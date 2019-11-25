@@ -11,6 +11,7 @@ import io.fabric8.openshift.api.model.RouteTargetReference
 import io.fabric8.openshift.api.model.SecurityContextConstraints
 import io.fabric8.openshift.client.OpenShiftClient
 import objects.Deployment
+import util.Timer
 
 class OpenShift extends Kubernetes {
     OpenShiftClient oClient
@@ -89,25 +90,23 @@ class OpenShift extends Kubernetes {
                     null
             )
             oClient.routes().inNamespace(deployment.namespace).createOrReplace(route)
-            int waitTime = 0
             println "Waiting for Route for " + deployment.name
-            while (waitTime < maxWaitTime) {
+            int retries = maxWaitTimeSeconds / sleepDurationSeconds
+            Timer t = new Timer(retries, sleepDurationSeconds)
+            boolean keepIterating = true
+            while (keepIterating && t.IsValid()) {
                 RouteList rList
                 rList = oClient.routes().inNamespace(deployment.namespace).list()
 
                 for (Route r : rList.getItems()) {
                     if (r.getMetadata().getName() == deployment.name) {
                         if (r.getStatus().getIngress() != null) {
-                            println "Route Host: " +
-                                    r.getStatus().getIngress().get(0).getHost()
-                            deployment.loadBalancerIP =
-                                    r.getStatus().getIngress().get(0).getHost()
-                            waitTime += maxWaitTime
+                            println "Route Host: " + r.getStatus().getIngress().get(0).getHost()
+                            deployment.loadBalancerIP = r.getStatus().getIngress().get(0).getHost()
+                            keepIterating = false
                         }
                     }
                 }
-                sleep(sleepDuration)
-                waitTime += sleepDuration
             }
         }
     }

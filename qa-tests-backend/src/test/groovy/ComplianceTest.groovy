@@ -638,13 +638,14 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "verify deployment fully detected"
-        Set<String> receivedProcessPaths = ProcessService.getUniqueProcessPaths(deployment.deploymentUid)
-        def sleepTime = 0L
-        while (receivedProcessPaths.size() <= 1 && sleepTime < 60000) {
-            println "Didn't find all the expected processes, retrying..."
-            sleep(2000)
-            sleepTime += 2000
+        Set<String> receivedProcessPaths = []
+        Timer t = new Timer(30, 2)
+        while (t.IsValid()) {
             receivedProcessPaths = ProcessService.getUniqueProcessPaths(deployment.deploymentUid)
+            if (receivedProcessPaths.size() > 1) {
+                break
+            }
+            println "Didn't find all the expected processes, retrying..."
         }
         assert receivedProcessPaths.size() > 1
 

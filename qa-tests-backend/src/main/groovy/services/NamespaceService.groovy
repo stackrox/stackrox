@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.NamespaceServiceGrpc
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
+import util.Timer
 
 class NamespaceService extends BaseService {
 
@@ -23,14 +24,14 @@ class NamespaceService extends BaseService {
     }
     static waitForNamespace(String id, int timeoutSeconds = 10) {
         int intervalSeconds = 1
-        def startTime = System.currentTimeMillis()
-        for (int waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+        int retries = timeoutSeconds / intervalSeconds
+        Timer t = new Timer(retries, intervalSeconds)
+        while (t.IsValid()) {
             if (getNamespace(id) != null ) {
-                println "SR found namespace ${id} within ${(System.currentTimeMillis() - startTime) / 1000}s"
+                println "SR found namespace ${id} within ${t.SecondsSince()}s"
                 return true
             }
             println "Retrying in ${intervalSeconds}..."
-            sleep(intervalSeconds * 1000)
         }
         println "SR did not detect the namespace ${id}"
         return false

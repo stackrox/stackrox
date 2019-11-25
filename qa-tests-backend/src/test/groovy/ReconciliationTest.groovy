@@ -7,6 +7,7 @@ import services.SecretService
 
 import org.junit.experimental.categories.Category
 import groups.SensorBounce
+import util.Timer
 
 class ReconciliationTest extends BaseSpecification {
 
@@ -71,9 +72,10 @@ class ReconciliationTest extends BaseSpecification {
         then:
         "Verify that we don't have references to resources removed when sensor was gone"
         // Get the resources from central and make sure the values exist
-
+        int retries = maxWaitForSync / interval
+        Timer t = new Timer(retries, interval)
         int numDeployments, numNamespaces, numNetworkPolicies, numSecrets
-        for (int waitTime; waitTime < maxWaitForSync / interval ; waitTime++) {
+        while (t.IsValid()) {
             numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
@@ -83,7 +85,6 @@ class ReconciliationTest extends BaseSpecification {
                 break
             }
             println "Waiting for all resources to be reconciled"
-            sleep(interval * 1000)
         }
         assert numDeployments == 0
         assert numNamespaces == 0

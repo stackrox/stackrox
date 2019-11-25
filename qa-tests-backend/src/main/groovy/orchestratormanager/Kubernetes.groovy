@@ -83,9 +83,9 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 class Kubernetes implements OrchestratorMain {
-    final int sleepDuration = 5000
-    final int maxWaitTime = 90000
-    final int lbWaitTime = 600000
+    final int sleepDurationSeconds = 5
+    final int maxWaitTimeSeconds = 90
+    final int lbWaitTimeSeconds = 600
 
     String namespace
     KubernetesClient client
@@ -514,18 +514,16 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForServiceDeletion(objects.Service service) {
-        int waitTime = 0
         boolean beenDeleted = false
 
-        while (waitTime < maxWaitTime && !beenDeleted) {
-            Service s =
-                    client.services().inNamespace(service.namespace).withName(service.name).get()
+        int retries = maxWaitTimeSeconds / sleepDurationSeconds
+        Timer t = new Timer(retries, sleepDurationSeconds)
+        while (!beenDeleted && t.IsValid()) {
+            Service s = client.services().inNamespace(service.namespace).withName(service.name).get()
             beenDeleted = true
 
             println "Waiting for service ${service.name} to be deleted"
             if (s != null) {
-                sleep(sleepDuration)
-                waitTime += sleepDuration
                 beenDeleted = false
             }
         }
@@ -539,9 +537,10 @@ class Kubernetes implements OrchestratorMain {
 
     def createLoadBalancer(Deployment deployment) {
         if (deployment.createLoadBalancer) {
-            Long startTime = System.currentTimeMillis()
             println "Waiting for LB external IP for " + deployment.name
-            while (System.currentTimeMillis() - startTime < lbWaitTime) {
+            int retries = lbWaitTimeSeconds / sleepDurationSeconds
+            Timer t = new Timer(retries, sleepDurationSeconds)
+            while (t.IsValid()) {
                 Service service = client.services().inNamespace(deployment.namespace).withName(deployment.name).get()
 
                 if (service != null &&
@@ -554,7 +553,6 @@ class Kubernetes implements OrchestratorMain {
                     println "LB IP: " + deployment.loadBalancerIP
                     break
                 }
-                sleep(sleepDuration)
             }
         }
     }
@@ -563,16 +561,14 @@ class Kubernetes implements OrchestratorMain {
         Secrets Methods
     */
     def waitForSecretCreation(String secretName, String namespace = this.namespace) {
-        int waitTime = 0
-
-        while (waitTime < maxWaitTime) {
+        int retries = maxWaitTimeSeconds / sleepDurationSeconds
+        Timer t = new Timer(retries, sleepDurationSeconds)
+        while (t.IsValid()) {
             Secret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
             if (secret != null) {
                 println secretName + ": secret created."
                 return
             }
-            sleep(sleepDuration)
-            waitTime += sleepDuration
         }
         println "Timed out waiting for secret ${secretName} to be created"
     }
@@ -606,7 +602,7 @@ class Kubernetes implements OrchestratorMain {
 
     def deleteSecret(String name, String namespace = this.namespace) {
         client.secrets().inNamespace(namespace).withName(name).delete()
-        sleep(sleepDuration)
+        sleep(sleepDurationSeconds * 1000)
         println name + ": Secret removed."
     }
 
@@ -1198,7 +1194,7 @@ class Kubernetes implements OrchestratorMain {
             } else if (skipReplicaWait) {
                 // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                 // to work its way through the system.
-                sleep(sleepDuration)
+                sleep(sleepDurationSeconds * 1000)
                 println "${deploymentName}: deployment created (skipped replica wait)."
                 return
             }
@@ -1269,7 +1265,7 @@ class Kubernetes implements OrchestratorMain {
             } else if (skipReplicaWait) {
                 // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                 // to work its way through the system.
-                sleep(sleepDuration)
+                sleep(sleepDurationSeconds * 1000)
                 println "${name}: daemonset created (skipped replica wait)."
                 return
             }

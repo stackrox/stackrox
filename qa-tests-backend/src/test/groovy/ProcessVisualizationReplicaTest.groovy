@@ -5,6 +5,7 @@ import groups.RUNTIME
 import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import util.Timer
 
 class ProcessVisualizationReplicaTest extends BaseSpecification {
     static final private Integer REPLICACOUNT = 4
@@ -62,24 +63,23 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         assert uid != null
 
         // processContainerMap contains a map of process path to a container id for each time that path was executed
-        def processContainerMap = ProcessService.getProcessContainerMap(uid)
-
-        Set<String> receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
-
-        def sleepTime = 0L
-        def observedPathOnEachContainer = false
-        while ((!receivedProcessPaths.containsAll(expectedFilePaths) || !observedPathOnEachContainer)
-               && sleepTime < MAX_SLEEP_TIME) {
-            println "Didn't find all the expected processes, retrying..."
-            sleep(SLEEP_INCREMENT)
-            sleepTime += SLEEP_INCREMENT
+        Map<String, List<String>> processContainerMap
+        Set<String> receivedProcessPaths
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
             receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
             processContainerMap = ProcessService.getProcessContainerMap(uid, expectedFilePaths)
 
             // check that every container list has k*REPLICACOUNT containerId's
-            observedPathOnEachContainer = processContainerMap.every {
+            def observedPathOnEachContainer = processContainerMap.every {
                 k, v -> REPLICACOUNT == new HashSet<String>(v).size()
             }
+            if (receivedProcessPaths.containsAll(expectedFilePaths) && observedPathOnEachContainer) {
+                break
+            }
+            println "Didn't find all the expected processes, retrying..."
         }
         println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 

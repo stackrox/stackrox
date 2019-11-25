@@ -91,19 +91,15 @@ class NetworkPolicyService extends BaseService {
 
     static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {
         int intervalSeconds = 1
-        int waitTime
-        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            try {
+        int retries = timeoutSeconds / intervalSeconds
+        try {
+            evaluateWithRetry(retries, intervalSeconds) {
                 getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
-                return true
-            } catch (Exception e) {
-                println "Exception checking for NetworkPolicy in SR, retrying...:"
-                println e.toString()
-                sleep(intervalSeconds * 1000)
             }
+            return true
+        } catch (Exception ignored) {
+            println "SR did not detect the network policy"
         }
-
-        println "SR did not detect the network policy"
         return false
     }
 

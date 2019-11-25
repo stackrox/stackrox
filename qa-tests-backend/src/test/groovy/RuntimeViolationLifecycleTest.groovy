@@ -4,6 +4,7 @@ import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToWhitelistDeployment
 
+import util.Timer
 import services.AlertService
 import groups.BAT
 import java.util.stream.Collectors
@@ -33,16 +34,13 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         // Wait until the deployment disappears from StackRox.
-        long sleepTime = 0
-        long sleepInterval = 1000
+        Timer t = new Timer(60, 1)
         boolean disappearedFromStackRox = false
-        while (sleepTime < 60000) {
+        while (t.IsValid()) {
             if (!roxDetectedDeployment(deployment.getDeploymentUid(), deployment.getName())) {
                 disappearedFromStackRox = true
                 break
             }
-            sleep(sleepInterval)
-            sleepTime += sleepInterval
         }
         return disappearedFromStackRox
     }

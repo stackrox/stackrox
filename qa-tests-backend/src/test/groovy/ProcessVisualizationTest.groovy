@@ -6,6 +6,7 @@ import groups.SMOKE
 import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import util.Timer
 
 class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
@@ -74,13 +75,16 @@ class ProcessVisualizationTest extends BaseSpecification {
         String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
         assert uid != null
 
-        Set<String> receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
-        def sleepTime = 0L
-        while (!receivedProcessPaths.containsAll(expectedFilePaths) && sleepTime < MAX_SLEEP_TIME) {
-            println "Didn't find all the expected processes, retrying..."
-            sleep(SLEEP_INCREMENT)
-            sleepTime += SLEEP_INCREMENT
+        Set<String> receivedProcessPaths
+        int retries = MAX_SLEEP_TIME / SLEEP_INCREMENT
+        int delaySeconds = SLEEP_INCREMENT / 1000
+        Timer t = new Timer(retries, delaySeconds)
+        while (t.IsValid()) {
             receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
+            if (receivedProcessPaths.containsAll(expectedFilePaths)) {
+                break
+            }
+            println "Didn't find all the expected processes, retrying..."
         }
         println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
