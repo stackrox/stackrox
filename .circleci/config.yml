@@ -387,6 +387,12 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
+buildLivenessCheck: &buildLivenessCheck
+  run:
+    name: Ensure workflow is still live
+    command: |
+      .circleci/check-workflow-live.sh
+
 checkKopsLabel: &checkKopsLabel
   run:
     name: Determine whether to run kops tests
@@ -644,10 +650,7 @@ commands:
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
 
-      - run:
-          name: Ensure workflow is still live
-          command: |
-            .circleci/check-workflow-live.sh
+      - *buildLivenessCheck
 
       - run:
           name: Tear down cluster upon failure
@@ -911,6 +914,8 @@ commands:
                 name: Create alias for OpenShift data directory
                 command: |
                   cp -r openshift/ openshift<< parameters.suffix >>/
+
+      - *buildLivenessCheck
 
       - persist_to_workspace:
           root: .
@@ -2374,6 +2379,8 @@ jobs:
       - store_artifacts:
           path: kops
           destination: kops
+
+      - *buildLivenessCheck
 
       - persist_to_workspace:
           root: .
