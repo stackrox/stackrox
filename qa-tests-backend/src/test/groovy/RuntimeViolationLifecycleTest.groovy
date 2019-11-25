@@ -47,7 +47,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
     def assertAlertExistsForDeploymentUidAndGetViolations(String policyName, String deploymentUid) {
         checkPolicyExists(APTGETPOLICY)
-        def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, 60)
+        def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, 66)
         assert !violations?.empty
 
         for (def violation : violations) {

@@ -48,7 +48,7 @@ class RuntimePolicyTest extends BaseSpecification  {
 
         then:
         "Verify Violation is triggered"
-        assert waitForViolation(depName, policyName, 60)
+        assert waitForViolation(depName, policyName, 66)
 
         where:
         "Data inputs are :"
