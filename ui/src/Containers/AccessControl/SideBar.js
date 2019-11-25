@@ -1,11 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 
 import List from 'Components/List';
 import Panel, { headerClassName } from 'Components/Panel';
 import { defaultColumnClassName, rtTrActionsClassName } from 'Components/Table';
+import RowActionButton from 'Components/RowActionButton';
 
 const SideBar = ({
     onSelectRow,
@@ -36,15 +36,11 @@ const SideBar = ({
         if (row.noAction) return null;
         return (
             <div className="border-2 border-base-400 bg-base-100 flex">
-                <Tooltip placement="top" overlay={<div>Delete {type}</div>} mouseLeaveDelay={0}>
-                    <button
-                        type="button"
-                        className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
-                        onClick={onDeleteHandler(row)}
-                    >
-                        <Icon.Trash2 className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                <RowActionButton
+                    text={`Delete ${type}`}
+                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    onClick={onDeleteHandler(row)}
+                />
             </div>
         );
     }

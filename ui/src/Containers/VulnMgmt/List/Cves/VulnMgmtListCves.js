@@ -1,12 +1,15 @@
 /* eslint-disable react/jsx-no-bind */
-import React from 'react';
+import React, { useState } from 'react';
 import gql from 'graphql-tag';
+import * as Icon from 'react-feather';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import RowActionButton from 'Components/RowActionButton';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
+import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
@@ -101,28 +104,6 @@ export function getCveTableColumns(workflowState) {
             accessor: 'impactScore'
         },
         {
-            Header: `Scanned`,
-            headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { lastScanned } = original;
-                return <DateTimeField date={lastScanned} />;
-            },
-            accessor: 'lastScanned',
-            id: 'lastScanned'
-        },
-        {
-            Header: `Published`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { publishedOn } = original;
-                return <DateTimeField date={publishedOn} />;
-            },
-            accessor: 'publishedOn',
-            id: 'published'
-        },
-        {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
@@ -172,6 +153,28 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'componentCount',
             id: 'componentCount'
+        },
+        {
+            Header: `Scanned`,
+            headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { lastScanned } = original;
+                return <DateTimeField date={lastScanned} />;
+            },
+            accessor: 'lastScanned',
+            id: 'lastScanned'
+        },
+        {
+            Header: `Published`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { publishedOn } = original;
+                return <DateTimeField date={publishedOn} />;
+            },
+            accessor: 'publishedOn',
+            id: 'published'
         }
     ];
 
@@ -191,6 +194,7 @@ export function renderCveDescription(row) {
 }
 
 const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
+    const [selectedCves, setSelectedCves] = useState([]);
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
     const CVES_QUERY = gql`
@@ -208,6 +212,67 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
         }
     };
 
+    const addToPolicy = cve => e => {
+        e.stopPropagation();
+        if (cve) {
+            // to do: add add to policy logic
+        } else {
+            setSelectedCves([]);
+        }
+    };
+    const suppressCVEs = cve => e => {
+        e.stopPropagation();
+        if (cve) {
+            // to do: add suppress logic
+        } else {
+            setSelectedCves([]);
+        }
+    };
+    const viewSuppressed = () => {
+        // console.log('view suppressed');
+    };
+
+    const renderRowActionButtons = ({ id }) => (
+        <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
+            <RowActionButton
+                text="Add to Policy"
+                onClick={addToPolicy(id)}
+                icon={<Icon.Plus className="mt-1 h-4 w-4" />}
+            />
+            <RowActionButton
+                text="Suppress CVE"
+                border="border-l-2 border-base-400"
+                onClick={suppressCVEs(id)}
+                icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+            />
+        </div>
+    );
+
+    const tableHeaderComponents = (
+        <React.Fragment>
+            <PanelButton
+                icon={<Icon.Plus className="h-4 w-4" />}
+                text="Add to Policy"
+                className="btn-icon btn-tertiary"
+                onClick={addToPolicy()}
+                disabled={selectedCves.length === 0}
+            />
+            <PanelButton
+                icon={<Icon.Trash2 className="h-4 w-4" />}
+                text="Suppress"
+                className="btn-icon btn-alert ml-2"
+                onClick={suppressCVEs()}
+                disabled={selectedCves.length === 0}
+            />
+            <PanelButton
+                icon={<Icon.Plus className="h-4 w-4" />}
+                text="View Suppressed"
+                className="btn-icon btn-base ml-2"
+                onClick={viewSuppressed}
+            />
+        </React.Fragment>
+    );
+
     return (
         <WorkflowListPage
             data={data}
@@ -222,6 +287,11 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
             defaultSorted={sort || defaultCveSort}
             showSubrows
             SubComponent={renderCveDescription}
+            checkbox
+            tableHeaderComponents={tableHeaderComponents}
+            selection={selectedCves}
+            setSelection={setSelectedCves}
+            renderRowActionButtons={renderRowActionButtons}
         />
     );
 };

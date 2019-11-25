@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
 import { createStructuredSelector } from 'reselect';
 
 import { actions } from 'reducers/apitokens';
@@ -16,6 +15,7 @@ import Dialog from 'Components/Dialog';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import RowActionButton from 'Components/RowActionButton';
 
 import APITokenForm from './APITokenForm';
 import APITokenDetails from './APITokenDetails';
@@ -155,15 +155,11 @@ class APITokensModal extends Component {
 
     renderRowActionButtons = token => (
         <div className="border-2 border-r-2 border-base-400 bg-base-100">
-            <Tooltip placement="top" overlay={<div>Revoke token</div>} mouseLeaveDelay={0}>
-                <button
-                    type="button"
-                    className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
-                    onClick={this.onRevokeHandler(token)}
-                >
-                    <Icon.Trash2 className="mt-1 h-4 w-4" />
-                </button>
-            </Tooltip>
+            <RowActionButton
+                text="Revoke token"
+                icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                onClick={this.onRevokeHandler(token)}
+            />
         </div>
     );
 

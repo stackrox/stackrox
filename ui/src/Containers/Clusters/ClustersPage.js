@@ -3,7 +3,6 @@ import React, { useEffect, useState, useReducer } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
 import { generatePath } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -25,6 +24,7 @@ import {
     rtTrActionsClassName
 } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
+import RowActionButton from 'Components/RowActionButton';
 
 import useInterval from 'hooks/useInterval';
 import { actions as clustersActions } from 'reducers/clusters';
@@ -102,15 +102,12 @@ const ClustersPage = ({
     function renderRowActionButtons(cluster) {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
-                <Tooltip placement="top" overlay={<div>Delete cluster</div>} mouseLeaveDelay={0}>
-                    <button
-                        type="button"
-                        className="p-1 px-4 hover:bg-alert-200 text-alert-600 hover:text-alert-700"
-                        onClick={onDeleteHandler(cluster)}
-                    >
-                        <Icon.Trash2 className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                <RowActionButton
+                    text="Delete cluster"
+                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    className="hover:bg-alert-200 text-alert-600 hover:text-alert-700"
+                    onClick={onDeleteHandler(cluster)}
+                />
             </div>
         );
     }
@@ -246,13 +243,19 @@ const ClustersPage = ({
     function toggleAutoUpgrade() {
         // @TODO, wrap this settings change in a confirmation prompt of some sort
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
-        const newConfig = { ...autoUpgradeConfig, enableAutoUpgrade: !previousValue };
+        const newConfig = {
+            ...autoUpgradeConfig,
+            enableAutoUpgrade: !previousValue
+        };
 
         setAutoUpgradeConfig(newConfig); // optimistically set value before API call
 
         saveAutoUpgradeConfig(newConfig).catch(() => {
             // reverse the optimistic update of the control in the UI
-            const rollbackConfig = { ...autoUpgradeConfig, enableAutoUpgrade: previousValue };
+            const rollbackConfig = {
+                ...autoUpgradeConfig,
+                enableAutoUpgrade: previousValue
+            };
             setAutoUpgradeConfig(rollbackConfig);
 
             // also, re-fetch the data from the server, just in case it did update but we didn't get the network response

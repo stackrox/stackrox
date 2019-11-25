@@ -8,13 +8,13 @@ import { actions as backendActions } from 'reducers/policies/backend';
 import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
 import { actions as wizardActions } from 'reducers/policies/wizard';
-import Tooltip from 'rc-tooltip';
 import { createStructuredSelector } from 'reselect';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 
 import * as Icon from 'react-feather';
 import CheckboxTable from 'Components/CheckboxTable';
 import SeverityLabel from 'Components/SeverityLabel';
+import RowActionButton from 'Components/RowActionButton';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import {
     defaultColumnClassName,
@@ -68,7 +68,10 @@ class TableContents extends Component {
 
     toggleEnabledDisabledPolicy = ({ id, disabled }) => e => {
         e.stopPropagation();
-        this.props.updatePolicyDisabledState({ policyId: id, disabled: !disabled });
+        this.props.updatePolicyDisabledState({
+            policyId: id,
+            disabled: !disabled
+        });
         this.props.setWizardPolicyDisabled(!disabled);
     };
 
@@ -95,24 +98,18 @@ class TableContents extends Component {
         const enableIconHoverColor = policy.disabled ? 'text-primary-700' : 'text-success-700';
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
-                <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
-                    <button
-                        type="button"
-                        className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                        onClick={this.toggleEnabledDisabledPolicy(policy)}
-                    >
-                        <Icon.Power className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
-                <Tooltip placement="top" overlay={<div>Delete policy</div>} mouseLeaveDelay={0}>
-                    <button
-                        type="button"
-                        className="p-1 px-4 border-l-2 border-base-400 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
-                        onClick={this.onDeletePolicy(policy)}
-                    >
-                        <Icon.Trash2 className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                <RowActionButton
+                    text={enableTooltip}
+                    onClick={this.toggleEnabledDisabledPolicy(policy)}
+                    className={`hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
+                    icon={<Icon.Power className="mt-1 h-4 w-4" />}
+                />
+                <RowActionButton
+                    text="Delete policy"
+                    onClick={this.onDeletePolicy(policy)}
+                    border="border-l-2 border-base-400"
+                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                />
             </div>
         );
     };

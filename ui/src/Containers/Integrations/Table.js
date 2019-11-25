@@ -8,8 +8,8 @@ import CheckboxTable from 'Components/CheckboxTable';
 import { rtTrActionsClassName } from 'Components/Table';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
+import RowActionButton from 'Components/RowActionButton';
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
 
 import tableColumnDescriptor from 'Containers/Integrations/tableColumnDescriptor';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -134,35 +134,23 @@ class IntegrationTable extends Component {
                 ? 'text-primary-700'
                 : 'text-success-700';
             activateBtn = (
-                <Tooltip placement="top" overlay={<div>{enableTooltip}</div>} mouseLeaveDelay={0}>
-                    <button
-                        type="button"
-                        className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                        onClick={this.onActivateHandler(integration)}
-                    >
-                        <Icon.Power className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                <RowActionButton
+                    text={enableTooltip}
+                    onClick={this.onActivateHandler(integration)}
+                    className={`hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
+                    icon={<Icon.Power className="mt-1 h-4 w-4" />}
+                />
             );
         }
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 {activateBtn}
-                <Tooltip
-                    placement="top"
-                    overlay={<div>Delete integration</div>}
-                    mouseLeaveDelay={0}
-                >
-                    <button
-                        type="button"
-                        className={`p-1 px-4 ${
-                            source === 'authProviders' ? 'border-l-2 border-base-400' : ''
-                        } hover:bg-primary-200 text-primary-600 hover:text-primary-700`}
-                        onClick={this.onDeleteHandler(integration)}
-                    >
-                        <Icon.Trash2 className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                <RowActionButton
+                    text="Delete integration"
+                    onClick={this.onDeleteHandler(integration)}
+                    border={`${source === 'authProviders' ? 'border-l-2 border-base-400' : ''}`}
+                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                />
             </div>
         );
     };

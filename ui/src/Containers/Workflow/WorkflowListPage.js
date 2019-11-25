@@ -30,7 +30,12 @@ const WorkflowListPage = ({
     SubComponent,
     showSubrows,
     search,
-    page
+    page,
+    checkbox,
+    tableHeaderComponents,
+    selection,
+    setSelection,
+    renderRowActionButtons
 }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -70,6 +75,11 @@ const WorkflowListPage = ({
             defaultSorted={defaultSorted}
             defaultExpanded={defaultExpandedRows}
             searchOptions={searchOptions}
+            checkbox={checkbox}
+            tableHeaderComponents={tableHeaderComponents}
+            selection={selection}
+            setSelection={setSelection}
+            renderRowActionButtons={renderRowActionButtons}
         />
     );
 };
@@ -89,7 +99,12 @@ WorkflowListPage.propTypes = {
     page: PropTypes.number,
     SubComponent: PropTypes.func,
     showSubrows: PropTypes.bool,
-    idAttribute: PropTypes.string
+    idAttribute: PropTypes.string,
+    checkbox: PropTypes.bool,
+    tableHeaderComponents: PropTypes.element,
+    selection: PropTypes.arrayOf(PropTypes.string),
+    setSelection: PropTypes.func,
+    renderRowActionButtons: PropTypes.func
 };
 
 WorkflowListPage.defaultProps = {
@@ -103,7 +118,12 @@ WorkflowListPage.defaultProps = {
     page: 1,
     SubComponent: null,
     showSubrows: false,
-    idAttribute: 'id'
+    idAttribute: 'id',
+    checkbox: false,
+    tableHeaderComponents: null,
+    selection: [],
+    setSelection: null,
+    renderRowActionButtons: null
 };
 
 export default WorkflowListPage;

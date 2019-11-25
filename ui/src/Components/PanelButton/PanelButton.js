@@ -5,7 +5,7 @@ import 'rc-tooltip/assets/bootstrap.css';
 
 const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
     const tooltipText = tooltip || text;
-    const tooltipClassName = !tooltip ? 'sm:visible md:invisible' : '';
+    const tooltipClassName = !tooltip ? 'visible xl:invisible' : '';
     return (
         <Tooltip
             placement="top"
@@ -22,7 +22,7 @@ const PanelButton = ({ icon, text, onClick, className, disabled, tooltip }) => {
                     data-test-id={`${text.toLowerCase()}-button`}
                 >
                     {icon && <span className="flex items-center">{icon}</span>}
-                    {text && <span className="mx-2 sm:hidden md:flex">{text}</span>}
+                    {text && <span className="mx-2 hidden xl:flex">{text}</span>}
                 </button>
             </div>
         </Tooltip>

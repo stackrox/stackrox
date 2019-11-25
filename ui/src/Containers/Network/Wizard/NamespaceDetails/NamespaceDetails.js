@@ -14,9 +14,9 @@ import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
+import RowActionButton from 'Components/RowActionButton';
 import { filterModes, filterLabels } from 'Containers/Network/Graph/filterModes';
 
-import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 import { capitalize } from 'lodash';
 
@@ -82,24 +82,15 @@ class NamespaceDetails extends Component {
     };
 
     renderRowActionButtons = node => {
-        const enableIconColor = 'text-primary-600';
-        const enableIconHoverColor = 'text-primary-700';
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
-                <Tooltip
-                    placement="left"
-                    mouseLeaveDelay={0}
-                    overlay={<div>Navigate to Deployment</div>}
+                <RowActionButton
+                    text="Navigate to Deployment"
+                    tooltipPlacement="left"
+                    onClick={this.navigate(node)}
                     overlayClassName="pointer-events-none"
-                >
-                    <button
-                        type="button"
-                        className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                        onClick={this.navigate(node)}
-                    >
-                        <Icon.ArrowUpRight className="mt-1 h-4 w-4" />
-                    </button>
-                </Tooltip>
+                    icon={<Icon.ArrowUpRight className="mt-1 h-4 w-4" />}
+                />
             </div>
         );
     };

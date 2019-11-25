@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
@@ -12,6 +12,8 @@ import { withRouter } from 'react-router-dom';
 import { searchCategories } from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import createPDFTable from 'utils/pdfUtils';
+import CheckboxTable from 'Components/CheckboxTable';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 const EntityList = ({
     autoFocusSearchInput,
@@ -25,10 +27,28 @@ const EntityList = ({
     selectedRowId,
     tableColumns,
     SubComponent,
-    defaultExpanded
+    defaultExpanded,
+    checkbox,
+    selection,
+    setSelection,
+    tableHeaderComponents,
+    renderRowActionButtons
 }) => {
     const [page, setPage] = useState(0);
+    const tableRef = useRef(null);
     const workflowState = useContext(workflowStateContext);
+
+    function toggleTableRow(id) {
+        const newSelection = toggleRow(id, selection);
+        setSelection(newSelection);
+    }
+
+    function toggleAllTableRows() {
+        const rowsLength = selection.length;
+        const ref = tableRef.current.reactTable;
+        const newSelection = toggleSelectAll(rowsLength, selection, ref);
+        setSelection(newSelection);
+    }
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
@@ -48,6 +68,7 @@ const EntityList = ({
                         autoFocus={autoFocus}
                     />
                 </div>
+                <div className="ml-2 flex">{tableHeaderComponents}</div>
                 {/* TODO: update pagination to use server-side pagination */}
                 <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
             </>
@@ -76,14 +97,25 @@ const EntityList = ({
         availableCategories,
         autoFocusSearchInput
     );
+    let tableComponent = (
+        <Table
+            rows={rowData}
+            columns={tableColumns}
+            onRowClick={onRowClickHandler}
+            idAttribute={idAttribute}
+            id="capture-list"
+            selectedRowId={selectedRowId}
+            noDataText={noDataText}
+            page={page}
+            defaultSorted={defaultSorted}
+            SubComponent={SubComponent}
+            expanded={defaultExpanded}
+        />
+    );
 
-    return (
-        <Panel
-            className={selectedRowId ? 'bg-base-100 overlay' : ''}
-            header={header}
-            headerComponents={headerComponents}
-        >
-            <Table
+    if (checkbox) {
+        tableComponent = (
+            <CheckboxTable
                 rows={rowData}
                 columns={tableColumns}
                 onRowClick={onRowClickHandler}
@@ -95,7 +127,22 @@ const EntityList = ({
                 defaultSorted={defaultSorted}
                 SubComponent={SubComponent}
                 expanded={defaultExpanded}
+                selection={selection}
+                ref={tableRef}
+                toggleRow={toggleTableRow}
+                toggleSelectAll={toggleAllTableRows}
+                renderRowActionButtons={renderRowActionButtons}
             />
+        );
+    }
+
+    return (
+        <Panel
+            className={selectedRowId ? 'bg-base-100 overlay' : ''}
+            header={header}
+            headerComponents={headerComponents}
+        >
+            {tableComponent}
         </Panel>
     );
 };
@@ -112,7 +159,12 @@ EntityList.propTypes = {
     selectedRowId: PropTypes.string,
     tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     SubComponent: PropTypes.func,
-    defaultExpanded: PropTypes.arrayOf(PropTypes.shape({}))
+    defaultExpanded: PropTypes.arrayOf(PropTypes.shape({})),
+    checkbox: PropTypes.bool,
+    selection: PropTypes.arrayOf(PropTypes.string),
+    setSelection: PropTypes.func,
+    tableHeaderComponents: PropTypes.element,
+    renderRowActionButtons: PropTypes.func
 };
 
 EntityList.defaultProps = {
@@ -123,7 +175,12 @@ EntityList.defaultProps = {
     searchOptions: [],
     selectedRowId: null,
     SubComponent: null,
-    defaultExpanded: null
+    defaultExpanded: null,
+    checkbox: false,
+    selection: [],
+    setSelection: null,
+    tableHeaderComponents: null,
+    renderRowActionButtons: null
 };
 
 export default withRouter(EntityList);

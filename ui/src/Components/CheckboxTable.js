@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactTablePropTypes from 'react-table/lib/propTypes';
-import Table from 'Components/Table';
+import Table, { rtTrActionsClassName } from 'Components/Table';
 
 class CheckboxTable extends Component {
     static propTypes = {
@@ -12,14 +12,18 @@ class CheckboxTable extends Component {
         toggleRow: PropTypes.func.isRequired,
         toggleSelectAll: PropTypes.func.isRequired,
         selection: PropTypes.arrayOf(PropTypes.string),
-        page: PropTypes.number
+        page: PropTypes.number,
+        renderRowActionButtons: PropTypes.arrayOf(),
+        idAttribute: PropTypes.string
     };
 
     static defaultProps = {
         selectedRowId: null,
         onRowClick: null,
         selection: [],
-        page: 0
+        page: 0,
+        renderRowActionButtons: null,
+        idAttribute: 'id'
     };
 
     setTableRef = table => {
@@ -47,8 +51,8 @@ class CheckboxTable extends Component {
     };
 
     addCheckboxColumns = () => {
-        const { columns, selection } = this.props;
-        return [
+        const { columns, selection, renderRowActionButtons } = this.props;
+        let checkboxColumns = [
             {
                 id: 'checkbox',
                 accessor: '',
@@ -78,6 +82,19 @@ class CheckboxTable extends Component {
             },
             ...columns
         ];
+        if (renderRowActionButtons) {
+            checkboxColumns = [
+                ...checkboxColumns,
+                {
+                    Header: '',
+                    accessor: '',
+                    headerClassName: 'hidden',
+                    className: rtTrActionsClassName,
+                    Cell: ({ original }) => renderRowActionButtons(original)
+                }
+            ];
+        }
+        return checkboxColumns;
     };
 
     render() {
