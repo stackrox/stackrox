@@ -216,9 +216,8 @@ func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error
 
 func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies []*storage.Policy) []*storage.Policy {
 	var filteredPolicies []*storage.Policy
-	clusterID := resolver.data.GetMetadata().GetClusterId()
 	for _, policy := range policies {
-		if resolver.policyAppliesToNamespace(policy, clusterID) {
+		if policyAppliesToNamespace(policy, resolver.data.GetMetadata()) {
 			filteredPolicies = append(filteredPolicies, policy)
 		}
 	}
@@ -272,11 +271,16 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context) (*P
 	return mapListAlertsToPolicyCount(alerts), nil
 }
 
-func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Policy, clusterID string) bool {
+func policyAppliesToNamespace(policy *storage.Policy, namespace *storage.NamespaceMetadata) bool {
 	// Global Policy
 	if len(policy.GetScope()) == 0 {
 		return true
 	}
+
+	if namespaceWhitelisted(policy.GetWhitelists(), namespace) {
+		return false
+	}
+
 	// Clustered or namespace scope policy, evaluate all scopes
 	for _, scope := range policy.GetScope() {
 		cs, err := scopecomp.CompileScope(scope)
@@ -284,10 +288,27 @@ func (resolver *namespaceResolver) policyAppliesToNamespace(policy *storage.Poli
 			utils.Should(errors.Wrap(err, "could not compile scope"))
 			continue
 		}
-		if scope.GetCluster() != "" && cs.MatchesCluster(clusterID) && cs.MatchesNamespace(resolver.data.Metadata.GetName()) {
+		if scope.GetCluster() != "" && !cs.MatchesCluster(namespace.GetClusterId()) {
+			continue
+		}
+		if cs.MatchesNamespace(namespace.GetName()) {
 			return true
 		}
-		if cs.MatchesNamespace(resolver.data.Metadata.GetName()) {
+	}
+	return false
+}
+
+func namespaceWhitelisted(policyWhitelist []*storage.Whitelist, namespace *storage.NamespaceMetadata) bool {
+	for _, whitelist := range policyWhitelist {
+		cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
+		if err != nil {
+			utils.Should(errors.Wrap(err, "could not compile whitelist scope"))
+			continue
+		}
+		if cs.MatchesCluster(namespace.GetClusterId()) {
+			return true
+		}
+		if cs.MatchesNamespace(namespace.GetName()) {
 			return true
 		}
 	}

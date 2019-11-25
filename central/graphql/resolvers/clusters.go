@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -633,37 +634,72 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([
 	if err != nil {
 		return nil, err
 	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	namespaces, err := resolver.root.NamespaceDataStore.SearchNamespaces(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
 	var filteredPolicies []*storage.Policy
 	for _, policy := range policies {
-		if resolver.policyAppliesToCluster(ctx, policy) {
+		if policyAppliesToCluster(resolver.data, namespaces, policy) {
 			filteredPolicies = append(filteredPolicies, policy)
 		}
 	}
 	return resolver.root.wrapPolicies(filteredPolicies, nil)
 }
 
-func (resolver *clusterResolver) policyAppliesToCluster(ctx context.Context, policy *storage.Policy) bool {
+func policyAppliesToCluster(cluster *storage.Cluster, namespaces []*storage.NamespaceMetadata, policy *storage.Policy) bool {
 	// Global Policy
 	if len(policy.Scope) == 0 {
 		return true
 	}
+
+	if clusterWhitelisted(policy.GetWhitelists(), cluster, namespaces) {
+		return false
+	}
+
 	// Clustered or namespaced scope policy
 	for _, scope := range policy.GetScope() {
+		cs, err := scopecomp.CompileScope(scope)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "could not compile scope"))
+			continue
+		}
 		if scope.GetCluster() != "" {
-			if scope.GetCluster() == resolver.data.GetId() {
+			if cs.MatchesCluster(cluster.GetId()) {
 				return true
 			}
 		} else if scope.GetNamespace() != "" {
-			q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
-				AddRegexes(search.Namespace, scope.GetNamespace()).ProtoQuery()
-			result, err := resolver.root.NamespaceDataStore.Search(ctx, q)
-			if err != nil {
-				continue
+			for _, namespace := range namespaces {
+				if cs.MatchesNamespace(namespace.GetName()) {
+					return true
+				}
 			}
-			if len(result) != 0 {
-				return true
+		}
+	}
+	return false
+}
+
+func clusterWhitelisted(policyWhitelist []*storage.Whitelist, cluster *storage.Cluster, namespaces []*storage.NamespaceMetadata) bool {
+	for _, whitelist := range policyWhitelist {
+		cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
+		if err != nil {
+			utils.Should(errors.Wrap(err, "could not compile whitelist scope"))
+			continue
+		}
+		if cs.MatchesCluster(cluster.GetId()) {
+			return true
+		}
+		allNSWhitelisted := true
+		for _, namespace := range namespaces {
+			if !cs.MatchesNamespace(namespace.GetName()) {
+				allNSWhitelisted = false
+				break
 			}
-		} else {
+		}
+		if allNSWhitelisted {
 			return true
 		}
 	}

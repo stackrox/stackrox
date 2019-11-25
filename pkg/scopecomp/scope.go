@@ -77,5 +77,8 @@ func (c *CompiledScope) MatchesNamespace(ns string) bool {
 
 // MatchesCluster evaluates a compiled scope against a cluster ID
 func (c *CompiledScope) MatchesCluster(cluster string) bool {
+	if c == nil {
+		return true
+	}
 	return c.ClusterID == cluster
 }
