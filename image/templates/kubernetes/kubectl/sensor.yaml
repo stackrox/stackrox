@@ -315,6 +315,8 @@ spec:
         volumeMounts:
         - mountPath: /etc/ssl/
           name: etc-ssl
+        - mountPath: /etc/pki/ca-trust/
+          name: etc-pki-volume
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
@@ -427,6 +429,8 @@ spec:
           path: /run
         name: run
       - name: etc-ssl
+        emptyDir: {}
+      - name: etc-pki-volume
         emptyDir: {}
       {{if .MonitoringEndpoint}}
       - name: monitoring-client-volume
