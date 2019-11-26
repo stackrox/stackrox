@@ -83,7 +83,7 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = () => {
+    renderGraph = simulatorOn => {
         // If we have more than 1100 nodes, display a message instead of the graph.
         const { networkPolicyGraph, networkFlowGraph } = this.props;
         const { nodes: allowedNodes } = networkPolicyGraph;
@@ -108,6 +108,7 @@ class Graph extends Component {
                 onNamespaceClick={this.onNamespaceClick}
                 onClickOutside={closeWizard}
                 filterState={filterState}
+                simulatorOn={simulatorOn}
             />
         );
     };
@@ -122,7 +123,6 @@ class Graph extends Component {
         const simulatorMode = simulatorOn ? 'simulator-mode' : '';
 
         // Graph nodes and styling.
-        let nodes;
         const networkGraphState =
             filterState === filterModes.active ? networkFlowGraphState : networkPolicyGraphState;
         const networkGraphStateClass = networkGraphState === 'ERROR' ? 'error' : 'success';
@@ -130,7 +130,7 @@ class Graph extends Component {
         // Rendering.
         return (
             <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full theme-light`}>
-                {this.renderGraph(nodes)}
+                {this.renderGraph(simulatorOn)}
                 <Filters />
                 <Legend />
             </div>

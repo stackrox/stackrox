@@ -100,9 +100,11 @@ function Details(props) {
     ) : null;
 
     return (
-        <Panel leftButtons={leftButtons} header={curDeployment.name} onClose={closeHandler}>
-            {content}
-        </Panel>
+        <div data-testid="network-details-panel">
+            <Panel leftButtons={leftButtons} header={curDeployment.name} onClose={closeHandler}>
+                {content}
+            </Panel>
+        </div>
     );
 }
 

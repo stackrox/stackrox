@@ -1,6 +1,8 @@
 import { url as networkUrl, selectors as networkPageSelectors } from '../constants/NetworkPage';
+import { url as riskURL, selectors as RiskPageSelectors } from '../constants/RiskPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
+import selectors from '../selectors/index';
 
 const uploadFile = (fileName, selector) => {
     cy.get(selector).then(subject => {
@@ -18,20 +20,24 @@ const uploadFile = (fileName, selector) => {
 describe('Network page', () => {
     withAuth();
 
-    beforeEach(() => {
+    it('should have selected item in nav bar', () => {
         cy.server();
         cy.fixture('network/networkGraph.json').as('networkGraphJson');
         cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
         cy.visit(networkUrl);
         cy.wait('@networkGraph');
-    });
 
-    it('should have selected item in nav bar', () => {
         cy.get(networkPageSelectors.network).click();
         cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
     });
 
     it('should display a legend', () => {
+        cy.server();
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+
         cy.get(networkPageSelectors.legend.deployments)
             .eq(0)
             .children()
@@ -74,6 +80,12 @@ describe('Network page', () => {
     });
 
     it('should handle toggle click on simulator network policy button', () => {
+        cy.server();
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
         cy.get(networkPageSelectors.panels.creatorPanel).should('be.visible');
@@ -82,14 +94,41 @@ describe('Network page', () => {
     });
 
     it('should display error messages when uploaded wrong yaml', () => {
+        cy.server();
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
+
         cy.get(networkPageSelectors.simulatorSuccessMessage).should('not.be.visible');
     });
 
     it('should display success messages when uploaded right yaml', () => {
+        cy.server();
+        cy.fixture('network/networkGraph.json').as('networkGraphJson');
+        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+        cy.visit(networkUrl);
+        cy.wait('@networkGraph');
+
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadFile('network/policywithnamespace.yaml', 'input[type="file"]');
+
         cy.get(networkPageSelectors.simulatorSuccessMessage).should('be.visible');
+    });
+
+    it('should show the network policy simulator screen after generating network policies', () => {
+        cy.visit(riskURL);
+        cy.get(selectors.table.rows)
+            .eq(0)
+            .click({ force: true });
+        cy.get(RiskPageSelectors.networkNodeLink).click();
+        cy.get(networkPageSelectors.panels.detailsPanel).should('be.visible');
+        cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
+        cy.get(networkPageSelectors.buttons.generateNetworkPolicies).click();
+        cy.wait(1000);
+        cy.get(networkPageSelectors.panels.simulatorPanel).should('be.visible');
     });
 });

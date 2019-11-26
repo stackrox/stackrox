@@ -4,15 +4,13 @@ import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { actions as graphActions } from 'reducers/network/graph';
-
-import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
-
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import popper from 'cytoscape-popper';
 import Tippy from 'tippy.js';
 import { uniq, throttle, flatMap } from 'lodash';
 
+import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
@@ -71,6 +69,7 @@ const NetworkGraph = ({
     setNetworkGraphRef,
     setSelectedNamespace,
     setSelectedNodeInGraph,
+    simulatorOn,
     history,
     match
 }) => {
@@ -664,6 +663,10 @@ const NetworkGraph = ({
                 deployments: namespacesWithDeployments[selectedNode.id] || []
             });
         }
+        if (simulatorOn) {
+            setSelectedNode();
+            setSelectedNamespace(null);
+        }
     }
 
     function grabifyNamespaces() {
@@ -674,7 +677,7 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [activeNodes, allowedNodes, networkEdgeMap, filterState]);
+    useEffect(runLayout, [activeNodes, allowedNodes, networkEdgeMap, filterState, simulatorOn]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 
@@ -737,7 +740,8 @@ NetworkGraph.propTypes = {
     setSelectedNamespace: PropTypes.func.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
-    setSelectedNodeInGraph: PropTypes.func
+    setSelectedNodeInGraph: PropTypes.func,
+    simulatorOn: PropTypes.bool.isRequired
 };
 
 NetworkGraph.defaultProps = {

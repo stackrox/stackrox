@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
@@ -14,10 +16,13 @@ class SimulatorButton extends Component {
         creatingOrSimulating: PropTypes.bool.isRequired,
         openWizard: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
-        closeWizard: PropTypes.func.isRequired
+        closeWizard: PropTypes.func.isRequired,
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     toggleSimulation = () => {
+        // @TODO: This isn't very nice. We'll have  to revisit this in the future. But adding this fix to address a customer issue (https://stack-rox.atlassian.net/browse/ROX-3118)
+        this.props.history.push('/main/network');
         if (this.props.creatingOrSimulating) {
             this.props.closeWizard();
         } else {
@@ -63,7 +68,9 @@ const mapDispatchToProps = {
     setWizardStage: wizardActions.setNetworkWizardStage
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(SimulatorButton);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(SimulatorButton)
+);

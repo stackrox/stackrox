@@ -5,7 +5,9 @@ export const selectors = {
     simulatorSuccessMessage: 'div:contains("Policies processed")',
     panels: {
         creatorPanel: '[data-test-id="network-creator-panel"]',
-        uploadPanel: '[data-test-id="upload-yaml-panel"]'
+        simulatorPanel: '[data-testid="network-simulator-panel"]',
+        uploadPanel: '[data-test-id="upload-yaml-panel"]',
+        detailsPanel: '[data-testid="network-details-panel"]'
     },
     legend: {
         deployments: '[data-test-id="deployment-legend"] div',
@@ -29,6 +31,7 @@ export const selectors = {
     buttons: {
         viewActiveYamlButton: '[data-test-id="view-active-yaml-button"]',
         simulatorButtonOn: '[data-test-id="simulator-button-on"]',
-        simulatorButtonOff: '[data-test-id="simulator-button-off"]'
+        simulatorButtonOff: '[data-test-id="simulator-button-off"]',
+        generateNetworkPolicies: 'button:contains("Generate and simulate network policies")'
     }
 };
