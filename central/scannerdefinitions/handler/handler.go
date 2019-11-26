@@ -2,6 +2,12 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // New returns a new instance of the service handler.

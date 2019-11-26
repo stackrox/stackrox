@@ -3,6 +3,7 @@ package uploaddb
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/pkg/errors"
@@ -27,7 +28,8 @@ func Command() *cobra.Command {
 			}
 			defer utils.IgnoreError(file.Close)
 
-			resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/scannerdefinitions", flags.Timeout(c), "POST", file)
+			resp, err := common.DoHTTPRequestAndCheck200("/api/extensions/scannerdefinitions",
+				flags.Timeout(c), http.MethodPost, file)
 			if err != nil {
 				return err
 			}
