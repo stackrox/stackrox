@@ -158,13 +158,13 @@ class IntegrationsPage extends Component {
 
     renderIntegrationTiles = source =>
         integrationsList[source].map(tile => {
-            if (tile.dependsOnFeatureFlag) {
+            if (tile.featureFlagDependency) {
                 if (
-                    !isBackendFeatureFlagEnabled(
+                    isBackendFeatureFlagEnabled(
                         this.props.featureFlags,
-                        tile.dependsOnFeatureFlag,
+                        tile.featureFlagDependency.featureFlag,
                         false
-                    )
+                    ) !== tile.featureFlagDependency.showIfValueIs
                 ) {
                     return null;
                 }

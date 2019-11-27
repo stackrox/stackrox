@@ -19,6 +19,7 @@ import s3 from 'images/s3.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 const integrationsList = {
     authProviders: [
@@ -44,7 +45,11 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: logo,
-            disabled: false
+            disabled: false,
+            featureFlagDependency: {
+                featureFlag: knownBackendFlags.ROX_LANGUAGE_SCANNER,
+                showIfValueIs: false
+            }
         },
         {
             label: 'Generic Docker Registry',
