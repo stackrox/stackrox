@@ -15,8 +15,7 @@ type Store interface {
 	GetAlertIDs() ([]string, error)
 	GetAlert(id string) (*storage.Alert, bool, error)
 	GetAlerts(ids []string) ([]*storage.Alert, []int, error)
-	AddAlert(alert *storage.Alert) error
-	UpdateAlert(alert *storage.Alert) error
+	UpsertAlert(alert *storage.Alert) error
 	DeleteAlert(id string) error
 	DeleteAlerts(ids ...string) error
 

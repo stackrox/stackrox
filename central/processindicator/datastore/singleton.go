@@ -9,10 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
-	"github.com/stackrox/rox/central/processindicator/store"
 	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
-	boltStore "github.com/stackrox/rox/central/processindicator/store/bolt"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -32,12 +29,7 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	if features.BadgerDB.Enabled() {
-		storage = badgerStore.New(globaldb.GetGlobalBadgerDB())
-	} else {
-		storage = boltStore.New(globaldb.GetGlobalDB())
-	}
+	storage := badgerStore.New(globaldb.GetGlobalBadgerDB())
 	indexer := index.New(globalindex.GetGlobalIndex())
 	searcher := search.New(storage, indexer)
 

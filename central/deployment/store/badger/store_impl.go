@@ -172,13 +172,6 @@ func (b *storeImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	return b.deploymentCRUD.Upsert(deployment)
 }
 
-// UpdateDeployment updates a deployment to bolt
-func (b *storeImpl) UpdateDeployment(deployment *storage.Deployment) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Update, "Deployment")
-
-	return b.deploymentCRUD.Update(deployment)
-}
-
 // RemoveDeployment removes a deployment
 func (b *storeImpl) RemoveDeployment(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Deployment")

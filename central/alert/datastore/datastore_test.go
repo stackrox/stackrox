@@ -114,37 +114,18 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
-	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(nil)
+	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
 
-	err := s.dataStore.AddAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
+	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
-	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
+	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Return(errFake)
 
-	err := s.dataStore.AddAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
-
-	s.Equal(errFake, err)
-}
-
-func (s *alertDataStoreTestSuite) TestUpdateAlert() {
-	s.storage.EXPECT().GetAlert(alerttest.NewFakeAlert().Id).Return(nil, true, nil)
-	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Return(nil)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
-
-	err := s.dataStore.UpdateAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
-
-	s.Equal(errFake, err)
-}
-
-func (s *alertDataStoreTestSuite) TestUpdateAlertWhenTheIndexerFails() {
-	s.storage.EXPECT().GetAlert(alerttest.NewFakeAlert().Id).Return(nil, true, nil)
-	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Return(errFake)
-
-	err := s.dataStore.UpdateAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
+	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
@@ -153,7 +134,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	fakeAlert := alerttest.NewFakeAlert()
 
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().UpdateAlert(gomock.Any()).Return(nil)
+	s.storage.EXPECT().UpsertAlert(gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
@@ -223,20 +204,10 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
-	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Times(0)
+	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Times(0)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Times(0)
 
-	err := s.dataStore.AddAlert(s.hasReadCtx, alerttest.NewFakeAlert())
-
-	s.EqualError(err, "permission denied")
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertEnforced() {
-	s.storage.EXPECT().GetAlert(alerttest.NewFakeAlert().Id).Times(0)
-	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Times(0)
-	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Times(0)
-
-	err := s.dataStore.UpdateAlert(s.hasReadCtx, alerttest.NewFakeAlert())
+	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
 
 	s.EqualError(err, "permission denied")
 }
@@ -245,7 +216,7 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().UpdateAlert(gomock.Any()).Times(0)
+	s.storage.EXPECT().UpsertAlert(gomock.Any()).Times(0)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
 	err := s.dataStore.MarkAlertStale(s.hasReadCtx, alerttest.FakeAlertID)

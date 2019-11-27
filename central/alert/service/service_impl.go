@@ -295,7 +295,7 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 			}
 			alert.State = state
 		}
-		err := s.dataStore.UpdateAlerts(ctx, alerts[start:end])
+		err := s.dataStore.UpsertAlerts(ctx, alerts[start:end])
 		if err != nil {
 			log.Error(err)
 			return status.Error(codes.Internal, err.Error())
@@ -312,7 +312,7 @@ func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert
 		alert.SnoozeTill = nil
 	}
 	alert.State = state
-	err := s.dataStore.UpdateAlert(ctx, alert)
+	err := s.dataStore.UpsertAlert(ctx, alert)
 	if err != nil {
 		log.Error(err)
 		return status.Error(codes.Internal, err.Error())

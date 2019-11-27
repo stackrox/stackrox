@@ -19,9 +19,6 @@ type keyFunc func(msg proto.Message) []byte
 type Crud interface {
 	Count() (int, error)
 
-	Create(msg proto.Message) error
-	CreateBatch(msg []proto.Message) error
-
 	Exists(id string) (bool, error)
 
 	Read(id string) (proto.Message, bool, error)
@@ -32,9 +29,6 @@ type Crud interface {
 
 	ReadAll() (msgs []proto.Message, err error)
 	ReadAllPartial() (msgs []proto.Message, err error)
-
-	Update(kv proto.Message) error
-	UpdateBatch(msgs []proto.Message) error
 
 	Upsert(kv proto.Message) error
 	UpsertBatch(msgs []proto.Message) error

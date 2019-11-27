@@ -28,9 +28,8 @@ type DataStore interface {
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
 	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
 	CountAlerts(ctx context.Context) (int, error)
-	AddAlert(ctx context.Context, alert *storage.Alert) error
-	UpdateAlert(ctx context.Context, alert *storage.Alert) error
-	UpdateAlerts(ctx context.Context, alerts []*storage.Alert) error
+	UpsertAlert(ctx context.Context, alert *storage.Alert) error
+	UpsertAlerts(ctx context.Context, alerts []*storage.Alert) error
 	MarkAlertStale(ctx context.Context, id string) error
 
 	DeleteAlerts(ctx context.Context, ids ...string) error

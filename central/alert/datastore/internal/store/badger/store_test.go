@@ -60,7 +60,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 	}
 
 	for _, a := range alerts {
-		s.NoError(s.store.AddAlert(a))
+		s.NoError(s.store.UpsertAlert(a))
 	}
 
 	for _, a := range alerts {
@@ -79,7 +79,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 
 	for _, a := range alerts {
 		a.Policy.Severity = storage.Severity_MEDIUM_SEVERITY
-		s.NoError(s.store.UpdateAlert(a))
+		s.NoError(s.store.UpsertAlert(a))
 	}
 
 	for _, a := range alerts {

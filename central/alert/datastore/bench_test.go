@@ -8,21 +8,13 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
-	boltStore "github.com/stackrox/rox/central/alert/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkDBs(b *testing.B) {
-	b.Run("bolt", func(b *testing.B) {
-		tmpStore, err := bolthelper.NewTemp("alert_bench_test.db")
-		require.NoError(b, err)
-		benchmarkLoad(b, boltStore.New(tmpStore))
-	})
-
 	b.Run("badger", func(b *testing.B) {
 		db, _, err := badgerhelper.NewTemp("alert_bench_test")
 		require.NoError(b, err)
@@ -41,7 +33,7 @@ func benchmarkLoad(b *testing.B, s store.Store) {
 
 	for i := 0; i < 15000; i++ {
 		a := fixtures.GetAlertWithID(fmt.Sprintf("%d", i))
-		require.NoError(b, s.AddAlert(a))
+		require.NoError(b, s.UpsertAlert(a))
 	}
 
 	log.Info("Successfully loaded the DB")

@@ -136,14 +136,8 @@ func (b *storeImpl) GetAlerts(ids []string) ([]*storage.Alert, []int, error) {
 }
 
 // AddAlert adds an alert into Badger
-func (b *storeImpl) AddAlert(alert *storage.Alert) error {
+func (b *storeImpl) UpsertAlert(alert *storage.Alert) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Add, "Alert")
-	return b.alertCRUD.Upsert(alert)
-}
-
-// UpdateAlert upserts an alert into Badger
-func (b *storeImpl) UpdateAlert(alert *storage.Alert) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Update, "Alert")
 	return b.alertCRUD.Upsert(alert)
 }
 

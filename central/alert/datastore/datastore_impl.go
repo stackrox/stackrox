@@ -107,7 +107,7 @@ func (ds *datastoreImpl) CountAlerts(ctx context.Context) (int, error) {
 }
 
 // AddAlert inserts an alert into storage and into the indexer
-func (ds *datastoreImpl) AddAlert(ctx context.Context, alert *storage.Alert) error {
+func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) error {
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
 		return errors.New("permission denied")
 	}
@@ -115,33 +115,10 @@ func (ds *datastoreImpl) AddAlert(ctx context.Context, alert *storage.Alert) err
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
 
-	if err := ds.storage.AddAlert(alert); err != nil {
+	if err := ds.storage.UpsertAlert(alert); err != nil {
 		return err
 	}
 	return ds.indexer.AddListAlert(convert.AlertToListAlert(alert))
-}
-
-// UpdateAlert updates an alert in storage and in the indexer
-func (ds *datastoreImpl) UpdateAlert(ctx context.Context, alert *storage.Alert) error {
-	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
-		return errors.New("permission denied")
-	}
-
-	ds.keyedMutex.Lock(alert.GetId())
-	defer ds.keyedMutex.Unlock(alert.GetId())
-
-	oldAlert, exists, err := ds.GetAlert(ctx, alert.GetId())
-	if err != nil {
-		log.Infof("Error in get alert: %v", err)
-		return err
-	}
-	if exists {
-		if !hasSameScope(alert.GetDeployment(), oldAlert.GetDeployment()) {
-			return errors.New("cannot change the cluster or namespace of an existing alert")
-		}
-	}
-
-	return ds.updateAlertNoLock(alert)
 }
 
 // UpdateAlert updates an alert in storage and in the indexer
@@ -168,7 +145,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 }
 
 // UpdateAlert updates an alert in storage and in the indexer
-func (ds *datastoreImpl) UpdateAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
+func (ds *datastoreImpl) UpsertAlerts(ctx context.Context, alertBatch []*storage.Alert) error {
 	var waitGroup sync.WaitGroup
 	c := make(chan error, len(alertBatch))
 	for _, alert := range alertBatch {
@@ -225,7 +202,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 	// Checks pass then update.
-	if err := ds.storage.UpdateAlert(alert); err != nil {
+	if err := ds.storage.UpsertAlert(alert); err != nil {
 		return err
 	}
 	return ds.indexer.AddListAlert(convert.AlertToListAlert(alert))

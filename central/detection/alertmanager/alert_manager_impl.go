@@ -55,7 +55,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.UpdateAlert(ctx, existingAlert))
+		errList.AddError(d.alerts.UpsertAlert(ctx, existingAlert))
 	}
 	return errList.ToError()
 }

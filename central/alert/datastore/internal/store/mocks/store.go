@@ -141,32 +141,18 @@ func (mr *MockStoreMockRecorder) GetAlerts(ids interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlerts", reflect.TypeOf((*MockStore)(nil).GetAlerts), ids)
 }
 
-// AddAlert mocks base method
-func (m *MockStore) AddAlert(alert *storage.Alert) error {
+// UpsertAlert mocks base method
+func (m *MockStore) UpsertAlert(alert *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddAlert", alert)
+	ret := m.ctrl.Call(m, "UpsertAlert", alert)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddAlert indicates an expected call of AddAlert
-func (mr *MockStoreMockRecorder) AddAlert(alert interface{}) *gomock.Call {
+// UpsertAlert indicates an expected call of UpsertAlert
+func (mr *MockStoreMockRecorder) UpsertAlert(alert interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlert", reflect.TypeOf((*MockStore)(nil).AddAlert), alert)
-}
-
-// UpdateAlert mocks base method
-func (m *MockStore) UpdateAlert(alert *storage.Alert) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAlert", alert)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateAlert indicates an expected call of UpdateAlert
-func (mr *MockStoreMockRecorder) UpdateAlert(alert interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlert", reflect.TypeOf((*MockStore)(nil).UpdateAlert), alert)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertAlert", reflect.TypeOf((*MockStore)(nil).UpsertAlert), alert)
 }
 
 // DeleteAlert mocks base method

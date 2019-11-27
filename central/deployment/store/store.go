@@ -16,7 +16,6 @@ type Store interface {
 
 	CountDeployments() (int, error)
 	UpsertDeployment(deployment *storage.Deployment) error
-	UpdateDeployment(deployment *storage.Deployment) error
 	RemoveDeployment(id string) error
 
 	GetTxnCount() (txNum uint64, err error)

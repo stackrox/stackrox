@@ -176,66 +176,6 @@ func (s *CRUDTestSuite) TestReadAll() {
 	}
 }
 
-func (s *CRUDTestSuite) TestUpdate() {
-	s.Error(s.crud.Update(alert1))
-
-	s.NoError(s.crud.Upsert(alert1))
-
-	localAlert := proto.Clone(alert1).(*storage.Alert)
-	localAlert.State = storage.ViolationState_RESOLVED
-
-	val := s.crud.GetTxnCount()
-	s.NoError(s.crud.Update(localAlert))
-	s.Equal(val+1, s.crud.GetTxnCount())
-
-	msg, exists, err := s.crud.Read(alert1ID)
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(localAlert, msg)
-
-	if s.partial {
-		msg, exists, err := s.crud.ReadPartial(alert1ID)
-		s.NoError(err)
-		s.True(exists)
-		s.Equal(converter(localAlert), msg)
-	}
-}
-func (s *CRUDTestSuite) TestUpdateMany() {
-	s.Error(s.crud.UpdateBatch([]proto.Message{alert1}))
-	s.NoError(s.crud.Upsert(alert1))
-
-	s.Error(s.crud.UpdateBatch([]proto.Message{alert1, alert2}))
-
-	s.NoError(s.crud.Upsert(alert2))
-
-	localAlert1 := proto.Clone(alert1).(*storage.Alert)
-	localAlert1.State = storage.ViolationState_RESOLVED
-
-	localAlert2 := proto.Clone(alert2).(*storage.Alert)
-	localAlert2.State = storage.ViolationState_RESOLVED
-
-	txNum := s.crud.GetTxnCount()
-	s.NoError(s.crud.UpdateBatch([]proto.Message{localAlert1, localAlert2}))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
-
-	msgs, err := s.crud.ReadAll()
-	s.NoError(err)
-
-	localAlerts := []*storage.Alert{localAlert1, localAlert2}
-	s.ElementsMatch(localAlerts, msgs)
-
-	if s.partial {
-		var partialMsgs []proto.Message
-		for _, a := range localAlerts {
-			partialMsgs = append(partialMsgs, converter(a))
-		}
-
-		msgs, err := s.crud.ReadAllPartial()
-		s.NoError(err)
-		s.ElementsMatch(partialMsgs, msgs)
-	}
-}
-
 func (s *CRUDTestSuite) TestUpsert() {
 	s.NoError(s.crud.Upsert(alert1))
 

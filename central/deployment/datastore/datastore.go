@@ -5,13 +5,11 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
-	"github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
-	boltStore "github.com/stackrox/rox/central/deployment/store/bolt"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
@@ -81,15 +79,6 @@ func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.Da
 // NewBadger creates a deployment datastore based on BadgerDB
 func NewBadger(db *badger.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
 	store, err := badgerStore.New(db)
-	if err != nil {
-		return nil, err
-	}
-	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter)
-}
-
-// NewBolt creates a deployment datastore based on BoltDB
-func NewBolt(db *bbolt.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
-	store, err := boltStore.New(db)
 	if err != nil {
 		return nil, err
 	}

@@ -36,14 +36,6 @@ func BenchmarkAddDeployment(b *testing.B) {
 	}
 }
 
-func BenchmarkUpdateDeployment(b *testing.B) {
-	store := getDeploymentStore(b)
-	deployment := fixtures.GetDeployment()
-	for i := 0; i < b.N; i++ {
-		require.NoError(b, store.UpdateDeployment(deployment))
-	}
-}
-
 func BenchmarkGetDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetDeployment()

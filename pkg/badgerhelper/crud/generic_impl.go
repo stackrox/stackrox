@@ -39,14 +39,6 @@ func (c *crudImpl) Count() (int, error) {
 	return count, errors.Wrapf(err, "error getting count in %s", c.prefixString)
 }
 
-func (c *crudImpl) Create(msg proto.Message) error {
-	return c.Upsert(msg)
-}
-
-func (c *crudImpl) CreateBatch(msg []proto.Message) error {
-	return c.UpsertBatch(msg)
-}
-
 func (c *crudImpl) getKey(id string) []byte {
 	return badgerhelper.GetBucketKey(c.prefix, []byte(id))
 }
@@ -233,10 +225,6 @@ func (c *crudImpl) runUpdate(msg proto.Message, mustExist bool) error {
 	return c.IncTxnCount()
 }
 
-func (c *crudImpl) Update(msg proto.Message) error {
-	return c.runUpdate(msg, true)
-}
-
 func (c *crudImpl) Upsert(msg proto.Message) error {
 	return c.runUpdate(msg, false)
 }
@@ -268,10 +256,6 @@ func (c *crudImpl) updateBatch(msgs []proto.Message, mustExist bool) error {
 		}
 	}
 	return c.txnHelper.IncTxnCount()
-}
-
-func (c *crudImpl) UpdateBatch(msgs []proto.Message) error {
-	return c.updateBatch(msgs, true)
 }
 
 func (c *crudImpl) UpsertBatch(msgs []proto.Message) error {

@@ -346,7 +346,7 @@ func TestAlertPruning(t *testing.T) {
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
-				require.NoError(t, alerts.AddAlert(ctx, alert))
+				require.NoError(t, alerts.UpsertAlert(ctx, alert))
 			}
 			for _, deployment := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))

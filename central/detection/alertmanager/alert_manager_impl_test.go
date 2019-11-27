@@ -149,7 +149,7 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	alerts := getAlerts()
 
 	// Only the new alert will be updated.
-	suite.alertsMock.EXPECT().UpdateAlert(suite.ctx, alerts[0]).Return(nil)
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, alerts[0]).Return(nil)
 
 	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()

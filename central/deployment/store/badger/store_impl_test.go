@@ -82,23 +82,9 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 		},
 	}
 
-	// Test Add
+	// Test Upsert
 	for _, d := range deployments {
-		err := suite.store.UpdateDeployment(d)
-		suite.Require().Error(err)
-		suite.Error(err)
 		suite.NoError(suite.store.UpsertDeployment(d))
-		// Update should be idempotent
-		suite.NoError(suite.store.UpdateDeployment(d))
-	}
-
-	suite.verifyDeploymentsAre(suite.store, deployments...)
-
-	// Test Update
-	for _, d := range deployments {
-		d.Created = ptypes.TimestampNow()
-		d.Name += "-ext"
-		suite.NoError(suite.store.UpdateDeployment(d))
 	}
 
 	suite.verifyDeploymentsAre(suite.store, deployments...)
