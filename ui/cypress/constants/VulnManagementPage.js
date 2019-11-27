@@ -24,8 +24,16 @@ export const listSelectors = {
     tableRows: '.rt-tr',
     tableColumn: '.rt-th.leading-normal > div',
     tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
-    tableCVEColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > .items-center',
+    allCVEColumnLink: '[data-testid="allCvesLink"]',
+    fixableCVELink: '[data-testid="fixableCvesLink"]',
     numCVEColLink: '.rt-tr > .rt-td'
+};
+
+export const sidePanelListEntityPageSelectors = {
+    entityRowHeader:
+        '[data-test-id="side-panel"] > .h-full > .flex > .flex-no-wrap > .flex > [data-test-id="panel-header"]',
+    parentEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > a',
+    childEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > span'
 };
 
 export const dashboardSelectors = {
@@ -81,5 +89,6 @@ export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
     ...linkSelectors,
-    ...sidepanelSelectors
+    ...sidepanelSelectors,
+    ...sidePanelListEntityPageSelectors
 };

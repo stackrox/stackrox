@@ -7,24 +7,102 @@ const hasExpectedHeaderColumns = colNames => {
     });
 };
 
-const hasExpectedLinks = colLinks => {
+function validateDataInEntityListPage(entityCountAndName, entityURL) {
+    cy.get(selectors.entityRowHeader)
+        .invoke('text')
+        .then(entityCountFromHeader => {
+            expect(entityCountFromHeader).contains(
+                entityCountAndName,
+                // eslint-disable-next-line no-undef
+                `expected entity count ${entityCountAndName} found in the related entity list page`
+            );
+        });
+    cy.visit(entityURL);
+}
+function validateClickableLinks(colLinks, parentUrl) {
     colLinks.forEach(col => {
-        cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`);
+        if (col !== 'Policies') {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .invoke('text')
+                .then(value => {
+                    cy.get(
+                        `${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
+                    ).click();
+                    validateDataInEntityListPage(value, parentUrl);
+                });
+        }
+        if (col === 'Policies') {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .invoke('text')
+                .then(value => {
+                    expect(value).contains('policies' || 'policy', 'expected text displayed');
+                    cy.get(`${selectors.tableColumnLinks}:contains('${value}')`).click();
+                    validateDataInEntityListPage(value, parentUrl);
+                });
+        }
     });
-};
+}
 
-const hasExpectedCVELinks = colCVELinks => {
-    colCVELinks.forEach(col => {
-        cy.get(`${selectors.tableCVEColumnLinks}:contains('${col}')`);
+function validateClickableLinksEntityListPage(colLinks, parentUrl) {
+    colLinks.forEach(col => {
+        if (col !== 'Policies') {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .eq(0)
+                .invoke('text')
+                .then(value => {
+                    cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                        .eq(0)
+                        .click({ force: true });
+                    validateDataInEntityListPage(value, parentUrl);
+                });
+        }
+        if (col === 'Policies') {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .eq(0)
+                .invoke('text')
+                .then(value => {
+                    expect(value).contains('policies' || 'policy', 'expected text displayed');
+                    cy.get(`${selectors.tableColumnLinks}:contains('${value}')`)
+                        .eq(0)
+                        .click({ force: true });
+                    validateDataInEntityListPage(`${parseInt(value, 10)} policies`, parentUrl);
+                });
+        }
     });
-};
+}
+
+function validateAllCVELinks(prevUrl) {
+    cy.get(`${selectors.allCVEColumnLink}`)
+        .eq(0)
+        .invoke('text')
+        .then(value => {
+            cy.get(`${selectors.allCVEColumnLink}`)
+                .eq(0)
+                .click({ force: true });
+            validateDataInEntityListPage(value.toUpperCase(), prevUrl);
+        });
+}
+
+function validateFixableCVELinks(urlBack) {
+    cy.get(`${selectors.fixableCVELink}`)
+        .eq(0)
+        .invoke('text')
+        .then(value => {
+            cy.get(`${selectors.fixableCVELink}`)
+                .eq(0)
+                .click({ force: true });
+            if (parseInt(value, 10) === 1)
+                validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);
+            if (parseInt(value, 10) > 1)
+                validateDataInEntityListPage(`${parseInt(value, 10)} CVES`, urlBack);
+        });
+}
 
 function validateSort(selector) {
     let current;
     let prev;
     prev = -1000;
     cy.get(selector).each($el => {
-        cy.log(`priority value ${$el.text()}`);
         current = parseInt($el.text(), 10);
         const sortOrderStatus = current >= prev;
         expect(sortOrderStatus).to.equals(true, 'sort order is as expected');
@@ -38,7 +116,6 @@ function validateSortForCVE(selector) {
     let sortOrderStatus = false;
     prev = 1000;
     cy.get(selector).each($el => {
-        cy.log(`priority value ${$el.text()}`);
         current = parseFloat($el.text(), 10.0);
         // eslint-disable-next-line no-restricted-globals
         if (!isNaN(prev) && !isNaN(current)) {
@@ -64,8 +141,9 @@ describe('Entities list Page', () => {
             'Latest violation',
             'Risk Priority'
         ]);
-        hasExpectedLinks(['Namespace', 'Deployment']);
-        hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateClickableLinks(['Namespace', 'Deployment', 'Policies'], url.list.clusters);
+        validateAllCVELinks(url.list.clusters);
+        validateFixableCVELinks(url.list.clusters);
         validateSort(selectors.riskScoreCol);
     });
 
@@ -82,8 +160,9 @@ describe('Entities list Page', () => {
             'Latest violation',
             'Risk Priority'
         ]);
-        hasExpectedLinks(['image', 'deployment']);
-        hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateClickableLinksEntityListPage(['image', 'deployment'], url.list.namespaces);
+        validateAllCVELinks(url.list.namespaces);
+        validateFixableCVELinks(url.list.namespaces);
         validateSort(selectors.riskScoreCol);
     });
 
@@ -100,8 +179,9 @@ describe('Entities list Page', () => {
             'Latest violation',
             'Risk Priority'
         ]);
-        hasExpectedLinks(['image']);
-        hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateClickableLinksEntityListPage(['image', 'Policies'], url.list.deployments);
+        validateAllCVELinks(url.list.deployments);
+        validateFixableCVELinks(url.list.deployments);
         validateSort(selectors.riskScoreCol);
     });
 
@@ -118,8 +198,9 @@ describe('Entities list Page', () => {
             'Components',
             'Risk Priority'
         ]);
-        hasExpectedLinks(['deployment', 'component']);
-        hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateClickableLinksEntityListPage(['deployment', 'component'], url.list.images);
+        validateAllCVELinks(url.list.images);
+        validateFixableCVELinks(url.list.images);
         validateSort(selectors.riskScoreCol);
     });
 
@@ -133,8 +214,9 @@ describe('Entities list Page', () => {
             'Deployments',
             'Risk Priority'
         ]);
-        hasExpectedLinks(['deployment', 'image']);
-        hasExpectedCVELinks(['CVE', 'Fixable']);
+        validateClickableLinksEntityListPage(['deployment', 'image'], url.list.components);
+        validateAllCVELinks(url.list.components);
+        validateFixableCVELinks(url.list.components);
         validateSort(selectors.componentsRiskScoreCol);
     });
 
@@ -150,7 +232,7 @@ describe('Entities list Page', () => {
             'Published',
             'Deployments'
         ]);
-        hasExpectedLinks(['image', 'deployment', 'component']);
+        validateClickableLinksEntityListPage(['image', 'deployment', 'component'], url.list.cves);
         validateSortForCVE(selectors.cvesCvssScoreCol);
     });
 });
