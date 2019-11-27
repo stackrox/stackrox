@@ -2,9 +2,11 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,17 +22,24 @@ func TestWhitelist(t *testing.T) {
 }
 
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
+	var alerts []*storage.ListAlert
 	for i := 0; i < 5; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()
 		require.NoError(t, err)
-		if len(resp.GetAlerts()) == desired {
+		alerts = resp.GetAlerts()
+		if len(alerts) == desired {
 			return
 		}
 		time.Sleep(2 * time.Second)
 	}
-	require.Fail(t, "Failed to have %d alerts", desired)
+	alertStrings := ""
+	for _, alert := range alerts {
+		alertStrings = fmt.Sprintf("%s%s\n", alertStrings, proto.MarshalTextString(alert))
+	}
+	log.Infof("Received alerts:\n%s", alertStrings)
+	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
 func verifyNoAlertForWhitelist(t *testing.T) {
