@@ -26,8 +26,10 @@ data:
         grpcPort: 8081
 
       updater:
-        # Frequency the database will be updated with vulnerabilities from the default data sources
-        # The value 0 disables the updater entirely.
-        interval: 2h
+        # Frequency with which the scanner will poll for vulnerability updates.
+        interval: 5m
+        {{ if eq .Values.offlineMode true -}}
+        fetchFromCentral: true
+        {{- end }}
 
       logLevel: {{ .Values.logLevel }}
