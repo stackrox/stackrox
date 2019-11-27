@@ -13,7 +13,6 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
         .then(entityCountFromHeader => {
             expect(entityCountFromHeader).contains(
                 entityCountAndName,
-                // eslint-disable-next-line no-undef
                 `expected entity count ${entityCountAndName} found in the related entity list page`
             );
         });
@@ -128,7 +127,7 @@ function validateSortForCVE(selector) {
 
 describe('Entities list Page', () => {
     withAuth();
-    it('should display all the columns and links expected in clusters list page', () => {
+    it.skip('should display all the columns and links expected in clusters list page', () => {
         cy.visit(url.list.clusters);
         hasExpectedHeaderColumns([
             'Cluster',
