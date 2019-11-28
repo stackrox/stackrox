@@ -2,7 +2,7 @@ FROM alpine:3.10
 
 RUN mkdir /stackrox-data
 
-RUN wget -O product-docs.tgz https://storage.googleapis.com/doc-bundles/03c318a8759d13e8ed7611bccd6618dde60d768a345ff3c0a870e60c53bcfbe9/0.0.0-269-gdb6ed419.tgz && \
+RUN wget -O product-docs.tgz https://storage.googleapis.com/doc-bundles/03c318a8759d13e8ed7611bccd6618dde60d768a345ff3c0a870e60c53bcfbe9/0.0.0-275-g7c3a66dd.tgz && \
     tar xzf product-docs.tgz && \
     mv public /stackrox-data/product-docs && \
     ls /stackrox-data/product-docs/index.html && \
