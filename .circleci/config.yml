@@ -1003,6 +1003,8 @@ commands:
 
             ./scripts/ci/openshift-gcr-secrets.sh
 
+
+      - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
       - *setupLicense
 
