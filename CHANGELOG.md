@@ -3,7 +3,7 @@ All notable changes to this project that require documentation updates will be d
 
 ## [NEXT RELEASE]
 - Proxy configuration can now be changed at runtime by editing and applying `proxy-config-secret.yaml` in the cluster
-  where central and scanner run (ROX-3348, #3994).
+  where central and scanner run (ROX-3348, #3994, #4127).
 
 ## [34.0]
 ### Added

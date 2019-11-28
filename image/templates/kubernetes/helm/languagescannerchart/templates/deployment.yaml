@@ -87,6 +87,9 @@ spec:
           readOnly: true
         - name: vuln-temp-db
           mountPath: /var/lib/stackrox
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
       - name: db
         image: {{.Values.dbImage}}
         resources:
@@ -111,3 +114,7 @@ spec:
         emptyDir: {}
       - name: vuln-temp-db
         emptyDir: {}
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true
