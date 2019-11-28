@@ -8,8 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func makeEndpoints(host, zone, port string) []string {
-	var result []string
+type endpointTestCase struct {
+	endpoint  string
+	canonical bool
+}
+
+func makeEndpoints(host, zone, port string) []endpointTestCase {
+	var result []endpointTestCase
 
 	hostZone := host
 	if zone != "" {
@@ -17,15 +22,16 @@ func makeEndpoints(host, zone, port string) []string {
 	}
 
 	if port == "" {
-		result = append(result, hostZone)
-		result = append(result, fmt.Sprintf("[%s]", hostZone))
+		result = append(result, endpointTestCase{endpoint: hostZone, canonical: true})
+		result = append(result, endpointTestCase{endpoint: fmt.Sprintf("[%s]", hostZone)})
 		return result
 	}
 
-	if !strings.ContainsRune(hostZone, ':') {
-		result = append(result, fmt.Sprintf("%s:%s", hostZone, port))
+	needsBrackets := strings.ContainsRune(hostZone, ':')
+	if !needsBrackets {
+		result = append(result, endpointTestCase{endpoint: fmt.Sprintf("%s:%s", hostZone, port), canonical: true})
 	}
-	result = append(result, fmt.Sprintf("[%s]:%s", hostZone, port))
+	result = append(result, endpointTestCase{endpoint: fmt.Sprintf("[%s]:%s", hostZone, port), canonical: needsBrackets})
 
 	return result
 }
@@ -53,12 +59,18 @@ func TestParseEndpoint_Valid(t *testing.T) {
 			for _, port := range ports {
 				endpoints := makeEndpoints(host, zone, port)
 
-				for _, ep := range endpoints {
+				for _, epTC := range endpoints {
+					ep := epTC.endpoint
 					parsedHost, parsedZone, parsedPort, err := ParseEndpoint(ep)
 					assert.NoError(t, err, "error parsing endpoint %s", ep)
 					assert.Equal(t, host, parsedHost, "host mismatch for endpoint %s", ep)
 					assert.Equal(t, zone, parsedZone, "zone mismatch for endpoint %s", ep)
 					assert.Equal(t, port, parsedPort, "port mismatch for endpoint %s", ep)
+
+					if epTC.canonical {
+						formattedEndpoint := FormatEndpoint(parsedHost, parsedZone, parsedPort)
+						assert.Equal(t, ep, formattedEndpoint, "FormatEndpoint did not result in original endpoint")
+					}
 				}
 			}
 		}

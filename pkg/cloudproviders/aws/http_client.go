@@ -3,6 +3,8 @@ package aws
 import (
 	"net/http"
 	"time"
+
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 const (
@@ -10,5 +12,6 @@ const (
 )
 
 var httpClient = &http.Client{
-	Timeout: timeout,
+	Timeout:   timeout,
+	Transport: proxy.Without(),
 }

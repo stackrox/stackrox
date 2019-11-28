@@ -5,12 +5,14 @@ import (
 	"crypto/x509"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -56,6 +58,13 @@ func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasVa
 	}, nil
 }
 
+func (s *serviceImpl) EnvVars(ctx context.Context, _ *central.Empty) (*central.EnvVarsResponse, error) {
+	envVars := os.Environ()
+	return &central.EnvVarsResponse{
+		EnvVars: envVars,
+	}, nil
+}
+
 func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataRequest) (*central.RandomDataResponse, error) {
 	resp := &central.RandomDataResponse{
 		Data: make([]byte, req.GetSize_()),
@@ -69,7 +78,8 @@ func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataReq
 func New() Service {
 	return &serviceImpl{
 		client: http.Client{
-			Timeout: 20 * time.Second,
+			Timeout:   20 * time.Second,
+			Transport: proxy.RoundTripper(),
 		},
 	}
 }

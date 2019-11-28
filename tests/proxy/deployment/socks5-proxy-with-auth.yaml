@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: socks5-proxy-with-auth
+  namespace: squid
+  labels:
+    app: socks5-proxy-with-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: socks5-proxy-with-auth
+  template:
+    metadata:
+      labels:
+        app: socks5-proxy-with-auth
+        proxy-service: "true"
+    spec:
+      containers:
+        - name: socks5
+          image: serjs/go-socks5-proxy@sha256:1b1c3ad98b44d30e2a84f50bc80a1da918d242ef71694fe8e13ebd7492e24f91
+          ports:
+            - containerPort: 1080
+              protocol: TCP
+          env:
+            - name: PROXY_PORT   # This is required to override the discovery variable set by Kubernetes
+              value: "1080"
+            - name: PROXY_USER
+              value: foo
+            - name: PROXY_PASSWORD
+              value: bar
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: squid
+  name: socks5-proxy-with-auth
+  labels:
+    app: socks5-proxy-with-auth
+spec:
+  type: ClusterIP
+  ports:
+    - port: 1080
+      protocol: TCP
+      targetPort: 1080
+  selector:
+    app: socks5-proxy-with-auth

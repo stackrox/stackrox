@@ -59,6 +59,7 @@ import (
 	"github.com/docker/docker/api"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 // DefaultDockerHost defines os specific default if DOCKER_HOST is unset
@@ -129,6 +130,7 @@ func NewEnvClient() (*Client, error) {
 		client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: tlsc,
+				Proxy:           proxy.FromConfig(),
 			},
 			CheckRedirect: CheckRedirect,
 		}

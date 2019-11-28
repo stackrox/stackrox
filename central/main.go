@@ -117,6 +117,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
@@ -152,10 +153,21 @@ const (
 	insecureLocalEndpoint = "127.0.0.1:8444"
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
+
+	proxyConfigPath = "/run/secrets/stackrox.io/proxy-config"
+	proxyConfigFile = "config.yaml"
 )
+
+func init() {
+	if !proxy.UseWithDefaultTransport() {
+		log.Warn("Failed to use proxy transport with default HTTP transport. Some proxy features may not work.")
+	}
+}
 
 func main() {
 	premain.StartMain()
+
+	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
 	if devbuild.IsEnabled() {
 		debughandler.MustStartServerAsync("")

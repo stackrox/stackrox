@@ -42,8 +42,7 @@ type attestedMetadata struct {
 func getAttestedVMID(ctx context.Context) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, attestedMetadataBaseURL, nil)
 	if err != nil {
-		utils.Should(err)
-		return "", err
+		return "", utils.Should(err)
 	}
 	req = req.WithContext(ctx)
 
@@ -52,7 +51,7 @@ func getAttestedVMID(ctx context.Context) (string, error) {
 	// https://docs.microsoft.com/en-us/azure/virtual-machines/windows/instance-metadata-service#attested-data .
 	req.Header.Add("Metadata", "True")
 
-	resp, err := httpClient.Do(req)
+	resp, err := metadataHTTPClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
 	if err != nil {
 		return "", nil
@@ -98,7 +97,7 @@ func getAttestedVMID(ctx context.Context) (string, error) {
 
 	intermediateCertPool := x509.NewCertPool()
 	for _, intermediateCertURL := range signer.IssuingCertificateURL {
-		resp, err := httpClient.Get(intermediateCertURL)
+		resp, err := certificateHTTPClient.Get(intermediateCertURL)
 		if err != nil {
 			return "", errors.Wrap(err, "retrieving intermediate CA certificate")
 		}

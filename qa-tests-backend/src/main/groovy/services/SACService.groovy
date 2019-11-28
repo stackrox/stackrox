@@ -18,7 +18,7 @@ class SACService extends BaseService {
                             .setName("SR Test Auth Plugin")
                             .setEnabled(true)
                             .setEndpointConfig(HttpEndpoint.HTTPEndpointConfig.newBuilder()
-                                    .setEndpoint("https://authorization-plugin:443/authorize")
+                                    .setEndpoint("https://authorization-plugin.stackrox:443/authorize")
                                     .setSkipTlsVerify(true)
                             )
                             .build()

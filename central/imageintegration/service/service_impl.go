@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -205,12 +206,12 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 	for _, category := range request.GetCategories() {
 		if category == storage.ImageIntegrationCategory_REGISTRY {
 			if err := s.testRegistryIntegration(request); err != nil {
-				return status.Error(codes.InvalidArgument, err.Error())
+				return status.Error(codes.InvalidArgument, errors.Wrap(err, "registry integration").Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_SCANNER {
 			if err := s.testScannerIntegration(request); err != nil {
-				return status.Error(codes.InvalidArgument, err.Error())
+				return status.Error(codes.InvalidArgument, errors.Wrap(err, "scanner integration").Error())
 			}
 		}
 	}

@@ -31,7 +31,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 		return nil, nil
 	}
 
-	c := metadata.NewClient(httpClient)
+	c := metadata.NewClient(metadataHTTPClient)
 
 	var verified bool
 	errs := errorhelpers.NewErrorList("retrieving GCE metadata")

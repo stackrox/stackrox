@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    helm.sh/hook: pre-install
+  labels:
+    app.kubernetes.io/name: stackrox
+  name: proxy-config
+  namespace: stackrox
+type: Opaque
+stringData:
+  config.yaml: |-
+    url: http://proxy-with-auth.squid:3128
+    username: foo
+    password: bar

@@ -1,7 +1,9 @@
 package docker
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -71,18 +74,20 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 	if strings.Contains(cfg.Endpoint, "docker.io") {
 		registryServer = "docker.io"
 	}
-	var client *registry.Registry
+	var transport http.RoundTripper
 	if cfg.Insecure {
-		client, err = registry.NewInsecure(url, cfg.Username, cfg.Password)
+		transport = proxy.RoundTripperWithTLSConfig(&tls.Config{
+			InsecureSkipVerify: true,
+		})
 	} else {
-		client, err = registry.New(url, cfg.Username, cfg.Password)
+		transport = proxy.RoundTripper()
 	}
+
+	client, err := registry.NewFromTransport(
+		url, registry.WrapTransport(transport, strings.TrimSuffix(url, "/"), cfg.Username, cfg.Password), registry.Quiet)
 	if err != nil {
 		return nil, err
 	}
-
-	// Turn off the logs
-	client.Logf = registry.Quiet
 
 	client.Client.Timeout = registryTimeout
 

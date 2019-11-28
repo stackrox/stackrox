@@ -422,17 +422,26 @@ class NetworkSimulator extends BaseSpecification {
             if (simulation.simulatedGraph.nodesList.get(k).entity.deployment.namespace == "qa") {
                 assert v.policyIdsCount > 0
                 assert v.outEdgesCount == 0
-                assert !v.nonIsolatedIngress
-                assert !v.nonIsolatedEgress
+            } else {
+                assert v.policyIdsCount == 0
             }
+            assert !v.nonIsolatedIngress
+            assert !v.nonIsolatedEgress
         }
 
-        // Verify removed details contains only deployments from test namespace
+        // Verify removed details contains only deployments from test namespace, or deployments that have an egress
+        // network policy applying to them (since for these we store the outgoing edges explicitly).
         simulation.removed.nodeDiffsMap.each { k, v ->
-            assert simulation.simulatedGraph.nodesList.get(k).entity.deployment.namespace == "qa"
-            assert v.policyIdsCount == 0
-            assert v.nonIsolatedIngress
-            assert v.nonIsolatedEgress
+            def origNode = simulation.simulatedGraph.nodesList.get(k)
+            if (origNode.entity.deployment.namespace == "qa") {
+                assert v.policyIdsCount == 0
+                assert v.nonIsolatedIngress
+                assert v.nonIsolatedEgress
+            } else {
+                assert !origNode.nonIsolatedEgress
+                assert !v.nonIsolatedEgress
+                assert !v.nonIsolatedIngress
+            }
         }
      }
 

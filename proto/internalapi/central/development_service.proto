@@ -32,12 +32,28 @@ message RandomDataResponse {
     bytes data = 1;
 }
 
+message EnvVarsResponse {
+    repeated string env_vars = 1;
+}
+
+message Empty {}
+
 service DevelopmentService {
-    rpc URLHasValidCert (URLHasValidCertRequest) returns (URLHasValidCertResponse);
+    rpc URLHasValidCert (URLHasValidCertRequest) returns (URLHasValidCertResponse) {
+        option (google.api.http) = {
+            get: "/v1/internal/dev/certcheck"
+        };
+    }
 
     rpc RandomData (RandomDataRequest) returns (RandomDataResponse) {
         option (google.api.http) = {
             get: "/v1/internal/dev/random"
+        };
+    }
+
+    rpc EnvVars (Empty) returns (EnvVarsResponse) {
+        option (google.api.http) = {
+            get: "/v1/internal/dev/envvars"
         };
     }
 }

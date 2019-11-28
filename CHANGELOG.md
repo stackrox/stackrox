@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project that require documentation updates will be documented in this file.
 
+## [NEXT RELEASE]
+- Proxy configuration can now be changed at runtime by editing and applying `proxy-config-secret.yaml` in the cluster
+  where central and scanner run (ROX-3348, #3994).
+
 ## [34.0]
 ### Added
 - Policy whitelists are now shown in the UI. Previously, we only showed whitelisted deployment names, and not the entire structure that was

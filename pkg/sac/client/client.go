@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/default-authz-plugin/pkg/payload"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 )
 
 // Client is a simple interface describing retrieving some per user data from a separate service.
@@ -43,7 +44,10 @@ func New(config *storage.HTTPEndpointConfig) (Client, error) {
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)
 	}
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+		Proxy:           proxy.FromConfig(),
+	}
 	client := &http.Client{Transport: transport}
 	return &clientImpl{
 		client: client,

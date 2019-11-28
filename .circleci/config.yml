@@ -284,6 +284,7 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh stackrox
       ./scripts/ci/collect-service-logs.sh kube-system
       ./scripts/ci/collect-service-logs.sh proxies
+      ./scripts/ci/collect-service-logs.sh squid
       ./scripts/ci/collect-infrastructure-logs.sh
     when: always
 
@@ -506,6 +507,38 @@ commands:
       - store_artifacts:
           path: debug-dump
           destination: debug
+
+  setup-egress-proxies:
+    steps:
+      - run:
+          name: Set up egress proxies (if desired)
+          command: |
+            if ! .circleci/pr_has_label.sh ci-rox-egress-proxies; then
+              echo "Not setting up egress proxies"
+              exit 0
+            fi
+
+            kubectl -n squid apply -R -f tests/proxy/deployment/ || true  # might fail because of SCC
+            configs=(tests/proxy/config/*.yaml)
+
+            selected_config="${configs[$((RANDOM % ${#configs[@]}))]}"
+            echo "Selected configuration file ${selected_config}"
+            kubectl -n stackrox apply -f "${selected_config}"
+
+            echo "Waiting for 3min for proxy config to be picked up"
+            for i in {1..180}; do
+              echo -n .
+              sleep 1
+            done
+            echo
+
+            if [[ "$CIRCLE_JOB" == "openshift-crio-tests" ]]; then
+              echo "Skipping egress isolation on CRI-O due to network policy issues."
+              exit 0
+            fi
+
+            echo "Isolating pods"
+            kubectl -n stackrox apply -R -f tests/proxy/netpol/
 
   setup-gcp:
     parameters:
@@ -757,6 +790,7 @@ commands:
       - deploy-stackrox:
           post-central-deploy-steps:
             - *setupClientTLSCerts
+            - setup-egress-proxies
 
       - deploy-default-psp
       - deploy-webhook-server
@@ -1015,6 +1049,7 @@ commands:
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
+            - setup-egress-proxies
 
       - deploy-webhook-server
       - deploy-authz-plugin
@@ -1713,6 +1748,7 @@ jobs:
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
+            - setup-egress-proxies
 
       - run:
           name: Set up client CA auth provider

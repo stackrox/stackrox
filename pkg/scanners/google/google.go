@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -21,6 +22,7 @@ import (
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/common"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 	_package "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/package"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -79,8 +81,9 @@ func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
 	if err != nil {
 		return nil, err
 	}
+	proxySupport := grpc.WithContextDialer(proxy.AwareDialContext)
 	registry := urlfmt.GetServerFromURL(url)
-	betaClient, err := containeranalysis.NewGrafeasV1Beta1Client(context.Background(), option.WithCredentialsJSON([]byte(config.GetServiceAccount())))
+	betaClient, err := containeranalysis.NewGrafeasV1Beta1Client(context.Background(), option.WithGRPCDialOption(proxySupport), option.WithCredentialsJSON([]byte(config.GetServiceAccount())))
 	if err != nil {
 		return nil, err
 	}

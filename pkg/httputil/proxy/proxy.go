@@ -1,176 +1,129 @@
 package proxy
 
 import (
+	"context"
+	"crypto/tls"
+	"fmt"
+	"net"
 	"net/http"
 	"net/url"
+	"sync/atomic"
+	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-// TODO: Re-enable
-//
-//const (
-//	proxyConfigPath     = "/run/secrets/stackrox.io/proxy-config"
-//	proxyConfigFile = "config.yaml"
-//	proxyReloadInterval = 5 * time.Second
-//)
-//
-//var (
-//	log = logging.LoggerForModule()
-//	proxyHandler   *reloadProxyConfigHandler
-//	proxyTransport *http.Transport
-//	proxyOnce      sync.Once
-//)
-//
-//type proxyConfig struct {
-//	ProxyURL string `json:"url"`
-//	Username string `json:"username"`
-//	Password string `json:"password"`
-//}
-//
-//func (pc proxyConfig) toURL() (*url.URL, error) {
-//	if pc.ProxyURL == "" {
-//		return nil, nil
-//	}
-//	u, err := url.Parse(pc.ProxyURL)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if pc.Username != "" {
-//		u.User = url.User(pc.Username)
-//		if pc.Password != "" {
-//			u.User = url.UserPassword(pc.Username, pc.Password)
-//		}
-//	}
-//	return u, nil
-//}
-//
-//type reloadProxyConfigHandler struct {
-//	mutex    sync.Mutex
-//	proxyURL *url.URL
-//	setEnv   bool
-//}
-//
-//func (r *reloadProxyConfigHandler) OnChange(dir string) (interface{}, error) {
-//	var out proxyConfig
-//	configBytes, err := ioutil.ReadFile(filepath.Join(dir, proxyConfigFile))
-//	if err != nil {
-//		if os.IsNotExist(err) {
-//			return nil, nil
-//		}
-//		return nil, err
-//	}
-//	err = yaml.Unmarshal(configBytes, &out)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return out.toURL()
-//}
-//
-//func (r *reloadProxyConfigHandler) OnStableUpdate(val interface{}, err error) {
-//	if err != nil {
-//		log.Errorf("Error reading proxy config file: %v", err)
-//	}
-//	r.mutex.Lock()
-//	defer r.mutex.Unlock()
-//	r.proxyURL, _ = val.(*url.URL)
-//	r.updateEnvNoLock()
-//}
-//
-//func (r *reloadProxyConfigHandler) updateEnvNoLock() {
-//	if !r.setEnv {
-//		return
-//	}
-//	if r.proxyURL == nil {
-//		_ = os.Unsetenv("https_proxy")
-//		_ = os.Unsetenv("http_proxy")
-//	} else {
-//		proxyString := r.proxyURL.String()
-//		_ = os.Setenv("https_proxy", proxyString)
-//		_ = os.Setenv("http_proxy", proxyString)
-//	}
-//}
-//
-//func (r *reloadProxyConfigHandler) OnWatchError(err error) {
-//	if os.IsNotExist(err) {
-//		return
-//	}
-//	log.Errorf("Error watching for proxy config changes: %v", err)
-//}
-//
-//func (r *reloadProxyConfigHandler) proxy(_ *http.Request) (*url.URL, error) {
-//	r.mutex.Lock()
-//	defer r.mutex.Unlock()
-//	return r.proxyURL, nil
-//}
-//
-//func (r *reloadProxyConfigHandler) enableProxySetting(enable bool) {
-//	r.mutex.Lock()
-//	defer r.mutex.Unlock()
-//	r.setEnv = enable
-//	r.updateEnvNoLock()
-//}
+const (
+	proxyReloadInterval = 5 * time.Second
+)
 
-// TODO: Re-enable
-//func initHandler() {
-//	proxyOnce.Do(func() {
-//		opts := k8scfgwatch.Options{
-//			Force:    true,
-//			Interval: proxyReloadInterval,
-//		}
-//		proxyHandler = &reloadProxyConfigHandler{}
-//		_ = k8scfgwatch.WatchConfigMountDir(context.Background(), proxyConfigPath, k8scfgwatch.DeduplicateWatchErrors(proxyHandler), opts)
-//		trans, _ := http.DefaultTransport.(*http.Transport)
-//		if trans != nil {
-//			proxyTransport = trans.Clone()
-//			proxyTransport.Proxy = proxyHandler.proxy
-//		} else {
-//			// fallback copied from go http/transport.go, circa 1.13.1.
-//			proxyTransport = &http.Transport{
-//				Proxy: proxyHandler.proxy,
-//				DialContext: (&net.Dialer{
-//					Timeout:   30 * time.Second,
-//					KeepAlive: 30 * time.Second,
-//					DualStack: true,
-//				}).DialContext,
-//				ForceAttemptHTTP2:     true,
-//				MaxIdleConns:          100,
-//				IdleConnTimeout:       90 * time.Second,
-//				TLSHandshakeTimeout:   10 * time.Second,
-//				ExpectContinueTimeout: 1 * time.Second,
-//			}
-//		}
-//	})
-//}
+var (
+	log = logging.LoggerForModule()
+
+	defaultProxyConfig = (&proxyConfig{}).Compile(initialEnvCfg)
+	globalProxyConfig  atomic.Value
+
+	proxyTransport *http.Transport
+)
+
+func init() {
+	proxyTransport = copyDefaultTransport()
+	proxyTransport.Proxy = TransportFunc
+}
+
+func getGlobalProxyConfig() *compiledConfig {
+	cc, _ := globalProxyConfig.Load().(*compiledConfig)
+	if cc == nil {
+		return defaultProxyConfig
+	}
+	return cc
+}
+
+// UseWithDefaultTransport configures the default HTTP transport to use the proxy function defined in this package.
+// It should be called from an `init()` function to avoid any concurrent access to fields of `http.DefaultTransport`.
+func UseWithDefaultTransport() bool {
+	defaultTrans, _ := http.DefaultTransport.(*http.Transport)
+	if defaultTrans == nil {
+		return false
+	}
+	defaultTrans.Proxy = TransportFunc
+	return true
+}
 
 // FromConfig returns an function suitable for use as a Proxy field in an *http.Transport instance that will always
 // use the latest configured proxy setting.
 func FromConfig() func(*http.Request) (*url.URL, error) {
-	return http.ProxyFromEnvironment
-
-	// TODO: Re-enable
-	//initHandler()
-	//return proxyHandler.proxy
+	return getGlobalProxyConfig().ProxyURL
 }
 
-// EnableProxyEnvironmentSetting enables the behavior of mutating the current process's environment to always have
-// the most up to date setting. This is specifically useful when running child processes that need to access the
-// environment.
-// Note: setting this flag to false after it was set to true will not clear the environment.
-func EnableProxyEnvironmentSetting(enable bool) {
-	// TODO: Re-enable
-	//initHandler()
-	//if enable && (os.Getenv("https_proxy") != "" || os.Getenv("http_proxy") != "") {
-	//	log.Warn("Not enabling proxy environment override because the environment is already configured")
-	//	return
-	//}
-	//proxyHandler.enableProxySetting(enable)
+// TransportFunc is a function that is suitable to use in http.Transport.ProxyFunc
+func TransportFunc(req *http.Request) (*url.URL, error) {
+	return FromConfig()(req)
+}
+
+// Without is a ProxyFunc for http.Transport that will always attempt a direct connection.
+func Without() http.RoundTripper {
+	transport := copyDefaultTransport()
+	transport.Proxy = nil
+	return transport
 }
 
 // RoundTripper returns something very similar to http.DefaultTransport, but with the Proxy setting changed to use
 // the configuration supported by this package.
 func RoundTripper() http.RoundTripper {
-	return http.DefaultTransport
+	return proxyTransport
+}
 
-	// TODO: Re-enable
-	//initHandler()
-	//return proxyTransport
+// RoundTripperWithTLSConfig returns a round tripper like RoundTripper(), but using a custom TLS config.
+func RoundTripperWithTLSConfig(tlsConf *tls.Config) http.RoundTripper {
+	trans := proxyTransport.Clone()
+	trans.TLSClientConfig = tlsConf
+	return trans
+}
+
+// AwareDialContext implements a TCP "DialContext", but respecting the proxy configuration.
+func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
+	configurator := FromConfig()
+	if configurator == nil {
+		return defaultDialer.DialContext(ctx, "tcp", address)
+	}
+
+	fakeHTTPReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
+	if err != nil {
+		return nil, utils.Should(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
+	}
+	proxyURL, err := configurator(fakeHTTPReq)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to determine proxy URL for address %q", address)
+	}
+	return DialWithProxy(ctx, proxyURL, address)
+}
+
+// AwareDialContextTLS is a convenience wrapper around AwareDialContext that establishes a TLS connection.
+func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls.Config) (net.Conn, error) {
+	host, _, _, err := netutil.ParseEndpoint(address)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unparseable address %q", address)
+	}
+
+	conn, err := AwareDialContext(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	if tlsClientConf == nil {
+		tlsClientConf = &tls.Config{
+			ServerName: host,
+		}
+	} else if tlsClientConf.ServerName == "" {
+		tlsClientConf = tlsClientConf.Clone()
+		tlsClientConf.ServerName = host
+	}
+	tlsConn := tls.Client(conn, tlsClientConf)
+	if err := tlsConn.Handshake(); err != nil {
+		return nil, err
+	}
+	return tlsConn, nil
 }

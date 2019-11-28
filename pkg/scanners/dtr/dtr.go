@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -82,6 +83,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*dtr, error) {
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: conf.Insecure,
 			},
+			Proxy: proxy.FromConfig(),
 		},
 	}
 
@@ -95,13 +97,13 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*dtr, error) {
 	return scanner, nil
 }
 
-func (d *dtr) sendRequest(client *http.Client, method, urlPrefix string) ([]byte, error) {
+func (d *dtr) sendRequest(method, urlPrefix string) ([]byte, error) {
 	req, err := http.NewRequest(method, d.conf.Endpoint+urlPrefix, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.SetBasicAuth(d.conf.Username, d.conf.Password)
-	resp, err := client.Do(req)
+	resp, err := d.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +124,7 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, nil
 	}
 	getScanURL := fmt.Sprintf("/api/v0/imagescan/repositories/%v/%v?detailed=true", image.GetName().GetRemote(), image.GetName().GetTag())
-	body, err := d.sendRequest(d.client, "GET", getScanURL)
+	body, err := d.sendRequest(http.MethodGet, getScanURL)
 	if err != nil {
 		return nil, err
 	}
@@ -179,15 +181,7 @@ func errorFromStatusCode(status int) error {
 
 // Test initiates a test of the DTR which verifies that we have the proper scan permissions
 func (d *dtr) Test() error {
-	client := &http.Client{
-		Timeout: requestTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: d.conf.Insecure,
-			},
-		},
-	}
-	_, err := d.sendRequest(client, "GET", "/api/v0/imagescan/status")
+	_, err := d.sendRequest(http.MethodGet, "/api/v0/imagescan/status")
 	return err
 }
 

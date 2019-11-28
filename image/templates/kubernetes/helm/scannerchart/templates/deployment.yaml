@@ -78,6 +78,9 @@ spec:
         - name: scanner-tls-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+        - name: proxy-config-volume
+          mountPath: /run/secrets/stackrox.io/proxy-config/
+          readOnly: true
       serviceAccount: scanner
       volumes:
       - name: clair-config-volume
@@ -86,3 +89,7 @@ spec:
       - name: scanner-tls-volume
         secret:
           secretName: scanner-tls
+      - name: proxy-config-volume
+        secret:
+          secretName: proxy-config
+          optional: true

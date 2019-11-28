@@ -41,7 +41,7 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	q.Add("api-version", "2018-04-02")
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := httpClient.Do(req)
+	resp, err := metadataHTTPClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
 	if err != nil {
 		return nil, nil

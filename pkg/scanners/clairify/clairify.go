@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -76,6 +77,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		Transport: &http.Transport{
 			DialContext:     dialer.DialContext,
 			TLSClientConfig: tlsConfig,
+			Proxy:           proxy.FromConfig(),
 		},
 	}
 

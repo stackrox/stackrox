@@ -2,6 +2,7 @@ package email
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -308,43 +310,43 @@ func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
 }
 
 func (e *email) connection() (conn net.Conn, auth smtp.Auth, err error) {
-	dialer := &net.Dialer{
-		Timeout: connectTimeout,
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
+
 	if e.config.GetDisableTLS() {
 		if e.config.GetUseSTARTTLS() {
-			return e.startTLSConn(dialer)
+			return e.startTLSConn(ctx)
 		}
-		return e.unencryptedConn(dialer)
+		return e.unencryptedConn(ctx)
 	}
-	return e.tlsConn(dialer)
+	return e.tlsConn(ctx)
 }
 
-func (e *email) tlsConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+func (e *email) tlsConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
 	// With a connection that starts with TLS, we can simply use the standard
 	// library to authenticate.
 	auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
-	conn, err = tls.DialWithDialer(dialer, "tcp", e.smtpServer.endpoint(), e.tlsConfig())
+	conn, err = proxy.AwareDialContextTLS(dialCtx, e.smtpServer.endpoint(), e.tlsConfig())
 	return
 }
 
-func (e *email) unencryptedConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+func (e *email) unencryptedConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
 	// With a completely unencrypted connection, we must override the
 	// standard library's SMTP authenticator, since it blocks attempts
 	// to send credentials over any non-TLS connection that isn't localhost.
 	auth = unencryptedPlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
-	conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
+	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
 }
 
-func (e *email) startTLSConn(dialer *net.Dialer) (conn net.Conn, auth smtp.Auth, err error) {
+func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.Auth, err error) {
 	// With STARTTLS, we will first connect unencrypted and later
 	// "upgrade" the connection to use TLS by the time we authenticate.
 	// Hence, we can use the stdlib authenticator, which treats
 	// STARTTLS as TLS for purposes of deciding whether it's safe to
 	// transmit a password.
 	auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
-	conn, err = dialer.Dial("tcp", e.smtpServer.endpoint())
+	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
 }
 

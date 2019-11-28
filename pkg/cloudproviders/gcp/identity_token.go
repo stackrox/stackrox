@@ -35,8 +35,7 @@ type identityTokenClaims struct {
 func getIdentityToken(ctx context.Context, audience string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, baseIdentityURL, nil)
 	if err != nil {
-		utils.Should(err)
-		return "", err
+		return "", utils.Should(err)
 	}
 	req = req.WithContext(ctx)
 	q := req.URL.Query()
@@ -45,7 +44,7 @@ func getIdentityToken(ctx context.Context, audience string) (string, error) {
 
 	req.Header.Add("Metadata-Flavor", "Google")
 
-	resp, err := httpClient.Do(req)
+	resp, err := metadataHTTPClient.Do(req)
 	// Assume the service is unavailable if we encounter a transport error or a non-2xx status code
 	if err != nil {
 		return "", nil

@@ -1,13 +1,14 @@
 package tlscheck
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net"
 	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,10 +37,10 @@ func CheckTLS(origAddr string) (bool, error) {
 		}
 	}
 
-	dialer := &net.Dialer{
-		Timeout: timeout,
-	}
-	conn, err := tls.DialWithDialer(dialer, "tcp", fmt.Sprintf("%s:%s", host, port), nil)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	conn, err := proxy.AwareDialContextTLS(ctx, fmt.Sprintf("%s:%s", host, port), nil)
 	if err != nil {
 		switch err.(type) {
 		case x509.CertificateInvalidError, x509.HostnameError, x509.UnknownAuthorityError, tls.RecordHeaderError:

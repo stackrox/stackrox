@@ -1,6 +1,7 @@
 package netutil
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -66,4 +67,19 @@ func ParseEndpoint(endpoint string) (host, zone, port string, err error) {
 		}
 	}
 	return
+}
+
+// FormatEndpoint formats the results for ParseEndpoint as a single endpoint string.
+func FormatEndpoint(host, zone, port string) string {
+	hostZone := host
+	if zone != "" {
+		hostZone = fmt.Sprintf("%s%%%s", host, zone)
+	}
+	if port == "" {
+		return hostZone
+	}
+	if strings.ContainsRune(hostZone, ':') {
+		hostZone = fmt.Sprintf("[%s]", hostZone)
+	}
+	return fmt.Sprintf("%s:%s", hostZone, port)
 }
