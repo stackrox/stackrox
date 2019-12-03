@@ -16,5 +16,5 @@ var (
 	ManagedDB = registerFeature("Use managed sequencing for the embedded Badger DB", "ROX_MANAGED_DB", false)
 
 	// LanguageScanner enables the deployment of the language scanner
-	LanguageScanner = registerFeature("Enable support for the version of the image scanner that detects on languages", "ROX_LANGUAGE_SCANNER", false)
+	LanguageScanner = registerFeature("Enable support for the version of the image scanner that detects on languages", "ROX_LANGUAGE_SCANNER", true)
 )
