@@ -19,9 +19,9 @@ const getSeverityClassName = severity => {
     }
 };
 
-const SeverityLabel = ({ severity }) => {
-    return <span className={getSeverityClassName(severity)}>{severityLabels[severity]}</span>;
-};
+const SeverityLabel = ({ severity }) => (
+    <span className={getSeverityClassName(severity)}>{severityLabels[severity]}</span>
+);
 
 SeverityLabel.propTypes = {
     severity: PropTypes.string.isRequired

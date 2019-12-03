@@ -8,7 +8,6 @@ import entityLabels from 'messages/entity';
 
 const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityTypeText }) => {
     const workflowState = useContext(workflowStateContext);
-    if (!workflowState.useCase) return null;
 
     const type = entityTypeText || entityLabels[entityType];
     if (count === 0) return `No ${pluralize(type)}`;

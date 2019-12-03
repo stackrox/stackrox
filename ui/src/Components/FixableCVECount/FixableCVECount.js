@@ -29,7 +29,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const pluralized = count === 1 || fixable ? type : `${type}s`;
 
     const cveText = (
-        <span className={`${classes} ${individualClasses}`}>{`${count} ${pluralized}`}</span>
+        <span className={`${classes} ${individualClasses}`}>{`${count} ${pluralized} `}</span>
     );
     const testId = fixable ? 'fixableCvesLink' : 'allCvesLink';
 
@@ -45,7 +45,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
 const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink }) => {
     const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
         orientation
-    )} `;
+    )}`;
     const individualClasses = orientation === 'horizontal' ? 'mr-1' : '';
 
     return (
