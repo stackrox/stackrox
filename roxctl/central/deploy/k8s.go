@@ -98,13 +98,11 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flagWrap.StringVar(&k8sConfig.Monitoring.HostPath.NodeSelectorKey, "monitoring-node-selector-key", "", "monitoring node selector key (e.g. kubernetes.io/hostname)", "monitoring", "monitoring-type=on-prem", "monitoring-persistence-type=hostpath")
 	flagWrap.StringVar(&k8sConfig.Monitoring.HostPath.NodeSelectorValue, "monitoring-node-selector-value", "", "monitoring node selector value", "monitoring", "monitoring-type=on-prem", "monitoring-persistence-type=hostpath")
 
-	// Scanner
-	flagWrap.BoolVar(&k8sConfig.ScannerV2Config.Enable, "enable-scanner-v2", false, "whether to use the preview of Scanner V2", "scanner")
-
-	flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", defaults.ScannerImage(), "Scanner image to use", "scanner", "enable-scanner-v2=false")
 	if features.LanguageScanner.Enabled() {
-		flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", defaults.ScannerDBImage(), "Scanner DB image to use", "scanner", "enable-scanner-v2=false")
+		flagWrap.StringVar(&k8sConfig.ScannerImage, "scanner-image", defaults.ScannerImage(), "Scanner image to use", "scanner")
+		flagWrap.StringVar(&k8sConfig.ScannerDBImage, "scanner-db-image", defaults.ScannerDBImage(), "Scanner DB image to use", "scanner")
 	} else {
+		flagWrap.BoolVar(&k8sConfig.ScannerV2Config.Enable, "enable-scanner-v2", false, "whether to use the preview of Scanner V2", "scanner")
 		flagWrap.StringVar(&k8sConfig.ScannerV2Image, "scanner-v2-image", defaults.ScannerV2Image(), "Scanner V2 image to use", "scanner", "enable-scanner-v2=true")
 		flagWrap.StringVar(&k8sConfig.ScannerV2DBImage, "scanner-db-image", defaults.ScannerV2DBImage(), "Scanner V2 DB image to use", "scanner", "enable-scanner-v2=true")
 
