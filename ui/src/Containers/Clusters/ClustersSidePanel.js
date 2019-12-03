@@ -198,10 +198,11 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
                     <Icon.Check className="h-4 w-4" />
                 )
             }
-            text={showFormStyles ? 'Next' : 'Finish'}
             className={`mr-2 btn ${showFormStyles ? 'btn-base' : 'btn-success'}`}
             onClick={onNext}
-        />
+        >
+            {showFormStyles ? 'Next' : 'Finish'}
+        </PanelButton>
     );
 
     const showPanelButtons = !messageState || !messageState.blocking;

@@ -198,27 +198,30 @@ class Form extends Component {
             <React.Fragment>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
-                    text={this.isEditMode() ? 'Save' : 'Create'}
                     className="btn btn-success mx-1"
                     onClick={this.onSubmit}
-                />
+                >
+                    {this.isEditMode() ? 'Save' : 'Create'}
+                </PanelButton>
                 {this.props.source === 'backups' &&
                     this.props.initialValues &&
                     this.props.initialValues.id && (
                         <PanelButton
                             icon={<Icon.Check className="h-4 w-4" />}
-                            text="Trigger Backup"
                             className="btn btn-base mx-1"
                             onClick={this.onBackup}
-                        />
+                        >
+                            Trigger Backup
+                        </PanelButton>
                     )}
                 {this.props.source !== 'authProviders' && (
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
-                        text="Test"
                         className="btn btn-base mx-1"
                         onClick={this.onTest}
-                    />
+                    >
+                        Test
+                    </PanelButton>
                 )}
             </React.Fragment>
         );

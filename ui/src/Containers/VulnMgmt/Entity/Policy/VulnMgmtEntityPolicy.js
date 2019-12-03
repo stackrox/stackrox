@@ -17,6 +17,7 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                 id
                 name
                 description
+                disabled
                 rationale
                 remediation
                 severity

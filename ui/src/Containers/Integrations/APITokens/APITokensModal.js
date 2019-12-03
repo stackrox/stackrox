@@ -170,23 +170,25 @@ class APITokensModal extends Component {
                 {selectionCount !== 0 && (
                     <PanelButton
                         icon={<Icon.Slash className="h-4 w-4 ml-1" />}
-                        text={`Revoke (${selectionCount})`}
                         className="btn btn-alert"
                         onClick={this.showConfirmationDialog}
                         disabled={this.state.selectedTokenId !== null}
-                    />
+                    >
+                        {`Revoke (${selectionCount})`}
+                    </PanelButton>
                 )}
                 {selectionCount === 0 && (
                     <PanelButton
                         icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                        text="Generate Token"
                         className="btn btn-base"
                         onClick={this.openForm}
                         disabled={
                             this.props.tokenGenerationWizardOpen ||
                             this.state.selectedTokenId !== null
                         }
-                    />
+                    >
+                        Generate Token
+                    </PanelButton>
                 )}
             </React.Fragment>
         );
@@ -224,10 +226,11 @@ class APITokensModal extends Component {
         const buttons = (
             <PanelButton
                 icon={<Icon.Save className="h-4 w-4" />}
-                text="Generate"
                 className="btn btn-success"
                 onClick={this.onSubmit}
-            />
+            >
+                Generate
+            </PanelButton>
         );
 
         return (

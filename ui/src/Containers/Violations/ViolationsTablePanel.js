@@ -47,18 +47,20 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
             {checkedRuntimeAlerts !== 0 && (
                 <PanelButton
                     icon={<Icon.Check className="h-4 ml-1" />}
-                    text={`Mark as Resolved (${checkedRuntimeAlerts})`}
                     className="btn btn-base"
                     onClick={showResolveConfirmationDialog}
-                />
+                >
+                    {`Mark as Resolved (${checkedRuntimeAlerts})`}
+                </PanelButton>
             )}
             {whitelistCount !== 0 && (
                 <PanelButton
                     icon={<Icon.BellOff className="h-4 ml-1" />}
-                    text={`Whitelist (${whitelistCount})`}
                     className="btn btn-base"
                     onClick={showWhitelistConfirmationDialog}
-                />
+                >
+                    {`Whitelist (${whitelistCount})`}
+                </PanelButton>
             )}
         </React.Fragment>
     );

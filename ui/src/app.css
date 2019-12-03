@@ -644,7 +644,8 @@ h6 {
 }
 
 .btn-class {
-    @apply .flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
+    @apply .inline-flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
+    line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 
 .btn-sm {
@@ -1100,6 +1101,9 @@ h6 {
 .toggle-switch {
     @apply relative select-none w-12 leading-normal;
 }
+.toggle-switch-small {
+    @apply w-8;
+}
 .toggle-switch-checkbox {
     /* we cannot hide with @apply, or toggle switch will not be keyboard-focusable */
     left: -9999px;
@@ -1110,6 +1114,9 @@ h6 {
 
     transition: background-color 0.2s ease-in;
 }
+.toggle-switch-small .toggle-switch-label {
+    @apply h-4
+}
 .toggle-switch-label:before {
     @apply absolute block bg-base-100 pin-y w-6 border rounded-full -ml-1;
 
@@ -1117,6 +1124,10 @@ h6 {
     right: 50%;
     transition: all 0.2s ease-in;
 }
+.toggle-switch-small .toggle-switch-label:before {
+    @apply w-4
+}
+
 .toggle-switch-checkbox:checked + .toggle-switch-label,
 .toggle-switch-checkbox:checked + .toggle-switch-label:before {
 }

@@ -30,16 +30,18 @@ class Buttons extends Component {
             <React.Fragment>
                 <PanelButton
                     icon={<Icon.ArrowLeft className="h-4 w-4" />}
-                    text="Previous"
                     className="btn btn-base"
                     onClick={this.goBackToPreview}
-                />
+                >
+                    Previous
+                </PanelButton>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
-                    text="Save"
                     className="btn btn-success"
                     onClick={this.onSubmit}
-                />
+                >
+                    Save
+                </PanelButton>
             </React.Fragment>
         );
     }

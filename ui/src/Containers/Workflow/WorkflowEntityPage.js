@@ -1,11 +1,11 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useTheme } from 'Containers/ThemeProvider';
+import { useQuery } from 'react-apollo';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
-import { useQuery } from 'react-apollo';
+import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'modules/queryService';
 
 export const entityGridContainerClassName =

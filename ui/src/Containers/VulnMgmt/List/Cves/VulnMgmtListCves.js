@@ -252,24 +252,27 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
         <React.Fragment>
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4" />}
-                text="Add to Policy"
                 className="btn-icon btn-tertiary"
                 onClick={addToPolicy()}
                 disabled={selectedCves.length === 0}
-            />
+            >
+                Add to Policy
+            </PanelButton>
             <PanelButton
                 icon={<Icon.Trash2 className="h-4 w-4" />}
-                text="Suppress"
                 className="btn-icon btn-alert ml-2"
                 onClick={suppressCVEs()}
                 disabled={selectedCves.length === 0}
-            />
+            >
+                Suppress
+            </PanelButton>
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4" />}
-                text="View Suppressed"
                 className="btn-icon btn-base ml-2"
                 onClick={viewSuppressed}
-            />
+            >
+                View Suppressed
+            </PanelButton>
         </React.Fragment>
     );
 

@@ -97,21 +97,23 @@ class Buttons extends Component {
                 {selectionCount === 0 && (
                     <PanelButton
                         icon={<Icon.RefreshCw className="h-4 w-4 ml-1" />}
-                        text="Reassess All"
                         className="btn btn-base mr-2"
                         onClick={this.props.reassessPolicies}
                         tooltip="Manually enrich external data"
                         disabled={buttonsDisabled}
-                    />
+                    >
+                        Reassess All
+                    </PanelButton>
                 )}
                 {selectionCount === 0 && (
                     <PanelButton
                         icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                        text="New Policy"
                         className="btn btn-base"
                         onClick={this.addPolicy}
                         disabled={buttonsDisabled}
-                    />
+                    >
+                        New Policy
+                    </PanelButton>
                 )}
             </React.Fragment>
         );

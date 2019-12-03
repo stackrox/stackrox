@@ -8,7 +8,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { set } from 'lodash';
 
-function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames, flipped }) {
+function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames, flipped, small }) {
     const flippedToggleHandler = e => {
         set(e, 'target.checked', !e.target.checked);
         toggleHandler(e);
@@ -18,7 +18,11 @@ function ToggleSwitch({ id, toggleHandler, label, enabled, extraClassNames, flip
             <label className="text-xs text-grey-dark" htmlFor={id}>
                 {label}
             </label>
-            <div className="toggle-switch inline-block align-middle ml-2">
+            <div
+                className={`toggle-switch inline-block align-middle ml-2 ${
+                    small ? 'toggle-switch-small' : ''
+                }`}
+            >
                 <input
                     type="checkbox"
                     checked={flipped ? !enabled : !!enabled}
@@ -39,14 +43,16 @@ ToggleSwitch.propTypes = {
     label: PropTypes.string,
     enabled: PropTypes.bool,
     extraClassNames: PropTypes.string,
-    flipped: PropTypes.bool
+    flipped: PropTypes.bool,
+    small: PropTypes.bool
 };
 
 ToggleSwitch.defaultProps = {
     label: '',
     enabled: false,
     extraClassNames: '',
-    flipped: false
+    flipped: false,
+    small: false
 };
 
 export default ToggleSwitch;

@@ -1,11 +1,15 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
+import { Power, Edit } from 'react-feather';
 
+import ButtonLink from 'Components/ButtonLink';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
+import PanelButton from 'Components/PanelButton';
 import SeverityLabel from 'Components/SeverityLabel';
 import StatusChip from 'Components/StatusChip';
+import ToggleSwitch from 'Components/ToggleSwitch';
 import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
@@ -13,6 +17,8 @@ import workflowStateContext from 'Containers/workflowStateContext';
 // TO DO: factor this out from config management
 import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
+import { updatePolicyDisabledState } from 'services/PoliciesService';
+
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 import PolicyConfigurationFields from './PolicyConfigurationFields';
@@ -22,6 +28,7 @@ const emptyPolicy = {
     deploymentCount: 0,
     deployments: [],
     description: '',
+    disabled: true,
     enforcementActions: [],
     fields: {},
     id: '',
@@ -48,6 +55,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         name,
         policyStatus,
         description,
+        disabled,
         rationale,
         remediation,
         severity,
@@ -61,6 +69,45 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         whitelists,
         deployments
     } = safeData;
+    const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
+
+    function togglePolicy() {
+        updatePolicyDisabledState(id, !currentDisabledState).then(() => {
+            setCurrentDisabledState(!currentDisabledState);
+        });
+    }
+
+    const policyActionButtons = (
+        <div className="flex px-4">
+            <PanelButton
+                icon={<Power className="h-4 w-4 xl:ml-1" />}
+                className={`btn ml-2 ${currentDisabledState ? 'btn-tertiary' : 'btn-success'}`}
+                onClick={togglePolicy}
+                tooltip={`${currentDisabledState ? 'Toggle Policy On' : 'Toggle Policy Off'}`}
+            >
+                <label
+                    htmlFor="enableDisablePolicy"
+                    className={`block leading-none ${
+                        currentDisabledState ? 'text-primary-700' : 'text-success-600'
+                    } font-600 text-sm`}
+                >
+                    Policy
+                </label>
+                <ToggleSwitch
+                    extraClassNames="mt-1"
+                    id="enableDisablePolicy"
+                    name="enableDisablePolicy"
+                    toggleHandler={null}
+                    enabled={!currentDisabledState}
+                    small
+                />
+            </PanelButton>
+            <ButtonLink linkTo={`/main/policies/${id}/edit`} extraClassNames="mx-1 ml-2 lg:mr-3">
+                <span className="mr-2">Edit</span>
+                <Edit size="16" />
+            </ButtonLink>
+        </div>
+    );
 
     // @TODO: extract this out to make it re-usable and easier to test
     const failingDeployments = deployments.filter(singleDeploy => {
@@ -180,7 +227,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Policy summary">
+                <CollapsibleSection title="Policy summary" headerComponents={policyActionButtons}>
                     <div className="flex mb-4 pdf-page">
                         <Widget
                             header="Description, Rationale, & Remediation"
