@@ -7,7 +7,7 @@ export const selectors = {
         creatorPanel: '[data-test-id="network-creator-panel"]',
         simulatorPanel: '[data-testid="network-simulator-panel"]',
         uploadPanel: '[data-test-id="upload-yaml-panel"]',
-        detailsPanel: '[data-testid="network-details-panel"]'
+        detailsPanel: '[data-test-id="network-details-panel"]'
     },
     legend: {
         deployments: '[data-test-id="deployment-legend"] div',
