@@ -157,7 +157,7 @@ func (c *clairify) scan(image *storage.Image) error {
 	}
 
 	_, err := c.client.AddImage(rc.Username, rc.Password, &types.ImageRequest{
-		Image:    image.GetName().GetFullName(),
+		Image:    utils.GetFullyQualifiedFullName(image),
 		Registry: rc.URL,
 		Insecure: rc.Insecure})
 	return err

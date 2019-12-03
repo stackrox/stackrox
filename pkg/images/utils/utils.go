@@ -165,3 +165,14 @@ func ExtractImageDigest(imageStr string) string {
 
 	return ""
 }
+
+// GetFullyQualifiedFullName takes in an id and image name and returns the full name including sha256 if it exists
+func GetFullyQualifiedFullName(img *storage.Image) string {
+	if img.GetId() == "" {
+		return img.GetName().GetFullName()
+	}
+	if idx := strings.Index(img.GetName().GetFullName(), "@"); idx != -1 {
+		return img.GetName().GetFullName()
+	}
+	return fmt.Sprintf("%s@%s", img.GetName().GetFullName(), img.GetId())
+}
