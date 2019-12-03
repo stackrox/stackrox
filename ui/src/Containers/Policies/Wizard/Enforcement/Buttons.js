@@ -1,6 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
+
 import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 import { actions as wizardActions } from 'reducers/policies/wizard';
@@ -11,6 +14,8 @@ import PanelButton from 'Components/PanelButton';
 
 class Buttons extends Component {
     static propTypes = {
+        history: ReactRouterPropTypes.location.isRequired,
+        match: ReactRouterPropTypes.location.isRequired,
         wizardPolicyIsNew: PropTypes.bool.isRequired,
         setWizardStage: PropTypes.func.isRequired
     };
@@ -22,6 +27,7 @@ class Buttons extends Component {
             this.props.setWizardStage(wizardStages.create);
         } else {
             this.props.setWizardStage(wizardStages.save);
+            this.props.history.push(`/main/policies/${this.props.match.params.policyId}`);
         }
     };
 
@@ -55,7 +61,9 @@ const mapDispatchToProps = {
     setWizardStage: wizardActions.setWizardStage
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Buttons);
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(Buttons)
+);

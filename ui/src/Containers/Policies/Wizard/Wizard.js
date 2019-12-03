@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
@@ -64,7 +65,8 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     closeWizard: pageActions.closeWizard,
     selectPolicyId: tableActions.selectPolicyId,
-    setWizardPolicy: wizardActions.setWizardPolicy
+    setWizardPolicy: wizardActions.setWizardPolicy,
+    setWizardStage: wizardActions.setWizardStage
 };
 
 export default connect(

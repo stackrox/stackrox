@@ -43,7 +43,7 @@ export function* getPolicyCategories() {
     }
 }
 
-export function* getPolicy(policyId) {
+export function* getPolicy(policyId, command) {
     yield put(backendActions.fetchPolicy.request());
     try {
         const [policyResult] = yield all([
@@ -57,7 +57,11 @@ export function* getPolicy(policyId) {
         if (fetchedPolicies.length === 1) {
             yield put(tableActions.selectPolicyId(fetchedPolicies[0].id));
             yield put(wizardActions.setWizardPolicy(fetchedPolicies[0]));
-            yield put(wizardActions.setWizardStage(wizardStages.details));
+            if (command === 'edit') {
+                yield put(wizardActions.setWizardStage(wizardStages.edit));
+            } else {
+                yield put(wizardActions.setWizardStage(wizardStages.details));
+            }
             yield put(pageActions.openWizard());
         }
     } catch (error) {
@@ -215,9 +219,9 @@ export function* loadPoliciesPage() {
 }
 
 export function* loadPolicy({ match }) {
-    const { policyId } = match.params;
+    const { policyId, command } = match.params;
     if (policyId) {
-        yield fork(getPolicy, policyId);
+        yield fork(getPolicy, policyId, command);
     }
 }
 
