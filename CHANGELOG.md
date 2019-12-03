@@ -6,6 +6,10 @@ All notable changes to this project that require documentation updates will be d
   where central and scanner run (ROX-3348, #3994, #4127).
 - The component object within the image object now contains a field "Source", which indicates how the component was identified. Components derived from package managers
   will have the type "OS" whereas components derived from language analysis will have the language as the source (e.g. PYTHON).
+### Added
+- Images based on the Red Hat Universal Base Image (UBI) are published in stackrox.io/main-rhel,
+  stackrox.io/scanner-rhel, stackrox.io/scanner-db-rhel and collector.stackrox.io/collector-rhel repositories. These
+  images are functionally equivalent to our regular images and use the same version tags.
 
 ## [34.0]
 ### Added

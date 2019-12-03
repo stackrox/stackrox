@@ -559,6 +559,9 @@ commands:
             cci-export GOOGLE_APPLICATION_CREDENTIALS /tmp/gcp.json
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               cci-export MAIN_IMAGE_REPO stackrox/main-rhel
+              cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
+              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
             fi
 
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
@@ -1033,6 +1036,9 @@ commands:
             cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               cci-export MAIN_IMAGE_REPO stackrox/main-rhel
+              cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
+              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
             fi
 
             ./scripts/ci/openshift-gcr-secrets.sh
@@ -2263,6 +2269,7 @@ jobs:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
+      - ROX_LANGUAGE_SCANNER: true
 
     steps:
       - checkout
@@ -2619,6 +2626,19 @@ jobs:
             docker tag     "docker.io/stackrox/collector:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest"
             docker push collector.stackrox.io/collector:$COLLECTOR_TAG | cat
             docker push "collector.stackrox.io/collector:${COLLECTOR_TAG}-latest" | cat
+
+            # RHEL images
+            docker pull docker.io/stackrox/main-rhel:$MAIN_TAG | cat
+            docker tag  docker.io/stackrox/main-rhel:$MAIN_TAG stackrox.io/main-rhel:$MAIN_TAG
+            docker push        stackrox.io/main-rhel:$MAIN_TAG | cat
+
+            docker pull    docker.io/stackrox/collector-rhel:$COLLECTOR_TAG | cat
+            docker pull    "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+            docker tag     docker.io/stackrox/collector-rhel:$COLLECTOR_TAG collector.stackrox.io/collector-rhel:$COLLECTOR_TAG
+            docker tag     "docker.io/stackrox/collector-rhel:${COLLECTOR_TAG}-latest" "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest"
+            docker push collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
+            docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
+
 
       - run:
           name: Push roxctl to stackrox-hub

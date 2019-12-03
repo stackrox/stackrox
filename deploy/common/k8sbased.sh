@@ -88,6 +88,10 @@ function launch_central {
         add_args "--scanner-image=$SCANNER_IMAGE"
     fi
 
+    if [[ -n "$SCANNER_DB_IMAGE" ]]; then
+        add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
+    fi
+
     if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
     	add_args "--default-tls-cert"
     	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
@@ -220,6 +224,10 @@ function launch_sensor {
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
     	extra_config+=("--admission-controller=true")
     	extra_json_config+=', "admissionController": true'
+    fi
+
+    if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
+        extra_config+=("--collector-image=${COLLECTOR_IMAGE_REPO}")
     fi
 
     # Delete path

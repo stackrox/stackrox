@@ -1,10 +1,7 @@
 ARG DATA_IMAGE_TAG=latest
 FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
-# For list of tags, ref: https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/ubi7/ubi-minimal
-FROM registry.access.redhat.com/ubi7/ubi-minimal
-
-RUN microdnf install tar gzip
+FROM registry.access.redhat.com/ubi7/ubi
 
 LABEL name="stackrox.io/main"
 LABEL vendor="StackRox (support@stackrox.com)"
@@ -14,7 +11,15 @@ LABEL description="This image contains everything required to operate the StackR
 # Telegraf (for monitoring)
 RUN curl -L https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -o /telegraf && chmod +x /telegraf
 
-RUN microdnf remove curl rpm rpm-libs microdnf libdnf libsolv
+# Make image STIG compliant: https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/
+ARG DSOP_URL=https://dccscr.dsop.io/dsop/redhat/ubi/ubi7/raw/master/7.7
+RUN ( for i in dsop-fix-{1,2,3}.sh ; do curl -O "$DSOP_URL/$i" ; done; )
+RUN ( chmod +x /dsop-fix-{1,2}.sh && for i in $(ls /dsop-fix-{1,2}.sh); do sh ${i}; done; )
+RUN ( yum update -y --disableplugin=subscription-manager && rm -rf /var/cache/yum/ /var/tmp/* /tmp/* /var/tmp/.???* /tmp/.???*; )
+RUN ( chmod +x /dsop-fix-3.sh && for i in $(ls /dsop-fix-3.sh); do sh ${i}; done && rm -rf /dsop-fix*.sh ; )
+
+# Remove package manager
+RUN rpm -e --nodeps curl yum yum-utils yum-plugin-ovl subscription-manager rpm rpm-libs rpm-build-libs rpm-python subscription-manager-rhsm
 
 ENV PATH="/stackrox:$PATH"
 
