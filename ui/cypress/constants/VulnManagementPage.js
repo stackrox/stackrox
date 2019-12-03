@@ -23,6 +23,7 @@ export const listSelectors = {
     cvesCvssScoreCol: '.rt-table > .rt-tbody > div > .rt-tr.-odd > div:nth-child(4) > div > span',
     tableRows: '.rt-tr',
     tableColumn: '.rt-th.leading-normal > div',
+    tableFirstColumn: '.rt-tr > .rt-td',
     tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
     allCVEColumnLink: '[data-testid="allCvesLink"]',
     fixableCVELink: '[data-testid="fixableCvesLink"]',
@@ -33,7 +34,13 @@ export const sidePanelListEntityPageSelectors = {
     entityRowHeader:
         '[data-test-id="side-panel"] > .h-full > .flex > .flex-no-wrap > .flex > [data-test-id="panel-header"]',
     parentEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > a',
-    childEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > span'
+    childEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > span',
+    tileLinkText: '[data-testid="tileLinkSuperText"]',
+    tileLinkValue: '[data-test-id="tile-link-value"]',
+    tabButton: '[data-test-id="tab"]',
+    getSidePanelTabHeader: title => {
+        return `[data-test-id="widget-header"] > .w-full:contains('${title}')`;
+    }
 };
 
 export const dashboardSelectors = {
