@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+
+import { AUTH_STATUS } from 'reducers/auth';
 import { LICENSE_STATUS } from 'reducers/license';
-
 import { getLicenseStatusMessage } from 'Containers/License/helpers';
-import { dashboardPath } from 'routePaths';
+import { dashboardPath, loginPath } from 'routePaths';
 import logoPlatform from 'images/logo-platform.svg';
-
 import MessageBanner from 'Components/MessageBanner';
 import LoadingSection from 'Components/LoadingSection';
 import UploadLicense from 'Containers/License/UploadLicense';
@@ -24,7 +24,7 @@ const getDefaultBannerText = (licenseUploadStatus, licenseStatus) => {
     return getLicenseStatusMessage(licenseStatus, null);
 };
 
-const StartUpScreen = ({ licenseStatus, licenseUploadStatus }) => {
+const StartUpScreen = ({ licenseStatus, licenseUploadStatus, authStatus }) => {
     const hasLicense = licenseStatus === LICENSE_STATUS.VALID;
 
     const fetchingLicense = licenseStatus === LICENSE_STATUS.RESTARTING;
@@ -43,16 +43,32 @@ const StartUpScreen = ({ licenseStatus, licenseUploadStatus }) => {
         </div>
     );
 
-    const button = hasLicense ? (
-        <Link
-            className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide mt-4 no-underline"
-            to={dashboardPath}
-        >
-            Go to Dashboard
-        </Link>
-    ) : (
-        <UploadLicense licenseUploadStatus={{ status: licenseStatus }} isStartUpScreen />
-    );
+    let button = null;
+
+    if (!hasLicense) {
+        button = <UploadLicense licenseUploadStatus={{ status: licenseStatus }} isStartUpScreen />;
+    } else if (
+        authStatus === AUTH_STATUS.LOGGED_IN ||
+        authStatus === AUTH_STATUS.ANONYMOUS_ACCESS
+    ) {
+        button = (
+            <Link
+                className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide mt-4 no-underline"
+                to={dashboardPath}
+            >
+                Go to Dashboard
+            </Link>
+        );
+    } else {
+        button = (
+            <a
+                className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide mt-4 no-underline"
+                href={loginPath}
+            >
+                Go to Login
+            </a>
+        );
+    }
 
     return (
         <section className="flex flex-col items-center justify-center h-full bg-base-300">
@@ -73,7 +89,8 @@ StartUpScreen.propTypes = {
     licenseUploadStatus: PropTypes.shape({
         status: PropTypes.string,
         message: PropTypes.string
-    })
+    }),
+    authStatus: PropTypes.string.isRequired
 };
 
 StartUpScreen.defaultProps = {
@@ -86,7 +103,8 @@ StartUpScreen.defaultProps = {
 
 const mapStateToProps = createStructuredSelector({
     licenseStatus: selectors.getLicenseStatus,
-    licenseUploadStatus: selectors.getLicenseUploadStatus
+    licenseUploadStatus: selectors.getLicenseUploadStatus,
+    authStatus: selectors.getAuthStatus
 });
 
 export default connect(

@@ -30,7 +30,7 @@ COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/bin/
 COPY ./bin/sensor-upgrader /stackrox/bin/
 COPY ./static-bin/* /stackrox/
-COPY ./restricted-ui /stackrox/ui
+COPY ./ui/build /ui/
 COPY --from=data /stackrox-data.tgze /stackrox/
 
 COPY ./THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES

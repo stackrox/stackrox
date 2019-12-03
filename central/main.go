@@ -237,10 +237,8 @@ func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgG
 func (invalidLicenseFactory) StartServices() {
 }
 
-func (invalidLicenseFactory) CustomRoutes() []routes.CustomRoute {
-	return []routes.CustomRoute{
-		uiRoute(ui.RestrictedModeMux()),
-	}
+func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
+	return []routes.CustomRoute{uiRoute()}
 }
 
 func startLimitedModeServer(restartingFlag *concurrency.Flag) {
@@ -478,18 +476,18 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	log.Debug("All dynamic integrations registered, exiting")
 }
 
-func uiRoute(uiHandler http.Handler) routes.CustomRoute {
+func uiRoute() routes.CustomRoute {
 	return routes.CustomRoute{
 		Route:         "/",
 		Authorizer:    allow.Anonymous(),
-		ServerHandler: uiHandler,
+		ServerHandler: ui.Mux(),
 		Compression:   true,
 	}
 }
 
 func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
-		uiRoute(ui.Mux()),
+		uiRoute(),
 		{
 			Route:         "/api/extensions/clusters/zip",
 			Authorizer:    or.SensorOrAuthorizer(user.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity))),
