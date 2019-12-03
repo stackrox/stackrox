@@ -5,11 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	clairV1 "github.com/coreos/clair/api/v1"
 	gogoProto "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/clairify/client"
-	"github.com/stackrox/clairify/types"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -20,6 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	clairV1 "github.com/stackrox/scanner/api/v1"
+	"github.com/stackrox/scanner/pkg/clairify/client"
+	"github.com/stackrox/scanner/pkg/clairify/types"
 )
 
 const (

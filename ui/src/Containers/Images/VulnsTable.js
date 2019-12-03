@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Tooltip from 'rc-tooltip';
 
-const VulnsTable = ({ vulns, containsFixableCVEs }) => {
+const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
     const columns = [
         {
             Header: 'CVE',
@@ -59,7 +59,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
             accessor: 'fixedBy',
             width: 130,
             headerClassName: 'font-600 border-b border-base-300 flex items-end',
-            className: 'pointer-events-none flex items-center justify-end italic'
+            className: 'pointer-events-none flex items-center justify-end italic',
+            Cell: ({ value }) => (value === '' && !isOSPkg ? '?' : value)
         });
     }
 
@@ -85,11 +86,13 @@ const VulnsTable = ({ vulns, containsFixableCVEs }) => {
 
 VulnsTable.propTypes = {
     vulns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    containsFixableCVEs: PropTypes.bool
+    containsFixableCVEs: PropTypes.bool,
+    isOSPkg: PropTypes.bool
 };
 
 VulnsTable.defaultProps = {
-    containsFixableCVEs: false
+    containsFixableCVEs: false,
+    isOSPkg: false
 };
 
 export default VulnsTable;

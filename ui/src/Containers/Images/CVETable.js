@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { sortValue } from 'sorters/sorters';
+import Tooltip from 'rc-tooltip';
 
 import VulnsTable from './VulnsTable';
 
@@ -12,7 +13,7 @@ const CVETable = props => {
             {
                 expander: true,
                 headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none bg-primary-200`,
-                className: 'w-1/8 pointer-events-none flex items-center justify-end',
+                className: 'w-1/8 flex items-center justify-end',
                 // eslint-disable-next-line react/prop-types
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) return '';
@@ -31,37 +32,63 @@ const CVETable = props => {
             {
                 Header: 'Version',
                 accessor: 'version',
-                className: 'pr-4 flex items-center justify-end',
+                className: 'w-1/8 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+            },
+            {
+                Header: 'Source',
+                accessor: 'source',
+                className: 'pr-4 flex items-center justify-end w-1/8',
+                headerClassName:
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+            },
+            {
+                Header: 'Location',
+                accessor: 'location',
+                className: 'flex items-center justify-start word-break-all w-1/4',
+                headerClassName:
+                    'w-1/4 font-600 border-b border-base-300 border-r-0 bg-primary-200',
+                Cell: ({ value }) => (
+                    <Tooltip placement="top" overlay={<div>{value}</div>} mouseLeaveDelay={0}>
+                        <div>{value}</div>
+                    </Tooltip>
+                )
             },
             {
                 Header: 'CVEs',
                 accessor: 'vulns.length',
-                className: 'w-1/8 pr-4 flex items-center justify-end',
+                className: 'w-1/10 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
             }
         ];
 
         if (props.containsFixableCVEs) {
             columns.push({
                 Header: 'Fixable',
-                className: 'w-1/8 pr-4 flex items-center justify-end',
+                className: 'w-1/10 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
-                Cell: ({ original }) => original.vulns.filter(vuln => vuln.fixedBy).length,
+                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                Cell: ({ original }) => {
+                    return original.vulns.filter(vuln => vuln.fixedBy).length;
+                },
                 sortMethod: sortValue
             });
         }
         return columns;
     }
 
-    // eslint-disable-next-line react/prop-types
     function renderVulnsTable({ original }) {
-        const { vulns } = original;
+        const { vulns, source } = original;
         if (vulns.length === 0) return null;
-        return <VulnsTable vulns={vulns} containsFixableCVEs={props.containsFixableCVEs} />;
+        return (
+            <VulnsTable
+                vulns={vulns}
+                containsFixableCVEs={props.containsFixableCVEs}
+                isOSPkg={source === 'OS'}
+            />
+        );
     }
 
     const { scan, ...rest } = props;

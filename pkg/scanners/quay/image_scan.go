@@ -3,7 +3,7 @@ package quay
 import (
 	"encoding/json"
 
-	clairV1 "github.com/coreos/clair/api/v1"
+	clairV1 "github.com/stackrox/scanner/api/v1"
 )
 
 // https://docs.quay.io/api/swagger

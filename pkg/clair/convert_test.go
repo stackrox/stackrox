@@ -3,9 +3,10 @@ package clair
 import (
 	"testing"
 
-	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
+	clairV1 "github.com/stackrox/scanner/api/v1"
+	"github.com/stackrox/scanner/pkg/component"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,6 +21,10 @@ func TestConvertVulnerability(t *testing.T) {
 func TestConvertFeatures(t *testing.T) {
 	clairFeatures, protoComponents := mock.GetTestFeatures()
 	assert.Equal(t, protoComponents, ConvertFeatures(nil, clairFeatures))
+}
+
+func TestVersionFormatCompleteness(t *testing.T) {
+	assert.Equal(t, len(versionFormatsToSource), int(component.SentinelEndSourceType-component.UnsetSourceType-1))
 }
 
 func componentWithLayerIndex(name string, idx int32) *storage.EmbeddedImageScanComponent {

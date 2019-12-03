@@ -420,6 +420,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"useSTARTTLS: Boolean!",
 		"username: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedImageScanComponent_SourceType(0)))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
@@ -4157,6 +4158,24 @@ func (resolver *emailResolver) UseSTARTTLS(ctx context.Context) bool {
 func (resolver *emailResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
+}
+
+func toEmbeddedImageScanComponent_SourceType(value *string) storage.EmbeddedImageScanComponent_SourceType {
+	if value != nil {
+		return storage.EmbeddedImageScanComponent_SourceType(storage.EmbeddedImageScanComponent_SourceType_value[*value])
+	}
+	return storage.EmbeddedImageScanComponent_SourceType(0)
+}
+
+func toEmbeddedImageScanComponent_SourceTypes(values *[]string) []storage.EmbeddedImageScanComponent_SourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.EmbeddedImageScanComponent_SourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toEmbeddedImageScanComponent_SourceType(&v)
+	}
+	return output
 }
 
 type embeddedSecretResolver struct {

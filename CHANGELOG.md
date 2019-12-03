@@ -4,6 +4,8 @@ All notable changes to this project that require documentation updates will be d
 ## [NEXT RELEASE]
 - Proxy configuration can now be changed at runtime by editing and applying `proxy-config-secret.yaml` in the cluster
   where central and scanner run (ROX-3348, #3994, #4127).
+- The component object within the image object now contains a field "Source", which indicates how the component was identified. Components derived from package managers
+  will have the type "OS" whereas components derived from language analysis will have the language as the source (e.g. PYTHON).
 
 ## [34.0]
 ### Added

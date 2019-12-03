@@ -3,7 +3,7 @@ package quay
 import (
 	"testing"
 
-	clairV1 "github.com/coreos/clair/api/v1"
+	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

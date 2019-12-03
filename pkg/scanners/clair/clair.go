@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"time"
 
-	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	clairV1 "github.com/stackrox/scanner/api/v1"
 )
 
 const (

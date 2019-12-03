@@ -23,7 +23,7 @@ function ImagesPage({
 
     // Handle changes in the currently displayed images.
     const [currentImages, setCurrentImages] = useState([]);
-    const [sortOption, setSortOption] = useState({ field: 'Image', reversed: false });
+    const [sortOption, setSortOption] = useState({ field: 'Fixable CVE Count', reversed: true });
     const [imagesCount, setImagesCount] = useState(0);
 
     // When the selected image changes, update the URL.

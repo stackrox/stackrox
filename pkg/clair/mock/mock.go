@@ -1,8 +1,8 @@
 package mock
 
 import (
-	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	clairV1 "github.com/stackrox/scanner/api/v1"
 )
 
 // GetTestVulns returns test clair vulns and also the expected converted proto vulns

@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
+	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
 )
 

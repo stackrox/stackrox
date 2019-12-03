@@ -56,6 +56,15 @@ message EmbeddedImageScanComponent {
         int32 layer_index                   = 5;
     }
     int64                          priority = 6;
+    enum SourceType {
+        OS     = 0;
+        PYTHON = 1;
+        JAVA   = 2;
+        RUBY   = 3;
+        NODEJS = 4;
+    }
+    SourceType                      source   = 7;
+    string                          location = 8;
 }
 
 message License {

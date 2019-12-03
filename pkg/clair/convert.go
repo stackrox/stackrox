@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss/cvssv2"
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
@@ -13,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stackrox/rox/pkg/stringutils"
+	clairV1 "github.com/stackrox/scanner/api/v1"
+	"github.com/stackrox/scanner/pkg/component"
 )
 
 const (
@@ -21,6 +22,13 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	versionFormatsToSource = map[string]storage.EmbeddedImageScanComponent_SourceType{
+		component.GemSourceType.String():    storage.EmbeddedImageScanComponent_RUBY,
+		component.JavaSourceType.String():   storage.EmbeddedImageScanComponent_JAVA,
+		component.NPMSourceType.String():    storage.EmbeddedImageScanComponent_NODEJS,
+		component.PythonSourceType.String(): storage.EmbeddedImageScanComponent_PYTHON,
+	}
 )
 
 type nvd struct {
@@ -110,8 +118,12 @@ func ConvertVulnerability(v clairV1.Vulnerability) *storage.EmbeddedVulnerabilit
 
 func convertFeature(feature clairV1.Feature) *storage.EmbeddedImageScanComponent {
 	component := &storage.EmbeddedImageScanComponent{
-		Name:    feature.Name,
-		Version: feature.Version,
+		Name:     feature.Name,
+		Version:  feature.Version,
+		Location: feature.Location,
+	}
+	if source, ok := versionFormatsToSource[feature.VersionFormat]; ok {
+		component.Source = source
 	}
 	component.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(feature.Vulnerabilities))
 	for _, v := range feature.Vulnerabilities {
