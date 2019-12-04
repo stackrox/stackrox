@@ -163,7 +163,7 @@ class IntegrationsPage extends Component {
                     isBackendFeatureFlagEnabled(
                         this.props.featureFlags,
                         tile.featureFlagDependency.featureFlag,
-                        false
+                        tile.featureFlagDependency.defaultValue
                     ) !== tile.featureFlagDependency.showIfValueIs
                 ) {
                     return null;

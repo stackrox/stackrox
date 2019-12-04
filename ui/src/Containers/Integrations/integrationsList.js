@@ -48,7 +48,8 @@ const integrationsList = {
             disabled: false,
             featureFlagDependency: {
                 featureFlag: knownBackendFlags.ROX_LANGUAGE_SCANNER,
-                showIfValueIs: false
+                showIfValueIs: false,
+                defaultValue: true
             }
         },
         {
