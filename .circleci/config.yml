@@ -2103,6 +2103,8 @@ jobs:
             sleep 5
 
             roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" sensor generate k8s \
+              --image "${MAIN_IMAGE_REPO:-docker.io/stackrox/main}" \
+              --collector-image "${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}" \
               --name remote-new
 
             CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
