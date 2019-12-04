@@ -1,5 +1,6 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import checkFeatureFlag from '../../helpers/features';
 
 function validatePresenceOfTabsAndLinks(selector, relatedEntities) {
     cy.get(selector).each(($el, i) => {
@@ -106,97 +107,99 @@ function validateWithActualSelector(
 
 describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', () => {
     withAuth();
-    it('validate data consistency for top riskiest images widget data row onwards', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Top Riskiest Images'))
-            .find(selectors.viewAllButton)
-            .click();
-        cy.get(selectors.numCVEColLink)
-            .eq(2)
-            .invoke('text')
-            .then(value => {
-                if (value === 'No CVEs') {
-                    validateWithAParentSelector(
-                        'image',
-                        url.list.image,
-                        selectors.dataRowLink,
-                        0,
-                        [
-                            'Overview',
-                            'deployments',
-                            'components',
-                            'CVES',
-                            'Fixable CVEs',
-                            'Dockerfile'
-                        ],
-                        ['DEPLOYMENT', 'COMPONENT']
-                    );
-                } else {
-                    validateWithAParentSelector(
-                        'image',
-                        url.list.image,
-                        selectors.dataRowLink,
-                        0,
-                        [
-                            'Overview',
-                            'deployments',
-                            'components',
-                            'CVES',
-                            'Fixable CVEs',
-                            'Dockerfile'
-                        ],
-                        ['DEPLOYMENT', 'COMPONENT', 'CVE']
-                    );
-                }
-            });
-    });
+    if (checkFeatureFlag('ROX_VULN_MGMT_UI', true)) {
+        it('validate data consistency for top riskiest images widget data row onwards', () => {
+            cy.visit(url.dashboard);
+            cy.get(selectors.getWidget('Top Riskiest Images'))
+                .find(selectors.viewAllButton)
+                .click();
+            cy.get(selectors.numCVEColLink)
+                .eq(2)
+                .invoke('text')
+                .then(value => {
+                    if (value === 'No CVEs') {
+                        validateWithAParentSelector(
+                            'image',
+                            url.list.image,
+                            selectors.dataRowLink,
+                            0,
+                            [
+                                'Overview',
+                                'deployments',
+                                'components',
+                                'CVES',
+                                'Fixable CVEs',
+                                'Dockerfile'
+                            ],
+                            ['DEPLOYMENT', 'COMPONENT']
+                        );
+                    } else {
+                        validateWithAParentSelector(
+                            'image',
+                            url.list.image,
+                            selectors.dataRowLink,
+                            0,
+                            [
+                                'Overview',
+                                'deployments',
+                                'components',
+                                'CVES',
+                                'Fixable CVEs',
+                                'Dockerfile'
+                            ],
+                            ['DEPLOYMENT', 'COMPONENT', 'CVE']
+                        );
+                    }
+                });
+        });
 
-    it('validate data consistency for most common vulnerabilities widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.cve,
-            selectors.topMostRowMCV,
-            ['Overview', 'components', 'images', 'deployments'],
-            ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
-        );
-    });
+        it('validate data consistency for most common vulnerabilities widget data row onwards', () => {
+            validateWithActualSelector(
+                'cve',
+                url.list.cve,
+                selectors.topMostRowMCV,
+                ['Overview', 'components', 'images', 'deployments'],
+                ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
+            );
+        });
 
-    it('validate data consistency for recently detected vulnerabilities widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.cve,
-            selectors.topMostRowRDV,
-            ['Overview', 'components', 'images', 'deployments'],
-            ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
-        );
-    });
+        it('validate data consistency for recently detected vulnerabilities widget data row onwards', () => {
+            validateWithActualSelector(
+                'cve',
+                url.list.cve,
+                selectors.topMostRowRDV,
+                ['Overview', 'components', 'images', 'deployments'],
+                ['COMPONENT', 'IMAGE', 'DEPLOYMENT']
+            );
+        });
 
-    it('validate data consistency for frequently violated policies widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.policy,
-            selectors.topMostRowFVP,
-            ['Overview', 'deployments'],
-            ['DEPLOYMENT']
-        );
-    });
+        it('validate data consistency for frequently violated policies widget data row onwards', () => {
+            validateWithActualSelector(
+                'cve',
+                url.list.policy,
+                selectors.topMostRowFVP,
+                ['Overview', 'deployments'],
+                ['DEPLOYMENT']
+            );
+        });
 
-    it('validate data consistency for deployments with most severe policy violations widget data row onwards', () => {
-        validateWithActualSelector(
-            'cve',
-            url.list.deployment,
-            selectors.topMostRowMSPV,
+        it('validate data consistency for deployments with most severe policy violations widget data row onwards', () => {
+            validateWithActualSelector(
+                'cve',
+                url.list.deployment,
+                selectors.topMostRowMSPV,
 
-            [
-                'Overview',
-                'images',
-                'components',
-                'failing policies',
-                'CVES',
-                'Policies',
-                'Fixable CVEs'
-            ],
-            ['POLICIES', 'IMAGE', 'COMPONENT', 'CVE']
-        );
-    });
+                [
+                    'Overview',
+                    'images',
+                    'components',
+                    'failing policies',
+                    'CVES',
+                    'Policies',
+                    'Fixable CVEs'
+                ],
+                ['POLICIES', 'IMAGE', 'COMPONENT', 'CVE']
+            );
+        });
+    }
 });

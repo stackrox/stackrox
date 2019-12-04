@@ -1,5 +1,6 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
+import checkFeatureFlag from '../../helpers/features';
 
 const hasExpectedHeaderColumns = colNames => {
     colNames.forEach(col => {
@@ -218,141 +219,146 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
 
 describe('Entities list Page', () => {
     withAuth();
-    it.skip('should display all the columns and links expected in clusters list page', () => {
-        cy.visit(url.list.clusters);
-        hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'K8S Version',
-            'Namespaces',
-            'Deployments',
-            'Policies',
-            'Policy Status',
-            'Latest Violation',
-            'Risk Priority'
-        ]);
-        validateClickableLinks(['Namespace', 'Deployment', 'Policies'], url.list.clusters);
-        validateAllCVELinks(url.list.clusters);
-        validateFixableCVELinks(url.list.clusters);
-        validateSort(selectors.riskScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Namespace', 'Deployment', 'Policies', 'CVEs', 'Fixable'],
-            url.list.clusters
-        );
-    });
+    if (checkFeatureFlag('ROX_VULN_MGMT_UI', true)) {
+        it.skip('should display all the columns and links expected in clusters list page', () => {
+            cy.visit(url.list.clusters);
+            hasExpectedHeaderColumns([
+                'Cluster',
+                'CVEs',
+                'K8S Version',
+                'Namespaces',
+                'Deployments',
+                'Policies',
+                'Policy Status',
+                'Latest Violation',
+                'Risk Priority'
+            ]);
+            validateClickableLinks(['Namespace', 'Deployment', 'Policies'], url.list.clusters);
+            validateAllCVELinks(url.list.clusters);
+            validateFixableCVELinks(url.list.clusters);
+            validateSort(selectors.riskScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Namespace', 'Deployment', 'Policies', 'CVEs', 'Fixable'],
+                url.list.clusters
+            );
+        });
 
-    it('should display all the columns and links expected in namespaces list page', () => {
-        cy.visit(url.list.namespaces);
-        hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'Images',
-            'Namespace',
-            'Deployments',
-            'Policies',
-            'Policy Status',
-            'Latest Violation',
-            'Risk Priority'
-        ]);
-        validateClickableLinksEntityListPage(['image', 'deployment'], url.list.namespaces);
-        validateAllCVELinks(url.list.namespaces);
-        validateFixableCVELinks(url.list.namespaces);
-        validateSort(selectors.riskScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Deployment', 'Image', 'Policies', 'CVEs', 'Fixable'],
-            url.list.namespaces
-        );
-    });
+        it('should display all the columns and links expected in namespaces list page', () => {
+            cy.visit(url.list.namespaces);
+            hasExpectedHeaderColumns([
+                'Cluster',
+                'CVEs',
+                'Images',
+                'Namespace',
+                'Deployments',
+                'Policies',
+                'Policy Status',
+                'Latest Violation',
+                'Risk Priority'
+            ]);
+            validateClickableLinksEntityListPage(['image', 'deployment'], url.list.namespaces);
+            validateAllCVELinks(url.list.namespaces);
+            validateFixableCVELinks(url.list.namespaces);
+            validateSort(selectors.riskScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Deployment', 'Image', 'Policies', 'CVEs', 'Fixable'],
+                url.list.namespaces
+            );
+        });
 
-    it('should display all the columns and links expected in deployments list page', () => {
-        cy.visit(url.list.deployments);
-        hasExpectedHeaderColumns([
-            'Cluster',
-            'CVEs',
-            'Images',
-            'Namespace',
-            'Deployment',
-            'Policies',
-            'Policy Status',
-            'Latest Violation',
-            'Risk Priority'
-        ]);
-        validateClickableLinksEntityListPage(['image', 'Policies'], url.list.deployments);
-        validateAllCVELinks(url.list.deployments);
-        validateFixableCVELinks(url.list.deployments);
-        validateSort(selectors.riskScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Image', 'Policies', 'CVEs', 'Fixable'],
-            url.list.deployments
-        );
-    });
+        it('should display all the columns and links expected in deployments list page', () => {
+            cy.visit(url.list.deployments);
+            hasExpectedHeaderColumns([
+                'Cluster',
+                'CVEs',
+                'Images',
+                'Namespace',
+                'Deployment',
+                'Policies',
+                'Policy Status',
+                'Latest Violation',
+                'Risk Priority'
+            ]);
+            validateClickableLinksEntityListPage(['image', 'Policies'], url.list.deployments);
+            validateAllCVELinks(url.list.deployments);
+            validateFixableCVELinks(url.list.deployments);
+            validateSort(selectors.riskScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Image', 'Policies', 'CVEs', 'Fixable'],
+                url.list.deployments
+            );
+        });
 
-    it('should display all the columns and links expected in images list page', () => {
-        cy.visit(url.list.images);
-        hasExpectedHeaderColumns([
-            'Image',
-            'CVEs',
-            'Top CVSS',
-            'Created',
-            'Scan Time',
-            'Image Status',
-            'Deployments',
-            'Components',
-            'Risk Priority'
-        ]);
-        validateClickableLinksEntityListPage(['deployment', 'component'], url.list.images);
-        validateAllCVELinks(url.list.images);
-        validateFixableCVELinks(url.list.images);
-        validateSort(selectors.riskScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Deployment', 'Component'],
-            url.list.images
-        );
-    });
+        it('should display all the columns and links expected in images list page', () => {
+            cy.visit(url.list.images);
+            hasExpectedHeaderColumns([
+                'Image',
+                'CVEs',
+                'Top CVSS',
+                'Created',
+                'Scan Time',
+                'Image Status',
+                'Deployments',
+                'Components',
+                'Risk Priority'
+            ]);
+            validateClickableLinksEntityListPage(['deployment', 'component'], url.list.images);
+            validateAllCVELinks(url.list.images);
+            validateFixableCVELinks(url.list.images);
+            validateSort(selectors.riskScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Deployment', 'Component'],
+                url.list.images
+            );
+        });
 
-    it('should display all the columns expected in components list page', () => {
-        cy.visit(url.list.components);
-        hasExpectedHeaderColumns([
-            'Component',
-            'CVEs',
-            'Top CVSS',
-            'Images',
-            'Deployments',
-            'Risk Priority'
-        ]);
-        validateClickableLinksEntityListPage(['deployment', 'image'], url.list.components);
-        validateAllCVELinks(url.list.components);
-        validateFixableCVELinks(url.list.components);
-        validateSort(selectors.componentsRiskScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Deployment', 'Image', 'CVEs'],
-            url.list.components
-        );
-    });
+        it('should display all the columns expected in components list page', () => {
+            cy.visit(url.list.components);
+            hasExpectedHeaderColumns([
+                'Component',
+                'CVEs',
+                'Top CVSS',
+                'Images',
+                'Deployments',
+                'Risk Priority'
+            ]);
+            validateClickableLinksEntityListPage(['deployment', 'image'], url.list.components);
+            validateAllCVELinks(url.list.components);
+            validateFixableCVELinks(url.list.components);
+            validateSort(selectors.componentsRiskScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Deployment', 'Image', 'CVEs'],
+                url.list.components
+            );
+        });
 
-    it('should display all the columns and links expected in cves list page', () => {
-        cy.visit(url.list.cves);
-        hasExpectedHeaderColumns([
-            'CVE',
-            'Fixable',
-            'CVSS Score',
-            'Env. Impact',
-            'Impact Score',
-            'Scanned',
-            'Published',
-            'Deployments'
-        ]);
-        validateClickableLinksEntityListPage(['image', 'deployment', 'component'], url.list.cves);
-        validateSortForCVE(selectors.cvesCvssScoreCol);
-        validateTileLinksSidePanelEntityPage(
-            selectors.tableFirstColumn,
-            ['Deployment', 'Component', 'Image'],
-            url.list.cves
-        );
-    });
+        it('should display all the columns and links expected in cves list page', () => {
+            cy.visit(url.list.cves);
+            hasExpectedHeaderColumns([
+                'CVE',
+                'Fixable',
+                'CVSS Score',
+                'Env. Impact',
+                'Impact Score',
+                'Scanned',
+                'Published',
+                'Deployments'
+            ]);
+            validateClickableLinksEntityListPage(
+                ['image', 'deployment', 'component'],
+                url.list.cves
+            );
+            validateSortForCVE(selectors.cvesCvssScoreCol);
+            validateTileLinksSidePanelEntityPage(
+                selectors.tableFirstColumn,
+                ['Deployment', 'Component', 'Image'],
+                url.list.cves
+            );
+        });
+    }
 });

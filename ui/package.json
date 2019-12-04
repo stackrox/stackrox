@@ -91,7 +91,7 @@
         "test": "react-scripts test --coverage",
         "test-watch": "react-scripts test",
         "lint": "tailwind build ./src/app.css -c ./tailwind.js -o ./src/index.css && NODE_PATH=src eslint src cypress",
-        "cypress-open": "CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) cypress open",
+        "cypress-open": "./scripts/cypress-open.sh",
         "cypress-demo-open": "CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-demo-auth-token.sh) cypress open --config integrationFolder=cypress/demo",
         "test-e2e-local": "CYPRESS_ROX_AUTH_TOKEN=(./scripts/get-auth-token.sh) cypress run",
         "test-e2e-ci": "CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
