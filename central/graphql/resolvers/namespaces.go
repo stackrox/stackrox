@@ -22,7 +22,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("namespaces(query: String): [Namespace!]!"),
+		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
@@ -63,7 +63,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 }
 
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
-func (resolver *Resolver) Namespaces(ctx context.Context, args rawQuery) ([]*namespaceResolver, error) {
+func (resolver *Resolver) Namespaces(ctx context.Context, args paginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Namespaces")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
@@ -72,7 +72,11 @@ func (resolver *Resolver) Namespaces(ctx context.Context, args rawQuery) ([]*nam
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(resolver.wrapNamespaces(namespace.ResolveByQuery(ctx, query, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore)))
+	return resolvers.([]*namespaceResolver), err
 }
 
 type clusterIDAndNameQuery struct {

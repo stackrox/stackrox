@@ -18,7 +18,7 @@ func init() {
 	schema := getBuilder()
 
 	utils.Must(
-		schema.AddQuery("policies(query: String): [Policy!]!"),
+		schema.AddQuery("policies(query: String, pagination: Pagination): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Policy", `alertCount: Int!`),
@@ -30,7 +30,7 @@ func init() {
 }
 
 // Policies returns GraphQL resolvers for all policies
-func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+func (resolver *Resolver) Policies(ctx context.Context, args paginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Policies")
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
@@ -39,7 +39,11 @@ func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*polic
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(ctx, q))
+
+	resolvers, err := paginationWrapper{
+		pv: q.Pagination,
+	}.paginate(resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(ctx, q)))
+	return resolvers.([]*policyResolver), err
 }
 
 // Policy returns a GraphQL resolver for a given policy

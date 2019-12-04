@@ -46,7 +46,7 @@ func init() {
 		schema.AddExtraResolver("ImageScan", `components(query: String): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
 		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"),
-		schema.AddQuery("components(query: String): [EmbeddedImageScanComponent!]!"),
+		schema.AddQuery("components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
 	)
 }
 
@@ -78,7 +78,7 @@ func (resolver *Resolver) Component(ctx context.Context, args struct{ *graphql.I
 }
 
 // Components returns the image scan components that match the input query.
-func (resolver *Resolver) Components(ctx context.Context, q rawQuery) ([]*EmbeddedImageScanComponentResolver, error) {
+func (resolver *Resolver) Components(ctx context.Context, q paginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -89,7 +89,11 @@ func (resolver *Resolver) Components(ctx context.Context, q rawQuery) ([]*Embedd
 	if err != nil {
 		return nil, err
 	}
-	return components(ctx, resolver, query)
+
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(components(ctx, resolver, query))
+	return resolvers.([]*EmbeddedImageScanComponentResolver), err
 }
 
 // Helper function that actually runs the queries and produces the resolvers from the images.

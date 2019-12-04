@@ -54,7 +54,7 @@ func init() {
 			"vulnerabilityType: String!",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
-		schema.AddQuery("vulnerabilities(query: String): [EmbeddedVulnerability!]!"),
+		schema.AddQuery("vulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
 		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("k8sVulnerabilities(query: String): [EmbeddedVulnerability!]!"),
 		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability"),
@@ -82,7 +82,7 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args struct{ *graph
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
-func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*EmbeddedVulnerabilityResolver, error) {
+func (resolver *Resolver) Vulnerabilities(ctx context.Context, q paginatedQuery) ([]*EmbeddedVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Vulnerabilities")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -94,7 +94,10 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q rawQuery) ([]*E
 		return nil, err
 	}
 
-	return vulnerabilities(ctx, resolver, query)
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(vulnerabilities(ctx, resolver, query))
+	return resolvers.([]*EmbeddedVulnerabilityResolver), err
 }
 
 // K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).

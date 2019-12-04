@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"errors"
+	"reflect"
 	"sort"
 
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
@@ -155,12 +157,12 @@ func (resolver *clusterResolver) getQuery() *v1.Query {
 	return resolver.getQueryBuilder().ProtoQuery()
 }
 
-func (resolver *clusterResolver) getRawConjunctionQuery(q rawQuery) rawQuery {
+func (resolver *clusterResolver) getRawConjunctionQuery(q rawQuery) paginatedQuery {
 	clusterQuery := resolver.getQueryBuilder().Query()
 	if q.Query != nil && *q.Query != "" {
 		clusterQuery += "+" + *q.Query
 	}
-	return rawQuery{
+	return paginatedQuery{
 		Query: &clusterQuery,
 	}
 }
@@ -293,4 +295,40 @@ func (resolver *ClusterWithK8sCVEInfoResolver) K8sCVEInfo() *K8sCVEInfoResolver 
 		return nil
 	}
 	return resolver.k8sCVEInfo
+}
+
+type paginationWrapper struct {
+	pv *v1.QueryPagination
+}
+
+func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface{}, error) {
+	if err != nil || pw.pv == nil {
+		return datSlice, err
+	}
+
+	datType := reflect.TypeOf(datSlice)
+	if datType.Kind() != reflect.Slice {
+		return datSlice, errors.New("not a slice")
+	}
+
+	datValue := reflect.ValueOf(datSlice)
+	if datValue.Len() == 0 {
+		return datSlice, nil
+	}
+
+	offset := int(pw.pv.GetOffset())
+	limit := int(pw.pv.GetLimit())
+
+	remnants := datValue.Len() - offset
+	if remnants <= 0 {
+		return nil, nil
+	}
+
+	var end int
+	if limit == 0 || remnants < limit {
+		end = offset + remnants
+	} else {
+		end = offset + limit
+	}
+	return datValue.Slice(offset, end).Interface(), nil
 }

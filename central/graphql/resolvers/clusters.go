@@ -27,7 +27,7 @@ func init() {
 	utils.Must(
 		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
-		schema.AddQuery("clusters(query: String): [Cluster!]!"),
+		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
@@ -88,7 +88,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 }
 
 // Clusters returns GraphQL resolvers for all clusters
-func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clusterResolver, error) {
+func (resolver *Resolver) Clusters(ctx context.Context, args paginatedQuery) ([]*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Clusters")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
@@ -97,7 +97,11 @@ func (resolver *Resolver) Clusters(ctx context.Context, args rawQuery) ([]*clust
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapClusters(resolver.ClusterDataStore.SearchRawClusters(ctx, query))
+
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(resolver.wrapClusters(resolver.ClusterDataStore.SearchRawClusters(ctx, query)))
+	return resolvers.([]*clusterResolver), err
 }
 
 // ClusterCount returns count of all clusters across infrastructure

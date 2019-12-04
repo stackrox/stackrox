@@ -3,17 +3,26 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stretchr/testify/assert"
 )
 
+func emptyPaginatedQuery() *v1.Query {
+	q := search.EmptyQuery()
+	paginated.FillPagination(q, nil, math.MaxInt32)
+	return q
+}
+
 func TestGetClusters(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().SearchRawClusters(gomock.Any(), search.EmptyQuery()).Return([]*storage.Cluster{
+	mocks.cluster.EXPECT().SearchRawClusters(gomock.Any(), emptyPaginatedQuery()).Return([]*storage.Cluster{
 		{
 			Id:   fakeClusterID,
 			Name: "fake cluster",
