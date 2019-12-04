@@ -4,74 +4,8 @@ import entityToColumns from 'constants/tableColumns';
 import ReactDOMServer from 'react-dom/server';
 import flattenObject from 'utils/flattenObject';
 
-/**
- * Prevent AutoTable from breaking lines in the middle of words
- * by setting the minWidth to the longest word in the column
- *
- * WARNING: this may cause the table to exceede the allowed width (just like in HTML)
- * and give a "can't fit page" console error, could be improved.
- *
- * Borrowed from https://github.com/simonbengtsson/jsPDF-AutoTable/issues/568
- */
-export function enhanceWordBreak({ doc, cell, column }) {
-    if (cell === undefined) {
-        return;
-    }
-
-    const hasCustomWidth = typeof cell.styles.cellWidth === 'number';
-
-    if (hasCustomWidth || cell.raw == null || cell.colSpan > 1) {
-        return;
-    }
-
-    let text;
-
-    if (cell.raw instanceof Node) {
-        text = cell.raw.innerText;
-    } else {
-        if (typeof cell.raw === 'object') {
-            // not implemented yet
-            // when a cell contains other cells (colSpan)
-            return;
-        }
-        text = cell.raw;
-    }
-
-    // split cell string by space or "-"
-    const words = text.split(/\s+|(?<=-)/);
-
-    // calculate longest word width
-    const maxWordUnitWidth = words
-        .map(s => Math.floor(doc.getStringUnitWidth(s) * 100) / 100)
-        .reduce((a, b) => Math.max(a, b), 0);
-    const maxWordWidth = maxWordUnitWidth * (cell.styles.fontSize / doc.internal.scaleFactor);
-
-    const minWidth = cell.padding('horizontal') + maxWordWidth;
-
-    // update minWidth for cell & column
-
-    if (minWidth > cell.minWidth) {
-        // eslint-disable-next-line no-param-reassign
-        cell.minWidth = minWidth;
-    }
-
-    if (cell.minWidth > cell.wrappedWidth) {
-        // eslint-disable-next-line no-param-reassign
-        cell.wrappedWidth = cell.minWidth;
-    }
-
-    if (cell.minWidth > column.minWidth) {
-        // eslint-disable-next-line no-param-reassign
-        column.minWidth = cell.minWidth;
-    }
-
-    if (column.minWidth > column.wrappedWidth) {
-        // eslint-disable-next-line no-param-reassign
-        column.wrappedWidth = column.minWidth;
-    }
-}
-
 const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
+    const { standardId } = query;
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
     if (table && parent.contains(table)) {
@@ -86,17 +20,15 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     let type = null;
     if (query.groupBy) {
         type = startCase(toLower(query.groupBy));
-    } else if (query.standardId) {
+    } else if (standardId) {
         type = 'Standard';
     }
-    const columns = tableColumns || entityToColumns[query.standardId || entityType];
+    const columns = tableColumns || entityToColumns[standardId || entityType];
     if (tableData.length) {
-        const filteredColumns = columns.filter(
-            ({ accessor, className }) =>
-                accessor && className !== 'hidden' && accessor !== 'id' && accessor !== 'checkbox'
-        );
-        const headers = filteredColumns.map(col => col.Header);
-        const headerKeys = filteredColumns.map(col => col.accessor);
+        const headers = columns
+            .map(col => col.Header)
+            .filter(header => header !== 'id' && header !== 'Id');
+        const headerKeys = columns.map(col => col.accessor).filter(header => header !== 'id');
         if (tableData[0].rows && type) {
             headers.unshift(type);
             headerKeys.unshift(type);
@@ -113,7 +45,6 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
             trh.appendChild(th);
         });
         tbdy.appendChild(trh);
-
         const addRows = val => {
             const tr = document.createElement('tr');
             headerKeys.forEach((key, index) => {

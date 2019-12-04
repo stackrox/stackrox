@@ -9,7 +9,6 @@ import computedStyleToInlineStyle from 'computed-style-to-inline-style';
 import Button from 'Components/Button';
 import { actions } from 'reducers/pdfDownload';
 import StackroxLogo from 'images/stackrox-logo.png';
-import { enhanceWordBreak } from 'utils/pdfUtils';
 
 const printClassName = 'pdf-page';
 const imagesClassName = 'pdf-page-image';
@@ -115,8 +114,7 @@ class PDFExportButton extends Component {
                 styles: {
                     fontSize: 6
                 },
-                margin: { left: 3, right: 3 },
-                didParseCell: enhanceWordBreak
+                margin: { left: 3, right: 3 }
             },
             this.props.tableOptions
         );

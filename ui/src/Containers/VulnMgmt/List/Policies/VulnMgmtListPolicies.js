@@ -50,35 +50,36 @@ export function getPolicyTableColumns(workflowState) {
             id: 'description'
         },
         {
-            Header: `Policy Status`,
+            Header: `Policy status`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => (
-                <div className="flex justify-center w-full">
-                    <StatusChip status={original.policyStatus} />
-                </div>
-            ),
+            Cell: ({ original }) => {
+                const { policyStatus } = original;
+                const policyLabel = <StatusChip status={policyStatus} />;
+
+                return <div className="flex justify-center w-full">{policyLabel}</div>;
+            },
             id: 'policyStatus',
             accessor: 'policyStatus'
         },
         {
-            Header: `Last Updated`,
+            Header: `Last updated`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { lastUpdated } = original;
-                return <DateTimeField date={lastUpdated} asString={pdf} />;
+                return <DateTimeField date={lastUpdated} />;
             },
             accessor: 'lastUpdated'
         },
         {
-            Header: `Latest Violation`,
+            Header: `Latest violation`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { latestViolation } = original;
-                return <DateTimeField date={latestViolation} asString={pdf} />;
+                return <DateTimeField date={latestViolation} />;
             },
             accessor: 'latestViolation'
         },
@@ -86,7 +87,10 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Severity`,
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
+            Cell: ({ original }) => {
+                const { severity } = original;
+                return <SeverityLabel severity={severity} />;
+            },
             accessor: 'severity',
             id: 'severity'
         },

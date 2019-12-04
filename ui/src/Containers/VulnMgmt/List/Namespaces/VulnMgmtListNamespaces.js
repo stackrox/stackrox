@@ -129,7 +129,7 @@ export function getNamespaceTableColumns(workflowState) {
             accessor: 'policyCount'
         },
         {
-            Header: `Policy Status`,
+            Header: `Policy status`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
@@ -143,12 +143,12 @@ export function getNamespaceTableColumns(workflowState) {
             accessor: 'policyStatus.status'
         },
         {
-            Header: `Latest Violation`,
+            Header: `Latest violation`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const { latestViolation } = original;
-                return <DateTimeField date={latestViolation} asString={pdf} />;
+                return <DateTimeField date={latestViolation} />;
             },
             accessor: 'latestViolation',
             sortMethod: sortDate

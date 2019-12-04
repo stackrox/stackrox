@@ -88,7 +88,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 accessor: 'vulnCounter.all.total'
             },
             {
-                Header: `K8S Version`,
+                Header: `K8S version`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 accessor: 'status.orchestratorMetadata.version'
@@ -151,7 +151,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 accessor: 'policyCount'
             },
             {
-                Header: `Policy Status`,
+                Header: `Policy status`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
@@ -165,12 +165,12 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 accessor: 'policyStatus.status'
             },
             {
-                Header: `Latest Violation`,
+                Header: `Latest violation`,
                 headerClassName: `w-1/10 ${defaultHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                Cell: ({ original, pdf }) => {
+                Cell: ({ original }) => {
                     const { latestViolation } = original;
-                    return <DateTimeField date={latestViolation} asString={pdf} />;
+                    return <DateTimeField date={latestViolation} />;
                 },
                 accessor: 'latestViolation'
             },

@@ -32,10 +32,7 @@ const TopCvssLabel = ({ cvss, version, expanded }) => {
     return (
         <div className="mx-auto flex flex-col">
             {labelElm}
-            <span className="pt-1 text-base-500 text-xs font-700 text-center">
-                {' '}
-                ({versionText})
-            </span>
+            <span className="pt-1 text-base-500 text-xs font-700 text-center">({versionText})</span>
         </div>
     );
 };

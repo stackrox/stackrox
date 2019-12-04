@@ -219,6 +219,101 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
 
 describe('Entities list Page', () => {
     withAuth();
+    it.skip('should display all the columns and links expected in clusters list page', () => {
+        cy.visit(url.list.clusters);
+        hasExpectedHeaderColumns([
+            'Cluster',
+            'CVEs',
+            'K8S version',
+            'Namespaces',
+            'Deployments',
+            'Policies',
+            'Policy status',
+            'Latest violation',
+            'Risk Priority'
+        ]);
+        validateClickableLinks(['Namespace', 'Deployment', 'Policies'], url.list.clusters);
+        validateAllCVELinks(url.list.clusters);
+        validateFixableCVELinks(url.list.clusters);
+        validateSort(selectors.riskScoreCol);
+        validateTileLinksSidePanelEntityPage(
+            selectors.tableFirstColumn,
+            ['Namespace', 'Deployment', 'Policies', 'CVEs', 'Fixable'],
+            url.list.clusters
+        );
+    });
+
+    it('should display all the columns and links expected in namespaces list page', () => {
+        cy.visit(url.list.namespaces);
+        hasExpectedHeaderColumns([
+            'Cluster',
+            'CVEs',
+            'Images',
+            'Namespace',
+            'Deployments',
+            'Policies',
+            'Policy status',
+            'Latest violation',
+            'Risk Priority'
+        ]);
+        validateClickableLinksEntityListPage(['image', 'deployment'], url.list.namespaces);
+        validateAllCVELinks(url.list.namespaces);
+        validateFixableCVELinks(url.list.namespaces);
+        validateSort(selectors.riskScoreCol);
+        validateTileLinksSidePanelEntityPage(
+            selectors.tableFirstColumn,
+            ['Deployment', 'Image', 'Policies', 'CVEs', 'Fixable'],
+            url.list.namespaces
+        );
+    });
+
+    it('should display all the columns and links expected in deployments list page', () => {
+        cy.visit(url.list.deployments);
+        hasExpectedHeaderColumns([
+            'Cluster',
+            'CVEs',
+            'Images',
+            'Namespace',
+            'Deployment',
+            'Policies',
+            'Policy Status',
+            'Latest violation',
+            'Risk Priority'
+        ]);
+        validateClickableLinksEntityListPage(['image', 'Policies'], url.list.deployments);
+        validateAllCVELinks(url.list.deployments);
+        validateFixableCVELinks(url.list.deployments);
+        validateSort(selectors.riskScoreCol);
+        validateTileLinksSidePanelEntityPage(
+            selectors.tableFirstColumn,
+            ['Image', 'Policies', 'CVEs', 'Fixable'],
+            url.list.deployments
+        );
+    });
+
+    it('should display all the columns and links expected in images list page', () => {
+        cy.visit(url.list.images);
+        hasExpectedHeaderColumns([
+            'Image',
+            'CVEs',
+            'Top CVSS',
+            'Created',
+            'Scan time',
+            'Image Status',
+            'Deployments',
+            'Components',
+            'Risk Priority'
+        ]);
+        validateClickableLinksEntityListPage(['deployment', 'component'], url.list.images);
+        validateAllCVELinks(url.list.images);
+        validateFixableCVELinks(url.list.images);
+        validateSort(selectors.riskScoreCol);
+        validateTileLinksSidePanelEntityPage(
+            selectors.tableFirstColumn,
+            ['Deployment', 'Component'],
+            url.list.images
+        );
+    });
     if (checkFeatureFlag('ROX_VULN_MGMT_UI', true)) {
         it.skip('should display all the columns and links expected in clusters list page', () => {
             cy.visit(url.list.clusters);
@@ -337,14 +432,14 @@ describe('Entities list Page', () => {
             );
         });
 
-        it('should display all the columns and links expected in cves list page', () => {
+        it('should display all the columns and links  expected in cves list page', () => {
             cy.visit(url.list.cves);
             hasExpectedHeaderColumns([
                 'CVE',
                 'Fixable',
-                'CVSS Score',
+                'CVSS score',
                 'Env. Impact',
-                'Impact Score',
+                'Impact score',
                 'Scanned',
                 'Published',
                 'Deployments'

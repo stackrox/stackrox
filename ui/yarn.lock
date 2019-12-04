@@ -8713,10 +8713,10 @@ jsonpointer@^4.0.1:
   resolved "https://registry.yarnpkg.com/jsonpointer/-/jsonpointer-4.0.1.tgz#4fd92cb34e0e9db3c89c8622ecf51f9b978c6cb9"
   integrity sha1-T9kss04OnbPInIYi7PUfm5eMbLk=
 
-jspdf-autotable@^3.2.9:
-  version "3.2.11"
-  resolved "https://registry.yarnpkg.com/jspdf-autotable/-/jspdf-autotable-3.2.11.tgz#a6951a26b494078d5d3ecf8efe00587b5b4c51cb"
-  integrity sha512-w7eIoHWXXi3sT7oGf3fCfeTYc0Od1ww2vamirleS58OF7pPZE4soHA6jhMykDiVxwRIjgks8UgoXZnzJwurIQw==
+jspdf-autotable@^3.0.9:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/jspdf-autotable/-/jspdf-autotable-3.2.4.tgz#cf56b4ca191432b25e841fa2d38dc2163fd5b22e"
+  integrity sha512-tnrfVyk9CmB2nDnTGcj+adV87viefYNng2FDR0rNvI6ZXj4DjpN4Ja8mqSQ3gav07QXIP9W1klw/PzEXZkwR3g==
 
 jspdf@^1.5.3:
   version "1.5.3"
