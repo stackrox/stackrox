@@ -43,10 +43,3 @@ func (s *clusterStoreImpl) CreateFlowStore(clusterID string) (store.FlowStore, e
 	}
 	return fs, nil
 }
-
-// RemoveFlowStore deletes the bucket holding the flow information for the graph in that cluster.
-func (s *clusterStoreImpl) RemoveFlowStore(clusterID string) error {
-	keyPrefix := flowStoreKeyPrefix(clusterID)
-
-	return s.db.DropPrefix(keyPrefix)
-}

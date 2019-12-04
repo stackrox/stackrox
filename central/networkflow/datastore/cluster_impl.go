@@ -41,13 +41,3 @@ func (cds *clusterDataStoreImpl) CreateFlowStore(ctx context.Context, clusterID 
 		deletedDeploymentsCache: cds.deletedDeploymentsCache,
 	}, nil
 }
-
-func (cds *clusterDataStoreImpl) RemoveFlowStore(ctx context.Context, clusterID string) error {
-	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
-		return nil
-	} else if !ok {
-		return errors.New("permission denied")
-	}
-
-	return cds.storage.RemoveFlowStore(clusterID)
-}

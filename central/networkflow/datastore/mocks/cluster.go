@@ -62,17 +62,3 @@ func (mr *MockClusterDataStoreMockRecorder) CreateFlowStore(ctx, clusterID inter
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFlowStore", reflect.TypeOf((*MockClusterDataStore)(nil).CreateFlowStore), ctx, clusterID)
 }
-
-// RemoveFlowStore mocks base method
-func (m *MockClusterDataStore) RemoveFlowStore(ctx context.Context, clusterID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveFlowStore", ctx, clusterID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveFlowStore indicates an expected call of RemoveFlowStore
-func (mr *MockClusterDataStoreMockRecorder) RemoveFlowStore(ctx, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowStore", reflect.TypeOf((*MockClusterDataStore)(nil).RemoveFlowStore), ctx, clusterID)
-}
