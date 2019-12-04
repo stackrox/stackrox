@@ -17,4 +17,4 @@ if [[ -n "$ROX_PASSWORD" ]]; then
   done
 fi
 export CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh)
-cypress open
+cypress "$@"
