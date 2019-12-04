@@ -19,6 +19,8 @@ import { truncate } from 'utils/textUtils';
 
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
+import CveBulkActionDialogue from './CveBulkActionDialogue';
+
 export const defaultCveSort = [
     {
         id: 'cvss',
@@ -194,7 +196,9 @@ export function renderCveDescription(row) {
 }
 
 const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
-    const [selectedCves, setSelectedCves] = useState([]);
+    const [selectedCveIds, setSelectedCveIds] = useState([]);
+    const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
+
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
     const CVES_QUERY = gql`
@@ -212,12 +216,17 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
         }
     };
 
-    const addToPolicy = cve => e => {
+    const addToPolicy = cveId => e => {
         e.stopPropagation();
-        if (cve) {
-            // to do: add add to policy logic
+
+        const cveIdsToAdd = cveId ? [cveId] : selectedCveIds;
+
+        if (cveIdsToAdd.length) {
+            setBulkActionCveIds(cveIdsToAdd);
         } else {
-            setSelectedCves([]);
+            throw new Error(
+                'Logic error: tried to open Add to Policy dialog without any policy selected.'
+            );
         }
     };
     const suppressCVEs = cve => e => {
@@ -225,7 +234,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
         if (cve) {
             // to do: add suppress logic
         } else {
-            setSelectedCves([]);
+            setSelectedCveIds([]);
         }
     };
     const viewSuppressed = () => {
@@ -254,7 +263,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 icon={<Icon.Plus className="h-4 w-4" />}
                 className="btn-icon btn-tertiary"
                 onClick={addToPolicy()}
-                disabled={selectedCves.length === 0}
+                disabled={selectedCveIds.length === 0}
             >
                 Add to Policy
             </PanelButton>
@@ -262,7 +271,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 icon={<Icon.Trash2 className="h-4 w-4" />}
                 className="btn-icon btn-alert ml-2"
                 onClick={suppressCVEs()}
-                disabled={selectedCves.length === 0}
+                disabled={selectedCveIds.length === 0}
             >
                 Suppress
             </PanelButton>
@@ -277,25 +286,33 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
     );
 
     return (
-        <WorkflowListPage
-            data={data}
-            query={CVES_QUERY}
-            queryOptions={queryOptions}
-            idAttribute="cve"
-            entityListType={entityTypes.CVE}
-            getTableColumns={getCveTableColumns}
-            selectedRowId={selectedRowId}
-            search={search}
-            page={page}
-            defaultSorted={sort || defaultCveSort}
-            showSubrows
-            SubComponent={renderCveDescription}
-            checkbox
-            tableHeaderComponents={tableHeaderComponents}
-            selection={selectedCves}
-            setSelection={setSelectedCves}
-            renderRowActionButtons={renderRowActionButtons}
-        />
+        <>
+            <WorkflowListPage
+                data={data}
+                query={CVES_QUERY}
+                queryOptions={queryOptions}
+                idAttribute="cve"
+                entityListType={entityTypes.CVE}
+                getTableColumns={getCveTableColumns}
+                selectedRowId={selectedRowId}
+                search={search}
+                page={page}
+                defaultSorted={sort || defaultCveSort}
+                showSubrows
+                SubComponent={renderCveDescription}
+                checkbox
+                tableHeaderComponents={tableHeaderComponents}
+                selection={selectedCveIds}
+                setSelection={setSelectedCveIds}
+                renderRowActionButtons={renderRowActionButtons}
+            />
+            {bulkActionCveIds.length > 0 && (
+                <CveBulkActionDialogue
+                    closeAction={setBulkActionCveIds}
+                    bulkActionCveIds={bulkActionCveIds}
+                />
+            )}
+        </>
     );
 };
 
