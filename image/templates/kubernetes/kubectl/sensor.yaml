@@ -312,6 +312,7 @@ spec:
             memory: 10Mi
         securityContext:
           runAsUser: 0
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /etc/ssl/
           name: etc-ssl
