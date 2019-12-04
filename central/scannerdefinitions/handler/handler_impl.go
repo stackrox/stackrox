@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -28,6 +29,7 @@ var (
 
 const (
 	scannerDefsSubZipName = "scanner-defs.zip"
+	k8sIstioCveZipName    = "k8s-istio.zip"
 )
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +112,11 @@ func handleLegacyPost(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte("Successfully stored the scanner definitions"))
 }
 
+func updateK8sIstioCVEs(zipPath string) {
+	mgr := fetcher.SingletonManager()
+	mgr.Update(zipPath)
+}
+
 func copyReqBodyToFile(filePath string, r *http.Request) error {
 	file, err := os.Create(filePath)
 	if err != nil {
@@ -165,9 +172,9 @@ func handleZipContentsFromOfflineDump(zipPath string) error {
 			}
 			scannerDefsFileFound = true
 			continue
+		} else if zipF.Name == k8sIstioCveZipName {
+			updateK8sIstioCVEs(zipPath)
 		}
-
-		// TODO(nilanshu): Hook in k8s-istio.zip logic here.
 	}
 
 	if !scannerDefsFileFound {

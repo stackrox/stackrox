@@ -20,16 +20,17 @@ import (
 )
 
 const (
-	fetchDelay            = 2 * time.Hour
-	persistentCVEsPath    = migrations.DBMountPath
-	preloadedCVEsBasePath = "/stackrox/data"
-	k8sCVEsURL            = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
-	k8sCVEsChecksumURL    = "https://definitions.stackrox.io/cve/k8s/checksum"
-	istioCVEsURL          = "https://definitions.stackrox.io/cve/istio/cve-list.json"
-	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve/istio/checksum"
-	commonCveDir          = "cve"
-	k8sCVEsDir            = "k8s"
-	istioCVEsDir          = "istio"
+	fetchDelay               = 2 * time.Hour
+	persistentCVEsPath       = migrations.DBMountPath
+	preloadedCVEsBasePath    = "/stackrox/data"
+	k8sCVEsURL               = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
+	k8sCVEsChecksumURL       = "https://definitions.stackrox.io/cve/k8s/checksum"
+	istioCVEsURL             = "https://definitions.stackrox.io/cve/istio/cve-list.json"
+	istioCVEsChecksumURL     = "https://definitions.stackrox.io/cve/istio/checksum"
+	commonCveDir             = "cve"
+	k8sCVEsDir               = "k8s"
+	istioCVEsDir             = "istio"
+	scannerDefinitionsSubdir = `scannerdefinitions`
 )
 
 var (
