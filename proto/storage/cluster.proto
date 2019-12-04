@@ -59,7 +59,7 @@ message AdmissionControllerConfig {
     bool                  enabled                              = 1;
     int32                 timeout_seconds                      = 2;
     bool                  scan_inline                          = 3;
-    bool                  disableBypass                        = 4;
+    bool                  disable_bypass                       = 4;
 }
 
 message TolerationsConfig {
