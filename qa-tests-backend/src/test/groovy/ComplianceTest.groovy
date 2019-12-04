@@ -908,52 +908,57 @@ class ComplianceTest extends BaseSpecification {
 
     @Category([SensorBounce])
     def "Verify failed run result"() {
-        given:
-        "Get Sensor pod name"
-        def sensorPod = orchestrator.getSensorContainerName()
-        def complianceRun
-        when:
-        "trigger compliance run"
-        def complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_ID, clusterId)
-        Long startTime = System.currentTimeMillis()
-
-        and:
-        "kill sensor"
-        orchestrator.deleteContainer(sensorPod, "stackrox")
-        while (complianceRuns.get(0).state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
-                (System.currentTimeMillis() - startTime) < 30000) {
-            sleep 1000
-            def recentRuns = ComplianceManagementService.getRecentRuns(NIST_ID)
-            complianceRun = recentRuns.find { it.id == complianceRuns.get(0).id }
-        }
-
-        then:
-        "validate result contains errors"
-        ComplianceRunResults results =
-                ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
-        assert results != null
-        Compliance.ComplianceRunMetadata metadata = results.runMetadata
-        assert metadata.clusterId == clusterId
-        assert metadata.runId == complianceRun.id
-        assert metadata.standardId == NIST_ID
-
+        expect:
+        "errors when the sensor is killed during a compliance run"
         def numErrors = 0
-        for (def ctrlResults : results.clusterResults.controlResultsMap.values()) {
-            if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                numErrors++
+        def curIteration = 0
+        while (curIteration < 3 && numErrors == 0) {
+            if (curIteration > 0) {
+                // Make sure the sensor is available.  If this is a retry it could still be down.
+                orchestrator.waitForSensor()
             }
-        }
-        for (def deploymentResults : results.deploymentResultsMap.values()) {
-            for (def ctrlResults : deploymentResults.controlResultsMap.values()) {
+            curIteration++
+            // Get the sensor pod name
+            def sensorPod = orchestrator.getSensorContainerName()
+            // Trigger the compliance run
+            def complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_ID, clusterId)
+            def complianceRun = complianceRuns.get(0)
+
+            // Kill the sensor and wait for the compliance run to complete
+            orchestrator.deleteContainer(sensorPod, "stackrox")
+            Timer t = new Timer(30, 1)
+            while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
+                    t.IsValid()) {
+                def recentRuns = ComplianceManagementService.getRecentRuns(NIST_ID)
+                complianceRun = recentRuns.find { it.id == complianceRun.id }
+            }
+
+            // Check whether there were errors
+            ComplianceRunResults results =
+                    ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
+            assert results != null
+            Compliance.ComplianceRunMetadata metadata = results.runMetadata
+            assert metadata.clusterId == clusterId
+            assert metadata.runId == complianceRun.id
+            assert metadata.standardId == NIST_ID
+
+            for (def ctrlResults : results.clusterResults.controlResultsMap.values()) {
                 if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
                     numErrors++
                 }
             }
-        }
-        for (def nodeResults : results.nodeResultsMap.values()) {
-            for (def ctrlResults : nodeResults.controlResultsMap.values()) {
-                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
-                    numErrors++
+            for (def deploymentResults : results.deploymentResultsMap.values()) {
+                for (def ctrlResults : deploymentResults.controlResultsMap.values()) {
+                    if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                        numErrors++
+                    }
+                }
+            }
+            for (def nodeResults : results.nodeResultsMap.values()) {
+                for (def ctrlResults : nodeResults.controlResultsMap.values()) {
+                    if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                        numErrors++
+                    }
                 }
             }
         }
