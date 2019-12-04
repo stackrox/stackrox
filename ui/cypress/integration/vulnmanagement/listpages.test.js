@@ -12,10 +12,16 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
     cy.get(selectors.entityRowHeader)
         .invoke('text')
         .then(entityCountFromHeader => {
-            expect(entityCountFromHeader).contains(
-                entityCountAndName,
-                `expected entity count ${entityCountAndName} found in the related entity list page`
-            );
+            if (entityCountAndName.includes('CVE')) {
+                const numEntitiesListPage = parseInt(entityCountFromHeader, 10);
+                const numEntitiesParentPage = parseInt(entityCountAndName, 10);
+                expect(numEntitiesListPage - numEntitiesParentPage).to.be.lessThan(6);
+            } else {
+                expect(entityCountFromHeader).contains(
+                    parseInt(entityCountAndName, 10),
+                    `expected entity count ${entityCountAndName} found in the related entity list page`
+                );
+            }
         });
     cy.visit(entityURL);
 }
@@ -315,7 +321,7 @@ describe('Entities list Page', () => {
         );
     });
     if (checkFeatureFlag('ROX_VULN_MGMT_UI', true)) {
-        it.skip('should display all the columns and links expected in clusters list page', () => {
+        it('should display all the columns and links expected in clusters list page', () => {
             cy.visit(url.list.clusters);
             hasExpectedHeaderColumns([
                 'Cluster',
