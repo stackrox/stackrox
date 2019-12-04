@@ -95,6 +95,7 @@ function Details(props) {
                 icon={<Icon.ArrowLeft className="h-5 w-5" />}
                 className="flex pl-3 text-center text-sm items-center"
                 onClick={onBackButtonClick}
+                tooltip="Back"
             />
         </React.Fragment>
     ) : null;

@@ -200,6 +200,7 @@ class Form extends Component {
                     icon={<Icon.Save className="h-4 w-4" />}
                     className="btn btn-success mx-1"
                     onClick={this.onSubmit}
+                    tooltip={this.isEditMode() ? 'Save' : 'Create'}
                 >
                     {this.isEditMode() ? 'Save' : 'Create'}
                 </PanelButton>
@@ -210,6 +211,7 @@ class Form extends Component {
                             icon={<Icon.Check className="h-4 w-4" />}
                             className="btn btn-base mx-1"
                             onClick={this.onBackup}
+                            tooltip="Trigger Backup"
                         >
                             Trigger Backup
                         </PanelButton>
@@ -219,6 +221,7 @@ class Form extends Component {
                         icon={<Icon.Check className="h-4 w-4" />}
                         className="btn btn-base mx-1"
                         onClick={this.onTest}
+                        tooltip="Test"
                     >
                         Test
                     </PanelButton>

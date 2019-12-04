@@ -38,6 +38,7 @@ class Buttons extends Component {
                     icon={<Icon.ArrowLeft className="h-4 w-4" />}
                     className="btn btn-base"
                     onClick={this.goBackToPreview}
+                    tooltip="Back to previous step"
                 >
                     Previous
                 </PanelButton>
@@ -45,6 +46,7 @@ class Buttons extends Component {
                     icon={<Icon.Save className="h-4 w-4" />}
                     className="btn btn-success"
                     onClick={this.onSubmit}
+                    tooltip="Save policy"
                 >
                     Save
                 </PanelButton>

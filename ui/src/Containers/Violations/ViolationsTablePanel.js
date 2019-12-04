@@ -49,6 +49,7 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
                     icon={<Icon.Check className="h-4 ml-1" />}
                     className="btn btn-base"
                     onClick={showResolveConfirmationDialog}
+                    tooltip={`Mark as Resolved (${checkedRuntimeAlerts})`}
                 >
                     {`Mark as Resolved (${checkedRuntimeAlerts})`}
                 </PanelButton>
@@ -58,6 +59,7 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
                     icon={<Icon.BellOff className="h-4 ml-1" />}
                     className="btn btn-base"
                     onClick={showWhitelistConfirmationDialog}
+                    tooltip={`Whitelist (${whitelistCount})`}
                 >
                     {`Whitelist (${whitelistCount})`}
                 </PanelButton>

@@ -80,6 +80,7 @@ class Buttons extends Component {
                 icon={<Icon.ArrowRight className="h-4 w-4" />}
                 className="btn btn-base"
                 onClick={this.goToPreview}
+                tooltip="Go to next step"
             >
                 Next
             </PanelButton>

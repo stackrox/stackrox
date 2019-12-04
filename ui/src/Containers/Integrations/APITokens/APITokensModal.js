@@ -173,6 +173,7 @@ class APITokensModal extends Component {
                         className="btn btn-alert"
                         onClick={this.showConfirmationDialog}
                         disabled={this.state.selectedTokenId !== null}
+                        tooltip={`Revoke (${selectionCount})`}
                     >
                         {`Revoke (${selectionCount})`}
                     </PanelButton>
@@ -186,6 +187,7 @@ class APITokensModal extends Component {
                             this.props.tokenGenerationWizardOpen ||
                             this.state.selectedTokenId !== null
                         }
+                        tooltip="Generate Token"
                     >
                         Generate Token
                     </PanelButton>
@@ -228,6 +230,7 @@ class APITokensModal extends Component {
                 icon={<Icon.Save className="h-4 w-4" />}
                 className="btn btn-success"
                 onClick={this.onSubmit}
+                tooltip="Generate"
             >
                 Generate
             </PanelButton>

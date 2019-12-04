@@ -200,6 +200,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
             }
             className={`mr-2 btn ${showFormStyles ? 'btn-base' : 'btn-success'}`}
             onClick={onNext}
+            tooltip={showFormStyles ? 'Next' : 'Finish'}
         >
             {showFormStyles ? 'Next' : 'Finish'}
         </PanelButton>

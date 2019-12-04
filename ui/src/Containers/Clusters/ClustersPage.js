@@ -289,7 +289,7 @@ const ClustersPage = ({
         <React.Fragment>
             <PanelButton
                 icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
-                text={`Upgrade (${upgradableClusters.length})`}
+                tooltip={`Upgrade (${upgradableClusters.length})`}
                 className="btn btn-tertiary ml-2"
                 onClick={upgradeSelectedClusters}
                 disabled={upgradableClusters.length === 0 || !!selectedClusterId}
@@ -298,7 +298,7 @@ const ClustersPage = ({
             </PanelButton>
             <PanelButton
                 icon={<Icon.Trash2 className="h-4 w-4 ml-1" />}
-                text={`Delete (${checkedClusterIds.length})`}
+                tooltip={`Delete (${checkedClusterIds.length})`}
                 className="btn btn-alert ml-2"
                 onClick={deleteSelectedClusters}
                 disabled={checkedClusterIds.length === 0 || !!selectedClusterId}
@@ -307,7 +307,7 @@ const ClustersPage = ({
             </PanelButton>
             <PanelButton
                 icon={<Icon.Plus className="h-4 w-4 ml-1" />}
-                text="New Cluster"
+                tooltip="New Cluster"
                 className="btn btn-base ml-2"
                 onClick={onAddCluster}
                 disabled={!!selectedClusterId}

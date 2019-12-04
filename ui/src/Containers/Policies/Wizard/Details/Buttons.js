@@ -36,6 +36,7 @@ class Buttons extends Component {
                     icon={<Icon.Copy className="h-4 w-4" />}
                     className="btn btn-base mr-2"
                     onClick={this.onPolicyClone}
+                    tooltip="Clone policy"
                 >
                     Clone
                 </PanelButton>
@@ -43,6 +44,7 @@ class Buttons extends Component {
                     icon={<Icon.Edit className="h-4 w-4" />}
                     className="btn btn-base"
                     onClick={this.goToEdit}
+                    tooltip="Edit policy"
                 >
                     Edit
                 </PanelButton>

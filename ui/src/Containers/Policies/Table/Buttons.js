@@ -111,6 +111,7 @@ class Buttons extends Component {
                         className="btn btn-base"
                         onClick={this.addPolicy}
                         disabled={buttonsDisabled}
+                        tooltip="Create a new policy"
                     >
                         New Policy
                     </PanelButton>
