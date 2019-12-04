@@ -8,6 +8,7 @@ import (
 	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +40,7 @@ func DBForT(t *testing.T) *bbolt.DB {
 // BadgerDBForT creates and returns a new DB to use for this test, failing the test if creating/opening
 // the DB fails.
 func BadgerDBForT(t *testing.T) *badger.DB {
-	db, _, err := badgerhelper.NewTemp(DBFileNameForT(t))
+	db, _, err := badgerhelper.NewTemp(DBFileNameForT(t), features.ManagedDB.Enabled())
 	require.NoError(t, err)
 	require.NotNil(t, db)
 	return db

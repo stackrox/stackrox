@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,9 @@ import (
 )
 
 func TestFlowStore(t *testing.T) {
+	if features.ManagedDB.Enabled() {
+		t.Skip()
+	}
 	suite.Run(t, new(FlowStoreTestSuite))
 }
 
@@ -28,7 +32,7 @@ type FlowStoreTestSuite struct {
 }
 
 func (suite *FlowStoreTestSuite) SetupSuite() {
-	db, path, err := badgerhelper.NewTemp(suite.T().Name())
+	db, path, err := badgerhelper.NewTemp(suite.T().Name(), false)
 	suite.Require().NoError(err)
 	suite.db = db
 	suite.path = path

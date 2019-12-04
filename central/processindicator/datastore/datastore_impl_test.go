@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -61,7 +62,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite))
+	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite), features.ManagedDB.Enabled())
 	suite.NoError(err)
 	suite.storage = badgerStore.New(db)
 

@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/features"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -70,7 +71,7 @@ func (s *searcherSuite) SetupTest() {
 
 	s.indexer = index.New(s.bleveIndex)
 
-	s.badgerDB, _, err = badgerhelper.NewTemp(testutils.DBFileName(s))
+	s.badgerDB, _, err = badgerhelper.NewTemp(testutils.DBFileName(s), features.ManagedDB.Enabled())
 	s.Require().NoError(err)
 
 	s.store = badgerStore.New(s.badgerDB, false)

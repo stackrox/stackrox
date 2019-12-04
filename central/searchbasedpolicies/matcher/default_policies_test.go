@@ -85,7 +85,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	suite.db, suite.dir, err = badgerhelper.NewTemp("default_policies_test.db")
+	suite.db, suite.dir, err = badgerhelper.NewTemp("default_policies_test.db", false)
 	suite.Require().NoError(err)
 
 	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex)

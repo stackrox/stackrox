@@ -88,7 +88,7 @@ func TestBackup(t *testing.T) {
 	badgerFile, err := badgerFileEntry.Open()
 	require.NoError(t, err)
 
-	b, err := badgerhelper.New("backup.db")
+	b, err := badgerhelper.New("backup.db", false)
 	require.NoError(t, err)
 
 	require.NoError(t, badgerutils.Load(badgerFile, b))

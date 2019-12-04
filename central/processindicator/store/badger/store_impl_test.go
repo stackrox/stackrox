@@ -9,10 +9,14 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestIndicatorStore(t *testing.T) {
+	if features.ManagedDB.Enabled() {
+		t.Skip()
+	}
 	suite.Run(t, new(IndicatorStoreTestSuite))
 }
 
@@ -26,7 +30,7 @@ type IndicatorStoreTestSuite struct {
 }
 
 func (suite *IndicatorStoreTestSuite) SetupSuite() {
-	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name()+".db", false)
 	if err != nil {
 		suite.FailNow("Failed to make BadgerDB", err.Error())
 	}

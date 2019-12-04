@@ -41,7 +41,7 @@ func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 }
 
 func preloadDB(t require.TestingT, preload int) (int, store.FlowStore) {
-	db, _, err := badgerhelper.NewTemp("")
+	db, _, err := badgerhelper.NewTemp("", false)
 	require.NoError(t, err)
 
 	clusterStore := NewClusterStore(db)

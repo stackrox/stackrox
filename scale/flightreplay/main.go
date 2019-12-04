@@ -55,7 +55,7 @@ func main() {
 	go recv(stream)
 
 	utils.Must(os.MkdirAll("/tmp/recordreplay", 0777))
-	db, err := badgerhelper.New("/tmp/recordreplay")
+	db, err := badgerhelper.New("/tmp/recordreplay", false)
 	utils.Must(err)
 
 	f, err := os.Open("/recorder.db")

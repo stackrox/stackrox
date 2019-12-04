@@ -48,7 +48,7 @@ policyLoop:
 }
 
 func setup(b require.TestingT) (processIndicatorDataStore.DataStore, imageIndexer.Indexer, index.Indexer) {
-	db, _, err := badgerhelper.NewTemp("bench_test.db")
+	db, _, err := badgerhelper.NewTemp("bench_test.db", false)
 	require.NoError(b, err)
 
 	bleveIndex, err := globalindex.TempInitializeIndices("")

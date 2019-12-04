@@ -7,11 +7,15 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestAlertStore(t *testing.T) {
+	if features.ManagedDB.Enabled() {
+		t.Skip()
+	}
 	t.Parallel()
 	suite.Run(t, new(alertStoreTestSuite))
 }
@@ -26,7 +30,7 @@ type alertStoreTestSuite struct {
 }
 
 func (s *alertStoreTestSuite) SetupSuite() {
-	db, dir, err := badgerhelper.NewTemp(s.T().Name() + ".db")
+	db, dir, err := badgerhelper.NewTemp(s.T().Name()+".db", false)
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 
 	s.db = db

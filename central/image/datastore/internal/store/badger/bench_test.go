@@ -17,7 +17,7 @@ import (
 const maxGRPCSize = 4194304
 
 func getImageStore(b *testing.B) store.Store {
-	db, _, err := badgerhelper.NewTemp(b.Name() + ".db")
+	db, _, err := badgerhelper.NewTemp(b.Name()+".db", false)
 	if err != nil {
 		b.Fatal(err)
 	}
