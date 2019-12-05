@@ -175,7 +175,9 @@ class Kubernetes implements OrchestratorMain {
         LabelSelector selector = new LabelSelector()
         selector.matchLabels = new HashMap<String, String>()
         selector.matchLabels.put("app", name)
-        PodList list = client.pods().inNamespace(ns).withLabelSelector(selector).list()
+        PodList list = evaluateWithRetry(2, 3) {
+            return client.pods().inNamespace(ns).withLabelSelector(selector).list()
+        }
 
         println "Status of ${name}'s pods:"
         for (Pod pod : list.getItems()) {
@@ -378,7 +380,9 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def deleteContainer(String containerName, String namespace = this.namespace) {
-        client.pods().inNamespace(namespace).withName(containerName).delete()
+        withRetry(2, 3) {
+            client.pods().inNamespace(namespace).withName(containerName).delete()
+        }
     }
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
@@ -406,51 +410,59 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def isKubeProxyPresent() {
-        PodList pods = client.pods().inAnyNamespace().list()
-        return pods.getItems().findAll {
-            it.getSpec().getContainers().find {
-                it.getImage().contains("kube-proxy")
+        return evaluateWithRetry(2, 3) {
+            PodList pods = client.pods().inAnyNamespace().list()
+            return pods.getItems().findAll {
+                it.getSpec().getContainers().find {
+                    it.getImage().contains("kube-proxy")
+                }
             }
         }
     }
 
     def isKubeDashboardRunning() {
-        PodList pods = client.pods().inAnyNamespace().list()
-        List<Pod> kubeDashboards = pods.getItems().findAll {
-            it.getSpec().getContainers().find {
-                it.getImage().contains("kubernetes-dashboard")
+        return evaluateWithRetry(2, 3) {
+            PodList pods = client.pods().inAnyNamespace().list()
+            List<Pod> kubeDashboards = pods.getItems().findAll {
+                it.getSpec().getContainers().find {
+                    it.getImage().contains("kubernetes-dashboard")
+                }
             }
+            return kubeDashboards.size() > 0
         }
-        return kubeDashboards.size() > 0
     }
 
     def getContainerlogs(Deployment deployment) {
-        PodList pods = client.pods().inNamespace(deployment.namespace).list()
-        Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
+        withRetry(2, 3) {
+            PodList pods = client.pods().inNamespace(deployment.namespace).list()
+            Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
 
-        try {
-            println client.pods()
-                    .inNamespace(pod.metadata.namespace)
-                    .withName(pod.metadata.name)
-                    .tailingLines(5000)
-                    .watchLog(System.out)
-        } catch (Exception e) {
-            println "Error getting container logs: ${e.toString()}"
+            try {
+                println client.pods()
+                        .inNamespace(pod.metadata.namespace)
+                        .withName(pod.metadata.name)
+                        .tailingLines(5000)
+                        .watchLog(System.out)
+            } catch (Exception e) {
+                println "Error getting container logs: ${e.toString()}"
+            }
         }
     }
 
     def getStaticPodCount(String ns = null) {
-        // This method assumes that a static pod name will contain the node name that the pod is running on
-        def nodeNames = client.nodes().list().items.collect { it.metadata.name }
-        Set<String> staticPods = [] as Set
-        client.pods().inNamespace(ns).list().items.each {
-            for (String node : nodeNames) {
-                if (it.metadata.name.contains(node)) {
-                    staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
+        return evaluateWithRetry(2, 3) {
+            // This method assumes that a static pod name will contain the node name that the pod is running on
+            def nodeNames = client.nodes().list().items.collect { it.metadata.name }
+            Set<String> staticPods = [] as Set
+            client.pods().inNamespace(ns).list().items.each {
+                for (String node : nodeNames) {
+                    if (it.metadata.name.contains(node)) {
+                        staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
+                    }
                 }
             }
+            return staticPods
         }
-        return staticPods
     }
 
     /*
@@ -458,59 +470,65 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createService(Deployment deployment) {
-        Service service = new Service(
-                metadata: new ObjectMeta(
-                        name: deployment.serviceName ? deployment.serviceName : deployment.name,
-                        namespace: deployment.namespace,
-                        labels: deployment.labels
-                ),
-                spec: new ServiceSpec(
-                        ports: deployment.getPorts().collect {
-                            k, v ->
-                                new ServicePort(
-                                        name: k as String,
-                                        port: k as Integer,
-                                        protocol: v,
-                                        targetPort:
-                                                new IntOrString(deployment.targetport) ?: new IntOrString(k as Integer)
-                                )
-                        },
-                        selector: deployment.labels,
-                        type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
-                )
-        )
-        client.services().inNamespace(deployment.namespace).createOrReplace(service)
+        withRetry(2, 3) {
+            Service service = new Service(
+                    metadata: new ObjectMeta(
+                            name: deployment.serviceName ? deployment.serviceName : deployment.name,
+                            namespace: deployment.namespace,
+                            labels: deployment.labels
+                    ),
+                    spec: new ServiceSpec(
+                            ports: deployment.getPorts().collect {
+                                k, v ->
+                                    new ServicePort(
+                                            name: k as String,
+                                            port: k as Integer,
+                                            protocol: v,
+                                            targetPort: new IntOrString(deployment.targetport) ?:
+                                                    new IntOrString(k as Integer)
+                                    )
+                            },
+                            selector: deployment.labels,
+                            type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
+                    )
+            )
+            client.services().inNamespace(deployment.namespace).createOrReplace(service)
+        }
         println "${deployment.name}: Service created"
     }
 
     def createService(objects.Service s) {
-        Service service = new Service(
-                metadata: new ObjectMeta(
-                        name: s.name,
-                        namespace: s.namespace,
-                        labels: s.labels
-                ),
-                spec: new ServiceSpec(
-                        ports: s.getPorts().collect {
-                            k, v ->
-                                new ServicePort(
-                                        name: k as String,
-                                        port: k as Integer,
-                                        protocol: v,
-                                        targetPort:
-                                                new IntOrString(s.targetport) ?: new IntOrString(k as Integer)
-                                )
-                        },
-                        selector: s.labels,
-                        type: s.type.toString()
-                )
-        )
-        client.services().inNamespace(s.namespace).createOrReplace(service)
+        withRetry(2, 3) {
+            Service service = new Service(
+                    metadata: new ObjectMeta(
+                            name: s.name,
+                            namespace: s.namespace,
+                            labels: s.labels
+                    ),
+                    spec: new ServiceSpec(
+                            ports: s.getPorts().collect {
+                                k, v ->
+                                    new ServicePort(
+                                            name: k as String,
+                                            port: k as Integer,
+                                            protocol: v,
+                                            targetPort:
+                                                    new IntOrString(s.targetport) ?: new IntOrString(k as Integer)
+                                    )
+                            },
+                            selector: s.labels,
+                            type: s.type.toString()
+                    )
+            )
+            client.services().inNamespace(s.namespace).createOrReplace(service)
+        }
         println "${s.name}: Service created"
     }
 
     def deleteService(String name, String namespace = this.namespace) {
-        client.services().inNamespace(namespace).withName(name).delete()
+        withRetry(2, 3) {
+            client.services().inNamespace(namespace).withName(name).delete()
+        }
     }
 
     def waitForServiceDeletion(objects.Service service) {
@@ -574,42 +592,48 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createSecret(String name, String namespace = this.namespace) {
-        Map<String, String> data = new HashMap<String, String>()
-        data.put("username", "YWRtaW4=")
-        data.put("password", "MWYyZDFlMmU2N2Rm")
+        return evaluateWithRetry(2, 3) {
+            Map<String, String> data = new HashMap<String, String>()
+            data.put("username", "YWRtaW4=")
+            data.put("password", "MWYyZDFlMmU2N2Rm")
 
-        Secret secret = new Secret(
-                apiVersion: "v1",
-                kind: "Secret",
-                type: "Opaque",
-                data: data,
-                metadata: new ObjectMeta(
-                        name: name
-                )
-        )
+            Secret secret = new Secret(
+                    apiVersion: "v1",
+                    kind: "Secret",
+                    type: "Opaque",
+                    data: data,
+                    metadata: new ObjectMeta(
+                            name: name
+                    )
+            )
 
-        try {
-            Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
-            if (createdSecret != null) {
-                waitForSecretCreation(name, namespace)
-                return createdSecret.metadata.uid
+            try {
+                Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
+                if (createdSecret != null) {
+                    waitForSecretCreation(name, namespace)
+                    return createdSecret.metadata.uid
+                }
+            } catch (Exception e) {
+                println("Error creating secret" + e.toString())
             }
-        } catch (Exception e) {
-            println("Error creating secret" + e.toString())
+            return null
         }
-        return null
     }
 
     def deleteSecret(String name, String namespace = this.namespace) {
-        client.secrets().inNamespace(namespace).withName(name).delete()
+        withRetry(2, 3) {
+            client.secrets().inNamespace(namespace).withName(name).delete()
+        }
         sleep(sleepDurationSeconds * 1000)
         println name + ": Secret removed."
     }
 
     def getSecretCount(String ns = null) {
-        return client.secrets().inNamespace(ns).list().getItems().findAll {
-            !it.type.startsWith("kubernetes.io/service-account-token")
-        }.size()
+        return evaluateWithRetry(2, 3) {
+            return client.secrets().inNamespace(ns).list().getItems().findAll {
+                !it.type.startsWith("kubernetes.io/service-account-token")
+            }.size()
+        }
     }
 
     /*
@@ -617,51 +641,59 @@ class Kubernetes implements OrchestratorMain {
     */
 
     String applyNetworkPolicy(NetworkPolicy policy) {
-        io.fabric8.kubernetes.api.model.networking.NetworkPolicy networkPolicy =
-                createNetworkPolicyObject(policy)
+        return evaluateWithRetry(2, 3) {
+            io.fabric8.kubernetes.api.model.networking.NetworkPolicy networkPolicy =
+                    createNetworkPolicyObject(policy)
 
-        println "${networkPolicy.metadata.name}: NetworkPolicy created:"
-        println YamlGenerator.toYaml(networkPolicy)
-        io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
-                client.network().networkPolicies()
-                        .inNamespace(networkPolicy.metadata.namespace ?
-                        networkPolicy.metadata.namespace :
-                        this.namespace).createOrReplace(networkPolicy)
-        policy.uid = createdPolicy.metadata.uid
-        return createdPolicy.metadata.uid
+            println "${networkPolicy.metadata.name}: NetworkPolicy created:"
+            println YamlGenerator.toYaml(networkPolicy)
+            io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
+                    client.network().networkPolicies()
+                            .inNamespace(networkPolicy.metadata.namespace ?
+                                    networkPolicy.metadata.namespace :
+                                    this.namespace).createOrReplace(networkPolicy)
+            policy.uid = createdPolicy.metadata.uid
+            return createdPolicy.metadata.uid
+        }
     }
 
     boolean deleteNetworkPolicy(NetworkPolicy policy) {
-        Boolean status = client.network().networkPolicies()
-                .inNamespace(policy.namespace ? policy.namespace : this.namespace)
-                .withName(policy.name)
-                .delete()
-        if (status) {
-            println "${policy.name}: NetworkPolicy removed."
-            return true
+        return evaluateWithRetry(2, 3) {
+            Boolean status = client.network().networkPolicies()
+                    .inNamespace(policy.namespace ? policy.namespace : this.namespace)
+                    .withName(policy.name)
+                    .delete()
+            if (status) {
+                println "${policy.name}: NetworkPolicy removed."
+                return true
+            }
+            println "${policy.name}: Failed to remove NetworkPolicy."
+            return false
         }
-        println "${policy.name}: Failed to remove NetworkPolicy."
-        return false
     }
 
     def getNetworkPolicyCount(String ns) {
-        return client.network().networkPolicies().inNamespace(ns).list().items.size()
+        return evaluateWithRetry(2, 3) {
+            return client.network().networkPolicies().inNamespace(ns).list().items.size()
+        }
     }
 
     def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated = false) {
-        Map<String, List<String>> networkPolicies = [:]
-        client.network().networkPolicies().inAnyNamespace().list().items.each {
-            boolean skip = false
-            if (ignoreUndoneStackroxGenerated) {
-                if (it.spec.podSelector.matchLabels.get("network-policies.stackrox.io/disable") == "nomatch") {
-                    skip = true
+        return evaluateWithRetry(2, 3) {
+            Map<String, List<String>> networkPolicies = [:]
+            client.network().networkPolicies().inAnyNamespace().list().items.each {
+                boolean skip = false
+                if (ignoreUndoneStackroxGenerated) {
+                    if (it.spec.podSelector.matchLabels.get("network-policies.stackrox.io/disable") == "nomatch") {
+                        skip = true
+                    }
                 }
-            }
-            skip ?: networkPolicies.containsKey(it.metadata.namespace) ?
+                skip ?: networkPolicies.containsKey(it.metadata.namespace) ?
                         networkPolicies.get(it.metadata.namespace).add(it.metadata.name) :
                         networkPolicies.put(it.metadata.namespace, [it.metadata.name])
+            }
+            return networkPolicies
         }
-        return networkPolicies
     }
 
     /*
@@ -669,30 +701,36 @@ class Kubernetes implements OrchestratorMain {
      */
 
     def getNodeCount() {
-        return client.nodes().list().getItems().size()
+        return evaluateWithRetry(2, 3) {
+            return client.nodes().list().getItems().size()
+        }
     }
 
     List<Node> getNodeDetails() {
-        return client.nodes().list().items.collect {
-            new Node(
-                    uid: it.metadata.uid,
-                    name: it.metadata.name,
-                    labels: it.metadata.labels,
-                    annotations: it.metadata.annotations,
-                    internalIps: it.status.addresses.findAll { it.type == "InternalIP" }*.address,
-                    externalIps: it.status.addresses.findAll { it.type == "ExternalIP" }*.address,
-                    containerRuntimeVersion: it.status.nodeInfo.containerRuntimeVersion,
-                    kernelVersion: it.status.nodeInfo.kernelVersion,
-                    osImage: it.status.nodeInfo.osImage
-            )
+        return evaluateWithRetry(2, 3) {
+            return client.nodes().list().items.collect {
+                new Node(
+                        uid: it.metadata.uid,
+                        name: it.metadata.name,
+                        labels: it.metadata.labels,
+                        annotations: it.metadata.annotations,
+                        internalIps: it.status.addresses.findAll { it.type == "InternalIP" }*.address,
+                        externalIps: it.status.addresses.findAll { it.type == "ExternalIP" }*.address,
+                        containerRuntimeVersion: it.status.nodeInfo.containerRuntimeVersion,
+                        kernelVersion: it.status.nodeInfo.kernelVersion,
+                        osImage: it.status.nodeInfo.osImage
+                )
+            }
         }
     }
 
     def supportsNetworkPolicies() {
-        List<Node> gkeNodes = client.nodes().list().getItems().findAll {
-            it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
+        return evaluateWithRetry(2, 3) {
+            List<Node> gkeNodes = client.nodes().list().getItems().findAll {
+                it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
+            }
+            return gkeNodes.size() > 0
         }
-        return gkeNodes.size() > 0
     }
 
     /*
@@ -700,19 +738,21 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<objects.Namespace> getNamespaceDetails() {
-        return client.namespaces().list().items.collect {
-            new objects.Namespace(
-                    uid: it.metadata.uid,
-                    name: it.metadata.name,
-                    labels: it.metadata.labels,
-                    deploymentCount: getDeploymentCount(it.metadata.name) +
-                            getDaemonSetCount(it.metadata.name) +
-                            getStaticPodCount(it.metadata.name) +
-                            getStatefulSetCount(it.metadata.name) +
-                            getJobCount(it.metadata.name),
-                    secretsCount: getSecretCount(it.metadata.name),
-                    networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
-            )
+        return evaluateWithRetry(2, 3) {
+            return client.namespaces().list().items.collect {
+                new objects.Namespace(
+                        uid: it.metadata.uid,
+                        name: it.metadata.name,
+                        labels: it.metadata.labels,
+                        deploymentCount: getDeploymentCount(it.metadata.name) +
+                                getDaemonSetCount(it.metadata.name) +
+                                getStaticPodCount(it.metadata.name) +
+                                getStatefulSetCount(it.metadata.name) +
+                                getJobCount(it.metadata.name),
+                        secretsCount: getSecretCount(it.metadata.name),
+                        networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
+                )
+            }
         }
     }
 
@@ -721,36 +761,42 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<ServiceAccount> getServiceAccounts() {
-        def serviceAccounts = []
-        client.serviceAccounts().inAnyNamespace().list().items.each {
-            serviceAccounts.add(new K8sServiceAccount(
-                    name: it.metadata.name,
-                    namespace: it.metadata.namespace,
-                    labels: it.metadata.labels ? it.metadata.labels : [:],
-                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                    secrets: it.secrets*.name,
-                    imagePullSecrets: it.imagePullSecrets*.name
-            ))
+        return evaluateWithRetry(1, 2) {
+            def serviceAccounts = []
+            client.serviceAccounts().inAnyNamespace().list().items.each {
+                serviceAccounts.add(new K8sServiceAccount(
+                        name: it.metadata.name,
+                        namespace: it.metadata.namespace,
+                        labels: it.metadata.labels ? it.metadata.labels : [:],
+                        annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                        secrets: it.secrets*.name,
+                        imagePullSecrets: it.imagePullSecrets*.name
+                ))
+            }
+            return serviceAccounts
         }
-        return serviceAccounts
     }
 
     def createServiceAccount(K8sServiceAccount serviceAccount) {
-        ServiceAccount sa  = new ServiceAccount(
-                metadata: new ObjectMeta(
-                        name: serviceAccount.name,
-                        namespace: serviceAccount.namespace,
-                        labels: serviceAccount.labels,
-                        annotations: serviceAccount.annotations
-                ),
-                secrets: serviceAccount.secrets,
-                imagePullSecrets: serviceAccount.imagePullSecrets
-        )
-        client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
+        withRetry(1, 2) {
+            ServiceAccount sa = new ServiceAccount(
+                    metadata: new ObjectMeta(
+                            name: serviceAccount.name,
+                            namespace: serviceAccount.namespace,
+                            labels: serviceAccount.labels,
+                            annotations: serviceAccount.annotations
+                    ),
+                    secrets: serviceAccount.secrets,
+                    imagePullSecrets: serviceAccount.imagePullSecrets
+            )
+            client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
+        }
     }
 
     def deleteServiceAccount(K8sServiceAccount serviceAccount) {
-        client.serviceAccounts().inNamespace(serviceAccount.namespace).withName(serviceAccount.name).delete()
+        withRetry(1, 2) {
+            client.serviceAccounts().inNamespace(serviceAccount.namespace).withName(serviceAccount.name).delete()
+        }
     }
 
     /*
@@ -758,51 +804,57 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRole> getRoles() {
-        def roles = []
-        client.rbac().roles().inAnyNamespace().list().items.each {
-            roles.add(new K8sRole(
-                    name: it.metadata.name,
-                    namespace: it.metadata.namespace,
-                    clusterRole: false,
-                    labels: it.metadata.labels ? it.metadata.labels : [:],
-                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                    rules: it.rules.collect {
-                        new K8sPolicyRule(
-                                verbs: it.verbs,
-                                apiGroups: it.apiGroups,
-                                resources: it.resources,
-                                nonResourceUrls: it.nonResourceURLs,
-                                resourceNames: it.resourceNames
-                        )
-                    }
-            ))
+        return evaluateWithRetry(1, 2) {
+            def roles = []
+            client.rbac().roles().inAnyNamespace().list().items.each {
+                roles.add(new K8sRole(
+                        name: it.metadata.name,
+                        namespace: it.metadata.namespace,
+                        clusterRole: false,
+                        labels: it.metadata.labels ? it.metadata.labels : [:],
+                        annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                        rules: it.rules.collect {
+                            new K8sPolicyRule(
+                                    verbs: it.verbs,
+                                    apiGroups: it.apiGroups,
+                                    resources: it.resources,
+                                    nonResourceUrls: it.nonResourceURLs,
+                                    resourceNames: it.resourceNames
+                            )
+                        }
+                ))
+            }
+            return roles
         }
-        return roles
     }
 
     def createRole(K8sRole role) {
-        Role r = new Role(
-                metadata: new ObjectMeta(
-                        name: role.name,
-                        namespace: role.namespace,
-                        labels: role.labels,
-                        annotations: role.annotations
-                ),
-                rules: role.rules.collect {
-                    new PolicyRule(
-                            verbs: it.verbs,
-                            apiGroups: it.apiGroups,
-                            resources: it.resources,
-                            nonResourceURLs: it.nonResourceUrls,
-                            resourceNames: it.resourceNames
-                    )
-                }
-        )
-        role.uid = client.rbac().roles().inNamespace(role.namespace).createOrReplace(r).metadata.uid
+        withRetry(1, 2) {
+            Role r = new Role(
+                    metadata: new ObjectMeta(
+                            name: role.name,
+                            namespace: role.namespace,
+                            labels: role.labels,
+                            annotations: role.annotations
+                    ),
+                    rules: role.rules.collect {
+                        new PolicyRule(
+                                verbs: it.verbs,
+                                apiGroups: it.apiGroups,
+                                resources: it.resources,
+                                nonResourceURLs: it.nonResourceUrls,
+                                resourceNames: it.resourceNames
+                        )
+                    }
+            )
+            role.uid = client.rbac().roles().inNamespace(role.namespace).createOrReplace(r).metadata.uid
+        }
     }
 
     def deleteRole(K8sRole role) {
-        client.rbac().roles().inNamespace(role.namespace).withName(role.name).delete()
+        withRetry(1, 2) {
+            client.rbac().roles().inNamespace(role.namespace).withName(role.name).delete()
+        }
     }
 
     /*
@@ -810,53 +862,61 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRoleBinding> getRoleBindings() {
-        def bindings = []
-        client.rbac().roleBindings().inAnyNamespace().list().items.each {
-            def b = new K8sRoleBinding(
-                    new K8sRole(
-                            name: it.metadata.name,
-                            namespace: it.metadata.namespace,
-                            clusterRole: false,
-                            labels: it.metadata.labels ? it.metadata.labels : [:],
-                            annotations: it.metadata.annotations ? it.metadata.annotations : [:]
-                    ),
-                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "") }
-            )
-            def uid = it.roleRef.kind == "Role" ?
-                    client.rbac().roles()
-                            .inNamespace(it.metadata.namespace)
-                            .withName(it.roleRef.name).get()?.metadata?.uid :
-                    client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid
-            b.roleRef.uid = uid ?: ""
-            bindings.add(b)
+        return evaluateWithRetry(2, 3) {
+            def bindings = []
+            client.rbac().roleBindings().inAnyNamespace().list().items.each {
+                def b = new K8sRoleBinding(
+                        new K8sRole(
+                                name: it.metadata.name,
+                                namespace: it.metadata.namespace,
+                                clusterRole: false,
+                                labels: it.metadata.labels ? it.metadata.labels : [:],
+                                annotations: it.metadata.annotations ? it.metadata.annotations : [:]
+                        ),
+                        it.subjects.collect {
+                    new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "")
+                        }
+                )
+                def uid = it.roleRef.kind == "Role" ?
+                        client.rbac().roles()
+                                .inNamespace(it.metadata.namespace)
+                                .withName(it.roleRef.name).get()?.metadata?.uid :
+                        client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid
+                b.roleRef.uid = uid ?: ""
+                bindings.add(b)
+            }
+            return bindings
         }
-        return bindings
     }
 
     def createRoleBinding(K8sRoleBinding roleBinding) {
-        RoleBinding r = new RoleBinding(
-                metadata: new ObjectMeta(
-                        name: roleBinding.name,
-                        namespace: roleBinding.namespace,
-                        labels: roleBinding.labels,
-                        annotations: roleBinding.annotations
-                ),
-                subjects: roleBinding.subjects.collect {
-                    new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
-                },
-                roleRef: new RoleRef(
-                        name: roleBinding.roleRef.name,
-                        kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
-                )
-        )
-        client.rbac().roleBindings().inNamespace(roleBinding.namespace).createOrReplace(r)
+        withRetry(1, 2) {
+            RoleBinding r = new RoleBinding(
+                    metadata: new ObjectMeta(
+                            name: roleBinding.name,
+                            namespace: roleBinding.namespace,
+                            labels: roleBinding.labels,
+                            annotations: roleBinding.annotations
+                    ),
+                    subjects: roleBinding.subjects.collect {
+                        new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
+                    },
+                    roleRef: new RoleRef(
+                            name: roleBinding.roleRef.name,
+                            kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
+                    )
+            )
+            client.rbac().roleBindings().inNamespace(roleBinding.namespace).createOrReplace(r)
+        }
     }
 
     def deleteRoleBinding(K8sRoleBinding roleBinding) {
-        client.rbac().roleBindings()
-                .inNamespace(roleBinding.namespace)
-                .withName(roleBinding.name)
-                .delete()
+        withRetry(1, 2) {
+            client.rbac().roleBindings()
+                    .inNamespace(roleBinding.namespace)
+                    .withName(roleBinding.name)
+                    .delete()
+        }
     }
 
     /*
@@ -864,50 +924,56 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRole> getClusterRoles() {
-        def clusterRoles = []
-        client.rbac().clusterRoles().inAnyNamespace().list().items.each {
-            clusterRoles.add(new K8sRole(
-                    name: it.metadata.name,
-                    namespace: "",
-                    clusterRole: true,
-                    labels: it.metadata.labels ? it.metadata.labels : [:],
-                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
-                    rules: it.rules.collect {
-                        new K8sPolicyRule(
-                                verbs: it.verbs,
-                                apiGroups: it.apiGroups,
-                                resources: it.resources,
-                                nonResourceUrls: it.nonResourceURLs,
-                                resourceNames: it.resourceNames
-                        )
-                    }
-            ))
+        return evaluateWithRetry(2, 3) {
+            def clusterRoles = []
+            client.rbac().clusterRoles().inAnyNamespace().list().items.each {
+                clusterRoles.add(new K8sRole(
+                        name: it.metadata.name,
+                        namespace: "",
+                        clusterRole: true,
+                        labels: it.metadata.labels ? it.metadata.labels : [:],
+                        annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                        rules: it.rules.collect {
+                            new K8sPolicyRule(
+                                    verbs: it.verbs,
+                                    apiGroups: it.apiGroups,
+                                    resources: it.resources,
+                                    nonResourceUrls: it.nonResourceURLs,
+                                    resourceNames: it.resourceNames
+                            )
+                        }
+                ))
+            }
+            return clusterRoles
         }
-        return clusterRoles
     }
 
     def createClusterRole(K8sRole role) {
-        ClusterRole r = new ClusterRole(
-                metadata: new ObjectMeta(
-                        name: role.name,
-                        labels: role.labels,
-                        annotations: role.annotations
-                ),
-                rules: role.rules.collect {
-                    new PolicyRule(
-                            verbs: it.verbs,
-                            apiGroups: it.apiGroups,
-                            resources: it.resources,
-                            nonResourceURLs: it.nonResourceUrls,
-                            resourceNames: it.resourceNames
-                    )
-                }
-        )
-        role.uid = client.rbac().clusterRoles().createOrReplace(r).metadata.uid
+        withRetry(2, 3) {
+            ClusterRole r = new ClusterRole(
+                    metadata: new ObjectMeta(
+                            name: role.name,
+                            labels: role.labels,
+                            annotations: role.annotations
+                    ),
+                    rules: role.rules.collect {
+                        new PolicyRule(
+                                verbs: it.verbs,
+                                apiGroups: it.apiGroups,
+                                resources: it.resources,
+                                nonResourceURLs: it.nonResourceUrls,
+                                resourceNames: it.resourceNames
+                        )
+                    }
+            )
+            role.uid = client.rbac().clusterRoles().createOrReplace(r).metadata.uid
+        }
     }
 
     def deleteClusterRole(K8sRole role) {
-        client.rbac().clusterRoles().withName(role.name).delete()
+        withRetry(2, 3) {
+            client.rbac().clusterRoles().withName(role.name).delete()
+        }
     }
 
     /*
@@ -915,55 +981,63 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<K8sRoleBinding> getClusterRoleBindings() {
-        def clusterBindings = []
-        client.rbac().clusterRoleBindings().inAnyNamespace().list().items.each {
-            def b = new K8sRoleBinding(
-                    new K8sRole(
-                            name: it.metadata.name,
-                            namespace: "",
-                            clusterRole: true,
-                            labels: it.metadata.labels ? it.metadata.labels : [:],
-                            annotations: it.metadata.annotations ? it.metadata.annotations : [:]
-                    ),
-                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "") }
-            )
-            def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
-                    client.rbac().roles()
-                            .inNamespace(it.metadata.namespace)
-                            .withName(it.roleRef.name).get()?.metadata?.uid
-            b.roleRef.uid = uid ?: ""
-            clusterBindings.add(b)
+        return evaluateWithRetry(2, 3) {
+            def clusterBindings = []
+            client.rbac().clusterRoleBindings().inAnyNamespace().list().items.each {
+                def b = new K8sRoleBinding(
+                        new K8sRole(
+                                name: it.metadata.name,
+                                namespace: "",
+                                clusterRole: true,
+                                labels: it.metadata.labels ? it.metadata.labels : [:],
+                                annotations: it.metadata.annotations ? it.metadata.annotations : [:]
+                        ),
+                        it.subjects.collect {
+                    new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace ?: "")
+                        }
+                )
+                def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
+                        client.rbac().roles()
+                                .inNamespace(it.metadata.namespace)
+                                .withName(it.roleRef.name).get()?.metadata?.uid
+                b.roleRef.uid = uid ?: ""
+                clusterBindings.add(b)
+            }
+            return clusterBindings
         }
-        return clusterBindings
     }
 
     def createClusterRoleBinding(K8sRoleBinding roleBinding) {
-        ClusterRoleBinding r = new ClusterRoleBinding(
-                metadata: new ObjectMeta(
-                        name: roleBinding.name,
-                        labels: roleBinding.labels,
-                        annotations: roleBinding.annotations
-                ),
-                subjects: roleBinding.subjects.collect {
-                    new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
-                },
-                roleRef: new RoleRef(
-                        name: roleBinding.roleRef.name,
-                        kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
-                )
-        )
-        client.rbac().clusterRoleBindings().createOrReplace(r)
+        withRetry(2, 3) {
+            ClusterRoleBinding r = new ClusterRoleBinding(
+                    metadata: new ObjectMeta(
+                            name: roleBinding.name,
+                            labels: roleBinding.labels,
+                            annotations: roleBinding.annotations
+                    ),
+                    subjects: roleBinding.subjects.collect {
+                        new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
+                    },
+                    roleRef: new RoleRef(
+                            name: roleBinding.roleRef.name,
+                            kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
+                    )
+            )
+            client.rbac().clusterRoleBindings().createOrReplace(r)
+        }
     }
 
     def deleteClusterRoleBinding(K8sRoleBinding roleBinding) {
-        client.rbac().clusterRoleBindings().withName(roleBinding.name).delete()
+        withRetry(2, 3) {
+            client.rbac().clusterRoleBindings().withName(roleBinding.name).delete()
+        }
     }
 
     /*
         PodSecurityPolicies
     */
 
-    private generatePspRole() {
+    protected generatePspRole() {
         def rules = [new K8sPolicyRule(
                 apiGroups: ["extensions"],
                 resources: ["podsecuritypolicies"],
@@ -978,7 +1052,7 @@ class Kubernetes implements OrchestratorMain {
         )
     }
 
-    private generatePspRoleBinding(String namespace) {
+    protected generatePspRoleBinding(String namespace) {
         def roleBinding =  new K8sRoleBinding(
                 name: "allow-all-for-test-" + namespace,
                 namespace: namespace,
@@ -992,7 +1066,7 @@ class Kubernetes implements OrchestratorMain {
         return roleBinding
     }
 
-    private defaultPspForNamespace(String namespace) {
+    protected defaultPspForNamespace(String namespace) {
         PodSecurityPolicy psp = new PodSecurityPolicyBuilder().withNewMetadata()
                 .withName("allow-all-for-test")
                 .endMetadata()
@@ -1021,7 +1095,9 @@ class Kubernetes implements OrchestratorMain {
      */
 
     def getJobCount(String ns = null) {
-        return client.batch().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        return evaluateWithRetry(2, 3) {
+            return client.batch().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
     }
 
     /*
@@ -1091,9 +1167,11 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String getSensorContainerName() {
-        return client.pods().inNamespace("stackrox").list().items.find {
-            it.metadata.name.startsWith("sensor")
-        }.metadata.name
+        return evaluateWithRetry(2, 3) {
+            return client.pods().inNamespace("stackrox").list().items.find {
+                it.metadata.name.startsWith("sensor")
+            }.metadata.name
+        }
     }
 
     def waitForSensor() {
@@ -1361,7 +1439,9 @@ class Kubernetes implements OrchestratorMain {
     def updateDeploymentDetails(Deployment deployment) {
         // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
         // object - IF this is ever missing, it may cause problems fetching pod details
-        def deployedPods = client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
+        def deployedPods = evaluateWithRetry(2, 3) {
+            return client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
+        }
         for (Pod pod : deployedPods.getItems()) {
             deployment.addPod(
                     pod.getMetadata().getName(),
@@ -1376,7 +1456,7 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    private io.fabric8.kubernetes.api.model.networking.NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
+    protected io.fabric8.kubernetes.api.model.networking.NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
         def networkPolicy = new NetworkPolicyBuilder()
                 .withApiVersion("networking.k8s.io/v1")
                 .withKind("NetworkPolicy")
@@ -1465,14 +1545,18 @@ class Kubernetes implements OrchestratorMain {
     }
 
     String createNamespace(String ns) {
-        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
-        def namespaceId =  client.namespaces().createOrReplace(namespace).metadata.getUid()
-        defaultPspForNamespace(ns)
-        return namespaceId
+        return evaluateWithRetry(2, 3) {
+            Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+            def namespaceId = client.namespaces().createOrReplace(namespace).metadata.getUid()
+            defaultPspForNamespace(ns)
+            return namespaceId
+        }
     }
 
     def deleteNamespace(String ns) {
-        client.namespaces().withName(ns).delete()
+        withRetry(2, 3) {
+            client.namespaces().withName(ns).delete()
+        }
     }
 
     def waitForNamespaceDeletion(String ns, int retries = 20, int intervalSeconds = 3) {
