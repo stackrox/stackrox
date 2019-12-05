@@ -9,12 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stretchr/testify/assert"
-	v12 "k8s.io/api/apps/v1"
+	appsV1 "k8s.io/api/apps/v1"
 	appsV1beta2 "k8s.io/api/apps/v1beta2"
 	v1 "k8s.io/api/core/v1"
 	extV1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/apis/apps"
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
@@ -88,16 +87,16 @@ func TestDaemonSetReplicas(t *testing.T) {
 	deploymentWrap.populateReplicas(reflect.Value{}, daemonSet2)
 	assert.Equal(t, int(deploymentWrap.Replicas), 2)
 
-	daemonSet3 := &apps.DaemonSet{
-		Status: apps.DaemonSetStatus{
+	daemonSet3 := &appsV1.DaemonSet{
+		Status: appsV1.DaemonSetStatus{
 			NumberAvailable: 3,
 		},
 	}
 	deploymentWrap.populateReplicas(reflect.Value{}, daemonSet3)
 	assert.Equal(t, int(deploymentWrap.Replicas), 3)
 
-	daemonSet4 := &v12.DaemonSet{
-		Status: v12.DaemonSetStatus{},
+	daemonSet4 := &appsV1.DaemonSet{
+		Status: appsV1.DaemonSetStatus{},
 	}
 	deploymentWrap.populateReplicas(reflect.Value{}, daemonSet4)
 	assert.Equal(t, int(deploymentWrap.Replicas), 0)

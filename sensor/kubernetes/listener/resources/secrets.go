@@ -3,6 +3,7 @@ package resources
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,8 +13,80 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/kubernetes/pkg/credentialprovider"
 )
+
+// The following types are copied from the Kubernetes codebase,
+// since it is not placed in any of the officially supported client
+// libraries.
+// dockerConfigJSON represents ~/.docker/config.json file info
+// see https://github.com/docker/docker/pull/12009
+type dockerConfigJSON struct {
+	Auths dockerConfig `json:"auths"`
+}
+
+// dockerConfig represents the config file used by the docker CLI.
+// This config that represents the credentials that should be used
+// when pulling images from specific image repositories.
+type dockerConfig map[string]dockerConfigEntry
+
+// dockerConfigEntry is an entry in the dockerConfig.
+type dockerConfigEntry struct {
+	Username string
+	Password string
+	Email    string
+}
+
+// dockerConfigEntryWithAuth is used solely for deserializing the Auth field
+// into a dockerConfigEntry during JSON deserialization.
+type dockerConfigEntryWithAuth struct {
+	// +optional
+	Username string `json:"username,omitempty"`
+	// +optional
+	Password string `json:"password,omitempty"`
+	// +optional
+	Email string `json:"email,omitempty"`
+	// +optional
+	Auth string `json:"auth,omitempty"`
+}
+
+// decodeDockerConfigFieldAuth deserializes the "auth" field from dockercfg into a
+// username and a password. The format of the auth field is base64(<username>:<password>).
+func decodeDockerConfigFieldAuth(field string) (username, password string, err error) {
+	decoded, err := base64.StdEncoding.DecodeString(field)
+	if err != nil {
+		return
+	}
+
+	parts := strings.SplitN(string(decoded), ":", 2)
+	if len(parts) != 2 {
+		err = errors.New("unable to parse auth field")
+		return
+	}
+
+	username = parts[0]
+	password = parts[1]
+
+	return
+}
+
+func (d *dockerConfigEntry) UnmarshalJSON(data []byte) error {
+	var tmp dockerConfigEntryWithAuth
+	err := json.Unmarshal(data, &tmp)
+	if err != nil {
+		return err
+	}
+
+	d.Username = tmp.Username
+	d.Password = tmp.Password
+	d.Email = tmp.Email
+
+	if len(tmp.Auth) == 0 {
+		return nil
+	}
+
+	d.Username, d.Password, err = decodeDockerConfigFieldAuth(tmp.Auth)
+	return err
+}
 
 var dataTypeMap = map[string]storage.SecretType{
 	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
@@ -111,7 +184,7 @@ func newSecretDispatcher() *secretDispatcher {
 	return &secretDispatcher{}
 }
 
-func dockerConfigToImageIntegration(registry string, dce credentialprovider.DockerConfigEntry) *storage.ImageIntegration {
+func dockerConfigToImageIntegration(registry string, dce dockerConfigEntry) *storage.ImageIntegration {
 	return &storage.ImageIntegration{
 		Id:         uuid.NewV4().String(),
 		Type:       "docker",
@@ -129,7 +202,7 @@ func dockerConfigToImageIntegration(registry string, dce credentialprovider.Dock
 }
 
 func getImageIntegrationSensorEvents(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
-	var dockerConfig credentialprovider.DockerConfig
+	var dockerConfig dockerConfig
 	protoSecret := getProtoSecret(secret)
 	switch secret.Type {
 	case v1.SecretTypeDockercfg:
@@ -150,7 +223,7 @@ func getImageIntegrationSensorEvents(secret *v1.Secret, action central.ResourceA
 		if !ok {
 			return nil
 		}
-		var dockerConfigJSON credentialprovider.DockerConfigJson
+		var dockerConfigJSON dockerConfigJSON
 		if err := json.Unmarshal(data, &dockerConfigJSON); err != nil {
 			log.Error(err)
 			return nil
