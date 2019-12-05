@@ -62,6 +62,17 @@ func TestWithinScope(t *testing.T) {
 			result: false,
 		},
 		{
+			name: "matching cluster with no namespace scope",
+			scope: &storage.Scope{
+				Cluster: "cluster",
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+				Namespace: "namespace",
+			},
+			result: true,
+		},
+		{
 			name: "matching label",
 			scope: &storage.Scope{
 				Label: &storage.Scope_Label{

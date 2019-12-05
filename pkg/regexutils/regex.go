@@ -6,6 +6,10 @@ import (
 
 // MatchWholeString uses a regex and ensures it matches the entire string
 func MatchWholeString(r *regexp.Regexp, s string) bool {
+	if r.String() == "" {
+		return true
+	}
+
 	loc := r.FindStringIndex(s)
 	if loc == nil {
 		return false
