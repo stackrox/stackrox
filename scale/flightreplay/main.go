@@ -78,6 +78,11 @@ func main() {
 			var msg central.MsgFromSensor
 			utils.Must(proto.Unmarshal(val, &msg))
 
+			if update := msg.GetClusterStatusUpdate().GetDeploymentEnvUpdate(); update != nil {
+				// Rewrite the replay
+				update.Environments = []string{"gcp/stackrox-ci"}
+			}
+
 			records = append(records, record{
 				nanos: binenc.BigEndian.Uint64(it.Item().Key()),
 				msg:   &msg,
