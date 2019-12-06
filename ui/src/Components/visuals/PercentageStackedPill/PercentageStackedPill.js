@@ -8,8 +8,10 @@ const TooltipOverlay = ({ title, body }) => {
     if (!title || !body) return null;
     return (
         <div className="">
-            <div className="border-b border-base-100 mb-2 pb-2">{title}</div>
-            <div>{body}</div>
+            <h2 className="border-b border-primary-400 mb-1 pb-1 graph-hint-title text-sm">
+                {title}
+            </h2>
+            <div className="graph-hint-body py-1 text-xs">{body}</div>
         </div>
     );
 };
@@ -36,6 +38,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
             placement="top"
             overlay={<TooltipOverlay title={tooltipTitle} body={tooltipBody} />}
             mouseLeaveDelay={0}
+            overlayClassName="opacity-100"
         >
             <div
                 className="flex rounded-full w-full min-w-10 max-w-24 h-3 border border-base-300 bg-base-200"
