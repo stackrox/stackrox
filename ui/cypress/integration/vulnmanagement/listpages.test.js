@@ -197,7 +197,7 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                         (value.includes('policies') || value.includes('policy')) &&
                         value !== 'No failing policies'
                     ) {
-                        cy.get(selectors.tableFirstColumn)
+                        cy.get(colSelector)
                             .eq(0)
                             .click({ force: true });
                         let colText = '';
@@ -217,6 +217,70 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                                 .contains(colText.toUpperCase()),
                             'policy text displayed is valid'
                         );
+                    }
+                });
+        }
+    });
+}
+
+function validateTabsInSidePanelWithTileLinks(parentUrl, colSelector, relatedEntitiesList) {
+    relatedEntitiesList.forEach(col => {
+        if (
+            col !== 'CVEs' &&
+            col !== 'Fixable' &&
+            col !== 'Policies' &&
+            col !== 'Failing Policies'
+        ) {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+                .invoke('text')
+                .then(value => {
+                    cy.get(colSelector)
+                        .eq(0)
+                        .click({ force: true });
+                    cy.get(selectors.sidePanelExpandButton).click({ force: true });
+                    cy.get(selectors.getSidePanelTabLink(col.toLowerCase())).click({ force: true });
+                    expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                    cy.visit(parentUrl);
+                });
+        }
+        if (col === 'CVEs') {
+            cy.get(`${selectors.allCVEColumnLink}`)
+                .eq(0)
+                .invoke('text')
+                .then(value => {
+                    cy.get(colSelector)
+                        .eq(0)
+                        .click({ force: true });
+                    cy.get(selectors.sidePanelExpandButton).click({ force: true });
+                    cy.get(selectors.getSidePanelTabLink(col.toUpperCase())).click({ force: true });
+                    expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                    cy.visit(parentUrl);
+                });
+        }
+        if (col === 'Policies' || col === 'Failing Policies') {
+            cy.get(`${selectors.tableColumnLinks}`)
+                .contains(/(?:policies|policy)/)
+                .invoke('text')
+                .then(value => {
+                    if (
+                        (value.includes('policies') || value.includes('policy')) &&
+                        value !== 'No failing policies'
+                    ) {
+                        cy.get(colSelector)
+                            .eq(0)
+                            .click({ force: true });
+                        let colText = '';
+                        if (parseInt(value, 10) > 1) colText = 'POLICIES';
+                        if (parseInt(value, 10) === 1) colText = 'POLICY';
+                        if (col === 'Failing Policies') colText = 'POLICIES';
+
+                        cy.get(selectors.sidePanelExpandButton).click({ force: true });
+                        cy.get(selectors.getSidePanelTabLink(colText.toLowerCase())).click({
+                            force: true
+                        });
+
+                        expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                        cy.visit(parentUrl);
                     }
                 });
         }
@@ -255,6 +319,12 @@ describe('Entities list Page', () => {
             ['Namespace', 'Deployment', 'Policies', 'CVEs', 'Fixable'],
             url.list.clusters
         );
+        validateTabsInSidePanelWithTileLinks(url.list.clusters, selectors.tableFirstColumn, [
+            'Namespace',
+            'Deployment',
+            'Policies',
+            'CVEs'
+        ]);
     });
 
     it('should display all the columns and links expected in namespaces list page', () => {
@@ -279,6 +349,12 @@ describe('Entities list Page', () => {
             ['Deployment', 'Image', 'Policies', 'CVEs', 'Fixable'],
             url.list.namespaces
         );
+        validateTabsInSidePanelWithTileLinks(url.list.namespaces, selectors.tableFirstColumn, [
+            'Deployment',
+            'Image',
+            'Policies',
+            'CVEs'
+        ]);
     });
 
     it('should display all the columns and links expected in deployments list page', () => {
@@ -303,6 +379,11 @@ describe('Entities list Page', () => {
             ['Image', 'Policies', 'CVEs', 'Fixable'],
             url.list.deployments
         );
+        validateTabsInSidePanelWithTileLinks(url.list.deployments, selectors.tableFirstColumn, [
+            'Image',
+            'Failing Policies',
+            'CVEs'
+        ]);
     });
 
     it('should display all the columns and links expected in images list page', () => {
@@ -327,6 +408,10 @@ describe('Entities list Page', () => {
             ['Deployment', 'Component'],
             url.list.images
         );
+        validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableFirstColumn, [
+            'Deployment',
+            'Component'
+        ]);
     });
 
     it('should display all the columns expected in components list page', () => {
@@ -348,6 +433,11 @@ describe('Entities list Page', () => {
             ['Deployment', 'Image', 'CVEs'],
             url.list.components
         );
+        validateTabsInSidePanelWithTileLinks(url.list.components, selectors.tableFirstColumn, [
+            'Deployment',
+            'Image',
+            'CVEs'
+        ]);
     });
 
     it('should display all the columns and links  expected in cves list page', () => {
@@ -369,5 +459,10 @@ describe('Entities list Page', () => {
             ['Deployment', 'Component', 'Image'],
             url.list.cves
         );
+        validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableFirstColumn, [
+            'Deployment',
+            'Component',
+            'Image'
+        ]);
     });
 });

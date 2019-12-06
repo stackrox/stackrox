@@ -89,7 +89,11 @@ const linkSelectors = {
 };
 
 const sidepanelSelectors = {
-    backButton: '[data-testid="sidepanelBackButton"]'
+    backButton: '[data-testid="sidepanelBackButton"]',
+    sidePanelExpandButton: '[data-test-id = "external-link"]',
+    getSidePanelTabLink: title => {
+        return `[data-test-id="tab"]:contains('${title}')`;
+    }
 };
 
 export const selectors = {
