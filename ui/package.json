@@ -29,7 +29,7 @@
         "history": "^4.9.0",
         "html2canvas": "^1.0.0-alpha.12",
         "jspdf": "^1.5.3",
-        "jspdf-autotable": "^3.0.9",
+        "jspdf-autotable": "^3.2.9",
         "lodash": "^4.17.15",
         "mobx": "^4.2.0",
         "normalizr": "^3.4.0",

@@ -302,12 +302,12 @@ describe('Entities list Page', () => {
         hasExpectedHeaderColumns([
             'Cluster',
             'CVEs',
-            'K8S version',
+            'K8S Version',
             'Namespaces',
             'Deployments',
             'Policies',
-            'Policy status',
-            'Latest violation',
+            'Policy Status',
+            'Latest Violation',
             'Risk Priority'
         ]);
         validateClickableLinks(['Namespace', 'Deployment', 'Policies'], url.list.clusters);
@@ -336,8 +336,8 @@ describe('Entities list Page', () => {
             'Namespace',
             'Deployments',
             'Policies',
-            'Policy status',
-            'Latest violation',
+            'Policy Status',
+            'Latest Violation',
             'Risk Priority'
         ]);
         validateClickableLinksEntityListPage(['image', 'deployment'], url.list.namespaces);
@@ -367,7 +367,7 @@ describe('Entities list Page', () => {
             'Deployment',
             'Policies',
             'Policy Status',
-            'Latest violation',
+            'Latest Violation',
             'Risk Priority'
         ]);
         validateClickableLinksEntityListPage(['image', 'Policies'], url.list.deployments);
@@ -393,7 +393,7 @@ describe('Entities list Page', () => {
             'CVEs',
             'Top CVSS',
             'Created',
-            'Scan time',
+            'Scan Time',
             'Image Status',
             'Deployments',
             'Components',
@@ -440,14 +440,14 @@ describe('Entities list Page', () => {
         ]);
     });
 
-    it('should display all the columns and links  expected in cves list page', () => {
+    it('should display all the columns and links expected in cves list page', () => {
         cy.visit(url.list.cves);
         hasExpectedHeaderColumns([
             'CVE',
             'Fixable',
-            'CVSS score',
+            'CVSS Score',
             'Env. Impact',
-            'Impact score',
+            'Impact Score',
             'Scanned',
             'Published',
             'Deployments'

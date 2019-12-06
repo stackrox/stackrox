@@ -71,12 +71,12 @@ export function getDeploymentTableColumns(workflowState) {
             accessor: 'vulnCounter.all.total'
         },
         {
-            Header: `Latest violation`,
+            Header: `Latest Violation`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { latestViolation } = original;
-                return <DateTimeField date={latestViolation} />;
+                return <DateTimeField date={latestViolation} asString={pdf} />;
             },
             accessor: 'latestViolation',
             sortMethod: sortDate

@@ -41,10 +41,10 @@ export function getCveTableColumns(workflowState) {
             show: false
         },
         {
-            Header: 'cve',
+            Header: 'id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'cve'
+            accessor: 'id'
         },
         {
             Header: `CVE`,
@@ -57,9 +57,8 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-20 text-center ${defaultHeaderClassName}`,
             className: `w-20 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => {
-                const { isFixable } = original;
-                const fixableFlag = isFixable ? (
+            Cell: ({ original, pdf }) => {
+                const fixableFlag = original.isFixable ? (
                     <LabelChip text="Fixable" type="success" size="large" />
                 ) : (
                     'No'
@@ -70,7 +69,7 @@ export function getCveTableColumns(workflowState) {
             id: 'isFixable'
         },
         {
-            Header: `CVSS score`,
+            Header: `CVSS Score`,
             headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
@@ -95,7 +94,7 @@ export function getCveTableColumns(workflowState) {
             accessor: 'envImpact'
         },
         {
-            Header: `Impact score`,
+            Header: `Impact Score`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
@@ -160,10 +159,9 @@ export function getCveTableColumns(workflowState) {
             Header: `Scanned`,
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { lastScanned } = original;
-                return <DateTimeField date={lastScanned} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <DateTimeField date={original.lastScanned} asString={pdf} />
+            ),
             accessor: 'lastScanned',
             id: 'lastScanned'
         },
@@ -171,10 +169,9 @@ export function getCveTableColumns(workflowState) {
             Header: `Published`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
-                const { publishedOn } = original;
-                return <DateTimeField date={publishedOn} />;
-            },
+            Cell: ({ original, pdf }) => (
+                <DateTimeField date={original.publishedOn} asString={pdf} />
+            ),
             accessor: 'publishedOn',
             id: 'published'
         }

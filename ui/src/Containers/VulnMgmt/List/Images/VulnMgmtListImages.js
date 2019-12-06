@@ -87,22 +87,22 @@ export function getImageTableColumns(workflowState) {
             Header: `Created`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { metadata } = original;
                 if (!metadata || !metadata.v1) return '–';
-                return <DateTimeField date={metadata.v1.created} />;
+                return <DateTimeField date={metadata.v1.created} asString={pdf} />;
             },
             sortMethod: sortDate,
             accessor: 'metadata.v1.created'
         },
         {
-            Header: `Scan time`,
+            Header: `Scan Time`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { scan } = original;
                 if (!scan) return '–';
-                return <DateTimeField date={scan.scanTime} />;
+                return <DateTimeField date={scan.scanTime} asString={pdf} />;
             },
             sortMethod: sortDate,
             accessor: 'scan.scanTime'
