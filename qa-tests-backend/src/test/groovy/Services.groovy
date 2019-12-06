@@ -401,6 +401,42 @@ class Services extends BaseService {
         return policyMeta.getEnforcementActionsList()
     }
 
+    /**
+     * This function add a notifier for Splunk.
+     *
+     * @param name
+     */
+
+    static addSplunkNotifier(String name)  throws Exception {
+        String splunkIntegration = "splunk-Integration"
+        String prePackagedToken = "00000000-0000-0000-0000-000000000000"
+        try {
+            return getNotifierClient().postNotifier(
+                   NotifierOuterClass.Notifier.newBuilder()
+                       .setType("splunk")
+                       .setName(name)
+                       .setLabelKey(splunkIntegration)
+                       .setLabelDefault(splunkIntegration)
+                       .setEnabled(true)
+                       .setUiEndpoint( "https://" +
+                                   Env.mustGetHostname() + ":" +
+                                   Env.mustGetPort())
+
+                        .setSplunk(
+                                NotifierOuterClass.Splunk.newBuilder()
+                                        .setHttpToken(prePackagedToken)
+                                        .setInsecure(true)
+                                        .setHttpEndpoint("https://splunk-collector." +
+                                                "qa:8088/services/collector/event")
+                                                .build()
+                         ).build()
+            )
+        } catch (Exception e) {
+            println("Integration with splunk failed or already existed. Please check the logs")
+            throw e
+        }
+    }
+
     static addSlackNotifier(String name) {
         return evaluateWithRetry(3, 10) {
             return getNotifierClient().postNotifier(

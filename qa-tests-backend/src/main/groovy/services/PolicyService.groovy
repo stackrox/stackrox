@@ -10,4 +10,5 @@ class PolicyService extends BaseService {
     static reassessPolicies() {
         getPolicyClient().reassessPolicies(EMPTY)
     }
+
 }

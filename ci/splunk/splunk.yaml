@@ -1,0 +1,48 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: splunk
+  namespace: stackrox
+spec:
+  selector:
+    app: splunk
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8000
+    targetPort: 8000
+  - name: https
+    protocol: TCP
+    port: 8088
+    targetPort: 8088
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: splunk
+  namespace: stackrox
+  labels:
+    apps: splunk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: splunk
+  template:
+    metadata:
+      labels:
+        app: splunk
+    spec:
+      imagePullSecrets:
+        - name: stackrox
+      containers:
+        - name: splunk
+          image: stackrox/splunk-test-repo:latest
+          ports:
+            - containerPort: 8000
+            - containerPort: 8088
+          env:
+          - name: SPLUNK_START_ARGS
+            value: --accept-license
+          - name: SPLUNK_USER
+            value: root

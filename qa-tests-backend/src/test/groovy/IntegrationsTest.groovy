@@ -1,13 +1,19 @@
 import groovy.json.JsonSlurper
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
-
 import groups.BAT
 import groups.Integration
 import org.junit.experimental.categories.Category
+import services.CreatePolicyService
 import services.NotifierService
 import spock.lang.Unroll
 import objects.Deployment
+import objects.Service
+import util.SplunkUtil
+import util.Env
+import org.junit.Assume
+import orchestratormanager.OrchestratorTypes
+import common.Constants
 
 class IntegrationsTest extends BaseSpecification {
 
@@ -99,60 +105,107 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Category(BAT)
     def "Verify Splunk Integration"() {
-        when:
+        given:
+        "Only run on non-OpenShift until we can fix the route issue in CI"
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
         "the integration is tested"
-
-        Deployment  deployment =
+        orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
+                 Env.mustGetDockerIOPassword(), Constants.ORCHESTRATOR_NAMESPACE)
+        Deployment deployment =
             new Deployment()
-                .setNamespace("stackrox")
+                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                 .setName("splunk")
-                .setImage("store/splunk/enterprise:latest")
+                .setImage("stackrox/splunk-test-repo:latest")
                 .addPort (8000)
                 .addPort (8088)
+                .addPort(8089)
                 .addAnnotation("test", "annotation")
                 .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
                 .addLabel("app", "splunk")
                 .setPrivilegedFlag(true)
                 .addVolume("test", "/tmp")
-                .setSkipReplicaWait(true)
-                .addImagePullSecret("stackrox")
-
+                .addImagePullSecret("qa-stackrox")
         orchestrator.createDeployment(deployment)
 
-        Deployment serviceDeployment =
-            new Deployment()
+        Service httpSvc = new Service("splunk-http", Constants.ORCHESTRATOR_NAMESPACE)
+                 .addLabel("app", "splunk")
+                 .addPort(8000, "TCP")
+                 .setType(Service.Type.CLUSTERIP)
+        orchestrator.createService(httpSvc)
+
+        Service  collectorSvc = new Service("splunk-collector", Constants.ORCHESTRATOR_NAMESPACE)
                 .addLabel("app", "splunk")
-                .setCreateLoadBalancer(true)
-                .setNamespace("stackrox")
-                .setName("splunk")
-                .setTargetPort(8000)
-                .addPort(8000, "TCP")
-                .setServiceName("splunk-http")
-
-        orchestrator.createService(serviceDeployment)
-
-        Deployment serviceDeploymentHec =
-            new Deployment()
-                .addLabel("app" , "splunk")
-                .setCreateLoadBalancer(true)
-                .setNamespace("stackrox")
-                .setName("splunk")
-                .setTargetPort(8088)
                 .addPort(8088, "TCP")
-                .setServiceName("splunk-hec")
+                .setType(Service.Type.CLUSTERIP)
 
-        orchestrator.createService(serviceDeploymentHec)
+        orchestrator.createService(collectorSvc)
 
-        then :
-        "the API should return an empty message or an error, depending on the config"
+        Service httpsSvc = new Service("splunk-https", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", "splunk")
+                .addPort(8089, "TCP")
+                .setType(Service.Type.LOADBALANCER)
+
+        orchestrator.createService(httpsSvc)
+
+        when:
+        "call the grpc API for the splunk integration."
+        NotifierOuterClass.Notifier notifier = Services.addSplunkNotifier("Splunk-integration")
+
+        and:
+        "Edit the policy with the latest keyword."
+        PolicyOuterClass.Policy.Builder policy = Services.getPolicyByName("Latest tag").toBuilder()
+        policy.setName(policy.name + " Splunk")
+                .setId("")
+                .addNotifiers(notifier.getId())
+        def policyId = CreatePolicyService.createNewPolicy(policy.build())
+
+        and:
+        "Create a new deployment to trigger the violation against the policy"
+        def nginxName = "nginxtest"+new Random(3000).nextInt()
+        Deployment nginxdeployment =
+                new Deployment()
+                        .setName(nginxName)
+                        .setImage("nginx:latest")
+                        .addLabel("app", "nginx-splunk-test")
+        orchestrator.createDeployment(nginxdeployment)
+        assert Services.waitForViolation(nginxName, policy.name, 60)
+
+        and:
+        "API call get info from Splunk."
+        println("Load Balancer ip is ${ httpsSvc.loadBalancerIP }")
+        //Max time out with junit is 50
+        def response = SplunkUtil.waitForSplunkAlerts(httpsSvc.loadBalancerIP, 50)
+
+        then:
+        "Verify the messages are seen in the json"
+
+        assert response.get("offset") == 0
+        assert response.get("preview") == false
+        assert response.get("namespace") == nginxdeployment.namespace
+        assert response.get("name") == nginxName
+        assert response.get("type") == "Deployment"
+        assert response.get("clusterName") == "remote"
+        assert response.get("policy") == policy.name
+        assert response.get("sourcetype") == "_json"
+        assert response.get("source") == "stackrox"
 
         cleanup:
         "remove Deployment and services"
+
         if (deployment != null) {
             orchestrator.deleteDeployment(deployment)
+            orchestrator.deleteDeployment(nginxdeployment)
         }
-        orchestrator.deleteService( "splunk-hec", "stackrox")
-        orchestrator.deleteService( "splunk-http", "stackrox")
+        orchestrator.deleteService("splunk-collector", Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.deleteService("splunk-http", Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.deleteService("splunk-https", Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.deleteSecret("qa-stackrox", Constants.ORCHESTRATOR_NAMESPACE)
+        if (policy != null) {
+            CreatePolicyService.deletePolicy(policyId)
+        }
+        if (notifier != null) {
+            NotifierService.deleteNotifier(notifier.getId())
+        }
     }
 
     @Category(Integration)

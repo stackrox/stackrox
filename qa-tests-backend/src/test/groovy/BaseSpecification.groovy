@@ -140,7 +140,6 @@ class BaseSpecification extends Specification {
             tc.setProjectSectionId("Prevent", "Policies")
             tc.createRun()
         }*/
-
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         try {

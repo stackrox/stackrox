@@ -9,6 +9,7 @@ class Service {
     Map<Integer, String> ports = [:]
     Type type = Type.CLUSTERIP
     Integer targetport
+    String loadBalancerIP = null
 
     Service(String name, String namespace = Constants.ORCHESTRATOR_NAMESPACE) {
         this.name = name

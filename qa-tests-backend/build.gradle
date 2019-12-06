@@ -49,6 +49,7 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
+    compile 'com.google.code.gson:gson:2.7'
     compile "com.google.api.grpc:proto-google-common-protos:1.0.0"
     compile "io.grpc:grpc-alts:${grpcVersion}"
     compile "io.grpc:grpc-netty:${grpcVersion}"
@@ -57,7 +58,6 @@ dependencies {
     compile "io.grpc:grpc-auth:${grpcVersion}"
     compile "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     compile "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
-
 
     // Use the latest Groovy version for building this library
     compile 'org.codehaus.groovy:groovy-all:2.2.2'

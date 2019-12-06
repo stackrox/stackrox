@@ -61,6 +61,7 @@ interface OrchestratorMain {
 
     //Secrets
     def createSecret(String name, String namespace)
+    def createImagePullSecret(String name, String username, String password, String namespace)
     def deleteSecret(String name, String namespace)
     def getSecretCount(String ns)
 

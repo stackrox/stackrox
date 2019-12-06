@@ -74,7 +74,6 @@ import objects.NetworkPolicyTypes
 import objects.Node
 import okhttp3.Response
 import util.Timer
-
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -83,10 +82,11 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 class Kubernetes implements OrchestratorMain {
+
     final int sleepDurationSeconds = 5
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
-
+    final int intervalTime = 1
     String namespace
     KubernetesClient client
 
@@ -493,8 +493,12 @@ class Kubernetes implements OrchestratorMain {
                     )
             )
             client.services().inNamespace(deployment.namespace).createOrReplace(service)
+            println(deployment.serviceName ?: deployment.name + " service created")
+            if (deployment.createLoadBalancer) {
+                deployment.loadBalancerIP = waitForLoadBalancer(deployment.serviceName ?:
+                        deployment.name, deployment.namespace)
+            }
         }
-        println "${deployment.name}: Service created"
     }
 
     def createService(objects.Service s) {
@@ -523,6 +527,9 @@ class Kubernetes implements OrchestratorMain {
             client.services().inNamespace(s.namespace).createOrReplace(service)
         }
         println "${s.name}: Service created"
+        if (objects.Service.Type.LOADBALANCER == s.type) {
+            s.loadBalancerIP = waitForLoadBalancer(s.name, s.namespace)
+        }
     }
 
     def deleteService(String name, String namespace = this.namespace) {
@@ -553,28 +560,39 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def createLoadBalancer(Deployment deployment) {
+    def waitForLoadBalancer(Deployment deployment) {
+        "Creating a load balancer"
         if (deployment.createLoadBalancer) {
-            println "Waiting for LB external IP for " + deployment.name
-            int retries = lbWaitTimeSeconds / sleepDurationSeconds
-            Timer t = new Timer(retries, sleepDurationSeconds)
-            while (t.IsValid()) {
-                Service service = client.services().inNamespace(deployment.namespace).withName(deployment.name).get()
-
-                if (service != null &&
-                        service.getStatus().getLoadBalancer().getIngress() != null &&
-                        service.getStatus().getLoadBalancer().getIngress().size() > 0) {
-                    deployment.loadBalancerIP =
-                            service.getStatus().getLoadBalancer().getIngress().get(0).getIp() != null ?
-                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp() :
-                                    service.getStatus().getLoadBalancer().getIngress().get(0).getHostname()
-                    println "LB IP: " + deployment.loadBalancerIP
-                    break
-                }
-            }
+            deployment.loadBalancerIP = waitForLoadBalancer(deployment.serviceName ?:
+                                        deployment.name, deployment.namespace)
         }
     }
 
+    /**
+     * This is an overloaded method for creating load balancer for a given service or deployment
+     *
+     * @param service
+     */
+    String waitForLoadBalancer(String serviceName, String namespace) {
+        Service service
+        String loadBalancerIP
+        int iterations = lbWaitTimeSeconds/intervalTime
+        println "Waiting for LB external IP for " + serviceName
+        Timer t = new Timer(iterations, intervalTime)
+        while (t.IsValid()) {
+            service = client.services().inNamespace(namespace).withName(serviceName).get()
+            if (service?.status?.loadBalancer?.ingress?.size()) {
+                loadBalancerIP = service.status.loadBalancer.ingress.get(0).
+                                  ip ?: service.status.loadBalancer.ingress.get(0).hostname
+                println "LB IP: " + loadBalancerIP
+                break
+            }
+        }
+        if (loadBalancerIP == null) {
+            println("Could not get loadBalancer IP in ${t.SecondsSince()} and ${iterations}")
+        }
+        return loadBalancerIP
+    }
     /*
         Secrets Methods
     */
@@ -589,6 +607,31 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         println "Timed out waiting for secret ${secretName} to be created"
+    }
+
+    String createImagePullSecret(String name, String username, String password, String namespace = this.namespace)  {
+        Map<String, String> data = new HashMap<String, String>()
+        String userNameWithPassword = username + ":" + password
+        def b64Password = Base64.getEncoder().encodeToString(userNameWithPassword.getBytes())
+        def dockerConfigJSON =  "{\"auths\":{\"https://docker.io\": {\"auth\": \"" + b64Password + "\"}}}"
+        data.put(".dockerconfigjson", Base64.getEncoder().encodeToString(dockerConfigJSON.getBytes()))
+
+        Secret secret = new Secret(
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "kubernetes.io/dockerconfigjson",
+                data: data,
+                metadata: new ObjectMeta(
+                        name: name
+                )
+        )
+
+        Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
+        if (createdSecret != null) {
+            waitForSecretCreation(name, namespace)
+            return createdSecret.metadata.uid
+        }
+        throw new RuntimeException("Couldn't create secret")
     }
 
     String createSecret(String name, String namespace = this.namespace) {
@@ -1211,7 +1254,6 @@ class Kubernetes implements OrchestratorMain {
         // Create service if needed
         if (deployment.exposeAsService) {
             createService(deployment)
-            createLoadBalancer(deployment)
         }
 
         K8sDeployment d = new K8sDeployment(
@@ -1239,7 +1281,10 @@ class Kubernetes implements OrchestratorMain {
 
         try {
             client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
-            println("Told the orchestrator to create " + deployment.getName())
+            println("Told the orchestrator to create " + deployment.name)
+            if (deployment.createLoadBalancer) {
+                waitForLoadBalancer(deployment)
+            }
             return true
         } catch (Exception e) {
             println("Error creating k8s deployment: " + e.toString())

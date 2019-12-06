@@ -78,8 +78,6 @@ class OpenShift extends Kubernetes {
     /*
         Service Methods
     */
-
-    @Override
     def createLoadBalancer(Deployment deployment) {
         if (deployment.createLoadBalancer) {
             Route route = new Route(
@@ -97,7 +95,6 @@ class OpenShift extends Kubernetes {
             while (keepIterating && t.IsValid()) {
                 RouteList rList
                 rList = oClient.routes().inNamespace(deployment.namespace).list()
-
                 for (Route r : rList.getItems()) {
                     if (r.getMetadata().getName() == deployment.name) {
                         if (r.getStatus().getIngress() != null) {
