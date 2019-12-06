@@ -1,0 +1,156 @@
+package graph
+
+import (
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/utils"
+)
+
+// RGraph is a read-only view of a Graph.
+type RGraph interface {
+	HasRefsFrom(from []byte) bool
+	HasRefsTo(to []byte) bool
+
+	CountRefsFrom(from []byte) int
+	CountRefsTo(to []byte) int
+
+	GetRefsFrom(from []byte) [][]byte
+	GetRefsTo(to []byte) [][]byte
+}
+
+// RWGraph is a read-write view of a Graph.
+type RWGraph interface {
+	RGraph
+
+	SetRefs(from []byte, to [][]byte) error
+	AddRefs(from []byte, to ...[]byte) error
+	DeleteRefs(from []byte) error
+}
+
+// NewGraph is the basic type holding forward and backward ID relationships.
+func NewGraph() *Graph {
+	return &Graph{
+		forward:  make(map[string][][]byte),
+		backward: make(map[string][][]byte),
+	}
+}
+
+// Graph holds forward and backward edge lists which can be modified by Add, Set, and Delete calls.
+type Graph struct {
+	forward  map[string][][]byte
+	backward map[string][][]byte
+}
+
+// HasRefsFrom returns if there is an entry with 0 or more child keys in the graph.
+func (s *Graph) HasRefsFrom(from []byte) bool {
+	_, exists := s.forward[string(from)]
+	return exists
+}
+
+// HasRefsTo returns if there is an entry with 0 or more parent keys in the graph.
+func (s *Graph) HasRefsTo(to []byte) bool {
+	_, exists := s.backward[string(to)]
+	return exists
+}
+
+// CountRefsFrom returns the number of children reference from the input parent key.
+func (s *Graph) CountRefsFrom(from []byte) int {
+	return len(s.forward[string(from)])
+}
+
+// CountRefsTo returns the number of parents that reference the input child key.
+func (s *Graph) CountRefsTo(to []byte) int {
+	return len(s.backward[string(to)])
+}
+
+// GetRefsFrom returns the children referenced by the input parent key.
+func (s *Graph) GetRefsFrom(from []byte) [][]byte {
+	if keys, exist := s.forward[string(from)]; exist {
+		return append([][]byte{}, keys...)
+	}
+	return nil
+}
+
+// GetRefsTo returns the parents that reference the input child key.
+func (s *Graph) GetRefsTo(to []byte) [][]byte {
+	if keys, exist := s.backward[string(to)]; exist {
+		return append([][]byte{}, keys...)
+	}
+	return nil
+}
+
+// SetRefs sets the children of 'from' to be the input list of keys 'to'.
+func (s *Graph) SetRefs(from []byte, to [][]byte) {
+	s.removeMappings(from)
+	s.addMappings(from, to)
+}
+
+// AddRefs adds the set of keys 'to' to the list of children of 'from'.
+func (s *Graph) AddRefs(from []byte, to ...[]byte) {
+	s.addMappings(from, to)
+}
+
+// DeleteRefs removes all children from the input key, and removes the input key from the maps.
+// Calls to HasRefsFrom will return false afterwards.
+func (s *Graph) DeleteRefs(from []byte) {
+	s.removeMappings(from)
+}
+
+// Copy creates a copy of the Graph.
+func (s *Graph) Copy() *Graph {
+	ret := &Graph{
+		forward:  make(map[string][][]byte, len(s.forward)),
+		backward: make(map[string][][]byte, len(s.backward)),
+	}
+	for from, tos := range s.forward {
+		ret.forward[from] = utils.CopyKeys(tos)
+	}
+	for to, froms := range s.backward {
+		ret.backward[to] = utils.CopyKeys(froms)
+	}
+	return ret
+}
+
+// Clear resets the Graph to be empty.
+func (s *Graph) Clear() {
+	s.forward = make(map[string][][]byte)
+	s.backward = make(map[string][][]byte)
+}
+
+// Used by RemoteGraph to set values without causing dependent changes.
+///////////////////////////////////////////////////////////////////////
+
+func (s *Graph) initializeFrom(from []byte, to [][]byte) {
+	s.forward[string(from)] = to
+}
+
+func (s *Graph) initializeTo(to []byte, from [][]byte) {
+	s.backward[string(to)] = from
+}
+
+// Helper functions.
+////////////////////
+
+func (s *Graph) addMappings(from []byte, to [][]byte) {
+	sFrom := string(from)
+	s.forward[sFrom] = sortedkeys.SortedKeys(s.forward[sFrom]).Union(sortedkeys.Sort(to))
+	for _, t := range to {
+		sTo := string(t)
+		s.backward[sTo], _ = sortedkeys.SortedKeys(s.backward[sTo]).Insert(from)
+	}
+}
+
+func (s *Graph) removeMappings(from []byte) {
+	sFrom := string(from)
+	tos, exists := s.forward[sFrom]
+	if !exists {
+		return
+	}
+	for _, to := range tos {
+		sTo := string(to)
+		s.backward[sTo], _ = sortedkeys.SortedKeys(s.backward[sTo]).Remove(from)
+		if len(s.backward[sTo]) == 0 {
+			delete(s.backward, sTo)
+		}
+	}
+	delete(s.forward, sFrom)
+}

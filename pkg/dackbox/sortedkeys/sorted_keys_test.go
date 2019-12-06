@@ -8,10 +8,10 @@ import (
 
 func TestSortedKeys(t *testing.T) {
 	var sk SortedKeys
-	sk = sk.Insert([]byte("4key4"))
-	sk = sk.Insert([]byte("key1"))
-	sk = sk.Insert([]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"))
-	sk = sk.Insert([]byte("33key"))
+	sk, _ = sk.Insert([]byte("4key4"))
+	sk, _ = sk.Insert([]byte("key1"))
+	sk, _ = sk.Insert([]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"))
+	sk, _ = sk.Insert([]byte("33key"))
 	require.Equal(t, 3, sk.Find([]byte("key1")))
 
 	marshaled := sk.Marshal()
@@ -20,8 +20,8 @@ func TestSortedKeys(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, sk, newSk)
 
-	newSk = newSk.Remove([]byte("33key"))
-	newSk = newSk.Remove([]byte("4key4"))
+	newSk, _ = newSk.Remove([]byte("33key"))
+	newSk, _ = newSk.Remove([]byte("4key4"))
 
 	require.Equal(t, SortedKeys{[]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"), []byte("key1")}, newSk)
 	uni := sk.Union(newSk)
@@ -35,17 +35,17 @@ func TestSortedKeys(t *testing.T) {
 func BenchmarkSortedKeys(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var sk SortedKeys
-		sk = sk.Insert([]byte("4key4"))
-		sk = sk.Insert([]byte("key1"))
-		sk = sk.Insert([]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"))
-		sk = sk.Insert([]byte("33key"))
+		sk, _ = sk.Insert([]byte("4key4"))
+		sk, _ = sk.Insert([]byte("key1"))
+		sk, _ = sk.Insert([]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"))
+		sk, _ = sk.Insert([]byte("33key"))
 
 		marshaled := sk.Marshal()
 
 		newSk, _ := Unmarshal(marshaled)
 
-		newSk = newSk.Remove([]byte("33key"))
-		newSk = newSk.Remove([]byte("4key4"))
+		newSk, _ = newSk.Remove([]byte("33key"))
+		newSk, _ = newSk.Remove([]byte("4key4"))
 
 		sk.Union(newSk)
 		sk.Difference(newSk)

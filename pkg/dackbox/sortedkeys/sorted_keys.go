@@ -22,26 +22,29 @@ func Sort(in [][]byte) SortedKeys {
 
 // Find returns the index of the input key, or -1 if it is not found.
 func (sk SortedKeys) Find(key []byte) int {
-	if len(sk) == 0 {
+	pos, exists := sk.positionOf(key)
+	if !exists {
 		return -1
 	}
-	idx := sort.Search(len(sk), func(i int) bool {
-		return bytes.Compare(sk[i], key) >= 0
-	})
-	if idx < len(sk) && bytes.Equal(sk[idx], key) {
-		return idx
-	}
-	return -1
+	return pos
 }
 
 // Insert adds a key to the sorted set.
-func (sk SortedKeys) Insert(key []byte) SortedKeys {
-	return sk.Union(SortedKeys{key})
+func (sk SortedKeys) Insert(key []byte) (SortedKeys, bool) {
+	pos, exists := sk.positionOf(key)
+	if exists {
+		return sk, false
+	}
+	return sk.insertAt(key, pos), true
 }
 
 // Remove removes a key from the sorted set.
-func (sk SortedKeys) Remove(key []byte) SortedKeys {
-	return sk.Difference(SortedKeys{key})
+func (sk SortedKeys) Remove(key []byte) (SortedKeys, bool) {
+	pos, exists := sk.positionOf(key)
+	if !exists {
+		return sk, false
+	}
+	return sk.removeAt(pos), true
 }
 
 // Union combines two sets of sorted keys.
@@ -125,4 +128,34 @@ func (sk SortedKeys) Intersect(other SortedKeys) SortedKeys {
 		otherInBounds = otherIdx < len(other)
 	}
 	return newKeys
+}
+
+// Does a binary search for where key fits into the sorted list, returns true in the second param if it is already present.
+func (sk SortedKeys) positionOf(key []byte) (int, bool) {
+	if len(sk) == 0 {
+		return 0, false
+	}
+	idx := sort.Search(len(sk), func(i int) bool {
+		return bytes.Compare(sk[i], key) >= 0
+	})
+	if idx < len(sk) && bytes.Equal(sk[idx], key) {
+		return idx, true
+	}
+	return idx, false
+}
+
+func (sk SortedKeys) insertAt(key []byte, idx int) SortedKeys {
+	leadingValues := append(append([][]byte{}, sk[:idx]...), key)
+	if len(sk) == idx {
+		return leadingValues // no values after the insertion index.
+	}
+	return append(leadingValues, sk[idx:]...)
+}
+
+func (sk SortedKeys) removeAt(idx int) SortedKeys {
+	leadingValues := append([][]byte{}, sk[:idx]...)
+	if len(sk)-1 == idx {
+		return leadingValues // no values after the removed index.
+	}
+	return append(leadingValues, sk[idx+1:]...)
 }
