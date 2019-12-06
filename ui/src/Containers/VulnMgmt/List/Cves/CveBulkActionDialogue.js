@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import gql from 'graphql-tag';
+import { useQuery } from 'react-apollo';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
 import CustomDialogue from 'Components/CustomDialogue';
+import InfoList from 'Components/InfoList';
+import Loader from 'Components/Loader';
+import queryService from 'modules/queryService';
+import { truncate } from 'utils/textUtils';
 
 const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [policy, setPolicy] = useState({ name: '' });
 
     // TODO: add useQuery to get the (hopefully cached) cve summaries to display in the dialog
     //       (this seems easier than refactoring the checkbox tables everywhere to maintain an array of selected entities)
+    const CVES_QUERY = gql`
+        query getCves($query: String) {
+            results: vulnerabilities(query: $query) {
+                id: cve
+                cve
+                summary
+            }
+        }
+    `;
+
+    const cvesStr = bulkActionCveIds.join(',');
+    const cvesObj = {
+        cve: cvesStr
+    };
+    const queryOptions = {
+        variables: {
+            query: queryService.objectToWhereClause(cvesObj)
+        }
+    };
+    const { loading, data: cveData } = useQuery(CVES_QUERY, queryOptions);
 
     function handleChange(event) {
         if (get(policy, event.target.name) !== undefined) {
@@ -24,11 +50,24 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     function handleClose() {
         closeAction([]);
     }
+    function renderCve(item) {
+        const truncatedSummary = truncate(item.summary, 120);
+        return (
+            <li key={item.id} className="flex items-center bg-tertiary-200 mb-2 p-2">
+                <span className="min-w-32">{item.cve}</span>
+                <span>{truncatedSummary}</span>
+            </li>
+        );
+    }
+
+    const cveItems =
+        !loading && cveData && cveData.results && cveData.results.length ? cveData.results : [];
 
     if (bulkActionCveIds.length === 0) return null;
 
     return (
         <CustomDialogue
+            className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
             title="Add To Policy"
             text=""
             onConfirm={handleClose}
@@ -37,7 +76,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             onCancel={handleClose}
         >
             {/* TODO: replace with working form, this is a temporary placeholder only */}
-            <div className="p-2">
+            <div className="p-4">
                 <form>
                     <div className="mb-4">
                         <label htmlFor="name" className="block py-2 text-base-600 font-700">
@@ -61,12 +100,15 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                             />
                         </div>
                     </div>
-                    Form goes here for {bulkActionCveIds.length}
                 </form>
-                <div className="p-2">
-                    <h3>{`${
+                <div className="pt-2">
+                    <h3 className="mb-2">{`${
                         bulkActionCveIds.length
                     } CVEs listed below will be added to this policy:`}</h3>
+                    {loading && <Loader />}
+                    {!loading && (
+                        <InfoList items={cveItems} renderItem={renderCve} extraClassNames="h-48" />
+                    )}
                 </div>
             </div>
         </CustomDialogue>
