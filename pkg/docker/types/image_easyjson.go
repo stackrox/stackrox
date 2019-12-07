@@ -94,7 +94,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes(in *jlexer.Lexer, 
 				if out.Config == nil {
 					out.Config = new(Config)
 				}
-				easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in, &*out.Config)
+				easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in, out.Config)
 			}
 		default:
 			in.SkipRecursive()
@@ -221,7 +221,7 @@ func easyjson220accf5DecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.Healthcheck == nil {
 					out.Healthcheck = new(container.HealthConfig)
 				}
-				easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in, &*out.Healthcheck)
+				easyjson220accf5DecodeGithubComDockerDockerApiTypesContainer(in, out.Healthcheck)
 			}
 		case "User":
 			out.User = string(in.String())

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -9,7 +11,7 @@ import (
 func Must(errs ...error) {
 	for _, err := range errs {
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("%+v", err))
 		}
 	}
 }

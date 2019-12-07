@@ -24,11 +24,6 @@ func Equal(u1 UUID, u2 UUID) bool {
 	return uuid.Equal(u1.uuid, u2.uuid)
 }
 
-// Version returns algorithm version used to generate UUID.
-func (u UUID) Version() uint {
-	return u.uuid.Version()
-}
-
 // Bytes returns bytes slice representation of UUID.
 func (u UUID) Bytes() []byte {
 	return u.uuid.Bytes()

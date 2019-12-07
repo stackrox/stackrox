@@ -26,12 +26,9 @@ func (objectPreconditionsCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *
 		}
 
 		for _, act := range acts {
-			resClient, err := ctx.DynamicClientForResource(res, act.ObjectRef.Namespace)
-			if err != nil {
-				return errors.Wrapf(err, "could not retrieve dynamic client for resource type %v", gvk)
-			}
+			resClient := ctx.DynamicClientForResource(res, act.ObjectRef.Namespace)
 
-			_, err = resClient.Get(act.ObjectRef.Name, metav1.GetOptions{})
+			_, err := resClient.Get(act.ObjectRef.Name, metav1.GetOptions{})
 			if err != nil && !k8sErrors.IsNotFound(err) {
 				return errors.Wrapf(err, "could not retrieve resource %v", act.ObjectRef)
 			}

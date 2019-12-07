@@ -190,7 +190,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.Config == nil {
 					out.Config = new(Config)
 				}
-				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes3(in, &*out.Config)
+				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes3(in, out.Config)
 			}
 		case "NetworkSettings":
 			if in.IsNull() {
@@ -200,7 +200,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.NetworkSettings == nil {
 					out.NetworkSettings = new(NetworkSettings)
 				}
-				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes4(in, &*out.NetworkSettings)
+				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes4(in, out.NetworkSettings)
 			}
 		case "Id":
 			out.ID = string(in.String())
@@ -214,7 +214,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.State == nil {
 					out.State = new(ContainerState)
 				}
-				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes5(in, &*out.State)
+				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes5(in, out.State)
 			}
 		case "Name":
 			out.Name = string(in.String())
@@ -228,7 +228,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes1(in *jlexer.Lexer,
 				if out.HostConfig == nil {
 					out.HostConfig = new(HostConfig)
 				}
-				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes6(in, &*out.HostConfig)
+				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes6(in, out.HostConfig)
 			}
 		default:
 			in.SkipRecursive()
@@ -490,7 +490,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes6(in *jlexer.Lexer,
 						if v8 == nil {
 							v8 = new(go_units.Ulimit)
 						}
-						easyjson1dbef17bDecodeGithubComDockerGoUnits(in, &*v8)
+						easyjson1dbef17bDecodeGithubComDockerGoUnits(in, v8)
 					}
 					out.Ulimits = append(out.Ulimits, v8)
 					in.WantComma()
@@ -962,7 +962,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes5(in *jlexer.Lexer,
 				if out.Health == nil {
 					out.Health = new(Health)
 				}
-				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes7(in, &*out.Health)
+				easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes7(in, out.Health)
 			}
 		default:
 			in.SkipRecursive()
@@ -1323,7 +1323,7 @@ func easyjson1dbef17bDecodeGithubComStackroxRoxPkgDockerTypes3(in *jlexer.Lexer,
 				if out.Healthcheck == nil {
 					out.Healthcheck = new(container.HealthConfig)
 				}
-				easyjson1dbef17bDecodeGithubComDockerDockerApiTypesContainer2(in, &*out.Healthcheck)
+				easyjson1dbef17bDecodeGithubComDockerDockerApiTypesContainer2(in, out.Healthcheck)
 			}
 		case "User":
 			out.User = string(in.String())

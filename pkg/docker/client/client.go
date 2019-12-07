@@ -46,6 +46,7 @@ For example, to list running containers (the equivalent of "docker ps"):
 package client
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -57,6 +58,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/versions"
 	"github.com/docker/go-connections/sockets"
 	"github.com/docker/go-connections/tlsconfig"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -89,6 +92,9 @@ type Client struct {
 	customHTTPHeaders map[string]string
 	// manualOverride is set to true when the version was set by users.
 	manualOverride bool
+
+	// negotiated indicates that API version negotiation took place
+	negotiated bool
 }
 
 // CheckRedirect specifies the policy for dealing with redirect responses:
@@ -204,12 +210,43 @@ func NewClient(host string, version string, client *http.Client, httpHeaders map
 	}, nil
 }
 
+// NegotiateAPIVersion queries the API and updates the version to match the
+// API version. Any errors are silently ignored.
+func (cli *Client) NegotiateAPIVersion(ctx context.Context) {
+	ping, _ := cli.Ping(ctx)
+	cli.NegotiateAPIVersionPing(ping)
+}
+
+// NegotiateAPIVersionPing updates the client version to match the Ping.APIVersion
+// if the ping version is less than the default version.
+func (cli *Client) NegotiateAPIVersionPing(p types.Ping) {
+	if cli.manualOverride {
+		return
+	}
+	// try the latest version before versioning headers existed
+	if p.APIVersion == "" {
+		p.APIVersion = "1.24"
+	}
+	// if the client is not initialized with a version, start with the latest supported version
+	if cli.version == "" {
+		cli.version = api.DefaultVersion
+	}
+
+	// if server version is lower than the maximum version supported by the Client, downgrade
+	if versions.LessThan(p.APIVersion, api.DefaultVersion) {
+		// if server version is lower than the client version, downgrade
+		if versions.LessThan(p.APIVersion, cli.version) {
+			cli.version = p.APIVersion
+		}
+	}
+	cli.negotiated = true
+}
+
 // Close ensures that transport.Client is closed
 // especially needed while using NewClient with *http.Client = nil
 // for example
 // client.NewClient("unix:///var/run/docker.sock", nil, "v1.18", map[string]string{"User-Agent": "engine-api-cli-1.0"})
 func (cli *Client) Close() error {
-
 	if t, ok := cli.client.Transport.(*http.Transport); ok {
 		t.CloseIdleConnections()
 	}
@@ -219,7 +256,11 @@ func (cli *Client) Close() error {
 
 // getAPIPath returns the versioned request path to call the api.
 // It appends the query parameters to the path if they are not empty.
-func (cli *Client) getAPIPath(p string, query url.Values) string {
+func (cli *Client) getAPIPath(ctx context.Context, p string, query url.Values) string {
+	if !cli.negotiated {
+		cli.NegotiateAPIVersion(ctx)
+	}
+
 	var apiPath string
 	if cli.version != "" {
 		v := strings.TrimPrefix(cli.version, "v")

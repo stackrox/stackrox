@@ -25,9 +25,9 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi"
-	openAPIValidation "k8s.io/kubernetes/pkg/kubectl/cmd/util/openapi/validation"
-	"k8s.io/kubernetes/pkg/kubectl/validation"
+	"k8s.io/kubectl/pkg/util/openapi"
+	openAPIValidation "k8s.io/kubectl/pkg/util/openapi/validation"
+	"k8s.io/kubectl/pkg/validation"
 )
 
 var (
@@ -41,12 +41,12 @@ type UpgradeContext struct {
 
 	config config.UpgraderConfig
 
-	scheme            *runtime.Scheme
-	codecs            serializer.CodecFactory
-	resources         map[schema.GroupVersionKind]*resources.Metadata
-	clientSet         *kubernetes.Clientset
-	dynamicClientPool dynamic.ClientPool
-	schemaValidator   validation.Schema
+	scheme                 *runtime.Scheme
+	codecs                 serializer.CodecFactory
+	resources              map[schema.GroupVersionKind]*resources.Metadata
+	clientSet              *kubernetes.Clientset
+	dynamicClientGenerator dynamic.Interface
+	schemaValidator        validation.Schema
 
 	ownerRef *metav1.OwnerReference
 
@@ -70,8 +70,11 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	if err != nil {
 		return nil, errors.Wrap(err, "creating Kubernetes API clients")
 	}
-	dynamicClientPool := dynamic.NewDynamicClientPool(&restConfigShallowCopy)
 
+	dynamicClientGenerator, err := dynamic.NewForConfig(&restConfigShallowCopy)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating dynamic client")
+	}
 	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery())
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving Kubernetes resources from server")
@@ -121,13 +124,13 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	schm := scheme.Scheme
 
 	c := &UpgradeContext{
-		ctx:               ctx,
-		config:            *config,
-		scheme:            schm,
-		codecs:            serializer.NewCodecFactory(schm),
-		resources:         resourceMap,
-		clientSet:         k8sClientSet,
-		dynamicClientPool: dynamicClientPool,
+		ctx:                    ctx,
+		config:                 *config,
+		scheme:                 schm,
+		codecs:                 serializer.NewCodecFactory(schm),
+		resources:              resourceMap,
+		clientSet:              k8sClientSet,
+		dynamicClientGenerator: dynamicClientGenerator,
 		schemaValidator: validation.ConjunctiveSchema{
 			schemaValidator,
 			yamlValidator{jsonValidator: validation.NoDoubleKeySchema{}},
@@ -175,11 +178,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 		if ownerRes == nil {
 			return nil, errors.Errorf("server does not support resource type of supposed owner %v", config.Owner)
 		}
-		client, err := dynamicClientPool.ClientForGroupVersionKind(config.Owner.GVK)
-		if err != nil {
-			return nil, errors.Wrapf(err, "error obtaining dynamic client for owner resource type %v", config.Owner.GVK)
-		}
-		ownerResourceClient := client.Resource(&ownerRes.APIResource, config.Owner.Namespace)
+		ownerResourceClient := c.DynamicClientForResource(ownerRes, config.Owner.Namespace)
 		ownerObj, err := ownerResourceClient.Get(config.Owner.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not retrieve supposed owner %v", config.Owner)
@@ -230,12 +229,12 @@ func (c *UpgradeContext) ClientSet() *kubernetes.Clientset {
 
 // DynamicClientForResource returns a dynamic client for the given resource and namespace. If the resource is not
 // namespaced, the namespace parameter is ignored.
-func (c *UpgradeContext) DynamicClientForResource(resource *resources.Metadata, namespace string) (dynamic.ResourceInterface, error) {
-	client, err := c.dynamicClientPool.ClientForGroupVersionKind(resource.GroupVersionKind())
-	if err != nil {
-		return nil, err
+func (c *UpgradeContext) DynamicClientForResource(resource *resources.Metadata, namespace string) dynamic.ResourceInterface {
+	r := c.dynamicClientGenerator.Resource(resource.GroupVersionResource())
+	if resource.Namespaced {
+		return r.Namespace(namespace)
 	}
-	return client.Resource(&resource.APIResource, namespace), nil
+	return r
 }
 
 // DynamicClientForGVK returns a dynamic client for the given group/version/kind, given that it is a valid resource for
@@ -245,7 +244,7 @@ func (c *UpgradeContext) DynamicClientForGVK(gvk schema.GroupVersionKind, purpos
 	if resMD == nil {
 		return nil, errors.Errorf("the server does not support resource type %v for purpose %v", gvk, purpose)
 	}
-	return c.DynamicClientForResource(resMD, namespace)
+	return c.DynamicClientForResource(resMD, namespace), nil
 }
 
 // ProcessID returns the ID of the current upgrade process.
@@ -377,10 +376,7 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 			continue
 		}
 
-		resourceClient, err := c.DynamicClientForResource(resourceType, common.Namespace)
-		if err != nil {
-			return nil, errors.Wrapf(err, "obtaining dynamic client for resource %v", resourceType)
-		}
+		resourceClient := c.DynamicClientForResource(resourceType, common.Namespace)
 		listObj, err := resourceClient.List(*listOpts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceType)

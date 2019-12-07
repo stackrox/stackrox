@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -31,14 +32,14 @@ func clearServiceAccountDynamicFields(obj *unstructured.Unstructured) {
 	// Remove the default token, as it is auto-populated.
 	defaultTokenNamePrefix := fmt.Sprintf("%s-token-", obj.GetName())
 	secrets, _, _ := unstructured.NestedSlice(obj.Object, "secrets")
-	filteredSecrets := secrets[:0]
+	var filteredSecrets []interface{}
 	for _, secret := range secrets {
 		secretObj, _ := secret.(map[string]interface{})
 		if secretName, _, _ := unstructured.NestedString(secretObj, "name"); !strings.HasPrefix(secretName, defaultTokenNamePrefix) {
 			filteredSecrets = append(filteredSecrets, secret)
 		}
 	}
-	_ = unstructured.SetNestedSlice(obj.Object, filteredSecrets, "secrets")
+	utils.Should(unstructured.SetNestedSlice(obj.Object, filteredSecrets, "secrets"))
 }
 
 func clearServiceDynamicFields(obj *unstructured.Unstructured) {

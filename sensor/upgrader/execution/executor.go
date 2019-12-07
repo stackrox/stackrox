@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -37,10 +38,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 		return errors.Errorf("no resource information available for object kind %v", act.ObjectRef.GVK)
 	}
 
-	client, err := e.ctx.DynamicClientForResource(res, act.ObjectRef.Namespace)
-	if err != nil {
-		return errors.Wrapf(err, "obtaining dynamic client for resource %v", res)
-	}
+	client := e.ctx.DynamicClientForResource(res, act.ObjectRef.Namespace)
 
 	var obj unstructured.Unstructured
 	if act.Object != nil {
@@ -59,7 +57,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 
 	switch act.ActionName {
 	case plan.CreateAction:
-		if _, err := client.Create(&obj); err != nil {
+		if _, err := client.Create(&obj, metaV1.CreateOptions{}); err != nil {
 			if k8sErrors.IsAlreadyExists(err) && common.IsSharedObject(act.ObjectRef) {
 				log.Warnf("Skipping creation of shared object %v", act.ObjectRef)
 			} else {
@@ -67,7 +65,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			}
 		}
 	case plan.UpdateAction:
-		if _, err := client.Update(&obj); err != nil {
+		if _, err := client.Update(&obj, metaV1.UpdateOptions{}); err != nil {
 			return err
 		}
 	case plan.DeleteAction:

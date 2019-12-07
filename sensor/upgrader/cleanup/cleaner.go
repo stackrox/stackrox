@@ -33,10 +33,7 @@ func (c *cleaner) CleanupOwner() error {
 		return errors.Errorf("the cluster does not support the resource of the owning object %v", ownerRef)
 	}
 
-	client, err := c.ctx.DynamicClientForResource(ownerResourceMD, ownerRef.Namespace)
-	if err != nil {
-		return errors.Wrapf(err, "obtaining client for owner %v cleanup", ownerRef)
-	}
+	client := c.ctx.DynamicClientForResource(ownerResourceMD, ownerRef.Namespace)
 	return client.Delete(ownerRef.Name, kubernetes.DeleteBackgroundOption)
 }
 

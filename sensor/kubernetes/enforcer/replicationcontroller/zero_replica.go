@@ -2,17 +2,16 @@ package replicationcontroller
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
-	"k8s.io/api/extensions/v1beta1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // EnforceZeroReplica scales a ReplicationController down to 0 instances.
 func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
-	scaleRequest := &v1beta1.Scale{
-		Spec: pkgKubernetes.ScaleToZeroSpec,
+	scaleRequest := &autoscalingv1.Scale{
+		Spec: autoscalingv1.ScaleSpec{Replicas: 0},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentInfo.GetDeploymentName(),
 			Namespace: deploymentInfo.GetNamespace(),

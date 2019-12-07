@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"gopkg.in/yaml.v2"
-	"k8s.io/apiserver/pkg/server/options/encryptionconfig"
+	v1 "k8s.io/apiserver/pkg/apis/config/v1"
 )
 
 const kubeAPIProcessName = "kube-apiserver"
@@ -82,7 +82,7 @@ func encryptionProvider() framework.Check {
 				framework.FailNowf(ctx, "No file was found encryption-provider-config value of %q", msgfmt.FormatStrings(arg.GetValues()...))
 			}
 
-			var config encryptionconfig.EncryptionConfig
+			var config v1.EncryptionConfiguration
 			if err := yaml.Unmarshal(arg.GetFile().GetContent(), &config); err != nil {
 				framework.FailNowf(ctx, "Could not parse file %q to check for aescbc, secretbox or kms specification due to %v. Please manually check", arg.GetFile().GetPath(), err)
 			}
