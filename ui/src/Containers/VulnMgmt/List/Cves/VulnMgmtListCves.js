@@ -261,6 +261,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 className="btn-icon btn-tertiary"
                 onClick={addToPolicy()}
                 disabled={selectedCveIds.length === 0}
+                tooltip="Add Selected CVEs to Policy"
             >
                 Add to Policy
             </PanelButton>
@@ -269,6 +270,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 className="btn-icon btn-alert ml-2"
                 onClick={suppressCVEs()}
                 disabled={selectedCveIds.length === 0}
+                tooltip="Suppress Selected CVEs"
             >
                 Suppress
             </PanelButton>
@@ -276,6 +278,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 icon={<Icon.Plus className="h-4 w-4" />}
                 className="btn-icon btn-base ml-2"
                 onClick={viewSuppressed}
+                tooltip="View Suppressed CVEs"
             >
                 View Suppressed
             </PanelButton>

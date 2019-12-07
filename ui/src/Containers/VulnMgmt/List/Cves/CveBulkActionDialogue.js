@@ -8,14 +8,37 @@ import set from 'lodash/set';
 import CustomDialogue from 'Components/CustomDialogue';
 import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
+import Message from 'Components/Message';
 import queryService from 'modules/queryService';
+import { createPolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
 
-const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
-    const [policy, setPolicy] = useState({ name: '' });
+import CveToPolicyShortForm from './CveToPolicyShortForm';
 
-    // TODO: add useQuery to get the (hopefully cached) cve summaries to display in the dialog
-    //       (this seems easier than refactoring the checkbox tables everywhere to maintain an array of selected entities)
+const emptyPolicy = {
+    name: '',
+    severity: '',
+    lifecycleStages: [],
+    description: '',
+    disabled: false,
+    categories: ['Vulnerability Management'],
+    fields: {
+        cve: ''
+    },
+    whitelists: []
+};
+
+const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
+    const [showMessage, setShowMessage] = useState(false);
+
+    // the combined CVEs are used for both the policy object and the GraphQL query var
+    const cvesStr = bulkActionCveIds.join(',');
+
+    // prepare policy object
+    const populatedPolicy = { ...emptyPolicy, fields: { cve: cvesStr } };
+    const [policy, setPolicy] = useState(populatedPolicy);
+
+    // use GraphQL to get the (hopefully cached) cve summaries to display in the dialog
     const CVES_QUERY = gql`
         query getCves($query: String) {
             results: vulnerabilities(query: $query) {
@@ -25,8 +48,6 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             }
         }
     `;
-
-    const cvesStr = bulkActionCveIds.join(',');
     const cvesObj = {
         cve: cvesStr
     };
@@ -50,6 +71,20 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     function handleClose() {
         closeAction([]);
     }
+
+    function savePolicy() {
+        // TODO: make the form submission more robust, and handle adding to an existing policy
+        //   this current save function is only for smoke-testing the form
+        createPolicy(policy)
+            .then(() => {
+                setShowMessage(true);
+            })
+            .catch(error => {
+                // eslint-disable-next-line no-console
+                console.log(error);
+            });
+    }
+
     function renderCve(item) {
         const truncatedSummary = truncate(item.summary, 120);
         return (
@@ -70,37 +105,15 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
             title="Add To Policy"
             text=""
-            onConfirm={handleClose}
-            confirmText="Shall I do it?"
-            confirmDisabled={false}
+            onConfirm={savePolicy}
+            confirmText="Save Policy"
+            confirmDisabled={showMessage}
             onCancel={handleClose}
         >
             {/* TODO: replace with working form, this is a temporary placeholder only */}
             <div className="p-4">
-                <form>
-                    <div className="mb-4">
-                        <label htmlFor="name" className="block py-2 text-base-600 font-700">
-                            Policy Name{' '}
-                            <span
-                                aria-label="Required"
-                                data-test-id="required"
-                                className="text-alert-500 ml-1"
-                            >
-                                *
-                            </span>
-                        </label>
-                        <div className="flex">
-                            <input
-                                id="name"
-                                name="name"
-                                value={policy.name}
-                                onChange={handleChange}
-                                disabled={false}
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
-                            />
-                        </div>
-                    </div>
-                </form>
+                {showMessage && <Message type="info" message="Policy successfully saved" />}
+                <CveToPolicyShortForm policy={policy} handleChange={handleChange} />
                 <div className="pt-2">
                     <h3 className="mb-2">{`${
                         bulkActionCveIds.length
