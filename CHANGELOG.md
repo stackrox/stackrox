@@ -2,6 +2,8 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [35.0]
 - Proxy configuration can now be changed at runtime by editing and applying `proxy-config-secret.yaml` in the cluster
   where central and scanner run (ROX-3348, #3994, #4127).
 - The component object within the image object now contains a field "Source", which indicates how the component was identified. Components derived from package managers
