@@ -2,13 +2,10 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -73,74 +70,48 @@ type registryImpl struct {
 	networkPolicyDispatcher  *networkPolicyDispatcher
 	nodeDispatcher           *nodeDispatcher
 	serviceAccountDispatcher *serviceAccountDispatcher
-
-	registryLock sync.Mutex
 }
 
 func (d *registryImpl) ForDeployments(deploymentType string) Dispatcher {
-	return d.newExclusive(newDeploymentDispatcher(deploymentType, d.deploymentHandler))
+	return newDeploymentDispatcher(deploymentType, d.deploymentHandler)
 }
 
 func (d *registryImpl) ForNamespaces() Dispatcher {
-	return d.newExclusive(d.namespaceDispatcher)
+	return d.namespaceDispatcher
 }
 
 func (d *registryImpl) ForNetworkPolicies() Dispatcher {
-	return d.newExclusive(d.networkPolicyDispatcher)
+	return d.networkPolicyDispatcher
 }
 
 func (d *registryImpl) ForNodes() Dispatcher {
-	return d.newExclusive(d.nodeDispatcher)
+	return d.nodeDispatcher
 }
 
 func (d *registryImpl) ForSecrets() Dispatcher {
-	return d.newExclusive(d.secretDispatcher)
+	return d.secretDispatcher
 }
 
 func (d *registryImpl) ForServices() Dispatcher {
-	return d.newExclusive(d.serviceDispatcher)
+	return d.serviceDispatcher
 }
 
 func (d *registryImpl) ForServiceAccounts() Dispatcher {
-	return d.newExclusive(d.serviceAccountDispatcher)
+	return d.serviceAccountDispatcher
 }
 
 func (d *registryImpl) ForRoles() Dispatcher {
-	return d.newExclusive(d.roleDispatcher)
+	return d.roleDispatcher
 }
 
 func (d *registryImpl) ForRoleBindings() Dispatcher {
-	return d.newExclusive(d.bindingDispatcher)
+	return d.bindingDispatcher
 }
 
 func (d *registryImpl) ForClusterRoles() Dispatcher {
-	return d.newExclusive(d.clusterRoleDispatcher)
+	return d.clusterRoleDispatcher
 }
 
 func (d *registryImpl) ForClusterRoleBindings() Dispatcher {
-	return d.newExclusive(d.clusterBindingDispatcher)
-}
-
-// Wraps the input dispatcher so that only a single dispatcher returned from the registry can be run at a time.
-func (d *registryImpl) newExclusive(dispatcher Dispatcher) Dispatcher {
-	return &exclusiveDispatcherImpl{
-		dispatcher: dispatcher,
-		lock:       &d.registryLock,
-	}
-}
-
-// Helper class that wraps a Dispatcher to make a set of Dispatchers run mutually exclusive.
-type exclusiveDispatcherImpl struct {
-	dispatcher Dispatcher
-	lock       *sync.Mutex
-}
-
-func (e *exclusiveDispatcherImpl) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
-	e.lock.Lock()
-	defer e.lock.Unlock()
-
-	if metaObj, ok := obj.(v1.Object); ok {
-		kubernetes.TrimAnnotations(metaObj)
-	}
-	return e.dispatcher.ProcessEvent(obj, action)
+	return d.clusterBindingDispatcher
 }

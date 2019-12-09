@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -36,16 +37,19 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}
 
+	// we will single-thread event processing using this lock
+	var eventLock sync.Mutex
+
 	// Informers that need to be synced initially
-	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, prePodWaitGroup, stopSignal)
-	handle(secretInformer, dispatchers.ForSecrets(), output, nil, prePodWaitGroup, stopSignal)
-	handle(saInformer, dispatchers.ForServiceAccounts(), output, nil, prePodWaitGroup, stopSignal)
+	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	handle(secretInformer, dispatchers.ForSecrets(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	handle(saInformer, dispatchers.ForServiceAccounts(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
 
 	// RBAC dispatchers handles multiple sets of data
-	handle(roleInformer, dispatchers.ForRoles(), output, nil, prePodWaitGroup, stopSignal)
-	handle(clusterRoleInformer, dispatchers.ForClusterRoles(), output, nil, prePodWaitGroup, stopSignal)
-	handle(roleBindingInformer, dispatchers.ForRoleBindings(), output, nil, prePodWaitGroup, stopSignal)
-	handle(clusterRoleBindingInformer, dispatchers.ForClusterRoleBindings(), output, nil, prePodWaitGroup, stopSignal)
+	handle(roleInformer, dispatchers.ForRoles(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	handle(clusterRoleInformer, dispatchers.ForClusterRoles(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	handle(roleBindingInformer, dispatchers.ForRoleBindings(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
+	handle(clusterRoleBindingInformer, dispatchers.ForClusterRoleBindings(), output, nil, prePodWaitGroup, stopSignal, &eventLock)
 
 	sif.Start(stopSignal.Done())
 
@@ -64,7 +68,7 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 	// Run the pod informer second since other handlers rely on its output.
 	podWaitGroup := &concurrency.WaitGroup{}
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal)
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal, &eventLock)
 	sif.Start(stopSignal.Done())
 	cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced)
 
@@ -75,21 +79,21 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	wg := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
-	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal)
-	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, wg, stopSignal)
-	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal)
+	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal, &eventLock)
+	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, wg, stopSignal, &eventLock)
+	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal, &eventLock)
 
 	// Deployment types.
-	handle(sif.Extensions().V1beta1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Extensions().V1beta1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Extensions().V1beta1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Apps().V1beta1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates, wg, stopSignal)
-	handle(sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Extensions().V1beta1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Extensions().V1beta1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Extensions().V1beta1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Apps().V1beta1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
+	handle(sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 
 	if osf != nil {
-		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates, wg, stopSignal)
+		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
@@ -117,8 +121,9 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 // Helper function that creates and adds a handler to an informer.
 //////////////////////////////////////////////////////////////////
-func handle(informer cache.SharedIndexInformer, dispatcher resources.Dispatcher, output chan<- *central.SensorEvent, treatCreatesAsUpdates *concurrency.Flag, wg *concurrency.WaitGroup, stopSignal *concurrency.Signal) {
+func handle(informer cache.SharedIndexInformer, dispatcher resources.Dispatcher, output chan<- *central.SensorEvent, treatCreatesAsUpdates *concurrency.Flag, wg *concurrency.WaitGroup, stopSignal *concurrency.Signal, eventLock *sync.Mutex) {
 	handlerImpl := &resourceEventHandlerImpl{
+		eventLock:             eventLock,
 		dispatcher:            dispatcher,
 		output:                output,
 		treatCreatesAsUpdates: treatCreatesAsUpdates,

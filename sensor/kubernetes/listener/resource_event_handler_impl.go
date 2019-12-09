@@ -4,17 +4,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 // resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
 // channel
 type resourceEventHandlerImpl struct {
-	dispatcher            resources.Dispatcher
+	eventLock  *sync.Mutex
+	dispatcher resources.Dispatcher
+
 	output                chan<- *central.SensorEvent
 	treatCreatesAsUpdates *concurrency.Flag
 
@@ -93,6 +97,15 @@ func (h *resourceEventHandlerImpl) checkHasSeenAllInitialIDsNoLock() {
 }
 
 func (h *resourceEventHandlerImpl) sendResourceEvent(obj interface{}, action central.ResourceAction) {
+	if metaObj, ok := obj.(v1.Object); ok {
+		kubernetes.TrimAnnotations(metaObj)
+	}
+
+	// Make sure sensor events are sent in order so that we don't send old state to Central after we send new state to
+	// Central
+	h.eventLock.Lock()
+	defer h.eventLock.Unlock()
+
 	evWraps := h.dispatcher.ProcessEvent(obj, action)
 	h.sendEvents(evWraps...)
 }

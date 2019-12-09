@@ -6,6 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/mocks"
 	"github.com/stretchr/testify/suite"
@@ -68,7 +69,9 @@ func (suite *ResourceEventHandlerImplTestSuite) assertFinished(handler *resource
 func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventHandlerImpl {
 	var treatCreatesAsUpdates concurrency.Flag
 	treatCreatesAsUpdates.Set(true)
+	var eventLock sync.Mutex
 	return &resourceEventHandlerImpl{
+		eventLock:             &eventLock,
 		dispatcher:            suite.dispatcher,
 		output:                make(chan *central.SensorEvent),
 		treatCreatesAsUpdates: &treatCreatesAsUpdates,
