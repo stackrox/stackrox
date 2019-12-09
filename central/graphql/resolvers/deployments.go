@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/policy/matcher"
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,6 +32,8 @@ func init() {
 		schema.AddExtraResolver("Deployment", `deployAlerts: [Alert!]!`),
 		schema.AddExtraResolver("Deployment", `deployAlertCount: Int!`),
 		schema.AddExtraResolver("Deployment", "latestViolation(query: String): Time"),
+		schema.AddExtraResolver("Deployment", "policies(query: String): [Policy!]!"),
+		schema.AddExtraResolver("Deployment", "policyCount(query: String): Int!"),
 		schema.AddExtraResolver("Deployment", `failingPolicies(query: String): [Policy!]!`),
 		schema.AddExtraResolver("Deployment", `failingPolicyCount(query: String): Int!`),
 		schema.AddExtraResolver("Deployment", `failingPolicyCounter: PolicyCounter`),
@@ -165,6 +168,47 @@ func (resolver *deploymentResolver) DeployAlertCount(ctx context.Context) (int32
 		return 0, err
 	}
 	return int32(len(results)), nil
+}
+
+func (resolver *deploymentResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Policies")
+
+	if err := readPolicies(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, args))
+}
+
+func (resolver *deploymentResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PolicyCount")
+
+	policies, err := resolver.Policies(ctx, args)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(len(policies)), nil
+}
+
+func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	policyLoader, err := loaders.GetPolicyLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	policies, err := policyLoader.FromQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	applicable, _ := matcher.NewDeploymentMatcher(resolver.data).FilterApplicablePolicies(policies)
+	return applicable, nil
 }
 
 // FailingPolicies returns policy resolvers for policies failing on this deployment

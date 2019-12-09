@@ -11,12 +11,12 @@ import (
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/policy/matcher"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -627,87 +627,38 @@ func k8sIstioVulns(ctx context.Context, resolver *clusterResolver, args rawQuery
 
 func (resolver *clusterResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Policies")
+
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, query)
-	if err != nil {
-		return nil, err
-	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	namespaces, err := resolver.root.NamespaceDataStore.SearchNamespaces(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var filteredPolicies []*storage.Policy
-	for _, policy := range policies {
-		if policyAppliesToCluster(resolver.data, namespaces, policy) {
-			filteredPolicies = append(filteredPolicies, policy)
-		}
-	}
-	return resolver.root.wrapPolicies(filteredPolicies, nil)
+	return resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, args))
 }
 
-func policyAppliesToCluster(cluster *storage.Cluster, namespaces []*storage.NamespaceMetadata, policy *storage.Policy) bool {
-	// Global Policy
-	if len(policy.Scope) == 0 {
-		return true
+func (resolver *clusterResolver) getApplicablePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
 	}
 
-	if clusterWhitelisted(policy.GetWhitelists(), cluster, namespaces) {
-		return false
+	policyLoader, err := loaders.GetPolicyLoader(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Clustered or namespaced scope policy
-	for _, scope := range policy.GetScope() {
-		cs, err := scopecomp.CompileScope(scope)
-		if err != nil {
-			utils.Should(errors.Wrap(err, "could not compile scope"))
-			continue
-		}
-		if scope.GetCluster() != "" {
-			if cs.MatchesCluster(cluster.GetId()) {
-				return true
-			}
-		} else if scope.GetNamespace() != "" {
-			for _, namespace := range namespaces {
-				if cs.MatchesNamespace(namespace.GetName()) {
-					return true
-				}
-			}
-		}
+	policies, err := policyLoader.FromQuery(ctx, q)
+	if err != nil {
+		return nil, err
 	}
-	return false
-}
 
-func clusterWhitelisted(policyWhitelist []*storage.Whitelist, cluster *storage.Cluster, namespaces []*storage.NamespaceMetadata) bool {
-	for _, whitelist := range policyWhitelist {
-		cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
-		if err != nil {
-			utils.Should(errors.Wrap(err, "could not compile whitelist scope"))
-			continue
-		}
-		if cs.MatchesCluster(cluster.GetId()) {
-			return true
-		}
-		allNSWhitelisted := true
-		for _, namespace := range namespaces {
-			if !cs.MatchesNamespace(namespace.GetName()) {
-				allNSWhitelisted = false
-				break
-			}
-		}
-		if allNSWhitelisted {
-			return true
-		}
+	namespaces, err := resolver.root.NamespaceDataStore.SearchNamespaces(ctx,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery())
+	if err != nil {
+		return nil, err
 	}
-	return false
+
+	applicable, _ := matcher.NewClusterMatcher(resolver.data, namespaces).FilterApplicablePolicies(policies)
+	return applicable, nil
 }
 
 func (resolver *clusterResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {

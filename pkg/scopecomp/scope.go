@@ -72,7 +72,7 @@ func (c *CompiledScope) MatchesNamespace(ns string) bool {
 	if c == nil {
 		return true
 	}
-	return c.Namespace.MatchString(ns)
+	return regexutils.MatchWholeString(c.Namespace, ns)
 }
 
 // MatchesCluster evaluates a compiled scope against a cluster ID
@@ -80,5 +80,5 @@ func (c *CompiledScope) MatchesCluster(cluster string) bool {
 	if c == nil {
 		return true
 	}
-	return c.ClusterID == cluster
+	return c.ClusterID == "" || c.ClusterID == cluster
 }

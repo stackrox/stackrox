@@ -1,4 +1,4 @@
-package resolvers
+package matcher
 
 import (
 	"testing"
@@ -7,31 +7,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPolicyAppliesToNamespace(t *testing.T) {
+func TestDeploymentMatcher(t *testing.T) {
 	cases := []struct {
-		policy    *storage.Policy
-		namespace *storage.NamespaceMetadata
-		matches   bool
+		policy     *storage.Policy
+		deployment *storage.Deployment
+		matches    bool
 	}{
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster:   "cluster1",
-						Namespace: "ns1",
+						Cluster: "cluster1",
 					},
 				},
 			},
 			matches: true,
 		},
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
@@ -44,9 +45,10 @@ func TestPolicyAppliesToNamespace(t *testing.T) {
 			matches: false,
 		},
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
@@ -58,58 +60,38 @@ func TestPolicyAppliesToNamespace(t *testing.T) {
 			matches: true,
 		},
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
-			policy: &storage.Policy{
-				Scope: []*storage.Scope{
-					{
-						Namespace: "ns2",
-					},
-				},
-			},
-			matches: false,
+			policy:  &storage.Policy{},
+			matches: true,
 		},
 	}
 
 	for _, c := range cases {
-		actual := policyAppliesToNamespace(c.policy, c.namespace)
+		actual := NewDeploymentMatcher(c.deployment).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
 
-func TestPolicyAppliesToNamespaceWithWhitelist(t *testing.T) {
+func TestDeploymentWithWhitelist(t *testing.T) {
 	cases := []struct {
-		policy    *storage.Policy
-		namespace *storage.NamespaceMetadata
-		matches   bool
+		policy     *storage.Policy
+		deployment *storage.Deployment
+		matches    bool
 	}{
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
 					{
-						Cluster:   "cluster1",
-						Namespace: "ns1",
-					},
-				},
-			},
-			matches: true,
-		},
-		{
-			namespace: &storage.NamespaceMetadata{
-				ClusterId: "cluster1",
-				Name:      "ns1",
-			},
-			policy: &storage.Policy{
-				Scope: []*storage.Scope{
-					{
-						Cluster:   "cluster1",
-						Namespace: "ns1",
+						Cluster: "cluster1",
 					},
 				},
 				Whitelists: []*storage.Whitelist{
@@ -125,9 +107,36 @@ func TestPolicyAppliesToNamespaceWithWhitelist(t *testing.T) {
 			matches: false,
 		},
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
+			},
+			policy: &storage.Policy{
+				Scope: []*storage.Scope{
+					{
+						Cluster:   "cluster1",
+						Namespace: "ns1",
+					},
+				},
+				Whitelists: []*storage.Whitelist{
+					{
+						Deployment: &storage.Whitelist_Deployment{
+							Name: "deployment2",
+							Scope: &storage.Scope{
+								Namespace: "ns.*",
+							},
+						},
+					},
+				},
+			},
+			matches: true,
+		},
+		{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
+				ClusterId: "cluster1",
+				Namespace: "ns1",
 			},
 			policy: &storage.Policy{
 				Scope: []*storage.Scope{
@@ -138,8 +147,45 @@ func TestPolicyAppliesToNamespaceWithWhitelist(t *testing.T) {
 				Whitelists: []*storage.Whitelist{
 					{
 						Deployment: &storage.Whitelist_Deployment{
+							Name: "deployment2",
 							Scope: &storage.Scope{
-								Cluster:   "cluster1",
+								Namespace: "ns1",
+							},
+						},
+					},
+					{
+						Deployment: &storage.Whitelist_Deployment{
+							Name: "deployment1",
+						},
+					},
+				},
+			},
+			matches: false,
+		},
+		{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
+				ClusterId: "cluster1",
+				Namespace: "ns1",
+			},
+			policy: &storage.Policy{
+				Scope: []*storage.Scope{
+					{
+						Namespace: "ns1",
+					},
+				},
+				Whitelists: []*storage.Whitelist{
+					{
+						Deployment: &storage.Whitelist_Deployment{
+							Name: "deployment2",
+							Scope: &storage.Scope{
+								Namespace: "ns1",
+							},
+						},
+					},
+					{
+						Deployment: &storage.Whitelist_Deployment{
+							Scope: &storage.Scope{
 								Namespace: "ns1",
 							},
 						},
@@ -149,32 +195,18 @@ func TestPolicyAppliesToNamespaceWithWhitelist(t *testing.T) {
 			matches: false,
 		},
 		{
-			namespace: &storage.NamespaceMetadata{
+			deployment: &storage.Deployment{
+				Name:      "deployment1",
 				ClusterId: "cluster1",
-				Name:      "ns1",
+				Namespace: "ns1",
 			},
-			policy: &storage.Policy{
-				Scope: []*storage.Scope{
-					{
-						Namespace: "ns1",
-					},
-				},
-				Whitelists: []*storage.Whitelist{
-					{
-						Deployment: &storage.Whitelist_Deployment{
-							Scope: &storage.Scope{
-								Cluster: "cluster1",
-							},
-						},
-					},
-				},
-			},
-			matches: false,
+			policy:  &storage.Policy{},
+			matches: true,
 		},
 	}
 
 	for _, c := range cases {
-		actual := policyAppliesToNamespace(c.policy, c.namespace)
+		actual := NewDeploymentMatcher(c.deployment).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }

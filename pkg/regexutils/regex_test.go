@@ -39,6 +39,11 @@ func TestMatchWholeString(t *testing.T) {
 			value:    "",
 			expected: true,
 		},
+		{
+			regex:    "",
+			value:    "abc",
+			expected: true,
+		},
 	}
 
 	for _, c := range cases {

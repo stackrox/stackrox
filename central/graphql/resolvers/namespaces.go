@@ -5,15 +5,14 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/namespace"
+	"github.com/stackrox/rox/central/policy/matcher"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -218,48 +217,47 @@ func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error
 	return imageLoader.CountFromQuery(ctx, resolver.getClusterNamespaceQuery())
 }
 
-func (resolver *namespaceResolver) filterPoliciesApplicableToNamespace(policies []*storage.Policy) []*storage.Policy {
-	var filteredPolicies []*storage.Policy
-	for _, policy := range policies {
-		if policyAppliesToNamespace(policy, resolver.data.GetMetadata()) {
-			filteredPolicies = append(filteredPolicies, policy)
-		}
-	}
-	return filteredPolicies
-}
-
-func (resolver *namespaceResolver) getNamespacePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
+func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, args rawQuery) ([]*storage.Policy, error) {
 	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	policies, err := resolver.root.PolicyDataStore.SearchRawPolicies(ctx, q)
+
+	policyLoader, err := loaders.GetPolicyLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.filterPoliciesApplicableToNamespace(policies), nil
+
+	policies, err := policyLoader.FromQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.Metadata).FilterApplicablePolicies(policies)
+	return applicable, nil
 }
 
 // PolicyCount returns count of policies applicable to this namespace
 func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyCount")
-	if err := readPolicies(ctx); err != nil {
-		return 0, err
-	}
-	policies, err := resolver.getNamespacePolicies(ctx, args)
+
+	policies, err := resolver.Policies(ctx, args)
 	if err != nil {
 		return 0, err
 	}
+
 	return int32(len(policies)), nil
 }
 
 // Policies returns all the policies applicable to this namespace
 func (resolver *namespaceResolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Policies")
+
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapPolicies(resolver.getNamespacePolicies(ctx, args))
+
+	return resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, args))
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
@@ -273,50 +271,6 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context) (*P
 		return nil, nil
 	}
 	return mapListAlertsToPolicyCount(alerts), nil
-}
-
-func policyAppliesToNamespace(policy *storage.Policy, namespace *storage.NamespaceMetadata) bool {
-	// Global Policy
-	if len(policy.GetScope()) == 0 {
-		return true
-	}
-
-	if namespaceWhitelisted(policy.GetWhitelists(), namespace) {
-		return false
-	}
-
-	// Clustered or namespace scope policy, evaluate all scopes
-	for _, scope := range policy.GetScope() {
-		cs, err := scopecomp.CompileScope(scope)
-		if err != nil {
-			utils.Should(errors.Wrap(err, "could not compile scope"))
-			continue
-		}
-		if scope.GetCluster() != "" && !cs.MatchesCluster(namespace.GetClusterId()) {
-			continue
-		}
-		if cs.MatchesNamespace(namespace.GetName()) {
-			return true
-		}
-	}
-	return false
-}
-
-func namespaceWhitelisted(policyWhitelist []*storage.Whitelist, namespace *storage.NamespaceMetadata) bool {
-	for _, whitelist := range policyWhitelist {
-		cs, err := scopecomp.CompileScope(whitelist.GetDeployment().GetScope())
-		if err != nil {
-			utils.Should(errors.Wrap(err, "could not compile whitelist scope"))
-			continue
-		}
-		if cs.MatchesCluster(namespace.GetClusterId()) {
-			return true
-		}
-		if cs.MatchesNamespace(namespace.GetName()) {
-			return true
-		}
-	}
-	return false
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster

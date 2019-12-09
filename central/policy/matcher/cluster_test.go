@@ -1,4 +1,4 @@
-package resolvers
+package matcher
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPolicyAppliesToCluster(t *testing.T) {
+func TestClusterMatcher(t *testing.T) {
 	cases := []struct {
 		policy     *storage.Policy
 		cluster    *storage.Cluster
@@ -88,12 +88,12 @@ func TestPolicyAppliesToCluster(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := policyAppliesToCluster(c.cluster, c.namespaces, c.policy)
+		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
 
-func TestPolicyAppliesToClusterWithWhitelist(t *testing.T) {
+func TestClusterMatcherrWithWhitelist(t *testing.T) {
 	cases := []struct {
 		policy     *storage.Policy
 		cluster    *storage.Cluster
@@ -211,7 +211,7 @@ func TestPolicyAppliesToClusterWithWhitelist(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := policyAppliesToCluster(c.cluster, c.namespaces, c.policy)
+		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
