@@ -60,7 +60,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             width: 130,
             headerClassName: 'font-600 border-b border-base-300 flex items-end',
             className: 'pointer-events-none flex items-center justify-end italic',
-            Cell: ({ value }) => (value === '' && !isOSPkg ? '?' : value)
+            Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value)
         });
     }
 
