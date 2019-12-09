@@ -140,29 +140,6 @@ service ComplianceManagementService {
 
     // BEGIN EXPERIMENTAL/UNSTABLE API
 
-    rpc GetRunSchedules(GetComplianceRunSchedulesRequest) returns (GetComplianceRunSchedulesResponse) {
-        option (google.api.http) = {
-            get: "/v1/complianceManagement/schedules"
-        };
-    }
-    rpc AddRunSchedule(AddComplianceRunScheduleRequest) returns (AddComplianceRunScheduleResponse) {
-        option (google.api.http) = {
-            post: "/v1/complianceManagement/schedules"
-            body: "schedule_spec"
-        };
-    }
-    rpc UpdateRunSchedule(UpdateComplianceRunScheduleRequest) returns (UpdateComplianceRunScheduleResponse) {
-        option (google.api.http) = {
-            post: "/v1/complianceManagement/schedules/{schedule_id}"
-            body: "updated_spec"
-        };
-    }
-    rpc DeleteRunSchedule(DeleteComplianceRunScheduleRequest) returns (Empty) {
-        option (google.api.http) = {
-            delete: "/v1/complianceManagement/schedules/{schedule_id}"
-        };
-    }
-
     rpc GetRecentRuns(GetRecentComplianceRunsRequest) returns (GetRecentComplianceRunsResponse) {
         option (google.api.http) = {
             get: "/v1/complianceManagement/runs"

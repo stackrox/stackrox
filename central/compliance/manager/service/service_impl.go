@@ -28,14 +28,6 @@ var (
 			"/v1.ComplianceManagementService/TriggerRun",
 			"/v1.ComplianceManagementService/TriggerRuns",
 		},
-		user.With(permissions.View(resources.ComplianceRunSchedule)): { // Not exposed in UI
-			"/v1.ComplianceManagementService/GetRunSchedules",
-		},
-		user.With(permissions.Modify(resources.ComplianceRunSchedule)): { // Not exposed in UI
-			"/v1.ComplianceManagementService/AddRunSchedule",
-			"/v1.ComplianceManagementService/UpdateRunSchedule",
-			"/v1.ComplianceManagementService/DeleteRunSchedule",
-		},
 	})
 )
 
@@ -61,40 +53,6 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *service) AddRunSchedule(ctx context.Context, req *v1.AddComplianceRunScheduleRequest) (*v1.AddComplianceRunScheduleResponse, error) {
-	schedule, err := s.manager.AddSchedule(ctx, req.GetScheduleSpec())
-	if err != nil {
-		return nil, err
-	}
-	return &v1.AddComplianceRunScheduleResponse{
-		AddedSchedule: schedule,
-	}, nil
-}
-
-func (s *service) UpdateRunSchedule(ctx context.Context, req *v1.UpdateComplianceRunScheduleRequest) (*v1.UpdateComplianceRunScheduleResponse, error) {
-	if req.GetUpdatedSpec().GetId() == "" {
-		req.UpdatedSpec.Id = req.GetScheduleId()
-	} else if req.GetUpdatedSpec().GetId() != req.GetScheduleId() {
-		return nil, status.Errorf(codes.InvalidArgument, "id in updated spec body must be empty or match schedule id %q, is: %q", req.GetScheduleId(), req.GetUpdatedSpec().GetId())
-	}
-
-	schedule, err := s.manager.UpdateSchedule(ctx, req.GetUpdatedSpec())
-	if err != nil {
-		return nil, err
-	}
-	return &v1.UpdateComplianceRunScheduleResponse{
-		UpdatedSchedule: schedule,
-	}, nil
-}
-
-func (s *service) DeleteRunSchedule(ctx context.Context, req *v1.DeleteComplianceRunScheduleRequest) (*v1.Empty, error) {
-	err := s.manager.DeleteSchedule(ctx, req.GetScheduleId())
-	if err != nil {
-		return nil, err
-	}
-	return &v1.Empty{}, nil
-}
-
 func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentComplianceRunsRequest) (*v1.GetRecentComplianceRunsResponse, error) {
 	runs, err := s.manager.GetRecentRuns(ctx, req)
 	if err != nil {
@@ -106,16 +64,6 @@ func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentCompliance
 
 	return &v1.GetRecentComplianceRunsResponse{
 		ComplianceRuns: runs,
-	}, nil
-}
-
-func (s *service) GetRunSchedules(ctx context.Context, req *v1.GetComplianceRunSchedulesRequest) (*v1.GetComplianceRunSchedulesResponse, error) {
-	schedules, err := s.manager.GetSchedules(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &v1.GetComplianceRunSchedulesResponse{
-		Schedules: schedules,
 	}, nil
 }
 
