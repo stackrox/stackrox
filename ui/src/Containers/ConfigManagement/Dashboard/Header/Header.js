@@ -1,6 +1,7 @@
 import React from 'react';
 
 import ExportButton from 'Components/ExportButton';
+import useCaseTypes from 'constants/useCaseTypes';
 import PoliciesTile from './PoliciesTile';
 import CISControlsTile from './CISControlsTile';
 import AppMenu from './AppMenu';
@@ -19,9 +20,9 @@ const Header = () => {
             </div>
             <div className="flex items-center self-center">
                 <ExportButton
-                    fileName="Config Mangement Dashboard Report"
+                    fileName="Config Management Dashboard Report"
                     type={null}
-                    page="configManagement"
+                    page={useCaseTypes.CONFIG_MANAGEMENT}
                     pdfId="capture-dashboard"
                 />
             </div>

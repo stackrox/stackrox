@@ -1,13 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import { standardLabels } from 'messages/standards';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
-import PageHeader from 'Components/PageHeader';
-import ScanButton from 'Containers/Compliance/ScanButton';
-import ExportButton from 'Components/ExportButton';
 import findKey from 'lodash/findKey';
+
+import PageHeader from 'Components/PageHeader';
+import ExportButton from 'Components/ExportButton';
+import ScanButton from 'Containers/Compliance/ScanButton';
+import { standardLabels } from 'messages/standards';
+import useCaseTypes from 'constants/useCaseTypes';
 
 const ListHeader = ({ entityType, searchComponent, standard }) => {
     const standardId = findKey(standardLabels, key => key === standard);
@@ -40,6 +42,7 @@ const ListHeader = ({ entityType, searchComponent, standard }) => {
                                 fileName={`${headerText} Compliance Report`}
                                 id={standardId || entityType}
                                 type={standardId ? 'STANDARD' : ''}
+                                page={useCaseTypes.COMPLIANCE}
                                 pdfId="capture-list"
                                 tableOptions={tableOptions}
                             />

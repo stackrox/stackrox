@@ -24,7 +24,7 @@ function translateTypes(obj) {
     }, {});
 }
 
-const baseContext = 'configmanagement';
+const baseContext = useCases.CONFIG_MANAGEMENT;
 const baseParams = {
     context: baseContext
 };

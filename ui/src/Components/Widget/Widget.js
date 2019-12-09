@@ -85,7 +85,7 @@ function Widget({
                         {pagerControls ? pagerControls.arrows : null}
                     </div>
                     {headerComponents && (
-                        <div className="flex flex-auto justify-end items-center pr-3 relative">
+                        <div className="flex justify-end items-center pr-3 relative">
                             {headerComponents}
                         </div>
                     )}

@@ -1,14 +1,12 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
 import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-
-import Button from 'Components/Button';
+import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
@@ -33,14 +31,6 @@ const FREQUENTLY_VIOLATED_POLICIES = gql`
         }
     }
 `;
-
-const ViewAllButton = ({ url }) => {
-    return (
-        <Link to={url} className="no-underline">
-            <Button className="btn-sm btn-base" type="button" text="View All" />
-        </Link>
-    );
-};
 
 const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, ['alertCount']).slice(-limit); // @TODO: Remove when we have pagination on Policies

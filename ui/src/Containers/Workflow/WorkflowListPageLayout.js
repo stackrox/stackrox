@@ -1,11 +1,13 @@
 import React from 'react';
 import pluralize from 'pluralize';
 import startCase from 'lodash/startCase';
+
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
+import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import parseURL from 'modules/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -45,7 +47,7 @@ const WorkflowListPageLayout = ({ location }) => {
     const selectedRow = workflowState.getSelectedTableRow();
 
     const header = pluralize(entityLabels[pageListType]);
-    const exportFilename = `${pluralize(startCase(header))} Report`;
+    const exportFilename = `${useCaseLabels[useCase]} ${pluralize(startCase(header))} Report`;
     const entityContext = {};
 
     if (selectedRow) {
@@ -62,7 +64,7 @@ const WorkflowListPageLayout = ({ location }) => {
                             <ExportButton
                                 fileName={exportFilename}
                                 type={pageListType}
-                                page="configManagement"
+                                page={useCase}
                                 pdfId="capture-list"
                             />
                         </div>

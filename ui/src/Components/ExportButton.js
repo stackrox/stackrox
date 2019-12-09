@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Button from 'Components/Button';
 import * as Icon from 'react-feather';
-import downloadCsv from 'services/ComplianceDownloadService';
-import onClickOutside from 'react-onclickoutside';
-import PDFExportButton from 'Components/PDFExportButton';
 import { format } from 'date-fns';
+import onClickOutside from 'react-onclickoutside';
+
+import downloadCsv from 'services/ComplianceDownloadService';
+import PDFExportButton from 'Components/PDFExportButton';
+import Button from 'Components/Button';
+import useCaseTypes from 'constants/useCaseTypes';
 
 const btnClassName =
     'btn border-primary-600 bg-primary-600 text-base-100 w-48 hover:bg-primary-700 hover:border-primary-700';
@@ -61,9 +63,10 @@ class ExportButton extends Component {
         downloadCsv(query, fileName, downloadUrl);
     };
 
-    isTypeSupported = () =>
-        Object.keys(queryParamMap).includes(this.props.type) &&
-        this.props.page !== 'configManagement';
+    isTypeSupported = () => {
+        const { type, page } = this.props;
+        return Object.keys(queryParamMap).includes(type) && page === useCaseTypes.COMPLIANCE;
+    };
 
     renderContent = () => {
         const { toggleWidget } = this.state;

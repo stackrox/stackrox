@@ -25,6 +25,7 @@ const printProperties = [
 ];
 const defaultPageLandscapeWidth = 297;
 const defaultPagePotraitWidth = 210;
+const WIDGET_WIDTH = 203;
 
 class PDFExportButton extends Component {
     static propTypes = {
@@ -144,29 +145,47 @@ class PDFExportButton extends Component {
         const doc = new jsPDF(mode, marginType, paperSize, true);
         let positionX = 0;
         let positionY = 0;
-        let count = 1;
         const pageHeight = doc.internal.pageSize.getHeight();
         let remainingHeight = pageHeight;
 
-        function drawPDF(imgHeight, index, imgData, canvases) {
+        const paddingX = 2;
+        const paddingY = 2;
+        const pageWidgetWidth = (WIDGET_WIDTH + paddingX) * 2;
+        let remainingWidgetWidth = pageWidgetWidth;
+
+        function drawPDF(imgHeight, imgWidgetWidth, index, imgData, canvases) {
             const halfImgWidth = imgWidth / 2;
             const halfImgHeight = imgHeight / 2;
 
-            if (index % 2 === 1) {
-                positionX = 2;
+            // beginning of a new row
+            if (remainingWidgetWidth < imgWidgetWidth || remainingWidgetWidth === pageWidgetWidth) {
+                positionX = paddingX;
+
+                // reset remaining width in widget row
+                remainingWidgetWidth = pageWidgetWidth;
+
+                // calculating new row height position
+                const prevCanvasHeight = index === 1 ? 0 : canvases[index - 1].height;
+                const prevRowHeight = (prevCanvasHeight * imgWidth) / canvases[index].width;
+                const halfPrevRowHeight = prevRowHeight / 2;
+                positionY += halfPrevRowHeight + paddingY;
+                remainingHeight -= halfPrevRowHeight;
+            } else {
+                // still in same row of widgets, just move x position
+                positionX += halfImgWidth + paddingX;
             }
 
-            if (index % 2 === 0) {
-                positionX += halfImgWidth + 2;
-            }
-
+            // beginning of new page
             if (remainingHeight < halfImgHeight) {
                 doc.addPage();
-                positionX = 2;
-                positionY = 2;
-                count = 1;
+                positionX = paddingX;
+                positionY = paddingY;
                 remainingHeight = pageHeight;
             }
+
+            // calculating remaining width
+            remainingWidgetWidth -= imgWidgetWidth;
+
             doc.addImage(
                 imgData,
                 'jpg',
@@ -177,26 +196,14 @@ class PDFExportButton extends Component {
                 `Image${index}`,
                 'FAST'
             );
-            count += 1;
-            if (count % 3 === 0) {
-                //  every  2 widgets
-                const firstCanvas = canvases[index - 1].height;
-                const secondCanvas = canvases[index - 2].height;
-                const prevRowMaxHeight = firstCanvas > secondCanvas ? firstCanvas : secondCanvas;
-                const prevRowHeight = (prevRowMaxHeight * imgWidth) / canvases[index - 1].width;
-                const halfPrevRowHeight = prevRowHeight / 2;
-                positionY += halfPrevRowHeight + 2;
-                count = 1;
-                remainingHeight -= halfPrevRowHeight;
-            }
         }
+
         function drawStretchPDF(imgHeight, index, imgData) {
-            positionX = 2;
+            positionX = paddingX;
             if (remainingHeight < imgHeight) {
                 doc.addPage();
-                positionX = 2;
-                positionY = 2;
-                count = 1;
+                positionX = paddingX;
+                positionY = paddingY;
                 remainingHeight = pageHeight;
             }
             doc.addImage(
@@ -209,7 +216,7 @@ class PDFExportButton extends Component {
                 `Image${index}`,
                 'FAST'
             );
-            positionY += imgHeight + 2;
+            positionY += imgHeight + paddingY;
             remainingHeight -= imgHeight;
         }
 
@@ -222,10 +229,13 @@ class PDFExportButton extends Component {
                 canvases.forEach((canvas, index) => {
                     const imgData = canvas.toDataURL('image/jpeg');
                     if (id.includes('capture-dashboard') && index > 0) {
-                        imgWidth = 203;
+                        imgWidth = canvas.classList.contains('pdf-stretch')
+                            ? (WIDGET_WIDTH + paddingX) * 2
+                            : WIDGET_WIDTH;
                     }
                     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
+                    // for PDF page header
                     if (index === 0) {
                         doc.addImage(
                             imgData,
@@ -237,12 +247,12 @@ class PDFExportButton extends Component {
                             `Image${index}`,
                             'FAST'
                         );
-                        positionY = imgHeight + 2;
+                        positionY = imgHeight + paddingY;
                         remainingHeight -= imgHeight;
                     } else {
                         if (id.includes('capture-dashboard')) {
                             if (id === 'capture-dashboard') {
-                                drawPDF(imgHeight, index, imgData, canvases);
+                                drawPDF(imgHeight, imgWidth, index, imgData, canvases);
                             } else {
                                 drawStretchPDF(imgHeight, index, imgData);
                             }

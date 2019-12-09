@@ -1,13 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
+import pluralize from 'pluralize';
+import toLower from 'lodash/toLower';
 
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
+import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
-import pluralize from 'pluralize';
-import toLower from 'lodash/toLower';
 
 const EntityHeader = ({
     entityType,
@@ -45,6 +46,7 @@ const EntityHeader = ({
                             <ExportButton
                                 fileName={exportFilename}
                                 type={entityType}
+                                page={useCaseTypes.COMPLIANCE}
                                 id={entityId}
                                 pdfId={pdfId}
                             />

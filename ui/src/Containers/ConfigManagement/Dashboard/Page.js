@@ -1,5 +1,6 @@
 import React from 'react';
-import contextLabels from 'messages/context';
+import useCaseLabels from 'messages/useCase';
+import useCaseTypes from 'constants/useCaseTypes';
 import { standardTypes } from 'constants/entityTypes';
 
 import DashboardLayout from 'Components/DashboardLayout';
@@ -12,7 +13,10 @@ import SecretsMostUsedAcrossDeployments from './widgets/SecretsMostUsedAcrossDep
 
 const ConfigManagementDashboardPage = () => {
     return (
-        <DashboardLayout headerText={contextLabels.CONFIG_MANAGEMENT} headerComponents={<Header />}>
+        <DashboardLayout
+            headerText={useCaseLabels[useCaseTypes.CONFIG_MANAGEMENT]}
+            headerComponents={<Header />}
+        >
             <PolicyViolationsBySeverity />
             <ComplianceByControls
                 className="pdf-page"

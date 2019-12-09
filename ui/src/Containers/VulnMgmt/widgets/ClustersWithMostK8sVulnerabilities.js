@@ -65,7 +65,10 @@ const processData = (data, workflowState, limit) => {
 
             const url = targetState.toUrl();
             const fixableUrl = targetState
-                .setSearch({ 'Fixed By': 'r/.*', 'Vulnerability Type': 'K8S_VULNERABILITY' })
+                .setSearch({
+                    'Fixed By': 'r/.*',
+                    'Vulnerability Type': 'K8S_VULNERABILITY'
+                })
                 .toUrl();
 
             const content = (

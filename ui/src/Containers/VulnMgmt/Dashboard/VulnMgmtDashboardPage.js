@@ -3,6 +3,7 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import DashboardLayout from 'Components/DashboardLayout';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import ExportButton from 'Components/ExportButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 
 import { dashboardLimit } from 'constants/workflowPages.constants';
@@ -34,12 +35,21 @@ const VulnDashboardPage = () => {
     ];
     const headerComponents = (
         <>
-            <PoliciesCountTile />
-            <CvesCountTile />
-            <div className="flex w-32">
-                <EntitiesMenu text="Application & Infrastructure" options={entityMenuTypes} />
+            <div className="flex">
+                <PoliciesCountTile />
+                <CvesCountTile />
+                <div className="flex w-32">
+                    <EntitiesMenu text="Application & Infrastructure" options={entityMenuTypes} />
+                </div>
             </div>
-            <FilterCvesRadioButtonGroup />
+            <div className="flex items-center pr-2 ml-6 pl-3 border-l border-base-400">
+                <FilterCvesRadioButtonGroup />
+                <ExportButton
+                    fileName="Vulnerability Management Dashboard Report"
+                    page={workflowState.useCase}
+                    pdfId="capture-dashboard"
+                />
+            </div>
         </>
     );
     return (

@@ -29,9 +29,7 @@ const Button = ({
                     <span className="hidden lg:block"> {text} </span>
                 </>
             ) : (
-                <>
-                    <span> {text} </span>
-                </>
+                text
             )}
         </div>
     );

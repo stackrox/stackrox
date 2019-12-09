@@ -6,6 +6,7 @@ import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 import entityTypes from 'constants/entityTypes';
+import useCaseTypes from 'constants/useCaseTypes';
 import Tile from './Tile';
 
 const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
@@ -39,6 +40,7 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
                             fileName="Compliance Dashboard Report"
                             textClass="hidden lg:block"
                             type="ALL"
+                            page={useCaseTypes.COMPLIANCE}
                             pdfId="capture-dashboard"
                         />
                     </div>
