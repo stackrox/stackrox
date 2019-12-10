@@ -4,7 +4,7 @@ metadata:
   name: stackrox-central-psp
 rules:
   - apiGroups:
-      - extensions
+      - policy
     resources:
       - podsecuritypolicies
     resourceNames:
@@ -26,7 +26,7 @@ subjects:
     name: central
     namespace: {{.Values.namespace}}
 ---
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-central

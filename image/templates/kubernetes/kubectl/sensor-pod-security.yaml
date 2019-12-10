@@ -6,7 +6,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - apiGroups:
-      - extensions
+      - policy
     resources:
       - podsecuritypolicies
     resourceNames:
@@ -33,7 +33,7 @@ subjects:
     name: sensor-upgrader
     namespace: stackrox
 ---
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-sensor
@@ -76,7 +76,7 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
 rules:
   - apiGroups:
-      - extensions
+      - policy
     resources:
       - podsecuritypolicies
     resourceNames:
@@ -100,7 +100,7 @@ subjects:
     name: collector
     namespace: stackrox
 ---
-apiVersion: extensions/v1beta1
+apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-collector

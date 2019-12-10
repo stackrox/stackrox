@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sensor
@@ -211,7 +211,7 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:

@@ -42,7 +42,7 @@ func (m *Metadata) String() string {
 
 // GetAvailableResources uses the Kubernetes Discovery API to list all relevant resources on the server.
 func GetAvailableResources(client discovery.DiscoveryInterface) (map[schema.GroupVersionKind]*Metadata, error) {
-	resourceLists, err := client.ServerResources()
+	_, resourceLists, err := client.ServerGroupsAndResources()
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving list of server resources")
 	}

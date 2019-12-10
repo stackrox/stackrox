@@ -2,6 +2,9 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+- All YAML files have been updated to no longer reference the deprecated `extensions/v1beta1` API group. Previously,
+ we used these API versions for deployments, daemonsets and pod security policies. This should have no effect on existing
+ installs, but will mean that new installs can successfully install on Kube 1.16.
 
 ## [35.0]
 - Proxy configuration can now be changed at runtime by editing and applying `proxy-config-secret.yaml` in the cluster

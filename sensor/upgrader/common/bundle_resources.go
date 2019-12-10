@@ -16,7 +16,7 @@ var OrderedBundleResourceTypes = []schema.GroupVersionKind{
 	{Version: "v1", Kind: "ServiceAccount"},
 	{Version: "v1", Kind: "Secret"},
 	{Version: "v1", Kind: "ConfigMap"},
-	{Group: "extensions", Version: "v1beta1", Kind: "PodSecurityPolicy"},
+	{Group: "policy", Version: "v1beta1", Kind: "PodSecurityPolicy"},
 	{Group: "security.openshift.io", Version: "v1", Kind: "SecurityContextConstraints"},
 	{Group: "networking.k8s.io", Version: "v1", Kind: "NetworkPolicy"},
 
@@ -29,8 +29,8 @@ var OrderedBundleResourceTypes = []schema.GroupVersionKind{
 	{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRoleBinding"},
 
 	// Depends on all of the above
-	{Group: "apps", Version: "v1beta2", Kind: "DaemonSet"},
-	{Group: "extensions", Version: "v1beta1", Kind: "Deployment"},
+	{Group: "apps", Version: "v1", Kind: "DaemonSet"},
+	{Group: "apps", Version: "v1", Kind: "Deployment"},
 
 	// No syntactic dependencies, but semantically depends on deployments and daemonsets
 	{Version: "v1", Kind: "Service"},
