@@ -2554,13 +2554,15 @@ jobs:
             docker cp kops/id_rsa            kops:/data
             docker cp kops/id_rsa.pub        kops:/data
             docker cp kops/terraform.tfstate kops:/data
+            docker cp kops/cluster_name      kops:/data
+            docker cp kops/delete-cluster-$(cat kops/cluster_name).sh kops:/data
           when: always
 
       - run:
           name: Destroy Kops cluster
           command: |
             docker run --rm -t \
-              -v $PWD/kops:/data \
+              --volumes-from kops \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
               stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
