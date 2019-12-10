@@ -869,9 +869,14 @@ commands:
       gate-label:
         type: string
         default: ""
-      provision-extra-args:
+      crio:
+        type: boolean
+        default: false
+      flavor:
+        type: enum
+        enum: ["lite", "multi"]
+      version:
         type: string
-        default: ""
 
     steps:
       - checkout
@@ -894,50 +899,33 @@ commands:
       - run:
           name: Generate ephemeral SSH key
           command: |
-            mkdir -p openshift
-            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
-            chmod 0400 openshift/id_rsa openshift/id_rsa.pub
-            cat openshift/id_rsa.pub
+            mkdir -p openshift/artifacts
+            ssh-keygen -t rsa -f openshift/artifacts/id_rsa -C '' -N ''
+            chmod 0400 openshift/artifacts/id_rsa openshift/artifacts/id_rsa.pub
+            cat openshift/artifacts/id_rsa.pub
 
       - run:
           name: Create cloud resources
           command: |
-            extra_args=(<< parameters.provision-extra-args >>)
+            echo "suffix: ${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" > openshift/configuration.yaml
+            echo "use-crio: '<< parameters.crio >>'" >> openshift/configuration.yaml
+            cat openshift/configuration.yaml
 
-            try=0
-            success=0
-            while (( ! success && try < 3 )); do
-              rm -f openshift/terraform.tfplan || true
-
-              try=$((try + 1))
-              success=1
-              docker run --rm -t \
-                -v $PWD/openshift:/data \
-                -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-                "stackrox/openshift-automation:terraform-${OPENSHIFT_AUTOMATION_VERSION}" \
-                create "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>" "${extra_args[@]}" || success=0
-            done
-            if (( ! success )); then
-              echo >&2 "Failed to provision openshift cluster."
-              exit 1
-            fi
+            docker run --rm -t \
+              -v "$PWD/openshift:/well-known" \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+              "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
+              create
 
       - store_artifacts:
           path: openshift
           destination: openshift
 
       - run:
-          name: Create Openshift cluster
-          command: |
-            docker run --rm -t \
-            -v $PWD/openshift:/data \
-            stackrox/openshift-automation:ansible-$OPENSHIFT_AUTOMATION_VERSION
-
-      - run:
           name: Configure Kubeconfig
           command: |
             ls -lh $PWD/openshift
-            export KUBECONFIG=$PWD/openshift/config
+            export KUBECONFIG="$PWD/openshift/artifacts/config"
             kubectl get nodes
 
       - store_artifacts:
@@ -959,14 +947,40 @@ commands:
           paths:
             - openshift<< parameters.suffix >>
 
+      - destroy-openshift-cluster:
+          when: on_fail
+          flavor: << parameters.flavor >>
+          version: << parameters.version >>
+
+  destroy-openshift-cluster:
+    parameters:
+      flavor:
+        type: enum
+        enum: ["lite", "multi"]
+      version:
+        type: string
+      when:
+        type: enum
+        enum: ["on_fail", "always"]
+
+    steps:
+      - run:
+          name: Pack openshift volume
+          when: << parameters.when >>
+          command: |
+            docker create -v /well-known --name openshift alpine:3.9 /bin/true
+            docker cp openshift/configuration.yaml openshift:/well-known/configuration.yaml
+            docker cp openshift/artifacts          openshift:/well-known/artifacts
+
       - run:
           name: Destroy Openshift cluster
+          when: << parameters.when >>
           command: |
             docker run --rm -t \
-              -v $PWD/openshift:/data \
+              --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>"
-          when: on_fail
+              stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >> \
+              destroy
 
   run-openshift-tests:
     parameters:
@@ -976,6 +990,11 @@ commands:
       gate-label:
         type: string
         default: ""
+      flavor:
+        type: enum
+        enum: ["lite", "multi"]
+      version:
+        type: string
 
     steps:
       - checkout
@@ -1007,7 +1026,7 @@ commands:
           command: |
             pwd
             ls -lh $PWD/openshift
-            export KUBECONFIG=$PWD/openshift/config
+            export KUBECONFIG=$PWD/openshift/artifacts/config
             SUCCESS=0
             for i in {1..30}; do
              if oc get nodes; then
@@ -1027,9 +1046,9 @@ commands:
       - run:
           name: Configure Deployment Environment
           command: |
-            cci-export KUBECONFIG "$PWD/openshift/config"
+            cci-export KUBECONFIG "$PWD/openshift/artifacts/config"
             cci-export CLAIRIFY_IMAGE_TAG 0.5.2
-            cci-export OPENSHIFT_HOST "$(cat openshift/master)"
+            cci-export OPENSHIFT_HOST "$(cat openshift/artifacts/master)"
             cci-export ROX_IMAGE_REGISTRY docker.io
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
             cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
@@ -1113,24 +1132,10 @@ commands:
       - *verifyNoStackRoxRestarts
       - *storeK8sLogs
 
-      - run:
-          name: Pack openshift volume
-          command: |
-            docker create -v /data --name openshift alpine:3.9 /bin/true
-            docker cp openshift/id_rsa            openshift:/data
-            docker cp openshift/id_rsa.pub        openshift:/data
-            docker cp openshift/terraform.tfstate openshift:/data
+      - destroy-openshift-cluster:
           when: always
-
-      - run:
-          name: Destroy Openshift cluster
-          command: |
-            docker run --rm -t \
-              --volumes-from openshift \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}<< parameters.suffix >>"
-
-          when: always
+          flavor: << parameters.flavor >>
+          version: << parameters.version >>
 
   deploy-stackrox:
     parameters:
@@ -2332,26 +2337,26 @@ jobs:
 
   provision-openshift:
     machine: true
-    environment:
-      - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
     steps:
       - provision-openshift-cluster:
-          gate-label: "ci-openshift-tests"
+          crio: false
+          flavor: lite
+          gate-label: ci-openshift-tests
+          version: 0.6.0
 
   provision-openshift-crio:
     machine: true
-    environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.3
     steps:
       - provision-openshift-cluster:
-          suffix: "-crio"
-          gate-label: "ci-openshift-crio"
-          provision-extra-args: "true"
+          crio: true
+          flavor: multi
+          gate-label: ci-openshift-crio
+          suffix: -crio
+          version: 0.6.0
 
   openshift-tests:
     <<: *defaults
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: snapshot-0.4.2-7-g6255c49
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
@@ -2361,12 +2366,13 @@ jobs:
 
     steps:
       - run-openshift-tests:
-          gate-label: "ci-openshift-tests"
+          gate-label: ci-openshift-tests
+          flavor: lite
+          version: 0.6.0
 
   openshift-crio-tests:
     <<: *defaults
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.3
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
@@ -2377,7 +2383,9 @@ jobs:
     steps:
       - run-openshift-tests:
           suffix: "-crio"
-          gate-label: "ci-openshift-crio"
+          gate-label: ci-openshift-crio
+          flavor: multi
+          version: 0.6.0
 
   provision-kops:
     machine: true
