@@ -58,8 +58,8 @@ class SplunkUtil {
                         .get("https://${deploymentIP}:8089/services/search/jobs/export")
                 println("Querying loadbalancer ${deploymentIP}")
             }
-            catch (UnknownHostException e) {
-                println("catching unknownhost exception for KOPS to refresh DNS" + e)
+            catch (Exception e) {
+                println("catching unknownhost exception for KOPS and other intermittent connection issues" + e)
             }
         }
         println("Printing response from ${deploymentIP} " + response?.prettyPrint())

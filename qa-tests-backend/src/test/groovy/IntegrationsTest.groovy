@@ -3,6 +3,7 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import groups.BAT
 import groups.Integration
+import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.experimental.categories.Category
 import services.CreatePolicyService
 import services.NotifierService
@@ -137,14 +138,12 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                 .addLabel("app", "splunk")
                 .addPort(8088, "TCP")
                 .setType(Service.Type.CLUSTERIP)
-
         orchestrator.createService(collectorSvc)
 
         Service httpsSvc = new Service("splunk-https", Constants.ORCHESTRATOR_NAMESPACE)
                 .addLabel("app", "splunk")
                 .addPort(8089, "TCP")
                 .setType(Service.Type.LOADBALANCER)
-
         orchestrator.createService(httpsSvc)
 
         when:
@@ -154,27 +153,31 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         and:
         "Edit the policy with the latest keyword."
         PolicyOuterClass.Policy.Builder policy = Services.getPolicyByName("Latest tag").toBuilder()
-        policy.setName(policy.name + " Splunk")
-                .setId("")
-                .addNotifiers(notifier.getId())
+
+        def nginxName = "nginx-spl-violation"
+        policy.setName(policy.name + " ")
+              .setId("") // set ID to empty so that a new policy is created and not overwrite the original latest tag
+              .addScope(ScopeOuterClass.Scope.newBuilder()
+                .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                  .setKey("app")
+                  .setValue(nginxName)))
+              .addNotifiers(notifier.getId())
         def policyId = CreatePolicyService.createNewPolicy(policy.build())
 
         and:
         "Create a new deployment to trigger the violation against the policy"
-        def nginxName = "nginxtest"+new Random(3000).nextInt()
         Deployment nginxdeployment =
                 new Deployment()
                         .setName(nginxName)
                         .setImage("nginx:latest")
-                        .addLabel("app", "nginx-splunk-test")
+                        .addLabel("app", nginxName)
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
 
         and:
         "API call get info from Splunk."
         println("Load Balancer ip is ${ httpsSvc.loadBalancerIP }")
-        //Max time out with junit is 50
-        def response = SplunkUtil.waitForSplunkAlerts(httpsSvc.loadBalancerIP, 50)
+        def response = SplunkUtil.waitForSplunkAlerts(httpsSvc.loadBalancerIP, 60)
 
         then:
         "Verify the messages are seen in the json"
@@ -236,7 +239,6 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                         .addLabel ("app", "test")
         orchestrator.createDeployment(deployment)
         assert Services.waitForViolation("pgtest", "Latest tag", 30)
-
         and:
         "Get current the first incident from the PagerDuty"
         def firIncident = NotifierService.waitForPagerDutyUpdate(preNum)
