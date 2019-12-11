@@ -1,7 +1,8 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import gql from 'graphql-tag';
 import * as Icon from 'react-feather';
+import { connect } from 'react-redux';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
@@ -14,6 +15,8 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
+import { actions as notificationActions } from 'reducers/notifications';
+import { updateCveSuppressedState } from 'services/VulnerabilitiesService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { truncate } from 'utils/textUtils';
 
@@ -192,9 +195,10 @@ export function renderCveDescription(row) {
     );
 }
 
-const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, removeToast }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
+    const refetchRef = useRef();
 
     // TODO: change query line to `query getCves($query: String) {`
     //   after API starts accepting empty string ('') for query
@@ -226,16 +230,35 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
             );
         }
     };
-    const suppressCVEs = cve => e => {
+
+    const suppressCVEs = cveId => e => {
         e.stopPropagation();
-        if (cve) {
-            // to do: add suppress logic
-        } else {
-            setSelectedCveIds([]);
-        }
+
+        const cveIdsToSuppress = cveId ? [cveId] : selectedCveIds;
+
+        const promises = cveIdsToSuppress.map(id => {
+            const suppress = true;
+            return updateCveSuppressedState(id, suppress);
+        });
+        Promise.all(promises)
+            .then(() => {
+                setSelectedCveIds([]);
+
+                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
+                const pluralizedCVEs = promises.length === 1 ? 'CVE' : 'CVEs';
+
+                addToast(`Successfully suppressed ${promises.length} ${pluralizedCVEs}`);
+                setTimeout(removeToast, 2000);
+
+                refetchRef.current.triggerRefetch();
+            })
+            .catch(evt => {
+                addToast(`Could not suppress all of the selected CVEs: ${evt.message}`);
+                setTimeout(removeToast, 2000);
+            });
     };
     const viewSuppressed = () => {
-        // console.log('view suppressed');
+        // TODO: implement 'view suppressed' functionality
     };
 
     const renderRowActionButtons = ({ id }) => (
@@ -249,7 +272,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 text="Suppress CVE"
                 border="border-l-2 border-base-400"
                 onClick={suppressCVEs(id)}
-                icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                icon={<Icon.BellOff className="mt-1 h-4 w-4" />}
             />
         </div>
     );
@@ -266,17 +289,18 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 Add to Policy
             </PanelButton>
             <PanelButton
-                icon={<Icon.Trash2 className="h-4 w-4" />}
-                className="btn-icon btn-alert ml-2"
+                icon={<Icon.BellOff className="h-4 w-4" />}
+                className="btn-icon btn-tertiary ml-2"
                 onClick={suppressCVEs()}
                 disabled={selectedCveIds.length === 0}
                 tooltip="Suppress Selected CVEs"
             >
                 Suppress
             </PanelButton>
+            <span className="w-px bg-base-400 ml-2" />
             <PanelButton
-                icon={<Icon.Plus className="h-4 w-4" />}
-                className="btn-icon btn-base ml-2"
+                icon={<Icon.Archive className="h-4 w-4" />}
+                className="btn-icon btn-tertiary ml-2"
                 onClick={viewSuppressed}
                 tooltip="View Suppressed CVEs"
             >
@@ -302,6 +326,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data }) => {
                 SubComponent={renderCveDescription}
                 checkbox
                 tableHeaderComponents={tableHeaderComponents}
+                refetchRef={refetchRef}
                 selection={selectedCveIds}
                 setSelection={setSelectedCveIds}
                 renderRowActionButtons={renderRowActionButtons}
@@ -322,4 +347,12 @@ VulnMgmtCves.defaultProps = {
     sort: null
 };
 
-export default VulnMgmtCves;
+const mapDispatchToProps = {
+    addToast: notificationActions.addNotification,
+    removeToast: notificationActions.removeOldestNotification
+};
+
+export default connect(
+    null,
+    mapDispatchToProps
+)(VulnMgmtCves);

@@ -13,7 +13,7 @@ class CheckboxTable extends Component {
         toggleSelectAll: PropTypes.func.isRequired,
         selection: PropTypes.arrayOf(PropTypes.string),
         page: PropTypes.number,
-        renderRowActionButtons: PropTypes.arrayOf(),
+        renderRowActionButtons: PropTypes.func,
         idAttribute: PropTypes.string
     };
 
