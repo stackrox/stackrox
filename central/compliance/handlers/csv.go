@@ -189,6 +189,19 @@ func CSVHandler() http.HandlerFunc {
 			writeErr(w, http.StatusBadRequest, err)
 			return
 		}
+
+		// If the request to export csv does not include any standards filters, add supported standards filter
+		if len(options.standardIDs) == 0 {
+			options.standardIDs = standards.GetSupportedStandards()
+		} else {
+			var unsupported []string
+			options.standardIDs, unsupported = standards.FilterSupported(options.standardIDs)
+			if len(unsupported) > 0 {
+				writeErr(w, http.StatusBadRequest, standards.UnSupportedStandardsErr(unsupported...))
+				return
+			}
+		}
+
 		data, err := complianceDS.GetLatestRunResultsFiltered(r.Context(), options.clusterIDFilter(), options.standardIDFilter(), complianceDSTypes.WithMessageStrings)
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err)

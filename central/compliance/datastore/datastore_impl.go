@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/datastore/internal/store"
 	"github.com/stackrox/rox/central/compliance/datastore/types"
+	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +29,10 @@ func (ds *datastoreImpl) QueryControlResults(ctx context.Context, query *v1.Quer
 }
 
 func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
+	if !standards.IsSupported(standardID) {
+		return types.ResultsWithStatus{}, standards.UnSupportedStandardsErr(standardID)
+	}
+
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
@@ -48,6 +53,10 @@ func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, s
 }
 
 func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, standardID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
+	if !standards.IsSupported(standardID) {
+		return types.ResultsWithStatus{}, standards.UnSupportedStandardsErr(standardID)
+	}
+
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return types.ResultsWithStatus{}, err
 	} else if !ok {
@@ -68,6 +77,11 @@ func (ds *datastoreImpl) GetLatestRunResults(ctx context.Context, clusterID, sta
 }
 
 func (ds *datastoreImpl) GetLatestRunResultsBatch(ctx context.Context, clusterIDs, standardIDs []string, flags types.GetFlags) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error) {
+	standardIDs, unsupported := standards.FilterSupported(standardIDs)
+	if len(unsupported) > 0 {
+		return nil, standards.UnSupportedStandardsErr(unsupported...)
+	}
+
 	results, err := ds.storage.GetLatestRunResultsBatch(clusterIDs, standardIDs, flags)
 	if err != nil {
 		return nil, err
@@ -92,6 +106,11 @@ func (ds *datastoreImpl) GetLatestRunResultsFiltered(ctx context.Context, cluste
 }
 
 func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterID string, standardIDs []string) (map[compliance.ClusterStandardPair]types.ComplianceRunsMetadata, error) {
+	standardIDs, unsupported := standards.FilterSupported(standardIDs)
+	if len(unsupported) > 0 {
+		return nil, standards.UnSupportedStandardsErr(unsupported...)
+	}
+
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return nil, err
 	} else if !ok {
@@ -105,6 +124,11 @@ func (ds *datastoreImpl) GetLatestRunMetadataBatch(ctx context.Context, clusterI
 }
 
 func (ds *datastoreImpl) IsComplianceRunSuccessfulOnCluster(ctx context.Context, clusterID string, standardIDs []string) (bool, error) {
+	standardIDs, unsupported := standards.FilterSupported(standardIDs)
+	if len(unsupported) > 0 {
+		return false, standards.UnSupportedStandardsErr(unsupported...)
+	}
+
 	if ok, err := complianceSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID)); err != nil {
 		return false, err
 	} else if !ok {

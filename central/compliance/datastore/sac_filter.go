@@ -20,7 +20,7 @@ var (
 )
 
 // SacFilter provides the filtering abilities needed by the compliance datastore.
-//go:generate mockgen-wrapper
+//go:generate mockgen-wrapper SacFilter
 type SacFilter interface {
 	FilterRunResults(ctx context.Context, results *storage.ComplianceRunResults) (*storage.ComplianceRunResults, error)
 	FilterBatchResults(ctx context.Context, results map[compliance.ClusterStandardPair]types.ResultsWithStatus) (map[compliance.ClusterStandardPair]types.ResultsWithStatus, error)
