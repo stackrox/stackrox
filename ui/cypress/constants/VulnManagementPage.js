@@ -96,10 +96,15 @@ const sidepanelSelectors = {
     }
 };
 
+const policySidePanelSelectors = {
+    policyEditButton: '[data-testid="button-link"]'
+};
+
 export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
     ...linkSelectors,
     ...sidepanelSelectors,
-    ...sidePanelListEntityPageSelectors
+    ...sidePanelListEntityPageSelectors,
+    ...policySidePanelSelectors
 };
