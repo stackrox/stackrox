@@ -31,6 +31,7 @@ var defaultRoles = []*storage.Role{
 	permissions.NewRoleWithGlobalAccess(Analyst, storage.Access_READ_ACCESS),
 	permissions.NewRoleWithAccess(ContinuousIntegration,
 		permissions.View(resources.Detection),
+		permissions.Modify(resources.Image),
 	),
 	permissions.NewRoleWithAccess(SensorCreator,
 		permissions.View(resources.Cluster),
