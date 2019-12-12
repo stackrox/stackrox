@@ -2,50 +2,77 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
+export_image() {
+  local name=$1
+  local image=$2
+  local last_dir=$3
+
+  docker pull "$image" | cat
+
+  mkdir -p "${DIR}/${last_dir}"
+  echo "Saving $image to ${DIR}/${last_dir}/${name}.img"
+  docker save "$image" -o "${DIR}/${last_dir}/${name}.img"
+}
+
+save() {
+  local registry=$1
+  local name=$2
+  local tag=$3
+  local last_dir=$4
+
+  export_image "$name" "${registry}/${name}:${tag}" "${last_dir}"
+}
+
+save_with_rhel() {
+  local registry=$1
+  local name=$2
+  local tag=$3
+  local last_dir=$4
+
+  save "$registry" "$name" "$tag" "${last_dir}"
+  export_image "$name" "${registry}/${name}-rhel:${tag}" "${last_dir}-rhel"
+}
+
+bundle() {
+  local name=$1
+  pushd "${DIR}"
+  tar -czvf "${name}.tgz" "${name}"
+  tar -czvf "${name}-rhel.tgz" "${name}-rhel"
+  popd
+}
+
+store_roxctl() {
+  output_path=$1
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/darwin"  "${DIR}/${output_path}/bin/darwin"
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/linux"   "${DIR}/${output_path}/bin/linux"
+  gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/windows" "${DIR}/${output_path}/bin/windows"
+  chmod +x "${DIR}/${output_path}/bin/darwin/roxctl" "${DIR}/${output_path}/bin/linux/roxctl"
+}
+
 main() {
     # Main uses the version reported by make tag.
     local main_tag="$(make --quiet tag)"
-    local main_image="stackrox.io/main:${main_tag}"
+    save_with_rhel "stackrox.io" "main" "${main_tag}" "image-bundle"
 
-    # Monitoring uses the same exact version as main.
-    local monitoring_tag="$main_tag"
-    local monitoring_image="stackrox.io/monitoring:${monitoring_tag}"
+    # Monitoring uses the same exact version as main. There is also no RHEL version of monitoring
+    save "stackrox.io" "monitoring" "${main_tag}" "image-bundle"
 
     # Scanner uses the version contained in the SCANNER_VERSION file.
-    local scanner_tag="$(cat SCANNER_VERSION)"
-    local scanner_image="stackrox.io/scanner:${scanner_tag}"
-
-    # Scanner v2 uses the version contained in the SCANNER_V2_VERSION file.
-    local scanner_v2_tag="$(cat SCANNER_V2_VERSION)"
-    local scanner_v2_image="stackrox.io/scanner-v2:${scanner_v2_tag}"
-    local scanner_v2_db_image="stackrox.io/scanner-v2-db:${scanner_v2_tag}"
+    local scanner_tag="$(cat LANGUAGE_SCANNER_VERSION)"
+    save_with_rhel "stackrox.io" "scanner" "${scanner_tag}" "image-bundle"
+    save_with_rhel "stackrox.io" "scanner-db" "${scanner_tag}" "image-bundle"
 
     # Collector uses the version contained in the COLLECTOR_VERSION file.
     local collector_tag="$(cat COLLECTOR_VERSION)"
-    local collector_image="collector.stackrox.io/collector:${collector_tag}"
+    save_with_rhel "collector.stackrox.io" "collector" "${collector_tag}-latest" "image-collector-bundle"
 
-    docker pull "$main_image"          | cat
-    docker pull "$monitoring_image"    | cat
-    docker pull "$scanner_image"       | cat
-    docker pull "$scanner_v2_image"    | cat
-    docker pull "$scanner_v2_db_image" | cat
-    docker pull "$collector_image"     | cat
+    store_roxctl "image-bundle"
+    store_roxctl "image-bundle-rhel"
 
-    cd "$(dirname "${BASH_SOURCE[0]}")"
-    docker save "$main_image"          -o "image-bundle/main.img"
-    docker save "$monitoring_image"    -o "image-bundle/monitoring.img"
-    docker save "$scanner_image"       -o "image-bundle/scanner.img"
-    docker save "$scanner_v2_image"    -o "image-bundle/scanner_v2.img"
-    docker save "$scanner_v2_db_image" -o "image-bundle/scanner_v2_db.img"
-    docker save "$collector_image"     -o "image-collector-bundle/collector.img"
-
-    gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/darwin"  image-bundle/bin/darwin
-    gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/linux"   image-bundle/bin/linux
-    gsutil -m cp -r "gs://sr-roxc/${main_tag}/bin/windows" image-bundle/bin/windows
-    chmod +x image-bundle/bin/darwin/roxctl image-bundle/bin/linux/roxctl
-
-    tar -czvf image-bundle.tgz           image-bundle
-    tar -czvf image-collector-bundle.tgz image-collector-bundle
+    bundle "image-bundle"
+    bundle "image-collector-bundle"
 }
 
 main "$@"

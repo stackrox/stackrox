@@ -15,22 +15,17 @@ main() {
 
     echo "Loading main image..."
     main_tag="$(docker load -i main.img | tag)"
-    main_image_local="stackrox.io/main:${main_tag}"
-    main_image_remote="${registry_prefix}/main:${main_tag}"
-
-    echo "Loading monitoring image..."
-    monitoring_tag="$(docker load -i monitoring.img | tag)"
-    monitoring_image_local="stackrox.io/monitoring:${monitoring_tag}"
-    monitoring_image_remote="${registry_prefix}/monitoring:${monitoring_tag}"
+    main_image_local="stackrox.io/main-rhel:${main_tag}"
+    main_image_remote="${registry_prefix}/main-rhel:${main_tag}"
 
     echo "Loading scanner image..."
     scanner_tag="$(docker load -i scanner.img | tag)"
-    scanner_image_local="stackrox.io/scanner:${scanner_tag}"
-    scanner_image_remote="${registry_prefix}/scanner:${scanner_tag}"
+    scanner_image_local="stackrox.io/scanner-rhel:${scanner_tag}"
+    scanner_image_remote="${registry_prefix}/scanner-rhel:${scanner_tag}"
 
     scanner_db_tag="$(docker load -i scanner.img | tag)"
-    scanner_db_image_local="stackrox.io/scanner-db:${scanner_db_tag}"
-    scanner_db_image_remote="${registry_prefix}/scanner-db:${scanner_db_tag}"
+    scanner_db_image_local="stackrox.io/scanner-db-rhel:${scanner_db_tag}"
+    scanner_db_image_remote="${registry_prefix}/scanner-db-rhel:${scanner_db_tag}"
 
     if [[ -z "$registry_prefix" ]]; then
         echo "No registry prefix given, all done!"
@@ -40,10 +35,6 @@ main() {
     echo "Pushing image: ${main_image_local} as ${main_image_remote}"
     docker tag "${main_image_local}" "${main_image_remote}"
     docker push "${main_image_remote}" | cat
-
-    echo "Pushing image: ${monitoring_image_local} as ${monitoring_image_remote}"
-    docker tag "${monitoring_image_local}" "${monitoring_image_remote}"
-    docker push "${monitoring_image_remote}" | cat
 
     echo "Pushing image: ${scanner_image_local} as ${scanner_image_remote}"
     docker tag "${scanner_image_local}" "${scanner_image_remote}"
