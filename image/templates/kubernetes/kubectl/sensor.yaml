@@ -16,6 +16,8 @@ spec:
   selector:
     matchLabels:
       app: sensor
+  strategy:
+    type: Recreate
   template:
     metadata:
       namespace: stackrox
