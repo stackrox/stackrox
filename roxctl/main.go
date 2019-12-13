@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/db"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/gcp"
 	"github.com/stackrox/rox/roxctl/image"
@@ -54,6 +55,7 @@ func main() {
 		image.Command(),
 		scanner.Command(),
 		sensor.Command(),
+		db.Command(),
 	}
 
 	if features.ProbeUpload.Enabled() {

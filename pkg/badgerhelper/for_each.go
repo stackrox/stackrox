@@ -36,6 +36,7 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 
 	it := txn.NewIterator(*itOpts)
 	defer it.Close()
+
 	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
 		item := it.Item()
 		k := item.Key()

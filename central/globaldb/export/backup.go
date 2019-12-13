@@ -27,10 +27,10 @@ func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
 	}()
 
 	oldDB, err := bolt.Open(dbDumpFile, 0600, bolt.DefaultOptions)
-	oldDB.NoSync = true
 	if err != nil {
 		return "", errors.Wrap(err, "could not open database dump")
 	}
+	oldDB.NoSync = true
 
 	if err := scrubSensitiveData(oldDB); err != nil {
 		return "", errors.Wrap(err, "could not scrub secrets from database")

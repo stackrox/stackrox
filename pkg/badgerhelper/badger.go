@@ -24,6 +24,17 @@ var (
 	DefaultBadgerPath = filepath.Join(migrations.DBMountPath, BadgerDBDirName)
 )
 
+// GetDefaultOptions for BadgerDB
+func GetDefaultOptions(path string) badger.Options {
+	return badger.DefaultOptions(path).
+		WithDir(path).
+		WithTruncate(true).
+		// These options keep the DB size small at the cost of doing more aggressive compaction
+		// They are an adjustment on this issue and the related comments: https://github.com/dgraph-io/badger/issues/718
+		WithNumLevelZeroTables(2).
+		WithNumLevelZeroTablesStall(5)
+}
+
 // New returns an instance of the persistent BadgerDB store
 func New(path string, managed bool) (*badger.DB, error) {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
@@ -37,14 +48,7 @@ func New(path string, managed bool) (*badger.DB, error) {
 		return nil, fmt.Errorf("badger path %s is not a directory", path)
 	}
 
-	options := badger.DefaultOptions(path).
-		WithDir(path).
-		WithLogger(nullLogger{}).
-		WithTruncate(true).
-		// These options keep the DB size small at the cost of during more aggressive compaction
-		// They are an adjustment on this issue and the related comments: https://github.com/dgraph-io/badger/issues/718
-		WithNumLevelZeroTables(2).
-		WithNumLevelZeroTablesStall(5)
+	options := GetDefaultOptions(path).WithLogger(nullLogger{})
 	if managed {
 		return badger.OpenManaged(options)
 	}
