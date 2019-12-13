@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import MultiSelect from 'Components/MultiSelect';
-import ReactSelect from 'Components/ReactSelect';
+import ReactSelect, { Creatable } from 'Components/ReactSelect';
 import ToggleSwitch from 'Components/ToggleSwitch';
 
 const severityOptions = [
@@ -49,7 +49,13 @@ function wrapSelectEvent(key, handleChange) {
     };
 }
 
-function CveToPolicyShortForm({ policy, handleChange }) {
+function CveToPolicyShortForm({
+    policy,
+    handleChange,
+    existingPolicies,
+    selectedPolicy,
+    setSelectedPolicy
+}) {
     // curry the change handlers for the select inputs
     const onSeverityChange = wrapSelectEvent('severity', handleChange);
     const onLifeCycleChange = wrapSelectEvent('lifecycleStages', handleChange);
@@ -68,13 +74,12 @@ function CveToPolicyShortForm({ policy, handleChange }) {
                     </span>
                 </label>
                 <div className="flex">
-                    <input
-                        id="name"
-                        name="name"
-                        value={policy.name}
-                        onChange={handleChange}
-                        disabled={false}
-                        className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                    <Creatable
+                        key="policy"
+                        onChange={setSelectedPolicy}
+                        options={existingPolicies}
+                        placeholder="Type a name, or select an existing policy"
+                        value={selectedPolicy}
                     />
                 </div>
             </div>
@@ -101,6 +106,7 @@ function CveToPolicyShortForm({ policy, handleChange }) {
                             wrapperClass="bg-base-100 border-2 rounded border-base-300 w-full font-600 text-base-600 hover:border-base-400"
                             triggerClass="border-l border-base-300"
                             value={policy.severity}
+                            disabled={!!policy.id}
                         />
                     </div>
                 </div>
@@ -124,6 +130,7 @@ function CveToPolicyShortForm({ policy, handleChange }) {
                             onChange={onLifeCycleChange}
                             className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
                             value={policy.lifecycleStages}
+                            disabled={!!policy.id}
                         />
                     </div>
                 </div>
@@ -139,7 +146,7 @@ function CveToPolicyShortForm({ policy, handleChange }) {
                         name="description"
                         value={policy.description}
                         onChange={handleChange}
-                        disabled={false}
+                        disabled={!!policy.id}
                         placeholder="What does this policy do?"
                         className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-32"
                     />
@@ -181,7 +188,17 @@ CveToPolicyShortForm.propTypes = {
         }),
         whitelists: PropTypes.array
     }).isRequired,
+    existingPolicies: PropTypes.arrayOf(
+        PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })
+    ),
+    selectedPolicy: PropTypes.string,
+    setSelectedPolicy: PropTypes.func.isRequired,
     handleChange: PropTypes.func.isRequired
+};
+
+CveToPolicyShortForm.defaultProps = {
+    existingPolicies: [],
+    selectedPolicy: ''
 };
 
 export default CveToPolicyShortForm;

@@ -261,6 +261,11 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
         // TODO: implement 'view suppressed' functionality
     };
 
+    function closeDialog(idsToStaySelected = []) {
+        setBulkActionCveIds([]);
+        setSelectedCveIds(idsToStaySelected);
+    }
+
     const renderRowActionButtons = ({ id }) => (
         <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
             <RowActionButton
@@ -333,7 +338,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
             />
             {bulkActionCveIds.length > 0 && (
                 <CveBulkActionDialogue
-                    closeAction={setBulkActionCveIds}
+                    closeAction={closeDialog}
                     bulkActionCveIds={bulkActionCveIds}
                 />
             )}
