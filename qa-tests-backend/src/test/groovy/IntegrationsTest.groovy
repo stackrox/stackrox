@@ -104,7 +104,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         // connections to port 25
     }
 
-    @Category(BAT)
+    @Category(Integration)
     def "Verify Splunk Integration"() {
         given:
         "Only run on non-OpenShift until we can fix the route issue in CI"
