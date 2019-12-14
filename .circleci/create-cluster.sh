@@ -30,7 +30,7 @@ create-cluster() {
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
       timeout 420 gcloud beta container clusters create \
-          --machine-type n1-standard-4 \
+          --machine-type e2-standard-4 \
           --num-nodes "${NUM_NODES}" \
           --disk-type=pd-standard \
           --disk-size=20GB \
