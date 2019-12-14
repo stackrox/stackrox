@@ -84,6 +84,27 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 								},
 							},
 						},
+						{
+							Name: "additional-ca-volume",
+							VolumeSource: v1.VolumeSource{
+								Secret: &v1.SecretVolumeSource{
+									SecretName: "additional-ca-sensor",
+									Optional:   &[]bool{true}[0],
+								},
+							},
+						},
+						{
+							Name: "etc-ssl-volume",
+							VolumeSource: v1.VolumeSource{
+								EmptyDir: &v1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "etc-pki-trust-volume",
+							VolumeSource: v1.VolumeSource{
+								EmptyDir: &v1.EmptyDirVolumeSource{},
+							},
+						},
 					},
 					Containers: []v1.Container{
 						{
@@ -96,6 +117,19 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 									Name:      "sensor-tls-volume",
 									ReadOnly:  true,
 									MountPath: "/run/secrets/stackrox.io/certs",
+								},
+								{
+									Name:      "additional-ca-volume",
+									ReadOnly:  true,
+									MountPath: "/usr/local/share/ca-certificates/",
+								},
+								{
+									Name:      "etc-ssl-volume",
+									MountPath: "/etc/ssl/",
+								},
+								{
+									Name:      "etc-pki-trust-volume",
+									MountPath: "/etc/pki/ca-trust/",
 								},
 							},
 						},
