@@ -68,6 +68,9 @@ func rewrite(path, outputDB string) error {
 			if err != nil {
 				return errors.Wrapf(err, "error copying value for key %q", string(key))
 			}
+			if len(value) == 0 {
+				continue
+			}
 			if err := newWriteBatch.Set(key, value); err != nil {
 				return errors.Wrap(err, "error batch writing")
 			}
