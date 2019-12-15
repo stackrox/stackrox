@@ -15,9 +15,10 @@ require (
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
+	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
 	github.com/containers/image v3.0.2+incompatible
 	github.com/coreos/go-oidc v2.1.0+incompatible
-	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142
+	github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/dave/jennifer v1.3.0
 	github.com/deckarep/golang-set v1.7.1
 	github.com/dgraph-io/badger v0.0.0-20190131175406-28ef9bfd2438
@@ -52,8 +53,8 @@ require (
 	github.com/mitchellh/hashstructure v1.0.0
 	github.com/nilslice/protolock v0.0.0
 	github.com/opencontainers/go-digest v1.0.0-rc1
-	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
-	github.com/openshift/client-go v0.0.0-20191205152420-9faca5198b4f
+	github.com/openshift/api v3.9.1-0.20190923092516-169848dd8137+incompatible
+	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/russellhaering/gosaml2 v0.3.1
@@ -86,7 +87,7 @@ require (
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb
 	k8s.io/apiserver v0.0.0-20191114103151-9ca1dc586682
-	k8s.io/client-go v0.0.0-20191114101535-6c5935290e33
+	k8s.io/client-go v7.0.0+incompatible
 	k8s.io/helm v2.14.0+incompatible
 	k8s.io/kubectl v0.0.0-20191114113550-6123e1c827f7
 )
@@ -94,7 +95,6 @@ require (
 replace (
 	github.com/PagerDuty/go-pagerduty => github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20190918030150-5ebdc2278ffe
-	github.com/coreos/go-systemd => github.com/coreos/go-systemd/v22 v22.0.0
 	github.com/couchbase/ghistogram => github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6
 	github.com/couchbase/vellum => github.com/couchbase/vellum v0.0.0-20190626091642-41f2deade2cf
 	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20191025195058-f2b50b9f079c
@@ -106,7 +106,7 @@ replace (
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
-	github.com/stackrox/rox => ./
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20190923092832-6afefc9bb372
 
 	k8s.io/api => k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833

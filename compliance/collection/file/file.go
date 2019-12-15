@@ -8,7 +8,7 @@ import (
 	"strings"
 	"syscall"
 
-	systemdBus "github.com/coreos/go-systemd/dbus"
+	systemdBus "github.com/coreos/go-systemd/v22/dbus"
 	"github.com/godbus/dbus/v5"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/logging"

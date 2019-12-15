@@ -4,11 +4,12 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
-export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE
+export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE
 CGO_ENABLED := 0
 GOARCH := amd64
 DEFAULT_GOOS := linux
 GO111MODULE := on
+GOPRIVATE := github.com/stackrox
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
