@@ -2342,7 +2342,7 @@ jobs:
           crio: false
           flavor: lite
           gate-label: ci-openshift-tests
-          version: 0.6.0
+          version: 0.6.1
 
   provision-openshift-crio:
     machine: true
@@ -2352,7 +2352,7 @@ jobs:
           flavor: multi
           gate-label: ci-openshift-crio
           suffix: -crio
-          version: 0.6.0
+          version: 0.6.1
 
   openshift-tests:
     <<: *defaults
@@ -2368,7 +2368,7 @@ jobs:
       - run-openshift-tests:
           gate-label: ci-openshift-tests
           flavor: lite
-          version: 0.6.0
+          version: 0.6.1
 
   openshift-crio-tests:
     <<: *defaults
@@ -2385,7 +2385,7 @@ jobs:
           suffix: "-crio"
           gate-label: ci-openshift-crio
           flavor: multi
-          version: 0.6.0
+          version: 0.6.1
 
   provision-kops:
     machine: true
