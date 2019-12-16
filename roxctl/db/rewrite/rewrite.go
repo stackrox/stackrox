@@ -58,6 +58,8 @@ func rewrite(path, outputDB string) error {
 	defer utils.IgnoreError(newDBClose)
 
 	newWriteBatch := newDB.NewWriteBatch()
+	defer newWriteBatch.Cancel()
+
 	var keysWritten int
 	err = oldDB.View(func(tx *badger.Txn) error {
 		it := tx.NewIterator(badger.DefaultIteratorOptions)
