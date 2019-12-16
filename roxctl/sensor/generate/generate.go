@@ -2,9 +2,7 @@ package generate
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -12,11 +10,10 @@ import (
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/zipdownload"
+	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -70,7 +67,7 @@ func fullClusterCreation(timeout time.Duration) error {
 		}
 	}
 
-	if err := getBundle(id, createUpgraderSA, timeout); err != nil {
+	if err := util.GetBundle(id, outputDir, createUpgraderSA, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -121,21 +118,4 @@ func createCluster(svc v1.ClustersServiceClient, timeout time.Duration) (string,
 		return "", err
 	}
 	return response.GetCluster().GetId(), nil
-}
-
-func getBundle(id string, createUpgraderSA bool, timeout time.Duration) error {
-	path := "/api/extensions/clusters/zip"
-	body, err := json.Marshal(&apiparams.ClusterZip{ID: id, CreateUpgraderSA: &createUpgraderSA})
-	if err != nil {
-		return err
-	}
-	return zipdownload.GetZip(zipdownload.GetZipOptions{
-		Path:       path,
-		Method:     http.MethodPost,
-		Body:       body,
-		Timeout:    timeout,
-		BundleType: "sensor",
-		ExpandZip:  true,
-		OutputDir:  outputDir,
-	})
 }

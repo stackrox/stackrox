@@ -2,6 +2,9 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+### Added
+- Added a `roxctl sensor get-bundle <cluster-name-or-id>` command to download sensor bundles for existing
+  clusters by name or ID.
 
 ## [36.0]
 ### Changed
