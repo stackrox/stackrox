@@ -24,8 +24,7 @@ export const listSelectors = {
     tableRows: '.rt-tr',
     tableColumn: '.rt-th.leading-normal > div',
     tableBodyColumn: '.rt-tr-group:nth-child(1) > .rt-tr > .rt-td',
-    tableFirstColumn: '.rt-tr > .rt-td',
-    tableColumnLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
+    tableColumnLinks: '.rt-tr-group:nth-child(1)> .rt-tr > .rt-td > a',
     allCVEColumnLink: '[data-testid="allCvesLink"]',
     fixableCVELink: '[data-testid="fixableCvesLink"]',
     numCVEColLink: '.rt-tr > .rt-td'

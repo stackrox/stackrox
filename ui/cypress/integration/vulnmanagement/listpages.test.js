@@ -59,6 +59,7 @@ function validateClickableLinksEntityListPage(colLinks, parentUrl) {
                     cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     validateDataInEntityListPage(value, parentUrl);
                 });
         }
@@ -72,6 +73,7 @@ function validateClickableLinksEntityListPage(colLinks, parentUrl) {
                     cy.get(`${selectors.tableColumnLinks}:contains('${value}')`)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     validateDataInEntityListPage(`${parseInt(value, 10)} polic`, parentUrl);
                 });
         }
@@ -86,6 +88,7 @@ function validateAllCVELinks(prevUrl) {
             cy.get(`${selectors.allCVEColumnLink}`)
                 .eq(0)
                 .click({ force: true });
+            cy.wait(2000);
             validateDataInEntityListPage(value.toUpperCase(), prevUrl);
         });
 }
@@ -98,6 +101,7 @@ function validateFixableCVELinks(urlBack) {
             cy.get(`${selectors.fixableCVELink}`)
                 .eq(0)
                 .click({ force: true });
+            cy.wait(2000);
             if (parseInt(value, 10) === 1)
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);
             if (parseInt(value, 10) > 1)
@@ -142,6 +146,7 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                     cy.get(colSelector)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     cy.get(selectors.getTileLink(col.toUpperCase()))
                         .find(selectors.tileLinkText)
                         .contains(parseInt(value, 10));
@@ -159,6 +164,7 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                     cy.get(colSelector)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     if (parseInt(value, 10) === 1) {
                         cy.get(selectors.getTileLink('CVE'))
                             .find(selectors.tileLinkValue)
@@ -179,6 +185,7 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                     cy.get(colSelector)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     if (!parentUrl.includes('components')) {
                         cy.get(selectors.tabButton)
                             .contains('Fixable CVEs')
@@ -202,6 +209,7 @@ function validateTileLinksSidePanelEntityPage(colSelector, relatedEntitiesList, 
                         cy.get(colSelector)
                             .eq(0)
                             .click({ force: true });
+                        cy.wait(2000);
                         let colText = '';
                         if (parseInt(value, 10) > 1) colText = 'POLICIES';
                         if (parseInt(value, 10) === 1) colText = 'POLICY';
@@ -239,9 +247,11 @@ function validateTabsInSidePanelWithTileLinks(parentUrl, colSelector, relatedEnt
                     cy.get(colSelector)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     cy.get(selectors.sidePanelExpandButton).click({ force: true });
                     cy.get(selectors.getSidePanelTabLink(col.toLowerCase())).click({ force: true });
                     expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                    cy.wait(3000);
                     cy.visit(parentUrl);
                 });
         }
@@ -253,9 +263,11 @@ function validateTabsInSidePanelWithTileLinks(parentUrl, colSelector, relatedEnt
                     cy.get(colSelector)
                         .eq(0)
                         .click({ force: true });
+                    cy.wait(2000);
                     cy.get(selectors.sidePanelExpandButton).click({ force: true });
                     cy.get(selectors.getSidePanelTabLink(col.toUpperCase())).click({ force: true });
                     expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                    cy.wait(3000);
                     cy.visit(parentUrl);
                 });
         }
@@ -271,6 +283,7 @@ function validateTabsInSidePanelWithTileLinks(parentUrl, colSelector, relatedEnt
                         cy.get(colSelector)
                             .eq(0)
                             .click({ force: true });
+                        cy.wait(2000);
                         let colText = '';
                         if (parseInt(value, 10) > 1) colText = 'POLICIES';
                         if (parseInt(value, 10) === 1) colText = 'POLICY';
@@ -282,6 +295,7 @@ function validateTabsInSidePanelWithTileLinks(parentUrl, colSelector, relatedEnt
                         });
 
                         expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+                        cy.wait(3000);
                         cy.visit(parentUrl);
                     }
                 });
@@ -317,63 +331,55 @@ describe('Entities list Page', () => {
             if (!columnValue.includes('no') && columnValue.includes('polic')) {
                 validateClickableLinks(['Policies'], url.list.clusters);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Policies'],
                     url.list.clusters
                 );
-                validateTabsInSidePanelWithTileLinks(
-                    url.list.clusters,
-                    selectors.tableFirstColumn,
-                    ['Policies']
-                );
+                validateTabsInSidePanelWithTileLinks(url.list.clusters, selectors.tableBodyColumn, [
+                    'Policies'
+                ]);
             }
             if (columnValue !== 'no namespaces' && columnValue.includes('namespace')) {
                 validateClickableLinks(['Namespace'], url.list.clusters);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Namespace'],
                     url.list.clusters
                 );
-                validateTabsInSidePanelWithTileLinks(
-                    url.list.clusters,
-                    selectors.tableFirstColumn,
-                    ['Namespace']
-                );
+                validateTabsInSidePanelWithTileLinks(url.list.clusters, selectors.tableBodyColumn, [
+                    'Namespace'
+                ]);
             }
 
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 validateClickableLinks(['deployment'], url.list.clusters);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment'],
                     url.list.clusters
                 );
-                validateTabsInSidePanelWithTileLinks(
-                    url.list.clusters,
-                    selectors.tableFirstColumn,
-                    ['Deployment']
-                );
+                validateTabsInSidePanelWithTileLinks(url.list.clusters, selectors.tableBodyColumn, [
+                    'Deployment'
+                ]);
             }
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 validateAllCVELinks(url.list.clusters);
                 if (columnValue.includes('fixable')) {
                     validateFixableCVELinks(url.list.namespaces);
                     validateTileLinksSidePanelEntityPage(
-                        selectors.tableFirstColumn,
+                        selectors.tableBodyColumn,
                         ['Fixable'],
                         url.list.clusters
                     );
                 }
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs'],
                     url.list.clusters
                 );
-                validateTabsInSidePanelWithTileLinks(
-                    url.list.clusters,
-                    selectors.tableFirstColumn,
-                    ['CVEs']
-                );
+                validateTabsInSidePanelWithTileLinks(url.list.clusters, selectors.tableBodyColumn, [
+                    'CVEs'
+                ]);
             }
         });
     });
@@ -396,26 +402,26 @@ describe('Entities list Page', () => {
             if (!columnValue.includes('no') && columnValue.includes('polic')) {
                 validateClickableLinksEntityListPage(['Policies'], url.list.namespaces);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Policies'],
                     url.list.namespaces
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.namespaces,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Policies']
                 );
             }
             if (columnValue !== 'no images' && columnValue.includes('image')) {
                 validateClickableLinksEntityListPage(['image'], url.list.namespaces);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image'],
                     url.list.namespaces
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.namespaces,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image']
                 );
             }
@@ -423,13 +429,13 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 validateClickableLinksEntityListPage(['deployment'], url.list.namespaces);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment'],
                     url.list.namespaces
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.namespaces,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment']
                 );
             }
@@ -437,7 +443,7 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 validateFixableCVELinks(url.list.namespaces);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Fixable'],
                     url.list.namespaces
                 );
@@ -446,13 +452,13 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 validateAllCVELinks(url.list.namespaces);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs'],
                     url.list.namespaces
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.namespaces,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs']
                 );
             }
@@ -478,33 +484,33 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no failing policies' && columnValue.includes('polic')) {
                 validateClickableLinksEntityListPage(['Policies'], url.list.deployments);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Policies'],
                     url.list.deployments
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.deployments,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Failing Policies']
                 );
             }
             if (columnValue !== 'no images' && columnValue.includes('image')) {
                 validateClickableLinksEntityListPage(['image'], url.list.deployments);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image'],
                     url.list.deployments
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.deployments,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image']
                 );
             }
             if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 validateFixableCVELinks(url.list.deployments);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Fixable'],
                     url.list.deployments
                 );
@@ -512,13 +518,13 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 validateAllCVELinks(url.list.deployments);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs'],
                     url.list.deployments
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.deployments,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs']
                 );
             }
@@ -544,29 +550,29 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 validateClickableLinksEntityListPage(['deployment'], url.list.images);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment'],
                     url.list.images
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableBodyColumn, [
                     'Deployment'
                 ]);
             }
             if (columnValue !== 'no components' && columnValue.includes('component')) {
                 validateClickableLinksEntityListPage(['component'], url.list.images);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Component'],
                     url.list.images
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableBodyColumn, [
                     'Component'
                 ]);
             }
             if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 validateFixableCVELinks(url.list.deployments);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Fixable'],
                     url.list.images
                 );
@@ -575,11 +581,11 @@ describe('Entities list Page', () => {
                 validateAllCVELinks(url.list.deployments);
 
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs'],
                     url.list.images
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.images, selectors.tableBodyColumn, [
                     'CVEs'
                 ]);
             }
@@ -599,51 +605,51 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
+            cy.wait(3000);
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 validateClickableLinksEntityListPage(['deployment'], url.list.components);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment'],
                     url.list.components
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.components,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment']
                 );
             }
             if (columnValue !== 'no images' && columnValue.includes('image')) {
                 validateClickableLinksEntityListPage(['image'], url.list.components);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image'],
                     url.list.components
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.components,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image']
                 );
             }
             if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
                 validateFixableCVELinks(url.list.components);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Fixable'],
                     url.list.components
                 );
             }
             if (columnValue !== 'no cves' && columnValue.includes('cve')) {
                 validateAllCVELinks(url.list.components);
-
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs'],
                     url.list.components
                 );
                 validateTabsInSidePanelWithTileLinks(
                     url.list.components,
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['CVEs']
                 );
             }
@@ -668,33 +674,33 @@ describe('Entities list Page', () => {
             if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
                 validateClickableLinksEntityListPage(['deployment'], url.list.cves);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Deployment'],
                     url.list.cves
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableBodyColumn, [
                     'Deployment'
                 ]);
             }
             if (columnValue !== 'no images' && columnValue.includes('image')) {
                 validateClickableLinksEntityListPage(['image'], url.list.components);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Image'],
                     url.list.cves
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableBodyColumn, [
                     'Image'
                 ]);
             }
             if (columnValue !== 'no components' && columnValue.includes('component')) {
                 validateClickableLinksEntityListPage(['component'], url.list.cves);
                 validateTileLinksSidePanelEntityPage(
-                    selectors.tableFirstColumn,
+                    selectors.tableBodyColumn,
                     ['Component'],
                     url.list.cves
                 );
-                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableFirstColumn, [
+                validateTabsInSidePanelWithTileLinks(url.list.cves, selectors.tableBodyColumn, [
                     'Component'
                 ]);
             }

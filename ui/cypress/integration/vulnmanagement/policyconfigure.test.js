@@ -16,9 +16,9 @@ describe('Policy Detail View Page', () => {
 
     withAuth();
 
-    it('enable disable toggle for a policy work as expected', () => {
+    it('policy edit button on click goes to edit page of policy ', () => {
         cy.visit(url.list.policies);
-        cy.get(selectors.tableFirstColumn)
+        cy.get(selectors.tableBodyColumn)
             .eq(0)
             .click({ force: true });
         cy.url().then(currentURL => {
