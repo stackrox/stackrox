@@ -147,11 +147,6 @@ class MainPage extends Component {
                     <ProtectedRoute
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}
-                        featureFlagEnabled={isBackendFeatureFlagEnabled(
-                            this.props.featureFlags,
-                            knownBackendFlags.ROX_CONFIG_MGMT_UI,
-                            true
-                        )}
                     />
                     <ProtectedRoute path={clustersPath} component={AsyncClustersPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
