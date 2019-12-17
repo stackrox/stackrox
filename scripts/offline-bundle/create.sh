@@ -60,7 +60,7 @@ main() {
     save "stackrox.io" "monitoring" "${main_tag}" "image-bundle"
 
     # Scanner uses the version contained in the SCANNER_VERSION file.
-    local scanner_tag="$(cat LANGUAGE_SCANNER_VERSION)"
+    local scanner_tag="$(cat SCANNER_VERSION)"
     save_with_rhel "stackrox.io" "scanner" "${scanner_tag}" "image-bundle"
     save_with_rhel "stackrox.io" "scanner-db" "${scanner_tag}" "image-bundle"
 

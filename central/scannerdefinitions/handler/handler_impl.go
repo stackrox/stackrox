@@ -12,8 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/fetcher"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,8 +21,6 @@ import (
 var (
 	scannerDefinitionsSubdir   = path.Join(migrations.DBMountPath, "scannerdefinitions")
 	scannerDefinitionsFilePath = path.Join(scannerDefinitionsSubdir, "scanner-defs.zip")
-
-	legacyScannerDefinitionsFile = path.Join(scannerDefinitionsSubdir, "clair_definitions_central.sql.gz")
 )
 
 const (
@@ -44,38 +40,7 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusMethodNotAllowed)
 }
 
-func handleLegacyGet(w http.ResponseWriter) {
-	exists, err := fileutils.Exists(legacyScannerDefinitionsFile)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "couldn't check for scanner definitions file: %v", err)
-		return
-	}
-	if !exists {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte("No scanner definitions found"))
-		return
-	}
-	file, err := os.Open(legacyScannerDefinitionsFile)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "couldn't open file for reading: %v", err)
-		return
-	}
-	defer utils.IgnoreError(file.Close)
-
-	_, err = io.Copy(w, file)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "couldn't write file contents to response: %v", err)
-		return
-	}
-	w.Header().Add("Content-Disposition", `attachment; filename="clair_definitions_central.sql.gz"`)
-}
-
 func get(w http.ResponseWriter, r *http.Request) {
-	if !features.LanguageScanner.Enabled() {
-		handleLegacyGet(w)
-		return
-	}
-
 	_, err := os.Stat(scannerDefinitionsFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -88,28 +53,6 @@ func get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.ServeFile(w, r, scannerDefinitionsFilePath)
-}
-
-func handleLegacyPost(w http.ResponseWriter, r *http.Request) {
-	err := os.MkdirAll(scannerDefinitionsSubdir, 0755)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create directory: %v", err)
-		return
-	}
-
-	file, err := os.Create(legacyScannerDefinitionsFile)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create file: %v", err)
-		return
-	}
-	defer utils.IgnoreError(file.Close)
-
-	_, err = io.Copy(file, r.Body)
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to write to file: %v", err)
-		return
-	}
-	_, _ = w.Write([]byte("Successfully stored the scanner definitions"))
 }
 
 func updateK8sIstioCVEs(zipPath string) {
@@ -184,11 +127,6 @@ func handleZipContentsFromOfflineDump(zipPath string) error {
 }
 
 func post(w http.ResponseWriter, r *http.Request) {
-	if !features.LanguageScanner.Enabled() {
-		handleLegacyPost(w, r)
-		return
-	}
-
 	tempDir, err := ioutil.TempDir("", "scanner-definitions-handler")
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)

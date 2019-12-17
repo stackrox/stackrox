@@ -1,6 +1,0 @@
-name: scanner
-description: StackRox Scanner
-version: {{.Version}}
-maintainers:
-  - name: stackrox
-    email: support@stackrox.com

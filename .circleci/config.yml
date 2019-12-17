@@ -560,8 +560,8 @@ commands:
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               cci-export MAIN_IMAGE_REPO stackrox/main-rhel
               cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
-              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
@@ -1056,8 +1056,8 @@ commands:
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               cci-export MAIN_IMAGE_REPO stackrox/main-rhel
               cci-export COLLECTOR_IMAGE_REPO stackrox/collector-rhel
-              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
-              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+              cci-export SCANNER_IMAGE "stackrox/scanner-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+              cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
             ./scripts/ci/openshift-gcr-secrets.sh
@@ -1907,7 +1907,6 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_BADGER_DB: true
-      - ROX_LANGUAGE_SCANNER: true
 
     steps:
       - run-qa-tests:
@@ -2276,7 +2275,6 @@ jobs:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
-      - ROX_LANGUAGE_SCANNER: true
 
     steps:
       - checkout

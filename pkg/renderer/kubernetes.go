@@ -8,7 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -48,9 +47,6 @@ type chartPrefixPair struct {
 func getScannerChart(c *Config) chartPrefixPair {
 	if c.K8sConfig.ScannerV2Config.Enable {
 		return chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"}
-	}
-	if features.LanguageScanner.Enabled() {
-		return chartPrefixPair{image.GetLanguageScannerChart(), "scanner"}
 	}
 	return chartPrefixPair{image.GetScannerChart(), "scanner"}
 }

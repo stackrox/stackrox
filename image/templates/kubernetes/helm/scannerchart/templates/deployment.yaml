@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: scanner
@@ -15,6 +15,8 @@ spec:
   selector:
     matchLabels:
       app: scanner
+  strategy:
+    type: Recreate
   template:
     metadata:
       namespace: {{.Values.namespace}}
@@ -53,42 +55,67 @@ spec:
         image: {{.Values.image}}
         resources:
           requests:
-            memory: "500Mi"
-            cpu: "500m"
+            memory: "2500Mi"
+            cpu: "1000m"
           limits:
-            memory: "2000Mi"
-            cpu: "2000m"
-        env:
-        - name: CLAIR_ARGS
-          value: "-insecure-tls"
+            memory: "4000Mi"
+            cpu: "3000m"
         command:
-        - /entrypoint.sh
-        - /clairify
-        imagePullPolicy: Always
+        - /scanner
         ports:
-        - name: clairify
+        - name: https
           containerPort: 8080
+        - name: grpc
+          containerPort: 8443
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          runAsUser: 4000
+        readinessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /scanner/ping
+            port: 8080
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 6
+          successThreshold: 1
         volumeMounts:
-        - name: clair-config-volume
-          mountPath: /etc/clair
+        - name: scanner-config-volume
+          mountPath: /etc/scanner
           readOnly: true
         - name: scanner-tls-volume
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+        - name: vuln-temp-db
+          mountPath: /var/lib/stackrox
         - name: proxy-config-volume
           mountPath: /run/secrets/stackrox.io/proxy-config/
           readOnly: true
+      - name: db
+        image: {{.Values.dbImage}}
+        resources:
+          limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        volumeMounts:
+          - name: db-data
+            mountPath: /var/lib/postgresql/data
       serviceAccount: scanner
       volumes:
-      - name: clair-config-volume
+      - name: scanner-config-volume
         configMap:
-          name: clair-config
+          name: scanner-config
       - name: scanner-tls-volume
         secret:
           secretName: scanner-tls
+      - name: db-data
+        emptyDir: {}
+      - name: vuln-temp-db
+        emptyDir: {}
       - name: proxy-config-volume
         secret:
           secretName: proxy-config

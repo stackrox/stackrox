@@ -11,14 +11,11 @@ echo "StackRox image set to $MAIN_IMAGE"
 
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
 if [[ -z "${SCANNER_IMAGE}" ]]; then
-  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
+  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-}"
 if [[ -z "${SCANNER_DB_IMAGE}" ]]; then
-  export SCANNER_DB_IMAGE="stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/LANGUAGE_SCANNER_VERSION")"
-fi
-if [[ "${ROX_LANGUAGE_SCANNER}" == "false" ]]; then
-  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+  export SCANNER_DB_IMAGE="stackrox/scanner-db:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
 fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 

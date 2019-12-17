@@ -73,11 +73,6 @@ func GetScannerChart() *chart.Chart {
 	return mustGetChart(K8sBox, "helm/scannerchart/")
 }
 
-// GetLanguageScannerChart returns the new version of scanner
-func GetLanguageScannerChart() *chart.Chart {
-	return mustGetChart(K8sBox, "helm/languagescannerchart/")
-}
-
 // GetScannerV2Chart returns the Helm chart for ScannerV2
 func GetScannerV2Chart() *chart.Chart {
 	return mustGetChart(K8sBox, "helm/scannerv2chart/")

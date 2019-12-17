@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version/internal"
 )
 
@@ -25,9 +24,6 @@ func GetCollectorVersion() string {
 
 // GetScannerVersion returns the current Scanner tag.
 func GetScannerVersion() string {
-	if features.LanguageScanner.Enabled() {
-		return internal.LanguageScannerVersion
-	}
 	return internal.ScannerVersion
 }
 

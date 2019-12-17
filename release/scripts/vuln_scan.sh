@@ -47,9 +47,5 @@ retag_with_rhel "stackrox/collector" "$COLLECTOR_TAG"
 
 # Legacy scanner images
 SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
-retag_without_rhel stackrox/scanner "$SCANNER_TAG"
-
-# Language Scanner images
-LANGUAGE_SCANNER_TAG=$(cat "$DIR/../../LANGUAGE_SCANNER_VERSION")
-retag_with_rhel "stackrox/scanner" "$LANGUAGE_SCANNER_TAG"
-retag_with_rhel "stackrox/scanner-db" "$LANGUAGE_SCANNER_TAG"
+retag_with_rhel stackrox/scanner "$SCANNER_TAG"
+retag_with_rhel "stackrox/scanner-db" "$SCANNER_TAG"
