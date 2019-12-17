@@ -78,34 +78,34 @@ class OpenShift extends Kubernetes {
     /*
         Service Methods
     */
-    def createLoadBalancer(Deployment deployment) {
-        if (deployment.createLoadBalancer) {
-            Route route = new Route(
-                    "v1",
-                    "Route",
-                    new ObjectMeta(name: deployment.name),
-                    new RouteSpec(to: new RouteTargetReference("Service", deployment.name, null)),
-                    null
-            )
-            oClient.routes().inNamespace(deployment.namespace).createOrReplace(route)
-            println "Waiting for Route for " + deployment.name
-            int retries = maxWaitTimeSeconds / sleepDurationSeconds
-            Timer t = new Timer(retries, sleepDurationSeconds)
-            boolean keepIterating = true
-            while (keepIterating && t.IsValid()) {
-                RouteList rList
-                rList = oClient.routes().inNamespace(deployment.namespace).list()
-                for (Route r : rList.getItems()) {
-                    if (r.getMetadata().getName() == deployment.name) {
-                        if (r.getStatus().getIngress() != null) {
-                            println "Route Host: " + r.getStatus().getIngress().get(0).getHost()
-                            deployment.loadBalancerIP = r.getStatus().getIngress().get(0).getHost()
-                            keepIterating = false
-                        }
+    @Override
+    String waitForLoadBalancer(String serviceName, String namespace) {
+        def loadBalancerIP
+        Route route = new Route(
+                "v1",
+                "Route",
+                new ObjectMeta(name: serviceName),
+                new RouteSpec(to: new RouteTargetReference("Service", serviceName, null)),
+                null
+        )
+        oClient.routes().inNamespace(namespace).createOrReplace(route)
+        println "Waiting for Route for " + serviceName
+        int retries = maxWaitTimeSeconds / sleepDurationSeconds
+        Timer t = new Timer(retries, sleepDurationSeconds)
+        while (t.IsValid()) {
+            RouteList rList
+            rList = oClient.routes().inNamespace(namespace).list()
+            for (Route r : rList.getItems()) {
+                if (r.getMetadata().getName() == serviceName) {
+                    if (r.getStatus().getIngress() != null) {
+                        println "Route Host: " + r.getStatus().getIngress().get(0).getHost()
+                        return loadBalancerIP
                     }
                 }
             }
         }
+        println("Could not get loadBalancer IP in ${t.SecondsSince()} seconds")
+        return loadBalancerIP
     }
 
     /*
