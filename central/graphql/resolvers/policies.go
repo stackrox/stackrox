@@ -20,6 +20,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("policies(query: String, pagination: Pagination): [Policy!]!"),
 		schema.AddQuery("policy(id: ID): Policy"),
+		schema.AddQuery("policyCount(query: String): Int!"),
 		schema.AddExtraResolver("Policy", `alerts: [Alert!]!`),
 		schema.AddExtraResolver("Policy", `alertCount: Int!`),
 		schema.AddExtraResolver("Policy", `deployments(query: String): [Deployment!]!`),
@@ -53,6 +54,23 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 		return nil, err
 	}
 	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(ctx, string(*args.ID)))
+}
+
+// PolicyCount returns count of all policies across infrastructure
+func (resolver *Resolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PolicyCount")
+	if err := readPolicies(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.PolicyDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
