@@ -1720,7 +1720,6 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
-      - ROX_CONFIG_MGMT_UI: true
       - ROX_VULN_MGMT_UI: true
       - ROX_BADGER_DB: true
 
