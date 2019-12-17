@@ -7,7 +7,6 @@ import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
 import "storage/compliance_management.proto";
-import "api/v1/empty.proto";
 
 package v1;
 
