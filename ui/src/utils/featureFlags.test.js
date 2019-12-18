@@ -2,6 +2,11 @@ import { isBackendFeatureFlagEnabled } from './featureFlags';
 
 const backendFeatureFlags = [
     {
+        name: 'Enable Config Mgmt UI',
+        envVar: 'ROX_CONFIG_MGMT_UI',
+        enabled: false
+    },
+    {
         name: 'Enable Sensor Autoupgrades',
         envVar: 'ROX_SENSOR_AUTOUPGRADE',
         enabled: true
@@ -47,7 +52,7 @@ describe('featureFlags utils', () => {
         });
 
         it('should return the current value of the given flag when matched and disabled', () => {
-            const flagToFind = 'ROX_SENSOR_AUTOUPGRADE'; // backendFeatureFlags[1].name
+            const flagToFind = 'ROX_CONFIG_MGMT_UI'; // backendFeatureFlags[0].name
             const defaultVal = false;
 
             const isEnabled = isBackendFeatureFlagEnabled(
@@ -57,6 +62,19 @@ describe('featureFlags utils', () => {
             );
 
             expect(isEnabled).toEqual(backendFeatureFlags[0].enabled);
+        });
+
+        it('should return the current value of the given flag when matched and disabled', () => {
+            const flagToFind = 'ROX_SENSOR_AUTOUPGRADE'; // backendFeatureFlags[1].name
+            const defaultVal = false;
+
+            const isEnabled = isBackendFeatureFlagEnabled(
+                backendFeatureFlags,
+                flagToFind,
+                defaultVal
+            );
+
+            expect(isEnabled).toEqual(backendFeatureFlags[1].enabled);
         });
     });
 });
