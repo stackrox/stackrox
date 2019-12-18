@@ -93,11 +93,11 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, errors.New("image or image_name must be specified")
 	}
 	// This is a workaround for those who post the full image, but don't fill in fullname
-	if name := req.GetImage().GetName(); name != nil && name.GetFullName() == "" {
-		name.FullName = types.Wrapper{GenericImage: req.GetImage()}.FullName()
+	if name := image.GetName(); name != nil && name.GetFullName() == "" {
+		name.FullName = types.Wrapper{GenericImage: image}.FullName()
 	}
 
-	img := types.ToImage(req.GetImage())
+	img := types.ToImage(image)
 
 	eCtx := enricher.EnrichmentContext{}
 	if req.GetNoExternalMetadata() {
