@@ -24,6 +24,7 @@ func init() {
 		schema.AddQuery("namespaces(query: String, pagination: Pagination): [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
+		schema.AddQuery("namespaceCount(query: String): Int!"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Namespace", `subjects(query: String): [Subject!]!`),
 		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
@@ -90,6 +91,23 @@ func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args 
 		return nil, err
 	}
 	return resolver.wrapNamespace(namespace.ResolveByClusterIDAndName(ctx, string(args.ClusterID), args.Name, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+}
+
+// NamespaceCount returns count of all clusters across infrastructure
+func (resolver *Resolver) NamespaceCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NamespaceCount")
+	if err := readNamespaces(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.NamespaceDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {

@@ -55,6 +55,7 @@ func init() {
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
+		schema.AddQuery("vulnerabilityCount(query: String): Int!"),
 		schema.AddQuery("k8sVulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("k8sVulnerabilities(query: String): [EmbeddedVulnerability!]!"),
 		schema.AddQuery("istioVulnerability(id: ID): EmbeddedVulnerability"),
@@ -98,6 +99,23 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q paginatedQuery)
 		pv: query.Pagination,
 	}.paginate(vulnerabilities(ctx, resolver, query))
 	return resolvers.([]*EmbeddedVulnerabilityResolver), err
+}
+
+// VulnerabilityCount returns count of all clusters across infrastructure
+func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnerabilityCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	vulns, err := vulnerabilities(ctx, resolver, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(vulns)), nil
 }
 
 // K8sVulnerability resolves a single k8s vulnerability based on an id (the CVE value).

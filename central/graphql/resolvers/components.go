@@ -47,6 +47,7 @@ func init() {
 		schema.AddExtraResolver("ImageScan", `componentCount(query: String): Int!`),
 		schema.AddQuery("component(id: ID): EmbeddedImageScanComponent"),
 		schema.AddQuery("components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
+		schema.AddQuery("componentCount(query: String): Int!"),
 	)
 }
 
@@ -94,6 +95,23 @@ func (resolver *Resolver) Components(ctx context.Context, q paginatedQuery) ([]*
 		pv: query.Pagination,
 	}.paginate(components(ctx, resolver, query))
 	return resolvers.([]*EmbeddedImageScanComponentResolver), err
+}
+
+// ComponentCount returns count of all clusters across infrastructure
+func (resolver *Resolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComponentCount")
+	if err := readImages(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	comps, err := components(ctx, resolver, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(comps)), nil
 }
 
 // Helper function that actually runs the queries and produces the resolvers from the images.
