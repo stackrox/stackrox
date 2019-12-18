@@ -14,4 +14,7 @@ var (
 
 	// ManagedDB enabled the newly StackRox managed DB transaction sequencing.
 	ManagedDB = registerFeature("Use managed sequencing for the embedded Badger DB", "ROX_MANAGED_DB", false)
+
+	// Telemetry enables the telemetry features
+	Telemetry = registerFeature("Enable support for telemetry", "ROX_TELEMETRY", false)
 )

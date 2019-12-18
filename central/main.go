@@ -26,7 +26,6 @@ import (
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configService "github.com/stackrox/rox/central/config/service"
 	"github.com/stackrox/rox/central/cve/fetcher"
-	"github.com/stackrox/rox/central/debug/dump"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -542,12 +541,6 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
 			ServerHandler: complianceHandlers.CSVHandler(),
 			Compression:   true,
-		},
-		{
-			Route:         "/debug/dump",
-			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
-			ServerHandler: dump.DebugHandler(),
-			Compression:   false,
 		},
 		{
 			Route:         "/db/v2/restore",
