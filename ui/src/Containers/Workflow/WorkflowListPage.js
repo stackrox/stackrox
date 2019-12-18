@@ -1,4 +1,4 @@
-import React, { useContext, useImperativeHandle } from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 
@@ -33,7 +33,6 @@ const WorkflowListPage = ({
     page,
     checkbox,
     tableHeaderComponents,
-    refetchRef,
     selection,
     setSelection,
     renderRowActionButtons
@@ -50,19 +49,7 @@ const WorkflowListPage = ({
     const searchOptions = (searchData && searchData.searchOptions) || [];
 
     const queryOptionsWithSkip = !data ? queryOptions : { skip: true };
-    const { loading, error, data: ownQueryData, refetch } = useQuery(query, queryOptionsWithSkip);
-
-    // allow parent list page to trigger a refetch, if it passes in a refetchRef obj
-    //  for details, see: https://reactjs.org/docs/hooks-reference.html#useimperativehandle
-    useImperativeHandle(
-        refetchRef,
-        () => ({
-            triggerRefetch: () => {
-                refetch();
-            }
-        }),
-        [refetch]
-    );
+    const { loading, error, data: ownQueryData } = useQuery(query, queryOptionsWithSkip);
 
     let displayData = data;
     if (!data) {
@@ -115,7 +102,6 @@ WorkflowListPage.propTypes = {
     idAttribute: PropTypes.string,
     checkbox: PropTypes.bool,
     tableHeaderComponents: PropTypes.element,
-    refetchRef: PropTypes.shape({ current: PropTypes.shape({}) }),
     selection: PropTypes.arrayOf(PropTypes.string),
     setSelection: PropTypes.func,
     renderRowActionButtons: PropTypes.func
@@ -135,7 +121,6 @@ WorkflowListPage.defaultProps = {
     idAttribute: 'id',
     checkbox: false,
     tableHeaderComponents: null,
-    refetchRef: null,
     selection: [],
     setSelection: null,
     renderRowActionButtons: null

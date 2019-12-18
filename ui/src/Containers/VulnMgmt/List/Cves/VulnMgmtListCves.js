@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import gql from 'graphql-tag';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
@@ -198,10 +198,10 @@ export function renderCveDescription(row) {
 const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, removeToast }) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
-    const refetchRef = useRef();
 
-    // TODO: change query line to `query getCves($query: String) {`
-    //   after API starts accepting empty string ('') for query
+    // seed refresh trigger var with simple number
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
     const CVES_QUERY = gql`
         query getCves($query: String) {
             results: vulnerabilities(query: $query) {
@@ -213,7 +213,8 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
 
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause(search),
+            cachebuster: refreshTrigger
         }
     };
 
@@ -244,13 +245,14 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
             .then(() => {
                 setSelectedCveIds([]);
 
+                // changing this param value on the query vars, to force the query to refetch
+                setRefreshTrigger(Math.random());
+
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
                 const pluralizedCVEs = promises.length === 1 ? 'CVE' : 'CVEs';
 
                 addToast(`Successfully suppressed ${promises.length} ${pluralizedCVEs}`);
                 setTimeout(removeToast, 2000);
-
-                refetchRef.current.triggerRefetch();
             })
             .catch(evt => {
                 addToast(`Could not suppress all of the selected CVEs: ${evt.message}`);
@@ -331,7 +333,6 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
                 SubComponent={renderCveDescription}
                 checkbox
                 tableHeaderComponents={tableHeaderComponents}
-                refetchRef={refetchRef}
                 selection={selectedCveIds}
                 setSelection={setSelectedCveIds}
                 renderRowActionButtons={renderRowActionButtons}

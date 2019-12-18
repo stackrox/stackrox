@@ -243,6 +243,8 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
 export const POLICY_LIST_FRAGMENT = gql`
     fragment policyFields on Policy {
         id
+        disabled
+        notifiers
         name
         description
         policyStatus

@@ -66,12 +66,12 @@ const Menu = ({
     function renderGroupedOptions(formattedOptions) {
         return Object.keys(formattedOptions).map(group => {
             return (
-                <>
+                <React.Fragment key={group}>
                     <div className="uppercase font-condensed p-3 border-b border-primary-300 text-lg">
                         {group}
                     </div>
                     <div className="px-2">{renderOptions(options[group])}</div>
-                </>
+                </React.Fragment>
             );
         });
     }
