@@ -44,6 +44,7 @@ const emptyPolicy = {
     whitelists: []
 };
 
+const noop = () => {};
 const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -76,7 +77,6 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
             setCurrentDisabledState(!currentDisabledState);
         });
     }
-
     const policyActionButtons = (
         <div className="flex px-4">
             <PanelButton
@@ -97,7 +97,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                     extraClassNames="mt-1"
                     id="enableDisablePolicy"
                     name="enableDisablePolicy"
-                    toggleHandler={null}
+                    toggleHandler={noop}
                     enabled={!currentDisabledState}
                     small
                 />

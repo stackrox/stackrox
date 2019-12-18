@@ -1,35 +1,32 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import Raven from 'raven-js';
 import * as Icons from 'react-feather';
 
-class ErrorBoundary extends Component {
+class ErrorBoundary extends React.Component {
     static propTypes = {
-        location: ReactRouterPropTypes.location.isRequired,
         children: PropTypes.node.isRequired
     };
 
-    state = {
-        showError: false
-    };
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
 
-    // TODO: replace with getDerivedStateFromProps after upgrading to React 16.3
-    componentWillReceiveProps(nextProps) {
-        if (this.props.location !== nextProps.location) {
-            // navigation happened, invalidate state assuming new component tree may fix the problem
-            this.setState({ showError: false });
-        }
+    static getDerivedStateFromError() {
+        // Update state so the next render will show the fallback UI.
+        return { hasError: true };
     }
 
     componentDidCatch(error, errorInfo) {
-        this.setState({ showError: true });
+        // You can also log the error to an error reporting service
         Raven.captureException(error, { extra: errorInfo });
     }
 
     render() {
-        if (this.state.showError) {
+        if (this.state.hasError) {
+            // You can render any custom fallback UI
             return (
                 <div className="flex h-full items-center justify-center bg-base-100 text-base-600">
                     <Icons.XSquare size="48" />
@@ -46,6 +43,7 @@ class ErrorBoundary extends Component {
                 </div>
             );
         }
+
         return this.props.children;
     }
 }

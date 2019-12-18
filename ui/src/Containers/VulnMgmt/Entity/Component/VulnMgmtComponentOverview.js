@@ -54,22 +54,23 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Component Summary" />
-                <div className={entityGridContainerClassName}>
-                    <div className="s-1">
-                        <Metadata
-                            className="h-full min-w-48 bg-base-100 bg-counts-widget"
-                            keyValuePairs={metadataKeyValuePairs}
-                            statTiles={componentStats}
-                            title="Details & Metadata"
-                        />
+                <CollapsibleSection title="Component Summary">
+                    <div className={entityGridContainerClassName}>
+                        <div className="s-1">
+                            <Metadata
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
+                                keyValuePairs={metadataKeyValuePairs}
+                                statTiles={componentStats}
+                                title="Details & Metadata"
+                            />
+                        </div>
+                        <div className="s-1">
+                            <CvesByCvssScore
+                                entityContext={{ ...entityContext, [entityTypes.COMPONENT]: id }}
+                            />
+                        </div>
                     </div>
-                    <div className="s-1">
-                        <CvesByCvssScore
-                            entityContext={{ ...entityContext, [entityTypes.COMPONENT]: id }}
-                        />
-                    </div>
-                </div>
+                </CollapsibleSection>
                 <CollapsibleSection title="Component Findings">
                     <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <TableWidget

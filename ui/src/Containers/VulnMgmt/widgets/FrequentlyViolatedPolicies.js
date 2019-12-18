@@ -81,7 +81,6 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
     });
 
     let content = <Loader />;
-
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
         const processedData = processData(data, workflowState, limit);

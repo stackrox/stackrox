@@ -1,14 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 
-const NumberedGrid = ({ data }) => {
+const NumberedGrid = ({ data, history }) => {
+    const onClick = url => () => {
+        if (!url) return null;
+        history.push(url);
+        return 0;
+    };
+
     const stacked = data.length < 4;
     const list = data.map(({ text, subText, url, component }, index) => {
         const className = `inline-block w-full px-2 border-b  border-r border-base-300 ${
-            url ? 'hover:bg-base-200' : ''
+            url ? 'hover:bg-base-200 cursor-pointer' : ''
         } ${stacked ? 'py-4' : 'py-2'}`;
-        let content = (
+        const content = (
             <div className="flex flex-1 items-center">
                 <span className="text-base-600 self-center text-2xl tracking-widest pl-2 pr-4 font-600">
                     {index + 1}
@@ -26,19 +33,10 @@ const NumberedGrid = ({ data }) => {
                 </div>
             </div>
         );
-        if (url) {
-            content = (
-                <Link
-                    key={text}
-                    to={url}
-                    className="flex items-center no-underline text-base-600 hover:bg-base-200 inline-block w-full"
-                >
-                    {content}
-                </Link>
-            );
-        }
+
         return (
-            <li key={text} className={className}>
+            // eslint-disable-next-line
+            <li key={text} className={className} onClick={onClick(url)}>
                 {content}
             </li>
         );
@@ -61,11 +59,12 @@ NumberedGrid.propTypes = {
             components: PropTypes.element,
             url: PropTypes.string
         })
-    )
+    ),
+    history: ReactRouterPropTypes.history.isRequired
 };
 
 NumberedGrid.defaultProps = {
     data: []
 };
 
-export default NumberedGrid;
+export default withRouter(NumberedGrid);

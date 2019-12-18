@@ -97,8 +97,8 @@ function parseURL(location) {
         params.context,
         [...stateStackFromURLParams, ...stateStackFromQueryString],
         {
-            [searchParams.page]: pageSearch,
-            [searchParams.sidePanel]: sidePanelSearch
+            [searchParams.page]: pageSearch || null,
+            [searchParams.sidePanel]: sidePanelSearch || null
         },
         {
             [sortParams.page]: formatSort(pageSort),

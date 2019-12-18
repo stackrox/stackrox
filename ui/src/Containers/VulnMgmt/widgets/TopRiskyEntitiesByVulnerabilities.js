@@ -314,7 +314,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     yMultiple={10}
                     yAxisTitle="Average CVSS Score"
                     xAxisTitle="Critical Vulnerabilities & Exposures"
-                    legendData={!small && severityColorLegend}
+                    legendData={!small ? severityColorLegend : []}
                 />
             );
         }

@@ -34,7 +34,8 @@ ResourceCountPopper.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.oneOf([PropTypes.string, PropTypes.number, PropTypes.bool]).isRequired
+            value: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool])
+                .isRequired
         })
     ).isRequired,
     label: PropTypes.string.isRequired,

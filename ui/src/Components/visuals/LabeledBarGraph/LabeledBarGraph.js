@@ -122,7 +122,7 @@ HOCLabeledBarGraph.propTypes = {
         PropTypes.shape({
             color: PropTypes.string,
             x: PropTypes.number.isRequired,
-            y: PropTypes.number.isRequired,
+            y: PropTypes.string.isRequired,
             url: PropTypes.string
         })
     ),
