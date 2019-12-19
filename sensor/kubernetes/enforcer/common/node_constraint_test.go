@@ -5,24 +5,23 @@ import (
 
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
-	appsv1beta1 "k8s.io/api/apps/v1beta1"
+	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 )
 
 func TestApplyNodeConstraint(t *testing.T) {
 	a := assert.New(t)
 	nodeConstraints := make(map[string]map[string]string)
 
-	deployment := &v1beta1.Deployment{}
+	deployment := &appsV1.Deployment{}
 	a.NoError(ApplyNodeConstraintToObj(deployment, "alertID"))
 	nodeConstraints[pkgKubernetes.Deployment] = deployment.Spec.Template.Spec.NodeSelector
 
-	daemonSet := &v1beta1.DaemonSet{}
+	daemonSet := &appsV1.DaemonSet{}
 	a.NoError(ApplyNodeConstraintToObj(daemonSet, "alertID"))
 	nodeConstraints[pkgKubernetes.DaemonSet] = daemonSet.Spec.Template.Spec.NodeSelector
 
-	replicaSet := &v1beta1.ReplicaSet{}
+	replicaSet := &appsV1.ReplicaSet{}
 	a.NoError(ApplyNodeConstraintToObj(replicaSet, "alertID"))
 	nodeConstraints[pkgKubernetes.ReplicaSet] = replicaSet.Spec.Template.Spec.NodeSelector
 
@@ -34,7 +33,7 @@ func TestApplyNodeConstraint(t *testing.T) {
 	a.NoError(ApplyNodeConstraintToObj(replicationController, "alertID"))
 	nodeConstraints[pkgKubernetes.ReplicationController] = replicationController.Spec.Template.Spec.NodeSelector
 
-	statefulSet := &appsv1beta1.StatefulSet{}
+	statefulSet := &appsV1.StatefulSet{}
 	a.NoError(ApplyNodeConstraintToObj(statefulSet, "alertID"))
 	nodeConstraints[pkgKubernetes.StatefulSet] = statefulSet.Spec.Template.Spec.NodeSelector
 

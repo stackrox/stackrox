@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mock-sensor-${NAME}
@@ -12,6 +12,8 @@ metadata:
 spec:
   replicas: 1
   minReadySeconds: 15
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: mocksensor-${NAME}

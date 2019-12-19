@@ -2,7 +2,7 @@ package kubernetes
 
 import (
 	"github.com/stackrox/rox/pkg/set"
-	"k8s.io/api/extensions/v1beta1"
+	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,7 +31,7 @@ var (
 	DeleteOption           = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyForeground}
 	DeleteBackgroundOption = &metav1.DeleteOptions{PropagationPolicy: &DeletePolicyBackground}
 
-	ScaleToZeroSpec = v1beta1.ScaleSpec{
+	ScaleToZeroSpec = autoscalingV1.ScaleSpec{
 		Replicas: 0,
 	}
 

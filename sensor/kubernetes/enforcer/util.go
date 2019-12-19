@@ -43,7 +43,7 @@ func getRefContainer(enforcement *central.ContainerInstanceEnforcement) *corev1.
 func getRefDeployment(enforcement *central.DeploymentEnforcement) *corev1.ObjectReference {
 	return &corev1.ObjectReference{
 		Kind:       enforcement.GetDeploymentType(),
-		APIVersion: "extensions/v1beta1",
+		APIVersion: "apps/v1",
 		Name:       enforcement.GetDeploymentName(),
 		Namespace:  enforcement.GetNamespace(),
 		UID:        types.UID(enforcement.GetDeploymentId()),

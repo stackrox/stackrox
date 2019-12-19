@@ -170,7 +170,7 @@ func (p *process) waitForDeploymentDeletion(name string, uid types.UID) error {
 }
 
 func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) error {
-	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 	listOpts := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
@@ -224,7 +224,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 }
 
 func (p *process) createUpgraderDeploymentIfNecessary() error {
-	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 
 	upgraderDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -314,7 +314,7 @@ func (p *process) watchUpgraderDeployment() {
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(namespaces.StackRox)
 	foundDeployment, err := deploymentsClient.Get(upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {

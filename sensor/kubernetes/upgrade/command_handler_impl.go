@@ -125,7 +125,7 @@ func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool
 func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
-	err := h.k8sClient.ExtensionsV1beta1().Deployments(namespaces.StackRox).DeleteCollection(
+	err := h.k8sClient.AppsV1().Deployments(namespaces.StackRox).DeleteCollection(
 		kubernetes2.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{

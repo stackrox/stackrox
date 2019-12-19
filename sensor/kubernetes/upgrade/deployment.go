@@ -6,8 +6,8 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/namespaces"
+	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,10 +30,10 @@ func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1
 	return envVars
 }
 
-func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName string) *v1beta1.Deployment {
-	deployment := &v1beta1.Deployment{
+func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName string) *appsV1.Deployment {
+	deployment := &appsV1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "extensions/v1beta1",
+			APIVersion: "apps/v1",
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -44,7 +44,7 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 				processIDLabelKey: trigger.GetUpgradeProcessId(),
 			},
 		},
-		Spec: v1beta1.DeploymentSpec{
+		Spec: appsV1.DeploymentSpec{
 			Replicas: &([]int32{1})[0],
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{

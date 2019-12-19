@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: replay
@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: replay
+  strategy:
+    type: Recreate
   template:
     metadata:
       namespace: stackrox
