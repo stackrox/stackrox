@@ -17,7 +17,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("k8sRoles(query: String): [K8SRole!]!"),
+		schema.AddQuery("k8sRoles(query: String, pagination: Pagination): [K8SRole!]!"),
 		schema.AddExtraResolver("K8SRole", `cluster: Cluster!`),
 		schema.AddExtraResolver("K8SRole", `type: String!`),
 		schema.AddExtraResolver("K8SRole", `verbs: [String!]!`),
@@ -44,7 +44,7 @@ func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver,
 }
 
 // K8sRoles return k8s roles based on a query
-func (resolver *Resolver) K8sRoles(ctx context.Context, arg rawQuery) ([]*k8SRoleResolver, error) {
+func (resolver *Resolver) K8sRoles(ctx context.Context, arg paginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sRoles")
 
 	if err := readK8sRoles(ctx); err != nil {
@@ -64,7 +64,12 @@ func (resolver *Resolver) K8sRoles(ctx context.Context, arg rawQuery) ([]*k8SRol
 	for _, k8srole := range k8sRoles {
 		k8SRoleResolvers = append(k8SRoleResolvers, &k8SRoleResolver{root: resolver, data: k8srole})
 	}
-	return k8SRoleResolvers, nil
+
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(k8SRoleResolvers, nil)
+
+	return resolvers.([]*k8SRoleResolver), err
 }
 
 func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {

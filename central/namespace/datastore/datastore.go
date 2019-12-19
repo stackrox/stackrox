@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 //go:generate mockgen-wrapper
@@ -36,9 +38,10 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(store store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:       store,
-		indexer:     indexer,
-		deployments: deploymentDataStore,
+		store:             store,
+		indexer:           indexer,
+		formattedSearcher: formatSearcher(indexer),
+		deployments:       deploymentDataStore,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -54,14 +57,19 @@ var (
 	namespaceSACSearchHelper = namespaceSAC.MustCreateSearchHelper(mappings.OptionsMap)
 
 	log = logging.LoggerForModule()
+
+	defaultSortOption = &v1.QuerySortOption{
+		Field:    search.Namespace.String(),
+		Reversed: false,
+	}
 )
 
 type datastoreImpl struct {
-	store   store.Store
-	indexer index.Indexer
-
-	namespaceRanker  *ranking.Ranker
-	deploymentRanker *ranking.Ranker
+	store             store.Store
+	indexer           index.Indexer
+	formattedSearcher search.Searcher
+	namespaceRanker   *ranking.Ranker
+	deploymentRanker  *ranking.Ranker
 
 	deployments deploymentDataStore.DataStore
 }
@@ -164,7 +172,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return namespaceSACSearchHelper.Apply(b.indexer.Search)(ctx, q)
+	return b.formattedSearcher.Search(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -249,4 +257,15 @@ func (b *datastoreImpl) aggregateDeploymentScores(namespaceID string) {
 		aggregateScore += b.deploymentRanker.GetScoreForID(r.ID)
 	}
 	b.namespaceRanker.Add(namespaceID, aggregateScore)
+}
+
+// Helper functions which format our searching.
+///////////////////////////////////////////////
+
+func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return defaultSortedSearcher
 }

@@ -58,7 +58,12 @@ func (resolver *Resolver) Secrets(ctx context.Context, args paginatedQuery) ([]*
 	for _, secret := range secrets {
 		resolver.getDeploymentRelationships(ctx, secret)
 	}
-	return resolver.wrapSecrets(secrets, nil)
+
+	resolvers, err := paginationWrapper{
+		pv: q.Pagination,
+	}.paginate(resolver.wrapSecrets(secrets, nil))
+
+	return resolvers.([]*secretResolver), err
 }
 
 // SecretCount gets count of all secrets

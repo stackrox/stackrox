@@ -19,7 +19,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("subjects(query: String): [Subject!]!"),
+		schema.AddQuery("subjects(query: String, pagination: Pagination): [Subject!]!"),
 		schema.AddExtraResolver("Subject", `subjectWithClusterID: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterName: String!`),
@@ -87,7 +87,7 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 }
 
 // Subjects resolves list of subjects matching a query
-func (resolver *Resolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectResolver, error) {
+func (resolver *Resolver) Subjects(ctx context.Context, args paginatedQuery) ([]*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Subjects")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err

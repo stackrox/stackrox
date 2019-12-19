@@ -10,20 +10,25 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 var (
-	log = logging.LoggerForModule()
+	defaultSortOption = &v1.QuerySortOption{
+		Field:    search.Cluster.String(),
+		Reversed: false,
+	}
 
 	clusterSearchHelper = sac.ForResource(resources.Cluster).MustCreateSearchHelper(mappings.OptionsMap)
 )
 
 type searcherImpl struct {
-	storage store.Store
-	indexer index.Indexer
+	storage           store.Store
+	indexer           index.Indexer
+	formattedSearcher search.Searcher
 }
 
 func (ds *searcherImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -58,7 +63,7 @@ func (ds *searcherImpl) searchClusters(ctx context.Context, q *v1.Query) ([]*sto
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return clusterSearchHelper.Apply(ds.indexer.Search)(ctx, q)
+	return ds.formattedSearcher.Search(ctx, q)
 }
 
 func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchResult {
@@ -70,4 +75,15 @@ func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchRe
 		Score:          result.Score,
 		Location:       fmt.Sprintf("/%s", cluster.GetName()),
 	}
+}
+
+// Helper functions which format our searching.
+///////////////////////////////////////////////
+
+func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	filteredSearcher := clusterSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
+
+	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	return defaultSortedSearcher
 }

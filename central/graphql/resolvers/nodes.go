@@ -22,7 +22,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("node(id:ID!): Node"),
-		schema.AddQuery("nodes(query: String): [Node!]!"),
+		schema.AddQuery("nodes(query: String, pagination: Pagination): [Node!]!"),
 		schema.AddQuery("nodeCount(query: String): Int!"),
 		schema.AddExtraResolver("Node", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddType("ComplianceControlCount", []string{"failingCount: Int!", "passingCount: Int!", "unknownCount: Int!"}),
@@ -67,7 +67,7 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 }
 
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
-func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+func (resolver *Resolver) Nodes(ctx context.Context, args paginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Nodes")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -87,7 +87,11 @@ func (resolver *Resolver) Nodes(ctx context.Context, args rawQuery) ([]*nodeReso
 		nodeResolvers = append(nodeResolvers, &nodeResolver{root: resolver, data: node})
 	}
 
-	return nodeResolvers, nil
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(nodeResolvers, nil)
+
+	return resolvers.([]*nodeResolver), err
 }
 
 // NodeCount returns count of nodes across clusters

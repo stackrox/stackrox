@@ -124,7 +124,12 @@ func (resolver *clusterResolver) getRoleBindings(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, resolver.getConjunctionQuery(q))
+	q, err := resolver.getClusterConjunctionQuery(q)
+	if err != nil {
+		return nil, err
+	}
+
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -147,32 +152,6 @@ func (resolver *clusterResolver) getSubjects(ctx context.Context, q *v1.Query) (
 	}
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	return subjects, nil
-}
-
-func (resolver *clusterResolver) getQueryBuilder() *search.QueryBuilder {
-	return search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId())
-}
-
-func (resolver *clusterResolver) getQuery() *v1.Query {
-	return resolver.getQueryBuilder().ProtoQuery()
-}
-
-func (resolver *clusterResolver) getRawConjunctionQuery(q rawQuery) paginatedQuery {
-	clusterQuery := resolver.getQueryBuilder().Query()
-	if q.Query != nil && *q.Query != "" {
-		clusterQuery += "+" + *q.Query
-	}
-	return paginatedQuery{
-		Query: &clusterQuery,
-	}
-}
-
-func (resolver *clusterResolver) getConjunctionQuery(q *v1.Query) *v1.Query {
-	q1 := resolver.getQuery()
-	if q == search.EmptyQuery() {
-		return q1
-	}
-	return search.NewConjunctionQuery(q, q1)
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to

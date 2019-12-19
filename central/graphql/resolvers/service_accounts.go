@@ -20,7 +20,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("serviceAccount(id: ID!): ServiceAccount"),
-		schema.AddQuery("serviceAccounts(query: String): [ServiceAccount!]!"),
+		schema.AddQuery("serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
 		schema.AddExtraResolver("ServiceAccount", `roles(query: String): [K8SRole!]!`),
@@ -46,7 +46,7 @@ func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graph
 }
 
 // ServiceAccounts gets service accounts based on a query
-func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+func (resolver *Resolver) ServiceAccounts(ctx context.Context, args paginatedQuery) ([]*serviceAccountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccounts")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
@@ -57,11 +57,10 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args rawQuery) ([
 		return nil, err
 	}
 
-	serviceAccountResolvers, err := resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query))
-	if err != nil {
-		return nil, err
-	}
-	return serviceAccountResolvers, nil
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)))
+	return resolvers.([]*serviceAccountResolver), err
 }
 
 func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, error) {

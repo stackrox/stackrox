@@ -119,3 +119,11 @@ func filterQueriesByFunction(qs []*v1.Query, fn func(*v1.BaseQuery) bool) (filte
 	}
 	return
 }
+
+// AddRawQueriesAsConjunction adds the input toAdd raw query to the input addTo raw query
+func AddRawQueriesAsConjunction(toAdd string, addTo string) string {
+	if addTo == "" {
+		return toAdd
+	}
+	return addTo + "+" + toAdd
+}
