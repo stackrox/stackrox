@@ -10,7 +10,7 @@ export const url = {
             CIS_Docker_v1_2_0: `${baseURL}/controls?s[standard]=CIS%20Docker%20v1.2.0`,
             CIS_Kubernetes_v1_5: `${baseURL}/controls?s[standard]=CIS%20Kubernetes%20v1.5`,
             HIPAA_164: `${baseURL}/controls?s[standard]=HIPAA%20164`,
-            NIST_800_190: `${baseURL}/controls/?s[standard]=NIST%20800-190`,
+            NIST_800_190: `${baseURL}/controls/?s[standard]=NIST%20SP%20800-190`,
             PCI_DSS_3_2: `${baseURL}/controls?s[standard]=PCI%20DSS%203.2`
         }
     },

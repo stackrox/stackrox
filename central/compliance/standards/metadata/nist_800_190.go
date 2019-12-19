@@ -2,7 +2,7 @@ package metadata
 
 var nist800_190 = Standard{
 	ID:   "NIST_800_190",
-	Name: "NIST 800-190",
+	Name: "NIST SP 800-190",
 	Categories: []Category{
 		{
 			ID:          "4_1",

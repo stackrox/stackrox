@@ -2,6 +2,11 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+### Changed
+- The "NIST 800-190" standard has been renamed to "NIST SP 800-190", for correctness.
+The ID continues to be the same, so no API calls will need to be updated.
+Existing data will be preserved and available on upgrade.
+
 ### Added
 - Added a `roxctl sensor get-bundle <cluster-name-or-id>` command to download sensor bundles for existing
   clusters by name or ID.

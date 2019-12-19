@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/roxctl/common"
 )
@@ -33,15 +34,14 @@ var (
 		},
 	}
 
-	// Literally how the UI does this translation.  Why do we send them different names than we expect to get back?!?
-	standardNames = map[string]string{
-		"PCI_DSS_3_2":           "PCI DSS 3.2.1",
-		"NIST_800_190":          "NIST 800-190",
-		"HIPAA_164":             "HIPAA 164",
-		"CIS_Kubernetes_v1_4_1": "CIS Kubernetes v1.4.1",
-		"CIS_Docker_v1_1_0":     "CIS Docker v1.1.0",
-		"CIS_Docker_v1_2_0":     "CIS Docker v1.2.0",
-	}
+	standardNames = func() map[string]string {
+		m := make(map[string]string)
+		for _, standard := range metadata.AllStandards {
+			m[standard.ID] = standard.Name
+		}
+		return m
+	}()
+
 	maxWaitTime = 20 * time.Minute
 	maxRetries  = 1
 )

@@ -13,7 +13,7 @@ describe('Compliance Flow', () => {
         cy.get(ComplianceSelectors.emptyMessage).should('not.exist');
     });
 
-    it('clicking on "Passing Standards by Cluster" should take user to NIST standard details with filters: “Cluster: production, Standard: NIST 800-190”', () => {
+    it('clicking on "Passing Standards by Cluster" should take user to NIST standard details with filters: "Cluster: production, Standard: NIST SP 800-190"', () => {
         cy.visit(url.dashboard);
         cy.get(ComplianceSelectors.widget.passingStandardsByCluster.NISTBarLinks)
             .eq(0)
@@ -30,7 +30,7 @@ describe('Compliance Flow', () => {
             .contains('Standard:');
         cy.get(selectors.search.chips)
             .eq(3)
-            .contains('NIST');
+            .contains('NIST SP 800-190');
         cy.get(`${selectors.table.rows}:contains("4.1.1") div`)
             .eq(3)
             .contains('100%');

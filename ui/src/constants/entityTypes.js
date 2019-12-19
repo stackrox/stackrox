@@ -36,7 +36,7 @@ export const standardTypes = {
 
 export const standardBaseTypes = {
     [standardTypes.PCI_DSS_3_2]: 'PCI',
-    [standardTypes.NIST_800_190]: 'NIST',
+    [standardTypes.NIST_800_190]: 'NIST SP 800-190',
     [standardTypes.HIPAA_164]: 'HIPAA',
     [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker',
     [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker',

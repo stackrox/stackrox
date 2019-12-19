@@ -176,8 +176,10 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 		allowedPackages = append(allowedPackages, "sensor/common")
 	}
 
-	if validImportRoot == "cmd/roxdetect" {
-		allowedPackages = append(allowedPackages, "cmd/common")
+	// Allow scale tests to import some constants from central, to be more DRY.
+	// This is not a problem since none of this code is used in prod anyway.
+	if validImportRoot == "scale" {
+		allowedPackages = append(allowedPackages, "central")
 	}
 
 	for _, imp := range imps {
