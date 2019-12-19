@@ -2,10 +2,6 @@ import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
 import checkFeatureFlag from '../../helpers/features';
 
-function getPolicyID(editUrl) {
-    const res = editUrl.split('=');
-    return res[2];
-}
 describe('Policy Detail View Page', () => {
     before(function beforeHook() {
         // skip the whole suite if vuln mgmt isn't enabled
@@ -20,13 +16,18 @@ describe('Policy Detail View Page', () => {
         cy.visit(url.list.policies);
         cy.get(selectors.tableBodyColumn)
             .eq(0)
-            .click({ force: true });
-        cy.url().then(currentURL => {
-            const policyId = getPolicyID(currentURL);
-            cy.get(selectors.policyEditButton).click({ force: true });
-            cy.url().then(policyEditURL => {
-                expect(policyEditURL).to.contains(`policies/${policyId}/edit`);
+            .invoke('text')
+            .then(value => {
+                cy.get(selectors.tableBodyColumn)
+                    .eq(0)
+                    .click({ force: true });
+                cy.get(selectors.policyEditButton).click({ force: true });
+                cy.url().then(policyEditURL => {
+                    expect(policyEditURL).to.include(`/edit`);
+                });
+                cy.url().then(policyEditURL => {
+                    expect(policyEditURL).to.include(value);
+                });
             });
-        });
     });
 });

@@ -97,7 +97,8 @@ const sidepanelSelectors = {
 };
 
 const policySidePanelSelectors = {
-    policyEditButton: '[data-testid="button-link"]'
+    policyEditButton: '[data-testid="button-link"]',
+    policyEditPageHeader: '[data-test-id="side-panel-header"]'
 };
 
 export const selectors = {
