@@ -2,94 +2,87 @@ package graph
 
 import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
-	"github.com/stackrox/rox/pkg/dackbox/utils"
 )
 
+// Modification represents a readable change to a Graph.
+type Modification interface {
+	RGraph
+
+	FromModified([]byte) bool
+	ToModified([]byte) bool
+
+	Apply(graph RWGraph)
+}
+
 // NewModifiedGraph returns a new instance of a ModifiedGraph.
-func NewModifiedGraph() *ModifiedGraph {
+func NewModifiedGraph(graph RWGraph) *ModifiedGraph {
 	return &ModifiedGraph{
-		underlying: NewGraph(),
+		RWGraph: graph,
 	}
 }
 
 // ModifiedGraph provides a view of a Graph that tracks changes.
 type ModifiedGraph struct {
-	underlying *Graph
+	RWGraph
 
 	modifiedFrom sortedkeys.SortedKeys
 	modifiedTo   sortedkeys.SortedKeys
 }
 
-// HasRefsFrom returns if there is an entry with 0 or more child keys in the graph.
-func (ms *ModifiedGraph) HasRefsFrom(from []byte) bool {
-	return ms.underlying.HasRefsFrom(from)
+// Apply applies a modification to a separate graph object.
+func (ms *ModifiedGraph) Apply(graph RWGraph) {
+	for _, from := range ms.modifiedFrom {
+		tos := ms.GetRefsFrom(from)
+		if tos == nil {
+			graph.deleteFrom(from)
+		} else {
+			graph.setFrom(from, tos)
+		}
+	}
+	for _, to := range ms.modifiedTo {
+		froms := ms.GetRefsTo(to)
+		if froms == nil {
+			graph.deleteTo(to)
+		} else {
+			graph.setTo(to, froms)
+		}
+	}
 }
 
-// HasRefsTo returns if there is an entry with 0 or more parent keys in the graph.
-func (ms *ModifiedGraph) HasRefsTo(to []byte) bool {
-	return ms.underlying.HasRefsTo(to)
+// FromModified returns of the children of the input key have been modified in the ModifiedGraph.
+func (ms *ModifiedGraph) FromModified(from []byte) bool {
+	return ms.modifiedFrom.Find(from) != -1
 }
 
-// CountRefsFrom returns the number of children reference from the input parent key.
-func (ms *ModifiedGraph) CountRefsFrom(from []byte) int {
-	return ms.underlying.CountRefsFrom(from)
-}
-
-// CountRefsTo returns the number of parents that reference the input child key.
-func (ms *ModifiedGraph) CountRefsTo(to []byte) int {
-	return ms.underlying.CountRefsTo(to)
-}
-
-// GetRefsFrom returns the children referenced by the input parent key.
-func (ms *ModifiedGraph) GetRefsFrom(from []byte) [][]byte {
-	return ms.underlying.GetRefsFrom(from)
-}
-
-// GetRefsTo returns the parents that reference the input child key.
-func (ms *ModifiedGraph) GetRefsTo(to []byte) [][]byte {
-	return ms.underlying.GetRefsTo(to)
+// ToModified returns of the parents of the input key have been modified in the ModifiedGraph.
+func (ms *ModifiedGraph) ToModified(to []byte) bool {
+	return ms.modifiedTo.Find(to) != -1
 }
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
 // Will add all of the input keys, we well as any keys that were previously children of 'from' to the list of values modified.
-func (ms *ModifiedGraph) SetRefs(from []byte, to [][]byte) {
+func (ms *ModifiedGraph) SetRefs(from []byte, to [][]byte) error {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(sortedkeys.Sort(to))
-	ms.modifiedTo = ms.modifiedTo.Union(ms.underlying.GetRefsFrom(from))
+	ms.modifiedTo = ms.modifiedTo.Union(ms.GetRefsFrom(from))
 
-	ms.underlying.SetRefs(from, to)
+	return ms.RWGraph.SetRefs(from, to)
 }
 
 // AddRefs adds the set of keys 'to' to the list of children of 'from'.
 // Will add all of the input keys to the list of values modified.
-func (ms *ModifiedGraph) AddRefs(from []byte, to ...[]byte) {
+func (ms *ModifiedGraph) AddRefs(from []byte, to ...[]byte) error {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(sortedkeys.Sort(to))
 
-	ms.underlying.AddRefs(from, to...)
+	return ms.RWGraph.AddRefs(from, to...)
 }
 
 // DeleteRefs removes all children from the input key, and removes the input key from the maps.
 // The key and it's current list of children will be added to the lists of modified values.
-func (ms *ModifiedGraph) DeleteRefs(from []byte) {
+func (ms *ModifiedGraph) DeleteRefs(from []byte) error {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
-	ms.modifiedTo = ms.modifiedTo.Union(ms.underlying.GetRefsFrom(from))
+	ms.modifiedTo = ms.modifiedTo.Union(ms.GetRefsFrom(from))
 
-	ms.underlying.DeleteRefs(from)
-}
-
-// Copy returns a new copy of the modified state.
-func (ms *ModifiedGraph) Copy() *ModifiedGraph {
-	return &ModifiedGraph{
-		underlying:   ms.underlying.Copy(),
-		modifiedFrom: utils.CopyKeys(ms.modifiedFrom),
-		modifiedTo:   utils.CopyKeys(ms.modifiedTo),
-	}
-}
-
-// Clear removes all values and modifications.
-func (ms *ModifiedGraph) Clear() {
-	ms.modifiedFrom = nil
-	ms.modifiedTo = nil
-	ms.underlying.Clear()
+	return ms.RWGraph.DeleteRefs(from)
 }

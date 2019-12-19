@@ -24,6 +24,11 @@ type RWGraph interface {
 	SetRefs(from []byte, to [][]byte) error
 	AddRefs(from []byte, to ...[]byte) error
 	DeleteRefs(from []byte) error
+
+	setFrom(from []byte, to [][]byte)
+	deleteFrom(from []byte)
+	setTo(to []byte, from [][]byte)
+	deleteTo(to []byte)
 }
 
 // NewGraph is the basic type holding forward and backward ID relationships.
@@ -79,20 +84,23 @@ func (s *Graph) GetRefsTo(to []byte) [][]byte {
 }
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
-func (s *Graph) SetRefs(from []byte, to [][]byte) {
+func (s *Graph) SetRefs(from []byte, to [][]byte) error {
 	s.removeMappings(from)
 	s.addMappings(from, to)
+	return nil
 }
 
 // AddRefs adds the set of keys 'to' to the list of children of 'from'.
-func (s *Graph) AddRefs(from []byte, to ...[]byte) {
+func (s *Graph) AddRefs(from []byte, to ...[]byte) error {
 	s.addMappings(from, to)
+	return nil
 }
 
 // DeleteRefs removes all children from the input key, and removes the input key from the maps.
 // Calls to HasRefsFrom will return false afterwards.
-func (s *Graph) DeleteRefs(from []byte) {
+func (s *Graph) DeleteRefs(from []byte) error {
 	s.removeMappings(from)
+	return nil
 }
 
 // Copy creates a copy of the Graph.
@@ -116,15 +124,23 @@ func (s *Graph) Clear() {
 	s.backward = make(map[string][][]byte)
 }
 
-// Used by RemoteGraph to set values without causing dependent changes.
-///////////////////////////////////////////////////////////////////////
+// Used by ModifiedGraph to set values without causing dependent changes.
+/////////////////////////////////////////////////////////////////////////
 
-func (s *Graph) initializeFrom(from []byte, to [][]byte) {
+func (s *Graph) setFrom(from []byte, to [][]byte) {
 	s.forward[string(from)] = to
 }
 
-func (s *Graph) initializeTo(to []byte, from [][]byte) {
+func (s *Graph) deleteFrom(from []byte) {
+	delete(s.forward, string(from))
+}
+
+func (s *Graph) setTo(to []byte, from [][]byte) {
 	s.backward[string(to)] = from
+}
+
+func (s *Graph) deleteTo(to []byte) {
+	delete(s.forward, string(to))
 }
 
 // Helper functions.

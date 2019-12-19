@@ -10,15 +10,15 @@ import (
 func TestRemoteGraph(t *testing.T) {
 	refState := NewGraph()
 
-	refState.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
 
 	reader := &simpleRemote{refState}
 
-	remoteGraph := NewRemoteGraph(reader)
-	remoteGraph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")})
-	remoteGraph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	remoteGraph := NewRemoteGraph(NewModifiedGraph(refState), reader.Read)
+	_ = remoteGraph.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")})
+	_ = remoteGraph.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
 
 	assert.Equal(t, [][]byte{[]byte("toKey1"), []byte("toKey2")}, remoteGraph.GetRefsFrom([]byte("fromKey1")))
 	assert.Equal(t, [][]byte{[]byte("toKey3"), []byte("toKey4")}, remoteGraph.GetRefsFrom([]byte("fromKey2")))
@@ -29,8 +29,8 @@ func TestRemoteGraph(t *testing.T) {
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, remoteGraph.GetRefsTo([]byte("toKey3")))
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, remoteGraph.GetRefsTo([]byte("toKey4")))
 
-	assert.Equal(t, sortedkeys.SortedKeys{[]byte("fromKey2"), []byte("fromKey3")}, remoteGraph.modified.modifiedFrom)
-	assert.Equal(t, sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2"), []byte("toKey3"), []byte("toKey4")}, remoteGraph.modified.modifiedTo)
+	assert.Equal(t, sortedkeys.SortedKeys{[]byte("fromKey2"), []byte("fromKey3")}, remoteGraph.RWGraph.(*ModifiedGraph).modifiedFrom)
+	assert.Equal(t, sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2"), []byte("toKey3"), []byte("toKey4")}, remoteGraph.RWGraph.(*ModifiedGraph).modifiedTo)
 }
 
 // simple RemoteReader implementation for testing.

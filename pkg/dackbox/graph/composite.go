@@ -3,7 +3,7 @@ package graph
 // NewCompositeGraph returns an ReadOnlyGraph instance that uses the input states as a stack to surface values.
 // When a request for an id relationship is placed through one of it's functions, it search down the stack for the
 // first state that has the desired information, and returns that to the user.
-func NewCompositeGraph(base RGraph, modifications ...*ModifiedGraph) RGraph {
+func NewCompositeGraph(base RGraph, modifications ...Modification) RGraph {
 	if len(modifications) == 0 {
 		return base
 	}
@@ -14,7 +14,7 @@ func NewCompositeGraph(base RGraph, modifications ...*ModifiedGraph) RGraph {
 }
 
 type compositeGraph struct {
-	modifications []*ModifiedGraph
+	modifications []Modification
 	baseState     RGraph
 }
 
@@ -57,8 +57,8 @@ func (cs compositeGraph) GetRefsTo(to []byte) [][]byte {
 // getFirstStateWithFrom returns the graph with the most recent modification of the input key's children.
 // Will always return a non-nil RGraph.
 func (cs compositeGraph) getFirstStateWithFrom(from []byte) RGraph {
-	match := cs.getFirstStateThatMatches(func(modded *ModifiedGraph) bool {
-		return modded.modifiedFrom.Find(from) >= 0
+	match := cs.getFirstStateThatMatches(func(modded Modification) bool {
+		return modded.FromModified(from)
 	})
 	if match == nil {
 		return cs.baseState
@@ -69,8 +69,8 @@ func (cs compositeGraph) getFirstStateWithFrom(from []byte) RGraph {
 // getFirstStateWithTo returns the graph with the most recent modification of the input key's parents.
 // Will always return a non-nil RGraph.
 func (cs compositeGraph) getFirstStateWithTo(to []byte) RGraph {
-	match := cs.getFirstStateThatMatches(func(modded *ModifiedGraph) bool {
-		return modded.modifiedTo.Find(to) >= 0
+	match := cs.getFirstStateThatMatches(func(modded Modification) bool {
+		return modded.ToModified(to)
 	})
 	if match == nil {
 		return cs.baseState
@@ -78,7 +78,7 @@ func (cs compositeGraph) getFirstStateWithTo(to []byte) RGraph {
 	return match
 }
 
-func (cs compositeGraph) getFirstStateThatMatches(pred func(modded *ModifiedGraph) bool) RGraph {
+func (cs compositeGraph) getFirstStateThatMatches(pred func(modded Modification) bool) RGraph {
 	for i := len(cs.modifications) - 1; i >= 0; i-- {
 		if pred(cs.modifications[i]) {
 			return cs.modifications[i]

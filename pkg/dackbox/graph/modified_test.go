@@ -8,14 +8,14 @@ import (
 )
 
 func TestModifiedGraph(t *testing.T) {
-	refState := NewModifiedGraph()
+	refState := NewModifiedGraph(NewGraph())
 
-	refState.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
-	refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey1"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
+	_ = refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")})
 
-	refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
-	refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
+	_ = refState.SetRefs([]byte("fromKey2"), sortedkeys.SortedKeys{[]byte("toKey3"), []byte("toKey4")}) // resets
+	_ = refState.SetRefs([]byte("fromKey3"), sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2")}) // resets
 
 	assert.Equal(t, [][]byte{[]byte("toKey1"), []byte("toKey2")}, refState.GetRefsFrom([]byte("fromKey1")))
 	assert.Equal(t, [][]byte{[]byte("toKey3"), []byte("toKey4")}, refState.GetRefsFrom([]byte("fromKey2")))
