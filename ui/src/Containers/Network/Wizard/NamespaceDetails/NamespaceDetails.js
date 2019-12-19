@@ -43,7 +43,10 @@ class NamespaceDetails extends Component {
     };
 
     static defaultProps = {
-        namespace: {},
+        namespace: {
+            id: null,
+            deployments: []
+        },
         isFetchingNamespace: false,
         networkGraphRef: null
     };
@@ -144,7 +147,7 @@ class NamespaceDetails extends Component {
 
     render() {
         const { namespace, wizardOpen, wizardStage, isFetchingNamespace } = this.props;
-        if (!wizardOpen || wizardStage !== wizardStages.namespaceDetails) {
+        if (!namespace || !wizardOpen || wizardStage !== wizardStages.namespaceDetails) {
             return null;
         }
         const paginationComponent = (

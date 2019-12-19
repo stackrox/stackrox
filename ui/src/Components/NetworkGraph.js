@@ -730,7 +730,7 @@ NetworkGraph.propTypes = {
             }).isRequired
         })
     ).isRequired,
-    networkEdgeMap: PropTypes.shape({}).isRequired,
+    networkEdgeMap: PropTypes.shape({}),
     networkNodeMap: PropTypes.shape({}).isRequired,
     onNamespaceClick: PropTypes.func.isRequired,
     onNodeClick: PropTypes.func.isRequired,
@@ -745,7 +745,8 @@ NetworkGraph.propTypes = {
 };
 
 NetworkGraph.defaultProps = {
-    setSelectedNodeInGraph: null
+    setSelectedNodeInGraph: null,
+    networkEdgeMap: {}
 };
 
 const mapDispatchToProps = {
