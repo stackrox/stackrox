@@ -28,7 +28,7 @@ main() {
     scanner_image_local="stackrox.io/scanner:${scanner_tag}"
     scanner_image_remote="${registry_prefix}/scanner:${scanner_tag}"
 
-    scanner_db_tag="$(docker load -i scanner.img | tag)"
+    scanner_db_tag="$(docker load -i scanner-db.img | tag)"
     scanner_db_image_local="stackrox.io/scanner-db:${scanner_db_tag}"
     scanner_db_image_remote="${registry_prefix}/scanner-db:${scanner_db_tag}"
 

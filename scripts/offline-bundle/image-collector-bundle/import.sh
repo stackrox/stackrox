@@ -15,7 +15,7 @@ main() {
 
     echo "Loading collector image..."
     collector_tag="$(docker load -i collector.img | tag)"
-    collector_image_local="stackrox.io/collector:${collector_tag}"
+    collector_image_local="collector.stackrox.io/collector:${collector_tag}"
     collector_image_remote="${registry_prefix}/collector:${collector_tag}"
 
     if [[ -z "$registry_prefix" ]]; then

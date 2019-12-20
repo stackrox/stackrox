@@ -23,7 +23,7 @@ main() {
     scanner_image_local="stackrox.io/scanner-rhel:${scanner_tag}"
     scanner_image_remote="${registry_prefix}/scanner-rhel:${scanner_tag}"
 
-    scanner_db_tag="$(docker load -i scanner.img | tag)"
+    scanner_db_tag="$(docker load -i scanner-db.img | tag)"
     scanner_db_image_local="stackrox.io/scanner-db-rhel:${scanner_db_tag}"
     scanner_db_image_remote="${registry_prefix}/scanner-db-rhel:${scanner_db_tag}"
 
