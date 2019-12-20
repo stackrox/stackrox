@@ -44,7 +44,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                 }
                 policyCount(query: $policyQuery)
                 vulnCount
-                deploymentCount
+                deploymentCount: numDeployments
                 imageCount
                 componentCount
                 vulnerabilities: vulns {
