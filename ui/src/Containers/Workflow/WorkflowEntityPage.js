@@ -8,8 +8,11 @@ import Loader from 'Components/Loader';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'modules/queryService';
 
-export const entityGridContainerClassName =
-    'mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4 pdf-page';
+export const entityGridContainerBaseClassName =
+    'mx-4 grid-dense grid-auto-fit grid grid-gap-6 mb-4 xxxl:grid-gap-8';
+
+// to separate out column number related classes from the rest of the grid classes for easy column customization (see policyOverview component)
+export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 lg:grid-columns-2 xl:grid-columns-3`;
 
 const WorkflowEntityPage = ({
     ListComponent,
@@ -74,7 +77,7 @@ const WorkflowEntityPage = ({
                 !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
             }`}
         >
-            <div className="w-full min-h-full" id="capture-dashboard-stretch">
+            <div className="w-full min-h-full" id="capture-widgets">
                 <OverviewComponent data={result} entityContext={entityContext} />
             </div>
         </div>

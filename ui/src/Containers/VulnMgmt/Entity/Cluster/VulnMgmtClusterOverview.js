@@ -105,7 +105,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100"
+                                className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={clusterStats}
                                 title="Details & Metadata"
@@ -145,8 +145,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Cluster findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                <CollapsibleSection title="Cluster Findings">
+                    <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <Tabs
                             hasTabSpacing
                             headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}

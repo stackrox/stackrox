@@ -115,7 +115,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details & Metadata"
@@ -133,7 +133,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Image Findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <Tabs
                             hasTabSpacing
                             headers={[{ text: 'Fixable CVEs' }, { text: 'Dockerfile' }]}

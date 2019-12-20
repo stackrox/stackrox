@@ -65,6 +65,7 @@ const WorkflowListPageLayout = ({ location }) => {
                                 fileName={exportFilename}
                                 type={pageListType}
                                 page={useCase}
+                                disabled={!!sidePanelEntityId}
                                 pdfId="capture-list"
                             />
                         </div>

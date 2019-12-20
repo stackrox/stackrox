@@ -176,7 +176,7 @@ class PDFExportButton extends Component {
             }
 
             // beginning of new page
-            if (remainingHeight < halfImgHeight) {
+            if (remainingHeight < halfImgHeight || canvases[index].classList.contains('pdf-new')) {
                 doc.addPage();
                 positionX = paddingX;
                 positionY = paddingY;
@@ -227,8 +227,10 @@ class PDFExportButton extends Component {
                 );
                 const header = document.getElementById('pdf-header');
                 canvases.forEach((canvas, index) => {
+                    const isWidgetsView =
+                        id.includes('capture-dashboard') || id.includes('capture-widgets');
                     const imgData = canvas.toDataURL('image/jpeg');
-                    if (id.includes('capture-dashboard') && index > 0) {
+                    if (isWidgetsView && index > 0) {
                         imgWidth = canvas.classList.contains('pdf-stretch')
                             ? (WIDGET_WIDTH + paddingX) * 2
                             : WIDGET_WIDTH;
@@ -250,8 +252,8 @@ class PDFExportButton extends Component {
                         positionY = imgHeight + paddingY;
                         remainingHeight -= imgHeight;
                     } else {
-                        if (id.includes('capture-dashboard')) {
-                            if (id === 'capture-dashboard') {
+                        if (isWidgetsView) {
+                            if (id === 'capture-dashboard' || id === 'capture-widgets') {
                                 drawPDF(imgHeight, imgWidth, index, imgData, canvases);
                             } else {
                                 drawStretchPDF(imgHeight, index, imgData);

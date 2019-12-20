@@ -107,7 +107,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Namespace findings">
-                    <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                         <Tabs
                             hasTabSpacing
                             headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}

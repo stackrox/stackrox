@@ -16,7 +16,6 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
     const {
         columns,
         rows,
-        selectedRowId,
         idAttribute,
         noDataText,
         setTableRef,
@@ -25,6 +24,7 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
         SubComponent,
         hasNestedTable,
         defaultSorted,
+        className,
         ...widgetProps
     } = { ...rest };
     const headerComponents = (
@@ -35,21 +35,21 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
         const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
         history.push(url);
     }
+
     return (
         <>
             {rows.length ? (
                 <Widget
                     header={header}
                     headerComponents={headerComponents}
+                    className={`w-full ${className}`}
                     {...widgetProps}
-                    className="w-full"
                 >
                     <Table
                         columns={columns}
                         rows={rows}
                         // If "SubComponent" exists, clicking on the row should do nothing because the expander is used
                         onRowClick={SubComponent || hasNestedTable ? null : onRowClick}
-                        selectedRowId={selectedRowId}
                         idAttribute={idAttribute}
                         noDataText={noDataText}
                         setTableRef={setTableRef}

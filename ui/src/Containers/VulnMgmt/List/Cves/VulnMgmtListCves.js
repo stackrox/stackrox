@@ -144,8 +144,8 @@ export function getCveTableColumns(workflowState) {
         {
             Header: `Components`,
             entityType: entityTypes.COMPONENT,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
                 <TableCountLink

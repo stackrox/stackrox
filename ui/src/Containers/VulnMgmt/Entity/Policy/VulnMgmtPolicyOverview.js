@@ -18,6 +18,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
+import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -123,7 +124,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         });
     });
 
-    const drrMetadata = [
+    const descriptionBlockMetadata = [
         {
             key: 'Description',
             value: description || '-'
@@ -202,7 +203,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         );
     } else {
         policyFindingsContent = (
-            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+            <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative rounded bg-base-100 mb-4 mx-4">
                 <TableWidget
                     header={`${failingDeployments.length} ${pluralize(
                         entityTypes.DEPLOYMENT,
@@ -227,65 +228,79 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Policy summary" headerComponents={policyActionButtons}>
-                    <div className="flex mb-4 pdf-page">
-                        <Widget
-                            header="Description, Rationale, & Remediation"
-                            headerComponents={null}
-                            className="ml-4 mr-2 bg-base-100 min-h-48 mb-4 w-2/3"
-                        >
-                            <div className="flex flex-col w-full">
-                                <div className="bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
-                                    <div className="w-full flex-grow p-4">
-                                        <span>{name}</span>
-                                    </div>
-                                    <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
-                                        <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                            <span>Severity:</span>
-                                            <SeverityLabel severity={severity} />
-                                        </span>
-                                        <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                            <span>Status:</span>
-                                            <StatusChip status={policyStatus} />
-                                        </span>
-                                    </div>
-                                </div>
-                                <ul className="flex-1 list-reset border-r border-base-300">
-                                    {drrMetadata.map(({ key, value }) => (
-                                        <li
-                                            className="border-b border-base-300 px-4 py-2"
-                                            key={key}
-                                        >
-                                            <span className="text-base-700 font-600 mr-2">
-                                                {key}:
+                <CollapsibleSection title="Policy Summary" headerComponents={policyActionButtons}>
+                    {/* using a different container class here because we want default 3 columns instead of 2 */}
+                    <div
+                        className={`${entityGridContainerBaseClassName} grid-columns-2 lg:grid-columns-3 xl:grid-columns-4`}
+                    >
+                        <div className="sx-2">
+                            <Widget
+                                header="Description, Rationale, & Remediation"
+                                className="bg-base-100 min-h-48 w-full pdf-page pdf-stretch"
+                            >
+                                <div className="flex flex-col w-full">
+                                    <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
+                                        <div className="w-full flex-grow p-4">
+                                            <span>{name}</span>
+                                        </div>
+                                        <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
+                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                <span>Severity:</span>
+                                                <SeverityLabel severity={severity} />
                                             </span>
-                                            {value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </Widget>
-                        <Metadata
-                            className="w-1/3 mx-2 min-w-48 bg-base-100 min-h-48 mb-4"
-                            keyValuePairs={details}
-                            title="Details"
-                        />
-                    </div>
-                    <div className="flex mb-4 pdf-page">
-                        <PolicyConfigurationFields
-                            className="flex-1 mr-2 min-w-48 bg-base-100 h-48 mb-4 ml-4"
-                            fields={fields}
-                        />
-                        <Metadata
-                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                            keyValuePairs={scopeDetails}
-                            title="Scope"
-                        />
-                        <Metadata
-                            className="flex-1 mx-2 min-w-48 bg-base-100 h-48 mb-4"
-                            keyValuePairs={whitelistDetails}
-                            title="Whitelist"
-                        />
+                                            <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
+                                                <span>Status:</span>
+                                                <StatusChip status={policyStatus} />
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <ul className="w-full flex-1 list-reset border-base-300">
+                                        {descriptionBlockMetadata.map(({ key, value }, index) => (
+                                            <li
+                                                className={`${
+                                                    index === descriptionBlockMetadata.length - 1
+                                                        ? ''
+                                                        : 'border-b'
+                                                } border-base-300 px-4 py-2 leading-normal`}
+                                                key={key}
+                                            >
+                                                <span className="text-base-700 font-600 mr-2">
+                                                    {key}:
+                                                </span>
+                                                {value}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </Widget>
+                        </div>
+                        <div className="s-1">
+                            <Metadata
+                                className="h-full w-full min-w-48 bg-base-100 min-h-48 pdf-page"
+                                keyValuePairs={details}
+                                title="Details"
+                            />
+                        </div>
+                        <div className="s-1">
+                            <PolicyConfigurationFields
+                                className="flex-1 min-w-48 bg-base-100 h-48 pdf-page"
+                                fields={fields}
+                            />
+                        </div>
+                        <div className="s-1">
+                            <Metadata
+                                className="flex-1 min-w-48 bg-base-100 h-48 pdf-page"
+                                keyValuePairs={scopeDetails}
+                                title="Scope"
+                            />
+                        </div>
+                        <div className="s-1">
+                            <Metadata
+                                className="flex-1 min-w-48 bg-base-100 h-48 pdf-page"
+                                keyValuePairs={whitelistDetails}
+                                title="Whitelist"
+                            />
+                        </div>
                     </div>
                 </CollapsibleSection>
                 <CollapsibleSection title="Policy Findings">

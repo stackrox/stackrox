@@ -28,7 +28,8 @@ class ExportButton extends Component {
         id: PropTypes.string,
         pdfId: PropTypes.string,
         tableOptions: PropTypes.shape({}),
-        page: PropTypes.string
+        page: PropTypes.string,
+        disabled: PropTypes.bool
     };
 
     static defaultProps = {
@@ -39,7 +40,8 @@ class ExportButton extends Component {
         id: '',
         pdfId: '',
         tableOptions: {},
-        page: ''
+        page: '',
+        disabled: false
     };
 
     state = {
@@ -121,6 +123,7 @@ class ExportButton extends Component {
             <div className="relative pl-2">
                 <Button
                     className={this.props.className}
+                    disabled={this.props.disabled}
                     text="Export"
                     textCondensed="Export"
                     textClass={this.props.textClass}

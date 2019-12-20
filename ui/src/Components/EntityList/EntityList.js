@@ -75,12 +75,6 @@ const EntityList = ({
         );
     }
 
-    // TODO: fix big StackRox logo on PDF
-    if (rowData.length) {
-        const query = {}; // TODO: improve sep. of concerns in pdfUtils
-        createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
-    }
-
     // render section
     const entityLabel = entityLabels[entityType] || 'results';
     const noDataText = `No ${pluralize(entityLabel)} found. Please refine your search.`;
@@ -89,6 +83,12 @@ const EntityList = ({
         headerText || entityLabels[entityType],
         rowData.length
     )}`;
+
+    // TODO: fix big StackRox logo on PDF
+    if (rowData.length) {
+        const query = {}; // TODO: improve sep. of concerns in pdfUtils
+        createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
+    }
 
     const availableCategories = [searchCategories[entityType]];
     const headerComponents = getHeaderComponents(

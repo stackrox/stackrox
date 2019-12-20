@@ -62,7 +62,7 @@ export const dashboardSelectors = {
         return `[data-test-id="tile-link"]:contains('${title}')`;
     },
     getAllClickableTileLinks: title => {
-        return `#capture-dashboard-stretch > div > .h-full > div > ul > li > a > div > div > div:contains('${title}')`;
+        return `[data-test-id="tile-link-value"]:contains('${title}')`;
     },
     viewAllButton: 'button:contains("View All")',
     dataRowLink: '[data-testid="numbered-list-item-name"]',
@@ -76,7 +76,7 @@ export const dashboardSelectors = {
     topMostRowMSPV:
         '#capture-dashboard > div > div:nth-child(6) > div > .h-full > div > ul > li:nth-child(1) > a > span',
     tabLinks: '[data-test-id="tab"]',
-    allTileLinks: '#capture-dashboard-stretch > div > .h-full > div > ul > li',
+    allTileLinks: '#capture-widgets > div > .h-full > div > ul > li',
     tabHeader: '[data-test-id="panel-header"]'
 };
 

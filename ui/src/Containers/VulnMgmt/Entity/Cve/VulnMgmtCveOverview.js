@@ -108,11 +108,11 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="CVE summary">
-                    <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4 pdf-page">
+                    <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4">
                         <Widget
                             header="Details"
                             headerComponents={linkToMoreInfo}
-                            className="bg-base-100 min-h-48 lg:s-2"
+                            className="bg-base-100 min-h-48 lg:s-2 pdf-page pdf-stretch"
                         >
                             <div className="flex flex-col w-full bg-counts-widget">
                                 <div className="bg-tertiary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between">
@@ -150,12 +150,12 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                             </div>
                         </Widget>
                         <Metadata
-                            className="bg-base-100 min-h-48"
+                            className="bg-base-100 min-h-48 pdf-page"
                             keyValuePairs={cvssScoreBreakdown}
                             title="CVSS Score Breakdown"
                         />
                         <Metadata
-                            className="bg-base-100 min-h-48 "
+                            className="bg-base-100 min-h-48 pdf-page"
                             keyValuePairs={scanningDetails}
                             title="Scanning Details"
                         />

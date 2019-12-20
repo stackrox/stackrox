@@ -106,7 +106,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         );
     } else {
         deploymentFindingsContent = (
-            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+            <div className="flex pdf-page pdf-stretch pdf-new shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
                 <Tabs hasTabSpacing headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}>
                     <TabContent>
                         <TableWidget
@@ -143,11 +143,11 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Deployment summary">
+                <CollapsibleSection title="Deployment Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
+                                className="h-full min-w-48 bg-base-100 bg-counts-widget pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={deploymentStats}
                                 title="Details & Metadata"
@@ -176,7 +176,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                     </div>
                 </CollapsibleSection>
 
-                <CollapsibleSection title="Deployment findings">
+                <CollapsibleSection title="Deployment Findings">
                     {deploymentFindingsContent}
                 </CollapsibleSection>
             </div>
