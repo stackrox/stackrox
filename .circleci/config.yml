@@ -2706,6 +2706,8 @@ jobs:
             for release in "$(make --quiet tag)" latest; do
               gsutil cp scripts/offline-bundle/image-bundle.tgz           gs://sr-roxc/${release}/image-bundle.tgz
               gsutil cp scripts/offline-bundle/image-collector-bundle.tgz gs://sr-roxc/${release}/image-collector-bundle.tgz
+              gsutil cp scripts/offline-bundle/image-bundle-rhel.tgz           gs://sr-roxc/${release}/image-bundle-rhel.tgz
+              gsutil cp scripts/offline-bundle/image-collector-bundle-rhel.tgz gs://sr-roxc/${release}/image-collector-bundle-rhel.tgz
             done
 
   retrigger-master-workflow:
