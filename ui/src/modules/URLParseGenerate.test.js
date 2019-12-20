@@ -27,6 +27,11 @@ const searchParamValues = {
     }
 };
 
+const emptySearchParamValues = {
+    [searchParams.page]: '',
+    [searchParams.sidePanel]: ''
+};
+
 const sortParamValues = {
     [sortParams.page]: [{ id: 'name1', desc: true }],
     [sortParams.sidePanel]: [{ id: 'name2', desc: false }]
@@ -112,6 +117,24 @@ describe('ParseURL', () => {
 });
 
 describe('GenerateURL', () => {
+    it('generates a url with no search params when the search param objects are empty', () => {
+        const workflowState = new WorkflowState(
+            useCases.COMPLIANCE,
+            [
+                new WorkflowEntity(entityTypes.NAMESPACE),
+                new WorkflowEntity(entityTypes.NAMESPACE, 'nsId'),
+                new WorkflowEntity(entityTypes.DEPLOYMENT)
+            ],
+            emptySearchParamValues,
+            sortParamValues,
+            pagingParamValues
+        );
+
+        const url = generateURL(workflowState);
+        expect(url).toBe(
+            '/main/compliance/namespaces?workflowState[0][t]=NAMESPACE&workflowState[0][i]=nsId&workflowState[1][t]=DEPLOYMENT&sort[0][id]=name1&sort[0][desc]=true&sort2[0][id]=name2&sort2[0][desc]=false&p2=2'
+        );
+    });
     it('generates a list url from workflowState', () => {
         const workflowState = new WorkflowState(
             useCases.COMPLIANCE,

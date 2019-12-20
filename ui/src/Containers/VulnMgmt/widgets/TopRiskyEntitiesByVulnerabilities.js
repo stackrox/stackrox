@@ -33,6 +33,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     entityContext,
     defaultSelection,
     riskEntityTypes,
+    cveFilter,
     small
 }) => {
     const workflowState = useContext(workflowStateContext);
@@ -76,7 +77,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         }
     `;
     const DEPLOYMENT_QUERY = gql`
-        query topRiskyDeployments($query: String) {
+        query topRiskyDeployments($query: String, $vulnQuery: String) {
             results: deployments(query: $query) {
                 id
                 name
@@ -89,7 +90,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns {
+                vulns(query: $vulnQuery) {
                     ...vulnFields
                 }
             }
@@ -98,7 +99,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const CLUSTER_QUERY = gql`
-        query topRiskyClusters($query: String) {
+        query topRiskyClusters($query: String, $vulnQuery: String) {
             results: clusters(query: $query) {
                 id
                 name
@@ -109,7 +110,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns {
+                vulns(query: $vulnQuery) {
                     ...vulnFields
                 }
             }
@@ -118,7 +119,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const NAMESPACE_QUERY = gql`
-        query topRiskyNamespaces($query: String) {
+        query topRiskyNamespaces($query: String, $vulnQuery: String) {
             results: namespaces(query: $query) {
                 metadata {
                     clusterName
@@ -132,7 +133,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns {
+                vulns(query: $vulnQuery) {
                     ...vulnFields
                 }
             }
@@ -141,7 +142,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const IMAGE_QUERY = gql`
-        query topRiskyImages($query: String) {
+        query topRiskyImages($query: String, $vulnQuery: String) {
             results: images(query: $query) {
                 id
                 name {
@@ -154,7 +155,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns {
+                vulns(query: $vulnQuery) {
                     ...vulnFields
                 }
             }
@@ -163,7 +164,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const COMPONENT_QUERY = gql`
-        query topRiskyComponents($query: String) {
+        query topRiskyComponents($query: String, $vulnQuery: String) {
             results: components(query: $query) {
                 id
                 name
@@ -174,7 +175,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns {
+                vulns(query: $vulnQuery) {
                     ...vulnFields
                 }
             }
@@ -211,7 +212,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         return avgScore.toFixed(1);
     }
 
-    function getHint(datum) {
+    function getHint(datum, filter) {
         let subtitle = '';
         if (selectedEntityType === entityTypes.DEPLOYMENT) {
             subtitle = `${datum.clusterName} / ${datum.namespaceName}`;
@@ -225,6 +226,9 @@ const TopRiskyEntitiesByVulnerabilities = ({
         const severityKey = getSeverityByCvss(datum.avgSeverity);
         const severityTextColor = severityTextColorMap[severityKey];
         const severityText = severityLabels[severityKey];
+
+        let cveCountText = filter !== 'Fixable' ? `${datum.vulnCounter.all.total} total / ` : '';
+        cveCountText += `${datum.vulnCounter.all.fixable} fixable`;
 
         return {
             title:
@@ -248,13 +252,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         label="Weighted CVSS"
                         value={datum.avgSeverity}
                     />
-                    <HoverHintListItem
-                        key="cves"
-                        label="CVEs"
-                        value={`${datum.vulnCounter.all.total} total / ${
-                            datum.vulnCounter.all.fixable
-                        } fixable`}
-                    />
+                    <HoverHintListItem key="cves" label="CVEs" value={cveCountText} />
                 </ul>
             ),
             subtitle
@@ -264,10 +262,10 @@ const TopRiskyEntitiesByVulnerabilities = ({
         if (!data || !data.results) return [];
 
         const results = data.results
-            .filter(datum => datum.vulnCounter.all.total > 0)
+            .filter(datum => datum.vulns && datum.vulns.length > 0)
             .map(result => {
                 const entityId = result.id || result.metadata.id;
-                const vulnCount = result.vulnCounter.all.total;
+                const vulnCount = result.vulns.length;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
                 const avgSeverity = getAverageSeverity(result.vulns);
                 const color = severityColorMap[getSeverityByCvss(avgSeverity)];
@@ -276,7 +274,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     x: vulnCount,
                     y: +avgSeverity,
                     color,
-                    hint: getHint({ ...result, avgSeverity }),
+                    hint: getHint({ ...result, avgSeverity }, cveFilter),
                     url
                 };
             })
@@ -287,8 +285,11 @@ const TopRiskyEntitiesByVulnerabilities = ({
         return results;
     }
     let results = [];
+
+    const vulnQuery = cveFilter === 'Fixable' ? { 'Fixed By': 'r/.*' } : '';
     const variables = {
-        query: queryService.entityContextToQueryString(entityContext)
+        query: queryService.entityContextToQueryString(entityContext),
+        vulnQuery: queryService.objectToWhereClause(vulnQuery)
     };
     const { data, loading } = useQuery(query, { variables });
 
@@ -336,6 +337,7 @@ TopRiskyEntitiesByVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     defaultSelection: PropTypes.string.isRequired,
     riskEntityTypes: PropTypes.arrayOf(PropTypes.string),
+    cveFilter: PropTypes.string,
     small: PropTypes.bool
 };
 
@@ -347,6 +349,7 @@ TopRiskyEntitiesByVulnerabilities.defaultProps = {
         entityTypes.IMAGE,
         entityTypes.CLUSTER
     ],
+    cveFilter: 'All',
     small: false
 };
 

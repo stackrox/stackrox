@@ -88,9 +88,13 @@ function generateURL(workflowState) {
         [pagingParams.sidePanel]: workflowState.paging[pagingParams.sidePanel]
     };
 
-    // Don't write urs with p=1, since that's the default value anyway
+    // Don't write URLs with p=1, since that's the default value anyway
     if (queryParams[pagingParams.page] === 1) delete queryParams[pagingParams.page];
     if (queryParams[pagingParams.sidePanel] === 1) delete queryParams[pagingParams.sidePanel];
+
+    // Don't write URLs with s1 or s2 empty, since that's superfluous
+    if (!queryParams[searchParams.page]) delete queryParams[searchParams.page];
+    if (!queryParams[searchParams.sidePanel]) delete queryParams[searchParams.sidePanel];
 
     const queryString = queryParams
         ? qs.stringify(queryParams, {
