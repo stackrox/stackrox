@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
@@ -47,24 +46,18 @@ func main() {
 		Use:          os.Args[0],
 	}
 
-	commands := []*cobra.Command{
+	c.AddCommand(
 		central.Command(),
 		cluster.Command(),
+		collector.Command(),
 		deployment.Command(),
 		gcp.Command(),
 		image.Command(),
 		scanner.Command(),
 		sensor.Command(),
 		db.Command(),
-	}
-
-	if features.ProbeUpload.Enabled() {
-		commands = append(commands, collector.Command())
-	}
-
-	commands = append(commands, versionCommand())
-
-	c.AddCommand(commands...)
+		versionCommand(),
+	)
 
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)

@@ -292,6 +292,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		notifierService.Singleton(),
 		pingService.Singleton(),
 		policyService.Singleton(),
+		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processWhitelistService.Singleton(),
 		roleService.Singleton(),
@@ -308,10 +309,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 		backupRestoreService.Singleton(),
-	}
-
-	if features.ProbeUpload.Enabled() {
-		servicesToRegister = append(servicesToRegister, probeUploadService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
