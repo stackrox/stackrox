@@ -1,6 +1,8 @@
 package badgerhelper
 
 import (
+	"bytes"
+
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
@@ -36,7 +38,6 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 
 	it := txn.NewIterator(*itOpts)
 	defer it.Close()
-
 	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
 		item := it.Item()
 		k := item.Key()
@@ -63,6 +64,14 @@ func StripPrefix(prefix []byte, val []byte) []byte {
 		return val[len(prefix):]
 	}
 	return val
+}
+
+// HasPrefix returns if the given key has the given prefix.
+func HasPrefix(prefix []byte, val []byte) bool {
+	if len(val) < len(prefix)+1 {
+		return false
+	}
+	return bytes.Equal(append(append([]byte{}, prefix...), separator...), val[:len(prefix)+1])
 }
 
 // BucketForEach ensures that the prefix iterated over has the bucket prefix

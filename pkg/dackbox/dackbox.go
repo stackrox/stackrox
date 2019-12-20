@@ -80,6 +80,21 @@ func (rc *DackBox) NewGraphView() DiscardableRGraph {
 	}
 }
 
+// AtomicKVUpdate updates a key:value pair in badger atomically. It calls the input function inside the global lock,
+// so only use where the input function is very fast.
+func (rc *DackBox) AtomicKVUpdate(provide func() (key, value []byte)) error {
+	rc.lock.Lock()
+	defer rc.lock.Unlock()
+
+	ts := rc.history.StepForward()
+	txn := rc.db.NewTransactionAt(ts-1, true)
+	defer txn.Discard()
+	if err := txn.Set(provide()); err != nil {
+		return err
+	}
+	return txn.CommitAt(ts, nil)
+}
+
 func (rc *DackBox) readerAt(at uint64) graph.RemoteReadable {
 	return func(reader func(graph graph.RGraph)) {
 		rc.lock.RLock()

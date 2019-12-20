@@ -23,8 +23,8 @@ type Transaction struct {
 	commit  RemoteCommit
 }
 
-// Txn returns the badger Txn object for making read and write requests to the KV layer.
-func (dbt *Transaction) Txn() *badger.Txn {
+// BadgerTxn returns the badger Txn object for making read and write requests to the KV layer.
+func (dbt *Transaction) BadgerTxn() *badger.Txn {
 	return dbt.txn
 }
 

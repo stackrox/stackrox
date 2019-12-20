@@ -4,6 +4,7 @@ import "sync/atomic"
 
 // Sequence is n object that provides a thread safe monotonically increasing integer value.
 type Sequence interface {
+	Set(uint64)
 	Load() uint64
 	Add() uint64
 }
@@ -15,6 +16,10 @@ func NewSequence() Sequence {
 
 type sequenceImpl struct {
 	value uint64
+}
+
+func (s *sequenceImpl) Set(newVal uint64) {
+	atomic.StoreUint64(&s.value, newVal)
 }
 
 func (s *sequenceImpl) Load() uint64 {
