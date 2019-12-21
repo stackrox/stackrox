@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 	batchV1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -119,6 +120,19 @@ func newWrap(meta metav1.Object, kind, registryOverride string) *DeploymentWrap 
 	}
 }
 
+// SpecToPodTemplateSpec turns a top level spec into a podTemplateSpec
+func SpecToPodTemplateSpec(spec reflect.Value) (v1.PodTemplateSpec, error) {
+	templateInterface := spec.FieldByName("Template")
+	if templateInterface.Type().Kind() == reflect.Ptr && !templateInterface.IsNil() {
+		templateInterface = templateInterface.Elem()
+	}
+	podTemplate, ok := templateInterface.Interface().(v1.PodTemplateSpec)
+	if !ok {
+		return v1.PodTemplateSpec{}, errors.New("not a valid PodTemplateSpec")
+	}
+	return podTemplate, nil
+}
+
 func (w *DeploymentWrap) populateFields(obj interface{}) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -147,9 +161,9 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	case *batchV1beta1.CronJob:
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 	default:
-		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
-		if !ok {
-			log.Errorf("Spec obj %+v does not have a Template field", spec)
+		podTemplate, err := SpecToPodTemplateSpec(spec)
+		if err != nil {
+			utils.Should(errors.Wrapf(err, "spec obj %+v cannot be converted to a pod template spec", spec))
 			return
 		}
 		podSpec = podTemplate.Spec

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -73,7 +74,8 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 		return nil
 	}
 	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore); err != nil {
-		log.Error(err)
+		// Panic on dev because we should always be able to parse the deployments
+		utils.Should(err)
 		return nil
 	} else if !ok {
 		return nil
@@ -178,11 +180,10 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
 		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 		labelSelector = o.Spec.JobTemplate.Spec.Selector
-
 	default:
-		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
-		if !ok {
-			return false, fmt.Errorf("spec obj %+v does not have a Template field", spec)
+		podTemplate, err := resources.SpecToPodTemplateSpec(spec)
+		if err != nil {
+			return false, errors.Wrapf(err, "spec obj %+v cannot be converted to a pod template spec", spec)
 		}
 		podLabels = podTemplate.Labels
 		podSpec = podTemplate.Spec
