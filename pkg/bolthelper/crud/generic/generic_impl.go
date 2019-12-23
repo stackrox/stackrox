@@ -71,7 +71,7 @@ func (c *crudImpl) Read(firstKey Key, restKeys ...Key) (interface{}, error) {
 			return nil
 		}
 		bytes := innermostBucket.Get(leafKey)
-		if len(bytes) == 0 {
+		if bytes == nil {
 			return nil
 		}
 		var err error
