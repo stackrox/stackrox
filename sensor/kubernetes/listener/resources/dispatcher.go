@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -41,8 +42,9 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
 	rbacUpdater := newRBACUpdater()
 
+	hierarchy := references.NewParentHierarchy()
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister, processFilter, configHandler),
+		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister, processFilter, configHandler, hierarchy),
 
 		roleDispatcher:           newRoleDispatcher(rbacUpdater),
 		bindingDispatcher:        newBindingDispatcher(rbacUpdater),

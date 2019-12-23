@@ -5,7 +5,9 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	v1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -27,6 +29,25 @@ func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) 
 
 // ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
 func (d *deploymentDispatcherImpl) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	// Check owner references and build graph
+	// Every single object should implement this interface
+	metaObj, ok := obj.(metaV1.Object)
+	if !ok {
+		log.Errorf("could not process %+v as it does not implement metaV1.Object", obj)
+		return nil
+	}
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		d.handler.hierarchy.Remove(string(metaObj.GetUID()))
+		return d.handler.processWithType(obj, action, d.deploymentType)
+	}
+
+	parents := make([]string, 0, len(metaObj.GetOwnerReferences()))
+	for _, ref := range metaObj.GetOwnerReferences() {
+		if ref.UID != "" {
+			parents = append(parents, string(ref.UID))
+		}
+	}
+	d.handler.hierarchy.Add(parents, string(metaObj.GetUID()))
 	return d.handler.processWithType(obj, action, d.deploymentType)
 }
 
@@ -40,11 +61,12 @@ type deploymentHandler struct {
 	roxMetadata     roxmetadata.Metadata
 	processFilter   filter.Filter
 	config          config.Handler
+	hierarchy       references.ParentHierarchy
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
 func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore,
-	roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler) *deploymentHandler {
+	roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister, processFilter filter.Filter, config config.Handler, hierarchy references.ParentHierarchy) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:       podLister,
 		serviceStore:    serviceStore,
@@ -54,11 +76,12 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 		roxMetadata:     roxMetadata,
 		processFilter:   processFilter,
 		config:          config,
+		hierarchy:       hierarchy,
 	}
 }
 
 func (d *deploymentHandler) processWithType(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.config.GetConfig().GetRegistryOverride())
+	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
 	}

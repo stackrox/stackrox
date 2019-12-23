@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strings"
 
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
@@ -13,13 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,8 +30,6 @@ import (
 const (
 	k8sStandalonePodType = "StaticPods"
 	kubeSystemNamespace  = "kube-system"
-	labelMaxLength       = 63
-	trailingUIDLen       = 5
 )
 
 var (
@@ -68,12 +65,12 @@ func doesFieldExist(value reflect.Value) bool {
 }
 
 func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAction, deploymentType string,
-	lister v1listers.PodLister, namespaceStore *namespaceStore, registryOverride string) *deploymentWrap {
+	lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy, registryOverride string) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType, registryOverride)
 	if wrap == nil {
 		return nil
 	}
-	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore); err != nil {
+	if ok, err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore, hierarchy); err != nil {
 		// Panic on dev because we should always be able to parse the deployments
 		utils.Should(err)
 		return nil
@@ -136,7 +133,7 @@ func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
 	return updated
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore) (bool, error) {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore, hierarchy references.ParentHierarchy) (bool, error) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -221,7 +218,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 			w.populatePorts()
 			w.populateDataFromPods(pod)
 		} else {
-			pods, err := w.getPods(labelSelector, lister)
+			pods, err := w.getPods(hierarchy, labelSelector, lister)
 			if err != nil {
 				return false, err
 			}
@@ -244,64 +241,18 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 	return w.Deployment
 }
 
-func matchesOwnerName(name, topLevelType string, p *v1.Pod) bool {
-	// Edge case that happens for Standalone Pods
-	if len(p.GetOwnerReferences()) == 0 {
-		return true
-	}
-	var numExpectedDashes int
-	switch topLevelType {
-	case kubernetes.CronJob, kubernetes.Deployment, kubernetes.DeploymentConfig: // 2 dash in pod
-		// nginx-deployment-86d59dd769-7gmsk we want nginx-deployment
-		numExpectedDashes = 2
-	case kubernetes.DaemonSet, kubernetes.StatefulSet, kubernetes.ReplicationController, kubernetes.ReplicaSet, kubernetes.Job: // 1 dash in pod
-		// nginx-deployment-7gmsk we want nginx-deployment
-		numExpectedDashes = 1
-	default:
-		log.Warnf("Currently do not handle top level owner type %q. Adding to top level object %q", topLevelType, name)
-		// By default if we can't parse, then we'll hit the mis-attribution edge case, but I'd rather do that
-		// then miss the pods altogether
-		return true
-	}
-	spl := strings.Split(p.GetName(), "-")
-	if len(spl) > numExpectedDashes {
-		if name == strings.Join(spl[:len(spl)-numExpectedDashes], "-") {
-			return true
-		}
-		// We were able to parse the name, but didn't find a match
-		if len(p.GetName()) < labelMaxLength {
-			return false
-		}
-	} else if len(p.GetName()) < labelMaxLength {
-		// We should have been able to parse the name normally as it was < max length, but we were not
-		log.Debugf("Could not parse pod %q with top level owner type %q", p.GetName(), topLevelType)
-		return false
-	}
-
-	if name[0:len(name)-trailingUIDLen] == p.GetName()[0:len(p.GetName())-trailingUIDLen] {
-		return true
-	}
-
-	if name == strings.Join(spl[:len(spl)-1], "-") {
-		return true
-	}
-
-	log.Debugf("Could not parse pod %q with owner type %q", p.GetName(), topLevelType)
-	return false
-}
-
 // Do cheap filtering on pod name based on name of higher level object (deployment, daemonset, etc)
-func filterOnName(name, topLevelType string, pods []*v1.Pod) []*v1.Pod {
+func filterOnOwners(hierarchy references.ParentHierarchy, topLevelUID string, pods []*v1.Pod) []*v1.Pod {
 	filteredPods := pods[:0]
 	for _, p := range pods {
-		if matchesOwnerName(name, topLevelType, p) {
+		if hierarchy.IsValidChild(topLevelUID, string(p.UID)) {
 			filteredPods = append(filteredPods, p)
 		}
 	}
 	return filteredPods
 }
 
-func (w *deploymentWrap) getPods(labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
+func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
 	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not compile label selector")
@@ -311,7 +262,7 @@ func (w *deploymentWrap) getPods(labelSelector *metav1.LabelSelector, lister v1l
 	if err != nil {
 		return nil, err
 	}
-	return filterOnName(w.Name, w.Type, pods), nil
+	return filterOnOwners(hierarchy, w.Id, pods), nil
 }
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {

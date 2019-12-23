@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -25,6 +26,20 @@ var (
 		return s
 	}()
 )
+
+func hierarchyFromPodLister(l *mockPodLister) references.ParentHierarchy {
+	ph := references.NewParentHierarchy()
+	if l == nil {
+		return ph
+	}
+	pods, _ := l.List(nil)
+	for _, p := range pods {
+		if len(p.OwnerReferences) > 0 {
+			ph.Add([]string{string(p.OwnerReferences[0].UID)}, string(p.GetUID()))
+		}
+	}
+	return ph
+}
 
 func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 	cases := []struct {
@@ -61,7 +76,8 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore, "")
+		ph := references.NewParentHierarchy()
+		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", nil, mockNamespaceStore, ph, "")
 		assert.Equal(t, c.expectedAction, c.action)
 	}
 }
@@ -420,6 +436,7 @@ func TestConvert(t *testing.T) {
 							Namespace: "myns",
 							OwnerReferences: []metav1.OwnerReference{
 								{
+									UID:  "FooID",
 									Kind: kubernetes.Deployment,
 								},
 							},
@@ -634,118 +651,11 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, "").GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "").GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
 			assert.Equal(t, c.expectedDeployment, actual)
-		})
-	}
-}
-
-func getPod(name string, owner string) *v1.Pod {
-	return &v1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					Kind: owner,
-				},
-			},
-		},
-	}
-}
-
-func TestFilterOnName(t *testing.T) {
-	var cases = []struct {
-		name         string
-		topLevelType string
-		pods         []*v1.Pod
-		expected     []*v1.Pod
-	}{
-		{
-			name:         "nginx",
-			topLevelType: kubernetes.Deployment,
-			pods: []*v1.Pod{
-				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
-				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
-				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
-				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.Deployment),
-			},
-			expected: []*v1.Pod{
-				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
-				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
-			},
-		},
-		{
-			name:         "nginx-deployment",
-			topLevelType: kubernetes.Deployment,
-			pods: []*v1.Pod{
-				getPod("nginx-deployment-7gmsk", kubernetes.Deployment),
-				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
-				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
-				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
-			},
-			expected: []*v1.Pod{
-				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
-			},
-		},
-		{
-			name:         "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx63",
-			topLevelType: kubernetes.Deployment,
-			pods: []*v1.Pod{
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-xxxxx", kubernetes.Deployment),
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12345", kubernetes.Deployment),
-			},
-			expected: []*v1.Pod{
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx12345", kubernetes.Deployment),
-			},
-		},
-		{
-			name:         "nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57",
-			topLevelType: kubernetes.Deployment,
-			pods: []*v1.Pod{
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-abcde", kubernetes.Deployment),
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-86d59dd769-12345", kubernetes.Deployment),
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx577xxxxx", kubernetes.Deployment),
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-12345", kubernetes.Deployment),
-			},
-			expected: []*v1.Pod{
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-abcde", kubernetes.Deployment),
-				getPod("nginx-deploymentxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx57-12345", kubernetes.Deployment),
-			},
-		},
-		{
-			name:         "collector",
-			topLevelType: kubernetes.DaemonSet,
-			pods: []*v1.Pod{
-				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
-				getPod("collector-7gmsk", kubernetes.DaemonSet),
-
-				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.DaemonSet),
-			},
-			expected: []*v1.Pod{
-				getPod("collector-7gmsk", kubernetes.DaemonSet),
-			},
-		},
-		{
-			name:         "collector-ds",
-			topLevelType: kubernetes.DaemonSet,
-			pods: []*v1.Pod{
-				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
-				getPod("collector-7gmsk", kubernetes.DaemonSet),
-
-				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.DaemonSet),
-			},
-			expected: []*v1.Pod{
-				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
-			},
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, filterOnName(c.name, c.topLevelType, c.pods))
 		})
 	}
 }

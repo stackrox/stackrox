@@ -76,20 +76,30 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 		return
 	}
 
-	wg := &concurrency.WaitGroup{}
+	preTopLevelDeploymentWaitGroup := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
-	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal, &eventLock)
-	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, wg, stopSignal, &eventLock)
-	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal, &eventLock)
+	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+
+	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
+	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+
+	sif.Start(stopSignal.Done())
+
+	if !concurrency.WaitInContext(preTopLevelDeploymentWaitGroup, stopSignal) {
+		return
+	}
+
+	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
 	handle(sif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	handle(sif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
-	handle(sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
-	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	handle(sif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
-	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 	handle(sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates, wg, stopSignal, &eventLock)
 
 	if osf != nil {

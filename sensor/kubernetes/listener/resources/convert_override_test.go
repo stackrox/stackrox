@@ -68,6 +68,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 							Namespace: "myns",
 							OwnerReferences: []metav1.OwnerReference{
 								{
+									UID:  "FooID",
 									Kind: kubernetes.Deployment,
 								},
 							},
@@ -181,7 +182,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, c.registryOverride).GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), c.registryOverride).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
