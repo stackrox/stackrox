@@ -120,7 +120,7 @@ function validateCVETileLinksInSidePanel(parentUrl) {
     });
 }
 
-function validateTabsInSidePanel(parentUrl, colSelector, col) {
+function validateTabsInEntityPage(parentUrl, colSelector, col) {
     cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
         .then(value => {
@@ -136,7 +136,7 @@ function validateTabsInSidePanel(parentUrl, colSelector, col) {
         });
 }
 
-function validateFixableTabLinksInSidePanel(parentUrl) {
+function validateFixableTabLinksInEntityPage(parentUrl) {
     cy.get(selectors.tableBodyColumn).each($el => {
         const value = $el.text();
         let fixableCount = 0;
@@ -192,7 +192,7 @@ function validateLinksInListPage(col, parentUrl) {
 function allChecksForEntities(parentUrl, entity) {
     validateLinksInListPage(entity, parentUrl);
     validateTileLinksInSidePanel(selectors.tableBodyColumn, entity, parentUrl);
-    validateTabsInSidePanel(parentUrl, selectors.tableBodyColumn, entity);
+    validateTabsInEntityPage(parentUrl, selectors.tableBodyColumn, entity);
 }
 
 function allCVECheck(parentUrl) {
@@ -203,7 +203,7 @@ function allCVECheck(parentUrl) {
 
 function allFixableCheck(parentUrl) {
     validateFixableCVELinks(parentUrl);
-    validateFixableTabLinksInSidePanel(parentUrl);
+    validateFixableTabLinksInEntityPage(parentUrl);
 }
 
 describe('Entities list Page', () => {
