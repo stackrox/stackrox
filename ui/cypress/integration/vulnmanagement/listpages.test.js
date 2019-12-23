@@ -25,60 +25,6 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
         });
     cy.visit(entityURL);
 }
-function validateClickableLinks(colLinks, parentUrl) {
-    colLinks.forEach(col => {
-        if (col !== 'Policies') {
-            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-                .invoke('text')
-                .then(value => {
-                    cy.get(
-                        `${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
-                    ).click();
-                    validateDataInEntityListPage(value, parentUrl);
-                });
-        }
-        if (col === 'Policies') {
-            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-                .invoke('text')
-                .then(value => {
-                    expect(value).contains('policies' || 'policy', 'expected text displayed');
-                    cy.get(`${selectors.tableColumnLinks}:contains('${value}')`).click();
-                    validateDataInEntityListPage(value, parentUrl);
-                });
-        }
-    });
-}
-
-function validateClickableLinksEntityListPage(colLinks, parentUrl) {
-    colLinks.forEach(col => {
-        if (col !== 'Policies') {
-            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-                .eq(0)
-                .invoke('text')
-                .then(value => {
-                    cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-                        .eq(0)
-                        .click({ force: true });
-                    cy.wait(2000);
-                    validateDataInEntityListPage(value, parentUrl);
-                });
-        }
-        if (col === 'Policies') {
-            // handle "1 policy", "No failing policies", or "X policies"
-            cy.get(`${selectors.tableColumnLinks}:contains('polic')`)
-                .eq(0)
-                .invoke('text')
-                .then(value => {
-                    expect(value).contains('polic', 'expected text displayed');
-                    cy.get(`${selectors.tableColumnLinks}:contains('${value}')`)
-                        .eq(0)
-                        .click({ force: true });
-                    cy.wait(2000);
-                    validateDataInEntityListPage(`${parseInt(value, 10)} polic`, parentUrl);
-                });
-        }
-    });
-}
 
 function validateAllCVELinks(prevUrl) {
     cy.get(`${selectors.allCVEColumnLink}`)
@@ -138,159 +84,126 @@ function validateSortForCVE(selector) {
 }
 
 function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
-    if (col !== 'CVEs' && col !== 'Fixable' && col !== 'Policies') {
-        cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-            .invoke('text')
-            .then(value => {
-                cy.get(colSelector)
-                    .eq(0)
-                    .click({ force: true });
-                cy.wait(2000);
-                cy.get(selectors.getTileLink(col.toUpperCase()))
-                    .find(selectors.tileLinkText)
-                    .contains(parseInt(value, 10));
-                cy.get(selectors.getTileLink(col.toUpperCase()))
-                    .find(selectors.tileLinkValue)
-                    .contains(col.toUpperCase());
-                cy.visit(parentUrl);
-            });
-    }
-    if (col === 'CVEs') {
-        cy.get(`${selectors.allCVEColumnLink}`)
-            .eq(0)
-            .invoke('text')
-            .then(value => {
-                cy.get(colSelector)
-                    .eq(0)
-                    .click({ force: true });
-                cy.wait(2000);
-                if (parseInt(value, 10) === 1) {
-                    cy.get(selectors.getTileLink('CVE'))
-                        .find(selectors.tileLinkValue)
-                        .contains('CVE');
-                }
-                if (parseInt(value, 10) > 1) {
-                    cy.get(selectors.getTileLink('CVE'))
-                        .find(selectors.tileLinkValue)
-                        .contains('CVES');
-                }
-                cy.visit(parentUrl);
-            });
-    }
-    if (col === 'Fixable') {
-        cy.get(`${selectors.fixableCVELink}`)
-            .eq(0)
-            .invoke('text')
-            .then(value => {
-                cy.get(colSelector)
-                    .eq(0)
-                    .click({ force: true });
-                cy.wait(2000);
-                if (!parentUrl.includes('components')) {
-                    cy.get(selectors.tabButton)
-                        .contains('Fixable CVEs')
-                        .click();
-                }
-                cy.get(selectors.getSidePanelTabHeader('fixable')).contains(parseInt(value, 10));
-                cy.visit(parentUrl);
-            });
-    }
-    if (col === 'Policies') {
-        cy.get(`${selectors.tableColumnLinks}`)
-            .contains(/(?:policies|policy)/)
-            .invoke('text')
-            .then(value => {
-                if (
-                    (value.includes('policies') || value.includes('policy')) &&
-                    value !== 'No failing policies'
-                ) {
-                    cy.get(colSelector)
-                        .eq(0)
-                        .click({ force: true });
-                    cy.wait(2000);
-                    let colText = '';
-                    if (parseInt(value, 10) > 1) colText = 'POLICIES';
-                    if (parseInt(value, 10) === 1) colText = 'POLICY';
-                    expect(
-                        cy
-                            .get(selectors.getTileLink(colText))
-                            .find(selectors.tileLinkText)
-                            .contains(parseInt(value, 10)),
-                        'policy count displayed on tile is valid'
-                    );
-                    expect(
-                        cy
-                            .get(selectors.getTileLink(colText))
-                            .find(selectors.tileLinkValue)
-                            .contains(colText),
-                        'policy text displayed is valid'
-                    );
-                }
-            });
-    }
+    cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+        .invoke('text')
+        .then(value => {
+            cy.get(colSelector)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(2000);
+            cy.get(selectors.getTileLink(col.toUpperCase()))
+                .find(selectors.tileLinkText)
+                .contains(parseInt(value, 10));
+            cy.get(selectors.getTileLink(col.toUpperCase()))
+                .find(selectors.tileLinkValue)
+                .contains(col.toUpperCase());
+            cy.visit(parentUrl);
+        });
+}
+
+function validateCVETileLinksInSidePanel(parentUrl) {
+    cy.get(selectors.tableBodyColumn).each($el => {
+        const value = $el.text();
+        let cveCount = 0;
+        if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
+        if (cveCount > 0) {
+            cy.get(selectors.tableBodyColumn)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(2000);
+            cy.get(selectors.getTileLink('CVE'))
+                .find(selectors.tileLinkValue)
+                .contains('CVE');
+            cy.get(selectors.tileLinkText).contains(cveCount);
+            cy.visit(parentUrl);
+        }
+    });
 }
 
 function validateTabsInSidePanel(parentUrl, colSelector, col) {
-    if (col !== 'CVEs' && col !== 'Fixable' && col !== 'Policies' && col !== 'Failing Policies') {
-        cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
-            .invoke('text')
-            .then(value => {
-                cy.get(colSelector)
-                    .eq(0)
-                    .click({ force: true });
-                cy.wait(2000);
-                cy.get(selectors.sidePanelExpandButton).click({ force: true });
-                cy.get(selectors.getSidePanelTabLink(col.toLowerCase())).click({ force: true });
-                expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
-                cy.wait(3000);
-                cy.visit(parentUrl);
-            });
-    }
-    if (col === 'CVEs') {
-        cy.get(`${selectors.allCVEColumnLink}`)
-            .eq(0)
-            .invoke('text')
-            .then(value => {
-                cy.get(colSelector)
-                    .eq(0)
-                    .click({ force: true });
-                cy.wait(2000);
-                cy.get(selectors.sidePanelExpandButton).click({ force: true });
-                cy.get(selectors.getSidePanelTabLink(col.toUpperCase())).click({ force: true });
-                expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
-                cy.wait(3000);
-                cy.visit(parentUrl);
-            });
-    }
-    if (col === 'Policies' || col === 'Failing Policies') {
-        cy.get(`${selectors.tableColumnLinks}`)
-            .contains(/(?:policies|policy)/)
-            .invoke('text')
-            .then(value => {
-                if (
-                    (value.includes('policies') || value.includes('policy')) &&
-                    value !== 'No failing policies'
-                ) {
-                    cy.get(colSelector)
-                        .eq(0)
-                        .click({ force: true });
-                    cy.wait(2000);
-                    let colText = '';
-                    if (parseInt(value, 10) > 1) colText = 'POLICIES';
-                    if (parseInt(value, 10) === 1) colText = 'POLICY';
-                    if (col === 'Failing Policies') colText = 'POLICIES';
+    cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+        .invoke('text')
+        .then(value => {
+            cy.get(colSelector)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(2000);
+            cy.get(selectors.sidePanelExpandButton).click({ force: true });
+            cy.get(selectors.getSidePanelTabLink(col.toLowerCase())).click({ force: true });
+            expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
+            cy.wait(3000);
+            cy.visit(parentUrl);
+        });
+}
 
-                    cy.get(selectors.sidePanelExpandButton).click({ force: true });
-                    cy.get(selectors.getSidePanelTabLink(colText.toLowerCase())).click({
-                        force: true
-                    });
+function validateFixableTabLinksInSidePanel(parentUrl) {
+    cy.get(selectors.tableBodyColumn).each($el => {
+        const value = $el.text();
+        let fixableCount = 0;
+        if (value.toLowerCase().includes('fixable')) {
+            fixableCount = parseInt(value.split(' ')[2], 10);
+        }
+        if (fixableCount > 0) {
+            cy.get(selectors.tableBodyColumn)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(2000);
+            if (!parentUrl.includes('components')) {
+                cy.get(selectors.tabButton)
+                    .contains('Fixable CVEs')
+                    .click();
+            }
+            cy.get(selectors.getSidePanelTabHeader('fixable')).contains(fixableCount);
+            cy.visit(parentUrl);
+        }
+    });
+}
 
-                    expect(cy.get(selectors.tabHeader).contains(parseInt(value, 10)));
-                    cy.wait(3000);
-                    cy.visit(parentUrl);
-                }
+function validateCVETabsInSidePanel(parentUrl, colSelector, col) {
+    cy.get(selectors.tableBodyColumn).each($el => {
+        const value = $el.text();
+        let cveCount = 0;
+        if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
+        if (cveCount > 0) {
+            cy.get(selectors.tableBodyColumn)
+                .eq(0)
+                .click({ force: true });
+            cy.wait(2000);
+            cy.get(selectors.sidePanelExpandButton).click({ force: true });
+            cy.get(selectors.getSidePanelTabLink(col.toUpperCase())).click({ force: true });
+            expect(cy.get(selectors.tabHeader).contains(cveCount));
+            cy.wait(2000);
+            cy.visit(parentUrl);
+        }
+    });
+}
+
+function validateLinksInListPage(col, parentUrl) {
+    cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
+        .invoke('text')
+        .then(value => {
+            cy.get(`${selectors.tableColumnLinks}:contains('${col.toLowerCase()}')`).click({
+                force: true
             });
-    }
+            validateDataInEntityListPage(value, parentUrl);
+        });
+}
+
+function allChecksForEntities(parentUrl, entity) {
+    validateLinksInListPage(entity, parentUrl);
+    validateTileLinksInSidePanel(selectors.tableBodyColumn, entity, parentUrl);
+    validateTabsInSidePanel(parentUrl, selectors.tableBodyColumn, entity);
+}
+
+function allCVECheck(parentUrl) {
+    validateCVETileLinksInSidePanel(parentUrl);
+    validateCVETabsInSidePanel(parentUrl, selectors.tableBodyColumn, 'CVEs');
+    validateAllCVELinks(parentUrl);
+}
+
+function allFixableCheck(parentUrl) {
+    validateFixableCVELinks(parentUrl);
+    validateFixableTabLinksInSidePanel(parentUrl);
 }
 
 describe('Entities list Page', () => {
@@ -318,55 +231,16 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            if (!columnValue.includes('no') && columnValue.includes('polic')) {
-                validateClickableLinks(['Policies'], url.list.clusters);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Policies',
-                    url.list.clusters
-                );
-                validateTabsInSidePanel(url.list.clusters, selectors.tableBodyColumn, 'Policies');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no namespaces' && columnValue.includes('namespace')) {
-                validateClickableLinks(['Namespace'], url.list.clusters);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Namespace',
-                    url.list.clusters
-                );
-                validateTabsInSidePanel(url.list.clusters, selectors.tableBodyColumn, 'Namespace');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                validateClickableLinks(['deployment'], url.list.clusters);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Deployment',
-                    url.list.clusters
-                );
-                validateTabsInSidePanel(url.list.clusters, selectors.tableBodyColumn, 'Deployment');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                validateAllCVELinks(url.list.clusters);
-                if (columnValue.includes('fixable')) {
-                    validateFixableCVELinks(url.list.namespaces);
-                    validateTileLinksInSidePanel(
-                        selectors.tableBodyColumn,
-                        'Fixable',
-                        url.list.clusters
-                    );
-                }
-                validateTileLinksInSidePanel(selectors.tableBodyColumn, 'CVEs', url.list.clusters);
-                validateTabsInSidePanel(url.list.clusters, selectors.tableBodyColumn, 'CVEs');
-            }
+            if (!columnValue.includes('no') && columnValue.includes('polic'))
+                allChecksForEntities(url.list.clusters, 'policies');
+            if (columnValue !== 'no namespaces' && columnValue.includes('namespace'))
+                allChecksForEntities(url.list.clusters, 'namespaces');
+
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+                allChecksForEntities(url.list.clusters, 'deployments');
+            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+                allCVECheck(url.list.clusters);
+            if (columnValue.includes('fixable')) allFixableCheck(url.list.clusters);
         });
     });
 
@@ -385,67 +259,16 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            if (!columnValue.includes('no') && columnValue.includes('polic')) {
-                validateClickableLinksEntityListPage(['Policies'], url.list.namespaces);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Policies',
-                    url.list.namespaces
-                );
-                validateTabsInSidePanel(url.list.namespaces, selectors.tableBodyColumn, 'Policies');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no images' && columnValue.includes('image')) {
-                validateClickableLinksEntityListPage(['image'], url.list.namespaces);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Image',
-                    url.list.namespaces
-                );
-                validateTabsInSidePanel(url.list.namespaces, selectors.tableBodyColumn, 'Image');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                validateClickableLinksEntityListPage(['deployment'], url.list.namespaces);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Deployment',
-                    url.list.namespaces
-                );
-                validateTabsInSidePanel(
-                    url.list.namespaces,
-                    selectors.tableBodyColumn,
-                    'Deployment'
-                );
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                validateFixableCVELinks(url.list.namespaces);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Fixable',
-                    url.list.namespaces
-                );
-            }
-        });
-
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                validateAllCVELinks(url.list.namespaces);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'CVEs',
-                    url.list.namespaces
-                );
-                validateTabsInSidePanel(url.list.namespaces, selectors.tableBodyColumn, 'CVEs');
-            }
+            if (!columnValue.includes('no') && columnValue.includes('polic'))
+                allChecksForEntities(url.list.namespaces, 'polic');
+            if (columnValue !== 'no images' && columnValue.includes('image'))
+                allChecksForEntities(url.list.namespaces, 'image');
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+                allChecksForEntities(url.list.namespaces, 'deployment');
+            if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+                allFixableCheck(url.list.namespaces);
+            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+                allCVECheck(url.list.namespaces);
         });
         validateSort(selectors.riskScoreCol);
     });
@@ -465,57 +288,15 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no failing policies' && columnValue.includes('polic')) {
-                validateClickableLinksEntityListPage(['Policies'], url.list.deployments);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Policies',
-                    url.list.deployments
-                );
-                validateTabsInSidePanel(
-                    url.list.deployments,
-                    selectors.tableBodyColumn,
-                    'Failing Policies'
-                );
-            }
+            if (columnValue !== 'no failing policies' && columnValue.includes('polic'))
+                allChecksForEntities(url.list.deployments, 'Polic');
+            if (columnValue !== 'no images' && columnValue.includes('image'))
+                allChecksForEntities(url.list.deployments, 'image');
+            if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+                allFixableCheck(url.list.deployments);
+            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+                allCVECheck(url.list.deployments);
         });
-
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no images' && columnValue.includes('image')) {
-                validateClickableLinksEntityListPage(['image'], url.list.deployments);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Image',
-                    url.list.deployments
-                );
-                validateTabsInSidePanel(url.list.deployments, selectors.tableBodyColumn, 'Image');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                validateFixableCVELinks(url.list.deployments);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Fixable',
-                    url.list.deployments
-                );
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                validateAllCVELinks(url.list.deployments);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'CVEs',
-                    url.list.deployments
-                );
-                validateTabsInSidePanel(url.list.deployments, selectors.tableBodyColumn, 'CVEs');
-            }
-        });
-
         validateSort(selectors.riskScoreCol);
     });
 
@@ -534,45 +315,15 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                validateClickableLinksEntityListPage(['deployment'], url.list.images);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Deployment',
-                    url.list.images
-                );
-                validateTabsInSidePanel(url.list.images, selectors.tableBodyColumn, 'Deployment');
-            }
+            if (columnValue !== 'no deployments' && columnValue.includes('Deployment'))
+                allChecksForEntities(url.list.images, 'deployment');
+            if (columnValue !== 'no components' && columnValue.includes('Component'))
+                allChecksForEntities(url.list.images, 'component');
+            if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+                allFixableCheck(url.list.images);
+            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+                allCVECheck(url.list.images);
         });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no components' && columnValue.includes('component')) {
-                validateClickableLinksEntityListPage(['component'], url.list.images);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Component',
-                    url.list.images
-                );
-                validateTabsInSidePanel(url.list.images, selectors.tableBodyColumn, 'Component');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                validateFixableCVELinks(url.list.deployments);
-                validateTileLinksInSidePanel(selectors.tableBodyColumn, 'Fixable', url.list.images);
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                validateAllCVELinks(url.list.deployments);
-
-                validateTileLinksInSidePanel(selectors.tableBodyColumn, 'CVEs', url.list.images);
-                validateTabsInSidePanel(url.list.images, selectors.tableBodyColumn, 'CVEs');
-            }
-        });
-
         validateSort(selectors.riskScoreCol);
     });
 
@@ -588,57 +339,15 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            cy.wait(3000);
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                validateClickableLinksEntityListPage(['deployment'], url.list.components);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Deployment',
-                    url.list.components
-                );
-                validateTabsInSidePanel(
-                    url.list.components,
-                    selectors.tableBodyColumn,
-                    'Deployment'
-                );
-            }
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+                allChecksForEntities(url.list.components, 'Deployment');
+            if (columnValue !== 'no images' && columnValue.includes('image'))
+                allChecksForEntities(url.list.components, 'Image');
+            if (columnValue !== 'no cves' && columnValue.includes('fixable'))
+                allFixableCheck(url.list.components);
+            if (columnValue !== 'no cves' && columnValue.includes('cve'))
+                allCVECheck(url.list.components);
         });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no images' && columnValue.includes('image')) {
-                validateClickableLinksEntityListPage(['image'], url.list.components);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Image',
-                    url.list.components
-                );
-                validateTabsInSidePanel(url.list.components, selectors.tableBodyColumn, 'Image');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('fixable')) {
-                validateFixableCVELinks(url.list.components);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Fixable',
-                    url.list.components
-                );
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no cves' && columnValue.includes('cve')) {
-                validateAllCVELinks(url.list.components);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'CVEs',
-                    url.list.components
-                );
-                validateTabsInSidePanel(url.list.components, selectors.tableBodyColumn, 'CVEs');
-            }
-        });
-
         validateSort(selectors.componentsRiskScoreCol);
     });
 
@@ -656,31 +365,12 @@ describe('Entities list Page', () => {
         ]);
         cy.get(selectors.tableBodyColumn).each($el => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment')) {
-                validateClickableLinksEntityListPage(['deployment'], url.list.cves);
-                validateTileLinksInSidePanel(
-                    selectors.tableBodyColumn,
-                    'Deployment',
-                    url.list.cves
-                );
-                validateTabsInSidePanel(url.list.cves, selectors.tableBodyColumn, 'Deployment');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no images' && columnValue.includes('image')) {
-                validateClickableLinksEntityListPage(['image'], url.list.components);
-                validateTileLinksInSidePanel(selectors.tableBodyColumn, 'Image', url.list.cves);
-                validateTabsInSidePanel(url.list.cves, selectors.tableBodyColumn, 'Image');
-            }
-        });
-        cy.get(selectors.tableBodyColumn).each($el => {
-            const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no components' && columnValue.includes('component')) {
-                validateClickableLinksEntityListPage(['component'], url.list.cves);
-                validateTileLinksInSidePanel(selectors.tableBodyColumn, 'Component', url.list.cves);
-                validateTabsInSidePanel(url.list.cves, selectors.tableBodyColumn, 'Component');
-            }
+            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+                allChecksForEntities(url.list.cves, 'Deployment');
+            if (columnValue !== 'no images' && columnValue.includes('image'))
+                allChecksForEntities(url.list.cves, 'image');
+            if (columnValue !== 'no components' && columnValue.includes('component'))
+                allChecksForEntities(url.list.cves, 'component');
         });
 
         validateSortForCVE(selectors.cvesCvssScoreCol);
