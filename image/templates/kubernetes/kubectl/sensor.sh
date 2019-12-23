@@ -22,18 +22,9 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 
 {{if and (ne .ImageRemote "stackrox-launcher-project-1/stackrox") (ne .ImageRemote "cloud-marketplace/stackrox-launcher-project-1/stackrox-kubernetes-security")}}
-if ! ${KUBE_COMMAND} get namespace stackrox > /dev/null; then
-  ${KUBE_COMMAND} create -f - <<EOF
-apiVersion: v1
-kind: Namespace
-metadata:
-  annotations:
-    openshift.io/node-selector: ""
-  name: stackrox
-EOF
-fi
+${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 
-if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox > /dev/null; then
+if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
@@ -50,7 +41,7 @@ fi
 {{- end}}
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
-if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox > /dev/null; then
+if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF

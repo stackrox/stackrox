@@ -19,8 +19,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-{{.K8sConfig.Command}}}
 
-
-${KUBE_COMMAND} get namespace stackrox > /dev/null || ${KUBE_COMMAND} create namespace stackrox
+${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
+${KUBE_COMMAND} -n stackrox annotate namespace/stackrox --overwrite openshift.io/node-selector=""
 
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/../../docker-auth.sh" -m k8s "{{.K8sConfig.Registry}}")"
