@@ -300,7 +300,7 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 
 	remnants := datValue.Len() - offset
 	if remnants <= 0 {
-		return nil, nil
+		return reflect.Zero(datType).Interface(), nil
 	}
 
 	var end int
