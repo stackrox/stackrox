@@ -19,22 +19,16 @@ message ImageComponent {
     string                         version      = 3 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License                        license      = 4;
     int64                          priority     = 5;
-
-    ComponentRelationship          relationship = 6;
 }
 
-message ComponentRelationship {
-    // Component id
-    string                              id       = 1;
-    //Images that contain this component
-    repeated ComponentImageRelationship image_id = 2;
-}
+message ComponentCVEEdge {
+    // base 64 encoded Component:CVE ids.
+    string id = 1;
 
-message ComponentImageRelationship {
-    // Image id
-    string          id       = 1;
-    // Layer that contains this component
-    oneof has_layer_index {
-        int32 layer_index    = 2;
+    bool is_fixable = 2 [(gogoproto.moretags) = "search:\"Fixable,store\""];
+
+    // Whether there is a version the CVE is fixed in the component.
+    oneof has_fixed_by {
+        string fixed_by = 3 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
     }
 }

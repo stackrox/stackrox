@@ -33,13 +33,9 @@ message CVE {
     google.protobuf.Timestamp last_modified = 7;
     repeated Reference        references    = 8;
 
-    bool                      fixable       = 9 [(gogoproto.moretags) = "search:\"Fixable,store\""];
-
-    ScoreVersion              score_version = 11;
-    CVSSV2                    cvss_v2       = 12;
-    CVSSV3                    cvss_v3       = 13;
-
-    CVERelationship           relationship  = 14;
+    ScoreVersion              score_version = 9;
+    CVSSV2                    cvss_v2       = 10;
+    CVSSV3                    cvss_v3       = 11;
 }
 
 message CVSSV2 {
@@ -134,23 +130,4 @@ message CVSSV3 {
     Impact           availability         = 11;
     float            score                = 12;
     Severity         severity             = 13;
-}
-
-message CVERelationship {
-    // CVE id
-    string                            id                         = 1;
-    // Components that contain this CVE
-    repeated CVEComponentRelationship cve_component_relationship = 2;
-    // Components that fixes this cve
-    repeated FixableCVEComponentRelationship fixable_cve_component_relationship = 3;
-}
-
-message CVEComponentRelationship {
-    // Component ids
-    string id = 1;
-}
-
-message FixableCVEComponentRelationship {
-    // Component ids
-    string id = 1 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
 }

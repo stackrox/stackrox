@@ -920,7 +920,7 @@
               },
               {
                 "id": 4,
-                "name": "disableBypass",
+                "name": "disable_bypass",
                 "type": "bool"
               }
             ]
@@ -2077,34 +2077,18 @@
               },
               {
                 "id": 9,
-                "name": "fixable",
-                "type": "bool",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixable,store\\"
-                  }
-                ]
-              },
-              {
-                "id": 11,
                 "name": "score_version",
                 "type": "ScoreVersion"
               },
               {
-                "id": 12,
+                "id": 10,
                 "name": "cvss_v2",
                 "type": "CVSSV2"
               },
               {
-                "id": 13,
+                "id": 11,
                 "name": "cvss_v3",
                 "type": "CVSSV3"
-              },
-              {
-                "id": 14,
-                "name": "relationship",
-                "type": "CVERelationship"
               }
             ],
             "messages": [
@@ -2253,54 +2237,6 @@
                 "id": 13,
                 "name": "severity",
                 "type": "Severity"
-              }
-            ]
-          },
-          {
-            "name": "CVERelationship",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "cve_component_relationship",
-                "type": "CVEComponentRelationship",
-                "is_repeated": true
-              },
-              {
-                "id": 3,
-                "name": "fixable_cve_component_relationship",
-                "type": "FixableCVEComponentRelationship",
-                "is_repeated": true
-              }
-            ]
-          },
-          {
-            "name": "CVEComponentRelationship",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "FixableCVEComponentRelationship",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Fixed By,store\\"
-                  }
-                ]
               }
             ]
           }
@@ -3502,6 +3438,30 @@
       "def": {
         "enums": [
           {
+            "name": "EmbeddedImageScanComponent.SourceType",
+            "enum_fields": [
+              {
+                "name": "OS"
+              },
+              {
+                "name": "PYTHON",
+                "integer": 1
+              },
+              {
+                "name": "JAVA",
+                "integer": 2
+              },
+              {
+                "name": "RUBY",
+                "integer": 3
+              },
+              {
+                "name": "NODEJS",
+                "integer": 4
+              }
+            ]
+          },
+          {
             "name": "EmbeddedVulnerability.ScoreVersion",
             "enum_fields": [
               {
@@ -3526,6 +3486,10 @@
               {
                 "name": "K8S_VULNERABILITY",
                 "integer": 2
+              },
+              {
+                "name": "ISTIO_VULNERABILITY",
+                "integer": 3
               }
             ]
           }
@@ -3612,13 +3576,7 @@
               {
                 "id": 11,
                 "name": "priority",
-                "type": "int64",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Priority\\\" hash:\\\"ignore\\"
-                  }
-                ]
+                "type": "int64"
               }
             ],
             "reserved_ids": [
@@ -3692,6 +3650,16 @@
                 "id": 6,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 7,
+                "name": "source",
+                "type": "SourceType"
+              },
+              {
+                "id": 8,
+                "name": "location",
+                "type": "string"
               }
             ]
           },
@@ -4047,6 +4015,21 @@
             "reserved_ids": [
               9
             ]
+          },
+          {
+            "name": "ImageComponentEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "layer_index",
+                "type": "int32"
+              }
+            ]
           }
         ],
         "imports": [
@@ -4116,18 +4099,7 @@
               {
                 "id": 5,
                 "name": "priority",
-                "type": "int64",
-                "options": [
-                  {
-                    "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Priority\\\" hash:\\\"ignore\\"
-                  }
-                ]
-              },
-              {
-                "id": 6,
-                "name": "relationship",
-                "type": "ComponentRelationship"
+                "type": "int64"
               }
             ],
             "messages": [
@@ -4154,7 +4126,7 @@
             ]
           },
           {
-            "name": "ComponentRelationship",
+            "name": "ComponentCVEEdge",
             "fields": [
               {
                 "id": 1,
@@ -4163,24 +4135,25 @@
               },
               {
                 "id": 2,
-                "name": "image_id",
-                "type": "ComponentImageRelationship",
-                "is_repeated": true
-              }
-            ]
-          },
-          {
-            "name": "ComponentImageRelationship",
-            "fields": [
-              {
-                "id": 1,
-                "name": "id",
-                "type": "string"
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixable,store\\"
+                  }
+                ]
               },
               {
-                "id": 2,
-                "name": "layer_index",
-                "type": "int32"
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Fixed By,store\\"
+                  }
+                ]
               }
             ]
           }
