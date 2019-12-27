@@ -30,6 +30,26 @@ func TestClusterMatcher(t *testing.T) {
 						Cluster: "cluster1",
 					},
 				},
+				Disabled: true,
+			},
+			matches: false,
+		},
+		{
+			cluster: &storage.Cluster{
+				Id: "cluster1",
+			},
+			namespaces: []*storage.NamespaceMetadata{
+				{
+					ClusterId: "cluster1",
+					Name:      "ns1",
+				},
+			},
+			policy: &storage.Policy{
+				Scope: []*storage.Scope{
+					{
+						Cluster: "cluster1",
+					},
+				},
 			},
 			matches: true,
 		},

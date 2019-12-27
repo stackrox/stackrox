@@ -35,7 +35,7 @@ func (m *deploymentMatcher) FilterApplicablePolicies(policies []*storage.Policy)
 
 // IsPolicyApplicable returns true if the policy is applicable to deployment
 func (m *deploymentMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
-	return !m.anyWhitelistMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
+	return !policy.GetDisabled() && !m.anyWhitelistMatches(policy.GetWhitelists()) && m.anyScopeMatches(policy.GetScope())
 }
 
 func (m *deploymentMatcher) anyWhitelistMatches(whitelists []*storage.Whitelist) bool {
