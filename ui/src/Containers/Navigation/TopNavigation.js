@@ -45,8 +45,9 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
             data-test-id="top-nav-bar"
         >
             <div className="flex w-full">
-                <div className="flex py-2 px-4 border-r bg-base-100 border-base-400 items-center">
+                <div className="flex font-condensed font-600 uppercase py-2 px-4 border-r bg-base-100 border-base-400 items-center">
                     <Logo className="fill-current text-primary-800" />
+                    <div className="pl-1 pt-1 text-sm tracking-wide">Platform</div>
                 </div>
                 <SummaryCounts />
             </div>

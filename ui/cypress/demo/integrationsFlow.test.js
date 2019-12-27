@@ -5,13 +5,13 @@ import {
 import selectors from '../selectors/index';
 import withAuth from '../helpers/basicAuth';
 
-describe('Configure > Integrations Flow', () => {
+describe('Platform Configuration > Integrations Flow', () => {
     withAuth();
 
     it('should be able to navigate to integrations page through the left side navbar', () => {
         cy.visit('/');
         cy.get(selectors.navigation.leftNavBar, { timeout: 7000 })
-            .contains('Configure')
+            .contains('Platform Configuration')
             .click();
         cy.get(selectors.navigation.navPanel)
             .contains('Integrations')

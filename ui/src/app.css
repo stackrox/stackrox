@@ -1,6 +1,6 @@
-@import "../node_modules/slick-carousel/slick/slick.css";
-@import "../node_modules/slick-carousel/slick/slick-theme.css";
-@import "css/style.css";
+@import '../node_modules/slick-carousel/slick/slick.css';
+@import '../node_modules/slick-carousel/slick/slick-theme.css';
+@import 'css/style.css';
 
 .theme-light {
     --base-100: hsla(225, 0%, 100%, 1);
@@ -186,7 +186,7 @@
     --alert-900: hsla(358, 45%, 98%, 1);
 }
 
-.theme-dark input[type="checkbox"] {
+.theme-dark input[type='checkbox'] {
     filter: invert(0.3);
 }
 
@@ -222,8 +222,8 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
@@ -276,7 +276,7 @@ button[disabled] {
     border-collapse: collapse;
 }
 
-[class~="flex-1"] {
+[class~='flex-1'] {
     @apply min-h-0 !important;
     /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
 their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
@@ -354,18 +354,17 @@ h6 {
 }
 
 .tab-row {
-    box-shadow: inset 0 -1px 0 0 config("colors.base-400"),
-        0 15px 30px 0 config("colors.base-200");
+    box-shadow: inset 0 -1px 0 0 config('colors.base-400'), 0 15px 30px 0 config('colors.base-200');
 }
 
 .tab {
-    box-shadow: inset -1px 0px 0px 0px config("colors.base-400"),
-        inset 0px -1px 0px 0px config("colors.base-400");
+    box-shadow: inset -1px 0px 0px 0px config('colors.base-400'),
+        inset 0px -1px 0px 0px config('colors.base-400');
 }
 
 .tab-active {
-    box-shadow: inset 0px 2px 0px 0px config("colors.primary-400"),
-        inset -1px 0px 0px 0px config("colors.base-400");
+    box-shadow: inset 0px 2px 0px 0px config('colors.primary-400'),
+        inset -1px 0px 0px 0px config('colors.base-400');
 }
 
 .pill:hover {
@@ -391,7 +390,7 @@ h6 {
 }
 
 .login-bg {
-    background-image: url("images/login-stripes.svg");
+    background-image: url('images/login-stripes.svg');
     background-position: top left;
     background-repeat: no-repeat;
 }
@@ -404,7 +403,7 @@ h6 {
     background-repeat: no-repeat;
     bottom: 0;
     right: 0;
-    content: "";
+    content: '';
     transform: rotate(180deg);
     pointer-events: none;
 }
@@ -412,7 +411,7 @@ h6 {
 /* will clean this up at some point... */
 .panel-actions:not(:empty) + div:before {
     @apply bg-base-300 absolute .rounded-full;
-    content: "";
+    content: '';
     left: 9px;
     top: 50%;
     width: 2px;
@@ -426,12 +425,7 @@ h6 {
 
 .navigation-gradient {
     height: 2px;
-    background-image: linear-gradient(
-        90deg,
-        #d1a0ea 0%,
-        #a3acff 44%,
-        #78effb 99%
-    );
+    background-image: linear-gradient(90deg, #d1a0ea 0%, #a3acff 44%, #78effb 99%);
     top: 0;
     z-index: 2;
     width: 100%;
@@ -439,7 +433,7 @@ h6 {
 
 .navigation-panel {
     position: absolute;
-    left: 80px;
+    left: 133px;
     z-index: 1001;
     top: 0;
     height: 100%;
@@ -559,13 +553,13 @@ h6 {
 }
 
 .rc-tooltip-inner {
-    background-color: rgb(234,245, 255) !important;
+    background-color: rgb(234, 245, 255) !important;
     color: hsla(225, 14%, 43%, 1) !important;
     text-align: inherit !important;
 }
 
 .rc-tooltip-arrow {
-    border-top-color: rgb(234,245, 255) !important;
+    border-top-color: rgb(234, 245, 255) !important;
 }
 
 .recharts-responsive-container .recharts-tooltip-cursor {
@@ -577,11 +571,11 @@ h6 {
 }
 
 .left-navigation {
-    width: 80px;
+    width: 133px;
 }
 
 .bg-global-search-empty-state {
-    background-image: url("images/globalSearchEmptyState.svg");
+    background-image: url('images/globalSearchEmptyState.svg');
     background-repeat: no-repeat;
     background-position-x: 50%;
     background-position-y: 50%;
@@ -596,10 +590,7 @@ h6 {
 }
 
 .network-grid-bg {
-    background-image: linear-gradient(
-            hsla(216, 62%, 85%, 0.52) 1px,
-            transparent 1px
-        ),
+    background-image: linear-gradient(hsla(216, 62%, 85%, 0.52) 1px, transparent 1px),
         linear-gradient(90deg, hsla(216, 22%, 69%, 0.2) 1px, transparent 1px),
         linear-gradient(hsla(216, 33%, 77%, 0.1) 1px, transparent 1px),
         linear-gradient(90deg, hsla(216, 67%, 81%, 0.1) 1px, transparent 1px),
@@ -613,7 +604,7 @@ h6 {
  */
 .simulator-mode.success:before,
 .simulator-mode.error:before {
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     right: 0;
@@ -624,15 +615,15 @@ h6 {
 }
 
 .simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
-    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
-    box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
+    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
+    box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
 }
 
 .simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
-    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
-    box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
+    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
+    box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
 }
 
 .top-navigation {
@@ -729,11 +720,11 @@ h6 {
 }
 
 .bg-header:before {
-    background-image: url("images/header-bg.svg");
+    background-image: url('images/header-bg.svg');
     background-position: 100% 0%;
     background-repeat: no-repeat;
     background-size: 640px;
-    content: "";
+    content: '';
     width: 100%;
     height: 100%;
     top: 0;
@@ -743,7 +734,7 @@ h6 {
 }
 
 .bg-dashboard {
-    background-image: url("images/dashboard-bg.svg"),
+    background-image: url('images/dashboard-bg.svg'),
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
     background-position: right top, center center;
     background-repeat: no-repeat, repeat;
@@ -756,7 +747,7 @@ h6 {
 
 .text-separator:before,
 .text-separator:after {
-    content: "";
+    content: '';
     position: absolute;
     width: 100%;
     height: 1px;
@@ -780,7 +771,7 @@ h6 {
 }
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
-@import "../node_modules/react-table/react-table.css";
+@import '../node_modules/react-table/react-table.css';
 
 .ReactTable .rt-table {
     overflow: overlay !important;
@@ -806,13 +797,13 @@ h6 {
     @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
 }
 
-.ReactTable input[type="checkbox"] {
+.ReactTable input[type='checkbox'] {
     transform: scale(1.2);
     cursor: pointer;
 }
 
-.ReactTable input[type="checkbox"]:hover,
-.ReactTable input[type="checkbox"]:focus {
+.ReactTable input[type='checkbox']:hover,
+.ReactTable input[type='checkbox']:focus {
     @apply .shadow;
 }
 
@@ -846,13 +837,13 @@ h6 {
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
-    content: " ↓";
+    content: ' ↓';
     position: absolute;
     margin-left: 4px;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-asc div:after {
-    content: " ↑";
+    content: ' ↑';
     position: absolute;
     margin-left: 4px;
 }
@@ -866,22 +857,21 @@ h6 {
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300");
+    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300');
     @apply .whitespace-normal !important;
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 -1px config("colors.base-300");
+    box-shadow: 0px -1px 0 0 config('colors.base-300'),
+        inset 0px -1px 0 -1px config('colors.base-300');
     @apply .whitespace-normal !important;
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr:hover > .rt-td {
     @apply .bg-base-200 !important;
     z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config("colors.base-400"),
-        inset 0px -1px 0 -1px config("colors.base-400");
+    box-shadow: 0px -1px 0 0 config('colors.base-400'),
+        inset 0px -1px 0 -1px config('colors.base-400');
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr-group:hover {
@@ -892,15 +882,14 @@ h6 {
 .ReactTable .rt-tbody .rt-tr:hover > .rt-td {
     @apply .bg-base-200 !important;
     z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config("colors.base-400"),
-        inset 0px -1px 0 0 config("colors.base-400");
+    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400');
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
     @apply .text-tertiary-700 .bg-tertiary-200 !important;
-    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
-        inset 0px -1px 0 0 config("colors.tertiary-400");
+    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'),
+        inset 0px -1px 0 0 config('colors.tertiary-400');
     z-index: 4 !important;
 }
 
@@ -945,9 +934,8 @@ h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300"),
-        11px 0 8px -4px config("colors.base-100");
+    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'),
+        11px 0 8px -4px config('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th:first-child {
@@ -955,7 +943,7 @@ h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config("colors.base-100");
+    box-shadow: 11px 0 8px -4px config('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-tr {
@@ -971,9 +959,8 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1;
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300"),
-        11px 0 8px -4px config("colors.base-100");
+    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'),
+        11px 0 8px -4px config('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column {
@@ -981,7 +968,7 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config("colors.base-100");
+    box-shadow: 11px 0 8px -4px config('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column:hover {
@@ -990,18 +977,17 @@ h6 {
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr:hover .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config("colors.base-400"),
-        inset 0px -1px 0 0 config("colors.base-400"),
-        11px 0 8px -4px config("colors.base-200");
+    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400'),
+        11px 0 8px -4px config('colors.base-200');
     z-index: 2 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
-        inset 0px -1px 0 0 config("colors.tertiary-400"),
-        11px 0 8px -4px config("colors.tertiary-200");
+    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'),
+        inset 0px -1px 0 0 config('colors.tertiary-400'),
+        11px 0 8px -4px config('colors.tertiary-200');
     z-index: 4 !important;
 }
 
@@ -1077,7 +1063,7 @@ h6 {
     @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
 
     right: 50%;
-    content: "";
+    content: '';
 }
 
 .form-switch .form-switch-checkbox:checked + .form-switch-label,
@@ -1115,17 +1101,17 @@ h6 {
     transition: background-color 0.2s ease-in;
 }
 .toggle-switch-small .toggle-switch-label {
-    @apply h-4
+    @apply h-4;
 }
 .toggle-switch-label:before {
     @apply absolute block bg-base-100 pin-y w-6 border rounded-full -ml-1;
 
-    content: "";
+    content: '';
     right: 50%;
     transition: all 0.2s ease-in;
 }
 .toggle-switch-small .toggle-switch-label:before {
-    @apply w-4
+    @apply w-4;
 }
 
 .toggle-switch-checkbox:checked + .toggle-switch-label,
@@ -1142,7 +1128,7 @@ h6 {
 }
 
 /* React-vis */
-@import "../node_modules/react-vis/dist/style.css";
+@import '../node_modules/react-vis/dist/style.css';
 
 /* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {
@@ -1176,7 +1162,7 @@ h6 {
 .widget-detail-bullet::before {
     position: absolute;
     left: -17px;
-    content: "";
+    content: '';
     top: 11px;
     @apply rounded-full border-2 border-base-400 bg-base-100;
     height: 9px;
@@ -1184,18 +1170,18 @@ h6 {
 }
 
 .banner-background {
-    background-image: url("images/list-bg.svg");
+    background-image: url('images/list-bg.svg');
     background-repeat: no-repeat;
     background-position-y: bottom;
     background-size: contain;
 }
 
 .before:before {
-    content: " ";
+    content: ' ';
 }
 
 .after:after {
-    content: " ";
+    content: ' ';
 }
 
 /** Widget arrows */
@@ -1236,18 +1222,15 @@ h6 {
 }
 
 .table-group {
-    box-shadow: inset 0px -1px 0px 0px var(--base-400),
-        0 -1px 0 0 var(--base-400);
+    box-shadow: inset 0px -1px 0px 0px var(--base-400), 0 -1px 0 0 var(--base-400);
 }
 
 .table-group:hover {
-    box-shadow: inset 0 -1px 0px 0px var(--tertiary-400),
-        0 -1px 0 0 var(--tertiary-400);
+    box-shadow: inset 0 -1px 0px 0px var(--tertiary-400), 0 -1px 0 0 var(--tertiary-400);
 }
 
 .table-group-active {
-    box-shadow: 0 1px 0px 0px var(--tertiary-500),
-        0 -1px 0 0 var(--tertiary-500);
+    box-shadow: 0 1px 0px 0px var(--tertiary-500), 0 -1px 0 0 var(--tertiary-500);
 }
 
 .horizontal-bar-responsive .rv-xy-plot {
@@ -1266,7 +1249,7 @@ h6 {
 }
 
 .graph-bottom-border:before {
-    content: "";
+    content: '';
     position: absolute;
     width: 100%;
     height: 1px;
@@ -1297,7 +1280,7 @@ h6 {
 }
 
 .overlay:after {
-    content: "";
+    content: '';
     background: var(--base-500);
     position: absolute !important;
     top: 0;
@@ -1309,13 +1292,12 @@ h6 {
 }
 
 .bg-side-panel-wave {
-    background: url("images/side-panel-icons/sidepanel-wave.svg") no-repeat,
-        var(--base-200) !important;
+    background: url('images/side-panel-icons/sidepanel-wave.svg') no-repeat, var(--base-200) !important;
     background-size: 100% !important;
 }
 
 .bg-counts-widget {
-    background: url("images/counts-widget-blocks.svg");
+    background: url('images/counts-widget-blocks.svg');
     background-repeat: repeat-x;
     background-position: bottom right;
 }

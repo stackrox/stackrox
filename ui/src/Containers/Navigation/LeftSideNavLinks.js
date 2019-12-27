@@ -8,7 +8,7 @@ import { connect } from 'react-redux';
 import { knownBackendFlags } from 'utils/featureFlags';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
-const iconClassName = 'h-4 w-4 mb-1';
+const iconClassName = 'h-4 w-4';
 
 export const navLinks = [
     {
@@ -17,7 +17,7 @@ export const navLinks = [
         renderIcon: () => <Icon.BarChart2 className={iconClassName} />
     },
     {
-        text: 'Network',
+        text: 'Network Graph',
         to: '/main/network',
         renderIcon: () => <Icon.Share2 className={iconClassName} />
     },
@@ -38,7 +38,7 @@ export const navLinks = [
         featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI
     },
     {
-        text: 'Config Management',
+        text: 'Configuration Management',
         to: '/main/configmanagement',
         renderIcon: () => <Icon.UserCheck className={iconClassName} />
     },
@@ -53,7 +53,7 @@ export const navLinks = [
         renderIcon: () => <Icon.FileMinus className={iconClassName} />
     },
     {
-        text: 'Configure',
+        text: 'Platform Configuration',
         to: '',
         renderIcon: () => <Icon.Settings className={iconClassName} />,
         panelType: 'configure',

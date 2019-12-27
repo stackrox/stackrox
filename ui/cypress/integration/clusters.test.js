@@ -12,7 +12,7 @@ describe('Clusters page', () => {
             cy.get(selectors.navLink).click({ force: true });
         });
 
-        it('should be linked in the Configure menu', () => {
+        it('should be linked in the Platform Configuration menu', () => {
             cy.get(selectors.header).contains('Clusters');
         });
 

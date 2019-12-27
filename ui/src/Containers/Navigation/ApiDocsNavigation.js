@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useTheme } from 'Containers/ThemeProvider';
-
 import * as Icon from 'react-feather';
 import PropTypes from 'prop-types';
 import { Manager, Target, Popper, Arrow } from 'react-popper';
 import onClickOutside from 'react-onclickoutside';
 
+import { useTheme } from 'Containers/ThemeProvider';
 import { getDarkModeLinkClassName } from './navHelpers';
 
 const modifiers = {
@@ -13,14 +12,13 @@ const modifiers = {
         enabled: true,
         fn: data => {
             Object.assign(data.styles, {
-                left: '80px' // Left navigation width
+                left: '133px' // Left navigation width
             });
             return data;
         }
     }
 };
 
-const iconClassName = 'h-4 w-4 mb-1';
 const menuLinkClassName =
     'block p-4 border-b border-base-400 no-underline text-primary-800 hover:text-base-700 hover:bg-base-200';
 
@@ -58,7 +56,7 @@ const ApiDocsNavigation = ({ onClick }) => {
 
     const linkClassName = `${getDarkModeLinkClassName(
         isDarkMode
-    )} w-full font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b`;
+    )} w-full font-condensed font-700 text-primary-400 flex px-3 no-underline h-18 items-center border-b`;
 
     ApiDocsNavigation.handleClickOutside = () => {
         setToggleMenu(false);
@@ -78,15 +76,15 @@ const ApiDocsNavigation = ({ onClick }) => {
                     className={`${linkClassName} border-t`}
                     onClick={onButtonClick}
                 >
-                    <div className="text-center pb-1">
-                        <Icon.HelpCircle className={`${iconClassName} text-primary-400`} />
+                    <div className="text-center pt-1 pr-2">
+                        <Icon.HelpCircle className="h-4 w-4 text-primary-400" />
                     </div>
                     <div
                         className={`text-center ${
                             isDarkMode ? 'text-base-600' : 'text-base-100'
                         } font-condensed uppercase text-sm tracking-wide`}
                     >
-                        Help
+                        Help Center
                     </div>
                 </button>
             </Target>

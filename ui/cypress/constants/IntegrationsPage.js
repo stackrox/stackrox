@@ -1,7 +1,7 @@
 export const url = '/main/integrations';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Configure") a',
+    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
     navLink: '.navigation-panel li:contains("Integrations") a',
     kubernetesTile: 'div[role="button"]:contains("Kubernetes")',
     dockerRegistryTile: 'div[role="button"]:contains("Generic Docker Registry")',

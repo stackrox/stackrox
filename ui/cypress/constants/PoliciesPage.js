@@ -1,7 +1,7 @@
 export const url = '/main/policies';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Configure") a',
+    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
     navLink: '.navigation-panel li:contains("System Policies") a',
     newPolicyButton: 'button:contains("New")',
     editPolicyButton: 'button:contains("Edit")',

@@ -5,10 +5,10 @@ import withAuth from '../helpers/basicAuth';
 describe('Policies Flow', () => {
     withAuth();
 
-    it('should take you to the Policies list from Configure side menu', () => {
+    it('should take you to the Policies list from Platform Configuration side menu', () => {
         cy.visit('/');
         cy.get(selectors.navigation.leftNavBar)
-            .contains('Configure')
+            .contains('Platform Configuration')
             .click();
         cy.get(selectors.navigation.navPanel)
             .contains('System Policies')

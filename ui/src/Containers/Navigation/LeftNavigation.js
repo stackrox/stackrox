@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTheme } from 'Containers/ThemeProvider';
-
 import { connect } from 'react-redux';
 import { withRouter, NavLink as Link } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -8,6 +6,8 @@ import { createStructuredSelector } from 'reselect';
 import find from 'lodash/find';
 import PropTypes from 'prop-types';
 import { selectors } from 'reducers';
+
+import { useTheme } from 'Containers/ThemeProvider';
 import NavigationPanel from './NavigationPanel';
 import ApiDocsNavigation from './ApiDocsNavigation';
 import LeftSideNavLinks, { navLinks } from './LeftSideNavLinks';
@@ -28,7 +28,7 @@ const LeftNavigation = ({ location, metadata }) => {
     const [clickOnPanelItem, setClickOnPanelItem] = useState(false);
     const [selectedPanel, setSelectedPanel] = useState('');
 
-    const linkClassName = `flex flex-col font-condensed font-700 text-primary-400 px-3 no-underline justify-center h-18 items-center border-b ${getDarkModeLinkClassName(
+    const linkClassName = `flex font-condensed leading-normal font-700 text-primary-400 px-3 no-underline h-18 items-center border-b ${getDarkModeLinkClassName(
         isDarkMode
     )}`;
 
@@ -43,7 +43,7 @@ const LeftNavigation = ({ location, metadata }) => {
             (pathname.includes('main/policies') ||
                 pathname.includes('main/integrations') ||
                 pathname.includes('main/access')) &&
-            navText === 'configure'
+            navText === 'platform configuration'
         ) {
             return baseActiveClass;
         }
@@ -100,8 +100,8 @@ const LeftNavigation = ({ location, metadata }) => {
                 className={linkClassName}
                 data-test-id={navLink.data || navLink.text}
             >
-                <div className="text-center pb-1">{navLink.renderIcon()}</div>
-                <div className={`text-center ${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>
+                <div className="text-center pt-1 pr-2">{navLink.renderIcon()}</div>
+                <div className={`${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>
                     {navLink.text}
                 </div>
             </Link>

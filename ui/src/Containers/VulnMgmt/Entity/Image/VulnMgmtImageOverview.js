@@ -157,7 +157,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     header={`${layers.length} ${pluralize(
                                         'layer',
                                         layers.length
-                                    )} layers across this image`}
+                                    )} across this image`}
                                     rows={layers}
                                     noDataText="No layers available in this image"
                                     className="bg-base-100"

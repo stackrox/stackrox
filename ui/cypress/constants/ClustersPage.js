@@ -1,7 +1,7 @@
 export const clustersUrl = '/main/clusters';
 
 export const selectors = {
-    configure: 'nav.left-navigation li:contains("Configure") a',
+    configure: 'nav.left-navigation li:contains("Platform Configuration") a',
     navLink: '.navigation-panel li:contains("Clusters") a',
     header: '[data-test-id="header-text"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
