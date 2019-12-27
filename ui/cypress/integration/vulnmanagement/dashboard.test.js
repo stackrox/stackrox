@@ -152,9 +152,9 @@ describe('Vuln Management Dashboard Page', () => {
         cy.url().should('contain', url.list.deployments);
     });
     // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
-    it('clicking the "Clusters With Most K8s Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
+    it('clicking the "Clusters With Most K8s & Istio Vulnerabilities" widget\'s "View All" button should take you to the clusters list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Clusters With Most K8s Vulnerabilities'))
+        cy.get(selectors.getWidget('Clusters With Most K8s & Istio Vulnerabilities'))
             .find(selectors.viewAllButton)
             .click();
         cy.url().should('contain', url.list.clusters);

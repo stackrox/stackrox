@@ -19,7 +19,7 @@ import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
 import RecentlyDetectedVulnerabilities from '../widgets/RecentlyDetectedVulnerabilities';
 import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
-import ClustersWithMostK8sVulnerabilities from '../widgets/ClustersWithMostK8sVulnerabilities';
+import ClustersWithMostK8sIstioVulnerabilities from '../widgets/ClustersWithMostK8sIstioVulnerabilities';
 
 // layout-specific graph widget counts
 
@@ -115,7 +115,7 @@ const VulnDashboardPage = ({ history }) => {
                 <DeploymentsWithMostSeverePolicyViolations limit={dashboardLimit} />
             </div>
             <div className="s-2">
-                <ClustersWithMostK8sVulnerabilities />
+                <ClustersWithMostK8sIstioVulnerabilities />
             </div>
         </DashboardLayout>
     );

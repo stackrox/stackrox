@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="20px" height="30px" viewBox="0 0 20 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>istio</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Singles" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="parts" transform="translate(-1034.000000, -935.000000)" fill="#7F839A" fill-rule="nonzero">
+            <g id="Top-Cities-Copy-2" transform="translate(653.000000, 867.000000)">
+                <g id="Group-2" transform="translate(12.000000, 41.748503)">
+                    <g id="Group-39-Copy-9" transform="translate(263.000000, 0.000000)">
+                        <g id="Group-3" transform="translate(106.000000, 26.251497)">
+                            <g id="istio">
+                                <polygon id="hull" points="0 26.0928144 20 26.0928144 7.5 29.8203593"></polygon>
+                                <polygon id="mainsail" points="0 24.8502994 7.5 23.6077844 7.5 9.94011976"></polygon>
+                                <polygon id="headsail" points="8.75 23.6077844 20 24.8502994 8.75 0"></polygon>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
