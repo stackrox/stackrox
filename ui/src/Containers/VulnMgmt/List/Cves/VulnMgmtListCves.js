@@ -13,12 +13,14 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { actions as notificationActions } from 'reducers/notifications';
 import { updateCveSuppressedState } from 'services/VulnerabilitiesService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { truncate } from 'utils/textUtils';
+// import { cveSortFields } from 'constants/sortFields';
 
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -26,13 +28,19 @@ import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 export const defaultCveSort = [
     {
-        id: 'cvss',
+        id: 'Fixed By',
         desc: true
-    },
-    {
-        id: 'cve',
-        desc: false
     }
+    // @TODO, remove the temp sort above
+    //        uncomment the sort fields below for CVEs, after they are available for backend pagination/sorting
+    // {
+    //     id: cveSortFields.CVSS_SCORE,
+    //     desc: true
+    // },
+    // {
+    //     id: cveSortFields.CVE,
+    //     desc: false
+    // }
 ];
 
 export function getCveTableColumns(workflowState) {
@@ -54,6 +62,7 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'cve'
+            // sortField: cveSortFields.cveSortFields.CVE
         },
         {
             Header: `Fixable`,
@@ -70,6 +79,7 @@ export function getCveTableColumns(workflowState) {
             },
             accessor: 'isFixable',
             id: 'isFixable'
+            // sortField: cveSortFields.CVSS_SCORE
         },
         {
             Header: `CVSS Score`,
@@ -82,6 +92,7 @@ export function getCveTableColumns(workflowState) {
             },
             accessor: 'cvss',
             id: 'cvss'
+            // sortField: cveSortFields.FIXABLE
         },
         {
             Header: `Env. Impact`,
@@ -95,6 +106,7 @@ export function getCveTableColumns(workflowState) {
                     : '-';
             },
             accessor: 'envImpact'
+            // sortField: cveSortFields.ENV_IMPACT
         },
         {
             Header: `Impact Score`,
@@ -106,6 +118,7 @@ export function getCveTableColumns(workflowState) {
                 return impactScore == Number(impactScore) ? impactScore.toFixed(1) : '-';
             },
             accessor: 'impactScore'
+            // sortField: cveSortFields.IMPACT_SCORE
         },
         {
             Header: `Deployments`,
@@ -123,6 +136,7 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'deploymentCount',
             id: 'deploymentCount'
+            // sortField: cveSortFields.DEPLOYMENTS
         },
         {
             Header: `Images`,
@@ -140,6 +154,7 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'imageCount',
             id: 'imageCount'
+            // sortField: cveSortFields.IMAGES
         },
         {
             Header: `Components`,
@@ -157,6 +172,7 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'componentCount',
             id: 'componentCount'
+            // sortField: cveSortFields.COMPONENTS
         },
         {
             Header: `Scanned`,
@@ -167,6 +183,7 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'lastScanned',
             id: 'lastScanned'
+            // sortField: cveSortFields.SCANNED
         },
         {
             Header: `Published`,
@@ -177,6 +194,7 @@ export function getCveTableColumns(workflowState) {
             ),
             accessor: 'publishedOn',
             id: 'published'
+            // sortField: cveSortFields.PUBLISHED
         }
     ];
 
@@ -203,18 +221,21 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const CVES_QUERY = gql`
-        query getCves($query: String) {
-            results: vulnerabilities(query: $query) {
+        query getCves($query: String, $pagination: Pagination) {
+            results: vulnerabilities(query: $query, pagination: $pagination) {
                 ...cveFields
             }
+            count: vulnerabilityCount(query: $query)
         }
         ${VULN_CVE_LIST_FRAGMENT}
     `;
 
+    const tableSort = sort || defaultCveSort;
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
-            cachebuster: refreshTrigger
+            cachebuster: refreshTrigger,
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -328,7 +349,6 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
                 selectedRowId={selectedRowId}
                 search={search}
                 page={page}
-                defaultSorted={sort || defaultCveSort}
                 showSubrows
                 SubComponent={renderCveDescription}
                 checkbox

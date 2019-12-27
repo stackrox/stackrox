@@ -206,7 +206,8 @@ function allFixableCheck(parentUrl) {
     validateFixableTabLinksInEntityPage(parentUrl);
 }
 
-describe('Entities list Page', () => {
+// @TODO: uncomment this test suite after back-end pagination is working completely
+describe.skip('Entities list Page', () => {
     before(function beforeHook() {
         // skip the whole suite if vuln mgmt isn't enabled
         if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {

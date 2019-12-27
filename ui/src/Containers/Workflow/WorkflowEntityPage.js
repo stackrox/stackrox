@@ -8,11 +8,18 @@ import Loader from 'Components/Loader';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'modules/queryService';
 
+import useCases from 'constants/useCaseTypes';
+import vulnMgmtDefaultSorts from '../VulnMgmt/VulnMgmt.defaultSorts';
+
 export const entityGridContainerBaseClassName =
     'mx-4 grid-dense grid-auto-fit grid grid-gap-6 mb-4 xxxl:grid-gap-8';
 
 // to separate out column number related classes from the rest of the grid classes for easy column customization (see policyOverview component)
 export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 lg:grid-columns-2 xl:grid-columns-3`;
+
+const useCaseDefaultSorts = {
+    [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts
+};
 
 const WorkflowEntityPage = ({
     ListComponent,
@@ -30,9 +37,16 @@ const WorkflowEntityPage = ({
     page
 }) => {
     const { isDarkMode } = useTheme();
+    const enhancedQueryOptions =
+        queryOptions && queryOptions.variables ? queryOptions : { variables: {} };
     let query = overviewQuery;
     let fieldName;
+
     if (entityListType) {
+        // sorting stuff
+        const appliedSort = sort || useCaseDefaultSorts[useCase][entityListType];
+        enhancedQueryOptions.variables.pagination = queryService.getPagination(appliedSort, page);
+
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityType,
             entityListType,
@@ -44,19 +58,17 @@ const WorkflowEntityPage = ({
 
     // TODO: remove this hack after we are able to search for k8s vulns
     if (
-        queryOptions &&
-        queryOptions.variables &&
-        queryOptions.variables.query &&
-        queryOptions.variables.query.includes('K8S_VULNERABILITY')
+        enhancedQueryOptions.variables.query &&
+        enhancedQueryOptions.variables.query.includes('K8S_VULNERABILITY')
     ) {
         // eslint-disable-next-line no-param-reassign
-        queryOptions.variables.query = queryOptions.variables.query.replace(
+        enhancedQueryOptions.variables.query = enhancedQueryOptions.variables.query.replace(
             /\+?Vulnerability Type:K8S_VULNERABILITY\+?/,
             ''
         );
     }
 
-    const { loading, data } = useQuery(query, queryOptions);
+    const { loading, data } = useQuery(query, enhancedQueryOptions);
     if (loading) return <Loader transparent />;
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
     const { result } = data;

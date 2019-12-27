@@ -16,23 +16,30 @@ import SeverityLabel from 'Components/SeverityLabel';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { actions as notificationActions } from 'reducers/notifications';
 import { deletePolicies } from 'services/PoliciesService';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { policySortFields } from 'constants/sortFields';
 
 import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 export const defaultPolicySort = [
+    // @TODO: remove this fake default sort on Policy name, when latest violation is available
     {
-        id: 'latestViolation',
-        desc: true
-    },
-    {
-        id: 'policyStatus',
+        id: policySortFields.POLICY,
         desc: false
     }
+    // {
+    //     id: policySortFields.LATEST_VIOLATION,
+    //     desc: true
+    // },
+    // {
+    //     id: policySortFields.POLICY_STATUS,
+    //     desc: false
+    // }
 ];
 
 export function getPolicyTableColumns(workflowState) {
@@ -69,14 +76,16 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Policy`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
+            sortField: policySortFields.POLICY
         },
         {
             Header: `Description`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'description',
-            id: 'description'
+            id: 'description',
+            sortField: policySortFields.DESCRIPTION
         },
         {
             Header: `Policy Status`,
@@ -89,7 +98,8 @@ export function getPolicyTableColumns(workflowState) {
                 </div>
             ),
             id: 'policyStatus',
-            accessor: 'policyStatus'
+            accessor: 'policyStatus',
+            sortField: policySortFields.POLICY_STATUS
         },
         {
             Header: `Last Updated`,
@@ -99,7 +109,8 @@ export function getPolicyTableColumns(workflowState) {
                 const { lastUpdated } = original;
                 return <DateTimeField date={lastUpdated} asString={pdf} />;
             },
-            accessor: 'lastUpdated'
+            accessor: 'lastUpdated',
+            sortField: policySortFields.LAST_UPDATED
         },
         {
             Header: `Latest Violation`,
@@ -109,7 +120,8 @@ export function getPolicyTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
-            accessor: 'latestViolation'
+            accessor: 'latestViolation' // ,
+            // sortField: policySortFields.LATEST_VIOLATION
         },
         {
             Header: `Severity`,
@@ -117,7 +129,8 @@ export function getPolicyTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
             accessor: 'severity',
-            id: 'severity'
+            id: 'severity',
+            sortField: policySortFields.DESCRIPTION
         },
         {
             Header: `Deployments`,
@@ -134,7 +147,8 @@ export function getPolicyTableColumns(workflowState) {
                 />
             ),
             accessor: 'deploymentCount',
-            id: 'deploymentCount'
+            id: 'deploymentCount',
+            sortField: policySortFields.DEPLOYMENTS
         },
         {
             Header: `Lifecyle`,
@@ -151,7 +165,8 @@ export function getPolicyTableColumns(workflowState) {
                 return <span>{lowercasedLifecycles}</span>;
             },
             accessor: 'lifecycleStages',
-            id: 'lifecycleStages'
+            id: 'lifecycleStages',
+            sortField: policySortFields.LIFECYCLE_STAGE
         },
         {
             Header: `Enforcement`,
@@ -163,7 +178,8 @@ export function getPolicyTableColumns(workflowState) {
                 return enforcementActions || enforcementActions.length ? 'Yes' : 'No';
             },
             accessor: 'enforcementActions',
-            id: 'enforcementActions'
+            id: 'enforcementActions',
+            sortField: policySortFields.ENFORCEMENT
         }
     ];
 
@@ -178,21 +194,24 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, r
     const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const POLICIES_QUERY = gql`
-        query getPolicies($policyQuery: String) {
-            results: policies(query: $policyQuery) {
+        query getPolicies($policyQuery: String, $pagination: Pagination) {
+            results: policies(query: $policyQuery, pagination: $pagination) {
                 ...policyFields
             }
+            count: policyCount(query: $policyQuery)
         }
         ${POLICY_LIST_FRAGMENT}
     `;
 
+    const tableSort = sort || defaultPolicySort;
     const queryOptions = {
         variables: {
             policyQuery: queryService.objectToWhereClause({
                 ...search,
                 Category: 'Vulnerability Management',
                 cachebuster: refreshTrigger
-            })
+            }),
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -274,7 +293,6 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, r
                 selectedRowId={selectedRowId}
                 search={search}
                 page={page}
-                defaultSorted={sort || defaultPolicySort}
                 checkbox
                 tableHeaderComponents={tableHeaderComponents}
                 selection={selectedPolicyIds}

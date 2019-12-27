@@ -6,9 +6,9 @@ import { selectors } from 'reducers';
 import { createStructuredSelector } from 'reselect';
 import { withRouter } from 'react-router-dom';
 
-import { pageSize } from './Table';
+import { pageSize as defaultPageSize } from './Table';
 
-const TablePagination = ({ dataLength, setPage, page, searchOptions }) => {
+const TablePagination = ({ dataLength, setPage, page, pageSize, searchOptions }) => {
     function getTotalPages() {
         return Math.ceil(dataLength / pageSize);
     }
@@ -86,11 +86,13 @@ TablePagination.propTypes = {
     page: PropTypes.number.isRequired,
     dataLength: PropTypes.number.isRequired,
     setPage: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.shape({}))
+    searchOptions: PropTypes.arrayOf(PropTypes.shape({})),
+    pageSize: PropTypes.number
 };
 
 TablePagination.defaultProps = {
-    searchOptions: []
+    searchOptions: [],
+    pageSize: defaultPageSize
 };
 
 const mapStateToProps = createStructuredSelector({

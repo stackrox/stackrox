@@ -115,7 +115,8 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
 
     withAuth();
 
-    it('validate data consistency for top riskiest images widget data row onwards', () => {
+    // @TODO: enable when back-end pagination allows for sorting by priority
+    it.skip('validate data consistency for top riskiest images widget data row onwards', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.getWidget('Top Riskiest Images'))
             .find(selectors.viewAllButton)
@@ -160,7 +161,8 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
             });
     });
 
-    it('validate data consistency for most common vulnerabilities widget data row onwards', () => {
+    // @TODO: enable when back-end pagination allows for sorting by deploymentCount
+    it.skip('validate data consistency for most common vulnerabilities widget data row onwards', () => {
         validateWithActualSelector(
             'cve',
             url.list.cve,
@@ -170,7 +172,8 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
         );
     });
 
-    it('validate data consistency for recently detected vulnerabilities widget data row onwards', () => {
+    // @TODO: enable when back-end pagination allows for sorting by deploymentCount
+    it.skip('validate data consistency for recently detected vulnerabilities widget data row onwards', () => {
         validateWithActualSelector(
             'cve',
             url.list.cve,
@@ -180,7 +183,8 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
         );
     });
 
-    it('validate data consistency for frequently violated policies widget data row onwards', () => {
+    // @TODO: enable when back-end pagination allows for sorting by policyStatus
+    it.skip('validate data consistency for frequently violated policies widget data row onwards', () => {
         validateWithActualSelector(
             'cve',
             url.list.policy,
@@ -190,7 +194,8 @@ describe('Vuln Management Dashboard Page To Entity Page Navigation Validation', 
         );
     });
 
-    it('validate data consistency for deployments with most severe policy violations widget data row onwards', () => {
+    // @TODO: enable when back-end pagination allows for sorting
+    it.skip('validate data consistency for deployments with most severe policy violations widget data row onwards', () => {
         validateWithActualSelector(
             'cve',
             url.list.deployment,

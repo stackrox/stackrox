@@ -7,21 +7,22 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import { sortDate, sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { imageSortFields } from 'constants/sortFields';
 
 export const defaultImageSort = [
     {
-        id: 'priority',
+        id: imageSortFields.PRIORITY,
         desc: false
     },
     {
-        id: 'name.fullName',
+        id: imageSortFields.NAME,
         desc: false
     }
 ];
@@ -38,7 +39,8 @@ export function getImageTableColumns(workflowState) {
             Header: `Image`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 word-break-all ${defaultColumnClassName}`,
-            accessor: 'name.fullName'
+            accessor: 'name.fullName',
+            sortField: imageSortFields.NAME
         },
         {
             Header: `CVEs`,
@@ -64,7 +66,8 @@ export function getImageTableColumns(workflowState) {
                     />
                 );
             },
-            accessor: 'vulnCounter.all.total'
+            accessor: 'vulnCounter.all.total',
+            sortField: imageSortFields.CVE_COUNT
         },
         {
             Header: `Top CVSS`,
@@ -82,6 +85,7 @@ export function getImageTableColumns(workflowState) {
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
             accessor: 'topVuln.cvss'
+            // sortField: TBD
         },
         {
             Header: `Created`,
@@ -92,8 +96,8 @@ export function getImageTableColumns(workflowState) {
                 if (!metadata || !metadata.v1) return '–';
                 return <DateTimeField date={metadata.v1.created} asString={pdf} />;
             },
-            sortMethod: sortDate,
-            accessor: 'metadata.v1.created'
+            accessor: 'metadata.v1.created',
+            sortField: imageSortFields.CREATED_TIME
         },
         {
             Header: `Scan Time`,
@@ -104,8 +108,8 @@ export function getImageTableColumns(workflowState) {
                 if (!scan) return '–';
                 return <DateTimeField date={scan.scanTime} asString={pdf} />;
             },
-            sortMethod: sortDate,
-            accessor: 'scan.scanTime'
+            accessor: 'scan.scanTime',
+            sortField: imageSortFields.SCAN_TIME
         },
         {
             Header: 'Image Status',
@@ -117,6 +121,7 @@ export function getImageTableColumns(workflowState) {
                 return <StatusChip status={imageStatus} />;
             },
             accessor: 'deploymentCount'
+            // sortField: TBD,
         },
         {
             Header: `Deployments`,
@@ -132,6 +137,7 @@ export function getImageTableColumns(workflowState) {
                 />
             ),
             accessor: 'deploymentCount'
+            // sortField: imageSortFields.STATUS,
         },
         {
             Header: `Components`,
@@ -152,13 +158,14 @@ export function getImageTableColumns(workflowState) {
                 );
             },
             accessor: 'scan.components',
-            sortMethod: sortValueByLength
+            sortField: imageSortFields.COMPONENT_COUNT
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'priority'
+            // sortField: TBD
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
@@ -166,17 +173,20 @@ export function getImageTableColumns(workflowState) {
 
 const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getImages($query: String) {
-            results: images(query: $query) {
+        query getImages($query: String, $pagination: Pagination) {
+            results: images(query: $query, pagination: $pagination) {
                 ...imageFields
             }
+            count: imageCount(query: $query)
         }
         ${IMAGE_LIST_FRAGMENT}
     `;
 
+    const tableSort = sort || defaultImageSort;
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause(search),
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -190,15 +200,11 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
             selectedRowId={selectedRowId}
             search={search}
             page={page}
-            defaultSorted={sort || defaultImageSort}
         />
     );
 };
 
 VulnMgmtImages.propTypes = workflowListPropTypes;
-VulnMgmtImages.defaultProps = {
-    ...workflowListDefaultProps,
-    sort: null
-};
+VulnMgmtImages.defaultProps = workflowListDefaultProps;
 
 export default VulnMgmtImages;

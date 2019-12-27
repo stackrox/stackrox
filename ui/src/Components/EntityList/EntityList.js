@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from 'react';
+import React, { useContext, useRef } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
@@ -17,7 +17,6 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 const EntityList = ({
     autoFocusSearchInput,
-    defaultSorted,
     entityType,
     headerText,
     history,
@@ -32,9 +31,13 @@ const EntityList = ({
     selection,
     setSelection,
     tableHeaderComponents,
-    renderRowActionButtons
+    renderRowActionButtons,
+    serverSidePagination,
+    onSortedChange,
+    page,
+    totalResults,
+    pageSize
 }) => {
-    const [page, setPage] = useState(0);
     const tableRef = useRef(null);
     const workflowState = useContext(workflowStateContext);
 
@@ -57,29 +60,20 @@ const EntityList = ({
         history.push(url);
     }
 
-    function getHeaderComponents(totalRows, categoryOptions, categories, autoFocus) {
-        return (
-            <>
-                <div className="flex flex-1 justify-start">
-                    <URLSearchInput
-                        className="w-full"
-                        categoryOptions={categoryOptions}
-                        categories={categories}
-                        autoFocus={autoFocus}
-                    />
-                </div>
-                <div className="ml-2 flex">{tableHeaderComponents}</div>
-                {/* TODO: update pagination to use server-side pagination */}
-                <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
-            </>
-        );
+    function setPage(newPage) {
+        history.push(workflowState.setPage(newPage).toUrl());
+    }
+
+    if (rowData.length) {
+        const query = {}; // TODO: improve sep. of concerns in pdfUtils
+        createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
     }
 
     // render section
     const entityLabel = entityLabels[entityType] || 'results';
     const noDataText = `No ${pluralize(entityLabel)} found. Please refine your search.`;
 
-    const header = `${rowData.length} ${pluralize(
+    const header = `${totalResults} ${pluralize(
         headerText || entityLabels[entityType],
         rowData.length
     )}`;
@@ -91,12 +85,26 @@ const EntityList = ({
     }
 
     const availableCategories = [searchCategories[entityType]];
-    const headerComponents = getHeaderComponents(
-        rowData.length,
-        searchOptions,
-        availableCategories,
-        autoFocusSearchInput
+    const headerComponents = (
+        <>
+            <div className="flex flex-1 justify-start">
+                <URLSearchInput
+                    className="w-full"
+                    categoryOptions={searchOptions}
+                    categories={availableCategories}
+                    autoFocus={autoFocusSearchInput}
+                />
+            </div>
+            <div className="ml-2 flex">{tableHeaderComponents}</div>
+            <TablePagination
+                page={page}
+                dataLength={totalResults}
+                pageSize={pageSize}
+                setPage={setPage}
+            />
+        </>
     );
+
     let tableComponent = (
         <Table
             rows={rowData}
@@ -106,10 +114,10 @@ const EntityList = ({
             id="capture-list"
             selectedRowId={selectedRowId}
             noDataText={noDataText}
-            page={page}
-            defaultSorted={defaultSorted}
             SubComponent={SubComponent}
             expanded={defaultExpanded}
+            manual={serverSidePagination}
+            onSortedChange={onSortedChange}
         />
     );
 
@@ -123,8 +131,6 @@ const EntityList = ({
                 id="capture-list"
                 selectedRowId={selectedRowId}
                 noDataText={noDataText}
-                page={page}
-                defaultSorted={defaultSorted}
                 SubComponent={SubComponent}
                 expanded={defaultExpanded}
                 selection={selection}
@@ -132,6 +138,8 @@ const EntityList = ({
                 toggleRow={toggleTableRow}
                 toggleSelectAll={toggleAllTableRows}
                 renderRowActionButtons={renderRowActionButtons}
+                manual={serverSidePagination}
+                onSortedChange={onSortedChange}
             />
         );
     }
@@ -149,7 +157,6 @@ const EntityList = ({
 
 EntityList.propTypes = {
     autoFocusSearchInput: PropTypes.bool,
-    defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     entityType: PropTypes.string.isRequired,
     headerText: PropTypes.string,
     idAttribute: PropTypes.string.isRequired,
@@ -164,12 +171,16 @@ EntityList.propTypes = {
     selection: PropTypes.arrayOf(PropTypes.string),
     setSelection: PropTypes.func,
     tableHeaderComponents: PropTypes.element,
-    renderRowActionButtons: PropTypes.func
+    renderRowActionButtons: PropTypes.func,
+    serverSidePagination: PropTypes.bool,
+    onSortedChange: PropTypes.func,
+    page: PropTypes.number,
+    totalResults: PropTypes.number,
+    pageSize: PropTypes.number
 };
 
 EntityList.defaultProps = {
     autoFocusSearchInput: true,
-    defaultSorted: [],
     headerText: '',
     rowData: null,
     searchOptions: [],
@@ -180,7 +191,12 @@ EntityList.defaultProps = {
     selection: [],
     setSelection: null,
     tableHeaderComponents: null,
-    renderRowActionButtons: null
+    renderRowActionButtons: null,
+    serverSidePagination: false,
+    onSortedChange: null,
+    page: 0,
+    totalResults: 0,
+    pageSize: null
 };
 
 export default withRouter(EntityList);

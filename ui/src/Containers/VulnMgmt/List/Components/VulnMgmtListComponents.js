@@ -5,6 +5,7 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import TopCvssLabel from 'Components/TopCvssLabel';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import queryService from 'modules/queryService';
@@ -12,14 +13,16 @@ import queryService from 'modules/queryService';
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { componentSortFields } from 'constants/sortFields';
 
 export const defaultComponentSort = [
+    // @TODO, uncomment the primary sort field for Components, after its available for backend pagination/sorting
+    // {
+    //     id: componentSortFields.PRIORITY,
+    //     desc: false
+    // },
     {
-        id: 'priority',
-        desc: false
-    },
-    {
-        id: 'name',
+        id: componentSortFields.COMPONENT,
         desc: false
     }
 ];
@@ -40,7 +43,8 @@ export function getComponentTableColumns(workflowState) {
                 const { version, name } = original;
                 return `${name} ${version}`;
             },
-            accessor: 'name'
+            accessor: 'name',
+            sortField: componentSortFields.COMPONENT
         },
         {
             Header: `CVEs`,
@@ -66,7 +70,8 @@ export function getComponentTableColumns(workflowState) {
                     />
                 );
             },
-            accessor: 'vulnCounter.all.total'
+            accessor: 'vulnCounter.all.total',
+            sortField: componentSortFields.CVE_COUNT
         },
         {
             Header: `Top CVSS`,
@@ -84,6 +89,7 @@ export function getComponentTableColumns(workflowState) {
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
             accessor: 'topVuln.cvss'
+            // sortField: componentSortFields.TOP_CVSS
         },
         {
             Header: `Images`,
@@ -99,6 +105,7 @@ export function getComponentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             )
+            // sortField: componentSortFields.IMAGES
         },
         {
             Header: `Deployments`,
@@ -114,12 +121,14 @@ export function getComponentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             )
+            // sortField: componentSortFields.DEPLOYMENTS
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'priority'
+            // sortField: componentSortFields.PRIORITY
         }
     ];
 
@@ -128,17 +137,19 @@ export function getComponentTableColumns(workflowState) {
 
 const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getComponents($query: String) {
-            results: components(query: $query) {
+        query getComponents($query: String, $pagination: Pagination) {
+            results: components(query: $query, pagination: $pagination) {
                 ...componentFields
             }
+            count: componentCount(query: $query)
         }
         ${VULN_COMPONENT_LIST_FRAGMENT}
     `;
-
+    const tableSort = sort || defaultComponentSort;
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search)
+            query: queryService.objectToWhereClause(search),
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -149,7 +160,6 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
             queryOptions={queryOptions}
             idAttribute="id"
             entityListType={entityTypes.COMPONENT}
-            defaultSorted={sort || defaultComponentSort}
             getTableColumns={getComponentTableColumns}
             selectedRowId={selectedRowId}
             page={page}

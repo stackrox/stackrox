@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 
@@ -9,6 +9,8 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import isGQLLoading from 'utils/gqlLoading';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 export function getDefaultExpandedRows(results) {
     return results
@@ -20,9 +22,9 @@ export function getDefaultExpandedRows(results) {
 
 const WorkflowListPage = ({
     data,
+    totalResults,
     query,
     queryOptions,
-    defaultSorted,
     entityListType,
     getTableColumns,
     selectedRowId,
@@ -35,9 +37,11 @@ const WorkflowListPage = ({
     tableHeaderComponents,
     selection,
     setSelection,
-    renderRowActionButtons
+    renderRowActionButtons,
+    history
 }) => {
     const workflowState = useContext(workflowStateContext);
+    const [sortFields, setSortFields] = useState({});
 
     const searchCategories = [searchCategoryTypes[entityListType]];
     const searchQueryOptions = {
@@ -52,15 +56,39 @@ const WorkflowListPage = ({
     const { loading, error, data: ownQueryData } = useQuery(query, queryOptionsWithSkip);
 
     let displayData = data;
+    let count = totalResults;
+    const pageSize =
+        queryOptions &&
+        queryOptions.variables &&
+        queryOptions.variables.pagination &&
+        queryOptions.variables.pagination.limit;
+
     if (!data) {
         if (isGQLLoading(loading, ownQueryData)) return <Loader />;
         if (!ownQueryData || !ownQueryData.results || error)
             return <PageNotFound resourceType={entityListType} />;
         displayData = ownQueryData.results;
+        // eslint-disable-next-line prefer-destructuring
+        count = ownQueryData.count;
     }
 
     const tableColumns = getTableColumns(workflowState);
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
+
+    function onSortedChange(newSort, column) {
+        const workflowSort = newSort.map(sortItem => {
+            const id = sortFields[sortItem.id] || column.sortField;
+            setSortFields({ [sortItem.id]: id, ...sortFields });
+            const { desc } = sortItem;
+            return {
+                id,
+                desc
+            };
+        });
+
+        const url = workflowState.setSort(workflowSort).toUrl();
+        history.push(url);
+    }
 
     return (
         <EntityList
@@ -72,7 +100,6 @@ const WorkflowListPage = ({
             search={search}
             page={page}
             SubComponent={SubComponent}
-            defaultSorted={defaultSorted}
             defaultExpanded={defaultExpandedRows}
             searchOptions={searchOptions}
             checkbox={checkbox}
@@ -80,6 +107,10 @@ const WorkflowListPage = ({
             selection={selection}
             setSelection={setSelection}
             renderRowActionButtons={renderRowActionButtons}
+            serverSidePagination
+            onSortedChange={onSortedChange}
+            totalResults={count}
+            pageSize={pageSize}
         />
     );
 };
@@ -88,9 +119,12 @@ WorkflowListPage.propTypes = {
     query: PropTypes.shape({}),
     data: PropTypes.arrayOf(PropTypes.shape({})),
     queryOptions: PropTypes.shape({
-        options: PropTypes.shape({})
+        variables: PropTypes.shape({
+            pagination: PropTypes.shape({
+                limit: PropTypes.number
+            })
+        })
     }),
-    defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     entityListType: PropTypes.string.isRequired,
     getTableColumns: PropTypes.func.isRequired,
     entityContext: PropTypes.shape({}),
@@ -104,18 +138,19 @@ WorkflowListPage.propTypes = {
     tableHeaderComponents: PropTypes.element,
     selection: PropTypes.arrayOf(PropTypes.string),
     setSelection: PropTypes.func,
-    renderRowActionButtons: PropTypes.func
+    renderRowActionButtons: PropTypes.func,
+    history: ReactRouterPropTypes.history.isRequired,
+    totalResults: PropTypes.number
 };
 
 WorkflowListPage.defaultProps = {
     query: null,
     queryOptions: null,
     data: null,
-    defaultSorted: [],
     entityContext: {},
     selectedRowId: null,
     search: null,
-    page: 1,
+    page: 0,
     SubComponent: null,
     showSubrows: false,
     idAttribute: 'id',
@@ -123,7 +158,8 @@ WorkflowListPage.defaultProps = {
     tableHeaderComponents: null,
     selection: [],
     setSelection: null,
-    renderRowActionButtons: null
+    renderRowActionButtons: null,
+    totalResults: 0
 };
 
-export default WorkflowListPage;
+export default withRouter(WorkflowListPage);

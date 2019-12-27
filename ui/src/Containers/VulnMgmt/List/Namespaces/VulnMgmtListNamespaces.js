@@ -7,21 +7,23 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
-import { sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { NAMESPACE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { namespaceSortFields } from 'constants/sortFields';
 
 export const defaultNamespaceSort = [
+    // @TODO, uncomment the primary sort field for Namespaces, after its available for backend pagination/sorting
+    // {
+    //     id: namespaceSortFields.PRIORITY,
+    //     desc: false
+    // },
     {
-        id: 'metadata.priority',
-        desc: false
-    },
-    {
-        id: 'metadata.name',
+        id: namespaceSortFields.NAMESPACE,
         desc: false
     }
 ];
@@ -38,7 +40,8 @@ export function getNamespaceTableColumns(workflowState) {
             Header: `Namespace`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
-            accessor: 'metadata.name'
+            accessor: 'metadata.name',
+            sortField: namespaceSortFields.NAMESPACE
         },
         {
             Header: `CVEs`,
@@ -64,7 +67,8 @@ export function getNamespaceTableColumns(workflowState) {
                     />
                 );
             },
-            accessor: 'vulnCounter.all.total'
+            accessor: 'vulnCounter.all.total',
+            sortField: namespaceSortFields.CVES
         },
         {
             Header: `Cluster`,
@@ -81,7 +85,8 @@ export function getNamespaceTableColumns(workflowState) {
 
                 return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
             },
-            accessor: 'metadata.clusterName'
+            accessor: 'metadata.clusterName',
+            sortField: namespaceSortFields.CLUSTER
         },
         {
             Header: `Deployments`,
@@ -96,7 +101,8 @@ export function getNamespaceTableColumns(workflowState) {
                     selectedRowId={original.metadata.id}
                 />
             ),
-            accessor: 'deploymentCount'
+            accessor: 'deploymentCount',
+            sortField: namespaceSortFields.DEPLOYMENTS
         },
         {
             Header: `Images`,
@@ -111,7 +117,8 @@ export function getNamespaceTableColumns(workflowState) {
                     selectedRowId={original.metadata.id}
                 />
             ),
-            accessor: 'imageCount'
+            accessor: 'imageCount',
+            sortField: namespaceSortFields.IMAGES
         },
         {
             Header: `Policies`,
@@ -126,7 +133,8 @@ export function getNamespaceTableColumns(workflowState) {
                     selectedRowId={original.metadata.id}
                 />
             ),
-            accessor: 'policyCount'
+            accessor: 'policyCount',
+            sortField: namespaceSortFields.POLICIES
         },
         {
             Header: `Policy Status`,
@@ -140,7 +148,8 @@ export function getNamespaceTableColumns(workflowState) {
                 return policyLabel;
             },
             id: 'policyStatus',
-            accessor: 'policyStatus.status'
+            accessor: 'policyStatus.status',
+            sortField: namespaceSortFields.POLICY_STATUS
         },
         {
             Header: `Latest Violation`,
@@ -151,13 +160,14 @@ export function getNamespaceTableColumns(workflowState) {
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
             accessor: 'latestViolation',
-            sortMethod: sortDate
+            sortField: namespaceSortFields.LATEST_VIOLATION
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'metadata.priority'
+            accessor: 'metadata.priority',
+            sortField: namespaceSortFields.PRIORITY
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
@@ -165,20 +175,22 @@ export function getNamespaceTableColumns(workflowState) {
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getNamespaces($query: String, $policyQuery: String) {
-            results: namespaces(query: $query) {
+        query getNamespaces($query: String, $policyQuery: String, $pagination: Pagination) {
+            results: namespaces(query: $query, pagination: $pagination) {
                 ...namespaceFields
             }
+            count: namespaceCount(query: $query)
         }
         ${NAMESPACE_LIST_FRAGMENT}
     `;
-
+    const tableSort = sort || defaultNamespaceSort;
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
             policyQuery: queryService.objectToWhereClause({
                 Category: 'Vulnerability Management'
-            })
+            }),
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -193,7 +205,6 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
             idAttribute="metadata.id"
             search={search}
             page={page}
-            defaultSorted={sort || defaultNamespaceSort}
         />
     );
 };

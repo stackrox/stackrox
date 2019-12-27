@@ -45,8 +45,13 @@ function paramsToStateStack(params) {
 }
 
 function formatSort(sort) {
-    if (!sort) return sort;
-    return sort.map(({ id, desc }) => {
+    if (!sort) return null;
+
+    let sorts;
+    if (!Array.isArray(sort)) sorts = [sort];
+    else sorts = [...sort];
+
+    return sorts.map(({ id, desc }) => {
         return {
             id,
             desc: JSON.parse(desc)
@@ -105,8 +110,8 @@ function parseURL(location) {
             [sortParams.sidePanel]: formatSort(sidePanelSort)
         },
         {
-            [pagingParams.page]: parseInt(pagePaging || 1, 10),
-            [pagingParams.sidePanel]: parseInt(sidePanelPaging || 1, 10)
+            [pagingParams.page]: parseInt(pagePaging || 0, 10),
+            [pagingParams.sidePanel]: parseInt(sidePanelPaging || 0, 10)
         }
     );
 

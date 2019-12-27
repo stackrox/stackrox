@@ -74,15 +74,14 @@ export const workflowListPropTypes = {
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
-    page: PropTypes.number,
-    entityContext: PropTypes.shape({})
+    page: PropTypes.number
 };
 
 export const workflowListDefaultProps = {
     search: null,
     entityContext: {},
-    sort: [],
-    page: 1,
+    sort: null,
+    page: 0,
     selectedRowId: null,
     data: null
 };

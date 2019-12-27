@@ -12,7 +12,8 @@ describe('Entities single views', () => {
 
     withAuth();
 
-    it('related entities tile links should unset search params upon navigation', () => {
+    // @TODO, uncomment when counts are available on entity page sub-list queries
+    it.skip('related entities tile links should unset search params upon navigation', () => {
         // arrange
         cy.visit(url.list.clusters);
 
