@@ -47,12 +47,12 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	update := msg.GetNetworkFlowUpdate()
 
 	if len(update.Updated) == 0 {
-		return status.Errorf(codes.Internal, "received empty updated flows")
+		return status.Error(codes.Internal, "received empty updated flows")
 	}
 
 	defer countMetrics.IncrementTotalNetworkFlowsReceivedCounter(s.clusterID, len(update.Updated))
 	if err = s.storeUpdater.update(ctx, update.Updated, update.Time); err != nil {
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
 }

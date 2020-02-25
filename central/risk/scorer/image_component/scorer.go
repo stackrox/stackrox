@@ -2,10 +2,10 @@ package imagecomponent
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/stackrox/rox/central/imagecomponent"
 	"github.com/stackrox/rox/central/risk/datastore"
-	imagecomponent "github.com/stackrox/rox/central/risk/multipliers/image_component"
+	imageComponentMultipliers "github.com/stackrox/rox/central/risk/multipliers/image_component"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -22,8 +22,8 @@ type Scorer interface {
 // NewImageComponentScorer returns a new scorer that encompasses multipliers for evaluating image component risk
 func NewImageComponentScorer() Scorer {
 	scoreImpl := &imageComponentScorerImpl{
-		ConfiguredMultipliers: []imagecomponent.Multiplier{
-			imagecomponent.NewVulnerabilities(),
+		ConfiguredMultipliers: []imageComponentMultipliers.Multiplier{
+			imageComponentMultipliers.NewVulnerabilities(),
 		},
 	}
 
@@ -31,7 +31,7 @@ func NewImageComponentScorer() Scorer {
 }
 
 type imageComponentScorerImpl struct {
-	ConfiguredMultipliers []imagecomponent.Multiplier
+	ConfiguredMultipliers []imageComponentMultipliers.Multiplier
 }
 
 // Score takes a image component and evaluates its risk
@@ -48,12 +48,15 @@ func (s *imageComponentScorerImpl) Score(ctx context.Context, imageComponent *st
 		return nil
 	}
 
-	imageComponentID := fmt.Sprintf("%s:%s", imageComponent.GetName(), imageComponent.GetVersion())
+	imageComponentID := imagecomponent.ComponentID{
+		Name:    imageComponent.GetName(),
+		Version: imageComponent.GetVersion(),
+	}
 	risk := &storage.Risk{
 		Score:   overallScore,
 		Results: riskResults,
 		Subject: &storage.RiskSubject{
-			Id:   imageComponentID,
+			Id:   imageComponentID.ToString(),
 			Type: storage.RiskSubjectType_IMAGE_COMPONENT,
 		},
 	}

@@ -12,7 +12,7 @@ import Loader from 'Components/Loader';
 
 import TablePagination from 'Components/TablePagination';
 import TableGroup from 'Components/TableGroup';
-import entityToColumns from 'constants/tableColumns';
+import { getColumnsByEntity, getColumnsByStandard } from 'constants/tableColumns';
 import Query from 'Components/CacheFirstQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
@@ -21,6 +21,10 @@ import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
+import { createStructuredSelector } from 'reselect';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -176,7 +180,8 @@ const ListTable = ({
     query,
     selectedRowId,
     updateSelectedRow,
-    pdfId
+    pdfId,
+    featureFlags
 }) => {
     const [page, setPage] = useState(0);
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
@@ -236,13 +241,27 @@ const ListTable = ({
     const variables = getVariables(entityType, query);
     const isControlList = entityType === entityTypes.CONTROL;
     const formatData = isControlList ? formatStandardData : formatResourceData;
-    const tableColumns = entityToColumns[standardId || entityType];
+    let tableColumns;
+    if (standardId) {
+        tableColumns = getColumnsByStandard(standardId);
+    } else {
+        tableColumns = getColumnsByEntity(
+            entityType,
+            isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_NIST_800_53, false)
+                ? []
+                : [standardTypes.NIST_SP_800_53]
+        );
+    }
+
     let tableData;
-    useEffect(() => {
-        if (tableData && tableData.length) {
-            createPDFTable(tableData, entityType, query, pdfId);
-        }
-    }, []); // eslint-disable-line
+    useEffect(
+        () => {
+            if (tableData && tableData.length) {
+                createPDFTable(tableData, entityType, query, pdfId, tableColumns);
+            }
+        },
+        [entityType, pdfId, query, tableColumns, tableData]
+    );
     return (
         <Query query={gqlQuery} variables={variables}>
             {({ loading, data }) => {
@@ -270,7 +289,7 @@ const ListTable = ({
                         )} ${groupedByText}`;
 
                         if (tableData && tableData.length) {
-                            createPDFTable(tableData, entityType, query, pdfId);
+                            createPDFTable(tableData, entityType, query, pdfId, tableColumns);
                         }
 
                         contents = isControlList ? (
@@ -331,7 +350,8 @@ ListTable.propTypes = {
     }),
     selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
-    pdfId: PropTypes.string
+    pdfId: PropTypes.string,
+    featureFlags: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 ListTable.defaultProps = {
@@ -342,4 +362,11 @@ ListTable.defaultProps = {
     query: null
 };
 
-export default ListTable;
+const mapStateToProps = createStructuredSelector({
+    featureFlags: selectors.getFeatureFlags
+});
+
+export default connect(
+    mapStateToProps,
+    null
+)(ListTable);

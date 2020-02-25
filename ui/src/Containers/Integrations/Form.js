@@ -6,6 +6,8 @@ import { actions } from 'reducers/integrations';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, FieldArray } from 'redux-form';
 import * as Icon from 'react-feather';
+import set from 'lodash/set';
+
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
@@ -247,8 +249,27 @@ const getFormFields = createSelector(
 const getFormFieldKeys = (source, type) =>
     formDescriptors[source] ? formDescriptors[source][type].map(obj => obj.jsonpath) : '';
 
-const formFieldKeys = (state, props) =>
-    formValueSelector('integrationForm')(state, ...getFormFieldKeys(props.source, props.type));
+const getFormDefaultValues = (source, type) => {
+    const defaultValues = {};
+    if (formDescriptors[source] && formDescriptors[source][type]) {
+        formDescriptors[source][type].forEach(field => {
+            if (field.default) {
+                set(defaultValues, field.jsonpath, field.default);
+            }
+        });
+    }
+    return defaultValues;
+};
+
+const formFieldKeys = (state, props) => {
+    const values = formValueSelector('integrationForm')(
+        state,
+        ...getFormFieldKeys(props.source, props.type)
+    );
+    const defaultValues = getFormDefaultValues(props.source, props.type);
+    const initialValues = Object.assign({}, defaultValues, values);
+    return initialValues;
+};
 
 const getFormData = createSelector(
     [formFieldKeys],

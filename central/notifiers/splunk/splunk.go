@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -26,17 +28,22 @@ const (
 	source                    = "stackrox"
 	sourceType                = "_json"
 	splunkHECDefaultDataLimit = 10000
+	splunkHECHealthEndpoint   = "/services/collector/health/1.0"
+	splunkHECEventEndpoint    = "/services/collector/event/1.0"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	timeout = 5 * time.Second
+
+	baseURLPattern = regexp.MustCompile(`^(https?://)?[^/]+/*$`)
 )
 
 type splunk struct {
-	endpoint string
-	conf     *storage.Splunk
+	eventEndpoint  string
+	healthEndpoint string
+	conf           *storage.Splunk
 
 	*storage.Notifier
 }
@@ -50,6 +57,9 @@ func (s *splunk) ProtoNotifier() *storage.Notifier {
 }
 
 func (s *splunk) Test() error {
+	if s.healthEndpoint != "" {
+		return s.sendHTTPPayload(http.MethodGet, s.healthEndpoint, nil)
+	}
 	alert := &storage.Alert{
 		Policy:     &storage.Policy{Name: "Test Policy"},
 		Deployment: &storage.Alert_Deployment{Name: "Test Deployment"},
@@ -70,7 +80,7 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendHTTPPayload(clonedAlert)
+			return s.sendEvent(clonedAlert)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -100,7 +110,7 @@ func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
 
 	return retry.WithRetry(
 		func() error {
-			return s.sendHTTPPayload(msg)
+			return s.sendEvent(msg)
 		},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -115,7 +125,7 @@ func (s *splunk) AuditLoggingEnabled() bool {
 	return s.GetSplunk().GetAuditLoggingEnabled()
 }
 
-func (s *splunk) sendHTTPPayload(msg proto.Message) error {
+func (s *splunk) sendEvent(msg proto.Message) error {
 	splunkEvent, err := getSplunkEvent(msg)
 	if err != nil {
 		return err
@@ -131,7 +141,11 @@ func (s *splunk) sendHTTPPayload(msg proto.Message) error {
 		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.conf.GetTruncate(), data.Len())
 	}
 
-	req, err := http.NewRequest(http.MethodPost, s.endpoint, &data)
+	return s.sendHTTPPayload(http.MethodPost, s.eventEndpoint, &data)
+}
+
+func (s *splunk) sendHTTPPayload(method, path string, data io.Reader) error {
+	req, err := http.NewRequest(method, path, data)
 	if err != nil {
 		return err
 	}
@@ -161,23 +175,29 @@ func init() {
 }
 
 func newSplunk(notifier *storage.Notifier) (*splunk, error) {
-	splunkConfig, ok := notifier.GetConfig().(*storage.Notifier_Splunk)
-	if !ok {
+	conf := notifier.GetSplunk()
+	if conf == nil {
 		return nil, errors.New("Splunk configuration required")
 	}
-	conf := splunkConfig.Splunk
 	if err := validate(conf); err != nil {
 		return nil, err
 	}
-	endpoint, err := urlfmt.FormatURL(conf.GetHttpEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	url, err := urlfmt.FormatURL(conf.GetHttpEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
+	eventEndpoint := url
+	var healthEndpoint string
+	if baseURLPattern.MatchString(url) {
+		eventEndpoint = url + splunkHECEventEndpoint
+		healthEndpoint = url + splunkHECHealthEndpoint
+	}
 
 	return &splunk{
-		conf:     conf,
-		endpoint: endpoint,
-		Notifier: notifier,
+		conf:           conf,
+		eventEndpoint:  eventEndpoint,
+		healthEndpoint: healthEndpoint,
+		Notifier:       notifier,
 	}, nil
 }
 

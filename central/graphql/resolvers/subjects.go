@@ -87,7 +87,7 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 }
 
 // Subjects resolves list of subjects matching a query
-func (resolver *Resolver) Subjects(ctx context.Context, args paginatedQuery) ([]*subjectResolver, error) {
+func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Subjects")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
@@ -144,14 +144,14 @@ func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (in
 		return 0, err
 	}
 
-	roles, err := resolver.getRolesForSubject(ctx, rawQuery{})
+	roles, err := resolver.getRolesForSubject(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(roles)), nil
 }
 
-func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args RawQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args ra
 
 }
 
-func (resolver *subjectWithClusterIDResolver) getRolesForSubject(ctx context.Context, args rawQuery) ([]*storage.K8SRole, error) {
+func (resolver *subjectWithClusterIDResolver) getRolesForSubject(ctx context.Context, args RawQuery) ([]*storage.K8SRole, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).
 		AddExactMatches(search.SubjectName, resolver.subject.Name(ctx)).
 		AddExactMatches(search.SubjectKind, resolver.subject.Kind(ctx)).
@@ -239,7 +239,7 @@ func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context)
 		rbacUtils.NewClusterPermissionEvaluator(clusterID,
 			rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)
 
-	namespaces, err := rootResolver.Namespaces(ctx, paginatedQuery{})
+	namespaces, err := rootResolver.Namespaces(ctx, PaginatedQuery{})
 	if err != nil {
 		return evaluators, err
 	}

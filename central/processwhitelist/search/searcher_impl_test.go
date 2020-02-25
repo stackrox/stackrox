@@ -55,10 +55,7 @@ func (suite *ProcessWhitelistSearchTestSuite) SetupTest() {
 	suite.controller = gomock.NewController(suite.T())
 	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-
-	var noWhitelists []*storage.ProcessWhitelist
-	suite.store.EXPECT().ListWhitelists().Return(noWhitelists, nil)
-	suite.indexer.EXPECT().AddWhitelists(noWhitelists).Return(nil)
+	suite.store.EXPECT().WalkAll(gomock.Any()).Return(nil)
 	searcher, err := New(suite.store, suite.indexer)
 
 	suite.NoError(err)

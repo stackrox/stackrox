@@ -80,12 +80,12 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 		}
 
 		// Create the backend for the provider.
-		backend, effectiveConfig, err := backendFactory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
+		backend, err := backendFactory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create backend for provider id %s", pr.storedInfo.Id)
 		}
 		pr.backend = backend
-		pr.storedInfo.Config = effectiveConfig
+		pr.storedInfo.Config = backend.Config(false)
 		return nil
 	}
 }

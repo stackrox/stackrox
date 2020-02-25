@@ -6,7 +6,7 @@ import (
 )
 
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string ValueType=string"
-//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/central/detection/map_gen.go -pkg detection gen "KeyType=string ValueType=CompiledPolicy"
+//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/detection/map_gen.go -pkg detection gen "KeyType=string ValueType=CompiledPolicy"
 
 // KeyType represents a generic type that we want to use as a map key.
 type KeyType generic.Type

@@ -1,31 +1,37 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
 
+import entityTypes from 'constants/entityTypes';
+import queryService from 'modules/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
-
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NumberedList from 'Components/NumberedList';
-import { getVulnerabilityChips, parseCVESearch } from 'utils/vulnerabilityUtils';
+import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { cveSortFields } from 'constants/sortFields';
 
 export const RECENTLY_DETECTED_VULNERABILITIES = gql`
-    query recentlyDetectedVulnerabilities($query: String) {
-        results: vulnerabilities(query: $query) {
+    query recentlyDetectedVulnerabilities(
+        $query: String
+        $scopeQuery: String
+        $pagination: Pagination
+    ) {
+        results: vulnerabilities(query: $query, pagination: $pagination) {
             id: cve
             cve
             cvss
             scoreVersion
+            deploymentCount
             imageCount
-            isFixable
+            isFixable(query: $scopeQuery)
             envImpact
             lastScanned
+            summary
         }
     }
 `;
@@ -43,14 +49,25 @@ const processData = (data, workflowState, limit) => {
 const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
-    const parsedSearch = parseCVESearch(search); // hack until isFixable is allowed in search
-
-    const queryObject = { ...entityContextObject, ...parsedSearch }; // Combine entity context and search
+    const queryObject = {
+        ...entityContextObject,
+        ...search,
+        [cveSortFields.CVE_TYPE]: 'IMAGE_CVE'
+    }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
     const { loading, data = {} } = useQuery(RECENTLY_DETECTED_VULNERABILITIES, {
         variables: {
-            query
+            query,
+            scopeQuery: queryService.objectToWhereClause(entityContextObject),
+            pagination: queryService.getPagination(
+                {
+                    id: cveSortFields.CVE_CREATED_TIME,
+                    desc: true
+                },
+                0,
+                limit
+            )
         }
     });
 
@@ -75,11 +92,12 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
     const viewAllURL = workflowState
         .pushList(entityTypes.CVE)
-        .setSort([
-            { id: 'lastScanned', desc: true },
-            { id: 'cvss', desc: true },
-            { id: 'envImpact', desc: true }
-        ])
+        // @TODO uncomment once these sort fields are supported on backend
+        // .setSort([
+        //     { id: cveSortFields.LAST_SCANNED, desc: true },
+        //     { id: cveSortFields.CVSS_SCORE, desc: true },
+        //     { id: cveSortFields.ENV_IMPACT, desc: true }
+        // ])
         .toUrl();
 
     return (

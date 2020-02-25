@@ -10,6 +10,7 @@ import (
 	whitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -57,7 +58,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 	containerNameToWhitelistedProcesses := make(map[string]*set.StringSet)
 	containerNameToWhitelistResults := make(map[string]*storage.ContainerNameAndWhitelistStatus)
 	for _, container := range deployment.GetContainers() {
-		whitelist, err := e.whitelists.GetProcessWhitelist(evaluatorCtx, &storage.ProcessWhitelistKey{
+		whitelist, exists, err := e.whitelists.GetProcessWhitelist(evaluatorCtx, &storage.ProcessWhitelistKey{
 			DeploymentId:  deployment.GetId(),
 			ContainerName: container.GetName(),
 			ClusterId:     deployment.GetClusterId(),
@@ -70,7 +71,7 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 			ContainerName:   container.GetName(),
 			WhitelistStatus: getWhitelistStatus(whitelist),
 		}
-		if whitelist == nil {
+		if !exists {
 			continue
 		}
 		processSet := processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
@@ -91,20 +92,45 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 		if !exists {
 			continue
 		}
-		whitelistItem := processwhitelist.WhitelistItemFromProcess(process)
+		whitelistItem := processWhitelistPkg.WhitelistItemFromProcess(process)
 		if whitelistItem == "" {
 			continue
 		}
 		if processwhitelist.IsStartupProcess(process) {
 			continue
 		}
-		if !processSet.Contains(processwhitelist.WhitelistItemFromProcess(process)) {
+		if !processSet.Contains(processWhitelistPkg.WhitelistItemFromProcess(process)) {
 			violatingProcesses = append(violatingProcesses, process)
 			containerNameToWhitelistResults[process.GetContainerName()].AnomalousProcessesExecuted = true
 		}
 	}
-	if err := e.persistResults(evaluatorCtx, deployment, containerNameToWhitelistResults); err != nil {
-		return nil, errors.Wrap(err, "failed to persist whitelist results")
+
+	whitelistResults, err := e.whitelistResults.GetWhitelistResults(evaluatorCtx, deployment.GetId())
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching whitelist results")
+	}
+
+	var persistenceRequired bool
+	if len(whitelistResults.GetWhitelistStatuses()) != len(containerNameToWhitelistResults) {
+		persistenceRequired = true
+	} else {
+		for _, status := range whitelistResults.GetWhitelistStatuses() {
+			newStatus := containerNameToWhitelistResults[status.GetContainerName()]
+			if newStatus == nil {
+				persistenceRequired = true
+				break
+			}
+			if status.GetAnomalousProcessesExecuted() != newStatus.GetAnomalousProcessesExecuted() ||
+				status.GetWhitelistStatus() != newStatus.GetWhitelistStatus() {
+				persistenceRequired = true
+				break
+			}
+		}
+	}
+	if persistenceRequired {
+		if err := e.persistResults(evaluatorCtx, deployment, containerNameToWhitelistResults); err != nil {
+			return nil, errors.Wrap(err, "failed to persist whitelist results")
+		}
 	}
 	return
 }

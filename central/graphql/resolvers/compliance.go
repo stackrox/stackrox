@@ -67,7 +67,7 @@ func InitCompliance() {
 }
 
 // ComplianceStandards returns graphql resolvers for all compliance standards
-func (resolver *Resolver) ComplianceStandards(ctx context.Context, query rawQuery) ([]*complianceStandardMetadataResolver, error) {
+func (resolver *Resolver) ComplianceStandards(ctx context.Context, query RawQuery) ([]*complianceStandardMetadataResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceStandards")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (resolver *Resolver) ComplianceControlGroup(ctx context.Context, args struc
 }
 
 // ComplianceNamespaceCount returns count of namespaces that have compliance run on them
-func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceNamespaceCount")
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
@@ -132,7 +132,7 @@ func (resolver *Resolver) ComplianceNamespaceCount(ctx context.Context, args raw
 }
 
 // ComplianceClusterCount returns count of clusters that have compliance run on them
-func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceClusterCount")
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
@@ -142,7 +142,7 @@ func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args rawQu
 }
 
 // ComplianceDeploymentCount returns count of deployments that have compliance run on them
-func (resolver *Resolver) ComplianceDeploymentCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ComplianceDeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceDeploymentCount")
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
@@ -152,7 +152,7 @@ func (resolver *Resolver) ComplianceDeploymentCount(ctx context.Context, args ra
 }
 
 // ComplianceNodeCount returns count of nodes that have compliance run on them
-func (resolver *Resolver) ComplianceNodeCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ComplianceNodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceNodeCount")
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
@@ -162,7 +162,7 @@ func (resolver *Resolver) ComplianceNodeCount(ctx context.Context, args rawQuery
 }
 
 // ComplianceNamespaceCount returns count of namespaces that have compliance run on them
-func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args rawQuery, scope []v1.ComplianceAggregation_Scope) (int32, error) {
+func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args RawQuery, scope []v1.ComplianceAggregation_Scope) (int32, error) {
 	r, _, _, err := resolver.ComplianceAggregator.Aggregate(ctx, args.String(), scope, v1.ComplianceAggregation_CONTROL)
 	if err != nil {
 		return 0, err
@@ -171,7 +171,7 @@ func (resolver *Resolver) getComplianceEntityCount(ctx context.Context, args raw
 }
 
 // ExecutedControls returns the controls which have executed along with their status across clusters
-func (resolver *Resolver) ExecutedControls(ctx context.Context, args rawQuery) ([]*ComplianceControlWithControlStatusResolver, error) {
+func (resolver *Resolver) ExecutedControls(ctx context.Context, args RawQuery) ([]*ComplianceControlWithControlStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ExecutedControls")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -207,7 +207,7 @@ func (resolver *Resolver) ExecutedControls(ctx context.Context, args rawQuery) (
 }
 
 // ExecutedControlCount returns the count of controls which have executed across all clusters
-func (resolver *Resolver) ExecutedControlCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ExecutedControlCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ExecutedControls")
 	if err := readCompliance(ctx); err != nil {
 		return 0, err
@@ -371,7 +371,7 @@ func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.
 }
 
 // ComplianceResults returns graphql resolvers for all matching compliance results
-func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery) ([]*complianceControlResultResolver, error) {
+func (resolver *Resolver) ComplianceResults(ctx context.Context, query RawQuery) ([]*complianceControlResultResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "ComplianceResults")
 
 	if err := readCompliance(ctx); err != nil {
@@ -508,7 +508,7 @@ func (resolver *controlResultResolver) Value(ctx context.Context) *complianceRes
 	}
 }
 
-func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Compliance, "ComplianceResults")
 
 	if err := readCompliance(ctx); err != nil {
@@ -527,7 +527,7 @@ func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx contex
 	return *output, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -569,7 +569,7 @@ func (resolver *complianceControlResolver) ComplianceControlEntities(ctx context
 	return resolver.root.wrapNodes(store.ListNodes())
 }
 
-func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx context.Context, args rawQuery) (*complianceControlNodeCountResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx context.Context, args RawQuery) (*complianceControlNodeCountResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -595,7 +595,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodeCount(ctx contex
 	return &nr, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Context, args RawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -626,7 +626,7 @@ func (resolver *complianceControlResolver) ComplianceControlNodes(ctx context.Co
 	return ret, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx context.Context, args RawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -657,7 +657,7 @@ func (resolver *complianceControlResolver) ComplianceControlFailingNodes(ctx con
 	return ret, nil
 }
 
-func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx context.Context, args rawQuery) ([]*nodeResolver, error) {
+func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx context.Context, args RawQuery) ([]*nodeResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -688,7 +688,7 @@ func (resolver *complianceControlResolver) ComplianceControlPassingNodes(ctx con
 	return ret, nil
 }
 
-func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx context.Context, clusterID string, standardIDs []string, args rawQuery) ([]*v1.ComplianceAggregation_Result, bool, error) {
+func (resolver *complianceControlResolver) getNodeControlAggregationResults(ctx context.Context, clusterID string, standardIDs []string, args RawQuery) ([]*v1.ComplianceAggregation_Result, bool, error) {
 	hasComplianceSuccessfullyRun, err := resolver.root.ComplianceDataStore.IsComplianceRunSuccessfulOnCluster(ctx, clusterID, standardIDs)
 	if err != nil || !hasComplianceSuccessfullyRun {
 		return nil, false, err

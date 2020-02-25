@@ -15,7 +15,7 @@ function SimulationBorder({ wizardOpen, wizardStage, modificationState }) {
     const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
     return (
         <div
-            className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
+            className={`absolute top-0 left-0 bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
         >
             Simulation Mode
         </div>

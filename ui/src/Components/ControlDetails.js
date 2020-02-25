@@ -16,7 +16,8 @@ const svgMapping = {
     [entityTypes.CIS_Kubernetes_v1_5]: CIS,
     [entityTypes.PCI_DSS_3_2]: PCI,
     [entityTypes.HIPAA_164]: HIPAA,
-    [entityTypes.NIST_800_190]: NIST
+    [entityTypes.NIST_800_190]: NIST,
+    [entityTypes.NIST_SP_800_53]: NIST
 };
 
 const ControlDetails = ({ standardId, control, description, className }) => (

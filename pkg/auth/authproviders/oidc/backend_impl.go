@@ -15,9 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -27,9 +32,18 @@ const (
 	nonceTTL     = 1 * time.Minute
 	nonceByteLen = 20
 
-	issuerConfigKey   = "issuer"
-	clientIDConfigKey = "client_id"
-	modeConfigKey     = "mode"
+	issuerConfigKey              = "issuer"
+	clientIDConfigKey            = "client_id"
+	clientSecretConfigKey        = "client_secret"
+	dontUseClientSecretConfigKey = "do_not_use_client_secret"
+	modeConfigKey                = "mode"
+)
+
+type nonceVerificationSetting int
+
+const (
+	verifyNonce nonceVerificationSetting = iota
+	dontVerifyNonce
 )
 
 type backendImpl struct {
@@ -39,9 +53,13 @@ type backendImpl struct {
 	defaultUIEndpoint  string
 	allowedUIEndpoints set.StringSet
 
+	provider        *provider
 	baseRedirectURL url.URL
 	baseOauthConfig oauth2.Config
 	baseOptions     []oauth2.AuthCodeOption
+	formPostMode    bool
+
+	config map[string]string
 }
 
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {
@@ -50,13 +68,55 @@ func (p *backendImpl) OnEnable(provider authproviders.Provider) {
 func (p *backendImpl) OnDisable(provider authproviders.Provider) {
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
-	claim, opts, err := p.verifyIDToken(ctx, externalRawToken)
-	_, clientState := idputil.SplitState(state)
+func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*authproviders.AuthResponse, string, error) {
+	responseValues := make(url.Values, 2)
+	responseValues.Set("state", state)
+	responseValues.Set("id_token", token)
+
+	return p.processIDPResponse(ctx, responseValues)
+}
+
+func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
+	token, err := p.baseOauthConfig.TokenSource(ctx, &oauth2.Token{
+		RefreshToken: refreshToken,
+	}).Token()
 	if err != nil {
-		return nil, nil, clientState, err
+		return nil, errors.Wrap(err, "refreshing access token")
 	}
-	return claim, opts, clientState, nil
+
+	rawIDToken, _ := token.Extra("id_token").(string)
+	if rawIDToken == "" {
+		return nil, errors.New("did not receive an identity token in exchange for the refresh token")
+	}
+
+	return p.verifyIDToken(ctx, rawIDToken, dontVerifyNonce)
+}
+
+func (p *backendImpl) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
+	if p.provider.RevocationEndpoint == "" {
+		return errors.New("provider does not expose a token revocation endpoint")
+	}
+
+	revokeTokenData := url.Values{
+		"token":           []string{refreshToken},
+		"token_type_hint": []string{"refresh_token"},
+	}
+	resp, err := p.baseOauthConfig.PostRawRequest(ctx, p.provider.RevocationEndpoint, revokeTokenData)
+	if err != nil {
+		return errors.Wrap(err, "transport error making token revocation request")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	if httputil.Is2xxStatusCode(resp.StatusCode) {
+		return nil
+	}
+
+	respBytes, err := ioutils.ReadAtMost(resp.Body, 1024)
+	errMsg := fmt.Sprintf("server returned status %s, first 1024 bytes of the response: %s", resp.Status, respBytes)
+	if err != nil {
+		errMsg = fmt.Sprintf("%s. Additionally, there was an error reading the response body: %v", errMsg, err)
+	}
+	return errors.New(errMsg)
 }
 
 func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
@@ -67,76 +127,40 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
+func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string, nonceVerification nonceVerificationSetting) (*authproviders.AuthResponse, error) {
 	idToken, err := p.idTokenVerifier.Verify(ctx, rawIDToken)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if !p.noncePool.ConsumeNonce(idToken.Nonce) {
-		return nil, nil, errors.New("invalid token")
+	if nonceVerification != dontVerifyNonce && !p.noncePool.ConsumeNonce(idToken.Nonce) {
+		return nil, errors.New("invalid token")
 	}
 
 	var userInfo userInfoType
 	if err := idToken.Claims(&userInfo); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	claim := userInfoToExternalClaims(&userInfo)
-	return claim, []tokens.Option{tokens.WithExpiry(idToken.Expiry)}, nil
+	return &authproviders.AuthResponse{
+		Claims:     claim,
+		Expiration: idToken.Expiry,
+	}, nil
 }
 
-// The go-oidc library has two annoying characteristics when it comes to creating backendImpl instances:
-// - The context is passed on to the remoteKeySource that is being created. Hence, we can't use a short-lived context
-//   (such as the request context), as otherwise subsequent verifications will fail because the keys have not been
-//   retrieved.
-// - The check for the issuer is done strictly, not even tolerating a trailing slash (which makes it very hard to omit
-//   the `https://` prefix, as is common).
-// We therefore add a wrapper method that calls `oidc.NewProvider` with the background context and writes the result to
-// a channel, and retries in case of an error with a trailing slash added or removed.
-//
-type createOIDCProviderResult struct {
-	issuer   string
-	provider *oidc.Provider
-	err      error
-}
-
-func createOIDCProviderAsync(issuer string, resultC chan<- createOIDCProviderResult) {
-	provider, err := oidc.NewProvider(context.Background(), issuer)
-	if err != nil {
-		if strings.HasSuffix(issuer, "/") {
-			issuer = strings.TrimSuffix(issuer, "/")
-		} else {
-			issuer = issuer + "/"
-		}
-		provider, err = oidc.NewProvider(context.Background(), issuer)
-	}
-	resultC <- createOIDCProviderResult{issuer: issuer, provider: provider, err: err}
-}
-
-func createOIDCProvider(ctx context.Context, issuer string) (*oidc.Provider, string, error) {
-	resultC := make(chan createOIDCProviderResult, 1)
-	go createOIDCProviderAsync(issuer, resultC)
-	select {
-	case res := <-resultC:
-		return res.provider, res.issuer, res.err
-	case <-ctx.Done():
-		return nil, "", ctx.Err()
-	}
-}
-
-func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*backendImpl, map[string]string, error) {
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*backendImpl, error) {
 	if len(uiEndpoints) == 0 {
-		return nil, nil, errors.New("OIDC requires a default UI endpoint")
+		return nil, errors.New("OIDC requires a default UI endpoint")
 	}
 
 	issuer := config[issuerConfigKey]
 	if issuer == "" {
-		return nil, nil, errors.New("no issuer provided")
+		return nil, errors.New("no issuer provided")
 	}
 
 	if strings.HasPrefix(issuer, "http://") {
-		return nil, nil, errors.New("unencrypted http is not allowed for OIDC issuers")
+		return nil, errors.New("unencrypted http is not allowed for OIDC issuers")
 	}
 	if !strings.HasPrefix(issuer, "https://") {
 		issuer = "https://" + issuer
@@ -147,13 +171,15 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	}
 
 	if oidcCfg.ClientID == "" {
-		return nil, nil, errors.New("no client ID provided")
+		return nil, errors.New("no client ID provided")
 	}
 
 	oidcProvider, issuer, err := createOIDCProvider(ctx, issuer)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+
+	provider := wrapProvider(oidcProvider)
 
 	p := &backendImpl{
 		id: id,
@@ -161,14 +187,11 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
 		defaultUIEndpoint:  uiEndpoints[0],
 		allowedUIEndpoints: set.NewStringSet(uiEndpoints...),
+		provider:           provider,
 	}
 
 	p.baseRedirectURL = url.URL{
 		Scheme: "https",
-	}
-
-	p.baseOptions = []oauth2.AuthCodeOption{
-		oauth2.SetAuthURLParam("response_type", "id_token"),
 	}
 
 	mode := strings.ToLower(config[modeConfigKey])
@@ -180,25 +203,90 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	case "post":
 		p.baseRedirectURL.Path = callbackURLPath
 		p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", "form_post"))
+		p.formPostMode = true
 	default:
-		return nil, nil, fmt.Errorf("invalid mode %q", mode)
+		return nil, errors.Errorf("invalid mode %q", mode)
 	}
+
+	responseType := "id_token"
+	clientSecret := config[clientSecretConfigKey]
+	if clientSecret != "" {
+		if !features.RefreshTokens.Enabled() {
+			return nil, errors.New("setting a client secret is not supported yet")
+		}
+
+		if mode != "post" {
+			return nil, errors.Errorf("mode %q cannot be used with a client secret", mode)
+		}
+		responseType = "code"
+	} else if config[dontUseClientSecretConfigKey] == "false" {
+		return nil, errors.New("please specify a client secret, or explicitly opt-out of client secret usage")
+	}
+
+	p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_type", responseType))
 
 	p.idTokenVerifier = oidcProvider.Verifier(&oidcCfg)
 
 	p.baseOauthConfig = oauth2.Config{
-		ClientID: oidcCfg.ClientID,
-		Endpoint: oidcProvider.Endpoint(),
-		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},
+		ClientID:     oidcCfg.ClientID,
+		ClientSecret: clientSecret,
+		Endpoint:     oidcProvider.Endpoint(),
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+	}
+	if features.RefreshTokens.Enabled() && clientSecret != "" && provider.SupportsScope(oidc.ScopeOfflineAccess) {
+		p.baseOauthConfig.Scopes = append(p.baseOauthConfig.Scopes, oidc.ScopeOfflineAccess)
 	}
 
-	effectiveConfig := map[string]string{
-		issuerConfigKey:   issuer,
-		clientIDConfigKey: oidcCfg.ClientID,
-		modeConfigKey:     mode,
+	p.config = map[string]string{
+		issuerConfigKey:       issuer,
+		clientIDConfigKey:     oidcCfg.ClientID,
+		clientSecretConfigKey: clientSecret,
+		modeConfigKey:         mode,
 	}
 
-	return p, effectiveConfig, nil
+	return p, nil
+}
+
+func (p *backendImpl) Config(redact bool) map[string]string {
+	configCopy := maputil.CloneStringStringMap(p.config)
+	if redact && configCopy[clientSecretConfigKey] != "" {
+		configCopy[clientSecretConfigKey] = "*****"
+	}
+	return configCopy
+}
+
+func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
+	mergedCfg := maputil.CloneStringStringMap(newCfg)
+	// This handles the case where the client sends an "unchanged" client secret. In that case,
+	// we will take the client secret from the stored config and put it into the merged config.
+	// We only put secret into the merged config if the new config says it wants to use a client secret, AND the client
+	// secret is not specified in the request.
+	if mergedCfg[dontUseClientSecretConfigKey] == "false" && mergedCfg[clientSecretConfigKey] == "" {
+		mergedCfg[clientSecretConfigKey] = p.config[clientSecretConfigKey]
+	}
+	return mergedCfg
+}
+
+func (p *backendImpl) useCodeFlow() bool {
+	return p.baseOauthConfig.ClientSecret != "" && p.formPostMode
+}
+
+func (p *backendImpl) oauthCfgForRequest(ri *requestinfo.RequestInfo) *oauth2.Config {
+	redirectURL := p.baseRedirectURL
+	if p.allowedUIEndpoints.Contains(ri.Hostname) {
+		redirectURL.Host = ri.Hostname
+		// Allow HTTP only if the client did not use TLS and the host is localhost.
+		if !ri.ClientUsedTLS && netutil.IsLocalEndpoint(redirectURL.Host) {
+			redirectURL.Scheme = "http"
+		}
+	} else {
+		redirectURL.Host = p.defaultUIEndpoint
+	}
+
+	oauthCfg := p.baseOauthConfig
+	oauthCfg.RedirectURL = redirectURL.String()
+
+	return &oauthCfg
 }
 
 func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
@@ -224,26 +312,66 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 		redirectURL.Host = p.defaultUIEndpoint
 	}
 
-	oauthCfg := p.baseOauthConfig
-	oauthCfg.RedirectURL = redirectURL.String()
-	return oauthCfg.AuthCodeURL(state, options...)
+	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
-	// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
-	rawIDToken := r.FormValue("id_token")
+func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
+	_, clientState := idputil.SplitState(responseData.Get("state"))
+
+	rawIDToken := responseData.Get("id_token")
 	if rawIDToken == "" {
-		return nil, nil, "", errors.New("required form fields not found")
+		return nil, clientState, errors.New("required form fields not found")
 	}
 
-	_, clientState := idputil.SplitState(r.FormValue("state"))
-
-	userClaim, opts, err := p.verifyIDToken(r.Context(), rawIDToken)
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
 	if err != nil {
-		return nil, nil, clientState, errors.Wrap(err, "id token verification failed")
+		return nil, clientState, errors.Wrap(err, "id token verification failed")
 	}
 
-	return userClaim, opts, clientState, nil
+	return authResp, clientState, nil
+}
+
+func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
+	_, clientState := idputil.SplitState(responseData.Get("state"))
+
+	code := responseData.Get("code")
+	if code == "" {
+		return nil, clientState, errors.New("required form fields not found")
+	}
+
+	ri := requestinfo.FromContext(ctx)
+	oauthCfg := p.oauthCfgForRequest(&ri)
+
+	token, err := oauthCfg.Exchange(ctx, code)
+	if err != nil {
+		return nil, clientState, errors.Wrap(err, "failed to obtain ID token for code")
+	}
+
+	rawIDToken, _ := token.Extra("id_token").(string) // needs to be present thanks to `openid` scope
+	if rawIDToken == "" {
+		return nil, clientState, errors.New("response from server did not contain ID token in violation of OIDC spec")
+	}
+
+	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
+	if err != nil {
+		return nil, clientState, errors.Wrap(err, "ID token verification failed")
+	}
+
+	authResp.RefreshToken = token.RefreshToken
+
+	return authResp, clientState, nil
+}
+
+func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
+	if p.useCodeFlow() {
+		return p.processIDPResponseForCodeFlow(ctx, responseData)
+	}
+	return p.processIDPResponseForImplicitFlow(ctx, responseData)
+}
+
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
+	// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
+	return p.processIDPResponse(r.Context(), r.Form)
 }
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {

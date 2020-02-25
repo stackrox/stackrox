@@ -149,6 +149,29 @@ const sortValueByLength = (a, b) => {
     return a.length - b.length;
 };
 
+/**
+ * Sort by ASCII, respects case
+ */
+
+/**
+ * [sortAscii description]
+ *
+ * @param   {string}   a  first item to compare
+ * @param   {string}  b  second item to compare
+ *
+ * @return  {number}     negative if a sorts before b, positive if b sorts before a, 0 if equal
+ */
+function sortAscii(a, b) {
+    // NOTE: we are not doing the expected comparison
+    //   a.localeCompare(b, 'en', { sensitivity: 'case' })
+    // because that is case-insensitive, even with that given option
+    //   which merely makes each letter sort A first, then a, but does not
+    //   sort A-Z before a-z
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
+}
+
 export {
     sortSeverity,
     sortValue,
@@ -157,5 +180,6 @@ export {
     sortNumberByKey,
     sortLifecycle,
     sortDate,
-    sortValueByLength
+    sortValueByLength,
+    sortAscii
 };

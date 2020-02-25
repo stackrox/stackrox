@@ -1,24 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import get from 'lodash/get';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import formDescriptor from './Form/formDescriptor';
-
-const Field = props => {
-    const { label, jsonPath, authProvider } = props;
-    const value = get(authProvider, jsonPath);
-    if (!value) return null;
-    return (
-        <div className="mb-4">
-            <div className="py-2 text-base-600 font-700">{label}</div>
-            <div className="w-1/2">{get(authProvider, jsonPath)}</div>
-        </div>
-    );
-};
+import ConfigurationDetails from './ConfigurationDetails';
 
 const Details = props => {
-    const { name, type, active } = props.authProvider;
+    const { name, active } = props.authProvider;
     const { groups, defaultRole } = props;
 
     if (!name) return null;
@@ -33,9 +20,8 @@ const Details = props => {
         );
     }
 
-    const title = `1. ${name} Configuration`;
-    const propsTitle = `2. Assign StackRox roles to your ${name} users`;
-    const fields = formDescriptor[type];
+    const title = `1. "${name}" Configuration`;
+    const propsTitle = `2. StackRox roles assigned to your "${name}" users`;
     return (
         <div className="w-full justify-between overflow-auto">
             {warning}
@@ -45,10 +31,7 @@ const Details = props => {
                     titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                 >
                     <div className="w-full h-full p-4 pt-2 pb-2">
-                        {fields &&
-                            fields.map((field, index) => (
-                                <Field key={index} {...field} authProvider={props.authProvider} />
-                            ))}
+                        <ConfigurationDetails authProvider={props.authProvider} />
                     </div>
                 </CollapsibleCard>
                 <div className="mt-4">
@@ -103,19 +86,6 @@ const Details = props => {
             </div>
         </div>
     );
-};
-
-Field.propTypes = {
-    label: PropTypes.string,
-    jsonPath: PropTypes.string,
-    authProvider: PropTypes.shape({
-        name: PropTypes.string
-    }).isRequired
-};
-
-Field.defaultProps = {
-    label: '',
-    jsonPath: ''
 };
 
 Details.propTypes = {

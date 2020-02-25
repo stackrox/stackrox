@@ -10,18 +10,24 @@ class ImageManagementTest extends BaseSpecification {
     private String gcrId
     @Shared
     private String azureId
+    @Shared
+    private static final boolean CHECK_AZURE = false
 
     def setupSpec() {
         gcrId = Services.addGcrRegistryAndScanner()
         assert gcrId != null
 
-        azureId = Services.addAzureACRRegistry()
-        assert azureId != null
+        if (CHECK_AZURE) {
+            azureId = Services.addAzureACRRegistry()
+            assert azureId != null
+        }
     }
 
     def cleanupSpec() {
         assert Services.deleteGcrRegistryAndScanner(gcrId)
-        assert Services.deleteImageIntegration(azureId)
+        if (CHECK_AZURE) {
+            assert Services.deleteImageIntegration(azureId)
+        }
     }
 
     @Unroll
@@ -52,7 +58,7 @@ class ImageManagementTest extends BaseSpecification {
         "Latest tag"                      | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | "(repeat)"
         "90-Day Image Age"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
         // verify Azure registry
-        "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
+        // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
         "Ubuntu Package Manager in Image" | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
         "Curl in Image"                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
         "Fixable CVSS >= 7"               | "us.gcr.io"              | "stackrox-ci/nginx"      | "1.11"   | ""

@@ -30,7 +30,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 	boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 	suite.Require().NoError(err, "Failed to make BoltDB")
 
-	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name(), false)
+	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err, "Failed to create BadgerDB")
 
 	suite.boltDB = boltDB

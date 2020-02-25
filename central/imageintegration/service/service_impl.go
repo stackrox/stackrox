@@ -265,7 +265,7 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 
 	integrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: request.GetName()})
 	if err != nil {
-		return status.Errorf(codes.Internal, err.Error())
+		return status.Error(codes.Internal, err.Error())
 	}
 	if len(integrations) != 0 && request.GetId() != integrations[0].GetId() {
 		errorList.AddStringf("Integration with name %q already exists", request.GetName())

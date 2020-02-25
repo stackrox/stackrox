@@ -45,9 +45,6 @@ type chartPrefixPair struct {
 }
 
 func getScannerChart(c *Config) chartPrefixPair {
-	if c.K8sConfig.ScannerV2Config.Enable {
-		return chartPrefixPair{image.GetScannerV2Chart(), "scannerv2"}
-	}
 	return chartPrefixPair{image.GetScannerChart(), "scanner"}
 }
 
@@ -79,22 +76,6 @@ func renderKubectl(c Config, mode mode) ([]*zip.File, error) {
 	return renderedFiles, nil
 }
 
-func getScannerV2Registry(c *Config) (string, error) {
-	registryFromScannerV2Image, err := kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerV2Image)
-	if err != nil {
-		return "", err
-	}
-	registryFromScannerV2DBImage, err := kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerV2DBImage)
-	if err != nil {
-		return "", err
-	}
-	if registryFromScannerV2Image != registryFromScannerV2DBImage {
-		return "", errors.Errorf("invalid config: scanner-v2 and scanner-v2-db MUST be from the same registry, but they are from %s (scanner-v2: %s) and %s (scanner-v2-db: %s)",
-			registryFromScannerV2Image, c.K8sConfig.ScannerV2Image, registryFromScannerV2DBImage, c.K8sConfig.ScannerV2DBImage)
-	}
-	return registryFromScannerV2Image, nil
-}
-
 func postProcessConfig(c *Config, mode mode) error {
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
@@ -115,11 +96,7 @@ func postProcessConfig(c *Config, mode mode) error {
 		}
 	}
 
-	if c.K8sConfig.ScannerV2Config.Enable {
-		c.K8sConfig.ScannerRegistry, err = getScannerV2Registry(c)
-	} else {
-		c.K8sConfig.ScannerRegistry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerImage)
-	}
+	c.K8sConfig.ScannerRegistry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerImage)
 	if err != nil {
 		return err
 	}

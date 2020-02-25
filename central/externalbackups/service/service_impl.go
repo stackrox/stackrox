@@ -121,7 +121,7 @@ func (s *serviceImpl) TestExternalBackup(ctx context.Context, request *storage.E
 
 func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "id must be specified when triggering a backup")
+		return nil, status.Error(codes.InvalidArgument, "id must be specified when triggering a backup")
 	}
 	if err := s.manager.Backup(ctx, request.GetId()); err != nil {
 		log.Errorf("error trigger backup: %v", err)
@@ -132,7 +132,7 @@ func (s *serviceImpl) TriggerExternalBackup(ctx context.Context, request *v1.Res
 
 func (s *serviceImpl) upsertExternalBackup(ctx context.Context, request *storage.ExternalBackup) error {
 	if err := s.manager.Upsert(ctx, request); err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	if err := s.dataStore.UpsertBackup(ctx, request); err != nil {
 		s.manager.Remove(ctx, request.GetId())

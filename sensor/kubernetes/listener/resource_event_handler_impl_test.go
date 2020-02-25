@@ -55,7 +55,7 @@ func makeExpectedMap(expectedIDs ...*hasAnID) *map[types.UID]struct{} {
 }
 
 func (suite *ResourceEventHandlerImplTestSuite) addObj(handler *resourceEventHandlerImpl, obj *hasAnID, expectedMap *map[types.UID]struct{}) {
-	suite.dispatcher.EXPECT().ProcessEvent(obj, central.ResourceAction_UPDATE_RESOURCE)
+	suite.dispatcher.EXPECT().ProcessEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
 	handler.OnAdd(obj)
 	suite.Equal(*expectedMap, handler.seenIDs)
 }
@@ -73,7 +73,7 @@ func (suite *ResourceEventHandlerImplTestSuite) newHandlerImpl() *resourceEventH
 	return &resourceEventHandlerImpl{
 		eventLock:             &eventLock,
 		dispatcher:            suite.dispatcher,
-		output:                make(chan *central.SensorEvent),
+		output:                make(chan *central.MsgFromSensor),
 		treatCreatesAsUpdates: &treatCreatesAsUpdates,
 
 		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
@@ -165,7 +165,7 @@ func (suite *ResourceEventHandlerImplTestSuite) TestCompleteSync() {
 	handler.PopulateInitialObjects([]interface{}{testMsgOne, testMsgTwo})
 	suite.Equal(*expectedMap, handler.missingInitialIDs)
 
-	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, central.ResourceAction_UPDATE_RESOURCE)
+	suite.dispatcher.EXPECT().ProcessEvent(testMsgTwo, nil, central.ResourceAction_UPDATE_RESOURCE)
 	handler.OnAdd(testMsgTwo)
 	suite.assertFinished(handler)
 }

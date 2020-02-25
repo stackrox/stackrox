@@ -15,14 +15,11 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
+import { getFilteredComponentColumns } from './ListComponents.utils';
+
 export const defaultComponentSort = [
-    // @TODO, uncomment the primary sort field for Components, after its available for backend pagination/sorting
-    // {
-    //     id: componentSortFields.PRIORITY,
-    //     desc: false
-    // },
     {
-        id: componentSortFields.COMPONENT,
+        id: componentSortFields.PRIORITY,
         desc: false
     }
 ];
@@ -88,8 +85,22 @@ export function getComponentTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
-            accessor: 'topVuln.cvss'
-            // sortField: componentSortFields.TOP_CVSS
+            accessor: 'topVuln.cvss',
+            sortField: componentSortFields.TOP_CVSS
+        },
+        {
+            Header: `Source`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'source',
+            sortField: componentSortFields.SOURCE
+        },
+        {
+            Header: `Location`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
+            accessor: 'location',
+            sortField: componentSortFields.LOCATION
         },
         {
             Header: `Images`,
@@ -104,8 +115,8 @@ export function getComponentTableColumns(workflowState) {
                     textOnly={pdf}
                     selectedRowId={original.id}
                 />
-            )
-            // sortField: componentSortFields.IMAGES
+            ),
+            sortField: componentSortFields.IMAGE_COUNT
         },
         {
             Header: `Deployments`,
@@ -120,26 +131,29 @@ export function getComponentTableColumns(workflowState) {
                     textOnly={pdf}
                     selectedRowId={original.id}
                 />
-            )
-            // sortField: componentSortFields.DEPLOYMENTS
+            ),
+            sortField: componentSortFields.DEPLOYMENT_COUNT
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'priority'
-            // sortField: componentSortFields.PRIORITY
+            accessor: 'priority',
+            sortField: componentSortFields.PRIORITY
         }
     ];
 
-    return removeEntityContextColumns(tableColumns, workflowState);
+    const componentColumnsBasedOnContext = getFilteredComponentColumns(tableColumns, workflowState);
+
+    return removeEntityContextColumns(componentColumnsBasedOnContext, workflowState);
 }
 
-const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
-        query getComponents($query: String, $pagination: Pagination) {
+        query getComponents($query: String, $scopeQuery: String, $pagination: Pagination) {
             results: components(query: $query, pagination: $pagination) {
                 ...componentFields
+                unusedVarSink(query: $scopeQuery)
             }
             count: componentCount(query: $query)
         }
@@ -149,6 +163,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
+            scopeQuery: '',
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
@@ -156,6 +171,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data }) => {
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             idAttribute="id"

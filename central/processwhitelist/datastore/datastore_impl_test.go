@@ -110,16 +110,18 @@ func (suite *ProcessWhitelistDataStoreTestSuite) createAndStoreWhitelistWithRand
 	})
 }
 
-func (suite *ProcessWhitelistDataStoreTestSuite) doGet(key *storage.ProcessWhitelistKey, exists bool, equals *storage.ProcessWhitelist) *storage.ProcessWhitelist {
-	whitelist, err := suite.datastore.GetProcessWhitelist(suite.requestContext, key)
+func (suite *ProcessWhitelistDataStoreTestSuite) doGet(key *storage.ProcessWhitelistKey, shouldExist bool, equals *storage.ProcessWhitelist) *storage.ProcessWhitelist {
+	whitelist, exists, err := suite.datastore.GetProcessWhitelist(suite.requestContext, key)
 	suite.NoError(err)
-	if exists {
+	if shouldExist {
+		suite.True(exists)
 		suite.NotNil(whitelist)
 		if equals != nil {
 			suite.Equal(equals, whitelist)
 		}
 	} else {
 		suite.Nil(whitelist)
+		suite.False(exists)
 	}
 	return whitelist
 }
@@ -296,4 +298,20 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRemoveByDeployment() {
 	suite.doGet(key1, false, nil)
 	suite.doGet(key2, false, nil)
 	suite.doGet(key3, true, nil)
+}
+
+func (suite *ProcessWhitelistDataStoreTestSuite) TestIDToKeyConversion() {
+	key := &storage.ProcessWhitelistKey{
+		DeploymentId:  "blah",
+		ContainerName: "container",
+		ClusterId:     "cluster1",
+		Namespace:     "namespace",
+	}
+
+	id, err := keyToID(key)
+	suite.NoError(err)
+	resKey, err := IDToKey(id)
+	suite.NoError(err)
+	suite.NotNil(resKey)
+	suite.Equal(*key, *resKey)
 }

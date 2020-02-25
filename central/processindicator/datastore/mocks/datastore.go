@@ -83,20 +83,6 @@ func (mr *MockDataStoreMockRecorder) GetProcessIndicator(ctx, id interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicator", reflect.TypeOf((*MockDataStore)(nil).GetProcessIndicator), ctx, id)
 }
 
-// AddProcessIndicator mocks base method
-func (m *MockDataStore) AddProcessIndicator(arg0 context.Context, arg1 *storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessIndicator", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddProcessIndicator indicates an expected call of AddProcessIndicator
-func (mr *MockDataStoreMockRecorder) AddProcessIndicator(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicator", reflect.TypeOf((*MockDataStore)(nil).AddProcessIndicator), arg0, arg1)
-}
-
 // AddProcessIndicators mocks base method
 func (m *MockDataStore) AddProcessIndicators(arg0 context.Context, arg1 ...*storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()

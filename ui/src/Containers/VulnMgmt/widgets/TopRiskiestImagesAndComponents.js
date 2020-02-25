@@ -1,20 +1,24 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
 import sortBy from 'lodash/sortBy';
+import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import NumberedList from 'Components/NumberedList';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
+import queryService from 'modules/queryService';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import entityTypes from 'constants/entityTypes';
+import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
+// import { entitySortFieldsMap } from 'constants/sortFields';
 
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
@@ -46,13 +50,16 @@ const TOP_RISKIEST_IMAGES = gql`
                 }
             }
             priority
+            scan {
+                scanTime
+            }
         }
     }
 `;
 
 const TOP_RISKIEST_COMPONENTS = gql`
-    query topRiskiestComponents($query: String) {
-        results: components(query: $query) {
+    query topRiskiestComponents($query: String, $pagination: Pagination) {
+        results: components(query: $query, pagination: $pagination) {
             id
             name
             version
@@ -109,6 +116,7 @@ const processData = (data, entityType, workflowState, limit) => {
             return d;
         })
         .map(({ id, vulnCounter, ...rest }) => {
+            const { scan } = rest;
             const text = getTextByEntityType(entityType, { ...rest });
             const newState = workflowState.pushRelatedEntity(entityType, id);
 
@@ -116,6 +124,37 @@ const processData = (data, entityType, workflowState, limit) => {
             const cveListState = newState.pushList(entityTypes.CVE);
             const cvesUrl = cveListState.toUrl();
             const fixableUrl = cveListState.setSearch({ 'Fixed By': 'r/.*' }).toUrl();
+
+            const { critical, high, medium, low } = vulnCounter;
+
+            const tooltipTitle = scan ? format(scan.scanTime, dateTimeFormat) : 'N/A';
+            const tooltipBody = (
+                <div className="flex-1 list-reset border-base-300 overflow-hidden">
+                    <div className="mb-2">
+                        <span className="text-base-600 font-700 mr-2">
+                            {entityType === entityTypes.IMAGE ? 'Image:' : 'Component:'}
+                        </span>
+                        <span className="font-600">{text}</span>
+                    </div>
+                    <div>
+                        <span className="text-base-600 font-700 mr-2 mb-1">
+                            Criticality Distribution:
+                        </span>
+                        <div>
+                            {critical.total} Critical CVEs ({critical.fixable} Fixable)
+                        </div>
+                        <div>
+                            {high.total} High CVEs ({high.fixable} Fixable)
+                        </div>
+                        <div>
+                            {medium.total} Medium CVEs ({medium.fixable} Fixable)
+                        </div>
+                        <div>
+                            {low.total} Low CVEs ({low.fixable} Fixable)
+                        </div>
+                    </div>
+                </div>
+            );
 
             return {
                 text,
@@ -127,9 +166,14 @@ const processData = (data, entityType, workflowState, limit) => {
                             url={cvesUrl}
                             fixableUrl={fixableUrl}
                             horizontal
+                            showTooltip={false}
                         />
                     </div>
-                )
+                ),
+                tooltip: {
+                    title: tooltipTitle,
+                    body: tooltipBody
+                }
             };
         });
     const processedData = sortBy(results, ['priority']).slice(0, limit); // @TODO: Remove when we have pagination on image components
@@ -167,30 +211,43 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
         setSelectedEntity(value);
     }
 
-    const { loading, data = {} } = useQuery(getQueryBySelectedEntity(selectedEntity), {
+    const { loading, data = {}, error } = useQuery(getQueryBySelectedEntity(selectedEntity), {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
-            pagination: {
-                /*
+            pagination: queryService.getPagination(
+                {
+                    id: 'Priority',
+                    desc: false
+                },
+                WIDGET_PAGINATION_START_OFFSET,
                 limit
-                @TODO: When priority is a sortable field, uncomment this
-
-                sortOption: {
-                    field: 'priority',
-                    reversed: true
-                }
-            } */
-            }
+            )
         }
     });
 
-    let content = <Loader />;
-    let headerComponents = null;
-
     const workflowState = useContext(workflowStateContext);
 
+    const viewAllURL = workflowState
+        .pushList(selectedEntity)
+        // @TODO to uncomment once priority is sortable for both image and components
+        // .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
+        .toUrl();
+
+    const headerComponents = <ViewAllButton url={viewAllURL} />;
+
+    let content = <Loader />;
+
     if (!loading) {
-        if (!data || !data.results) {
+        if (error) {
+            const entityText = selectedEntity === entityTypes.COMPONENT ? 'components' : 'images';
+            content = (
+                <NoResultsMessage
+                    message={`An error occurred in retrieving ${entityText}. Please refresh the page. If this problem continues, please contact support.`}
+                    className="p-6"
+                    icon="warn"
+                />
+            );
+        } else if (data && data.results && data.results === 0) {
             content = (
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
             );
@@ -203,13 +260,6 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
                         <NumberedList data={processedData} linkLeftOnly />
                     </div>
                 );
-
-                const viewAllURL = workflowState
-                    .pushList(selectedEntity)
-                    .setSort([{ id: 'priority', desc: false }])
-                    .toUrl();
-
-                headerComponents = <ViewAllButton url={viewAllURL} />;
             } else {
                 content = <NoComponentVulnMessage />;
             }

@@ -27,6 +27,22 @@ func BoolDiff(a, b []bool, lessFunc func(a, b bool) bool) (aOnly, bOnly []bool) 
 	return
 }
 
+// BoolClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func BoolClone(in []bool) []bool {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []bool{}
+	}
+	out := make([]bool, len(in))
+	copy(out, in)
+	return out
+}
+
 // BoolFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func BoolFind(slice []bool, elem bool) int {
@@ -88,6 +104,22 @@ func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) 
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// ByteClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func ByteClone(in []byte) []byte {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []byte{}
+	}
+	out := make([]byte, len(in))
+	copy(out, in)
+	return out
 }
 
 // ByteFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -153,6 +185,22 @@ func Complex128Diff(a, b []complex128, lessFunc func(a, b complex128) bool) (aOn
 	return
 }
 
+// Complex128Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Complex128Clone(in []complex128) []complex128 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []complex128{}
+	}
+	out := make([]complex128, len(in))
+	copy(out, in)
+	return out
+}
+
 // Complex128Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Complex128Find(slice []complex128, elem complex128) int {
@@ -214,6 +262,22 @@ func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly,
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Complex64Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Complex64Clone(in []complex64) []complex64 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []complex64{}
+	}
+	out := make([]complex64, len(in))
+	copy(out, in)
+	return out
 }
 
 // Complex64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -279,6 +343,22 @@ func ErrorDiff(a, b []error, lessFunc func(a, b error) bool) (aOnly, bOnly []err
 	return
 }
 
+// ErrorClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func ErrorClone(in []error) []error {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []error{}
+	}
+	out := make([]error, len(in))
+	copy(out, in)
+	return out
+}
+
 // ErrorFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func ErrorFind(slice []error, elem error) int {
@@ -340,6 +420,22 @@ func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Float32Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Float32Clone(in []float32) []float32 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []float32{}
+	}
+	out := make([]float32, len(in))
+	copy(out, in)
+	return out
 }
 
 // Float32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -405,6 +501,22 @@ func Float64Diff(a, b []float64, lessFunc func(a, b float64) bool) (aOnly, bOnly
 	return
 }
 
+// Float64Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Float64Clone(in []float64) []float64 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []float64{}
+	}
+	out := make([]float64, len(in))
+	copy(out, in)
+	return out
+}
+
 // Float64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Float64Find(slice []float64, elem float64) int {
@@ -466,6 +578,22 @@ func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// IntClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func IntClone(in []int) []int {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []int{}
+	}
+	out := make([]int, len(in))
+	copy(out, in)
+	return out
 }
 
 // IntFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -531,6 +659,22 @@ func Int16Diff(a, b []int16, lessFunc func(a, b int16) bool) (aOnly, bOnly []int
 	return
 }
 
+// Int16Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Int16Clone(in []int16) []int16 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []int16{}
+	}
+	out := make([]int16, len(in))
+	copy(out, in)
+	return out
+}
+
 // Int16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int16Find(slice []int16, elem int16) int {
@@ -592,6 +736,22 @@ func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Int32Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Int32Clone(in []int32) []int32 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []int32{}
+	}
+	out := make([]int32, len(in))
+	copy(out, in)
+	return out
 }
 
 // Int32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -657,6 +817,22 @@ func Int64Diff(a, b []int64, lessFunc func(a, b int64) bool) (aOnly, bOnly []int
 	return
 }
 
+// Int64Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Int64Clone(in []int64) []int64 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []int64{}
+	}
+	out := make([]int64, len(in))
+	copy(out, in)
+	return out
+}
+
 // Int64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Int64Find(slice []int64, elem int64) int {
@@ -718,6 +894,22 @@ func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) 
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Int8Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Int8Clone(in []int8) []int8 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []int8{}
+	}
+	out := make([]int8, len(in))
+	copy(out, in)
+	return out
 }
 
 // Int8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -783,6 +975,22 @@ func RuneDiff(a, b []rune, lessFunc func(a, b rune) bool) (aOnly, bOnly []rune) 
 	return
 }
 
+// RuneClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func RuneClone(in []rune) []rune {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []rune{}
+	}
+	out := make([]rune, len(in))
+	copy(out, in)
+	return out
+}
+
 // RuneFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func RuneFind(slice []rune, elem rune) int {
@@ -844,6 +1052,22 @@ func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// StringClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func StringClone(in []string) []string {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []string{}
+	}
+	out := make([]string, len(in))
+	copy(out, in)
+	return out
 }
 
 // StringFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -909,6 +1133,22 @@ func UintDiff(a, b []uint, lessFunc func(a, b uint) bool) (aOnly, bOnly []uint) 
 	return
 }
 
+// UintClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func UintClone(in []uint) []uint {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uint{}
+	}
+	out := make([]uint, len(in))
+	copy(out, in)
+	return out
+}
+
 // UintFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func UintFind(slice []uint, elem uint) int {
@@ -970,6 +1210,22 @@ func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Uint16Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Uint16Clone(in []uint16) []uint16 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uint16{}
+	}
+	out := make([]uint16, len(in))
+	copy(out, in)
+	return out
 }
 
 // Uint16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -1035,6 +1291,22 @@ func Uint32Diff(a, b []uint32, lessFunc func(a, b uint32) bool) (aOnly, bOnly []
 	return
 }
 
+// Uint32Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Uint32Clone(in []uint32) []uint32 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uint32{}
+	}
+	out := make([]uint32, len(in))
+	copy(out, in)
+	return out
+}
+
 // Uint32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint32Find(slice []uint32, elem uint32) int {
@@ -1096,6 +1368,22 @@ func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Uint64Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Uint64Clone(in []uint64) []uint64 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uint64{}
+	}
+	out := make([]uint64, len(in))
+	copy(out, in)
+	return out
 }
 
 // Uint64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
@@ -1161,6 +1449,22 @@ func Uint8Diff(a, b []uint8, lessFunc func(a, b uint8) bool) (aOnly, bOnly []uin
 	return
 }
 
+// Uint8Clone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func Uint8Clone(in []uint8) []uint8 {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uint8{}
+	}
+	out := make([]uint8, len(in))
+	copy(out, in)
+	return out
+}
+
 // Uint8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func Uint8Find(slice []uint8, elem uint8) int {
@@ -1222,6 +1526,22 @@ func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// UintptrClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func UintptrClone(in []uintptr) []uintptr {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []uintptr{}
+	}
+	out := make([]uintptr, len(in))
+	copy(out, in)
+	return out
 }
 
 // UintptrFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does

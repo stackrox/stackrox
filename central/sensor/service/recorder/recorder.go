@@ -57,7 +57,7 @@ type recordKeeper struct {
 func newRecordKeeper(server central.SensorService_CommunicateServer, recordDuration time.Duration) *recordKeeper {
 	utils.Must(os.MkdirAll("/tmp/flightrecorder", 0777))
 
-	db, err := badgerhelper.New("/tmp/flightrecorder", false)
+	db, err := badgerhelper.New("/tmp/flightrecorder")
 	utils.Must(err)
 
 	return &recordKeeper{

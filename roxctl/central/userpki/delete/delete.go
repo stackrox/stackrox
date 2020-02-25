@@ -108,7 +108,7 @@ func deleteProvider(c *cobra.Command, args []string) error {
 		return err
 	}
 
-	groups, err := groupService.GetGroups(ctx, &v1.Empty{})
+	groups, err := groupService.GetGroups(ctx, &v1.GetGroupsRequest{})
 	if err != nil {
 		return err
 	}

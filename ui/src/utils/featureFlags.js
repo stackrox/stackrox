@@ -9,7 +9,13 @@ const featureFlags = {
 
 // knownBackendFlags defines backend feature flags that are checked in the UI.
 export const knownBackendFlags = {
-    ROX_VULN_MGMT_UI: 'ROX_VULN_MGMT_UI'
+    ROX_VULN_MGMT_UI: 'ROX_VULN_MGMT_UI',
+    ROX_ANALYST_NOTES_UI: 'ROX_ANALYST_NOTES_UI',
+    ROX_EVENT_TIMELINE_UI: 'ROX_EVENT_TIMELINE_UI',
+    ROX_TELEMETRY: 'ROX_TELEMETRY',
+    ROX_DIAGNOSTIC_BUNDLE: 'ROX_DIAGNOSTIC_BUNDLE',
+    ROX_REFRESH_TOKENS: 'ROX_REFRESH_TOKENS',
+    ROX_NIST_800_53: 'ROX_NIST_800_53'
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

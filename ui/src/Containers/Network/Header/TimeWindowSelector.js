@@ -16,7 +16,7 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
 
     return (
         <div className="flex relative whitespace-no-wrap border-2 rounded-sm mr-2 ml-2 min-h-10 bg-base-100 border-base-300 hover:border-base-400">
-            <div className="absolute pin-y ml-2 flex items-center cursor-pointer z-0 pointer-events-none">
+            <div className="absolute inset-y-0 ml-2 flex items-center cursor-pointer z-0 pointer-events-none">
                 <Icon.Clock className="h-4 w-4 text-base-500" />
             </div>
             <select
@@ -30,7 +30,7 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
                     </option>
                 ))}
             </select>
-            <div className="absolute pl-2 pin-y pin-r flex items-center px-2 cursor-pointer z-0 pointer-events-none">
+            <div className="absolute pl-2 inset-y-0 right-0 flex items-center px-2 cursor-pointer z-0 pointer-events-none">
                 <Icon.ChevronDown className="h-4 w-4" />
             </div>
         </div>

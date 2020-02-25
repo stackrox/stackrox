@@ -11,8 +11,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -21,7 +21,7 @@ import (
 // BenchmarkResultsService is the struct that manages the benchmark results API
 type serviceImpl struct {
 	output       chan *compliance.ComplianceReturn
-	orchestrator orchestrators.Orchestrator
+	orchestrator orchestrator.Orchestrator
 
 	connectionManager *connectionManager
 }
@@ -62,12 +62,12 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
 func (s *serviceImpl) GetScrapeConfig(ctx context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
-	nodeInfo, err := s.orchestrator.GetNode(nodeName)
+	containerRuntimeVersion, err := s.orchestrator.GetNodeContainerRuntime(nodeName)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, _ := k8sutil.ParseContainerRuntimeString(nodeInfo.Status.NodeInfo.ContainerRuntimeVersion)
+	rt, _ := k8sutil.ParseContainerRuntimeString(containerRuntimeVersion)
 
 	return &sensor.MsgToCompliance_ScrapeConfig{
 		ContainerRuntime: rt,

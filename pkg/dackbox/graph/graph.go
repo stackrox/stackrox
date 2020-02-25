@@ -6,6 +6,7 @@ import (
 )
 
 // RGraph is a read-only view of a Graph.
+//go:generate mockgen-wrapper
 type RGraph interface {
 	HasRefsFrom(from []byte) bool
 	HasRefsTo(to []byte) bool
@@ -18,6 +19,7 @@ type RGraph interface {
 }
 
 // RWGraph is a read-write view of a Graph.
+//go:generate mockgen-wrapper
 type RWGraph interface {
 	RGraph
 
@@ -29,6 +31,15 @@ type RWGraph interface {
 	deleteFrom(from []byte)
 	setTo(to []byte, from [][]byte)
 	deleteTo(to []byte)
+}
+
+// DiscardableRGraph is an RGraph (read only view of the ID->[]ID map layer) that needs to be discarded when finished.
+// NOTE: THIS HAS TO BE HERE FOR MOCK GENERATION TO WORK. IF YOU PUT IT IN A DIFFERENT FILE, 'go generate' WILL FAIL.
+//go:generate mockgen-wrapper
+type DiscardableRGraph interface {
+	RGraph
+
+	Discard()
 }
 
 // NewGraph is the basic type holding forward and backward ID relationships.

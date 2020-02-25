@@ -28,7 +28,8 @@ function* getUserPermissions() {
 
 function* evaluateUserAccess() {
     const authStatus = yield select(selectors.getAuthStatus);
-    const tokenExists = yield call(AuthService.isTokenPresent);
+    const token = yield call(AuthService.getAccessToken);
+    const tokenExists = !!token;
 
     // No token but validated providers present? Log out the user since they
     // can't have access.
@@ -44,7 +45,7 @@ function* evaluateUserAccess() {
     if (tokenExists && authStatus !== AUTH_STATUS.LOGGED_IN) {
         // typical situation if token was stored before and then auth providers were loaded
         try {
-            yield call(AuthService.fetchAuthStatus);
+            yield call(AuthService.checkAuthStatus);
             // call didn't fail, meaning that the token is fine (should we check the returned result?)
             yield put(actions.login());
         } catch (e) {
@@ -85,7 +86,7 @@ function* watchLoginAuthProvidersFetchRequest() {
 }
 
 function* logout() {
-    yield call(AuthService.clearAccessToken);
+    yield call(AuthService.logout);
 }
 
 function* watchLogout() {
@@ -100,8 +101,19 @@ function* handleLoginPageRedirect({ location }) {
     }
 }
 
-function* handleOidcResponse(location) {
+function parseFragment(location) {
     const hash = queryString.parse(location.hash.slice(1)); // ignore '#' https://github.com/ljharb/qs/issues/222
+    // The fragment as a whole is URL-encoded, which means that each individual field is doubly URL-encoded. We need
+    // to decode one additional level of URL encoding here.
+    const transformedHash = {};
+    Object.entries(hash).forEach(([key, value]) => {
+        transformedHash[key] = decodeURIComponent(value);
+    });
+    return transformedHash;
+}
+
+function* handleOidcResponse(location) {
+    const hash = parseFragment(location);
     if (hash.error) {
         return hash;
     }
@@ -118,7 +130,7 @@ function* handleOidcResponse(location) {
 }
 
 function handleGenericResponse(location) {
-    const hash = queryString.parse(location.hash.slice(1)); // ignore '#' https://github.com/ljharb/qs/issues/222
+    const hash = parseFragment(location);
     if (hash.error) {
         return hash;
     }

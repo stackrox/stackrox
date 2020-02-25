@@ -22,6 +22,7 @@ import attributes from './attributesSagas';
 import cli from './cliSagas';
 import license from './licenseSagas';
 import systemConfig from './systemConfig';
+import telemetryConfig from './telemetryConfig';
 
 export default function* root() {
     yield all([
@@ -46,6 +47,7 @@ export default function* root() {
         fork(processes),
         fork(groups),
         fork(attributes),
-        fork(systemConfig)
+        fork(systemConfig),
+        fork(telemetryConfig)
     ]);
 }

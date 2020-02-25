@@ -1,4 +1,4 @@
-export function getHighValue(data, keyToCheck, multiple = 0) {
+export function getHighValue(data, keyToCheck, multiple = 0, shouldPad = false) {
     const max = data.reduce(
         (currentHighest, item) =>
             item[keyToCheck] > currentHighest ? item[keyToCheck] : currentHighest,
@@ -7,6 +7,10 @@ export function getHighValue(data, keyToCheck, multiple = 0) {
 
     if (multiple) {
         const nextHighestMultiple = Math.ceil(max / multiple) * multiple;
+
+        if (shouldPad) {
+            return nextHighestMultiple + multiple;
+        }
 
         return nextHighestMultiple;
     }

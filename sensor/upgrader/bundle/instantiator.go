@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -21,10 +22,10 @@ type instantiator struct {
 	ctx *upgradectx.UpgradeContext
 }
 
-func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sobjects.Object, error) {
+func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, error) {
 	trackedBundleContents := trackContents(bundleContents)
 
-	var allObjects []k8sobjects.Object
+	var allObjects []k8sutil.Object
 	dynamicObjs, err := createDynamicObjects(trackedBundleContents)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating config objects from sensor bundle")
@@ -53,8 +54,8 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sobjects.Object
 	return allObjects, nil
 }
 
-func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sobjects.Object, error) {
-	var result []k8sobjects.Object
+func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sutil.Object, error) {
+	var result []k8sutil.Object
 	for _, fileName := range c.ListFiles() {
 		if !strings.HasSuffix(fileName, ".yaml") {
 			continue
@@ -70,7 +71,7 @@ func (i *instantiator) loadObjectsFromYAMLs(c Contents) ([]k8sobjects.Object, er
 	return result, nil
 }
 
-func (i *instantiator) readObjectFromYAMLReader(r *yaml.YAMLReader) (k8sobjects.Object, error) {
+func (i *instantiator) readObjectFromYAMLReader(r *yaml.YAMLReader) (k8sutil.Object, error) {
 	doc, err := r.Read()
 	if err != nil {
 		return nil, err
@@ -83,7 +84,7 @@ func (i *instantiator) readObjectFromYAMLReader(r *yaml.YAMLReader) (k8sobjects.
 	return obj, nil
 }
 
-func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error)) ([]k8sobjects.Object, error) {
+func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error)) ([]k8sutil.Object, error) {
 	reader, err := openFn()
 	if err != nil {
 		return nil, err
@@ -95,11 +96,11 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 		return nil, err
 	}
 
-	var objects []k8sobjects.Object
+	var objects []k8sutil.Object
 
 	yamlReader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBuffer(contents)))
 	for {
-		var obj k8sobjects.Object
+		var obj k8sutil.Object
 		obj, err = i.readObjectFromYAMLReader(yamlReader)
 		if err != nil {
 			break
@@ -114,7 +115,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	return objects, nil
 }
 
-func validateMetadata(objs []k8sobjects.Object) error {
+func validateMetadata(objs []k8sutil.Object) error {
 	errs := errorhelpers.NewErrorList("object metadata validation failed")
 	for _, obj := range objs {
 		if labelVal := obj.GetLabels()[common.UpgradeResourceLabelKey]; labelVal != common.UpgradeResourceLabelValue {

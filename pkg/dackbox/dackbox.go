@@ -2,22 +2,27 @@ package dackbox
 
 import (
 	"github.com/dgraph-io/badger"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 // NewDackBox returns a new DackBox object using the given DB and prefix for storing data and ids.
-func NewDackBox(db *badger.DB, graphPrefix []byte) (*DackBox, error) {
-	initial, err := loadIntoMem(db, graphPrefix)
+func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
+	initial, err := loadGraphIntoMem(db, graphPrefix)
 	if err != nil {
 		return nil, err
 	}
 	ret := &DackBox{
-		history: graph.NewHistory(initial),
-		db:      db,
-		prefix:  graphPrefix,
+		history:     graph.NewHistory(initial),
+		db:          db,
+		toIndex:     toIndex,
+		graphPrefix: graphPrefix,
+		dirtyPrefix: dirtyPrefix,
+		validPrefix: validPrefix,
 	}
 	return ret, nil
 }
@@ -26,24 +31,30 @@ func NewDackBox(db *badger.DB, graphPrefix []byte) (*DackBox, error) {
 type DackBox struct {
 	lock sync.RWMutex
 
-	prefix  []byte
-	db      *badger.DB
 	history graph.History
+	db      *badger.DB
+	toIndex queue.AcceptsKeyValue
+
+	graphPrefix []byte
+	dirtyPrefix []byte
+	validPrefix []byte
 }
 
 // NewTransaction returns a new Transaction object for read and write operations on both key/value pairs, and ids.
 func (rc *DackBox) NewTransaction() *Transaction {
-	rc.lock.Lock()
-	defer rc.lock.Unlock()
+	rc.lock.RLock()
+	defer rc.lock.RUnlock()
 
 	ts := rc.history.Hold()
-	txn := rc.db.NewTransactionAt(ts, true)
+	txn := rc.db.NewTransaction(true)
 	modified := graph.NewModifiedGraph(graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)))
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.prefix, txn, modified),
+		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, modified),
 		modification: modified,
+		dirtyPrefix:  rc.dirtyPrefix,
+		dirtyMap:     make(map[string]proto.Message),
 		discard:      rc.discard,
 		commit:       rc.commit,
 	}
@@ -51,16 +62,16 @@ func (rc *DackBox) NewTransaction() *Transaction {
 
 // NewReadOnlyTransaction returns a Transaction object for read only operations.
 func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
-	rc.lock.Lock()
-	defer rc.lock.Unlock()
+	rc.lock.RLock()
+	defer rc.lock.RUnlock()
 
 	ts := rc.history.Hold()
-	txn := rc.db.NewTransactionAt(ts, false)
+	txn := rc.db.NewTransaction(false)
 	modified := graph.NewModifiedGraph(graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)))
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.prefix, txn, modified),
+		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, modified),
 		modification: modified,
 		discard:      rc.discard,
 		commit:       rc.commit,
@@ -68,31 +79,30 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 }
 
 // NewGraphView returns a read only view of the ID->[]ID graph.
-func (rc *DackBox) NewGraphView() DiscardableRGraph {
-	rc.lock.Lock()
-	defer rc.lock.Unlock()
+func (rc *DackBox) NewGraphView() graph.DiscardableRGraph {
+	rc.lock.RLock()
+	defer rc.lock.RUnlock()
 
 	ts := rc.history.Hold()
-	return &discardableGraphImpl{
-		ts:          ts,
-		RemoteGraph: graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)),
-		discard:     rc.discard,
-	}
+	return graph.NewDiscardableGraph(
+		graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)),
+		func() { rc.discard(ts, nil) },
+	)
 }
 
-// AtomicKVUpdate updates a key:value pair in badger atomically. It calls the input function inside the global lock,
-// so only use where the input function is very fast.
-func (rc *DackBox) AtomicKVUpdate(provide func() (key, value []byte)) error {
-	rc.lock.Lock()
-	defer rc.lock.Unlock()
-
-	ts := rc.history.StepForward()
-	txn := rc.db.NewTransactionAt(ts-1, true)
-	defer txn.Discard()
-	if err := txn.Set(provide()); err != nil {
-		return err
+// AckIndexed is an exposed way to remove keys from the dirty bucket.
+func (rc *DackBox) AckIndexed(keys ...[]byte) error {
+	if len(keys) == 0 {
+		return nil
 	}
-	return txn.CommitAt(ts, nil)
+	return rc.db.Update(func(txn *badger.Txn) error {
+		for _, key := range keys {
+			if err := txn.Delete(badgerhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (rc *DackBox) readerAt(at uint64) graph.RemoteReadable {
@@ -108,24 +118,36 @@ func (rc *DackBox) discard(openedAt uint64, txn *badger.Txn) {
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 
+	// Release the held history no matter what.
+	rc.history.Release(openedAt)
+
+	// Discard the disk changes.
 	if txn != nil {
 		txn.Discard()
 	}
-	rc.history.Release(openedAt)
 }
 
-func (rc *DackBox) commit(openedAt uint64, txn *badger.Txn, modification graph.Modification) error {
+func (rc *DackBox) commit(openedAt uint64, txn *badger.Txn, modification graph.Modification, dirtyMap map[string]proto.Message) error {
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 
-	ts := rc.history.StepForward()
+	// Release the held history no matter what.
+	rc.history.Release(openedAt)
+
+	// Try to commit the disk changes. Do nothing to the in-memory state if that fails.
 	if txn != nil {
-		if err := txn.CommitAt(ts, nil); err != nil {
+		if err := txn.Commit(); err != nil {
 			return err
 		}
 	}
+
+	// We should only add to the dirty queue and add the graph modification if the transaction was submitted successfully.
+	if rc.toIndex != nil {
+		for k, v := range dirtyMap {
+			rc.toIndex.Push([]byte(k), v)
+		}
+	}
 	rc.history.Apply(modification)
-	rc.history.Release(openedAt)
 	return nil
 }
 
@@ -140,9 +162,9 @@ var onLoadForEachOptions = badgerhelper.ForEachOptions{
 	StripKeyPrefix: true,
 }
 
-func loadIntoMem(db *badger.DB, graphPrefix []byte) (*graph.Graph, error) {
+func loadGraphIntoMem(db *badger.DB, graphPrefix []byte) (*graph.Graph, error) {
 	initial := graph.NewGraph()
-	err := badgerhelper.BucketForEach(db.NewTransactionAt(0, false), graphPrefix, onLoadForEachOptions, func(k, v []byte) error {
+	err := badgerhelper.BucketForEach(db.NewTransaction(false), graphPrefix, onLoadForEachOptions, func(k, v []byte) error {
 		sk, err := sortedkeys.Unmarshal(v)
 		if err != nil {
 			return err

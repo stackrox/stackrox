@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -41,7 +42,7 @@ func NewServiceCertInjectingRoundTripper(cert *tls.Certificate, rt http.RoundTri
 		reqShallowCopy := *req
 		newHeader := make(http.Header)
 		for k, vs := range req.Header {
-			newHeader[k] = append([]string{}, vs...)
+			newHeader[k] = sliceutils.StringClone(vs)
 		}
 
 		newHeader.Set("authorization", fmt.Sprintf("%s %s", tokenType, token))

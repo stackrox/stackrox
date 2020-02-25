@@ -1,5 +1,4 @@
 import cloneDeep from 'lodash/cloneDeep';
-import uniqBy from 'lodash/uniqBy';
 
 import entityRelationships from 'modules/entityRelationships';
 import generateURL from 'modules/URLGenerator';
@@ -28,31 +27,45 @@ export class WorkflowEntity {
 
 // Returns true if stack provided makes sense
 export function isStackValid(stack) {
-    const existingEntityTypes = uniqBy(stack, 'entityType');
-
-    // if the stack is smaller or equal to two entity types, it is always valid
-    if (Object.keys(existingEntityTypes).length <= 2) return true;
-
     // stack is invalid when the stack is in one of three states:
     //
     // 1) entity -> (entity parent list) -> entity parent -> nav away
     // 2) entity -> (entity matches list) -> match entity -> nav away
     // 3) entity -> ... -> same entity (nav away)
 
-    let isParentState;
-    let isMatchState;
-    let isDuplicateState;
+    let isParentState = false;
+    let isMatchState = false;
+    let isDuplicateState = false;
 
     const entityTypeMap = {};
+    let entityTypeCount = 0;
 
     stack.forEach((entity, i) => {
         const { entityType, entityId } = entity;
 
+        // checking if the entity type already exists in the map
         if (entityTypeMap[entityType]) {
-            isDuplicateState = !!entityTypeMap[entityType];
+            if (entityId) {
+                // if there is an entityId for the current entity, it's a duplicate if an entity exists for that type
+                isDuplicateState = !!entityTypeMap[entityType].hasEntity;
+            } else {
+                // else if the current entity is a list, it's a duplicate if an entity or list for that type preexists.
+                // we're using !! to force a truthy value here since hasEntity and hasList can be undefined
+                isDuplicateState =
+                    !!entityTypeMap[entityType].hasEntity || !!entityTypeMap[entityType].hasList;
+            }
         }
+        if (!entityTypeMap[entityType]) {
+            entityTypeCount += 1;
+            entityTypeMap[entityType] = {};
+        }
+        if (entityId) {
+            entityTypeMap[entityType].hasEntity = true;
+        } else {
+            entityTypeMap[entityType].hasList = true;
+        }
+
         if (i > 0) {
-            entityTypeMap[entityType] = entityId;
             const { entityType: prevType } = stack[i - 1];
             if (prevType !== entityType) {
                 if (!isParentState) {
@@ -81,7 +94,9 @@ export function isStackValid(stack) {
         }
         return false;
     });
-    return !isParentState && !isMatchState && !isDuplicateState;
+    // if there is a duplicate element in the stack, it's always invalid
+    // else if the stack is smaller or equal to two entity types, it is valid regardless of relationship type
+    return !isDuplicateState && (entityTypeCount <= 2 || (!isParentState && !isMatchState));
 }
 
 // Resets the current state based on minimal parameters
@@ -140,6 +155,15 @@ export class WorkflowState {
     getCurrentEntity() {
         if (!this.stateStack.length) return null;
         return this.stateStack.slice(-1)[0];
+    }
+
+    // Returns type of the current entity (top of stack)
+    getCurrentEntityType() {
+        const currentEntity = this.getCurrentEntity();
+
+        if (!currentEntity) return null;
+
+        return currentEntity.t;
     }
 
     // Returns base (first) entity of stack
@@ -203,13 +227,20 @@ export class WorkflowState {
         return new WorkflowState(useCase, newStateStack);
     }
 
+    // Returns a cleared stack on current use case. Useful when building state from scratch.
+    clear() {
+        const newStateStack = [];
+        const { useCase } = this;
+        return new WorkflowState(useCase, newStateStack);
+    }
+
     // sets the stateStack to base state when returning from side panel
     removeSidePanelParams() {
         const { useCase, search, sort, paging } = this;
         const newStateStack = this.getPageStack();
         const newSearch = search ? { [searchParams.page]: search[searchParams.page] } : null;
-        const newSort = sort ? { [searchParams.page]: sort[searchParams.page] } : null;
-        const newPaging = paging ? { [searchParams.page]: paging[searchParams.page] } : null;
+        const newSort = sort ? { [sortParams.page]: sort[sortParams.page] } : null;
+        const newPaging = paging ? { [pagingParams.page]: paging[pagingParams.page] } : null;
         return new WorkflowState(useCase, newStateStack, newSearch, newSort, newPaging);
     }
 
@@ -231,8 +262,10 @@ export class WorkflowState {
                 ? stateStack.slice(0, -1)
                 : [...stateStack];
         newStateStack.push(newItem);
+        const trimmedStack = trimStack(newStateStack);
+        const newPaging = trimmedStack.length === newStateStack.length ? paging : null;
 
-        return new WorkflowState(useCase, trimStack(newStateStack), search, sort, paging);
+        return new WorkflowState(useCase, trimStack(newStateStack), search, sort, newPaging);
     }
 
     // Selects an item in a list by Id
@@ -332,5 +365,35 @@ export class WorkflowState {
             .reduce((entityContext, item) => {
                 return { ...entityContext, [item.entityType]: item.entityId };
             }, {});
+    }
+
+    // the following methods are helpers for very specific business logic
+    /**
+     * tests if the root of the state stack is the list of the entity type specified,
+     *   with no child selected
+     *
+     * @param   {string}  entityType  the entityType constant for the entity list to check
+     *
+     * @return  {boolean}              true if the base of state stack is that entity list, false otherwise
+     */
+    isBaseList(entityType) {
+        return this.stateStack[0] && this.stateStack[0].t === entityType && !this.stateStack[0].i;
+    }
+
+    /**
+     * tests if the next the last position on the state stack is a single of a given entity type
+     *   (the part of the leaf entity)
+     *
+     * @param   {string}  entityType  the entityType constant to check
+     *
+     * @return  {boolean}              true if the parent is a single of the given entity type, false otherwise
+     */
+    isChildOfEntity(entityType) {
+        return (
+            this.stateStack &&
+            this.stateStack.length > 1 &&
+            this.stateStack[this.stateStack.length - 2].t === entityType &&
+            !!this.stateStack[this.stateStack.length - 2].i
+        );
     }
 }

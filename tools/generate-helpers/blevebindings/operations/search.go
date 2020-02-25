@@ -19,7 +19,7 @@ func generateSearch(props GeneratorProperties) (Code, Code) {
 	mappingPath := GenerateMappingGoPackage(props)
 	implementation := renderSearchFunctionSignature(renderFuncBStarIndexer()).Block(
 		metricLine("Search", props.Object),
-		Return(Qual(packagenames.RoxBleve, "RunSearchRequest").Call(Qual(packagenames.V1, props.SearchCategory), Id("q"), Id("b").Dot("index").Dot("Index"), Qual(mappingPath, "OptionsMap"), Id("opts").Op("..."))),
+		Return(Qual(packagenames.RoxBleve, "RunSearchRequest").Call(Qual(packagenames.V1, props.SearchCategory), Id("q"), Id("b").Dot("index"), Qual(mappingPath, "OptionsMap"), Id("opts").Op("..."))),
 	)
 
 	return interfaceMethod, implementation

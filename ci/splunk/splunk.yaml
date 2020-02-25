@@ -37,7 +37,7 @@ spec:
         - name: stackrox
       containers:
         - name: splunk
-          image: stackrox/splunk-test-repo:latest
+          image: stackrox/splunk-test-repo:6.6.0
           ports:
             - containerPort: 8000
             - containerPort: 8088

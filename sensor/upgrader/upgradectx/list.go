@@ -3,11 +3,11 @@ package upgradectx
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func unpackListReflect(listObj runtime.Object) ([]k8sobjects.Object, bool) {
+func unpackListReflect(listObj runtime.Object) ([]k8sutil.Object, bool) {
 	listObjVal := reflect.ValueOf(listObj)
 	if listObjVal.Kind() == reflect.Ptr {
 		listObjVal = listObjVal.Elem()
@@ -21,10 +21,10 @@ func unpackListReflect(listObj runtime.Object) ([]k8sobjects.Object, bool) {
 	}
 
 	l := itemsVal.Len()
-	result := make([]k8sobjects.Object, 0, l)
+	result := make([]k8sutil.Object, 0, l)
 	for i := 0; i < l; i++ {
 		item := itemsVal.Index(i).Addr()
-		obj, _ := item.Interface().(k8sobjects.Object)
+		obj, _ := item.Interface().(k8sutil.Object)
 		if obj == nil {
 			return nil, false
 		}

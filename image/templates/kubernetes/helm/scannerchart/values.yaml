@@ -19,3 +19,13 @@ secrets:
       cert.pem: {{index .SecretsBase64Map "scanner-cert.pem"}}
       key.pem: {{index .SecretsBase64Map "scanner-key.pem"}}
       ca.pem: {{index .SecretsBase64Map "ca.pem"}}
+
+  dbtls:
+    data:
+      cert.pem: {{index .SecretsBase64Map "scanner-db-cert.pem"}}
+      key.pem: {{index .SecretsBase64Map "scanner-db-key.pem"}}
+      ca.pem: {{index .SecretsBase64Map "ca.pem"}}
+
+  password:
+    data:
+      password: {{index .SecretsBase64Map "scanner-db-password"}}

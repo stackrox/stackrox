@@ -33,7 +33,7 @@ const fontIconMapping = {
     'deployment-allowed-connections': (
         <span className="text-center text-3xl relative">
             <i
-                className="icon-potential absolute pin-t pin-r"
+                className="icon-potential absolute top-0 right-0"
                 style={{ color: constants.INTERNET_ACCESS_NODE_BORDER_COLOR }}
             />
             <i className="icon-node" style={{ color: constants.INTERNET_ACCESS_NODE_COLOR }} />

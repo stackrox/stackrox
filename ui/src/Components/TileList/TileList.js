@@ -12,9 +12,14 @@ const TileList = ({ items, title }) => {
                 </h3>
             )}
             <ul className="list-reset">
-                {items.map(item => (
-                    <li className="p-2" key={item.label}>
-                        <TileLink superText={item.count} text={item.label} url={item.url} />
+                {items.map(({ label, count, url, entity }) => (
+                    <li className="p-2" key={label}>
+                        <TileLink
+                            superText={count}
+                            text={label}
+                            url={url}
+                            dataTestId={`${entity}-tile-link`}
+                        />
                     </li>
                 ))}
             </ul>

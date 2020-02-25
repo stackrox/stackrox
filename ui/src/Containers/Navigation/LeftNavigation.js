@@ -100,7 +100,7 @@ const LeftNavigation = ({ location, metadata }) => {
                 className={linkClassName}
                 data-test-id={navLink.data || navLink.text}
             >
-                <div className="text-center pt-1 pr-2">{navLink.renderIcon()}</div>
+                <div className="text-center pr-2">{navLink.renderIcon()}</div>
                 <div className={`${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>
                     {navLink.text}
                 </div>

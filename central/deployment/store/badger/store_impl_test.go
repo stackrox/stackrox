@@ -14,7 +14,7 @@ import (
 )
 
 func TestDeploymentStore(t *testing.T) {
-	if features.ManagedDB.Enabled() {
+	if features.Dackbox.Enabled() {
 		t.Skip()
 	}
 	suite.Run(t, new(DeploymentStoreTestSuite))
@@ -30,7 +30,7 @@ type DeploymentStoreTestSuite struct {
 }
 
 func (suite *DeploymentStoreTestSuite) SetupSuite() {
-	db, dir, err := badgerhelper.NewTemp(suite.T().Name()+".db", false)
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

@@ -3,10 +3,13 @@ package networkpolicies
 import (
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/networkpolicies"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	networkingV1Client "k8s.io/client-go/kubernetes/typed/networking/v1"
 )
@@ -19,13 +22,13 @@ type commandHandler struct {
 	networkingV1Client networkingV1Client.NetworkingV1Interface
 
 	commandsC  chan *central.NetworkPoliciesCommand
-	responsesC chan *central.NetworkPoliciesResponse
+	responsesC chan *central.MsgFromSensor
 
 	stopSig concurrency.Signal
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler() networkpolicies.CommandHandler {
+func NewCommandHandler() common.SensorComponent {
 	return newCommandHandler(client.MustCreateClientSet().NetworkingV1())
 }
 
@@ -33,17 +36,26 @@ func newCommandHandler(networkingV1Client networkingV1Client.NetworkingV1Interfa
 	return &commandHandler{
 		networkingV1Client: networkingV1Client,
 		commandsC:          make(chan *central.NetworkPoliciesCommand),
-		responsesC:         make(chan *central.NetworkPoliciesResponse),
+		responsesC:         make(chan *central.MsgFromSensor),
 		stopSig:            concurrency.NewSignal(),
 	}
 }
 
-func (h *commandHandler) Start() {
+func (h *commandHandler) Start() error {
 	go h.run()
+	return nil
 }
 
-func (h *commandHandler) Stop() {
+func (h *commandHandler) Stop(err error) {
 	h.stopSig.Signal()
+}
+
+func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+	return h.responsesC
 }
 
 func (h *commandHandler) run() {
@@ -65,26 +77,28 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) SendCommand(cmd *central.NetworkPoliciesCommand) bool {
+func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+	cmd := msg.GetNetworkPoliciesCommand()
+	if cmd == nil {
+		return nil
+	}
 	select {
 	case h.commandsC <- cmd:
-		return true
+		return nil
 	case <-h.stopSig.Done():
-		return false
+		return errors.Errorf("unable to apply network policies: %s", proto.MarshalTextString(cmd))
 	}
 }
 
 func (h *commandHandler) sendResponse(resp *central.NetworkPoliciesResponse) bool {
 	select {
-	case h.responsesC <- resp:
+	case h.responsesC <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_NetworkPoliciesResponse{NetworkPoliciesResponse: resp},
+	}:
 		return true
 	case <-h.stopSig.Done():
 		return false
 	}
-}
-
-func (h *commandHandler) Responses() <-chan *central.NetworkPoliciesResponse {
-	return h.responsesC
 }
 
 func (h *commandHandler) processCommand(cmd *central.NetworkPoliciesCommand) bool {

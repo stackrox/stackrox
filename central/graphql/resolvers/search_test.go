@@ -6,8 +6,10 @@ import (
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
@@ -35,6 +37,8 @@ func TestSearchCategories(t *testing.T) {
 	serviceAccounts := serviceAccountMocks.NewMockDataStore(ctrl)
 	roles := k8sroleMocks.NewMockDataStore(ctrl)
 	rolebindings := k8srolebindingMocks.NewMockDataStore(ctrl)
+	cves := cveMocks.NewMockDataStore(ctrl)
+	components := componentMocks.NewMockDataStore(ctrl)
 
 	resolver := &Resolver{
 		ClusterDataStore:         cluster,
@@ -49,6 +53,8 @@ func TestSearchCategories(t *testing.T) {
 		NodeGlobalDataStore:      nodes,
 		K8sRoleBindingStore:      rolebindings,
 		K8sRoleStore:             roles,
+		ImageComponentDataStore:  components,
+		CVEDataStore:             cves,
 	}
 
 	globalSearchCategories := search2.GetGlobalSearchCategories().AsSlice()

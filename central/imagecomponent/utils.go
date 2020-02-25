@@ -18,11 +18,11 @@ func FromString(str string) (ComponentID, error) {
 	if len(nameAndVersionEncoded) != 2 {
 		return ComponentID{}, fmt.Errorf("invalid id: %s", str)
 	}
-	name, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[0])
+	name, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[0])
 	if err != nil {
 		return ComponentID{}, err
 	}
-	version, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[1])
+	version, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[1])
 	if err != nil {
 		return ComponentID{}, err
 	}
@@ -31,7 +31,7 @@ func FromString(str string) (ComponentID, error) {
 
 // ToString serializes the ComponentID to a url string.
 func (cID ComponentID) ToString() string {
-	nameEncoded := base64.URLEncoding.EncodeToString([]byte(cID.Name))
-	versionEncoded := base64.URLEncoding.EncodeToString([]byte(cID.Version))
+	nameEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.Name))
+	versionEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.Version))
 	return fmt.Sprintf("%s:%s", nameEncoded, versionEncoded)
 }

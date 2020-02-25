@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 
@@ -17,14 +16,10 @@ import workflowStateContext from 'Containers/workflowStateContext';
 const EntityTabs = ({ entityType, activeTab }) => {
     const workflowState = useContext(workflowStateContext);
     function getTab(tabType) {
-        const failingText =
-            entityType === entityTypes.DEPLOYMENT && tabType === entityTypes.POLICY
-                ? 'failing '
-                : '';
         return {
             group: entityGroupMap[tabType],
             value: tabType,
-            text: `${failingText}${pluralize(entityLabels[tabType])}`,
+            text: pluralize(entityLabels[tabType]),
             to: workflowState
                 .pushList(tabType)
                 .setSearch('')

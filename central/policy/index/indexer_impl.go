@@ -3,12 +3,13 @@
 package index
 
 import (
+	"bytes"
+	bleve "github.com/blevesearch/bleve"
 	metrics "github.com/stackrox/rox/central/metrics"
 	mappings "github.com/stackrox/rox/central/policy/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
-	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -20,7 +21,7 @@ const batchSize = 5000
 const resourceName = "Policy"
 
 type indexerImpl struct {
-	index *blevehelper.BleveWrapper
+	index bleve.Index
 }
 
 type policyWrapper struct {
@@ -30,7 +31,7 @@ type policyWrapper struct {
 
 func (b *indexerImpl) AddPolicy(policy *storage.Policy) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Policy")
-	if err := b.index.Index.Index(policy.GetId(), &policyWrapper{
+	if err := b.index.Index(policy.GetId(), &policyWrapper{
 		Policy: policy,
 		Type:   v1.SearchCategory_POLICIES.String(),
 	}); err != nil {
@@ -87,12 +88,19 @@ func (b *indexerImpl) DeletePolicies(ids []string) error {
 	return nil
 }
 
-func (b *indexerImpl) ResetIndex() error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Policy")
-	return blevesearch.ResetIndex(v1.SearchCategory_POLICIES, b.index.Index)
+func (b *indexerImpl) MarkInitialIndexingComplete() error {
+	return b.index.SetInternal([]byte(resourceName), []byte("old"))
+}
+
+func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
+	data, err := b.index.GetInternal([]byte(resourceName))
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal([]byte("old"), data), nil
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Policy")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, q, b.index.Index, mappings.OptionsMap, opts...)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_POLICIES, q, b.index, mappings.OptionsMap, opts...)
 }

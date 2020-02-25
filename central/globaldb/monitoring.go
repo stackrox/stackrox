@@ -2,6 +2,7 @@ package globaldb
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -11,6 +12,10 @@ import (
 const gatherFrequency = 1 * time.Minute
 
 func gatherBucketStats(name string, stats bolt.BucketStats) {
+	// Ignore Bolt extra mapping buckets
+	if strings.HasSuffix(name, "-unique") || strings.HasSuffix(name, "-mapper") {
+		return
+	}
 	metrics.SetGaugeBucketInt(metrics.BranchPageN, stats.BranchPageN, name)
 	metrics.SetGaugeBucketInt(metrics.BranchOverflowN, stats.BranchOverflowN, name)
 	metrics.SetGaugeBucketInt(metrics.LeafPageN, stats.LeafPageN, name)

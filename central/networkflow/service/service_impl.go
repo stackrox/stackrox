@@ -60,7 +60,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
+		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
 	}
 
 	since := request.GetSince()

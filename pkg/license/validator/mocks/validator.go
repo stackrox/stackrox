@@ -35,7 +35,7 @@ func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 }
 
 // RegisterSigningKey mocks base method
-func (m *MockValidator) RegisterSigningKey(arg0 string, arg1 []byte, arg2 validator.SigningKeyRestrictions) error {
+func (m *MockValidator) RegisterSigningKey(arg0 string, arg1 []byte, arg2 *validator.SigningKeyRestrictions) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterSigningKey", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

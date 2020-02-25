@@ -33,10 +33,10 @@ func (suite *ResultSetTestSuite) TestUnion() {
 
 	results2 := []search.Result{
 		{
-			ID: "3",
+			ID: "5",
 		},
 		{
-			ID: "5",
+			ID: "3",
 		},
 		{
 			ID: "6",
@@ -152,6 +152,56 @@ func (suite *ResultSetTestSuite) TestSubtract() {
 	rs1 := newResultSet(results1, false)
 	rs2 := newResultSet(results2, false)
 	actual := rs1.subtract(rs2)
+
+	suite.Equal(expected, actual.asResultSlice())
+}
+
+func (suite *ResultSetTestSuite) TestLeftJoin() {
+	results1 := []search.Result{
+		{
+			ID: "1",
+		},
+		{
+			ID: "2",
+		},
+		{
+			ID: "3",
+		},
+		{
+			ID: "5",
+		},
+	}
+
+	results2 := []search.Result{
+		{
+			ID: "5",
+		},
+		{
+			ID: "1",
+		},
+		{
+			ID: "6",
+		},
+	}
+
+	expected := []search.Result{
+		{
+			ID: "5",
+		},
+		{
+			ID: "1",
+		},
+		{
+			ID: "2",
+		},
+		{
+			ID: "3",
+		},
+	}
+
+	rs1 := newResultSet(results1, false)
+	rs2 := newResultSet(results2, true)
+	actual := rs1.leftJoinWithRightOrder(rs2)
 
 	suite.Equal(expected, actual.asResultSlice())
 }

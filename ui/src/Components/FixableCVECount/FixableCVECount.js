@@ -14,8 +14,8 @@ function stopPropagation(e) {
 
 const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const classes = fixable
-        ? 'text-success-800 underline'
-        : 'underline text-base-700 hover:text-primary-700';
+        ? 'text-success-800 hover:text-success-700'
+        : `text-base-700 ${url && !hideLink ? 'hover:text-primary-700' : ''}`;
 
     // can't just pluralize() because of special requirements
     //   1 CVE or 2 CVEs
@@ -29,12 +29,14 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const pluralized = count === 1 || fixable ? type : `${type}s`;
 
     const cveText = (
-        <span className={`${classes} ${individualClasses}`}>{`${count} ${pluralized}`}</span>
+        <span className={`${classes} ${individualClasses}`}>{`${
+            count === 0 ? 'No' : count
+        } ${pluralized}`}</span>
     );
     const testId = fixable ? 'fixableCvesLink' : 'allCvesLink';
 
     return url && !hideLink ? (
-        <Link to={url} onClick={stopPropagation} className="w-full" data-testid={testId}>
+        <Link to={url} onClick={stopPropagation} className="w-full underline" data-testid={testId}>
             {cveText}
         </Link>
     ) : (
@@ -42,7 +44,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     );
 };
 
-const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink }) => {
+const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink, showZero }) => {
     const className = `text-sm items-center leading-normal whitespace-no-wrap ${getOrientationClassName(
         orientation
     )}`;
@@ -50,18 +52,23 @@ const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink
 
     return (
         <div className={className}>
-            {!!cves && (
+            {(showZero || !!cves) && (
                 <CountElement
                     count={cves}
                     url={url}
-                    hideLink={hideLink}
+                    hideLink={(showZero && !cves) || hideLink}
                     individualClasses={individualClasses}
                 />
             )}
             {!!fixable && (
                 <>
                     {` `}
-                    <CountElement count={fixable} url={fixableUrl} fixable hideLink={hideLink} />
+                    <CountElement
+                        count={fixable}
+                        url={fixableUrl}
+                        fixable
+                        hideLink={(showZero && !cves) || hideLink}
+                    />
                 </>
             )}
         </div>
@@ -75,7 +82,8 @@ FixableCVECount.propTypes = {
     fixableUrl: PropTypes.string,
     orientation: PropTypes.oneOf(orientations),
     // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
-    hideLink: PropTypes.bool
+    hideLink: PropTypes.bool,
+    showZero: PropTypes.bool
 };
 
 FixableCVECount.defaultProps = {
@@ -84,7 +92,8 @@ FixableCVECount.defaultProps = {
     url: null,
     fixableUrl: null,
     orientation: 'horizontal',
-    hideLink: false
+    hideLink: false,
+    showZero: false
 };
 
 export default FixableCVECount;

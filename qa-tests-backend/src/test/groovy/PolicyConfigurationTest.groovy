@@ -12,6 +12,7 @@ import objects.Service
 
 import common.Constants
 import objects.Volume
+import io.stackrox.proto.storage.Rbac
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
 import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
@@ -483,7 +484,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                                 .setPermissionPolicy(PolicyOuterClass.PermissionPolicy.newBuilder()
-                                        .setPermissionLevel(PolicyOuterClass.PermissionLevel.ELEVATED_CLUSTER_WIDE)))
+                                        .setPermissionLevel(Rbac.PermissionLevel.ELEVATED_CLUSTER_WIDE)))
                         .build()            | DEPLOYMENT_RBAC
     }
 

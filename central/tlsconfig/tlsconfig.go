@@ -12,10 +12,13 @@ import (
 )
 
 const (
-	tlsCertFileName = `tls.crt`
-	tlsKeyFileName  = `tls.key`
+	// TLSCertFileName is the tls certificate filename.
+	TLSCertFileName = `tls.crt`
+	// TLSKeyFileName is the private key filename.
+	TLSKeyFileName = `tls.key`
 
-	defaultCertPath = `/run/secrets/stackrox.io/default-tls-cert`
+	// DefaultCertPath is the path where the default TLS cert is located.
+	DefaultCertPath = `/run/secrets/stackrox.io/default-tls-cert`
 )
 
 // NewCentralTLSConfigurer returns a new tls configurer to be used for Central.
@@ -24,8 +27,8 @@ func NewCentralTLSConfigurer() verifier.TLSConfigurer {
 }
 
 func loadDefaultCertificate(dir string) (*tls.Certificate, error) {
-	certFile := filepath.Join(dir, tlsCertFileName)
-	keyFile := filepath.Join(dir, tlsKeyFileName)
+	certFile := filepath.Join(dir, TLSCertFileName)
+	keyFile := filepath.Join(dir, TLSKeyFileName)
 
 	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
 		return nil, err
@@ -88,7 +91,7 @@ func getInternalCertificate() (*tls.Certificate, error) {
 func serverCerts() ([]tls.Certificate, error) {
 	var certs []tls.Certificate
 
-	defaultCert, err := loadDefaultCertificate(defaultCertPath)
+	defaultCert, err := loadDefaultCertificate(DefaultCertPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading default certificate")
 	}

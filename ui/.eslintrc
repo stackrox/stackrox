@@ -27,7 +27,9 @@
           "**/*.test.js",
           "cypress/**",
           "src/setupTests.js",
-          "src/setupProxy.js"
+          "src/setupProxy.js",
+          "tailwind.config.js",
+          "postcss.config.js"
       ],
       "optionalDependencies": false
     }],

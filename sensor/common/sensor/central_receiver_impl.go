@@ -3,23 +3,13 @@ package sensor
 import (
 	"io"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/enforcers"
-	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
-	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/networkpolicies"
-	"github.com/stackrox/rox/sensor/common/upgrade"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 type centralReceiverImpl struct {
-	scrapeCommandHandler          complianceLogic.CommandHandler
-	networkPoliciesCommandHandler networkpolicies.CommandHandler
-	upgradeCommandHandler         upgrade.CommandHandler
-	enforcer                      enforcers.Enforcer
-	configCommandHandler          config.Handler
+	receivers []common.SensorComponent
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -63,65 +53,11 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopC.SignalWithError(err)
 				return
 			}
-			s.processMsg(msg)
+			for _, r := range s.receivers {
+				if err := r.ProcessMessage(msg); err != nil {
+					log.Error(err)
+				}
+			}
 		}
-	}
-}
-
-func (s *centralReceiverImpl) processMsg(msg *central.MsgToSensor) {
-	switch m := msg.Msg.(type) {
-	case *central.MsgToSensor_Enforcement:
-		s.processEnforcement(m.Enforcement)
-	case *central.MsgToSensor_ScrapeCommand:
-		s.processScrapeCommand(m.ScrapeCommand)
-	case *central.MsgToSensor_NetworkPoliciesCommand:
-		s.processNetworkPoliciesCommand(m.NetworkPoliciesCommand)
-	case *central.MsgToSensor_ClusterConfig:
-		s.processConfigChangeCommand(m.ClusterConfig)
-	case *central.MsgToSensor_SensorUpgradeTrigger:
-		s.processUpgradeTriggerCommand(m.SensorUpgradeTrigger)
-	default:
-		log.Errorf("Unsupported message from central of type %T: %+v", m, m)
-	}
-}
-
-func (s *centralReceiverImpl) processConfigChangeCommand(cluster *central.ClusterConfig) {
-	s.configCommandHandler.SendCommand(cluster)
-}
-
-func (s *centralReceiverImpl) processNetworkPoliciesCommand(command *central.NetworkPoliciesCommand) {
-	if !s.networkPoliciesCommandHandler.SendCommand(command) {
-		log.Errorf("Unable to apply network policies: %s", proto.MarshalTextString(command))
-	}
-}
-
-func (s *centralReceiverImpl) processScrapeCommand(command *central.ScrapeCommand) {
-	if !s.scrapeCommandHandler.SendCommand(command) {
-		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
-	}
-}
-
-func (s *centralReceiverImpl) processUpgradeTriggerCommand(command *central.SensorUpgradeTrigger) {
-	if s.upgradeCommandHandler == nil {
-		log.Errorf("Unable to send command %s as upgrades are not supported", proto.MarshalTextString(command))
-		return
-	}
-	if !s.upgradeCommandHandler.SendCommand(command) {
-		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
-	}
-}
-
-func (s *centralReceiverImpl) processEnforcement(enforcement *central.SensorEnforcement) {
-	if enforcement == nil {
-		return
-	}
-
-	if enforcement.GetEnforcement() == storage.EnforcementAction_UNSET_ENFORCEMENT {
-		log.Errorf("received enforcement with unset action: %s", proto.MarshalTextString(enforcement))
-		return
-	}
-
-	if !s.enforcer.SendEnforcement(enforcement) {
-		log.Errorf("unable to send enforcement: %s", proto.MarshalTextString(enforcement))
 	}
 }

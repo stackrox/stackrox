@@ -106,6 +106,7 @@ func LightweightDeployment() *storage.Deployment {
 						InstanceId: &storage.ContainerInstanceID{
 							Id: "containerid",
 						},
+						ImageDigest: "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 					},
 				},
 			},

@@ -5,11 +5,14 @@ import (
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	cveFetcher "github.com/stackrox/rox/central/cve/fetcher"
 	"github.com/stackrox/rox/central/deploymentenvs"
+	"github.com/stackrox/rox/central/scannerdefinitions/handler"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -22,20 +25,22 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), deploymentenvs.ManagerSingleton())
+	return NewPipeline(clusterDataStore.Singleton(), deploymentenvs.ManagerSingleton(), cveFetcher.SingletonManager())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager, cveFetcher cveFetcher.K8sIstioCVEManager) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:          clusters,
 		deploymentEnvsMgr: deploymentEnvsMgr,
+		cveFetcher:        cveFetcher,
 	}
 }
 
 type pipelineImpl struct {
 	clusters          clusterDataStore.DataStore
 	deploymentEnvsMgr deploymentenvs.Manager
+	cveFetcher        cveFetcher.K8sIstioCVEManager
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {
@@ -54,7 +59,16 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.Environments)
 		return nil
 	case *central.ClusterStatusUpdate_Status:
-		return s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status)
+		if err := s.clusters.UpdateClusterStatus(ctx, clusterID, m.Status); err != nil {
+			return err
+		}
+		offlineModeSetting := env.OfflineModeEnv.Setting()
+		if offlineModeSetting == "true" {
+			s.cveFetcher.Update(handler.K8sIstioCveZipName, true)
+		} else {
+			go s.cveFetcher.Fetch(true)
+		}
+		return nil
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
 	}

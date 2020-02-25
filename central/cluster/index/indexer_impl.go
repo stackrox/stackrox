@@ -3,12 +3,13 @@
 package index
 
 import (
+	"bytes"
+	bleve "github.com/blevesearch/bleve"
 	mappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
-	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -20,7 +21,7 @@ const batchSize = 5000
 const resourceName = "Cluster"
 
 type indexerImpl struct {
-	index *blevehelper.BleveWrapper
+	index bleve.Index
 }
 
 type clusterWrapper struct {
@@ -30,7 +31,7 @@ type clusterWrapper struct {
 
 func (b *indexerImpl) AddCluster(cluster *storage.Cluster) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Cluster")
-	if err := b.index.Index.Index(cluster.GetId(), &clusterWrapper{
+	if err := b.index.Index(cluster.GetId(), &clusterWrapper{
 		Cluster: cluster,
 		Type:    v1.SearchCategory_CLUSTERS.String(),
 	}); err != nil {
@@ -87,12 +88,19 @@ func (b *indexerImpl) DeleteClusters(ids []string) error {
 	return nil
 }
 
-func (b *indexerImpl) ResetIndex() error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Cluster")
-	return blevesearch.ResetIndex(v1.SearchCategory_CLUSTERS, b.index.Index)
+func (b *indexerImpl) MarkInitialIndexingComplete() error {
+	return b.index.SetInternal([]byte(resourceName), []byte("old"))
+}
+
+func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
+	data, err := b.index.GetInternal([]byte(resourceName))
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal([]byte("old"), data), nil
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Cluster")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.index.Index, mappings.OptionsMap, opts...)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_CLUSTERS, q, b.index, mappings.OptionsMap, opts...)
 }

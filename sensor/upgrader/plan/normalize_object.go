@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -117,7 +118,7 @@ func normalizeObject(obj *unstructured.Unstructured) {
 	obj.SetCreationTimestamp(metav1.Time{})
 	obj.SetResourceVersion("")
 	obj.SetGeneration(0)
-	delete(obj.GetAnnotations(), common.LastUpgradeIDAnnotationKey) // irrelevant for diff
+	k8sutil.DeleteAnnotation(obj, common.LastUpgradeIDAnnotationKey)
 	unstructured.RemoveNestedField(obj.Object, "status")
 
 	if clearDynamicFieldsFn := clearDynamicFieldsByGVK[obj.GetObjectKind().GroupVersionKind()]; clearDynamicFieldsFn != nil {

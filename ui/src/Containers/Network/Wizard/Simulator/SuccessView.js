@@ -109,7 +109,7 @@ const SuccessView = ({
                         modification={modification}
                         modificationName={modificationName}
                     />
-                    <div className="absolute pin-r pin-t h-9 z-10">
+                    <div className="absolute right-0 top-0 h-9 z-10">
                         <Undo />
                         <Generate />
                         <Upload />

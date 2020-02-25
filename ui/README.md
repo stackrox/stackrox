@@ -63,8 +63,14 @@ _If your machine goes into sleep mode, you may lose the port forwarding set up d
 
 If you want to connect your local frontend app to a Stackrox deployment that is already running, you can use one of the following, depending on whether it has a public IP. For both, start by visiting [https://setup.rox.systems/](https://setup.rox.systems/).
 
-* If it has a public IP, find that IP by looking in the **nodes/pods** section in the center-right panel. Copy the **External IP** value. Export that in the `YARN_START_TARGET` env. var and start the front-end by running, `export YARN_START_TARGET=<external_IP>; yarn start`
-* If it does not have a public IP, you can steps 2 and 4 from the section above, **Using Remote StackRox Deployment**.
+* If it has a public IP, find that IP by looking in the **nodes/pods** section in the center-right panel.
+    - Copy the **External IP** value.
+    - Export that in the `YARN_START_TARGET` env. var and start the front-end by running, `export YARN_START_TARGET=<external_IP>; yarn start`
+* If it is a demo cluster, you can use the demo URL.
+    -You will find it on the line below the line that reads, "A DNS entry was created for this demo" in the **setup.log** section in the center-left panel.
+    - Export that in the `YARN_START_TARGET` env. var and start the front-end by running, for example `export YARN_START_TARGET=https://k8s.demo.stackrox.com/; yarn start`
+    - (Note: you must login to the frontend with the admin username, and the admin password that you will also find further up in the **setup.log** section. You cannot login with your auth0 account.)
+* If it does not have a public IP or a demo URL, you can steps 2 and 4 from the section above, **Using Remote StackRox Deployment**.
     1. Run `yarn connect [rg-name]` where `[rg-name]` is the name found in the 'Resource Group' found in the existing cluster’s page in Setup.
     1. Run `yarn forward` in one terminal, and `yarn start` in another.
 

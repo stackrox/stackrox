@@ -1,22 +1,27 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-// deploymentStore stores deployments (by namespace and id).
-type deploymentStore struct {
+// DeploymentStore stores deployments (by namespace and id).
+type DeploymentStore struct {
+	lock        sync.RWMutex
 	deployments map[string]map[string]*deploymentWrap
 }
 
 // newDeploymentStore creates and returns a new deployment store.
-func newDeploymentStore() *deploymentStore {
-	return &deploymentStore{
+func newDeploymentStore() *DeploymentStore {
+	return &DeploymentStore{
 		deployments: make(map[string]map[string]*deploymentWrap),
 	}
 }
 
-func (ds *deploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
+func (ds *DeploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
 	nsMap := ds.deployments[wrap.GetNamespace()]
 	if nsMap == nil {
 		nsMap = make(map[string]*deploymentWrap)
@@ -25,7 +30,10 @@ func (ds *deploymentStore) addOrUpdateDeployment(wrap *deploymentWrap) {
 	nsMap[wrap.GetId()] = wrap
 }
 
-func (ds *deploymentStore) removeDeployment(wrap *deploymentWrap) {
+func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
 	nsMap := ds.deployments[wrap.GetNamespace()]
 	if nsMap == nil {
 		return
@@ -33,7 +41,10 @@ func (ds *deploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(nsMap, wrap.GetId())
 }
 
-func (ds *deploymentStore) getOwningDeployments(namespace string, podLabels map[string]string) (owning []*deploymentWrap) {
+func (ds *DeploymentStore) getOwningDeployments(namespace string, podLabels map[string]string) (owning []*deploymentWrap) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
 	podLabelSet := labels.Set(podLabels)
 	for _, wrap := range ds.deployments[namespace] {
 		if wrap.podSelector != nil && wrap.podSelector.Matches(podLabelSet) {
@@ -43,7 +54,10 @@ func (ds *deploymentStore) getOwningDeployments(namespace string, podLabels map[
 	return
 }
 
-func (ds *deploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
+func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
 	for _, wrap := range ds.deployments[namespace] {
 		if sel.Matches(labels.Set(wrap.PodLabels)) {
 			matching = append(matching, wrap)
@@ -52,7 +66,18 @@ func (ds *deploymentStore) getMatchingDeployments(namespace string, sel selector
 	return
 }
 
+// CountDeploymentsForNamespace returns the number of deployments in a namespace
+func (ds *DeploymentStore) CountDeploymentsForNamespace(namespace string) int {
+	ds.lock.RLock()
+	defer ds.lock.RUnlock()
+
+	return len(ds.deployments[namespace])
+}
+
 // OnNamespaceDeleted reacts to a namespace deletion, deleting all deployments in this namespace from the store.
-func (ds *deploymentStore) OnNamespaceDeleted(ns string) {
+func (ds *DeploymentStore) OnNamespaceDeleted(ns string) {
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
 	delete(ds.deployments, ns)
 }

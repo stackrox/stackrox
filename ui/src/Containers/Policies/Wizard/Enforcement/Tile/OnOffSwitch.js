@@ -46,7 +46,7 @@ class OnOffSwitch extends Component {
     };
 
     render() {
-        return <div className="flex pin-b"> {this.renderSwitch()} </div>;
+        return <div className="flex bottom-0"> {this.renderSwitch()} </div>;
     }
 }
 

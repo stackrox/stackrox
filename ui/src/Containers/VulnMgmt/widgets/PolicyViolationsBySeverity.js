@@ -33,11 +33,11 @@ const POLICIES_QUERY = gql`
                 name
                 categories
                 description
-                policyStatus
+                policyStatus(query: $query)
                 lastUpdated
-                latestViolation
+                latestViolation(query: $query)
                 severity
-                deploymentCount
+                deploymentCount(query: $query)
                 lifecycleStages
                 enforcementActions
             }
@@ -264,11 +264,13 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
 };
 
 PolicyViolationsBySeverity.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
+    policyContext: PropTypes.shape({})
 };
 
 PolicyViolationsBySeverity.defaultProps = {
-    entityContext: {}
+    entityContext: {},
+    policyContext: {}
 };
 
 export default PolicyViolationsBySeverity;

@@ -4,19 +4,18 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	// TODO: Need to setup sac for CVEs correctly instead of relying on global access.
 	imagesSAC = sac.ForResource(resources.Image)
 )
 
@@ -84,6 +83,7 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
+
 	cves, _, err := ds.storage.GetBatch(ids)
 	if err != nil {
 		return nil, err
@@ -91,20 +91,104 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 	return cves, nil
 }
 
-func (ds *datastoreImpl) Upsert(ctx context.Context, cve *storage.CVE) error {
-	if cve.GetId() == "" {
-		return errors.New("cannot upsert a cve without an id")
+func (ds *datastoreImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error {
+	if len(cves) == 0 {
+		return nil
 	}
+
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
 	}
 
-	if err := ds.indexer.AddCVE(cve); err != nil {
+	// Load the suppressed value for any CVEs already present.
+	ids := make([]string, 0, len(cves))
+	for _, cve := range cves {
+		ids = append(ids, cve.GetId())
+	}
+	currentCVEs, _, err := ds.storage.GetBatch(ids)
+	if err != nil {
 		return err
 	}
-	return ds.storage.Upsert(cve)
+	var currentIndex int
+	for newIndex := 0; newIndex < len(cves) && currentIndex < len(currentCVEs); newIndex++ {
+		if currentCVEs[currentIndex].GetId() == cves[newIndex].GetId() {
+			cves[newIndex].Suppressed = currentCVEs[currentIndex].Suppressed
+			currentIndex++
+		}
+	}
+
+	// Store the new CVE data.
+	return ds.storage.Upsert(cves...)
+}
+
+func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...converter.ClusterCVEParts) error {
+	if len(parts) == 0 {
+		return nil
+	}
+
+	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	// Load the suppressed value for any CVEs already present.
+	ids := make([]string, 0, len(parts))
+	for _, p := range parts {
+		ids = append(ids, p.CVE.GetId())
+	}
+	currentCVEs, _, err := ds.storage.GetBatch(ids)
+	if err != nil {
+		return err
+	}
+	var currentIndex int
+	for newIndex := 0; newIndex < len(parts) && currentIndex < len(currentCVEs); newIndex++ {
+		if currentCVEs[currentIndex].GetId() == parts[newIndex].CVE.GetId() {
+			parts[newIndex].CVE.Suppressed = currentCVEs[currentIndex].Suppressed
+			currentIndex++
+		}
+	}
+
+	// Store the new CVE data.
+	return ds.storage.UpsertClusterCVEs(parts...)
+}
+
+func (ds *datastoreImpl) Suppress(ctx context.Context, ids ...string) error {
+	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	cves, _, err := ds.storage.GetBatch(ids)
+	if err != nil {
+		return err
+	}
+
+	for _, cve := range cves {
+		cve.Suppressed = true
+	}
+	return ds.storage.Upsert(cves...)
+}
+
+func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
+	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return errors.New("permission denied")
+	}
+
+	cves, _, err := ds.storage.GetBatch(ids)
+	if err != nil {
+		return err
+	}
+
+	for _, cve := range cves {
+		cve.Suppressed = false
+	}
+	return ds.storage.Upsert(cves...)
 }
 
 func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
@@ -114,15 +198,5 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 		return errors.New("permission denied")
 	}
 
-	errorList := errorhelpers.NewErrorList("deleting cves")
-	for _, id := range ids {
-		if err := ds.storage.Delete(id); err != nil {
-			errorList.AddError(err)
-			continue
-		}
-		if err := ds.indexer.DeleteCVE(id); err != nil {
-			errorList.AddError(err)
-		}
-	}
-	return errorList.ToError()
+	return ds.storage.Delete(ids...)
 }

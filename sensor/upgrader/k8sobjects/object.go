@@ -3,16 +3,9 @@ package k8sobjects
 import (
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-// Object is a combination of `runtime.Object` and `metav1.Object`.
-type Object interface {
-	runtime.Object
-	metav1.Object
-}
 
 // ObjectRef references a Kubernetes object.
 type ObjectRef struct {
@@ -36,7 +29,7 @@ func (r ObjectRef) String() string {
 }
 
 // RefOf returns an ObjectRef for the given object.
-func RefOf(obj Object) ObjectRef {
+func RefOf(obj k8sutil.Object) ObjectRef {
 	return ObjectRef{
 		GVK:       obj.GetObjectKind().GroupVersionKind(),
 		Name:      obj.GetName(),
@@ -45,8 +38,8 @@ func RefOf(obj Object) ObjectRef {
 }
 
 // BuildObjectMap takes a slice of Objects, and returns a map keyed by object reference.
-func BuildObjectMap(objects []Object) map[ObjectRef]Object {
-	result := make(map[ObjectRef]Object, len(objects))
+func BuildObjectMap(objects []k8sutil.Object) map[ObjectRef]k8sutil.Object {
+	result := make(map[ObjectRef]k8sutil.Object, len(objects))
 	for _, obj := range objects {
 		result[RefOf(obj)] = obj
 	}

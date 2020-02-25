@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.2.8-2-g1e9382b6d6
+    - image: docker.io/stackrox/apollo-ci:0.2.10
       auth:
         username: $DOCKER_IO_PULL_USERNAME
         password: $DOCKER_IO_PULL_PASSWORD
@@ -10,6 +10,15 @@ runOnAllTags: &runOnAllTags
   filters:
     tags:
       only: /.*/
+
+# This runs a command only on rc builds,
+# which is a tagged build with a tag matching the below regex.
+runOnlyOnReleaseCandidateBuilds: &runOnlyOnReleaseCandidateBuilds
+  filters:
+    tags:
+      only: /^\d+\.\d+\.\d+\.\d+-rc\.\d$/
+    branches:
+      ignore: /.*/
 
 # This runs a command only on release builds,
 # which is a tagged build with a tag matching the below regex.
@@ -169,7 +178,8 @@ waitForAPI: &waitForAPI
         export API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
         export API_PORT=443
       fi
-      export METADATA_URL="https://${API_HOSTNAME}:${API_PORT}/v1/metadata"
+      export API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
+      export METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
       echo "METADATA_URL is set to ${METADATA_URL}"
       set +e
       SUCCESS=0
@@ -188,7 +198,7 @@ waitForAPI: &waitForAPI
       fi
       cci-export API_HOSTNAME "$API_HOSTNAME"
       cci-export API_PORT "$API_PORT"
-      cci-export API_ENDPOINT "${API_HOSTNAME}:${API_PORT}"
+      cci-export API_ENDPOINT "${API_ENDPOINT}"
 
 waitForSensorK8s: &waitForSensorK8s
   run:
@@ -236,8 +246,7 @@ runUIE2E: &runUIE2E
         export UI_BASE_URL="https://localhost:3000"
       else
         if [[ "${LOAD_BALANCER}" == "lb" ]]; then
-          LB_IP=$(./scripts/k8s/get-lb-ip.sh)
-          sudo sh -c "echo >>/etc/hosts ${LB_IP} central-lb"
+          sudo sh -c "echo >>/etc/hosts ${API_HOSTNAME} central-lb"
           export UI_BASE_URL="https://central-lb:443"
         else
           export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
@@ -393,6 +402,22 @@ buildLivenessCheck: &buildLivenessCheck
     name: Ensure workflow is still live
     command: |
       .circleci/check-workflow-live.sh
+
+checkEksLabel: &checkEksLabel
+  run:
+    name: Determine whether to run eks tests
+    command: |
+      set +e
+      if [ -z "${CIRCLE_TAG}" ]; then
+        .circleci/pr_has_label.sh ci-eks-tests
+        # SPECIAL CASE: eks-tests are currently NOT run on master.
+        # If you want to run it on master, change this block to be like
+        # checkOpenShiftLabel.
+        if [ $? -ne 0 ]; then
+          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-eks-tests label. Apply the ci-eks-tests label to your PR if you want to run them."
+          circleci step halt
+        fi
+      fi
 
 checkKopsLabel: &checkKopsLabel
   run:
@@ -699,6 +724,36 @@ commands:
           paths:
             - .ci-clusters/<< parameters.cluster-id >>
 
+  deploy-sensor-via-upgrader-for-upgrade-tests:
+    parameters:
+      desc:
+        type: string
+      upgrade-process-id:
+        type: string
+
+    steps:
+      - run:
+          name: Deploy sensor via upgrader (<< parameters.desc >>)
+          command: |
+            kubectl proxy --port 28001 &
+            proxy_pid=$!
+            sleep 5
+
+            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
+              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
+            ROX_UPGRADE_PROCESS_ID=<< parameters.upgrade-process-id >> \
+                ROX_CLUSTER_ID="$CLUSTER_ID" \
+                ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
+                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
+                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
+                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
+                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
+
+            kill "$proxy_pid"
+
+      - *waitForSensorK8s
+
   attach-gke-cluster:
     parameters:
       cluster-id:
@@ -735,6 +790,7 @@ commands:
           name: Remove all the existing StackRox resources (they can exist when Circle restarts a container)
           command: |
             kubectl -n stackrox delete cm,deploy,ds,networkpolicy,secret,svc,serviceaccount,validatingwebhookconfiguration,pv,pvc,clusterrole,clusterrolebinding,role,rolebinding,psp -l "app.kubernetes.io/name=stackrox" --wait || true
+            kubectl delete -R -f scripts/ci/psp --wait || true
             kubectl delete ns stackrox --wait || true
             helm del --purge monitoring || true
             helm del --purge central || true
@@ -1470,37 +1526,6 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - run:
-          name: Login to RedHat registry
-          command: |
-            success=0
-            for i in {1..10}; do
-              if docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io; then
-                success=1
-                break
-              fi
-              sleep $(( 2 ** i ))
-            done
-
-            if (( ! success )); then
-              echo "Failed to login to RHEL registry"
-              exit 1
-            fi
-
-            success=0
-            for i in {1..10}; do
-              if docker pull registry.access.redhat.com/ubi7/ubi-minimal; then
-                success=1
-                break
-              fi
-              sleep $(( 2 ** i ))
-            done
-
-            if (( ! success )); then
-              echo "Failed to pull RHEL image"
-              exit 1
-            fi
-
-      - run:
           name: Install ossls
           working_directory: /tmp
           command: |
@@ -1530,6 +1555,11 @@ jobs:
 
             TAG="$(make --quiet tag)"
             docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - image/rhel/bundle.tar.gz
 
       - cleanup-clusters-on-fail
 
@@ -1721,7 +1751,11 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROX_VULN_MGMT_UI: true
+      - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
+      - ROX_TELEMETRY: true
+      - ROX_DIAGNOSTIC_BUNDLE: true
+      - ROX_EVENT_TIMELINE_UI: true
 
     steps:
       - checkout
@@ -1906,6 +1940,8 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_BADGER_DB: true
+      - ROX_TELEMETRY: true
+      - ROX_DIAGNOSTIC_BUNDLE: true
 
     steps:
       - run-qa-tests:
@@ -1997,7 +2033,7 @@ jobs:
       - run:
           name: Restore DB
           command: |
-            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db restore \
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore \
               --file ./qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip \
               --timeout 1m
 
@@ -2038,7 +2074,7 @@ jobs:
       - run:
           name: Install license key
           command: |
-            roxctl -e "${API_HOSTNAME}:${API_PORT}" central license add --license="$ROX_LICENSE_KEY"
+            roxctl -e "${API_ENDPOINT}" central license add --license="$ROX_LICENSE_KEY"
             sleep 3
 
       - *waitForAPI
@@ -2046,7 +2082,11 @@ jobs:
       - run:
           name: Do the upgrade
           command: |
-            new_image="stackrox/main:$(make --quiet tag)"
+            if .circleci/pr_has_label.sh ci-run-against-rhel; then
+              new_image="stackrox/main-rhel:$(make --quiet tag)"
+            else
+              new_image="stackrox/main:$(make --quiet tag)"
+            fi
 
             kubectl -n stackrox set image deploy/central central=${new_image}
             kubectl -n stackrox describe deploy/central
@@ -2070,13 +2110,13 @@ jobs:
       - run:
           name: Back up and restore the DB
           command: |
-            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db backup \
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup \
               --output /tmp/stackrox-db.zip \
               --timeout 1m
 
             ls -lh /tmp/stackrox-db.zip
 
-            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db restore \
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore \
               --file /tmp/stackrox-db.zip \
               --timeout 1m
             sleep 5
@@ -2099,53 +2139,17 @@ jobs:
       - *updateTestRail
 
       - run:
-          name: Deploy sensor via upgrader
+          name: Create a "sensor-remote-new" cluster
           command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-
-            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" sensor generate k8s \
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor generate k8s \
               --image "${MAIN_IMAGE_REPO:-docker.io/stackrox/main}" \
               --collector-image "${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}" \
-              --name remote-new
+              --name remote-new \
+              --admission-controller
 
-            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
-              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
-            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
-                ROX_CLUSTER_ID="$CLUSTER_ID" \
-                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
-                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
-                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
-                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
-                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
-
-            kill "$proxy_pid"
-
-      - *waitForSensorK8s
-
-      - run:
-          name: Deploy sensor via upgrader a second time
-          command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-
-            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
-              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
-            ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
-                ROX_CLUSTER_ID="$CLUSTER_ID" \
-                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
-                ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
-                ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
-                ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
-                KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              ./bin/linux/upgrader -workflow roll-forward -local-bundle sensor-remote-new -kube-config kubectl
-
-            kill "$proxy_pid"
-
-      - *waitForSensorK8s
+      - deploy-sensor-via-upgrader-for-upgrade-tests:
+          upgrade-process-id: 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
+          desc: for the first time, to test rollback
 
       - run:
           name: Roll back sensor upgrade
@@ -2158,7 +2162,7 @@ jobs:
               | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
             ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
                 ROX_CLUSTER_ID="$CLUSTER_ID" \
-                ROX_CENTRAL_ENDPOINT="${API_HOSTNAME}:${API_PORT}" \
+                ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
                 ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
                 ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
                 ROX_MTLS_KEY_FILE="$(pwd)/sensor-remote-new/sensor-key.pem" \
@@ -2167,13 +2171,39 @@ jobs:
 
             kill "$proxy_pid"
 
+      - deploy-sensor-via-upgrader-for-upgrade-tests:
+          upgrade-process-id: 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
+          desc: from scratch
+
+      - deploy-sensor-via-upgrader-for-upgrade-tests:
+          upgrade-process-id: 9b8f2cbb-72c6-4e00-b375-5b50ce7f988b
+          desc: again, but with the same upgrade process ID
+
+      - deploy-sensor-via-upgrader-for-upgrade-tests:
+          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd6
+          desc: yet again, but with a new upgrade process ID
+
       - run:
-          name: Verify sensor is gone
+          name: Patch admission webhook
           command: |
-            kubectl -n stackrox wait deploy/sensor --for=delete --timeout=30s 2>/dev/null || true
-            if kubectl -n stackrox get deploy/sensor 2>/dev/null ; then
-              echo >&2 "Sensor deployment still exists after 30s"
-              exit 1
+            kubectl -n stackrox patch validatingwebhookconfiguration stackrox --type 'json'  -p '[{"op":"replace","path":"/webhooks/0/timeoutSeconds","value":29}]'
+            if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json  | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 29 ]]; then
+              echo "Webhook not patched";
+              kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
+              exit 1;
+            fi
+
+      - deploy-sensor-via-upgrader-for-upgrade-tests:
+          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd6
+          desc: after manually patching webhook
+
+      - run:
+          name: Verify the webhook was patched back by the upgrader
+          command: |
+            if [[ "$(kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o json  | jq '.webhooks | .[0] | .timeoutSeconds')" -ne 30 ]]; then
+              echo "Webhook not patched";
+              kubectl -n stackrox get validatingwebhookconfiguration/stackrox -o yaml
+              exit 1;
             fi
 
       - *collectK8sLogs
@@ -2372,7 +2402,7 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: ebpf
-      - MONITORING_SUPPORT: true
+      - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
@@ -2383,6 +2413,160 @@ jobs:
           gate-label: ci-openshift-crio
           flavor: multi
           version: 0.6.1
+
+  provision-eks:
+    <<: *defaults
+    environment:
+      - EKS_AUTOMATION_VERSION: 0.0.1
+    steps:
+      - checkout
+      - *checkEksLabel
+
+      - setup_remote_docker
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Create EKS cluster
+          command: |
+            mkdir $PWD/eks
+            docker run --name eks-automation -t \
+              -v $PWD/eks:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
+            docker cp eks-automation:/data $PWD/eks
+
+      - run:
+          name: Validate Kubeconfig
+          command: |
+            ls -lh $PWD/eks/data
+            export KUBECONFIG=$PWD/eks/data/eks-kube.yaml
+            sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
+            kubectl get nodes
+
+      - store_artifacts:
+          path: eks
+          destination: eks
+
+      - *buildLivenessCheck
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - eks
+
+      - run:
+          name: Destroy EKS cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/eks/data:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: on_fail
+
+
+  eks-tests:
+    <<: *defaults
+    environment:
+      - EKS_AUTOMATION_VERSION: 0.0.1
+      - LOCAL_PORT: 8000
+      - RUNTIME_SUPPORT: kernel-module
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ADMISSION_CONTROLLER: true
+
+    steps:
+      - checkout
+      - *checkEksLabel
+
+      - setup_remote_docker
+
+      - run:
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Sanity check KUBECONFIG
+          command: |
+            ls -lh $PWD/eks/data
+            export KUBECONFIG=$PWD/eks/data/eks-kube.yaml
+            kubectl get nodes
+
+      - *setupRoxctl
+
+      - run:
+          name: Configure Deployment Environment
+          command: |
+            cci-export KUBECONFIG "$PWD/eks/data/eks-kube.yaml"
+            cci-export CLAIRIFY_IMAGE_TAG 0.5.4
+            cci-export ROX_IMAGE_REGISTRY docker.io
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
+            cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
+            cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
+
+      - *setupGoogleAppCreds
+      - *setupLicense
+
+      - *setupDefaultTLSCerts
+
+      - deploy-stackrox:
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
+
+      - deploy-webhook-server
+      - deploy-authz-plugin
+
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME=localhost
+            export PORT=${LOCAL_PORT}
+            make -C qa-tests-backend test
+
+      - *storeQATestResults
+      - *storeQASpockReports
+      - copy-gradle-files:
+          target-dir: eks-tests
+
+      - *updateTestRail
+
+      - *restoreUI
+      - *determineWhetherToRunUIDevServer
+      - *runUIDevServer
+      - *waitForUIDevServer
+      - *runUIE2E
+      - *collectImbuedUILogs
+      - *storeImbuedUILogs
+
+      - *collectK8sLogs
+      - *backupDB
+      - *storeDBBackupArtifact
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
+
+      - *storeCypressResults
+      - *storeCypressScreenshots
+      - *storeCypressVideos
+
+      - run:
+          name: Destroy EKS cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/eks/data:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: always
 
   provision-kops:
     machine: true
@@ -2648,7 +2832,6 @@ jobs:
             docker push collector.stackrox.io/collector-rhel:$COLLECTOR_TAG | cat
             docker push "collector.stackrox.io/collector-rhel:${COLLECTOR_TAG}-latest" | cat
 
-
       - run:
           name: Push roxctl to stackrox-hub
           command: |
@@ -2709,6 +2892,37 @@ jobs:
               gsutil cp scripts/offline-bundle/image-bundle-rhel.tgz           gs://sr-roxc/${release}/image-bundle-rhel.tgz
               gsutil cp scripts/offline-bundle/image-collector-bundle-rhel.tgz gs://sr-roxc/${release}/image-collector-bundle-rhel.tgz
             done
+
+      - run:
+          name: Upload main image RHEL DSOP bundle to dsop-artifacts.stackrox.io
+          command: |
+              gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+              gcloud auth list
+              TAG="$(make --quiet tag)"
+              gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
+
+  scan-images-in-quay:
+      <<: *defaults
+      resource_class: small
+      steps:
+        - checkout
+        - setup_remote_docker
+        - attach_workspace:
+            at: /go/src/github.com/stackrox/rox
+
+        - run:
+            name: Push images into quay.io
+            command: |
+              docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+              docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+              ./release/scripts/vuln_scan.sh
+
+        - run:
+            name: Check for fixable vulns
+            command: |
+              export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
+              ./release/scripts/vuln_check.sh
+
 
   retrigger-master-workflow:
     <<: *defaults
@@ -2955,6 +3169,13 @@ workflows:
           requires:
             - build
             - provision-openshift-crio
+      - provision-eks:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - eks-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - provision-eks
       - provision-kops:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - kops-tests:
@@ -2979,8 +3200,16 @@ workflows:
           context: docker-io-and-stackrox-io-push
           requires:
             - build
+            - build-rhel
             - build-deployer
             - unit-tests
+
+      - scan-images-in-quay:
+          <<: *runOnlyOnReleaseCandidateBuilds
+          context: docker-io-and-stackrox-io-push
+          requires:
+            - build
+            - build-rhel
 
       - retrigger-master-workflow:
           context: docker-io-pull

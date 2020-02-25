@@ -36,6 +36,8 @@ var (
 		storage.Severity_HIGH_SEVERITY:     "error",
 		storage.Severity_CRITICAL_SEVERITY: "critical",
 	}
+
+	httpStatusCodePattern = regexp.MustCompile(`^HTTP Status Code: ([0-9]{3})\b`)
 )
 
 type pagerDuty struct {
@@ -122,8 +124,7 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 	if err != nil {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 
-		re := regexp.MustCompile(`^HTTP Status Code: ([0-9]{3})\b`)
-		matches := re.FindAllString(err.Error(), 1)
+		matches := httpStatusCodePattern.FindAllString(err.Error(), 1)
 		if len(matches) == 0 {
 			return err
 		}

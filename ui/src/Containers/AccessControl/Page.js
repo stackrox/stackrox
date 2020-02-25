@@ -17,7 +17,7 @@ function Page({ fetchResources }) {
     ];
     return (
         <section className="flex flex-col h-full">
-            <div className="flex flex-no-shrink">
+            <div className="flex flex-shrink-0">
                 <PageHeader header="Access Control" />
             </div>
             <div className="flex h-full">

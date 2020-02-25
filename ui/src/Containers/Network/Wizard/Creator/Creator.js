@@ -23,7 +23,7 @@ const Creator = ({ onClose, wizardOpen, wizardStage }) => {
             <Panel header={header} onClose={onClose} headerComponents={<ViewActive />}>
                 <div className="flex h-full w-full flex-col p-4 pb-0">
                     <Generate />
-                    <div className="w-full my-5 text-center flex items-center flex-no-shrink">
+                    <div className="w-full my-5 text-center flex items-center flex-shrink-0">
                         <div className="h-px bg-base-400 w-full" />
                         <span className="relative px-2 font-700">OR</span>
                         <div className="h-px bg-base-400 w-full" />

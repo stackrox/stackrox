@@ -1,14 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { connect } from 'react-redux';
-import { selectors } from 'reducers';
-import { createStructuredSelector } from 'reselect';
 import { withRouter } from 'react-router-dom';
 
 import { pageSize as defaultPageSize } from './Table';
 
-const TablePagination = ({ dataLength, setPage, page, pageSize, searchOptions }) => {
+const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     function getTotalPages() {
         return Math.ceil(dataLength / pageSize);
     }
@@ -30,14 +27,14 @@ const TablePagination = ({ dataLength, setPage, page, pageSize, searchOptions })
         setPage(page + 1);
     }
 
-    function resetPage() {
-        setPage(0);
-    }
-
     const totalPages = getTotalPages();
     const curPage = totalPages === 0 ? 0 : `${page + 1}`;
 
-    useEffect(resetPage, [searchOptions]);
+    // @TODO: move the resetting of the page number to 0 when the search parameters change for the entity list being displayed
+    //   up to a higher level of state,
+    //   because this causes the sidepanel to close when it is open to a sub-list, and the page is refreshed
+    //   --when the TablePagination component in the back resets the URL to the top-level lists URL
+    // useEffect(resetPage, [searchOptions]);
 
     return (
         <div
@@ -86,22 +83,11 @@ TablePagination.propTypes = {
     page: PropTypes.number.isRequired,
     dataLength: PropTypes.number.isRequired,
     setPage: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.shape({})),
     pageSize: PropTypes.number
 };
 
 TablePagination.defaultProps = {
-    searchOptions: [],
     pageSize: defaultPageSize
 };
 
-const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getAllSearchOptions
-});
-
-export default withRouter(
-    connect(
-        mapStateToProps,
-        null
-    )(TablePagination)
-);
+export default withRouter(TablePagination);

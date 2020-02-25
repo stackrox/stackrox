@@ -34,7 +34,9 @@ export const images = {
 export const auth = {
     loginAuthProviders: 'v1/login/authproviders',
     authProviders: 'v1/authProviders*',
-    authStatus: '/v1/auth/status'
+    authStatus: '/v1/auth/status',
+    logout: '/sso/session/logout',
+    tokenRefresh: '/sso/session/tokenrefresh'
 };
 
 export const dashboard = {
@@ -66,3 +68,5 @@ export const logs = '/api/logimbue';
 export const licenses = {
     list: '/v1/licenses/list*'
 };
+
+export const featureFlags = '/v1/featureflags';

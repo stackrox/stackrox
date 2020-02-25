@@ -18,16 +18,28 @@ type ClusterManager interface {
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 }
 
+// PolicyManager implements an interface to retrieve policies
+type PolicyManager interface {
+	GetPolicies(ctx context.Context) ([]*storage.Policy, error)
+}
+
+// WhitelistManager implements an interface to retrieve whitelists
+type WhitelistManager interface {
+	WalkAll(ctx context.Context, fn func(whitelist *storage.ProcessWhitelist) error) error
+}
+
 // Manager is responsible for managing all active connections from sensors.
 //go:generate mockgen-wrapper
 type Manager interface {
 	// Need to register cluster manager to avoid cyclic dependencies with cluster datastore
-	Start(mgr ClusterManager, autoTriggerUpgrades *concurrency.Flag) error
+	Start(mgr ClusterManager, policyMgr PolicyManager, whitelistMgr WhitelistManager, autoTriggerUpgrades *concurrency.Flag) error
 
 	// Connection-related methods.
 	HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error
 	GetConnection(clusterID string) SensorConnection
 	GetActiveConnections() []SensorConnection
+	BroadcastMessage(msg *central.MsgToSensor)
+	SendMessage(clusterID string, msg *central.MsgToSensor) error
 
 	// Upgrade-related methods.
 	TriggerUpgrade(ctx context.Context, clusterID string) error

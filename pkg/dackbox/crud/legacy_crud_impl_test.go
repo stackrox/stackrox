@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	generic "github.com/stackrox/rox/pkg/badgerhelper/crud"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
@@ -60,23 +59,23 @@ type CRUDTestSuite struct {
 	db      *badger.DB
 	duckBox *dackbox.DackBox
 
-	crud generic.Crud
+	crud *legacyCrudImpl
 }
 
 func (s *CRUDTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = badgerhelper.NewTemp("generic", true)
+	s.db, s.dir, err = badgerhelper.NewTemp("generic")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
-	s.duckBox, err = dackbox.NewDackBox(s.db, []byte("dackboxgraph_"))
+	s.duckBox, err = dackbox.NewDackBox(s.db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
 	if s.partial {
-		s.crud = NewCRUDWithPartial(s.duckBox, []byte("bucket"), alertKeyFunc, alloc, []byte("list_bucket"), listAlloc, converter)
+		s.crud = newCrudWithPartial(s.duckBox, []byte("bucket"), alertKeyFunc, alloc, []byte("list_bucket"), listAlloc, converter)
 	} else {
-		s.crud = NewCRUD(s.duckBox, []byte("bucket"), alertKeyFunc, alloc)
+		s.crud = newCrud(s.duckBox, []byte("bucket"), alertKeyFunc, alloc)
 	}
 }
 
@@ -189,9 +188,7 @@ func (s *CRUDTestSuite) TestUpsert() {
 	localAlert := proto.Clone(alert1).(*storage.Alert)
 	localAlert.State = storage.ViolationState_RESOLVED
 
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.Upsert(localAlert))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 
 	msg, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)
@@ -209,9 +206,7 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	localAlert2 := proto.Clone(alert2).(*storage.Alert)
 	localAlert2.State = storage.ViolationState_RESOLVED
 
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.UpsertBatch([]proto.Message{localAlert1, localAlert2}))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 
 	msgs, err := s.crud.ReadAll()
 	s.NoError(err)
@@ -219,11 +214,8 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 }
 
 func (s *CRUDTestSuite) TestDelete() {
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.Upsert(alert1))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 	s.NoError(s.crud.Delete(alert1ID))
-	s.Equal(txNum+2, s.crud.GetTxnCount())
 
 	_, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)
@@ -231,11 +223,8 @@ func (s *CRUDTestSuite) TestDelete() {
 }
 
 func (s *CRUDTestSuite) TestDeleteMany() {
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 	s.NoError(s.crud.DeleteBatch([]string{alert1ID, alert2ID}))
-	s.Equal(txNum+2, s.crud.GetTxnCount())
 
 	_, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)

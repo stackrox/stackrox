@@ -96,6 +96,8 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 		return "", errors.New("permission denied")
 	}
 
+	store.FillSortHelperFields(policy)
+
 	// No need to lock here because nobody can update the policy
 	// until this function returns and they receive the id.
 	id, err := ds.storage.AddPolicy(policy)
@@ -112,6 +114,8 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 	} else if !ok {
 		return errors.New("permission denied")
 	}
+
+	store.FillSortHelperFields(policy)
 
 	ds.keyedMutex.Lock(policy.GetId())
 	defer ds.keyedMutex.Unlock(policy.GetId())

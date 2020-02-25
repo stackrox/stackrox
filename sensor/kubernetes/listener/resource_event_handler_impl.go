@@ -19,7 +19,7 @@ type resourceEventHandlerImpl struct {
 	eventLock  *sync.Mutex
 	dispatcher resources.Dispatcher
 
-	output                chan<- *central.SensorEvent
+	output                chan<- *central.MsgFromSensor
 	treatCreatesAsUpdates *concurrency.Flag
 
 	syncLock                   sync.Mutex
@@ -31,20 +31,20 @@ type resourceEventHandlerImpl struct {
 func (h *resourceEventHandlerImpl) OnAdd(obj interface{}) {
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
 	if h.treatCreatesAsUpdates != nil && h.treatCreatesAsUpdates.Get() {
-		h.sendResourceEvent(obj, central.ResourceAction_UPDATE_RESOURCE)
+		h.sendResourceEvent(obj, nil, central.ResourceAction_UPDATE_RESOURCE)
 	} else {
-		h.sendResourceEvent(obj, central.ResourceAction_CREATE_RESOURCE)
+		h.sendResourceEvent(obj, nil, central.ResourceAction_CREATE_RESOURCE)
 	}
 	h.registerObject(obj)
 }
 
 func (h *resourceEventHandlerImpl) OnUpdate(oldObj, newObj interface{}) {
-	h.sendResourceEvent(newObj, central.ResourceAction_UPDATE_RESOURCE)
+	h.sendResourceEvent(newObj, oldObj, central.ResourceAction_UPDATE_RESOURCE)
 	h.registerObject(newObj)
 }
 
 func (h *resourceEventHandlerImpl) OnDelete(obj interface{}) {
-	h.sendResourceEvent(obj, central.ResourceAction_REMOVE_RESOURCE)
+	h.sendResourceEvent(obj, nil, central.ResourceAction_REMOVE_RESOURCE)
 }
 
 func (h *resourceEventHandlerImpl) PopulateInitialObjects(initialObjs []interface{}) <-chan struct{} {
@@ -96,23 +96,22 @@ func (h *resourceEventHandlerImpl) checkHasSeenAllInitialIDsNoLock() {
 	}
 }
 
-func (h *resourceEventHandlerImpl) sendResourceEvent(obj interface{}, action central.ResourceAction) {
+func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, action central.ResourceAction) {
 	if metaObj, ok := obj.(v1.Object); ok {
 		kubernetes.TrimAnnotations(metaObj)
 	}
 
-	// Make sure sensor events are sent in order so that we don't send old state to Central after we send new state to
-	// Central
-	h.eventLock.Lock()
-	defer h.eventLock.Unlock()
-
-	evWraps := h.dispatcher.ProcessEvent(obj, action)
+	evWraps := h.dispatcher.ProcessEvent(obj, oldObj, action)
 	h.sendEvents(evWraps...)
 }
 
 func (h *resourceEventHandlerImpl) sendEvents(evWraps ...*central.SensorEvent) {
 	for _, evWrap := range evWraps {
-		h.output <- protoutils.CloneCentralSensorEvent(evWrap)
+		h.output <- &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: protoutils.CloneCentralSensorEvent(evWrap),
+			},
+		}
 	}
 }
 

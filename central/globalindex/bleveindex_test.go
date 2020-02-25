@@ -25,7 +25,7 @@ func TestCompareMapping(t *testing.T) {
 
 	// close and open index and check mapping
 	assert.NoError(t, index.Close())
-	index, err = initializeIndices(tmpDir)
+	index, err = initializeIndices(tmpDir, EphemeralIndex)
 	require.NoError(t, err)
 	assert.True(t, compareMappings(indexMapping, index.Mapping()))
 

@@ -6,7 +6,6 @@ import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
 import EntityList from 'Components/EntityList';
 import workflowStateContext from 'Containers/workflowStateContext';
-import isGQLLoading from 'utils/gqlLoading';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
@@ -64,7 +63,12 @@ const WorkflowListPage = ({
         queryOptions.variables.pagination.limit;
 
     if (!data) {
-        if (isGQLLoading(loading, ownQueryData)) return <Loader />;
+        // @DEPRECATED, we no longer us the helper function isGQLLoading here,
+        //    because now that we are using backend pagination
+        //    it creates a weird UX lag where the table sort arrow changes,
+        //    but there is no indication that we are waiting for more data from the backend
+        if (loading) return <Loader />;
+
         if (!ownQueryData || !ownQueryData.results || error)
             return <PageNotFound resourceType={entityListType} />;
         displayData = ownQueryData.results;

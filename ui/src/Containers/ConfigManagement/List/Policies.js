@@ -57,7 +57,13 @@ const tableColumns = [
         // eslint-disable-next-line
         Cell: ({ original }) => {
             const { policyStatus } = original;
-            return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+            if (policyStatus === '') {
+                return '-';
+            }
+            if (policyStatus === 'pass') {
+                return 'Pass';
+            }
+            return <LabelChip text="Fail" type="alert" />;
         },
         accessor: 'policyStatus'
     },

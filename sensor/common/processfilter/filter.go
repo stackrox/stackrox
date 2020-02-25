@@ -12,7 +12,7 @@ const (
 var (
 	singletonInstance sync.Once
 
-	bucketSizes     = []int{12, 10, 8, 6, 4}
+	bucketSizes     = []int{8, 6, 4, 2}
 	singletonFilter filter.Filter
 )
 

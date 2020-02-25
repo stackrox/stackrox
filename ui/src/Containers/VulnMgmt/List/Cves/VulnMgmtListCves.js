@@ -1,10 +1,16 @@
 /* eslint-disable react/jsx-no-bind */
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
@@ -12,6 +18,7 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
+import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import queryService from 'modules/queryService';
@@ -19,28 +26,21 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import { actions as notificationActions } from 'reducers/notifications';
 import { updateCveSuppressedState } from 'services/VulnerabilitiesService';
 import removeEntityContextColumns from 'utils/tableUtils';
-import { truncate } from 'utils/textUtils';
-// import { cveSortFields } from 'constants/sortFields';
-
+import { doesSearchContain } from 'utils/searchUtils';
+import { cveSortFields } from 'constants/sortFields';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
 export const defaultCveSort = [
     {
-        id: 'Fixed By',
+        id: cveSortFields.CVSS_SCORE,
         desc: true
+    },
+    {
+        id: cveSortFields.CVE,
+        desc: false
     }
-    // @TODO, remove the temp sort above
-    //        uncomment the sort fields below for CVEs, after they are available for backend pagination/sorting
-    // {
-    //     id: cveSortFields.CVSS_SCORE,
-    //     desc: true
-    // },
-    // {
-    //     id: cveSortFields.CVE,
-    //     desc: false
-    // }
 ];
 
 export function getCveTableColumns(workflowState) {
@@ -61,12 +61,12 @@ export function getCveTableColumns(workflowState) {
             Header: `CVE`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'cve'
-            // sortField: cveSortFields.cveSortFields.CVE
+            accessor: 'cve',
+            sortField: cveSortFields.CVE
         },
         {
             Header: `Fixable`,
-            headerClassName: `w-20 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-20 text-center ${nonSortableHeaderClassName}`,
             className: `w-20 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -78,8 +78,9 @@ export function getCveTableColumns(workflowState) {
                 return <div className="mx-auto">{fixableFlag}</div>;
             },
             accessor: 'isFixable',
-            id: 'isFixable'
-            // sortField: cveSortFields.CVSS_SCORE
+            id: 'isFixable',
+            sortField: cveSortFields.FIXABLE,
+            sortable: false
         },
         {
             Header: `CVSS Score`,
@@ -91,12 +92,12 @@ export function getCveTableColumns(workflowState) {
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
             accessor: 'cvss',
-            id: 'cvss'
-            // sortField: cveSortFields.FIXABLE
+            id: 'cvss',
+            sortField: cveSortFields.CVSS_SCORE
         },
         {
             Header: `Env. Impact`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { envImpact } = original;
@@ -105,8 +106,9 @@ export function getCveTableColumns(workflowState) {
                     ? `${(envImpact * 100).toFixed(0)}% affected`
                     : '-';
             },
-            accessor: 'envImpact'
-            // sortField: cveSortFields.ENV_IMPACT
+            accessor: 'envImpact',
+            sortField: cveSortFields.ENV_IMPACT,
+            sortable: false
         },
         {
             Header: `Impact Score`,
@@ -117,13 +119,13 @@ export function getCveTableColumns(workflowState) {
                 // eslint-disable-next-line eqeqeq
                 return impactScore == Number(impactScore) ? impactScore.toFixed(1) : '-';
             },
-            accessor: 'impactScore'
-            // sortField: cveSortFields.IMPACT_SCORE
+            accessor: 'impactScore',
+            sortField: cveSortFields.IMPACT_SCORE
         },
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
@@ -135,13 +137,14 @@ export function getCveTableColumns(workflowState) {
                 />
             ),
             accessor: 'deploymentCount',
-            id: 'deploymentCount'
-            // sortField: cveSortFields.DEPLOYMENTS
+            id: 'deploymentCount',
+            sortField: cveSortFields.DEPLOYMENTS,
+            sortable: false
         },
         {
             Header: `Images`,
             entityType: entityTypes.IMAGE,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
@@ -153,13 +156,14 @@ export function getCveTableColumns(workflowState) {
                 />
             ),
             accessor: 'imageCount',
-            id: 'imageCount'
-            // sortField: cveSortFields.IMAGES
+            id: 'imageCount',
+            sortField: cveSortFields.IMAGES,
+            sortable: false
         },
         {
             Header: `Components`,
             entityType: entityTypes.COMPONENT,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
@@ -171,19 +175,18 @@ export function getCveTableColumns(workflowState) {
                 />
             ),
             accessor: 'componentCount',
-            id: 'componentCount'
-            // sortField: cveSortFields.COMPONENTS
+            id: 'componentCount',
+            sortField: cveSortFields.COMPONENTS,
+            sortable: false
         },
         {
-            Header: `Scanned`,
+            Header: `Discovered Time`,
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => (
-                <DateTimeField date={original.lastScanned} asString={pdf} />
-            ),
-            accessor: 'lastScanned',
-            id: 'lastScanned'
-            // sortField: cveSortFields.SCANNED
+            Cell: ({ original, pdf }) => <DateTimeField date={original.createdAt} asString={pdf} />,
+            accessor: 'createdAt',
+            id: 'createdAt',
+            sortField: cveSortFields.CVE_CREATED_TIME
         },
         {
             Header: `Published`,
@@ -193,35 +196,43 @@ export function getCveTableColumns(workflowState) {
                 <DateTimeField date={original.publishedOn} asString={pdf} />
             ),
             accessor: 'publishedOn',
-            id: 'published'
-            // sortField: cveSortFields.PUBLISHED
+            id: 'published',
+            sortField: cveSortFields.PUBLISHED
         }
     ];
 
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const maxLengthForSummary = 360; // based on showing up to approximately 2 lines before table starts scrolling horizontally
-
 export function renderCveDescription(row) {
     const { original } = row;
-    const truncatedSummary = truncate(original.summary, maxLengthForSummary);
     return (
-        <div className="hover:bg-base-100 px-2 pb-4 pt-1 text-base-500">
-            {truncatedSummary || 'No description available.'}
+        <div className="hover:bg-transparent px-2 pb-4 pt-1 text-base-500">
+            <div className="line-clamp">{original.summary || 'No description available.'}</div>
         </div>
     );
 }
 
-const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, removeToast }) => {
+const VulnMgmtCves = ({
+    history,
+    selectedRowId,
+    search,
+    sort,
+    page,
+    data,
+    totalResults,
+    addToast,
+    removeToast,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const [selectedCveIds, setSelectedCveIds] = useState([]);
     const [bulkActionCveIds, setBulkActionCveIds] = useState([]);
 
-    // seed refresh trigger var with simple number
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const workflowState = useContext(workflowStateContext);
 
     const CVES_QUERY = gql`
-        query getCves($query: String, $pagination: Pagination) {
+        query getCves($query: String, $scopeQuery: String, $pagination: Pagination) {
             results: vulnerabilities(query: $query, pagination: $pagination) {
                 ...cveFields
             }
@@ -230,10 +241,13 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
         ${VULN_CVE_LIST_FRAGMENT}
     `;
 
+    const viewingSuppressed = doesSearchContain(search, cveSortFields.SUPPRESSED);
+
     const tableSort = sort || defaultCveSort;
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
+            scopeQuery: '',
             cachebuster: refreshTrigger,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
@@ -253,16 +267,13 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
         }
     };
 
-    const suppressCVEs = cveId => e => {
+    const toggleCveSuppression = cveId => e => {
         e.stopPropagation();
 
-        const cveIdsToSuppress = cveId ? [cveId] : selectedCveIds;
+        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
 
-        const promises = cveIdsToSuppress.map(id => {
-            const suppress = true;
-            return updateCveSuppressedState(id, suppress);
-        });
-        Promise.all(promises)
+        const suppressionState = !viewingSuppressed;
+        updateCveSuppressedState(cveIdsToToggle, suppressionState)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -270,18 +281,31 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
                 setRefreshTrigger(Math.random());
 
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
-                const pluralizedCVEs = promises.length === 1 ? 'CVE' : 'CVEs';
+                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
 
-                addToast(`Successfully suppressed ${promises.length} ${pluralizedCVEs}`);
+                const actionVerb = suppressionState ? 'suppressed' : 'unsuppressed';
+                addToast(`Successfully ${actionVerb} ${cveIdsToToggle.length} ${pluralizedCVEs}`);
                 setTimeout(removeToast, 2000);
             })
             .catch(evt => {
-                addToast(`Could not suppress all of the selected CVEs: ${evt.message}`);
+                const actionVerb = suppressionState ? 'suppress' : 'unsuppress';
+                addToast(`Could not ${actionVerb} all of the selected CVEs: ${evt.message}`);
                 setTimeout(removeToast, 2000);
             });
     };
-    const viewSuppressed = () => {
-        // TODO: implement 'view suppressed' functionality
+    const toggleSuppressedView = () => {
+        const currentSearchState = workflowState.getCurrentSearchState();
+
+        const targetSearchState = { ...currentSearchState };
+        if (viewingSuppressed) {
+            delete targetSearchState[cveSortFields.SUPPRESSED];
+        } else {
+            targetSearchState[cveSortFields.SUPPRESSED] = true;
+        }
+
+        const newWorkflowState = workflowState.setSearch(targetSearchState);
+        const newUrl = newWorkflowState.toUrl();
+        history.push(newUrl);
     };
 
     function closeDialog(idsToStaySelected = []) {
@@ -294,16 +318,27 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
             <RowActionButton
                 text="Add to Policy"
                 onClick={addToPolicy(id)}
+                date-testid="row-action-add-to-policy"
                 icon={<Icon.Plus className="mt-1 h-4 w-4" />}
             />
             <RowActionButton
-                text="Suppress CVE"
+                text={`${viewingSuppressed ? 'Unsuppress CVE' : 'Suppress CVE'}`}
                 border="border-l-2 border-base-400"
-                onClick={suppressCVEs(id)}
-                icon={<Icon.BellOff className="mt-1 h-4 w-4" />}
+                onClick={toggleCveSuppression(id)}
+                date-testid="row-action-toggle-suppression"
+                icon={
+                    viewingSuppressed ? (
+                        <Icon.Bell className="mt-1 h-4 w-4" />
+                    ) : (
+                        <Icon.BellOff className="mt-1 h-4 w-4" />
+                    )
+                }
             />
         </div>
     );
+
+    const toggleButtonText = viewingSuppressed ? 'Unsuppress' : 'Suppress';
+    const viewButtonText = viewingSuppressed ? 'View Unsuppressed' : 'View Suppressed';
 
     const tableHeaderComponents = (
         <React.Fragment>
@@ -313,26 +348,41 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
                 onClick={addToPolicy()}
                 disabled={selectedCveIds.length === 0}
                 tooltip="Add Selected CVEs to Policy"
+                dataTestId="panel-button-add-cves-to-policy"
             >
                 Add to Policy
             </PanelButton>
             <PanelButton
-                icon={<Icon.BellOff className="h-4 w-4" />}
+                icon={
+                    viewingSuppressed ? (
+                        <Icon.Bell className="h-4 w-4" />
+                    ) : (
+                        <Icon.BellOff className="h-4 w-4" />
+                    )
+                }
                 className="btn-icon btn-tertiary ml-2"
-                onClick={suppressCVEs()}
+                onClick={toggleCveSuppression()}
                 disabled={selectedCveIds.length === 0}
-                tooltip="Suppress Selected CVEs"
+                tooltip={`${toggleButtonText} Selected CVEs`}
+                dataTestId="panel-button-toggle-suppress-selected-cves"
             >
-                Suppress
+                {toggleButtonText}
             </PanelButton>
             <span className="w-px bg-base-400 ml-2" />
             <PanelButton
-                icon={<Icon.Archive className="h-4 w-4" />}
+                icon={
+                    viewingSuppressed ? (
+                        <Icon.Zap className="h-4 w-4" />
+                    ) : (
+                        <Icon.Archive className="h-4 w-4" />
+                    )
+                }
                 className="btn-icon btn-tertiary ml-2"
-                onClick={viewSuppressed}
-                tooltip="View Suppressed CVEs"
+                onClick={toggleSuppressedView}
+                tooltip={`${viewButtonText} CVEs`}
+                dataTestId="panel-button-toggle-suppressed-cves-view"
             >
-                View Suppressed
+                {viewButtonText}
             </PanelButton>
         </React.Fragment>
     );
@@ -341,6 +391,7 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
         <>
             <WorkflowListPage
                 data={data}
+                totalResults={totalResults}
                 query={CVES_QUERY}
                 queryOptions={queryOptions}
                 idAttribute="cve"
@@ -367,10 +418,16 @@ const VulnMgmtCves = ({ selectedRowId, search, sort, page, data, addToast, remov
     );
 };
 
-VulnMgmtCves.propTypes = workflowListPropTypes;
+VulnMgmtCves.propTypes = {
+    ...workflowListPropTypes,
+    refreshTrigger: PropTypes.number,
+    setRefreshTrigger: PropTypes.func
+};
 VulnMgmtCves.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
+    refreshTrigger: 0,
+    setRefreshTrigger: null
 };
 
 const mapDispatchToProps = {
@@ -378,7 +435,9 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(VulnMgmtCves);
+export default withRouter(
+    connect(
+        null,
+        mapDispatchToProps
+    )(VulnMgmtCves)
+);

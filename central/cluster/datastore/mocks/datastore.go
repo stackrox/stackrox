@@ -68,6 +68,21 @@ func (mr *MockDataStoreMockRecorder) CountClusters(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClusters", reflect.TypeOf((*MockDataStore)(nil).CountClusters), arg0)
 }
 
+// Exists mocks base method
+func (m *MockDataStore) Exists(arg0 context.Context, arg1 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists
+func (mr *MockDataStoreMockRecorder) Exists(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), arg0, arg1)
+}
+
 // GetCluster mocks base method
 func (m *MockDataStore) GetCluster(arg0 context.Context, arg1 string) (*storage.Cluster, bool, error) {
 	m.ctrl.T.Helper()
@@ -82,6 +97,22 @@ func (m *MockDataStore) GetCluster(arg0 context.Context, arg1 string) (*storage.
 func (mr *MockDataStoreMockRecorder) GetCluster(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCluster", reflect.TypeOf((*MockDataStore)(nil).GetCluster), arg0, arg1)
+}
+
+// GetClusterName mocks base method
+func (m *MockDataStore) GetClusterName(arg0 context.Context, arg1 string) (string, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClusterName", arg0, arg1)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetClusterName indicates an expected call of GetClusterName
+func (mr *MockDataStoreMockRecorder) GetClusterName(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterName", reflect.TypeOf((*MockDataStore)(nil).GetClusterName), arg0, arg1)
 }
 
 // GetClusters mocks base method

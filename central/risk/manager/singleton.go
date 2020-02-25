@@ -2,6 +2,9 @@ package manager
 
 import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
+	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	deploymentScorer "github.com/stackrox/rox/central/risk/scorer/deployment"
 	imageScorer "github.com/stackrox/rox/central/risk/scorer/image"
@@ -16,7 +19,20 @@ var (
 
 func initialize() {
 	var err error
-	manager, err = New(deploymentDS.Singleton(), riskDS.Singleton(), deploymentScorer.GetScorer(), imageScorer.GetScorer(), imageComponentScorer.GetScorer())
+	manager, err = New(deploymentDS.Singleton(),
+		imageDS.Singleton(),
+		imageComponentDS.Singleton(),
+		riskDS.Singleton(),
+
+		deploymentScorer.GetScorer(),
+		imageScorer.GetScorer(),
+		imageComponentScorer.GetScorer(),
+
+		ranking.ClusterRanker(),
+		ranking.NamespaceRanker(),
+		ranking.DeploymentRanker(),
+		ranking.ImageRanker(),
+		ranking.ImageComponentRanker())
 	if err != nil {
 		panic(err)
 	}

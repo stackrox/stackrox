@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/semaphore"
 )
 
 type fakeScanner struct {
@@ -40,6 +41,10 @@ func (f *fakeScanner) Type() string {
 		return f.typ
 	}
 	return "type"
+}
+
+func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
+	return semaphore.NewWeighted(10)
 }
 
 func TestSetOrdering(t *testing.T) {

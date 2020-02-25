@@ -1,18 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import TooltipOverlay from 'Components/TooltipOverlay';
+
 const HoverHint = ({ top, left, title, body, subtitle, footer }) => (
-    <div
-        className="graph-hint visible text-xs text-base-600 absolute border z-10 border-tertiary-400 bg-tertiary-200 rounded min-w-32"
-        style={{ top, left }}
-    >
-        <div className="flex flex-col border-b border-primary-400 mb-1 py-1 px-2 leading-loose">
-            <h1 className="graph-hint-title text-sm">{title}</h1>
-            {subtitle && <span>{subtitle}</span>}
-        </div>
-        <div className="graph-hint-body px-2 pt-1 pb-2">{body}</div>
-        {!!footer && <footer className="font-700 text-sm leading-loose px-2 pb-1">{footer}</footer>}
-    </div>
+    <TooltipOverlay
+        top={top}
+        left={left}
+        title={title}
+        body={body}
+        subtitle={subtitle}
+        footer={footer}
+        className="visible absolute"
+    />
 );
 
 HoverHint.propTypes = {

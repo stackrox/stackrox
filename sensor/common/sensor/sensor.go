@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -19,25 +18,17 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/kocache"
-	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/clusterstatus"
-	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
-	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
-	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
-	"github.com/stackrox/rox/sensor/common/networkpolicies"
-	"github.com/stackrox/rox/sensor/common/roxmetadata"
-	signalService "github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/upgrade"
+	"github.com/stackrox/rox/sensor/common/detector"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
@@ -47,7 +38,6 @@ const (
 	pprofServer = "127.0.0.1:6060"
 
 	publicAPIEndpoint = ":8443"
-	localAPIEndpoint  = "127.0.0.1:8444"
 
 	publicWebhookEndpoint = ":9443"
 )
@@ -63,16 +53,10 @@ type Sensor struct {
 	centralEndpoint    string
 	advertisedEndpoint string
 
-	listener                      listeners.Listener
-	enforcer                      enforcers.Enforcer
-	orchestrator                  orchestrators.Orchestrator
-	networkConnManager            networkConnManager.Manager
-	commandHandler                compliance.CommandHandler
-	networkPoliciesCommandHandler networkpolicies.CommandHandler
-	clusterStatusUpdater          clusterstatus.Updater
-	configHandler                 config.Handler
-	upgradeCommandHandler         upgrade.CommandHandler
-	complianceService             compliance.Service
+	configHandler config.Handler
+	detector      detector.Detector
+	components    []common.SensorComponent
+	apiServices   []pkgGRPC.APIService
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -84,29 +68,23 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager,
-	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater,
-	configHandler config.Handler, upgradeCommandHandler upgrade.CommandHandler) *Sensor {
-
-	complianceService := compliance.NewService(o)
+func NewSensor(configHandler config.Handler, detector detector.Detector, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		listener:                      l,
-		enforcer:                      e,
-		orchestrator:                  o,
-		networkConnManager:            n,
-		complianceService:             complianceService,
-		commandHandler:                compliance.NewCommandHandler(m, complianceService),
-		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
-		clusterStatusUpdater:          clusterStatusUpdater,
-		configHandler:                 configHandler,
-		upgradeCommandHandler:         upgradeCommandHandler,
+		configHandler: configHandler,
+		detector:      detector,
+		components:    append(components, detector, configHandler), // Explicitly add the config handler
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
+}
+
+// AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()
+func (s *Sensor) AddAPIServices(services ...pkgGRPC.APIService) {
+	s.apiServices = append(s.apiServices, services...)
 }
 
 func (s *Sensor) startProfilingServer() *http.Server {
@@ -121,10 +99,6 @@ func (s *Sensor) startProfilingServer() *http.Server {
 		}
 	}()
 	return srv
-}
-
-type startable interface {
-	Start()
 }
 
 func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
@@ -170,6 +144,7 @@ func (s *Sensor) Start() {
 	if err != nil {
 		log.Fatalf("Error connecting to central: %s", err)
 	}
+	s.detector.SetClient(s.centralConnection)
 
 	s.profilingServer = s.startProfilingServer()
 
@@ -205,15 +180,16 @@ func (s *Sensor) Start() {
 	}
 
 	config := pkgGRPC.Config{
-		TLS:                   verifier.NonCA{},
-		CustomRoutes:          customRoutes,
-		IdentityExtractors:    []authn.IdentityExtractor{mtlsServiceIDExtractor},
-		PublicEndpoint:        publicAPIEndpoint,
-		InsecureLocalEndpoint: localAPIEndpoint,
+		TLS:                verifier.NonCA{},
+		CustomRoutes:       customRoutes,
+		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
+		PublicEndpoint:     publicAPIEndpoint,
 	}
 	s.server = pkgGRPC.NewAPI(config)
 
-	s.registerAPIServices()
+	s.server.Register(s.apiServices...)
+	log.Info("API services registered")
+
 	s.server.Start()
 
 	webhookConfig := pkgGRPC.Config{
@@ -225,34 +201,16 @@ func (s *Sensor) Start() {
 	webhookServer := pkgGRPC.NewAPI(webhookConfig)
 	webhookServer.Start()
 
-	// Start all of our channels and listeners
-	if s.listener != nil {
-		go s.listener.Start()
-	}
-	if s.enforcer != nil {
-		go s.enforcer.Start()
-	}
-	if s.networkConnManager != nil {
-		go s.networkConnManager.Start()
-	}
-
-	for _, toStart := range []startable{s.commandHandler, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.upgradeCommandHandler} {
-		if toStart != nil {
-			toStart.Start()
+	for _, component := range s.components {
+		if err := component.Start(); err != nil {
+			log.Panicf("Sensor component %T failed to start: %v", component, err)
 		}
 	}
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.centralConnection)
 
-	// If everything is brought up correctly, start the sensor.
-	if s.listener != nil && s.enforcer != nil {
-		go s.communicationWithCentral(&centralReachable)
-	}
-}
-
-type stoppable interface {
-	Stop()
+	go s.communicationWithCentral(&centralReachable)
 }
 
 // Stop shuts down background tasks.
@@ -262,11 +220,8 @@ func (s *Sensor) Stop() {
 		s.centralCommunication.Stop(nil)
 	}
 
-	for _, toStop := range []stoppable{s.listener, s.enforcer, s.networkConnManager,
-		s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler, s.upgradeCommandHandler} {
-		if toStop != nil {
-			toStop.Stop()
-		}
+	for _, c := range s.components {
+		c.Stop(nil)
 	}
 
 	if s.profilingServer != nil {
@@ -274,20 +229,8 @@ func (s *Sensor) Stop() {
 			log.Errorf("Error closing profiling server: %v", err)
 		}
 	}
-	if s.commandHandler != nil {
-		s.commandHandler.Stop(nil)
-	}
 
 	log.Info("Sensor shutdown complete")
-}
-
-func (s *Sensor) registerAPIServices() {
-	s.server.Register(
-		signalService.Singleton(),
-		networkFlowService.Singleton(),
-		s.complianceService,
-	)
-	log.Info("API services registered")
 }
 
 // waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
@@ -324,10 +267,9 @@ func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(),
-		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater, s.configHandler, s.upgradeCommandHandler)
+	s.centralCommunication = NewCentralCommunication(s.components...)
 
-	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler)
+	s.centralCommunication.Start(s.centralConnection, centralReachable, s.configHandler, s.detector)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)

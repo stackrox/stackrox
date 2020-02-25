@@ -6,18 +6,28 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
+	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageIndexer "github.com/stackrox/rox/central/image/index"
+	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
+	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -49,9 +59,21 @@ type DataStore interface {
 	GetDeploymentIDs() ([]string, error)
 }
 
-func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
+func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
+	var searcher search.Searcher
 	indexer := index.New(bleveIndex)
-	searcher := search.New(storage, indexer)
+	if features.Dackbox.Enabled() {
+		searcher = search.New(storage,
+			graphProvider,
+			cveIndexer.New(bleveIndex),
+			componentCVEEdgeIndexer.New(bleveIndex),
+			componentIndexer.New(bleveIndex),
+			imageComponentEdgeIndexer.New(bleveIndex),
+			imageIndexer.New(bleveIndex),
+			indexer)
+	} else {
+		searcher = search.New(storage, nil, nil, nil, nil, nil, nil, indexer)
+	}
 
 	ds, err := newDatastoreImpl(
 		storage,
@@ -70,17 +92,27 @@ func newDataStore(storage store.Store, bleveIndex bleve.Index, images imageDS.Da
 	}
 
 	if err := ds.initializeRanker(); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize ranker")
+		return nil, errors.Wrap(err, "failed to initialize deployment ranker")
 	}
 
 	return ds, nil
 }
 
 // NewBadger creates a deployment datastore based on BadgerDB
-func NewBadger(db *badger.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
-	store, err := badgerStore.New(db)
-	if err != nil {
-		return nil, err
+func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, bleveIndex bleve.Index, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (DataStore, error) {
+	var err error
+	var storage store.Store
+	if features.Dackbox.Enabled() {
+		storage, err = dackBoxStore.New(dacky, keyFence)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		storage, err = badgerStore.New(db)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return newDataStore(store, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter)
+
+	return newDataStore(storage, dacky, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter)
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/globaldb"
+	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -26,7 +27,7 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = NewBadger(globaldb.GetGlobalBadgerDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton(), filter.Singleton())
+	ad, err = NewBadger(dackbox.GetGlobalDackBox(), dackbox.GetKeyFence(), globaldb.GetGlobalBadgerDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton(), filter.Singleton())
 	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 

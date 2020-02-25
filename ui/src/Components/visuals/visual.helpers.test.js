@@ -20,16 +20,28 @@ describe('visuals.helpers', () => {
 
         it('should find the next multiple higher than the max data value, when multiple supplied', () => {
             const data = [{ x: 89, y: 47 }, { x: 15, y: 197 }, { x: 23, y: 777 }, { x: 65, y: 25 }];
+            const multiple = 5;
 
-            const highX = getHighValue(data, 'x', 5);
+            const highX = getHighValue(data, 'x', multiple);
 
             expect(highX).toEqual(90);
         });
 
+        it('should find the next multiple higher than the max data value, when multiple supplied, plus padding if flag set', () => {
+            const data = [{ x: 89, y: 47 }, { x: 15, y: 197 }, { x: 23, y: 777 }, { x: 65, y: 25 }];
+            const multiple = 5;
+            const shouldPad = true;
+
+            const highX = getHighValue(data, 'x', multiple, shouldPad);
+
+            expect(highX).toEqual(95);
+        });
+
         it('should find the next multiple higher than the max data value, even for distant multiple', () => {
             const data = [{ x: 89, y: 47 }, { x: 15, y: 197 }, { x: 23, y: 777 }, { x: 65, y: 25 }];
+            const multiple = 100;
 
-            const highX = getHighValue(data, 'y', 100);
+            const highX = getHighValue(data, 'y', multiple);
 
             expect(highX).toEqual(800);
         });

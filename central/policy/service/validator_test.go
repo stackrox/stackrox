@@ -8,9 +8,9 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	matcherMocks "github.com/stackrox/rox/central/searchbasedpolicies/matcher/mocks"
-	sbpMocks "github.com/stackrox/rox/central/searchbasedpolicies/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
+	sbpMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

@@ -24,6 +24,8 @@ import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import Header from './Header';
 
 function processData(data) {
@@ -196,6 +198,16 @@ const NodePage = ({
                                     entityType={entityTypes.NODE}
                                     className={pdfClassName}
                                 />
+                                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
+                                    <ComplianceByStandard
+                                        standardType={entityTypes.NIST_SP_800_53}
+                                        entityName={name}
+                                        entityId={id}
+                                        entityType={entityTypes.NAMESPACE}
+                                        className={pdfClassName}
+                                    />
+                                </FeatureEnabled>
+
                                 <ComplianceByStandard
                                     standardType={entityTypes.CIS_Kubernetes_v1_5}
                                     entityName={name}

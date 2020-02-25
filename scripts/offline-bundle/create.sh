@@ -56,9 +56,6 @@ main() {
     local main_tag="$(make --quiet tag)"
     save_with_rhel "stackrox.io" "main" "${main_tag}" "image-bundle"
 
-    # Monitoring uses the same exact version as main. There is also no RHEL version of monitoring
-    save "stackrox.io" "monitoring" "${main_tag}" "image-bundle"
-
     # Scanner uses the version contained in the SCANNER_VERSION file.
     local scanner_tag="$(cat SCANNER_VERSION)"
     save_with_rhel "stackrox.io" "scanner" "${scanner_tag}" "image-bundle"

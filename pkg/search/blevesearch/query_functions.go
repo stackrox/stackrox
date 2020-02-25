@@ -72,7 +72,7 @@ forloop:
 			queryModifiers = append(queryModifiers, negation)
 			negationOrAtLeastOneFound = true
 		case strings.HasPrefix(trimmedValue, pkgSearch.RegexPrefix) && len(trimmedValue) > len(pkgSearch.RegexPrefix):
-			trimmedValue = trimmedValue[len(pkgSearch.RegexPrefix):]
+			trimmedValue = strings.ToLower(trimmedValue[len(pkgSearch.RegexPrefix):])
 			queryModifiers = append(queryModifiers, regex)
 			break forloop // Once we see that it's a regex, we don't check for special-characters in the rest of the string.
 		case strings.HasPrefix(trimmedValue, pkgSearch.EqualityPrefixSuffix) && strings.HasSuffix(trimmedValue, pkgSearch.EqualityPrefixSuffix) && len(trimmedValue) > 2*len(pkgSearch.EqualityPrefixSuffix):
@@ -195,7 +195,16 @@ func newEnumQuery(_ v1.SearchCategory, field, value string, queryModifiers ...qu
 			return nil, errors.Errorf("unsupported query modifier for enum query: %v", queryModifiers[0])
 		}
 	case 0:
+		prefix, value := parseNumericPrefix(value)
+		if prefix == "" {
+			prefix = "="
+		}
 		enumValues = enumregistry.Get(field, value)
+		dq := bleve.NewDisjunctionQuery()
+		for _, s := range enumValues {
+			dq.AddQuery(createNumericQuery(field, prefix, floatPtr(float64(s))))
+		}
+		return dq, nil
 	}
 
 	if len(enumValues) == 0 {

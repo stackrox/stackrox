@@ -33,7 +33,7 @@ const Simulator = ({
     return (
         <div
             data-testid="network-simulator-panel"
-            className="w-full h-full absolute pin-r pin-b pt-1 pb-1 pr-1 shadow-md bg-base-200"
+            className="w-full h-full absolute right-0 bottom-0 pt-1 pb-1 pr-1 shadow-md bg-base-200"
         >
             <Panel
                 className="border-t-0 border-r-0 border-b-0"

@@ -2,14 +2,14 @@ package basic
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -33,9 +33,13 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, map[string]string, error) {
+func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
 	providerURLPathPrefix := f.urlPathPrefix + id + "/"
-	return newBackend(providerURLPathPrefix)
+	mgr := basicAuthManagerFromContext(ctx)
+	if mgr == nil {
+		return nil, errors.New("basic auth manager missing from context")
+	}
+	return newBackend(providerURLPathPrefix, mgr)
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -51,5 +55,9 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 }
 
 func (f *factory) ResolveProvider(state string) (string, error) {
-	return "", status.Errorf(codes.Unimplemented, "not implemented")
+	providerID, _ := idputil.SplitState(state)
+	if len(providerID) == 0 {
+		return "", errors.New("empty state")
+	}
+	return providerID, nil
 }

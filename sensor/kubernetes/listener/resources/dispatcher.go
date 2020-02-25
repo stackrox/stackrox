@@ -5,8 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/config"
-	"github.com/stackrox/rox/sensor/common/roxmetadata"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
+	"github.com/stackrox/rox/sensor/common/detector"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 )
 
@@ -14,7 +13,7 @@ import (
 // in response.
 //go:generate mockgen-wrapper Dispatcher
 type Dispatcher interface {
-	ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent
+	ProcessEvent(obj, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent
 }
 
 // DispatcherRegistry provides dispatchers to use.
@@ -27,29 +26,24 @@ type DispatcherRegistry interface {
 	ForSecrets() Dispatcher
 	ForServices() Dispatcher
 	ForServiceAccounts() Dispatcher
-	ForRoles() Dispatcher
-	ForRoleBindings() Dispatcher
-	ForClusterRoles() Dispatcher
-	ForClusterRoleBindings() Dispatcher
+	ForRBAC() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
-func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusterentities.Store, roxMetadata roxmetadata.Metadata, processFilter filter.Filter, configHandler config.Handler) DispatcherRegistry {
+func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusterentities.Store, processFilter filter.Filter,
+	configHandler config.Handler, detector detector.Detector) DispatcherRegistry {
 	serviceStore := newServiceStore()
-	deploymentStore := newDeploymentStore()
+	deploymentStore := DeploymentStoreSingleton()
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
 	rbacUpdater := newRBACUpdater()
 
-	hierarchy := references.NewParentHierarchy()
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister, processFilter, configHandler, hierarchy),
+		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore,
+			rbacUpdater, podLister, processFilter, configHandler, detector),
 
-		roleDispatcher:           newRoleDispatcher(rbacUpdater),
-		bindingDispatcher:        newBindingDispatcher(rbacUpdater),
-		clusterRoleDispatcher:    newClusterRoleDispatcher(rbacUpdater),
-		clusterBindingDispatcher: newClusterBindingDispatcher(rbacUpdater),
+		rbacDispatcher:           newRBACDispatcher(rbacUpdater),
 		namespaceDispatcher:      newNamespaceDispatcher(nsStore, serviceStore, deploymentStore),
 		serviceDispatcher:        newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
 		secretDispatcher:         newSecretDispatcher(),
@@ -62,10 +56,7 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	roleDispatcher           *roleDispatcher
-	bindingDispatcher        *bindingDispatcher
-	clusterRoleDispatcher    *clusterRoleDispatcher
-	clusterBindingDispatcher *clusterBindingDispatcher
+	rbacDispatcher           *rbacDispatcher
 	namespaceDispatcher      *namespaceDispatcher
 	serviceDispatcher        *serviceDispatcher
 	secretDispatcher         *secretDispatcher
@@ -102,18 +93,6 @@ func (d *registryImpl) ForServiceAccounts() Dispatcher {
 	return d.serviceAccountDispatcher
 }
 
-func (d *registryImpl) ForRoles() Dispatcher {
-	return d.roleDispatcher
-}
-
-func (d *registryImpl) ForRoleBindings() Dispatcher {
-	return d.bindingDispatcher
-}
-
-func (d *registryImpl) ForClusterRoles() Dispatcher {
-	return d.clusterRoleDispatcher
-}
-
-func (d *registryImpl) ForClusterRoleBindings() Dispatcher {
-	return d.clusterBindingDispatcher
+func (d *registryImpl) ForRBAC() Dispatcher {
+	return d.rbacDispatcher
 }

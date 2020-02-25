@@ -123,14 +123,14 @@ func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 func (s *pipelineImpl) enrichCluster(ctx context.Context, ns *storage.NamespaceMetadata) error {
 	ns.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ctx, ns.ClusterId)
+	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, ns.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", ns.ClusterId)
 	default:
-		ns.ClusterName = cluster.GetName()
+		ns.ClusterName = clusterName
 	}
 	return nil
 }

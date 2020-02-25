@@ -28,7 +28,7 @@ func checkNIST411(ctx framework.ComplianceContext) {
 	checkCVSS7PolicyEnforcedOnBuild(ctx)
 	checkCVSS7PolicyEnforcedOnDeploy(ctx)
 	common.CheckImageScannerInUseByCluster(ctx)
-	common.CheckBuildTimePolicyEnforced(ctx)
+	common.CheckAnyPolicyInLifecycleStageEnforced(ctx, storage.LifecycleStage_BUILD)
 }
 
 func checkCVSS7PolicyEnforcedOnBuild(ctx framework.ComplianceContext) {

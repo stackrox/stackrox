@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,8 +22,7 @@ type nodeSpec struct {
 type nodeSpecMap map[string]nodeSpec
 
 func sortedIDs(ids []string) []string {
-	result := make([]string, len(ids))
-	copy(result, ids)
+	result := sliceutils.StringClone(ids)
 	sort.Strings(result)
 	return result
 }

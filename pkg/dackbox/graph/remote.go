@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // RemoteReadable represents a shared graph state somewhere else that should be considered the current state of the
@@ -13,6 +13,8 @@ type RemoteReadable func(reader func(graph RGraph))
 func NewRemoteGraph(base RWGraph, reader RemoteReadable) *RemoteGraph {
 	return &RemoteGraph{
 		RWGraph:      base,
+		readForward:  set.NewStringSet(),
+		readBackward: set.NewStringSet(),
 		remoteToRead: reader,
 	}
 }
@@ -21,8 +23,8 @@ func NewRemoteGraph(base RWGraph, reader RemoteReadable) *RemoteGraph {
 type RemoteGraph struct {
 	RWGraph
 
-	readForward  sortedkeys.SortedKeys
-	readBackward sortedkeys.SortedKeys
+	readForward  set.StringSet
+	readBackward set.StringSet
 
 	remoteToRead RemoteReadable
 }
@@ -101,11 +103,11 @@ func (rm *RemoteGraph) copyNeededState(from []byte, to [][]byte) { // Copy the c
 }
 
 func (rm *RemoteGraph) ensureFrom(from []byte) {
-	var inserted bool
-	rm.readForward, inserted = rm.readForward.Insert(from)
-	if !inserted {
+	strFrom := string(from)
+	if !rm.readForward.Add(strFrom) {
 		return
 	}
+
 	rm.remoteToRead(func(g RGraph) {
 		if g.HasRefsFrom(from) {
 			rm.RWGraph.setFrom(from, g.GetRefsFrom(from))
@@ -114,11 +116,11 @@ func (rm *RemoteGraph) ensureFrom(from []byte) {
 }
 
 func (rm *RemoteGraph) ensureTo(to []byte) {
-	var inserted bool
-	rm.readBackward, inserted = rm.readBackward.Insert(to)
-	if !inserted {
+	strTo := string(to)
+	if !rm.readBackward.Add(strTo) {
 		return
 	}
+
 	rm.remoteToRead(func(g RGraph) {
 		if g.HasRefsTo(to) {
 			rm.RWGraph.setTo(to, g.GetRefsTo(to))
@@ -131,14 +133,17 @@ func (rm *RemoteGraph) ensureToAll(tos [][]byte) {
 		return
 	}
 
-	sortedTos := sortedkeys.Sort(tos)
-	unfetched := sortedTos.Difference(rm.readBackward)
-	rm.readBackward = rm.readBackward.Union(unfetched)
+	unfetched := make([][]byte, 0, len(tos))
+	for _, to := range tos {
+		strTo := string(to)
+		if rm.readBackward.Add(strTo) {
+			unfetched = append(unfetched, to)
+		}
+	}
 
 	// Read them all at once.
 	rm.remoteToRead(func(g RGraph) {
 		for _, to := range unfetched {
-			rm.readBackward, _ = rm.readBackward.Insert(to)
 			if g.HasRefsTo(to) {
 				rm.RWGraph.setTo(to, g.GetRefsTo(to))
 			}

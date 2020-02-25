@@ -44,8 +44,8 @@ const DragAndDrop = props => {
     }
 
     return (
-        <div className="flex flex-col bg-base-100 rounded-sm shadow flex-grow flex-no-shrink mb-4">
-            <div className="flex text-accent-700 p-3 border-b border-base-300 mb-2 items-center flex-no-shrink">
+        <div className="flex flex-col bg-base-100 rounded-sm shadow flex-grow flex-shrink-0 mb-4">
+            <div className="flex text-accent-700 p-3 border-b border-base-300 mb-2 items-center flex-shrink-0">
                 <Icon.Upload size="20px" strokeWidth="1.5px" />
 
                 <div className="pl-3 font-700 text-lg">Upload a network policy YAML</div>
@@ -59,9 +59,9 @@ const DragAndDrop = props => {
                 onDrop={onDrop}
                 className="flex w-full min-h-32 h-full mt-3 py-3 flex-col self-center uppercase hover:bg-warning-100 border border-dashed border-warning-500 bg-warning-100 hover:bg-warning-200 cursor-pointer justify-center"
             >
-                <div className="flex flex-no-shrink flex-col">
+                <div className="flex flex-shrink-0 flex-col">
                     <div
-                        className="mt-3 h-18 w-18 self-center rounded-full flex items-center justify-center flex-no-shrink"
+                        className="mt-3 h-18 w-18 self-center rounded-full flex items-center justify-center flex-shrink-0"
                         style={{ background: BACKGROUND_COLOR, color: ICON_COLOR }}
                     >
                         <Icon.Upload className="h-8 w-8" strokeWidth="1.5px" />

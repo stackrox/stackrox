@@ -15,6 +15,8 @@ import ResourceTabs from 'Components/ResourceTabs';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import Header from './Header';
 
 function processData(data) {
@@ -110,6 +112,15 @@ const ClusterPage = ({
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
+                                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
+                                    <ComplianceByStandard
+                                        standardType={entityTypes.NIST_SP_800_53}
+                                        entityName={name}
+                                        entityId={id}
+                                        entityType={entityTypes.CLUSTER}
+                                        className={pdfClassName}
+                                    />
+                                </FeatureEnabled>
                                 <ComplianceByStandard
                                     standardType={entityTypes.HIPAA_164}
                                     entityName={name}

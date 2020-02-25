@@ -2,9 +2,10 @@ package loaders
 
 import (
 	"context"
-	"errors"
 	"reflect"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -109,7 +110,11 @@ func (idl *deploymentLoaderImpl) load(ctx context.Context, ids []string) ([]*sto
 		deployments, missing = idl.readAll(ids)
 	}
 	if len(missing) > 0 {
-		return nil, errors.New("not all deployments could be found")
+		missingIDs := make([]string, 0, len(missing))
+		for _, m := range missing {
+			missingIDs = append(missingIDs, ids[m])
+		}
+		return nil, errors.Errorf("not all deployments could be found: %s", strings.Join(missingIDs, ","))
 	}
 	return deployments, nil
 }

@@ -27,6 +27,22 @@ func ElemTypeDiff(a, b []ElemType, lessFunc func(a, b ElemType) bool) (aOnly, bO
 	return
 }
 
+// ElemTypeClone clones a slice, creating a new slice
+// and copying the contents of the underlying array.
+// If `in` is a nil slice, a nil slice is returned.
+// If `in` is an empty slice, an empty slice is returned.
+func ElemTypeClone(in []ElemType) []ElemType {
+	if in == nil {
+		return nil
+	}
+	if len(in) == 0 {
+		return []ElemType{}
+	}
+	out := make([]ElemType, len(in))
+	copy(out, in)
+	return out
+}
+
 // ElemTypeFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
 // not contain elem.
 func ElemTypeFind(slice []ElemType, elem ElemType) int {

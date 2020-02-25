@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	detection "github.com/stackrox/rox/central/detection"
 	storage "github.com/stackrox/rox/generated/storage"
+	detection "github.com/stackrox/rox/pkg/detection"
 	reflect "reflect"
 )
 
@@ -76,6 +76,20 @@ func (mr *MockPolicySetMockRecorder) ForEach(pt interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockPolicySet)(nil).ForEach), pt)
 }
 
+// GetCompiledPolicies mocks base method
+func (m *MockPolicySet) GetCompiledPolicies() map[string]detection.CompiledPolicy {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCompiledPolicies")
+	ret0, _ := ret[0].(map[string]detection.CompiledPolicy)
+	return ret0
+}
+
+// GetCompiledPolicies indicates an expected call of GetCompiledPolicies
+func (mr *MockPolicySetMockRecorder) GetCompiledPolicies() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompiledPolicies", reflect.TypeOf((*MockPolicySet)(nil).GetCompiledPolicies))
+}
+
 // UpsertPolicy mocks base method
 func (m *MockPolicySet) UpsertPolicy(arg0 *storage.Policy) error {
 	m.ctrl.T.Helper()
@@ -88,20 +102,6 @@ func (m *MockPolicySet) UpsertPolicy(arg0 *storage.Policy) error {
 func (mr *MockPolicySetMockRecorder) UpsertPolicy(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPolicy", reflect.TypeOf((*MockPolicySet)(nil).UpsertPolicy), arg0)
-}
-
-// Recompile mocks base method
-func (m *MockPolicySet) Recompile(policyID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Recompile", policyID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Recompile indicates an expected call of Recompile
-func (mr *MockPolicySetMockRecorder) Recompile(policyID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Recompile", reflect.TypeOf((*MockPolicySet)(nil).Recompile), policyID)
 }
 
 // RemovePolicy mocks base method

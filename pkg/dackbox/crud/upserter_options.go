@@ -10,6 +10,13 @@ func WithKeyFunction(kf ProtoKeyFunction) UpserterOption {
 	}
 }
 
+// AddToIndex indexes the object after insert. It operates lazily, so things may not be in the index right away.
+func AddToIndex() UpserterOption {
+	return func(rc *upserterImpl) {
+		rc.addToIndex = true
+	}
+}
+
 // WithPartialUpserter adds a PartialUpserter to store some portion of an input objects data separately.
 func WithPartialUpserter(partial PartialUpserter) UpserterOption {
 	return func(rc *upserterImpl) {

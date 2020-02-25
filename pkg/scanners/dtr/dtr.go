@@ -41,6 +41,7 @@ type dtr struct {
 	registry string
 
 	protoImageIntegration *storage.ImageIntegration
+	types.ScanSemaphore
 }
 
 type config storage.DTRConfig
@@ -92,6 +93,8 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*dtr, error) {
 		registry:              registry,
 		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
+
+		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
 
 	return scanner, nil

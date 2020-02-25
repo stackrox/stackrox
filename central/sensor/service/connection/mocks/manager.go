@@ -103,6 +103,81 @@ func (mr *MockClusterManagerMockRecorder) GetClusters(ctx interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockClusterManager)(nil).GetClusters), ctx)
 }
 
+// MockPolicyManager is a mock of PolicyManager interface
+type MockPolicyManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockPolicyManagerMockRecorder
+}
+
+// MockPolicyManagerMockRecorder is the mock recorder for MockPolicyManager
+type MockPolicyManagerMockRecorder struct {
+	mock *MockPolicyManager
+}
+
+// NewMockPolicyManager creates a new mock instance
+func NewMockPolicyManager(ctrl *gomock.Controller) *MockPolicyManager {
+	mock := &MockPolicyManager{ctrl: ctrl}
+	mock.recorder = &MockPolicyManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockPolicyManager) EXPECT() *MockPolicyManagerMockRecorder {
+	return m.recorder
+}
+
+// GetPolicies mocks base method
+func (m *MockPolicyManager) GetPolicies(ctx context.Context) ([]*storage.Policy, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPolicies", ctx)
+	ret0, _ := ret[0].([]*storage.Policy)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPolicies indicates an expected call of GetPolicies
+func (mr *MockPolicyManagerMockRecorder) GetPolicies(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockPolicyManager)(nil).GetPolicies), ctx)
+}
+
+// MockWhitelistManager is a mock of WhitelistManager interface
+type MockWhitelistManager struct {
+	ctrl     *gomock.Controller
+	recorder *MockWhitelistManagerMockRecorder
+}
+
+// MockWhitelistManagerMockRecorder is the mock recorder for MockWhitelistManager
+type MockWhitelistManagerMockRecorder struct {
+	mock *MockWhitelistManager
+}
+
+// NewMockWhitelistManager creates a new mock instance
+func NewMockWhitelistManager(ctrl *gomock.Controller) *MockWhitelistManager {
+	mock := &MockWhitelistManager{ctrl: ctrl}
+	mock.recorder = &MockWhitelistManagerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockWhitelistManager) EXPECT() *MockWhitelistManagerMockRecorder {
+	return m.recorder
+}
+
+// WalkAll mocks base method
+func (m *MockWhitelistManager) WalkAll(ctx context.Context, fn func(*storage.ProcessWhitelist) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkAll", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkAll indicates an expected call of WalkAll
+func (mr *MockWhitelistManagerMockRecorder) WalkAll(ctx, fn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockWhitelistManager)(nil).WalkAll), ctx, fn)
+}
+
 // MockManager is a mock of Manager interface
 type MockManager struct {
 	ctrl     *gomock.Controller
@@ -127,17 +202,17 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // Start mocks base method
-func (m *MockManager) Start(mgr connection.ClusterManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *MockManager) Start(mgr connection.ClusterManager, policyMgr connection.PolicyManager, whitelistMgr connection.WhitelistManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Start", mgr, autoTriggerUpgrades)
+	ret := m.ctrl.Call(m, "Start", mgr, policyMgr, whitelistMgr, autoTriggerUpgrades)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Start indicates an expected call of Start
-func (mr *MockManagerMockRecorder) Start(mgr, autoTriggerUpgrades interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) Start(mgr, policyMgr, whitelistMgr, autoTriggerUpgrades interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, autoTriggerUpgrades)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockManager)(nil).Start), mgr, policyMgr, whitelistMgr, autoTriggerUpgrades)
 }
 
 // HandleConnection mocks base method
@@ -180,6 +255,32 @@ func (m *MockManager) GetActiveConnections() []connection.SensorConnection {
 func (mr *MockManagerMockRecorder) GetActiveConnections() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveConnections", reflect.TypeOf((*MockManager)(nil).GetActiveConnections))
+}
+
+// BroadcastMessage mocks base method
+func (m *MockManager) BroadcastMessage(msg *central.MsgToSensor) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BroadcastMessage", msg)
+}
+
+// BroadcastMessage indicates an expected call of BroadcastMessage
+func (mr *MockManagerMockRecorder) BroadcastMessage(msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMessage", reflect.TypeOf((*MockManager)(nil).BroadcastMessage), msg)
+}
+
+// SendMessage mocks base method
+func (m *MockManager) SendMessage(clusterID string, msg *central.MsgToSensor) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendMessage", clusterID, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendMessage indicates an expected call of SendMessage
+func (mr *MockManagerMockRecorder) SendMessage(clusterID, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockManager)(nil).SendMessage), clusterID, msg)
 }
 
 // TriggerUpgrade mocks base method

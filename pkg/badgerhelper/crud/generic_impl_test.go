@@ -62,7 +62,7 @@ type CRUDTestSuite struct {
 
 func (s *CRUDTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = badgerhelper.NewTemp("generic", false)
+	s.db, s.dir, err = badgerhelper.NewTemp("generic")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
@@ -182,9 +182,7 @@ func (s *CRUDTestSuite) TestUpsert() {
 	localAlert := proto.Clone(alert1).(*storage.Alert)
 	localAlert.State = storage.ViolationState_RESOLVED
 
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.Upsert(localAlert))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 
 	msg, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)
@@ -202,9 +200,7 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	localAlert2 := proto.Clone(alert2).(*storage.Alert)
 	localAlert2.State = storage.ViolationState_RESOLVED
 
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.UpsertBatch([]proto.Message{localAlert1, localAlert2}))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 
 	msgs, err := s.crud.ReadAll()
 	s.NoError(err)
@@ -212,11 +208,8 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 }
 
 func (s *CRUDTestSuite) TestDelete() {
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.Upsert(alert1))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 	s.NoError(s.crud.Delete(alert1ID))
-	s.Equal(txNum+2, s.crud.GetTxnCount())
 
 	_, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)
@@ -224,11 +217,8 @@ func (s *CRUDTestSuite) TestDelete() {
 }
 
 func (s *CRUDTestSuite) TestDeleteMany() {
-	txNum := s.crud.GetTxnCount()
 	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
-	s.Equal(txNum+1, s.crud.GetTxnCount())
 	s.NoError(s.crud.DeleteBatch([]string{alert1ID, alert2ID}))
-	s.Equal(txNum+2, s.crud.GetTxnCount())
 
 	_, exists, err := s.crud.Read(alert1ID)
 	s.NoError(err)
@@ -262,4 +252,34 @@ func (s *CRUDTestSuite) TestGetIDs() {
 	ids, err = s.crud.GetKeys()
 	s.NoError(err)
 	s.Len(ids, 0)
+}
+
+func (s *CRUDTestSuite) verifyKeyWasMarkedForIndexingAndReset(expectedKeys ...string) {
+	keys, err := s.crud.GetKeysToIndex()
+	s.NoError(err)
+	s.ElementsMatch(expectedKeys, keys)
+
+	// Verify that they can be removed as well
+	s.NoError(s.crud.AckKeysIndexed(keys...))
+	keys, err = s.crud.GetKeysToIndex()
+	s.NoError(err)
+	s.ElementsMatch(nil, keys)
+}
+
+func (s *CRUDTestSuite) TestKeysToIndex() {
+	keys, err := s.crud.GetKeysToIndex()
+	s.NoError(err)
+	s.Empty(keys)
+
+	s.NoError(s.crud.Upsert(alert1))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID)
+
+	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
+
+	s.NoError(s.crud.Delete(alert1ID))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID)
+
+	s.NoError(s.crud.DeleteBatch([]string{alert1ID, alert2ID}))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
 }

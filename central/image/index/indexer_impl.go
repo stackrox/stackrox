@@ -1,23 +1,23 @@
 package index
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/document"
-	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/pkg/errors"
-	mappings "github.com/stackrox/rox/central/image/mappings"
-	metrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
-	batcher "github.com/stackrox/rox/pkg/batcher"
-	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	search "github.com/stackrox/rox/pkg/search"
-	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	mappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -26,7 +26,7 @@ const batchSize = 5000
 const resourceName = "Image"
 
 type indexerImpl struct {
-	index *blevehelper.BleveWrapper
+	index bleve.Index
 }
 
 type imageWrapper struct {
@@ -76,6 +76,9 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 	cvssMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "cvss"))
 	cvssPathStr, cvssPath := getVulnPath("cvss")
 
+	cveSuppressedMapping := getFieldOrPanic(getSubMappingOrPanic(vulnMapping, "suppressed"))
+	cveSuppressedPathStr, cveSuppressedPath := getVulnPath("suppressed")
+
 	fixedMapping := vulnMapping.Properties["SetFixedBy"].Properties["fixed_by"].Fields[0]
 
 	fixedPathStr := "image.scan.components.vulns.SetFixedBy.fixed_by"
@@ -94,6 +97,7 @@ func mapComponents(im *mapping.IndexMappingImpl, components []*storage.EmbeddedI
 
 			cveMapping.ProcessString(vuln.GetCve(), cvePathStr, cvePath, vulnIndex, walkContext)
 			cvssMapping.ProcessFloat64(float64(vuln.GetCvss()), cvssPathStr, cvssPath, vulnIndex, walkContext)
+			cveSuppressedMapping.ProcessBoolean(vuln.GetSuppressed(), cveSuppressedPathStr, cveSuppressedPath, vulnIndex, walkContext)
 			fixedMapping.ProcessString(vuln.GetFixedBy(), fixedPathStr, fixedPath, vulnIndex, walkContext)
 		}
 	}
@@ -117,14 +121,6 @@ func (b *indexerImpl) optimizedMapDocument(wrapper *imageWrapper) (*document.Doc
 	return doc, nil
 }
 
-func (b *indexerImpl) memIndex(image *imageWrapper, udc *upsidedown.UpsideDownCouch) error {
-	doc, err := b.optimizedMapDocument(image)
-	if err != nil {
-		return err
-	}
-	return udc.UpdateWithAnalysis(doc, udc.Analyze(doc), nil)
-}
-
 func (b *indexerImpl) AddImage(image *storage.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Image")
 
@@ -132,18 +128,10 @@ func (b *indexerImpl) AddImage(image *storage.Image) error {
 		Image: image,
 		Type:  v1.SearchCategory_IMAGES.String(),
 	}
-	bleveIndex, _, err := b.index.Advanced()
-	if err != nil {
+	if err := b.index.Index(image.GetId(), wrapper); err != nil {
 		return err
 	}
-	udc, ok := bleveIndex.(*upsidedown.UpsideDownCouch)
-	if ok {
-		return b.memIndex(wrapper, udc)
-	}
-	if err := b.index.Index.Index(image.GetId(), wrapper); err != nil {
-		return err
-	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) AddImages(images []*storage.Image) error {
@@ -158,7 +146,7 @@ func (b *indexerImpl) AddImages(images []*storage.Image) error {
 			return err
 		}
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) processBatch(images []*storage.Image) error {
@@ -179,7 +167,7 @@ func (b *indexerImpl) DeleteImage(id string) error {
 	if err := b.index.Delete(id); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) DeleteImages(ids []string) error {
@@ -191,23 +179,22 @@ func (b *indexerImpl) DeleteImages(ids []string) error {
 	if err := b.index.Batch(batch); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
-func (b *indexerImpl) GetTxnCount() uint64 {
-	return b.index.GetTxnCount()
+func (b *indexerImpl) MarkInitialIndexingComplete() error {
+	return b.index.SetInternal([]byte(resourceName), []byte("old"))
 }
 
-func (b *indexerImpl) ResetIndex() error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "Image")
-	return blevesearch.ResetIndex(v1.SearchCategory_IMAGES, b.index.Index)
+func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
+	data, err := b.index.GetInternal([]byte(resourceName))
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal([]byte("old"), data), nil
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Image")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index.Index, mappings.OptionsMap, opts...)
-}
-
-func (b *indexerImpl) SetTxnCount(seq uint64) error {
-	return b.index.SetTxnCount(seq)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_IMAGES, q, b.index, mappings.OptionsMap, opts...)
 }

@@ -124,7 +124,7 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	cfg := req.GetConfig()
 
 	if cfg.GetId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "update must specify an ID")
+		return nil, status.Error(codes.InvalidArgument, "update must specify an ID")
 	}
 
 	if err := validateConfig(cfg); err != nil {

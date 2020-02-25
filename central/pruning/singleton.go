@@ -8,6 +8,7 @@ import (
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkflow/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	processWhitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
 
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,7 +21,7 @@ var (
 // Singleton returns the global instance of the garbage collection
 func Singleton() GarbageCollector {
 	once.Do(func() {
-		gc = newGarbageCollector(alertDatastore.Singleton(), imagesDatastore.Singleton(), clusterDatastore.Singleton(), deploymentDatastore.Singleton(), processDatastore.Singleton(), networkFlowsDataStore.Singleton(), configDatastore.Singleton())
+		gc = newGarbageCollector(alertDatastore.Singleton(), imagesDatastore.Singleton(), clusterDatastore.Singleton(), deploymentDatastore.Singleton(), processDatastore.Singleton(), processWhitelistDatastore.Singleton(), networkFlowsDataStore.Singleton(), configDatastore.Singleton())
 	})
 	return gc
 }

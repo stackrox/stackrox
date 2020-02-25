@@ -3,20 +3,21 @@ import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
-    getPolicyQueryVar,
-    tryUpdateQueryWithVulMgmtPolicyClause
+    vulMgmtPolicyQuery,
+    tryUpdateQueryWithVulMgmtPolicyClause,
+    getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getDeployment($id: ID!, $policyQuery: String) {
+        query getDeployment($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
                 id
                 priority
@@ -25,10 +26,19 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                     id
                     name
                     description
-                    policyStatus
-                    latestViolation
+                    policyStatus(query: $scopeQuery)
+                    latestViolation(query: $scopeQuery)
                     severity
-                    deploymentCount
+                    lifecycleStages
+                    enforcementActions
+                }
+                policies(query: $policyQuery) {
+                    id
+                    name
+                    description
+                    policyStatus(query: $scopeQuery)
+                    latestViolation(query: $scopeQuery)
+                    severity
                     lifecycleStages
                     enforcementActions
                 }
@@ -71,6 +81,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                         : 'serviceAccount serviceAccountID'
                 }
                 failingPolicyCount(query: $policyQuery)
+                policyCount(query: $policyQuery)
                 tolerations {
                     key
                     operator
@@ -83,7 +94,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                 imageCount
                 componentCount
                 vulnCount
-                vulnerabilities: vulns {
+                vulnerabilities: vulns(query: $query) {
                     ...cveFields
                 }
             }
@@ -93,12 +104,13 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getDeployment${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
-            entityListType
-        )}) {
+        query getDeployment${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
                 id
-                ${listFieldName}(query: $query) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}(query: $query)
+                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${fragment}
@@ -108,8 +120,9 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
-            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            ...vulMgmtPolicyQuery,
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 

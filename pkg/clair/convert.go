@@ -23,11 +23,11 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	versionFormatsToSource = map[string]storage.EmbeddedImageScanComponent_SourceType{
-		component.GemSourceType.String():    storage.EmbeddedImageScanComponent_RUBY,
-		component.JavaSourceType.String():   storage.EmbeddedImageScanComponent_JAVA,
-		component.NPMSourceType.String():    storage.EmbeddedImageScanComponent_NODEJS,
-		component.PythonSourceType.String(): storage.EmbeddedImageScanComponent_PYTHON,
+	versionFormatsToSource = map[string]storage.SourceType{
+		component.GemSourceType.String():    storage.SourceType_RUBY,
+		component.JavaSourceType.String():   storage.SourceType_JAVA,
+		component.NPMSourceType.String():    storage.SourceType_NODEJS,
+		component.PythonSourceType.String(): storage.SourceType_PYTHON,
 	}
 )
 

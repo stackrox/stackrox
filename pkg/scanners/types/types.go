@@ -6,6 +6,8 @@ import (
 
 // ImageScanner is the interface that all scanners must implement
 type ImageScanner interface {
+	ScanSemaphore
+
 	// GetScan gets the scan for the given image.
 	// It is a blocking call; if the scanner has not scanned the image yet,
 	// the function blocks until it does. It returns an error if it fails to do so.

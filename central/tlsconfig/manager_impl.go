@@ -58,7 +58,7 @@ func newManager() (*managerImpl, error) {
 		Interval: watchInterval,
 		Force:    true,
 	}
-	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), defaultCertPath, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), DefaultCertPath, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
 
 	return mgr, nil
 }

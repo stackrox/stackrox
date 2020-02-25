@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
-	"github.com/stackrox/rox/pkg/scanners/scannerv2"
 )
 
 // DefaultImageIntegrations are the default public registries
@@ -41,6 +40,18 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 				Endpoint: "gcr.io",
 			},
 		},
+	},
+	{
+		Id:         "6d7fc3f3-03d0-4b61-bf9f-34982a77bd56",
+		Name:       "Public GKE GCR",
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "gke.gcr.io",
+			},
+		},
+		SkipTestIntegration: true, // /v2 endpoint is not implemented
 	},
 	{
 		Id:         "e50087f1-6840-4d15-aeca-21ba636f0878",
@@ -88,26 +99,10 @@ var (
 		},
 	}
 
-	defaultScannerV2 = &storage.ImageIntegration{
-		Id:         "2dbc2f90-9829-4b79-a329-d7d4bd579014",
-		Name:       "StackRox Scanner V2",
-		Type:       "scanner",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
-		IntegrationConfig: &storage.ImageIntegration_Scannerv2{
-			Scannerv2: &storage.ScannerV2Config{
-				Endpoint: "http://scanner-v2.stackrox:8228",
-			},
-		},
-	}
-
 	// DelayedIntegrations are default integrations to be added only when the trigger function returns true
 	DelayedIntegrations = []DelayedIntegration{
 		makeDelayedIntegration(defaultScanner, func() scanners.Creator {
 			_, creator := clairify.Creator(nil)
-			return creator
-		}),
-		makeDelayedIntegration(defaultScannerV2, func() scanners.Creator {
-			_, creator := scannerv2.Creator(nil)
 			return creator
 		}),
 	}

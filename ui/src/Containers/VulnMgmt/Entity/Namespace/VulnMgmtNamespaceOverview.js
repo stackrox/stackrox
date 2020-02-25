@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-import workflowStateContext from 'Containers/workflowStateContext';
 import pluralize from 'pluralize';
+
 import CollapsibleSection from 'Components/CollapsibleSection';
 import StatusChip from 'Components/StatusChip';
 import RiskScore from 'Components/RiskScore';
@@ -9,6 +9,7 @@ import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import entityTypes from 'constants/entityTypes';
+import workflowStateContext from 'Containers/workflowStateContext';
 import TopRiskyEntitiesByVulnerabilities from 'Containers/VulnMgmt/widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/RecentlyDetectedVulnerabilities';
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
@@ -16,7 +17,10 @@ import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widge
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { getCveExportName } from 'utils/vulnerabilityUtils';
 
+import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -26,6 +30,7 @@ const emptyNamespace = {
     metadata: {
         clusterName: '',
         clusterId: '',
+        name: '',
         priority: 0,
         labels: [],
         id: ''
@@ -53,6 +58,17 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
     const metadataKeyValuePairs = [];
 
+    function customCsvExportHandler() {
+        const { useCase } = workflowState;
+        const pageEntityType = workflowState.getCurrentEntityType();
+        const entityName = safeData.metadata.name;
+        const csvName = getCveExportName(useCase, pageEntityType, entityName);
+
+        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
+
+        exportCvesAsCsv(csvName, stateWithFixable);
+    }
+
     if (!entityContext[entityTypes.CLUSTER]) {
         const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
         metadataKeyValuePairs.push({
@@ -69,7 +85,14 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         </React.Fragment>
     ];
 
-    const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: id };
+    const currentEntity = { [entityTypes.NAMESPACE]: id };
+    const newEntityContext = { ...entityContext, ...currentEntity };
+    const cveActions = (
+        <FixableCveExportButton
+            disabled={!fixableCves || !fixableCves.length}
+            clickHandler={customCsvExportHandler}
+        />
+    );
 
     return (
         <div className="flex h-full">
@@ -78,30 +101,31 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget"
+                                className="h-full min-w-48 bg-base-100"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={namespaceStats}
                                 labels={labels}
                                 title="Details & Metadata"
+                                bgClass
                             />
                         </div>
                         <div className="sx-1 lg:sx-2 sy-1 h-55">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.DEPLOYMENT}
                                 riskEntityTypes={[entityTypes.DEPLOYMENT, entityTypes.IMAGE]}
-                                entityContext={newEntityContext}
+                                entityContext={currentEntity}
                                 small
                             />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities entityContext={newEntityContext} />
+                            <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <TopRiskiestImagesAndComponents entityContext={newEntityContext} />
+                            <TopRiskiestImagesAndComponents entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <DeploymentsWithMostSeverePolicyViolations
-                                entityContext={newEntityContext}
+                                entityContext={currentEntity}
                             />
                         </div>
                     </div>
@@ -132,6 +156,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                         entityTypes.CVE,
                                         fixableCves.length
                                     )} found across this namespace`}
+                                    headerActions={cveActions}
                                     rows={fixableCves}
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this namespace"

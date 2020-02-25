@@ -13,7 +13,7 @@ function DeploymentNameColumn({ original }) {
         anomalousProcessesExecuted: true
     });
     return (
-        <div className="flex">
+        <div className="flex items-center">
             <span className="pr-1">
                 {isSuspicious && (
                     <Tooltip

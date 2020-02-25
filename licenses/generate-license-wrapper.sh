@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-GENERATE_LICENSE_VERSION="v0.0.0-24-g21fa2a4f3e"
+GENERATE_LICENSE_VERSION="0.2.0"
 
 generate_license_path="gs://stackrox-licensing-tools/generate-license/${GENERATE_LICENSE_VERSION}/$(uname | tr 'A-Z' 'a-z')/generate-license"
 

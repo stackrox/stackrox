@@ -1,8 +1,10 @@
 package upgrade
 
 import (
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -11,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/upgrade"
+	"github.com/stackrox/rox/sensor/common"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -32,7 +34,7 @@ type commandHandler struct {
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler() (upgrade.CommandHandler, error) {
+func NewCommandHandler() (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining Kubernetes REST config")
@@ -53,12 +55,21 @@ func NewCommandHandler() (upgrade.CommandHandler, error) {
 	}, nil
 }
 
-func (h *commandHandler) Start() {
+func (h *commandHandler) Start() error {
 	h.runSig.Reset()
+	return nil
 }
 
-func (h *commandHandler) Stop() {
+func (h *commandHandler) Stop(err error) {
 	h.runSig.Signal()
+}
+
+func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
+	return nil
 }
 
 func (h *commandHandler) waitForTermination(proc *process) {
@@ -83,18 +94,23 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool {
+func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+	trigger := msg.GetSensorUpgradeTrigger()
+	if trigger == nil {
+		return nil
+	}
+
 	h.currentProcessMutex.Lock()
 	defer h.currentProcessMutex.Unlock()
 
 	if h.runSig.IsDone() {
-		return false
+		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(trigger))
 	}
 
 	oldProcess := h.currentProcess
 	if oldProcess != nil {
 		if oldProcess.GetID() == trigger.GetUpgradeProcessId() {
-			return true // idempotent
+			return nil // idempotent
 		}
 
 		// If we receive a trigger with a different ID (or no ID), we should always terminate the current process,
@@ -106,12 +122,12 @@ func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool
 		// No upgrade should be in progress. Delete any deployment that might be lingering around.
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
-		return true
+		return nil
 	}
 
 	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
-		return false
+		return errors.Wrap(err, "error creating new upgrade process")
 	}
 
 	h.currentProcess = newProc
@@ -119,7 +135,7 @@ func (h *commandHandler) SendCommand(trigger *central.SensorUpgradeTrigger) bool
 	go newProc.Run()
 	go h.waitForTermination(newProc)
 
-	return true
+	return nil
 }
 
 func (h *commandHandler) deleteUpgraderDeployments() {

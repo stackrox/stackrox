@@ -31,7 +31,7 @@ StringValueColumn.propTypes = {
 // ///////////////////////////////////////
 function DeploymentColumn({ original }) {
     return (
-        <div className="flex">
+        <div className="flex items-center">
             <span
                 className="pr-2"
                 title={`${original.deployment.inactive ? 'Inactive' : 'Active'} Deployment`}

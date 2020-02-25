@@ -32,10 +32,12 @@ func init() {
 			},
 			common.CheckNoInsecureRegistries),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_5", aufs),
+
 		tlsVerifyCheck("CIS_Docker_v1_2_0:2_6"),
-		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_7", "default-ulimit", "", "", common.Set),
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_7", "default-ulimit", "", "", common.Info),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_8", userNamespaceInfo),
-		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_9", "cgroup-parent", "", "", common.Set),
+
+		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_9", "cgroup-parent", "", "", common.Info),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_10", "storage-opt", "dm.basesize", "", common.NotContains),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_11", "authorization-plugin", "", "", common.Set),
 		dockerInfoCheck("CIS_Docker_v1_2_0:2_12", remoteLogging),
@@ -188,13 +190,15 @@ func tlsVerifyCheck(name string) framework.Check {
 			}
 			args := dockerdProcess.Args
 			values := common.GetValuesForCommandFromFlagsAndConfig(args, config, "host")
+
+			var exposedOverTCP bool
 			for _, v := range values {
-				if strings.Contains(v, "fd://") {
-					framework.PassNowf(ctx, "Docker daemon is exposed over %q and not over TCP", v)
+				if strings.HasPrefix(v, "tcp://") {
+					exposedOverTCP = true
 				}
 			}
-			if len(values) > 0 {
-				framework.PassNowf(ctx, "host is set to %s", msgfmt.FormatStrings(values...))
+			if !exposedOverTCP {
+				framework.PassNow(ctx, "Docker daemon is not exposed over TCP")
 			}
 
 			var evidence []string

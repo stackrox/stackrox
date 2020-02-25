@@ -3,7 +3,9 @@ import { severities } from 'constants/severities';
 export function getPolicySeverityCounts(failingPolicies) {
     const counts = failingPolicies.reduce(
         (acc, curr) => {
-            acc[curr.severity] += 1;
+            if (curr && curr.severity && Object.keys(severities).includes(curr.severity)) {
+                acc[curr.severity] += 1;
+            }
             return acc;
         },
         {

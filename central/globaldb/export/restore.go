@@ -60,7 +60,7 @@ func tryRestoreBadger(r io.Reader, outDir string) error {
 		return errors.Wrap(err, "could not create badger database directory")
 	}
 
-	db, err := badgerhelper.New(badgerDirPath, false)
+	db, err := badgerhelper.New(badgerDirPath)
 	if err != nil {
 		return errors.Wrap(err, "could not create new badger DB in empty dir")
 	}

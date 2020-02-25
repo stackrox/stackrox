@@ -1,6 +1,5 @@
 import toLower from 'lodash/toLower';
 import startCase from 'lodash/startCase';
-import entityToColumns from 'constants/tableColumns';
 import ReactDOMServer from 'react-dom/server';
 import flattenObject from 'utils/flattenObject';
 
@@ -38,11 +37,11 @@ export function enhanceWordBreak({ doc, cell, column }) {
     }
 
     // split cell string by space or "-"
-    const words = text.split(/\s+|(?<=-)/);
+    const words = text.split(/\s+|(-)/);
 
     // calculate longest word width
     const maxWordUnitWidth = words
-        .map(s => Math.floor(doc.getStringUnitWidth(s) * 100) / 100)
+        .map(s => s && Math.floor(doc.getStringUnitWidth(s) * 100) / 100)
         .reduce((a, b) => Math.max(a, b), 0);
     const maxWordWidth = maxWordUnitWidth * (cell.styles.fontSize / doc.internal.scaleFactor);
 
@@ -89,9 +88,8 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
     } else if (query.standardId) {
         type = 'Standard';
     }
-    const columns = tableColumns || entityToColumns[query.standardId || entityType];
     if (tableData.length) {
-        const filteredColumns = columns.filter(
+        const filteredColumns = tableColumns.filter(
             ({ accessor, className }) =>
                 accessor && className !== 'hidden' && accessor !== 'id' && accessor !== 'checkbox'
         );

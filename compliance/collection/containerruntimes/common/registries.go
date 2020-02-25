@@ -2,7 +2,7 @@ package common
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/containers/image/pkg/sysregistriesv2"
+	"github.com/containers/image/v5/pkg/sysregistriesv2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/utils"
 	"github.com/stackrox/rox/generated/internalapi/compliance"

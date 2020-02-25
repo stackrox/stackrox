@@ -1,6 +1,8 @@
 package concurrency
 
-import "time"
+import (
+	"time"
+)
 
 // Timeout returns a waitable that is done after the given timeout.
 // Note: Every call to `Timeout` with a positive duration spawns a new goroutine that lives for the given duration,

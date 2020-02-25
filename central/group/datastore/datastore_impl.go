@@ -38,6 +38,16 @@ func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
 	return ds.storage.GetAll()
 }
 
+func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	return ds.storage.GetFiltered(filter)
+}
+
 func (ds *dataStoreImpl) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
 	if ok, err := groupSAC.ReadAllowed(ctx); err != nil {
 		return nil, err

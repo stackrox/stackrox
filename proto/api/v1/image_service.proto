@@ -8,6 +8,7 @@ import "api/v1/common.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
 import "storage/image.proto";
+import "storage/deployment.proto";
 
 package v1;
 
@@ -20,8 +21,16 @@ message CountImagesResponse {
 }
 
 message ScanImageRequest {
-    string image_name = 1;
-    bool   force      = 2;
+    string image_name   = 1;
+    bool   force        = 2;
+}
+
+message ScanImageInternalRequest {
+    storage.ContainerImage image = 1;
+}
+
+message ScanImageInternalResponse {
+    storage.Image image = 1;
 }
 
 message DeleteImagesRequest {
@@ -65,6 +74,9 @@ service ImageService {
             body: "*"
         };
     }
+
+    // ScanImageInternal is used solely by the Sensor to send scan requests
+    rpc ScanImageInternal (ScanImageInternalRequest) returns (ScanImageInternalResponse);
 
     // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {

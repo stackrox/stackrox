@@ -4,6 +4,8 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
+ALPINE_MIRROR_BUILD_ARG := $(ALPINE_MIRROR:%=--build-arg ALPINE_MIRROR=%)
+
 export CGO_ENABLED DEFAULT_GOOS GOARCH GOTAGS GO111MODULE GOPRIVATE
 CGO_ENABLED := 0
 GOARCH := amd64
@@ -50,6 +52,7 @@ $(GOVERALLS_BIN): deps
 	go install github.com/mattn/goveralls
 
 ROXVET_BIN := $(GOPATH)/bin/roxvet
+.PHONY: $(ROXVET_BIN)
 $(ROXVET_BIN): deps
 	@echo "+ $@"
 	go install ./tools/roxvet
@@ -436,13 +439,16 @@ deployer-image: build-prep
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main:$(TAG) --build-arg DATA_IMAGE_TAG=$(TAG) image/
+	docker build -t stackrox/main:$(TAG) --build-arg DATA_IMAGE_TAG=$(TAG) $(ALPINE_MIRROR_BUILD_ARG) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
+$(CURDIR)/image/rhel/bundle.tar.gz:
+	$(CURDIR)/image/rhel/create-bundle.sh $(CURDIR)/image stackrox-data:$(TAG) $@
+
 .PHONY: docker-build-main-image-rhel
-docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main-rhel:$(TAG) --file image/Dockerfile_rhel --label version=$(TAG) --label release=$(TAG) --build-arg DATA_IMAGE_TAG=$(TAG) image/
+docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image $(CURDIR)/image/rhel/bundle.tar.gz
+	docker build -t stackrox/main-rhel:$(TAG) --file image/rhel/Dockerfile --label version=$(TAG) --label release=$(TAG) image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
@@ -450,7 +456,7 @@ docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 docker-build-data-image:
 	test -f $(CURDIR)/image/keys/data-key
 	test -f $(CURDIR)/image/keys/data-iv
-	docker build -t stackrox-data:$(TAG) image/ --file image/stackrox-data.Dockerfile
+	docker build -t stackrox-data:$(TAG) image/ --file image/stackrox-data.Dockerfile $(ALPINE_MIRROR_BUILD_ARG)
 
 .PHONY: docker-build-deployer-image
 docker-build-deployer-image:
@@ -519,6 +525,7 @@ clean-image:
 	git clean -xf image/bin
 	git clean -xdf image/ui image/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
+	rm -f $(CURDIR)/image/rhel/bundle.tar.gz
 
 .PHONY: tag
 tag:

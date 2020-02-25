@@ -19,17 +19,17 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
     return (
         <section className="flex flex-col relative min-h-full">
             <PageHeader
-                classes={`bg-gradient-horizontal z-10 sticky pin-t ${
+                classes={`bg-gradient-horizontal z-10 sticky top-0 ${
                     isDarkMode ? 'text-base-600' : 'text-base-100'
                 }`}
                 bgStyle={bgStyle}
                 header={headerText}
                 subHeader="Dashboard"
             >
-                <div className="flex flex-1 justify-end">{headerComponents}</div>
+                <div className="flex flex-1 justify-end h-10">{headerComponents}</div>
             </PageHeader>
             <img
-                className="absolute pin-l pointer-events-none z-10 w-full"
+                className="absolute left-0 pointer-events-none z-10 w-full"
                 id="wave-bg2"
                 src={WaveBackground2}
                 style={{ mixBlendMode: 'lighten', top: '-60px' }}
@@ -41,7 +41,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
                 id="capture-dashboard"
             >
                 <img
-                    className="absolute pin-l pointer-events-none w-full"
+                    className="absolute left-0 pointer-events-none w-full"
                     id="wave-bg"
                     src={WaveBackground}
                     style={{ top: '-130px' }}

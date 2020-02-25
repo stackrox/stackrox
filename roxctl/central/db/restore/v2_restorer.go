@@ -50,7 +50,7 @@ const (
 
 var (
 	defaultSpinner = []string{"⠇", "⠏", "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧"}
-	waitingSpinner = append(append([]string{}, defaultSpinner...), sliceutils.Reversed(defaultSpinner).([]string)...)
+	waitingSpinner = sliceutils.ConcatStringSlices(defaultSpinner, sliceutils.Reversed(defaultSpinner).([]string))
 )
 
 type v2Restorer struct {

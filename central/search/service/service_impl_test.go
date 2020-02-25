@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/blevesearch/bleve"
+	"github.com/dgraph-io/badger"
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	cveMocks "github.com/stackrox/rox/central/cve/datastore/mocks"
+	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
@@ -25,6 +31,10 @@ import (
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/set"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dackbox/indexer"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/fixtures"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
@@ -72,6 +82,8 @@ func TestSearchFuncs(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build()
 
@@ -95,6 +107,9 @@ func TestAutocomplete(t *testing.T) {
 	testDB := testutils.BadgerDBForT(t)
 	defer utils.IgnoreError(testDB.Close)
 
+	dacky, registry, indexingQ := testDackBoxInstance(t, testDB, idx)
+	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
+
 	mockIndicators := mocks.NewMockDataStore(mockCtrl)
 	// This gets called as a side effect of `UpsertDeployment`.
 	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).AnyTimes()
@@ -105,7 +120,7 @@ func TestAutocomplete(t *testing.T) {
 
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-	deploymentDS, err := deploymentDatastore.NewBadger(testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter)
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -129,6 +144,10 @@ func TestAutocomplete(t *testing.T) {
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
 	require.NoError(t, deploymentDS.UpsertDeployment(allAccessCtx, deploymentName2))
 
+	finishedIndexing := concurrency.NewSignal()
+	indexingQ.PushSignal(&finishedIndexing)
+	finishedIndexing.Wait()
+
 	service := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
 		WithDeploymentStore(deploymentDS).
@@ -142,6 +161,8 @@ func TestAutocomplete(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -220,6 +241,8 @@ func TestAutocompleteForEnums(t *testing.T) {
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
 		WithClusterDataStore(clusterDataStoreMocks.NewMockDataStore(mockCtrl)).
+		WithCVEDataStore(cveMocks.NewMockDataStore(mockCtrl)).
+		WithComponentDataStore(componentMocks.NewMockDataStore(mockCtrl)).
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
@@ -227,4 +250,16 @@ func TestAutocompleteForEnums(t *testing.T) {
 	results, err := service.autocomplete(ctx, fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
+}
+
+func testDackBoxInstance(t *testing.T, db *badger.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
+	indexingQ := queue.NewWaitableQueue()
+	dacky, err := dackbox.NewDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+	require.NoError(t, err)
+
+	reg := indexer.NewWrapperRegistry()
+	lazy := indexer.NewLazy(indexingQ, reg, index, dacky.AckIndexed)
+	lazy.Start()
+
+	return dacky, reg, indexingQ
 }

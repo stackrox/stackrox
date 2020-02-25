@@ -46,6 +46,7 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Image
 }
 
 type googleScanner struct {
+	types.ScanSemaphore
 	betaClient *containeranalysis.GrafeasV1Beta1Client
 
 	project          string
@@ -93,6 +94,8 @@ func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
 		project:          config.GetProject(),
 		registry:         registry,
 		protoIntegration: integration,
+
+		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
 	return scanner, nil
 }

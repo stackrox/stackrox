@@ -60,12 +60,12 @@ func (s *serviceWrap) exposure() map[portRef]*storage.PortConfig_ExposureInfo {
 // serviceDispatcher handles servidce resource events.
 type serviceDispatcher struct {
 	serviceStore    *serviceStore
-	deploymentStore *deploymentStore
+	deploymentStore *DeploymentStore
 	endpointManager *endpointManager
 }
 
 // newServiceDispatcher creates and returns a new service handler.
-func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager) *serviceDispatcher {
+func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, endpointManager *endpointManager) *serviceDispatcher {
 	return &serviceDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
@@ -74,7 +74,7 @@ func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *deploymen
 }
 
 // Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (sh *serviceDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)

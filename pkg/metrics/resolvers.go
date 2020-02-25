@@ -9,9 +9,11 @@ const (
 	Cluster Resolver = iota
 	Compliance
 	ComlianceControl
+	CVEs
 	Deployments
 	Groups
 	Images
+	ImageComponents
 	K8sRoles
 	Namespaces
 	Nodes

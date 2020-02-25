@@ -179,12 +179,12 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 	return b.deploymentCRUD.Delete(id)
 }
 
-func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
-	return b.deploymentCRUD.GetTxnCount(), nil
+func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+	return b.deploymentCRUD.AckKeysIndexed(keys...)
 }
 
-func (b *storeImpl) IncTxnCount() error {
-	return b.deploymentCRUD.IncTxnCount()
+func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+	return b.deploymentCRUD.GetKeysToIndex()
 }
 
 func (b *storeImpl) GetDeploymentIDs() ([]string, error) {

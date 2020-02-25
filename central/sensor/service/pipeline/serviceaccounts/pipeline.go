@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -36,10 +37,11 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline for service accounts
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, serviceaccounts datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:        clusters,
-		deployments:     deployments,
-		serviceaccounts: serviceaccounts,
-		riskReprocessor: reprocessor.Singleton(),
+		clusters:             clusters,
+		deployments:          deployments,
+		serviceaccounts:      serviceaccounts,
+		riskReprocessor:      reprocessor.Singleton(),
+		reconciliationSignal: concurrency.NewSignal(),
 	}
 }
 
@@ -48,9 +50,15 @@ type pipelineImpl struct {
 	deployments     deploymentDataStore.DataStore
 	serviceaccounts datastore.DataStore
 	riskReprocessor reprocessor.Loop
+
+	reconciliationSignal concurrency.Signal
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
+	// Signal before running with reconciliation to avoid a potential race with Run() calls
+	// Calling this here will cause some duplicate risk reprocessing, but overall should be
+	// significantly less than without the reconciliation signal
+	s.reconciliationSignal.Signal()
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.serviceaccounts.Search(ctx, query)
 	if err != nil {
@@ -104,6 +112,22 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	return nil
 }
 
+func (s *pipelineImpl) reprocessRisk(ctx context.Context, sa *storage.ServiceAccount) error {
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).
+		AddExactMatches(search.Namespace, sa.Namespace).
+		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
+
+	results, err := s.deployments.Search(ctx, q)
+	if err != nil {
+		log.Errorf("error searching for deployments with service account %q", sa.GetName())
+		return err
+	}
+	deploymentIDs := search.ResultsToIDs(results)
+	// Reprocess risk
+	s.riskReprocessor.ReprocessRiskForDeployments(deploymentIDs...)
+	return nil
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, sa *storage.ServiceAccount) error {
 	if err := s.validateInput(sa); err != nil {
@@ -118,19 +142,10 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		return err
 	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).
-		AddExactMatches(search.Namespace, sa.Namespace).
-		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
-
-	results, err := s.deployments.Search(ctx, q)
-	if err != nil {
-		log.Errorf("error searching for deployments with service account %q", sa.GetName())
-		return err
+	// If we have completely reconciliation then reevaluate risk on every service account event
+	if s.reconciliationSignal.IsDone() {
+		return s.reprocessRisk(ctx, sa)
 	}
-	deploymentIDs := search.ResultsToIDs(results)
-	// Reprocess risk
-	s.riskReprocessor.ReprocessRiskForDeployments(deploymentIDs...)
-
 	return nil
 }
 
@@ -145,7 +160,7 @@ func (s *pipelineImpl) validateInput(sa *storage.ServiceAccount) error {
 func (s *pipelineImpl) enrichCluster(ctx context.Context, sa *storage.ServiceAccount) error {
 	sa.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ctx, sa.GetClusterId())
+	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, sa.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -154,7 +169,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, sa *storage.ServiceAcc
 		log.Warnf("Couldn't find cluster '%s'", sa.GetClusterId())
 		return err
 	default:
-		sa.ClusterName = cluster.GetName()
+		sa.ClusterName = clusterName
 	}
 	return nil
 }

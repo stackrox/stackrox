@@ -6,13 +6,23 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
-	"github.com/stackrox/rox/central/image/index"
+	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
+	imageIndexer "github.com/stackrox/rox/central/image/index"
+	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
+	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
+	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -36,17 +46,30 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-func newDatastore(storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore) (DataStore, error) {
-	indexer := index.New(bleveIndex)
-	searcher := search.New(storage, indexer)
+func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool, imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker) (DataStore, error) {
+	var searcher search.Searcher
+	indexer := imageIndexer.New(bleveIndex)
+	if features.Dackbox.Enabled() {
+		searcher = search.New(storage,
+			dacky,
+			cveIndexer.New(bleveIndex),
+			componentCVEEdgeIndexer.New(bleveIndex),
+			componentIndexer.New(bleveIndex),
+			imageComponentEdgeIndexer.New(bleveIndex),
+			imageIndexer.New(bleveIndex))
+	} else {
+		searcher = search.New(storage, nil, nil, nil, nil, nil, indexer)
+	}
 
-	ds, err := newDatastoreImpl(storage, indexer, searcher, risks)
+	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := ds.initializeRankers(); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize ranker")
+	if features.Dackbox.Enabled() {
+		if err := ds.initializeRankers(); err != nil {
+			return nil, errors.Wrap(err, "failed to initialize ranker")
+		}
 	}
 
 	return ds, nil
@@ -55,7 +78,16 @@ func newDatastore(storage store.Store, bleveIndex bleve.Index, noUpdateTimestamp
 // NewBadger returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewBadger(db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool, risks riskDS.DataStore) (DataStore, error) {
-	storage := badgerStore.New(db, noUpdateTimestamps)
-	return newDatastore(storage, bleveIndex, noUpdateTimestamps, risks)
+func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool, imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker) (DataStore, error) {
+	var storage store.Store
+	if features.Dackbox.Enabled() {
+		var err error
+		storage, err = dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		storage = badgerStore.New(db, noUpdateTimestamps)
+	}
+	return newDatastore(dacky, storage, bleveIndex, noUpdateTimestamps, imageComponents, risks, imageRanker)
 }

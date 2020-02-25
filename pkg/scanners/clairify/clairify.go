@@ -1,6 +1,7 @@
 package clairify
 
 import (
+	"math"
 	"net"
 	"net/http"
 	"time"
@@ -41,6 +42,8 @@ func Creator(set registries.Set) (string, func(integration *storage.ImageIntegra
 }
 
 type clairify struct {
+	scannerTypes.ScanSemaphore
+
 	client                *client.Clairify
 	conf                  *storage.ClairifyConfig
 	protoImageIntegration *storage.ImageIntegration
@@ -87,6 +90,8 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		conf:                  conf,
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
+
+		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(math.MaxInt32),
 	}
 	return scanner, nil
 }
@@ -104,6 +109,10 @@ func validateConfig(c *storage.ClairifyConfig) error {
 }
 
 func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
+	if layerEnvelope == nil || layerEnvelope.Layer == nil {
+		return nil
+	}
+
 	return &storage.ImageScan{
 		ScanTime:   gogoProto.TimestampNow(),
 		Components: clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
@@ -147,7 +156,11 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 			return nil, err
 		}
 	}
-	return convertLayerToImageScan(image, env), nil
+	scan := convertLayerToImageScan(image, env)
+	if scan == nil {
+		return nil, errors.New("malformed response from scanner")
+	}
+	return scan, nil
 }
 
 func (c *clairify) scan(image *storage.Image) error {

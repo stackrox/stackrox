@@ -8,7 +8,7 @@ import { actions as graphActions } from 'reducers/network/graph';
 import { filterModes, filterLabels } from '../filterModes';
 
 const baseButtonClassName =
-    'flex-no-shrink px-2 py-px border-2 rounded-sm uppercase text-xs font-700';
+    'flex-shrink-0 px-2 py-px border-2 rounded-sm uppercase text-xs font-700';
 const buttonClassName = `${baseButtonClassName} border-base-400 hover:bg-primary-200 text-base-600`;
 const activeButtonClassName = `${baseButtonClassName} bg-primary-300 border-primary-400 hover:bg-primary-200 text-primary-700 border-l-2 border-r-2`;
 
@@ -21,7 +21,7 @@ const Filters = ({ setFilterMode, offset, filterMode }) => {
 
     return (
         <div
-            className={`absolute pin-t pin-l px-2 py-2 ${
+            className={`absolute top-0 left-0 px-2 py-2 ${
                 offset ? 'mt-8' : 'mt-2'
             } ml-2 absolute z-1 bg-primary-100 uppercase flex items-center text-sm border-base-400 border-2`}
         >

@@ -41,7 +41,8 @@ type Manager interface {
 	// It also performs any enforcement actions necessary IF it is passed a non-nil injector to send the enforcement to.
 	DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, create bool, injector common.MessageInjector) error
 	UpsertPolicy(policy *storage.Policy) error
-	RecompilePolicy(policy *storage.Policy) error
+
+	HandleAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 
 	DeploymentRemoved(deployment *storage.Deployment) error
 	RemovePolicy(policyID string) error

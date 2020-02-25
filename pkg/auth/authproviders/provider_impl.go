@@ -73,7 +73,10 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 	defer p.mutex.RUnlock()
 
 	result := p.storedInfo
-	if p.backend == nil {
+	if p.backend != nil {
+		result.Config = p.backend.Config(true)
+	} else {
+		result.Config = nil
 		result.Enabled = false
 	}
 	return &result

@@ -10,6 +10,17 @@ import "storage/group.proto";
 
 package v1;
 
+message GetGroupsRequest {
+    oneof auth_provider_id_opt {
+        string auth_provider_id = 1;
+    }
+    oneof key_opt {
+        string key = 2;
+    }
+    oneof value_opt {
+        string value = 3;
+    }
+}
 
 // API for updating Groups and getting users.
 // Next Available Tag: 2
@@ -32,7 +43,7 @@ message GroupBatchUpdateRequest {
 
 service GroupService {
 
-    rpc GetGroups (Empty) returns (GetGroupsResponse) {
+    rpc GetGroups (GetGroupsRequest) returns (GetGroupsResponse) {
         option (google.api.http) = {
             get: "/v1/groups"
         };
@@ -40,7 +51,7 @@ service GroupService {
 
     rpc GetGroup (storage.GroupProperties) returns (storage.Group) {
         option (google.api.http) = {
-            get: "/v1/groups"
+            get: "/v1/group"
         };
     }
 

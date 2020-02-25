@@ -1,28 +1,29 @@
 import React from 'react';
 import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
 import {
-    getPolicyQueryVar,
-    tryUpdateQueryWithVulMgmtPolicyClause
+    vulMgmtPolicyQuery,
+    tryUpdateQueryWithVulMgmtPolicyClause,
+    getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getComponent($id: ID!) {
+        query getComponent($id: ID!, $query: String, $scopeQuery: String) {
             result: component(id: $id) {
                 id
                 name
                 version
                 priority
-                vulnCount
-                deploymentCount
-                imageCount
+                vulnCount(query: $query)
+                deploymentCount(query: $query)
+                imageCount(query: $query)
                 topVuln {
                     cvss
                     scoreVersion
@@ -37,12 +38,13 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getComponentSubEntity${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
-            entityListType
-        )}) {
+        query getComponentSubEntity${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: component(id: $id) {
                 id
-                ${listFieldName}(query: $query) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}(query: $query)
+                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${fragment}
@@ -52,8 +54,9 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
-            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            ...vulMgmtPolicyQuery,
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 

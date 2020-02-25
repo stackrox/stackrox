@@ -14,10 +14,12 @@ import (
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
@@ -38,21 +40,24 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 
-	db, dir, err := badgerhelper.NewTemp("benchmark_search_all", features.ManagedDB.Enabled())
+	db, dir, err := badgerhelper.NewTemp("benchmark_search_all")
 	require.NoError(b, err)
 	defer utils.IgnoreError(db.Close)
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	bleveIndex, err := globalindex.InitializeIndices(blevePath)
+	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	require.NoError(b, err)
+
+	bleveIndex, err := globalindex.InitializeIndices(blevePath, globalindex.EphemeralIndex)
 	require.NoError(b, err)
 
 	deploymentsStore, err := badgerStore.New(db)
 	require.NoError(b, err)
 
 	deploymentsIndexer := index.New(bleveIndex)
-	deploymentsSearcher := search.New(deploymentsStore, deploymentsIndexer)
+	deploymentsSearcher := search.New(deploymentsStore, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
 
-	imageDS, err := imageDatastore.NewBadger(db, bleveIndex, false, nil)
+	imageDS, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, false, nil, nil, ranking.NewRanker())
 	require.NoError(b, err)
 
 	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil, nil)

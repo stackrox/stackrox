@@ -5,18 +5,10 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/detection"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
-)
-
-const (
-	dummyID = "dummy"
 )
 
 type detectorImpl struct {
@@ -28,30 +20,16 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if image == nil {
 		return nil, errors.New("cannot detect on a nil image")
 	}
-	if image.GetId() == "" {
-		image.Id = dummyID
-	}
-	tempIndex, err := globalindex.MemOnlyIndex()
-	if err != nil {
-		return nil, errors.Wrap(err, "initializing temp index")
-	}
-	defer utils.IgnoreError(tempIndex.Close)
-	tempIndexer := index.New(tempIndex)
-	err = tempIndexer.AddImage(image)
-	if err != nil {
-		return nil, errors.Wrap(err, "inserting into temp index")
-	}
-	tempSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(tempIndexer)
 
 	var alerts []*storage.Alert
-	err = d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
+	err := d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.Matcher().MatchOne(context.Background(), tempSearcher, image.GetId(), nil)
+		violations, err := compiled.Matcher().MatchOne(context.Background(), nil, []*storage.Image{image}, nil)
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}

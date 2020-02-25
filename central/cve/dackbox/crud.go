@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 )
 
@@ -11,19 +12,24 @@ var (
 	// Bucket stores the child image vulnerabilities.
 	Bucket = []byte("image_vuln")
 
+	// BucketHandler is the bucket's handler.
+	BucketHandler = &badgerhelper.BucketHandler{BucketPrefix: Bucket}
+
 	// Reader reads storage.CVEs directly from the store.
 	Reader = crud.NewReader(
-		crud.WithAllocFunction(alloc),
+		crud.WithAllocFunction(Alloc),
 	)
 
 	// Upserter writes storage.CVEs directly to the store.
 	Upserter = crud.NewUpserter(
-		crud.WithKeyFunction(crud.PrefixKey(Bucket, keyFunc)),
+		crud.WithKeyFunction(KeyFunc),
+		crud.AddToIndex(),
 	)
 
 	// Deleter deletes vulns from the store.
 	Deleter = crud.NewDeleter(
-		crud.GCAllChildren(),
+		crud.Shared(),
+		crud.RemoveFromIndex(),
 	)
 )
 
@@ -31,10 +37,13 @@ func init() {
 	globaldb.RegisterBucket(Bucket, "Vuln")
 }
 
-func keyFunc(msg proto.Message) []byte {
-	return []byte(msg.(interface{ GetId() string }).GetId())
+// KeyFunc returns the key for a CVE.
+func KeyFunc(msg proto.Message) []byte {
+	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
+	return badgerhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
-func alloc() proto.Message {
+// Alloc allocates a CVE.
+func Alloc() proto.Message {
 	return &storage.CVE{}
 }

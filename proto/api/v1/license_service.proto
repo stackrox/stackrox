@@ -59,6 +59,10 @@ message GetActiveLicenseExpirationResponse {
     google.protobuf.Timestamp expiration_time = 1;
 }
 
+message GetActiveLicenseKeyResponse {
+    string license_key = 1;
+}
+
 service LicenseService {
 
     rpc GetLicenses(GetLicensesRequest) returns (GetLicensesResponse) {
@@ -77,6 +81,12 @@ service LicenseService {
     rpc GetActiveLicenseExpiration(Empty) returns (GetActiveLicenseExpirationResponse) {
         option (google.api.http) = {
             get: "/v1/licenses/expiration"
+        };
+    }
+
+    rpc GetActiveLicenseKey(Empty) returns (GetActiveLicenseKeyResponse) {
+        option (google.api.http) = {
+            get: "/v1/licenses/activekey"
         };
     }
 }

@@ -39,11 +39,16 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 
 		whitelistStatuses          []storage.ContainerNameAndWhitelistStatus_WhitelistStatus
 		anomalousProcessesExecuted []bool
+
+		currentWhitelistResults *storage.ProcessWhitelistResults
+		shouldBePersisted       bool
 	}{
 		{
 			name:                       "No Whitelist",
 			whitelistStatuses:          makeWhitelistStatuses(t, "NOT_GENERATED", "NOT_GENERATED"),
 			anomalousProcessesExecuted: []bool{false, false},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
 		},
 		{
 			name:      "Whitelist exists, but not locked",
@@ -59,6 +64,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			},
 			whitelistStatuses:          makeWhitelistStatuses(t, "UNLOCKED", "UNLOCKED"),
 			anomalousProcessesExecuted: []bool{false, false},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
 		},
 		{
 			name: "Locked whitelist, but all whitelisted",
@@ -77,6 +84,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			},
 			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{false, false},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
 		},
 		{
 			name: "Locked whitelist, one non-whitelisted process",
@@ -95,6 +104,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			expectedIndicatorIndices:   []int{0},
 			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{true, false},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
 		},
 		{
 			name: "Locked whitelist, two non-whitelisted processes",
@@ -120,6 +131,8 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			expectedIndicatorIndices:   []int{0, 1},
 			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{false, true},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
 		},
 		{
 			name: "Locked whitelist, two non-whitelisted processes from different containers",
@@ -153,6 +166,104 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			expectedIndicatorIndices:   []int{0, 2},
 			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
 			anomalousProcessesExecuted: []bool{true, true},
+			currentWhitelistResults:    nil,
+			shouldBePersisted:          true,
+		},
+		{
+			name: "Locked whitelist, two non-whitelisted processes from different containers. result already exists",
+			whitelist: &storage.ProcessWhitelist{
+				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get"),
+			},
+			indicators: []*storage.ProcessIndicator{
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/not-apt-get",
+						Args:         "install nmap",
+					},
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/apt-get",
+						Args:         "install nmap",
+					},
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/curl",
+						Args:         "badssl.com",
+					},
+					ContainerName: deployment.GetContainers()[1].GetName(),
+				},
+			},
+			expectedIndicatorIndices:   []int{0, 2},
+			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
+			anomalousProcessesExecuted: []bool{true, true},
+			currentWhitelistResults: &storage.ProcessWhitelistResults{
+				WhitelistStatuses: []*storage.ContainerNameAndWhitelistStatus{
+					{
+						ContainerName:              deployment.GetContainers()[1].GetName(),
+						WhitelistStatus:            storage.ContainerNameAndWhitelistStatus_LOCKED,
+						AnomalousProcessesExecuted: true,
+					},
+					{
+						ContainerName:              deployment.GetContainers()[0].GetName(),
+						WhitelistStatus:            storage.ContainerNameAndWhitelistStatus_LOCKED,
+						AnomalousProcessesExecuted: true,
+					},
+				},
+			},
+			shouldBePersisted: false,
+		},
+		{
+			name: "Locked whitelist, two non-whitelisted processes from different containers. result already exists, but needs an update",
+			whitelist: &storage.ProcessWhitelist{
+				StackRoxLockedTimestamp: protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
+				Elements:                fixtures.MakeWhitelistElements("/bin/apt-get"),
+			},
+			indicators: []*storage.ProcessIndicator{
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/not-apt-get",
+						Args:         "install nmap",
+					},
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/apt-get",
+						Args:         "install nmap",
+					},
+					ContainerName: deployment.GetContainers()[0].GetName(),
+				},
+				{
+					Signal: &storage.ProcessSignal{
+						ExecFilePath: "/bin/curl",
+						Args:         "badssl.com",
+					},
+					ContainerName: deployment.GetContainers()[1].GetName(),
+				},
+			},
+			expectedIndicatorIndices:   []int{0, 2},
+			whitelistStatuses:          makeWhitelistStatuses(t, "LOCKED", "LOCKED"),
+			anomalousProcessesExecuted: []bool{true, true},
+			currentWhitelistResults: &storage.ProcessWhitelistResults{
+				WhitelistStatuses: []*storage.ContainerNameAndWhitelistStatus{
+					{
+						ContainerName:              deployment.GetContainers()[1].GetName(),
+						WhitelistStatus:            storage.ContainerNameAndWhitelistStatus_UNLOCKED,
+						AnomalousProcessesExecuted: true,
+					},
+					{
+						ContainerName:              deployment.GetContainers()[0].GetName(),
+						WhitelistStatus:            storage.ContainerNameAndWhitelistStatus_LOCKED,
+						AnomalousProcessesExecuted: true,
+					},
+				},
+			},
+			shouldBePersisted: true,
 		},
 	}
 
@@ -165,7 +276,7 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 			mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
 			mockResults := processWhitelistResultMocks.NewMockDataStore(mockCtrl)
 
-			mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.whitelist, c.whitelistErr)
+			mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.whitelist, c.whitelist != nil, c.whitelistErr)
 			mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
 
 			expectedWhitelistResult := &storage.ProcessWhitelistResults{
@@ -180,8 +291,11 @@ func TestProcessWhitelistEvaluator(t *testing.T) {
 					AnomalousProcessesExecuted: c.anomalousProcessesExecuted[i],
 				})
 			}
-			mockResults.EXPECT().UpsertWhitelistResults(gomock.Any(), expectedWhitelistResult).Return(nil)
+			mockResults.EXPECT().GetWhitelistResults(gomock.Any(), deployment.GetId()).Return(c.currentWhitelistResults, nil)
 
+			if c.shouldBePersisted {
+				mockResults.EXPECT().UpsertWhitelistResults(gomock.Any(), expectedWhitelistResult).Return(nil)
+			}
 			results, err := New(mockResults, mockWhitelists, mockIndicators).EvaluateWhitelistsAndPersistResult(deployment)
 			require.NoError(t, err)
 

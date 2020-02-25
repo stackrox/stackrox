@@ -21,9 +21,7 @@ func visitChildrenRec(parentType, currentType reflect.Type, path FieldPath, visi
 		visitElemField(currentType, path, visitField)
 	case reflect.Interface:
 		visitInterfaceFields(parentType, currentType, path, visitField)
-	case reflect.Array:
-		visitElemField(currentType, path, visitField)
-	case reflect.Slice:
+	case reflect.Array, reflect.Slice:
 		visitElemField(currentType, path, visitField)
 	case reflect.Map:
 		visitMapFields(currentType, path, visitField)

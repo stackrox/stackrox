@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/alert/convert"
+	commentsStoreMocks "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore/mocks"
 	indexMocks "github.com/stackrox/rox/central/alert/datastore/internal/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -35,10 +37,11 @@ type alertDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore DataStore
-	storage   *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
-	searcher  *searchMocks.MockSearcher
+	dataStore       DataStore
+	storage         *storeMocks.MockStore
+	commentsStorage *commentsStoreMocks.MockStore
+	indexer         *indexMocks.MockIndexer
+	searcher        *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -55,13 +58,16 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetTxnCount().Return(uint64(1), nil)
+	s.commentsStorage = commentsStoreMocks.NewMockStore(s.mockCtrl)
+	s.storage.EXPECT().GetKeysToIndex().Return(nil, nil)
+
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().GetTxnCount().Return(uint64(1))
+	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.commentsStorage, s.indexer, s.searcher)
 	s.Require().NoError(err)
 }
 
@@ -114,18 +120,22 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
-	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Return(nil)
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().UpsertAlert(fakeAlert).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
+	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(errFake, err)
 }
 
 func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
-	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Return(errFake)
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().UpsertAlert(fakeAlert).Return(errFake)
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
+	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(errFake, err)
 }
@@ -136,9 +146,11 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.storage.EXPECT().UpsertAlert(gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
 	s.NoError(err)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
 }
@@ -163,6 +175,16 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenTheAlertWasNotFoundInSto
 	s.EqualError(err, fmt.Sprintf("alert with id '%s' does not exist", alerttest.FakeAlertID))
 }
 
+func (s *alertDataStoreTestSuite) TestKeyIndexing() {
+	fakeAlert := alerttest.NewFakeAlert()
+
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
+
+	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
+
+	s.EqualError(err, fmt.Sprintf("alert with id '%s' does not exist", alerttest.FakeAlertID))
+}
+
 func TestAlertDataStoreWithSAC(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(alertDataStoreWithSACTestSuite))
@@ -171,18 +193,21 @@ func TestAlertDataStoreWithSAC(t *testing.T) {
 type alertDataStoreWithSACTestSuite struct {
 	suite.Suite
 
+	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	dataStore DataStore
-	storage   *storeMocks.MockStore
-	indexer   *indexMocks.MockIndexer
-	searcher  *searchMocks.MockSearcher
+	dataStore       DataStore
+	storage         *storeMocks.MockStore
+	commentsStorage *commentsStoreMocks.MockStore
+	indexer         *indexMocks.MockIndexer
+	searcher        *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
 
 func (s *alertDataStoreWithSACTestSuite) SetupTest() {
+	s.hasNoneCtx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker())
 	s.hasReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -194,12 +219,14 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
-	s.storage.EXPECT().GetTxnCount().Return(uint64(1), nil)
+	s.commentsStorage = commentsStoreMocks.NewMockStore(s.mockCtrl)
+	s.storage.EXPECT().GetKeysToIndex().Return(nil, nil)
+
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
-	s.indexer.EXPECT().GetTxnCount().Return(uint64(1))
+	s.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.indexer, s.searcher)
+	s.dataStore, err = New(s.storage, s.commentsStorage, s.indexer, s.searcher)
 	s.NoError(err)
 }
 
@@ -223,4 +250,153 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	s.EqualError(err, "permission denied")
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
+}
+
+func (s *alertDataStoreTestSuite) TestGetAlertCommentsAllowed() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	fakeComment := alerttest.NewFakeAlertComment()
+	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
+
+	_, err := s.dataStore.GetAlertComments(s.hasReadCtx, alerttest.FakeAlertID)
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestGetAlertCommentsEnforced() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	fakeComment := alerttest.NewFakeAlertComment()
+	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
+
+	comments, err := s.dataStore.GetAlertComments(s.hasNoneCtx, alerttest.FakeAlertID)
+	s.NoError(err)
+	s.Empty(comments)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestAddCommentAllowed() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
+
+	_, err := s.dataStore.AddAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
+
+	_, err := s.dataStore.AddAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
+	s.EqualError(err, "permission denied")
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
+
+	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
+
+	err := s.dataStore.UpdateAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
+	s.EqualError(err, "permission denied")
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
+
+	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
+
+	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
+	s.EqualError(err, "permission denied")
+}
+
+func TestAlertReindexSuite(t *testing.T) {
+	suite.Run(t, new(AlertReindexSuite))
+}
+
+type AlertReindexSuite struct {
+	suite.Suite
+
+	storage         *storeMocks.MockStore
+	commentsStorage *commentsStoreMocks.MockStore
+	indexer         *indexMocks.MockIndexer
+	searcher        *searchMocks.MockSearcher
+
+	mockCtrl *gomock.Controller
+}
+
+func (suite *AlertReindexSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
+	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
+	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
+}
+
+func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
+	suite.indexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
+
+	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
+	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
+
+	listAlerts := []*storage.ListAlert{alert1, alert2}
+
+	suite.storage.EXPECT().GetAlertIDs().Return([]string{"A", "B"}, nil)
+	suite.storage.EXPECT().GetListAlerts([]string{"A", "B"}).Return(listAlerts, nil, nil)
+	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
+
+	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"D", "E"}, nil)
+	suite.storage.EXPECT().AckKeysIndexed([]string{"D", "E"}).Return(nil)
+
+	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
+
+	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	suite.NoError(err)
+}
+
+func (suite *AlertReindexSuite) TestReconciliationPartialReindex() {
+	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	alert1 := convert.AlertToListAlert(fixtures.GetAlertWithID("A"))
+	alert2 := convert.AlertToListAlert(fixtures.GetAlertWithID("B"))
+	alert3 := convert.AlertToListAlert(fixtures.GetAlertWithID("C"))
+
+	listAlerts := []*storage.ListAlert{alert1, alert2, alert3}
+
+	suite.storage.EXPECT().GetListAlerts([]string{"A", "B", "C"}).Return(listAlerts, nil, nil)
+	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	suite.NoError(err)
+
+	// Make listAlerts just A,B so C should be deleted
+	listAlerts = listAlerts[:1]
+	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	suite.storage.EXPECT().GetListAlerts([]string{"A", "B", "C"}).Return(listAlerts, []int{2}, nil)
+	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
+	suite.indexer.EXPECT().DeleteListAlerts([]string{"C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher)
+	suite.NoError(err)
 }

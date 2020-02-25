@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { severityLabels } from 'messages/common';
 
-const labelClassName = 'px-2 rounded-full border-2';
+const labelClassName = 'px-2 rounded-sm p-1 border text-base';
 
 const getSeverityClassName = severity => {
     switch (severity) {

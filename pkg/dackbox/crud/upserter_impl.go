@@ -8,11 +8,12 @@ import (
 type upserterImpl struct {
 	keyFunc ProtoKeyFunction
 
-	partials []PartialUpserter
+	addToIndex bool
+	partials   []PartialUpserter
 }
 
 // UpsertIn saves the input object and adds a reference to it from the input parentKey if one is passed in.
-func (uc upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) error {
+func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) error {
 	// Generate key.
 	key := uc.keyFunc(msg)
 
@@ -25,8 +26,13 @@ func (uc upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *da
 	}
 
 	// If a parent key is set, add the generated key to the parent's child list.
-	if parentKey != nil {
+	if len(parentKey) != 0 {
 		if err := dackTxn.Graph().AddRefs(parentKey, key); err != nil {
+			return err
+		}
+	}
+	if uc.addToIndex {
+		if err := dackTxn.MarkDirty(key, msg); err != nil {
 			return err
 		}
 	}
@@ -51,7 +57,7 @@ type partialUpserterImpl struct {
 }
 
 // UpsertIn splits the input object and stores partial by-products using the configured upserter.
-func (uc partialUpserterImpl) UpsertPartialIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
+func (uc *partialUpserterImpl) UpsertPartialIn(parentKey []byte, msg proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
 	newBase, partialValues := uc.splitFunc(msg)
 	for _, partial := range partialValues {
 		if err := uc.upserter.UpsertIn(parentKey, partial, dackTxn); err != nil {

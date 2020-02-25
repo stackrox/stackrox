@@ -4,7 +4,9 @@ import (
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -20,8 +22,11 @@ type SensorConnection interface {
 
 	Scrapes() scrape.Controller
 	NetworkPolicies() networkpolicies.Controller
+	Telemetry() telemetry.Controller
 
 	ClusterID() string
 
 	InjectMessageIntoQueue(msg *central.MsgFromSensor)
+
+	HasCapability(capability centralsensor.SensorCapability) bool
 }

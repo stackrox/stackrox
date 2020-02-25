@@ -41,6 +41,60 @@ describe('policyUtils', () => {
             expect(severity.low).toEqual(1);
         });
 
+        it('should ignore policies with an unrecognized severity', () => {
+            const failingPolicies = [
+                {
+                    id: 'c09f8da1-6111-4ca0-8f49-294a76c65112',
+                    severity: 'MEDIUM_SEVERITY'
+                },
+                {
+                    id: 'f09f8da1-6111-4ca0-8f49-294a76c65115',
+                    severity: 'UNKNOWN_SEVERITY'
+                },
+                {
+                    id: 'a09f8da1-6111-4ca0-8f49-294a76c65110',
+                    severity: 'LOW_SEVERITY'
+                },
+                {
+                    id: 'e09f8da1-6111-4ca0-8f49-294a76c65119',
+                    severity: 'CRITICAL_SEVERITY'
+                }
+            ];
+
+            const severity = getPolicySeverityCounts(failingPolicies);
+
+            expect(severity.critical).toEqual(1);
+            expect(severity.high).toEqual(0);
+            expect(severity.medium).toEqual(1);
+            expect(severity.low).toEqual(1);
+        });
+
+        it('should ignore policies that do not have a severity property', () => {
+            const failingPolicies = [
+                {
+                    id: 'c09f8da1-6111-4ca0-8f49-294a76c65112',
+                    severity: 'MEDIUM_SEVERITY'
+                },
+                {
+                    id: 'f09f8da1-6111-4ca0-8f49-294a76c65115'
+                },
+                {
+                    id: 'a09f8da1-6111-4ca0-8f49-294a76c65110'
+                },
+                {
+                    id: 'e09f8da1-6111-4ca0-8f49-294a76c65119',
+                    severity: 'CRITICAL_SEVERITY'
+                }
+            ];
+
+            const severity = getPolicySeverityCounts(failingPolicies);
+
+            expect(severity.critical).toEqual(1);
+            expect(severity.high).toEqual(0);
+            expect(severity.medium).toEqual(1);
+            expect(severity.low).toEqual(0);
+        });
+
         it('should count mulitple instances for each type of policy', () => {
             const failingPolicies = [
                 {

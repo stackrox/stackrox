@@ -9,14 +9,10 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestIndicatorStore(t *testing.T) {
-	if features.ManagedDB.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(IndicatorStoreTestSuite))
 }
 
@@ -30,7 +26,7 @@ type IndicatorStoreTestSuite struct {
 }
 
 func (suite *IndicatorStoreTestSuite) SetupSuite() {
-	db, dir, err := badgerhelper.NewTemp(suite.T().Name()+".db", false)
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
 	if err != nil {
 		suite.FailNow("Failed to make BadgerDB", err.Error())
 	}
@@ -92,77 +88,82 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 		Signal:       repeatedSignal,
 	}
 
-	for _, i := range indicators {
-		tx, err := suite.store.GetTxnCount()
-		suite.NoError(err)
-		_, err = suite.store.AddProcessIndicator(i)
-		suite.NoError(err)
-
-		newTx, err := suite.store.GetTxnCount()
-		suite.NoError(err)
-		suite.Equal(tx+1, newTx)
-	}
-
+	_, err := suite.store.AddProcessIndicators(indicators...)
+	suite.NoError(err)
 	suite.verifyIndicatorsAre(indicators...)
 
+	for _, i := range indicators {
+		keys, err := suite.store.GetKeysToIndex()
+		suite.NoError(err)
+		suite.Contains(keys, i.GetId())
+	}
+
 	var walkedIndicators []*storage.ProcessIndicator
-	err := suite.store.WalkAll(func(pi *storage.ProcessIndicator) error {
+	err = suite.store.WalkAll(func(pi *storage.ProcessIndicator) error {
 		walkedIndicators = append(walkedIndicators, pi)
 		return nil
 	})
 	suite.NoError(err)
 	suite.verifyIndicatorsAre(walkedIndicators...)
 
+	// Clear indexing
+	keys, err := suite.store.GetKeysToIndex()
+	suite.NoError(err)
+	suite.NoError(suite.store.AckKeysIndexed(keys...))
+
 	// Adding an indicator with the same secondary key should replace the original one.
-	tx, err := suite.store.GetTxnCount()
+	removed, err := suite.store.AddProcessIndicators(repeatIndicator)
 	suite.NoError(err)
-	removed, err := suite.store.AddProcessIndicator(repeatIndicator)
-	suite.NoError(err)
-	suite.Equal("id1", removed)
+	suite.Equal("id1", removed[0])
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
-	newTx, err := suite.store.GetTxnCount()
+	// The removed key and the added key should both be waiting to be indexed
+	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
-	suite.Equal(tx+2, newTx)
+	suite.ElementsMatch(append(removed, repeatIndicator.GetId()), keys)
+
+	// Clear indexing
+	keys, err = suite.store.GetKeysToIndex()
+	suite.NoError(err)
+	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	for _, i := range []*storage.ProcessIndicator{indicators[1], repeatIndicator} {
-		tx, err := suite.store.GetTxnCount()
+		suite.NoError(suite.store.RemoveProcessIndicators([]string{i.GetId()}))
+		keys, err = suite.store.GetKeysToIndex()
 		suite.NoError(err)
-
-		suite.NoError(suite.store.RemoveProcessIndicator(i.GetId()))
-
-		newTx, err := suite.store.GetTxnCount()
-		suite.NoError(err)
-		suite.Equal(tx+1, newTx)
+		suite.Contains(keys, i.GetId())
 	}
 	suite.verifyIndicatorsAre()
 
-	tx, err = suite.store.GetTxnCount()
+	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
+	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	oldIDs, err := suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
 	suite.Empty(oldIDs)
 
-	newTx, err = suite.store.GetTxnCount()
+	indicatorIDs := make([]string, 0, len(indicators))
+	for _, i := range indicators {
+		indicatorIDs = append(indicatorIDs, i.GetId())
+	}
+	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
-	suite.Equal(tx+1, newTx)
+	suite.ElementsMatch(keys, append(indicatorIDs, oldIDs...))
 
 	// Modify indicator ids so we can batch add and we should get the old values out
 	for idx, i := range indicators {
 		i.Id = fmt.Sprintf("id%d", idx+3)
 	}
 
-	tx, err = suite.store.GetTxnCount()
+	// Clear indexing
+	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
+	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	oldIDs, err = suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
 	suite.ElementsMatch([]string{"id1", "id2"}, oldIDs)
-
-	newTx, err = suite.store.GetTxnCount()
-	suite.NoError(err)
-	suite.Equal(tx+2, newTx)
 
 	indicators, err = suite.store.GetProcessIndicators()
 	suite.NoError(err)
@@ -171,14 +172,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	for _, i := range indicators {
 		ids = append(ids, i.GetId())
 	}
-	tx, err = suite.store.GetTxnCount()
-	suite.NoError(err)
-
 	suite.NoError(suite.store.RemoveProcessIndicators(ids))
-
-	newTx, err = suite.store.GetTxnCount()
-	suite.NoError(err)
-	suite.Equal(tx+1, newTx)
 
 	v, err := suite.store.GetProcessInfoToArgs()
 	suite.NoError(err)

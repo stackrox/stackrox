@@ -97,7 +97,7 @@ class MultiGaugeDetailSection extends Component {
         return (
             <div
                 key={`${d.title}-${d.arc}`}
-                className={`widget-detail-bullet flex items-center word-break leading-tight border-b border-base-300 py-2 ${
+                className={`widget-detail-bullet flex items-center word-break leading-tight border-b border-base-300 py-1 ${
                     selectedData && selectedData.index === idx ? '' : 'text-base-600 font-600'
                 }`}
             >
@@ -105,7 +105,7 @@ class MultiGaugeDetailSection extends Component {
                     <Icon.Square fill={colors[idx]} stroke={d.color} className="h-2 w-2" />
                 </div>
                 <span className="pl-1 font-600 truncate">{d.title}</span>
-                <div className="ml-auto text-right flex flex-no-shrink items-center">
+                <div className="ml-auto text-right flex flex-shrink-0 items-center">
                     <button
                         type="button"
                         title="Passing"

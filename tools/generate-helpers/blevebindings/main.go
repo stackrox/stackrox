@@ -74,7 +74,7 @@ func generateIndexImplementationFile(props operations.GeneratorProperties, imple
 	f.Line()
 	f.Const().Id("resourceName").Op("=").Lit(props.Object)
 
-	f.Type().Id("indexerImpl").Struct(Id("index").Op("*").Qual(packagenames.RoxBleveHelper, "BleveWrapper"))
+	f.Type().Id("indexerImpl").Struct(Id("index").Qual(packagenames.Bleve, "Index"))
 	f.Line()
 	f.Type().Id(wrapperClass).Struct(
 		Op("*").Qual(props.Pkg, props.Object).Tag(map[string]string{"json": tagString}),
@@ -95,10 +95,8 @@ func generateIndexInterfaceFile(interfaceMethods []Code) error {
 	f.Type().Id("Indexer").Interface(interfaceMethods...)
 
 	f.Func().Id("New").Params(Id("index").Qual(packagenames.Bleve, "Index")).Id("Indexer").Block(
-		List(Id("wrapper"), Err()).Op(":=").Qual(packagenames.RoxBleveHelper, "NewBleveWrapper").Call(Id("index"), Id("resourceName")),
-		If(Err().Op("!=").Nil().Block(Panic(Err()))),
 		Return(Op("&").Id("indexerImpl").Values(Dict{
-			Id("index"): Id("wrapper"),
+			Id("index"): Id("index"),
 		})),
 	)
 	return f.Save("indexer.go")
@@ -161,7 +159,6 @@ func main() {
 	c.Flags().StringVar(&props.OptionsPath, "options-path", "/index/mappings", "path to write out the options to")
 	c.Flags().StringVar(&props.ObjectPathName, "object-path-name", "", "overwrite the object path underneath Central")
 	c.Flags().StringVar(&props.Tag, "tag", "", "use the specified json tag")
-	c.Flags().BoolVar(&props.NeedsTxManager, "tx-manager", false, "use this flag if we need to track the indexer's txn counts")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.Plural == "" {

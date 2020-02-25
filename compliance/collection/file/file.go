@@ -1,6 +1,8 @@
 package file
 
 import (
+	"bufio"
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,25 +15,49 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const maxFileSize = 5 * 1024
 
-var filesWithContents = []string{
-	"/etc/audit",
-	"/etc/docker",
-	"/proc/mounts",
+type fileEntry struct {
+	path     string
+	contents bool
+	recurse  bool
 }
 
-var filesWithoutContents = []string{
-	"/etc/kubernetes",
-	"/etc/cni",
-	"/opt/cni",
+func newFileEntry(path string, contents, recurse bool) fileEntry {
+	return fileEntry{
+		path:     path,
+		contents: contents,
+		recurse:  recurse,
+	}
+}
 
-	// individual files
-	"/var/run/docker.sock",
-	"/run/docker.sock",
-	"/etc/default/docker",
+var files = []fileEntry{
+	// With contents
+	newFileEntry("/etc/audit", true, true),
+	newFileEntry("/etc/docker", true, true),
+	newFileEntry("/proc/mounts", true, true),
+
+	// Directories without contents
+	newFileEntry("/etc/kubernetes", false, true),
+	newFileEntry("/etc/cni", false, true),
+	newFileEntry("/opt/cni", false, true),
+
+	// individual files without contents
+	newFileEntry("/var/run/docker.sock", false, true),
+	newFileEntry("/run/docker.sock", false, true),
+	newFileEntry("/etc/default/docker", false, true),
+	newFileEntry("/etc/sysconfig/docker", false, true),
+
+	newFileEntry("/usr/bin/dockerd", false, true),
+	newFileEntry("/usr/bin/docker-containerd", false, true),
+	newFileEntry("/usr/sbin/runc", false, true),
+	newFileEntry("/usr/bin/runc", false, true),
+
+	// No recursion
+	newFileEntry("/var/lib/docker", false, false),
 }
 
 var systemdUnits = []string{
@@ -79,7 +105,7 @@ func CollectSystemdFiles() (map[string]*compliance.File, error) {
 	for _, u := range systemdUnitFiles {
 		for _, unitSubstring := range systemdUnits {
 			if strings.Contains(u.Path, unitSubstring) {
-				file, exists, err := EvaluatePath(u.Path, false)
+				file, exists, err := EvaluatePath(u.Path, false, true)
 				if err != nil || !exists {
 					continue
 				}
@@ -90,22 +116,57 @@ func CollectSystemdFiles() (map[string]*compliance.File, error) {
 	return systemFiles, nil
 }
 
+func collectAuditLog() *compliance.File {
+	path := "/var/log/audit/audit.log"
+	file, err := os.Open(filepath.Join("/host", path))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		log.Error(err)
+		return nil
+	}
+	defer utils.IgnoreError(file.Close)
+
+	stat, err := file.Stat()
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	complianceFile := getFile(path, stat)
+
+	scanner := bufio.NewScanner(file)
+
+	dockerByteSlice := []byte("docker")
+	execByteSlice := []byte("exec")
+	privilegedByteSlice := []byte("privileged")
+	userByte := []byte("user=root")
+
+	for scanner.Scan() {
+		if bytes.Contains(scanner.Bytes(), dockerByteSlice) && bytes.Contains(scanner.Bytes(), execByteSlice) {
+			if bytes.Contains(scanner.Bytes(), privilegedByteSlice) || bytes.Contains(scanner.Bytes(), userByte) {
+				complianceFile.Content = append(complianceFile.Content, scanner.Bytes()...)
+				complianceFile.Content = append(complianceFile.Content, byte('\n'))
+			}
+		}
+	}
+	return complianceFile
+}
+
 // CollectFiles returns the result of data collection of the files
 func CollectFiles() (map[string]*compliance.File, error) {
 	allFiles := make(map[string]*compliance.File)
-	for _, f := range filesWithoutContents {
-		file, exists, err := EvaluatePath(f, false)
+
+	for _, f := range files {
+		file, exists, err := EvaluatePath(f.path, f.contents, f.recurse)
 		if err != nil || !exists {
 			continue
 		}
 		allFiles[file.GetPath()] = file
 	}
-	for _, f := range filesWithContents {
-		file, exists, err := EvaluatePath(f, true)
-		if err != nil || !exists {
-			continue
-		}
-		allFiles[file.GetPath()] = file
+	// Manual special case. We need to get "/var/log/audit/audit.log", but we should filter the data because it's large
+	if auditFile := collectAuditLog(); auditFile != nil {
+		allFiles[auditFile.GetPath()] = auditFile
 	}
 	return allFiles, nil
 }
@@ -115,7 +176,7 @@ func containerPath(s string) string {
 }
 
 // EvaluatePath takes in a path and returns the corresponding File, if it exists or an error
-func EvaluatePath(path string, withContents bool) (*compliance.File, bool, error) {
+func EvaluatePath(path string, withContents, recurse bool) (*compliance.File, bool, error) {
 	pathInContainer := containerPath(path)
 	fi, err := os.Stat(pathInContainer)
 	if err != nil {
@@ -126,14 +187,13 @@ func EvaluatePath(path string, withContents bool) (*compliance.File, bool, error
 	}
 
 	file := getFile(path, fi)
-	if fi.IsDir() {
+	if fi.IsDir() && recurse {
 		files, err := ioutil.ReadDir(pathInContainer)
 		if err != nil {
 			return nil, false, err
 		}
 		for _, f := range files {
-
-			child, exists, err := EvaluatePath(filepath.Join(path, f.Name()), withContents)
+			child, exists, err := EvaluatePath(filepath.Join(path, f.Name()), withContents, recurse)
 			if err != nil {
 				return nil, false, err
 			}

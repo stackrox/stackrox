@@ -31,6 +31,25 @@ func buildSingleSpec(q *v1.Query, spec SearcherSpec) (*searchRequestSpec, error)
 	}, nil
 }
 
+func buildDefaultSpec(specs []SearcherSpec) (*searchRequestSpec, error) {
+	var spec *SearcherSpec
+	for _, considered := range specs {
+		if considered.IsDefault {
+			spec = &considered
+			break
+		}
+	}
+	if spec == nil {
+		spec = &specs[0]
+	}
+	return &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec:  spec,
+			Query: &v1.Query{},
+		},
+	}, nil
+}
+
 func buildMultiSpec(q *v1.Query, specs []SearcherSpec) (*searchRequestSpec, error) {
 	return treeBuilder(specs).walkSpecsRec(q)
 }
@@ -39,6 +58,10 @@ func buildMultiSpec(q *v1.Query, specs []SearcherSpec) (*searchRequestSpec, erro
 type treeBuilder []SearcherSpec
 
 func (tb treeBuilder) walkSpecsRec(q *v1.Query) (*searchRequestSpec, error) {
+	if q == nil || q.GetQuery() == nil {
+		return buildDefaultSpec(tb)
+	}
+
 	if _, isDisjunction := q.GetQuery().(*v1.Query_Disjunction); isDisjunction {
 		return tb.or(q.GetDisjunction())
 	} else if _, isConjunction := q.GetQuery().(*v1.Query_Conjunction); isConjunction {

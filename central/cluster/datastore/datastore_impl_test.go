@@ -20,6 +20,7 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -49,6 +50,7 @@ type ClusterDataStoreTestSuite struct {
 	riskDataStore       *riskMocks.MockDataStore
 	mockCtrl            *gomock.Controller
 	notifierMock        *notifierMocks.MockProcessor
+	mockProvider        *graphMocks.MockProvider
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
@@ -73,6 +75,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.riskDataStore = riskMocks.NewMockDataStore(suite.mockCtrl)
 	suite.connMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
+	suite.mockProvider = graphMocks.NewMockProvider(suite.mockCtrl)
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
@@ -80,14 +83,18 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
-	suite.clusterDataStore, err = New(suite.clusters,
+	suite.clusterDataStore, err = New(
+		suite.clusters,
 		suite.indexer,
 		suite.alertDataStore,
 		suite.deploymentDataStore,
 		suite.nodeDataStore,
 		suite.secretDataStore,
 		suite.connMgr,
-		suite.notifierMock)
+		suite.notifierMock,
+		suite.mockProvider,
+		ranking.NewRanker(),
+	)
 	suite.NoError(err)
 }
 
@@ -318,86 +325,4 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsSearch() {
 
 	_, err = suite.clusterDataStore.Search(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
-}
-
-func (suite *ClusterDataStoreTestSuite) TestClusterPriority() {
-	ranker := ranking.DeploymentRanker()
-	ranker.Add("dep1", 1.0)
-	ranker.Add("dep2", 2.0)
-
-	ranker.Add("dep3", 3.0)
-	ranker.Add("dep4", 4.0)
-
-	ranker.Add("dep5", 10.0)
-
-	cases := []struct {
-		cluster          *storage.Cluster
-		deployments      []search.Result
-		expectedPriority int64
-	}{
-		{
-			cluster: &storage.Cluster{
-				Id: "test1",
-			},
-			deployments: []search.Result{
-				{
-					ID: "dep1",
-				},
-				{
-					ID: "dep2",
-				},
-			},
-			expectedPriority: 3,
-		},
-		{
-			cluster: &storage.Cluster{
-				Id: "test2",
-			},
-			deployments: []search.Result{
-				{
-					ID: "dep3",
-				},
-				{
-					ID: "dep4",
-				},
-			},
-			expectedPriority: 2,
-		},
-		{
-			cluster: &storage.Cluster{
-				Id: "test3",
-			},
-			deployments: []search.Result{
-				{
-					ID: "dep5",
-				},
-			},
-			expectedPriority: 1,
-		},
-	}
-
-	deploymentReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-		))
-
-	var expectedClusters []*storage.Cluster
-	for _, c := range cases {
-		expectedClusters = append(expectedClusters, c.cluster)
-	}
-
-	suite.clusters.EXPECT().GetClusters().Return(expectedClusters, nil)
-	for _, c := range cases {
-		suite.deploymentDataStore.EXPECT().Search(deploymentReadCtx,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, c.cluster.GetId()).ProtoQuery()).
-			Return(c.deployments, nil)
-	}
-
-	actualClusters, err := suite.clusterDataStore.GetClusters(suite.hasReadCtx)
-	suite.Nil(err)
-
-	for i, c := range cases {
-		suite.Equal(c.expectedPriority, actualClusters[i].GetPriority())
-	}
 }

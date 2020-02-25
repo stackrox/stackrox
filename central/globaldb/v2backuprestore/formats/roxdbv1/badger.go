@@ -15,7 +15,7 @@ func restoreBadger(ctx common.RestoreFileContext, fileReader io.Reader, size int
 		return errors.Wrap(err, "could not create badger database directory")
 	}
 
-	db, err := badgerhelper.New(absDirPath, false)
+	db, err := badgerhelper.New(absDirPath)
 	if err != nil {
 		return errors.Wrapf(err, "could not create new badger DB in empty dir %s", absDirPath)
 	}

@@ -30,20 +30,27 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 	return
 }
 
-// GetAll return all groups currently in the store.
-func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
-	err = s.db.View(func(tx *bolt.Tx) error {
+func (s *storeImpl) GetFiltered(filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+	var grps []*storage.Group
+	err := s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 		return buc.ForEach(func(k, v []byte) error {
 			grp, err := deserialize(k, v)
 			if err != nil {
 				return err
 			}
-			grps = append(grps, grp)
+			if filter == nil || filter(grp.GetProps()) {
+				grps = append(grps, grp)
+			}
 			return nil
 		})
 	})
-	return
+	return grps, err
+}
+
+// GetAll return all groups currently in the store.
+func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
+	return s.GetFiltered(nil)
 }
 
 // Walk is an optimization. Since we normally want to find groups that apply to a user,

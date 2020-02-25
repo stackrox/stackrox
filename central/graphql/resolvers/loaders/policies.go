@@ -3,6 +3,7 @@ package loaders
 import (
 	"context"
 	"reflect"
+	"strings"
 
 	"github.com/pkg/errors"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -113,7 +114,11 @@ func (idl *policyLoaderImpl) load(ctx context.Context, ids []string) ([]*storage
 	}
 
 	if len(missing) > 0 {
-		return nil, errors.New("not all policies could be found")
+		missingIDs := make([]string, 0, len(missing))
+		for _, m := range missing {
+			missingIDs = append(missingIDs, ids[m])
+		}
+		return nil, errors.Errorf("not all policies could be found: %s", strings.Join(missingIDs, ","))
 	}
 
 	return policies, nil

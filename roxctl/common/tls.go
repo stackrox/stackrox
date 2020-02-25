@@ -17,8 +17,9 @@ import (
 
 const warningMsg = `WARNING: The remote endpoint failed TLS validation. This will be a fatal error in future releases.
 Please do one of the following at your earliest convenience:
-  1. Obtain a valid certificate for your Central instance/Load Balancer
-  2. Use the --ca option to specify a custom CA certificate (PEM format)
+  1. Obtain a valid certificate for your Central instance/Load Balancer.
+  2. Use the --ca option to specify a custom CA certificate (PEM format). This Certificate can be obtained by
+     running "roxctl central cert".
   3. Update all your roxctl usages to pass the --insecure-skip-tls-verify option, in order to
      suppress this warning and retain the old behavior of not validating TLS certificates in
      the future (NOT RECOMMENDED).
@@ -49,15 +50,26 @@ var (
 	warningVerifierInstance insecureVerifierWithWarning
 )
 
-func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
+// ConnectNames returns the endpoint and (SNI) server name given by the
+// --endpoint and --server-name flags respectively. If no server name is given,
+// an appropriate name is derived from the given endpoint.
+func ConnectNames() (string, string, error) {
 	endpoint := flags.Endpoint()
 	serverName := flags.ServerName()
 	if serverName == "" {
 		var err error
 		serverName, _, _, err = netutil.ParseEndpoint(endpoint)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing central endpoint")
+			return "", "", err
 		}
+	}
+	return endpoint, serverName, nil
+}
+
+func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
+	_, serverName, err := ConnectNames()
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing central endpoint")
 	}
 
 	skipVerify := false

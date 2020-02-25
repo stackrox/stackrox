@@ -7,8 +7,6 @@ var (
 	CollectorVersion string //XDef:STABLE_COLLECTOR_VERSION
 	// ScannerVersion is the scanner version to be used with this Rox version.
 	ScannerVersion string //XDef:STABLE_SCANNER_VERSION
-	// ScannerV2Version is the scanner-v2 version to be used with this Rox version.
-	ScannerV2Version string //XDef:STABLE_SCANNER_V2_VERSION
 	// GitShortSha is the (short) Git SHA that was built.
 	GitShortSha string //XDef:STABLE_GIT_SHORT_SHA
 )

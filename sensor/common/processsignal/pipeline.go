@@ -3,10 +3,12 @@ package processsignal
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
@@ -17,23 +19,23 @@ var (
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
 	clusterEntities    *clusterentities.Store
-	indicators         chan *central.SensorEvent
+	indicators         chan *central.MsgFromSensor
 	enrichedIndicators chan *storage.ProcessIndicator
-	deduper            *deduper
 	enricher           *enricher
 	processFilter      filter.Filter
+	detector           detector.Detector
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *central.SensorEvent, clusterEntities *clusterentities.Store, processFilter filter.Filter) *Pipeline {
+func NewProcessPipeline(indicators chan *central.MsgFromSensor, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
 		indicators:         indicators,
-		deduper:            newDeduper(),
 		enricher:           newEnricher(clusterEntities, enrichedIndicators),
 		enrichedIndicators: enrichedIndicators,
 		processFilter:      processFilter,
+		detector:           detector,
 	}
 	go p.sendIndicatorEvent()
 	return p
@@ -68,19 +70,21 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 
 func (p *Pipeline) sendIndicatorEvent() {
 	for indicator := range p.enrichedIndicators {
-		// determine whether or not we should send the event
-		if !p.deduper.Allow(indicator) {
-			continue
-		}
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
-		p.indicators <- &central.SensorEvent{
+		if features.SensorBasedDetection.Enabled() {
+			p.detector.ProcessIndicator(indicator)
+		}
+
+		p.indicators <- &central.MsgFromSensor{Msg: &central.MsgFromSensor_Event{Event: &central.SensorEvent{
 			Id:     indicator.GetId(),
 			Action: central.ResourceAction_CREATE_RESOURCE,
 			Resource: &central.SensorEvent_ProcessIndicator{
 				ProcessIndicator: indicator,
 			},
+		},
+		},
 		}
 	}
 }

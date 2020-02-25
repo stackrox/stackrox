@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import FixableCVECount from 'Components/FixableCVECount';
 import SeverityStackedPill from 'Components/visuals/SeverityStackedPill';
 
-const CVEStackedPill = ({ horizontal, vulnCounter, hideLink, url, fixableUrl }) => {
+const CVEStackedPill = ({ horizontal, vulnCounter, hideLink, url, fixableUrl, showTooltip }) => {
     const { critical, high, medium, low, all } = vulnCounter;
     const tooltipBody = (
         <div>
@@ -41,7 +41,7 @@ const CVEStackedPill = ({ horizontal, vulnCounter, hideLink, url, fixableUrl }) 
                 high={high.total}
                 medium={medium.total}
                 low={low.total}
-                tooltip={tooltip}
+                tooltip={showTooltip ? tooltip : null}
             />
         </div>
     );
@@ -73,14 +73,16 @@ CVEStackedPill.propTypes = {
     }).isRequired,
     hideLink: PropTypes.bool,
     url: PropTypes.string,
-    fixableUrl: PropTypes.string
+    fixableUrl: PropTypes.string,
+    showTooltip: PropTypes.bool
 };
 
 CVEStackedPill.defaultProps = {
     horizontal: false,
     hideLink: false,
     url: '',
-    fixableUrl: ''
+    fixableUrl: '',
+    showTooltip: true
 };
 
 export default CVEStackedPill;

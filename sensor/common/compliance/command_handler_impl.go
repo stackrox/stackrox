@@ -1,15 +1,14 @@
 package compliance
 
 import (
-	"errors"
-
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/roxmetadata"
 )
 
 var (
@@ -17,10 +16,8 @@ var (
 )
 
 type commandHandlerImpl struct {
-	roxMetadata roxmetadata.Metadata
-
 	commands chan *central.ScrapeCommand
-	updates  chan *central.ScrapeUpdate
+	updates  chan *central.MsgFromSensor
 
 	service Service
 
@@ -30,8 +27,17 @@ type commandHandlerImpl struct {
 	stoppedC concurrency.ErrorSignal
 }
 
-func (c *commandHandlerImpl) Start() {
+func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (c *commandHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return c.updates
+}
+
+func (c *commandHandlerImpl) Start() error {
 	go c.run()
+	return nil
 }
 
 func (c *commandHandlerImpl) Stop(err error) {
@@ -42,17 +48,17 @@ func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedC
 }
 
-func (c *commandHandlerImpl) SendCommand(command *central.ScrapeCommand) bool {
+func (c *commandHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	command := msg.GetScrapeCommand()
+	if command == nil {
+		return nil
+	}
 	select {
 	case c.commands <- command:
-		return true
+		return nil
 	case <-c.stoppedC.Done():
-		return false
+		return errors.Errorf("unable to send command: %s", proto.MarshalTextString(command))
 	}
-}
-
-func (c *commandHandlerImpl) Output() <-chan *central.ScrapeUpdate {
-	return c.updates
 }
 
 func (c *commandHandlerImpl) run() {
@@ -185,7 +191,11 @@ func (c *commandHandlerImpl) sendUpdate(update *central.ScrapeUpdate) {
 	case <-c.stoppedC.Done():
 		log.Errorf("failed to send update: %s", proto.MarshalTextString(update))
 		return
-	case c.updates <- update:
+	case c.updates <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ScrapeUpdate{
+			ScrapeUpdate: update,
+		},
+	}:
 		return
 	}
 }

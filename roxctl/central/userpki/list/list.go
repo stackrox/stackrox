@@ -57,7 +57,7 @@ func listProviders(cmd *cobra.Command, args []string) error {
 		fmt.Println("No user certificate providers configured")
 		return nil
 	}
-	groups, err := groupClient.GetGroups(ctx, &v1.Empty{})
+	groups, err := groupClient.GetGroups(ctx, &v1.GetGroupsRequest{})
 	if err != nil {
 		return err
 	}

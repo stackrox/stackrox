@@ -3,7 +3,9 @@ package resources
 import (
 	"sort"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/sync"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -30,6 +32,7 @@ func wrapNode(node *v1.Node) *nodeWrap {
 }
 
 type nodeStore struct {
+	mutex sync.RWMutex
 	nodes map[string]*nodeWrap
 }
 
@@ -42,8 +45,11 @@ func newNodeStore() *nodeStore {
 // addOrUpdateNode upserts a node to the store.
 // It returns true if the IP addresses of the node changed as a result.
 func (s *nodeStore) addOrUpdateNode(node *nodeWrap) bool {
-	oldNode := s.nodes[node.Name]
-	s.nodes[node.Name] = node
+	var oldNode *nodeWrap
+	concurrency.WithLock(&s.mutex, func() {
+		oldNode = s.nodes[node.Name]
+		s.nodes[node.Name] = node
+	})
 
 	if oldNode == nil || len(oldNode.addresses) != len(node.addresses) {
 		return true
@@ -57,14 +63,23 @@ func (s *nodeStore) addOrUpdateNode(node *nodeWrap) bool {
 }
 
 func (s *nodeStore) removeNode(node *v1.Node) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	delete(s.nodes, node.Name)
 }
 
 func (s *nodeStore) getNode(nodeName string) *nodeWrap {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	return s.nodes[nodeName]
 }
 
 func (s *nodeStore) getNodes() []*nodeWrap {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	result := make([]*nodeWrap, 0, len(s.nodes))
 	for _, node := range s.nodes {
 		result = append(result, node)

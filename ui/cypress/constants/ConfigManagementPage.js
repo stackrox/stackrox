@@ -73,6 +73,7 @@ export const dashboardSelectors = {
 };
 
 export const listSelectors = {
+    disabledTableRows: '.rt-tr-group > .data-test-disabled',
     tableRows: '.rt-tr-group > .rt-tr',
     tableCells: '.rt-td',
     tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',

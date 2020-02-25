@@ -301,3 +301,82 @@ func (suite *RequestExecutionTestSuite) TestExecuteBoolean() {
 	suite.Nil(err)
 	suite.Equal(expected, actual)
 }
+
+func (suite *RequestExecutionTestSuite) TestExecuteLeftJoin() {
+	ctx := context.Background()
+
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+			Options:  suite.mockOptions1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+			Options:  suite.mockOptions2,
+		},
+	}
+
+	q1 := &v1.Query{}
+	q2 := &v1.Query{}
+
+	testRequest := searchRequestSpec{
+		leftJoinWithRightOrder: &joinRequestSpec{
+			left: &searchRequestSpec{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: q1,
+				},
+			},
+			right: &searchRequestSpec{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[1],
+					Query: q2,
+				},
+			},
+		},
+	}
+
+	testResult1 := []search.Result{
+		{
+			ID: "1",
+		},
+		{
+			ID: "3",
+		},
+		{
+			ID: "6",
+		},
+	}
+
+	suite.mockSearcher1.EXPECT().Search(ctx, q1).Return(testResult1, nil)
+
+	testResult2 := []search.Result{
+		{
+			ID: "6",
+		},
+		{
+			ID: "2",
+		},
+		{
+			ID: "1",
+		},
+	}
+
+	suite.mockSearcher2.EXPECT().Search(ctx, q2).Return(testResult2, nil)
+
+	expected := []search.Result{
+		{
+			ID: "1",
+		},
+		{
+			ID: "3",
+		},
+		{
+			ID: "6",
+		},
+	}
+
+	actual, err := execute(ctx, &testRequest)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}

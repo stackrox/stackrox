@@ -21,6 +21,8 @@ import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStan
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
+import { knownBackendFlags } from 'utils/featureFlags';
+import FeatureEnabled from 'Containers/FeatureEnabled';
 import Header from './Header';
 
 function processData(data) {
@@ -159,6 +161,15 @@ const DeploymentPage = ({
                                     entityType={entityTypes.DEPLOYMENT}
                                     className={pdfClassName}
                                 />
+                                <FeatureEnabled featureFlags={knownBackendFlags.ROX_NIST_800_53}>
+                                    <ComplianceByStandard
+                                        standardType={entityTypes.NIST_SP_800_53}
+                                        entityName={name}
+                                        entityId={id}
+                                        entityType={entityTypes.DEPLOYMENT}
+                                        className={pdfClassName}
+                                    />
+                                </FeatureEnabled>
                                 <ComplianceByStandard
                                     standardType={entityTypes.HIPAA_164}
                                     entityName={name}

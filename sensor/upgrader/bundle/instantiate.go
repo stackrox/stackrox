@@ -1,8 +1,8 @@
 package bundle
 
 import (
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )
 
@@ -11,7 +11,7 @@ var (
 )
 
 // InstantiateBundle takes a view of the bundle context and instantiates all contained Kubernetes objects.
-func InstantiateBundle(ctx *upgradectx.UpgradeContext, bundleContents Contents) ([]k8sobjects.Object, error) {
+func InstantiateBundle(ctx *upgradectx.UpgradeContext, bundleContents Contents) ([]k8sutil.Object, error) {
 	inst := &instantiator{ctx: ctx}
 	return inst.Instantiate(bundleContents)
 }

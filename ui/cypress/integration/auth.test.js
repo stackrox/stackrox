@@ -1,10 +1,13 @@
+import addSeconds from 'date-fns/add_seconds';
+
 import { url as loginUrl, selectors } from '../constants/LoginPage';
+import { selectors as navSelectors } from '../constants/TopNavigation';
 import { url as dashboardURL } from '../constants/DashboardPage';
 
 import * as api from '../constants/apiEndpoints';
 
 describe('Authentication', () => {
-    const setupAuth = (landingUrl, authStatusValid = true) => {
+    const setupAuth = (landingUrl, authStatusValid = true, authStatusResponse = {}) => {
         cy.server();
         cy.route('GET', api.auth.loginAuthProviders, 'fixture:auth/authProviders.json').as(
             'authProviders'
@@ -13,7 +16,7 @@ describe('Authentication', () => {
             method: 'GET',
             url: api.auth.authStatus,
             status: authStatusValid ? 200 : 401,
-            response: {}
+            response: authStatusResponse
         }).as('authStatus');
 
         cy.visit(landingUrl);
@@ -24,6 +27,13 @@ describe('Authentication', () => {
         cy.server();
         // Cypress routes have an override behaviour, so defining this first makes it the fallback.
         cy.route(/.*/, {}).as('everythingElse');
+        // TODO-ivan: remove once ROX_REFRESH_TOKENS is enabled by default
+        cy.route('GET', api.featureFlags, {
+            featureFlags: [
+                { name: 'Refresh tokens', envVar: 'ROX_REFRESH_TOKENS', enabled: true },
+                { name: 'Vuln Mgmt', envVar: 'ROX_VULN_MGMT_UI', enabled: false }
+            ]
+        }).as('featureFlags');
         cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
         cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
             'searchOptions'
@@ -38,7 +48,7 @@ describe('Authentication', () => {
         cy.route('POST', api.logs, {}).as('logs');
     };
 
-    xit('should redirect user to login page, authenticate and redirect to the requested page', () => {
+    it('should redirect user to login page, authenticate and redirect to the requested page', () => {
         stubAPIs();
         setupAuth(dashboardURL);
         cy.server();
@@ -55,7 +65,7 @@ describe('Authentication', () => {
         cy.url().should('contain', dashboardURL);
     });
 
-    xit('should allow authenticated user to enter', () => {
+    it('should allow authenticated user to enter', () => {
         localStorage.setItem('access_token', 'my-token'); // simulate authenticated user
         stubAPIs();
         setupAuth(dashboardURL);
@@ -69,11 +79,25 @@ describe('Authentication', () => {
         cy.url().should('contain', loginUrl);
     });
 
-    // TODO(ROX-990): Fix and re-enable this test. It was flaky on OpenShift and K8s (failure rate was higher on OpenShift though).
-    xit('should logout user by request', () => {
+    it('should logout user by request', () => {
         localStorage.setItem('access_token', 'my-token'); // authenticated user
+        stubAPIs();
+        cy.route('POST', api.auth.logout, {}).as('logout');
         setupAuth(dashboardURL);
-        cy.get('button:contains("Logout")').click();
+
+        cy.get(navSelectors.menuButton).click();
+        cy.get(navSelectors.logoutButton).click();
+        cy.wait('@logout');
         cy.url().should('contain', loginUrl);
+    });
+
+    it('should request token refresh 30 sec in advance', () => {
+        localStorage.setItem('access_token', 'my-token'); // authenticated user
+        stubAPIs();
+        cy.route('POST', api.auth.tokenRefresh, {}).as('tokenRefresh');
+
+        const expiryDate = addSeconds(Date.now(), 33); // +3 sec should be enough
+        setupAuth(dashboardURL, true, { expires: expiryDate.toISOString() });
+        cy.wait('@tokenRefresh');
     });
 });

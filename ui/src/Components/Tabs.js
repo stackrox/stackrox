@@ -107,16 +107,16 @@ class Tabs extends Component {
     }
 
     render() {
+        const { className, tabContentBgColor } = this.props;
+
         return (
             <div className="w-full h-full flex flex-col">
                 <div
-                    className={`flex z-1 shadow-underline font-700 bg-base-100 ${
-                        this.props.className
-                    }`}
+                    className={`flex justify-between z-1 shadow-underline font-700 bg-base-100 ${className}`}
                 >
-                    {this.getHeaders()}
+                    <div className="flex">{this.getHeaders()}</div>
                 </div>
-                <div className={`overflow-hidden h-full flex-1 ${this.props.tabContentBgColor}`}>
+                <div className={`overflow-hidden h-full flex-1 ${tabContentBgColor}`}>
                     {this.renderChildren()}
                 </div>
             </div>

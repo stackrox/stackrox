@@ -30,6 +30,10 @@ func TestSortedKeys(t *testing.T) {
 	require.Equal(t, SortedKeys{[]byte("33key"), []byte("4key4")}, diff)
 	inter := sk.Intersect(newSk)
 	require.Equal(t, SortedKeys{[]byte("2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key2key"), []byte("key1")}, inter)
+
+	toSort := [][]byte{[]byte("key1"), []byte("key2"), []byte("key1"), []byte("key3")}
+	sorted := Sort(toSort)
+	require.Equal(t, SortedKeys{[]byte("key1"), []byte("key2"), []byte("key3")}, sorted)
 }
 
 func BenchmarkSortedKeys(b *testing.B) {

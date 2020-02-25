@@ -131,11 +131,16 @@ class HorizontalBarChart extends Component {
         const sortedData = data.sort(sortByYValue);
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
         const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
+
+        // Magic number that makes the horizontal bars a reasonable size if there are fewer than 6
+        // but shrinks them if there are 6 or more.
+        const yRangeMultiplier = Math.min(41, 210 / sortedData.length);
+        const yRange = [...sortedData.map((item, i) => (i + 1) * yRangeMultiplier), 0];
         const defaultPlotProps = {
             height: minimal ? 25 : 350,
             xDomain: [0, 102],
             yType: 'category',
-            yRange: sortedData.map((item, i) => (i + 1) * 41).concat([0]),
+            yRange,
             margin: minimal ? minimalMargin : { top: 33.3, left: Math.ceil(maxLength * 7.5) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''

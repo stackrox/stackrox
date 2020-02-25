@@ -167,6 +167,13 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if admissionReview.Request == nil {
+		errMsg := fmt.Sprintf("invalid admission review. nil request: %+v", admissionReview)
+		log.Error(errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
+
 	// Can guarantee that there is an admission controller config because we receive it between central reachable is set to true
 	conf := s.configHandler.GetConfig().GetAdmissionControllerConfig()
 

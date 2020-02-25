@@ -60,7 +60,7 @@ class Select extends Component {
                     ))}
                 </select>
                 <div
-                    className={`${triggerClass} absolute pin-y pin-r flex items-center px-2 cursor-pointer z-10 pointer-events-none`}
+                    className={`${triggerClass} absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer z-10 pointer-events-none`}
                 >
                     <Icon.ChevronDown className="h-4 w-4" />
                 </div>

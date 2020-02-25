@@ -84,186 +84,202 @@ func TestRBACUpdater(t *testing.T) {
 		},
 	}
 
-	tested := newRBACUpdater()
+	tested := newRBACUpdater().(*rbacUpdaterImpl)
 
 	// Add a binding with no role, should get a binding update with no role id.
-	events := tested.upsertBinding(bindings[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "b1",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{
-					Id:        "b1",
-					Name:      "b1",
-					Namespace: "n1",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
-				},
+	event := tested.upsertBinding(bindings[0])
+	expectedEvent := &central.SensorEvent{
+		Id:     "b1",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Binding{
+			Binding: &storage.K8SRoleBinding{
+				Id:        "b1",
+				Name:      "b1",
+				Namespace: "n1",
+				CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+				Subjects:  []*storage.Subject{},
 			},
 		},
-	})
+	}
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": toRoxRoleBinding(bindings[0]),
+		},
+	}, tested.roleRefToBindings)
 
-	// Upsert the role for the previous binding. We should get the role update, along with an update for that binding.
-	events = tested.upsertRole(roles[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "r1",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Role{
-				Role: &storage.K8SRole{
-					Id:        "r1",
-					Name:      "r1",
-					Namespace: "n1",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(roles[0].GetCreationTimestamp().Time),
-				},
+	// Upsert the role for the previous binding. We should get the role update and the binding ID should be updated
+	event = tested.upsertRole(roles[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "r1",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Role{
+			Role: &storage.K8SRole{
+				Id:        "r1",
+				Name:      "r1",
+				Namespace: "n1",
+				CreatedAt: protoconv.ConvertTimeToTimestamp(roles[0].GetCreationTimestamp().Time),
+				Rules:     []*storage.PolicyRule{},
 			},
 		},
-		{
-			Id:     "b1",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{
-					Id:        "b1",
-					Name:      "b1",
-					Namespace: "n1",
-					RoleId:    "r1",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
-				},
-			},
+	}
+	assert.Equal(t, expectedEvent, event)
+	// Verify that the role id of the binding that corresponds to this role is now updated
+	assert.Equal(t, "r1", tested.bindingsByID["b1"].GetRoleId())
+	// check the namespace role ref
+	binding0 := toRoxRoleBinding(bindings[0])
+	binding0.RoleId = "r1"
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
 		},
-	})
+	}, tested.roleRefToBindings)
 
 	// Add another binding for the first role. Since the role is now present, we should only get the binding update.
-	events = tested.upsertBinding(bindings[1])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "b2",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{
-					Id:        "b2",
-					Name:      "b2",
-					Namespace: "n1",
-					RoleId:    "r1",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
-				},
+	event = tested.upsertBinding(bindings[1])
+	expectedEvent = &central.SensorEvent{
+		Id:     "b2",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Binding{
+			Binding: &storage.K8SRoleBinding{
+				Id:        "b2",
+				Name:      "b2",
+				Namespace: "n1",
+				RoleId:    "r1",
+				CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
+				Subjects:  []*storage.Subject{},
 			},
 		},
-	})
+	}
+	assert.Equal(t, expectedEvent, event)
+	// check the namespace role ref
+	binding1 := toRoxRoleBinding(bindings[1])
+	binding1.RoleId = "r1"
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+			"b2": binding1,
+		},
+	}, tested.roleRefToBindings)
 
 	// Add a cluster binding with no role, since the role is absent, we should get the update with no role id.
-	events = tested.upsertClusterBinding(clusterBindings[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "b3",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{ // No role ID since the role does not yet exist.
-					Id:          "b3",
-					Name:        "b3",
-					Namespace:   "n1",
-					ClusterRole: true,
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-				},
+	event = tested.upsertClusterBinding(clusterBindings[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "b3",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Binding{
+			Binding: &storage.K8SRoleBinding{ // No role ID since the role does not yet exist.
+				Id:          "b3",
+				Name:        "b3",
+				Namespace:   "n1",
+				ClusterRole: true,
+				CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
+				Subjects:    []*storage.Subject{},
 			},
 		},
-	})
+	}
+	assert.Equal(t, expectedEvent, event)
+	clusterRoleBinding0 := toRoxClusterRoleBinding(clusterBindings[0])
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+			"b2": binding1,
+		},
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 
 	// Once we upsert the role for the previous binding, we should get the role update and the binding update with the
 	// role id filled in.
-	events = tested.upsertClusterRole(clusterRoles[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "r2",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Role{
-				Role: &storage.K8SRole{
-					Id:          "r2",
-					Name:        "r2",
-					Namespace:   "n1",
-					ClusterRole: true,
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-				},
+	event = tested.upsertClusterRole(clusterRoles[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "r2",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Role{
+			Role: &storage.K8SRole{
+				Id:          "r2",
+				Name:        "r2",
+				Namespace:   "n1",
+				ClusterRole: true,
+				CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+				Rules:       []*storage.PolicyRule{},
 			},
 		},
-		{
-			Id:     "b3",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{ // Role exists now, so the binding should receive it and get updated.
-					Id:          "b3",
-					Name:        "b3",
-					Namespace:   "n1",
-					ClusterRole: true,
-					RoleId:      "r2",
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-				},
-			},
+	}
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, "r2", tested.bindingsByID["b3"].GetRoleId())
+
+	clusterRoleBinding0.RoleId = "r2"
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+			"b2": binding1,
 		},
-	})
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 
 	// Remove the role. The role should get removed and the binding should get updated with an empty role id.
-	events = tested.removeClusterRole(clusterRoles[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "r2",
-			Action: central.ResourceAction_REMOVE_RESOURCE,
-			Resource: &central.SensorEvent_Role{
-				Role: &storage.K8SRole{
-					Id:          "r2",
-					Name:        "r2",
-					Namespace:   "n1",
-					ClusterRole: true,
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-				},
+	event = tested.removeClusterRole(clusterRoles[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "r2",
+		Action: central.ResourceAction_REMOVE_RESOURCE,
+		Resource: &central.SensorEvent_Role{
+			Role: &storage.K8SRole{
+				Id:          "r2",
+				Name:        "r2",
+				Namespace:   "n1",
+				ClusterRole: true,
+				CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+				Rules:       []*storage.PolicyRule{},
 			},
 		},
-		{
-			Id:     "b3",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{ // Role removed, so update with empty role
-					Id:          "b3",
-					Name:        "b3",
-					Namespace:   "n1",
-					ClusterRole: true,
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-				},
-			},
+	}
+
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, "", tested.bindingsByID["b3"].GetRoleId())
+
+	clusterRoleBinding0.RoleId = ""
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+			"b2": binding1,
 		},
-	})
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 
 	// Re-add the role. The role should get updated and the binding should be updated back the with role id.
-	events = tested.upsertClusterRole(clusterRoles[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "r2",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Role{
-				Role: &storage.K8SRole{
-					Id:          "r2",
-					Name:        "r2",
-					Namespace:   "n1",
-					ClusterRole: true,
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
-				},
+	event = tested.upsertClusterRole(clusterRoles[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "r2",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Role{
+			Role: &storage.K8SRole{
+				Id:          "r2",
+				Name:        "r2",
+				Namespace:   "n1",
+				ClusterRole: true,
+				CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoles[0].GetCreationTimestamp().Time),
+				Rules:       []*storage.PolicyRule{},
 			},
 		},
-		{
-			Id:     "b3",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{ // Role removed, so update with empty role
-					Id:          "b3",
-					Name:        "b3",
-					Namespace:   "n1",
-					ClusterRole: true,
-					RoleId:      "r2",
-					CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterBindings[0].GetCreationTimestamp().Time),
-				},
-			},
+	}
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, "r2", tested.bindingsByID["b3"].GetRoleId())
+	clusterRoleBinding0.RoleId = "r2"
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+			"b2": binding1,
 		},
-	})
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 
 	// Change the binding on b2 to bind to the cluster role.
 	bindings[1].RoleRef = v1.RoleRef{
@@ -271,38 +287,57 @@ func TestRBACUpdater(t *testing.T) {
 		Kind:     "ClusterRole",
 		APIGroup: "rbac.authorization.k8s.io",
 	}
-	events = tested.upsertBinding(bindings[1])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "b2",
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{
-					Id:        "b2",
-					Name:      "b2",
-					Namespace: "n1",
-					RoleId:    "r2",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
-				},
+	event = tested.upsertBinding(bindings[1])
+	expectedEvent = &central.SensorEvent{
+		Id:     "b2",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_Binding{
+			Binding: &storage.K8SRoleBinding{
+				Id:        "b2",
+				Name:      "b2",
+				Namespace: "n1",
+				RoleId:    "r2",
+				CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[1].GetCreationTimestamp().Time),
+				Subjects:  []*storage.Subject{},
 			},
 		},
-	})
+	}
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, "r2", tested.bindingsByID["b2"].GetRoleId())
+
+	binding1.RoleId = "r2"
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {
+			"b1": binding0,
+		},
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b2": binding1,
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 
 	// Removing the binding should just cause a single remove event.
-	events = tested.removeBinding(bindings[0])
-	assert.Equal(t, events, []*central.SensorEvent{
-		{
-			Id:     "b1",
-			Action: central.ResourceAction_REMOVE_RESOURCE,
-			Resource: &central.SensorEvent_Binding{
-				Binding: &storage.K8SRoleBinding{
-					Id:        "b1",
-					Name:      "b1",
-					Namespace: "n1",
-					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
-					RoleId:    "r1",
-				},
+	event = tested.removeBinding(bindings[0])
+	expectedEvent = &central.SensorEvent{
+		Id:     "b1",
+		Action: central.ResourceAction_REMOVE_RESOURCE,
+		Resource: &central.SensorEvent_Binding{
+			Binding: &storage.K8SRoleBinding{
+				Id:        "b1",
+				Name:      "b1",
+				Namespace: "n1",
+				CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+				RoleId:    "r1",
+				Subjects:  []*storage.Subject{},
 			},
 		},
-	})
+	}
+	assert.Equal(t, expectedEvent, event)
+	assert.Equal(t, map[namespacedRoleRef]map[string]*storage.K8SRoleBinding{
+		roleBindingRefToNamespaceRef(bindings[0]): {},
+		clusterRoleBindingRefToNamespaceRef(clusterBindings[0]): {
+			"b2": binding1,
+			"b3": clusterRoleBinding0,
+		},
+	}, tested.roleRefToBindings)
 }

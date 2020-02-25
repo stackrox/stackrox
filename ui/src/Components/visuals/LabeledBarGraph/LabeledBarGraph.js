@@ -18,13 +18,6 @@ import useGraphHoverHint from 'hooks/useGraphHoverHint';
 
 const NUM_TICKS = 3;
 
-function getXYPlotHeight(data) {
-    let multiplier = 36;
-    if (data.length < 5) multiplier = 50;
-    if (data.length < 2) multiplier = 90;
-    return multiplier * data.length; // space is allotted per bar to allow the bars to fit inside the XYPlot graph
-}
-
 function getFormattedData(data) {
     const { length } = data;
     return data.map(({ y, ...rest }, index) => ({
@@ -60,7 +53,6 @@ const LabeledBarGraph = ({ data, title, history }) => {
     return (
         <>
             <FlexibleXYPlot
-                height={getXYPlotHeight(data)}
                 margin={{ left: 5 }}
                 xDomain={[0, upperBoundX]}
                 yType="ordinal"

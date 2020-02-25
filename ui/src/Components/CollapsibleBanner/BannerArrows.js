@@ -27,13 +27,13 @@ const NextArrow = props => {
     const isDisabled = isArrowDisabled(className);
     return (
         <div
-            className={`${className} absolute z-10 pin-r h-full pointer-events-none ${isDisabled &&
+            className={`${className} absolute z-10 right-0 h-full pointer-events-none ${isDisabled &&
                 'hidden'}`}
         >
             <button
                 type="button"
                 style={{ ...style, ...arrowStyles }}
-                className={`${arrowButtonClass} pin-r rounded-l-full hover:bg-secondary-200 pointer-events-auto`}
+                className={`${arrowButtonClass} right-0 rounded-l-full hover:bg-secondary-200 pointer-events-auto`}
                 onClick={onClick}
             >
                 <Icon.ChevronRight className={`${arrowIconClass} ml-3`} />
@@ -51,13 +51,13 @@ const PrevArrow = props => {
     return (
         <div
             style={{ ...style, ...arrowStyles }}
-            className={`${className} absolute z-10 pin-l h-full pointer-events-none ${isDisabled &&
+            className={`${className} absolute z-10 left-0 h-full pointer-events-none ${isDisabled &&
                 'hidden'}`}
         >
             <button
                 type="button"
                 style={{ ...style, ...arrowStyles }}
-                className={`${arrowButtonClass} pin-l rounded-r-full hover:bg-secondary-200 pointer-events-auto`}
+                className={`${arrowButtonClass} left-0 rounded-r-full hover:bg-secondary-200 pointer-events-auto`}
                 onClick={onClick}
             >
                 <Icon.ChevronLeft className={`${arrowIconClass} mr-3`} />

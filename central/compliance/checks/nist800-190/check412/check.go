@@ -34,7 +34,7 @@ func checkNIST412(ctx framework.ComplianceContext) {
 	checkSSHPortAndProcesses(ctx)
 	checkPrivilegedCategoryPolicies(ctx)
 	common.CheckImageScannerInUseByCluster(ctx)
-	common.CheckBuildTimePolicyEnforced(ctx)
+	common.CheckAnyPolicyInLifecycleStageEnforced(ctx, storage.LifecycleStage_BUILD)
 }
 
 func checkSSHPortAndProcesses(ctx framework.ComplianceContext) {
@@ -70,8 +70,7 @@ func deploymentHasSSHProcess(deploymentToIndicators map[string][]*storage.Proces
 			continue
 		}
 		for _, indicator := range indicators {
-			if strings.Contains(indicator.GetSignal().GetExecFilePath(), "ssh") ||
-				strings.Contains(indicator.GetSignal().GetExecFilePath(), "sshd") {
+			if strings.Contains(indicator.GetSignal().GetExecFilePath(), "ssh") {
 				return true
 			}
 		}

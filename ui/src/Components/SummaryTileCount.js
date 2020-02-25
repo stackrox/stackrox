@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
 import { ClipLoader as Loader } from 'react-spinners';
+import TileContent from 'Components/TileContent';
 
 const SummaryTileCount = ({ label, value, loading }) => {
     return (
@@ -11,10 +12,15 @@ const SummaryTileCount = ({ label, value, loading }) => {
             className="flex flex-col border-r border-base-400 border-dashed px-3 lg:w-24 md:w-20 no-underline py-3 text-base-500 items-center justify-center font-condensed"
             data-test-id="summary-tile-count"
         >
-            <div className="text-3xl tracking-widest">
-                {loading && !value ? <Loader loading size={12} color="currentColor" /> : value}
-            </div>
-            <div className="text-sm pt-1 tracking-wide">{pluralize(label, value)}</div>
+            {loading && !value ? (
+                <Loader loading size={12} color="currentColor" />
+            ) : (
+                <TileContent
+                    superText={value}
+                    text={pluralize(label, value)}
+                    textColorClass="text-base-500"
+                />
+            )}
         </li>
     );
 };

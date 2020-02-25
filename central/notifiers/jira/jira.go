@@ -1,10 +1,14 @@
 package jira
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"sort"
+	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -25,12 +29,18 @@ const (
 var (
 	log = logging.LoggerForModule()
 
+	severities = []storage.Severity{
+		storage.Severity_CRITICAL_SEVERITY,
+		storage.Severity_HIGH_SEVERITY,
+		storage.Severity_MEDIUM_SEVERITY,
+		storage.Severity_LOW_SEVERITY,
+	}
+
 	defaultPriorities = map[storage.Severity]string{
 		storage.Severity_CRITICAL_SEVERITY: "P0",
 		storage.Severity_HIGH_SEVERITY:     "P1",
 		storage.Severity_MEDIUM_SEVERITY:   "P2",
 		storage.Severity_LOW_SEVERITY:      "P3",
-		storage.Severity_UNSET_SEVERITY:    "P4",
 	}
 	pattern = regexp.MustCompile(`^(P[0-9])\b`)
 )
@@ -43,7 +53,33 @@ type jira struct {
 
 	notifier *storage.Notifier
 
-	priorities map[storage.Severity]string
+	severityToPriority map[storage.Severity]string
+	needsPriority      bool
+
+	unknownMap map[string]interface{}
+}
+
+func isPriorityNeeded(client *jiraLib.Client, project, issueType string) (bool, error) {
+	cmi, _, err := client.Issue.GetCreateMeta(project)
+	if err != nil {
+		return false, err
+	}
+	proj := cmi.GetProjectWithKey(project)
+	if proj == nil {
+		return false, fmt.Errorf("could not find project %q", project)
+	}
+	var validIssues []string
+	for _, issue := range proj.IssueTypes {
+		validIssues = append(validIssues, issue.Name)
+		if !strings.EqualFold(issue.Name, issueType) {
+			continue
+		}
+		bytes, _ := json.MarshalIndent(issue.Fields, "", "  ")
+		log.Debugf("Fields for %q: %s", issue.Name, bytes)
+		_, hasPriority := issue.Fields["priority"]
+		return hasPriority, nil
+	}
+	return false, fmt.Errorf("could not find issue type %q in project %q. Valid issue types are: %+v", issueType, project, validIssues)
 }
 
 func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
@@ -86,12 +122,9 @@ func (j *jira) AlertNotify(alert *storage.Alert) error {
 				Key: project,
 			},
 			Description: description,
-			Priority: &jiraLib.Priority{
-				Name: j.severityToPriority(alert.GetPolicy().GetSeverity()),
-			},
 		},
 	}
-	return j.createIssue(i)
+	return j.createIssue(alert.GetPolicy().GetSeverity(), i)
 }
 
 func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
@@ -117,12 +150,9 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 				Key: project,
 			},
 			Description: description,
-			Priority: &jiraLib.Priority{
-				Name: j.severityToPriority(storage.Severity_MEDIUM_SEVERITY),
-			},
 		},
 	}
-	return j.createIssue(i)
+	return j.createIssue(storage.Severity_MEDIUM_SEVERITY, i)
 }
 
 func validate(jira *storage.Jira) error {
@@ -137,7 +167,20 @@ func validate(jira *storage.Jira) error {
 		errorList.AddString("Username must be specified")
 	}
 	if jira.GetPassword() == "" {
-		errorList.AddString("Password must be specified")
+		errorList.AddString("Password or API Token must be specified")
+	}
+
+	if len(jira.GetPriorityMappings()) != 0 {
+		unfoundSeverities := make(map[storage.Severity]struct{})
+		for _, sev := range severities {
+			unfoundSeverities[sev] = struct{}{}
+		}
+		for _, mapping := range jira.GetPriorityMappings() {
+			delete(unfoundSeverities, mapping.GetSeverity())
+		}
+		for sev := range unfoundSeverities {
+			errorList.AddStringf("mapping for severity %s required", sev.String())
+		}
 	}
 	return errorList.ToError()
 }
@@ -164,22 +207,53 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 		Timeout:   timeout,
 		Transport: bat,
 	}
+
 	client, err := jiraLib.NewClient(httpClient, url)
 	if err != nil {
 		return nil, err
 	}
-
 	prios, _, err := client.Priority.GetList()
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Retrieved priority list: %+v", prios)
+	jiraConf := notifier.GetJira()
+
+	derivedPriorities := mapPriorities(jiraConf, prios)
+	if len(jiraConf.GetPriorityMappings()) == 0 {
+		bytes, _ := json.Marshal(&derivedPriorities)
+		log.Debugf("Derived Jira Priorities: %s", bytes)
+		for k, v := range derivedPriorities {
+			jiraConf.PriorityMappings = append(jiraConf.PriorityMappings, &storage.Jira_PriorityMapping{
+				Severity:     k,
+				PriorityName: v,
+			})
+		}
+		sort.Slice(jiraConf.PriorityMappings, func(i, j int) bool {
+			return jiraConf.PriorityMappings[i].Severity < jiraConf.PriorityMappings[j].Severity
+		})
+	}
+
+	needsPriority, err := isPriorityNeeded(client, notifier.GetLabelDefault(), jiraConf.GetIssueType())
+	if err != nil {
+		return nil, err
+	}
+
+	// marshal unknowns
+	var unknownMap map[string]interface{}
+	if jiraConf.GetDefaultFieldsJson() != "" {
+		if err := json.Unmarshal([]byte(jiraConf.GetDefaultFieldsJson()), &unknownMap); err != nil {
+			return nil, errors.Wrap(err, "could not unmarshal default fields JSON")
+		}
+	}
 
 	return &jira{
-		client:     client,
-		conf:       notifier.GetJira(),
-		notifier:   notifier,
-		priorities: mapPriorities(prios),
+		client:             client,
+		conf:               notifier.GetJira(),
+		notifier:           notifier,
+		severityToPriority: derivedPriorities,
+
+		needsPriority: needsPriority,
+		unknownMap:    unknownMap,
 	}, nil
 }
 
@@ -187,17 +261,23 @@ func (j *jira) ProtoNotifier() *storage.Notifier {
 	return j.notifier
 }
 
-func (j *jira) createIssue(i *jiraLib.Issue) error {
+func (j *jira) createIssue(severity storage.Severity, i *jiraLib.Issue) error {
+	i.Fields.Unknowns = j.unknownMap
+
+	if j.needsPriority {
+		i.Fields.Priority = &jiraLib.Priority{
+			Name: j.severityToPriority[severity],
+		}
+	}
+
 	_, resp, err := j.client.Issue.Create(i)
 	if err != nil && resp == nil {
 		return errors.Errorf("Error creating issue. Response: %v", err)
 	}
-
 	if err != nil {
 		bytes, readErr := ioutil.ReadAll(resp.Body)
 		if readErr == nil {
-			log.Errorf("Error creating issue. Response: %v %v", err, string(bytes))
-			return errors.Errorf("Error creating issue: received HTTP status code %d. Check central logs for full error.", resp.StatusCode)
+			return errors.Wrapf(err, "error creating issue. Response: %s", bytes)
 		}
 	}
 	return err
@@ -214,39 +294,70 @@ func (j *jira) Test() error {
 				Key: j.notifier.GetLabelDefault(),
 			},
 			Summary: "This is a test issue created to test integration with StackRox.",
-			Priority: &jiraLib.Priority{
-				Name: j.severityToPriority(storage.Severity_LOW_SEVERITY),
-			},
 		},
 	}
-	return j.createIssue(i)
+	return j.createIssue(storage.Severity_LOW_SEVERITY, i)
 }
 
-func mapPriorities(prios []jiraLib.Priority) map[storage.Severity]string {
+// Optimistically tries to match all of the Jira priorities with the known mapping defined in defaultPriorities
+// If any severity is not matched, then it returns a nil map
+func optimisticMatching(prios []jiraLib.Priority) map[storage.Severity]string {
 	shortened := make(map[string]string)
 	for _, prio := range prios {
-		match := pattern.FindString(prio.Name)
-		if len(match) > 0 {
+		if match := pattern.FindString(prio.Name); len(match) > 0 {
 			shortened[match] = prio.Name
 		}
 	}
 	output := make(map[storage.Severity]string)
 	for k, name := range defaultPriorities {
 		match, ok := shortened[name]
-		if ok {
-			name = match
+		if !ok {
+			return nil
 		}
-		output[k] = name
+		output[k] = match
 	}
 	return output
 }
 
-func (j *jira) severityToPriority(sev storage.Severity) string {
-	name, ok := j.priorities[sev]
-	if ok {
-		return name
+func mapPriorities(integration *storage.Jira, prios []jiraLib.Priority) map[storage.Severity]string {
+	// Prioritize the defined mappings, which based on validation must contain mappings for ALL severities
+	if len(integration.GetPriorityMappings()) != 0 {
+		priorities := make(map[storage.Severity]string)
+		for _, mapping := range integration.GetPriorityMappings() {
+			priorities[mapping.GetSeverity()] = mapping.GetPriorityName()
+		}
+		return priorities
 	}
-	return j.priorities[storage.Severity_UNSET_SEVERITY]
+	if matching := optimisticMatching(prios); matching != nil {
+		return matching
+	}
+	// Lexicographically sort the priorities retrieved from Jira, which as far as we know are
+	// single digit IDs in string form. It's possible that the Jira installation has fewer priorities than our
+	// severities and therefore we will attribute the last priority from Jira to the remaining severities
+	sort.Slice(prios, func(i, j int) bool {
+		numI, errI := strconv.Atoi(prios[i].ID)
+		numJ, errJ := strconv.Atoi(prios[j].ID)
+		if errI == nil && errJ == nil {
+			return numI < numJ
+		}
+		if errI != errJ {
+			return errI == nil // all numeric before all non-numeric
+		}
+		return prios[i].ID < prios[j].ID
+	})
+	// Truncate priorities to the number of severities
+	if len(prios) > len(severities) {
+		prios = prios[:len(severities)]
+	}
+	priorities := make(map[storage.Severity]string)
+	for i, sev := range severities {
+		if i > len(prios)-1 {
+			priorities[sev] = prios[len(prios)-1].Name
+			continue
+		}
+		priorities[sev] = prios[i].Name
+	}
+	return priorities
 }
 
 func init() {

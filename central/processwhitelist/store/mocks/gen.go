@@ -120,3 +120,17 @@ func (mr *MockStoreMockRecorder) UpdateWhitelist(arg0 interface{}) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateWhitelist", reflect.TypeOf((*MockStore)(nil).UpdateWhitelist), arg0)
 }
+
+// WalkAll mocks base method
+func (m *MockStore) WalkAll(arg0 func(whitelist *storage.ProcessWhitelist) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkAll", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkAll indicates an expected call of IteratesOverWhiteLists
+func (mr *MockStoreMockRecorder) WalkAll(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockStore)(nil).WalkAll), arg0)
+}

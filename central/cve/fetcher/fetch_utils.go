@@ -10,6 +10,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
@@ -20,17 +21,16 @@ import (
 )
 
 const (
-	fetchDelay               = 2 * time.Hour
-	persistentCVEsPath       = migrations.DBMountPath
-	preloadedCVEsBasePath    = "/stackrox/data"
-	k8sCVEsURL               = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
-	k8sCVEsChecksumURL       = "https://definitions.stackrox.io/cve/k8s/checksum"
-	istioCVEsURL             = "https://definitions.stackrox.io/cve/istio/cve-list.json"
-	istioCVEsChecksumURL     = "https://definitions.stackrox.io/cve/istio/checksum"
-	commonCveDir             = "cve"
-	k8sCVEsDir               = "k8s"
-	istioCVEsDir             = "istio"
-	scannerDefinitionsSubdir = `scannerdefinitions`
+	fetchDelay            = 2 * time.Hour
+	persistentCVEsPath    = migrations.DBMountPath
+	preloadedCVEsBasePath = "/stackrox/data"
+	k8sCVEsURL            = "https://definitions.stackrox.io/cve/k8s/cve-list.json"
+	k8sCVEsChecksumURL    = "https://definitions.stackrox.io/cve/k8s/checksum"
+	istioCVEsURL          = "https://definitions.stackrox.io/cve/istio/cve-list.json"
+	istioCVEsChecksumURL  = "https://definitions.stackrox.io/cve/istio/checksum"
+	commonCveDir          = "cve"
+	k8sCVEsDir            = "k8s"
+	istioCVEsDir          = "istio"
 )
 
 var (
@@ -44,7 +44,7 @@ var (
 	preloadedIstioCVEsChecksumFilePath  = path.Join(preloadedCVEsBasePath, commonCveDir, nvd.Feeds[nvd.Istio].ChecksumFilename)
 	log                                 = logging.LoggerForModule()
 
-	cveTypeToString = map[converter.CveType]string{
+	cveTypeToString = map[converter.CVEType]string{
 		converter.K8s:   "k8s",
 		converter.Istio: "istio",
 	}
@@ -122,20 +122,20 @@ func getLocalCVEChecksum(cveChecksumFile string) (string, error) {
 	return string(b), nil
 }
 
-func getLocalCVEs(cveFile string) ([]*nvd.CVEEntry, error) {
+func getLocalCVEs(cveFile string) ([]*schema.NVDCVEFeedJSON10DefCVEItem, error) {
 	b, err := ioutil.ReadFile(cveFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed read CVEs file: %q", cveFile)
 	}
 
-	var cveEntries []nvd.CVEEntry
+	var cveEntries []*schema.NVDCVEFeedJSON10DefCVEItem
 	if err = json.Unmarshal(b, &cveEntries); err != nil {
 		return nil, errors.Wrapf(err, "failed to unmarshal CVEs in file: %q", cveFile)
 	}
 
-	ret := make([]*nvd.CVEEntry, 0, len(cveEntries))
+	ret := make([]*schema.NVDCVEFeedJSON10DefCVEItem, 0, len(cveEntries))
 	for i := 0; i < len(cveEntries); i++ {
-		ret = append(ret, &cveEntries[i])
+		ret = append(ret, cveEntries[i])
 	}
 
 	return ret, nil
@@ -155,7 +155,7 @@ func overwriteCVEs(cveFile, cveChecksumFile, checksum, CVEs string) error {
 	return nil
 }
 
-func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct converter.CveType) error {
+func copyCVEsFromPreloadedToPersistentDirIfAbsent(ct converter.CVEType) error {
 	paths, err := getPaths(ct)
 	if err != nil {
 		return err
@@ -221,7 +221,7 @@ type cvePaths struct {
 	persistentCveChecksumFile string
 }
 
-func getPaths(ct converter.CveType) (*cvePaths, error) {
+func getPaths(ct converter.CVEType) (*cvePaths, error) {
 	if ct == converter.K8s {
 		return &cvePaths{
 			preloadedCveDirPath:       path.Join(preloadedCVEsBasePath, commonCveDir, k8sCVEsDir),
@@ -250,7 +250,7 @@ type cveURLs struct {
 	cveChecksumURL string
 }
 
-func getUrls(ct converter.CveType) (*cveURLs, error) {
+func getUrls(ct converter.CVEType) (*cveURLs, error) {
 	if ct == converter.K8s {
 		return &cveURLs{
 			cveURL:         k8sCVEsURL,

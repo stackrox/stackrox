@@ -21,7 +21,6 @@ type DataStore interface {
 	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
 
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
-	AddProcessIndicator(context.Context, *storage.ProcessIndicator) error
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error
 	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deployment *storage.Deployment) error

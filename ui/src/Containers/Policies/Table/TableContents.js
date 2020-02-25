@@ -23,7 +23,7 @@ import {
     rtTrActionsClassName
 } from 'Components/Table';
 import { lifecycleStageLabels } from 'messages/common';
-import { sortSeverity, sortLifecycle } from 'sorters/sorters';
+import { sortAscii, sortSeverity, sortLifecycle } from 'sorters/sorters';
 
 // TableContents are the policy rows.
 class TableContents extends Component {
@@ -102,13 +102,13 @@ class TableContents extends Component {
                     text={enableTooltip}
                     onClick={this.toggleEnabledDisabledPolicy(policy)}
                     className={`hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                    icon={<Icon.Power className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Power className="h-4 w-4" />}
                 />
                 <RowActionButton
                     text="Delete policy"
                     onClick={this.onDeletePolicy(policy)}
                     border="border-l-2 border-base-400"
-                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Trash2 className="h-4 w-4" />}
                 />
             </div>
         );
@@ -149,6 +149,7 @@ class TableContents extends Component {
                         </div>
                     </div>
                 ),
+                sortMethod: sortAscii,
                 className: `w-1/5 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
                 headerClassName: `w-1/5 sticky-column left-checkbox-offset ${defaultHeaderClassName}`
             },
@@ -210,6 +211,12 @@ class TableContents extends Component {
                     selectedRowId={id}
                     noDataText="No results found. Please refine your search."
                     page={this.props.page}
+                    defaultSorted={[
+                        {
+                            id: 'name',
+                            desc: false
+                        }
+                    ]}
                 />
             </div>
         );

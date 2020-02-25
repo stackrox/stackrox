@@ -45,6 +45,7 @@ type quay struct {
 	registry   registryTypes.ImageRegistry
 
 	protoImageIntegration *storage.ImageIntegration
+	types.ScanSemaphore
 }
 
 func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) {
@@ -74,6 +75,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) 
 		oauthToken: config.GetOauthToken(),
 
 		protoImageIntegration: protoImageIntegration,
+		ScanSemaphore:         types.NewDefaultSemaphore(),
 	}
 	return scanner, nil
 }

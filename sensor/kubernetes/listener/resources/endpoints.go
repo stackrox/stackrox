@@ -11,13 +11,13 @@ import (
 
 type endpointManager struct {
 	serviceStore    *serviceStore
-	deploymentStore *deploymentStore
+	deploymentStore *DeploymentStore
 	nodeStore       *nodeStore
 
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *deploymentStore, nodeStore *nodeStore, entityStore *clusterentities.Store) *endpointManager {
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, entityStore *clusterentities.Store) *endpointManager {
 	return &endpointManager{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,

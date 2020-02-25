@@ -17,7 +17,7 @@ import (
 const maxGRPCSize = 4194304
 
 func getDeploymentStore(b *testing.B) store.Store {
-	db, _, err := badgerhelper.NewTemp(b.Name()+".db", false)
+	db, _, err := badgerhelper.NewTemp(b.Name() + ".db")
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -3,7 +3,6 @@ package common
 import (
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -72,20 +71,29 @@ func CheckFixedCVES(ctx framework.ComplianceContext) {
 	}
 }
 
-// CheckBuildTimePolicyEnforced checks if there is atleast one build
-// time policy that is enabled and enforced.
-func CheckBuildTimePolicyEnforced(ctx framework.ComplianceContext) {
+// CheckAnyPolicyInLifecycleStageEnforced checks if there is at least one
+// policy of the given lifecycle stage that is enabled and enforced.
+func CheckAnyPolicyInLifecycleStageEnforced(ctx framework.ComplianceContext, lifecycleStage storage.LifecycleStage) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		for _, stage := range p.GetLifecycleStages() {
-			if stage == storage.LifecycleStage_BUILD && !p.Disabled && IsPolicyEnforced(p) {
-				framework.Pass(ctx, "At least one build time policy is enabled and enforced")
-				return
-			}
+		if IsPolicyEnabled(p) && IsPolicyEnforced(p) && PolicyIsInLifecycleStage(p, lifecycleStage) {
+			framework.Passf(ctx, "At least one policy in lifecycle %q is enabled and enforced", lifecycleStage)
+			return
 		}
 	}
 
-	framework.Fail(ctx, "Unable to find a build time policy that is enabled and enforced")
+	framework.Failf(ctx, "No policies in lifecycle %q are enabled and enforced", lifecycleStage)
+}
+
+// PolicyIsInLifecycleStage returns whether the given policy is in the given lifecycle stage.
+func PolicyIsInLifecycleStage(policy *storage.Policy, targetStage storage.LifecycleStage) bool {
+	for _, policyStage := range policy.GetLifecycleStages() {
+		if policyStage == targetStage {
+			return true
+		}
+	}
+
+	return false
 }
 
 // AnyPoliciesEnforced checks if any policy in the given list is being enforced.
@@ -110,14 +118,12 @@ func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) 
 func CheckAnyPolicyInLifeCycle(ctx framework.ComplianceContext, policyLifeCycle storage.LifecycleStage) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		for _, stage := range p.GetLifecycleStages() {
-			if stage == policyLifeCycle && !p.Disabled {
-				framework.Passf(ctx, "At least one policy in lifecycle %q is enabled", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
-				return
-			}
+		if IsPolicyEnabled(p) && PolicyIsInLifecycleStage(p, policyLifeCycle) {
+			framework.Passf(ctx, "At least one policy in lifecycle %q is enabled", policyLifeCycle)
+			return
 		}
 	}
-	framework.Failf(ctx, "There are no enabled policies in lifecycle %q", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+	framework.Failf(ctx, "There are no enabled policies in lifecycle %q", policyLifeCycle)
 }
 
 // CheckAnyPolicyInCategoryEnforced checks if there are any policies in the given category
@@ -327,6 +333,22 @@ func policyIsOfType(spec *storage.NetworkPolicySpec, policyType storage.NetworkP
 
 func isKubeSystem(deployment *storage.Deployment) bool {
 	return deployment.GetNamespace() == "kube-system"
+}
+
+// CheckNoViolationsForDeployPhasePolicies checks that there are no active violations for deploy-phase policies.
+func CheckNoViolationsForDeployPhasePolicies(ctx framework.ComplianceContext) {
+	var violated bool
+	alerts := ctx.Data().UnresolvedAlerts()
+	for _, alert := range alerts {
+		if alert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
+			framework.Failf(ctx, "Policy %q is violated by deployment %q in namespace %q of cluster %q",
+				alert.GetPolicy().GetName(), alert.GetDeployment().GetName(), alert.GetDeployment().GetNamespace(), alert.GetDeployment().GetClusterName())
+			violated = true
+		}
+	}
+	if !violated {
+		framework.Pass(ctx, "There are no active violations for deploy-phase policies")
+	}
 }
 
 // CheckViolationsForPolicyByDeployment checks if the deployments have violations for a given policy.

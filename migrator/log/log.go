@@ -8,7 +8,7 @@ import (
 
 // WriteToStderr is a helper function to write to stderr.
 func WriteToStderr(s string) {
-	_, _ = fmt.Fprint(os.Stderr, fmt.Sprintf("Migrator: %s: %s\n", time.Now().Format("2006/01/02 15:04:05"), s))
+	_, _ = fmt.Fprintf(os.Stderr, "Migrator: %s: %s\n", time.Now().Format("2006/01/02 15:04:05"), s)
 }
 
 // WriteToStderrf writes to stderr with a format string.

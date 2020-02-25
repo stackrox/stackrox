@@ -1,13 +1,19 @@
-const _ = require('lodash');
+const map = require('lodash/map');
+const range = require('lodash/range');
+const max = require('lodash/max');
 
-module.exports = function({ grids = _.range(1, 12), gaps = {}, variants = ['responsive'] }) {
-    return function({ e, addUtilities }) {
+module.exports = function getGridClasses({
+    grids = range(1, 12),
+    gaps = {},
+    variants = ['responsive']
+}) {
+    return function f({ e, addUtilities }) {
         addUtilities(
             [
                 { '.grid': { display: 'grid' } },
                 { '.grid-dense': { gridAutoFlow: 'dense' } },
                 { '.s-full': { gridColumn: '1 / -1' } },
-                ..._.map(gaps, (size, name) => ({
+                ...map(gaps, (size, name) => ({
                     [`.${e(`grid-gap-${name}`)}`]: { gridGap: size }
                 })),
                 {
@@ -31,7 +37,7 @@ module.exports = function({ grids = _.range(1, 12), gaps = {}, variants = ['resp
                         gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`
                     }
                 })),
-                ..._.range(1, _.max(grids) + 1).map(span => ({
+                ...range(1, max(grids) + 1).map(span => ({
                     [`.s-${span}`]: {
                         gridColumnStart: `span ${span}`,
                         gridRowEnd: `span ${span}`

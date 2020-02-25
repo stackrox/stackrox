@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -18,4 +19,23 @@ func keyToID(key *storage.ProcessWhitelistKey) (string, error) {
 		return fmt.Sprintf("%s:%s:%s:%s:%s", deploymentContainerKeyPrefix, key.GetClusterId(), key.GetNamespace(), key.GetDeploymentId(), key.GetContainerName()), nil
 	}
 	return "", fmt.Errorf("invalid key %+v: doesn't match any of our known patterns", key)
+}
+
+// IDToKey converts a string process whitelist key to its proto object.
+func IDToKey(id string) (*storage.ProcessWhitelistKey, error) {
+	if strings.HasPrefix(id, string(deploymentContainerKeyPrefix)) {
+		keys := strings.Split(id, ":")
+		if len(keys) == 5 {
+			resKey := &storage.ProcessWhitelistKey{
+				ClusterId:     keys[1],
+				Namespace:     keys[2],
+				DeploymentId:  keys[3],
+				ContainerName: keys[4],
+			}
+
+			return resKey, nil
+		}
+	}
+
+	return nil, fmt.Errorf("invalid id %s: doesn't match any of our known patterns", id)
 }

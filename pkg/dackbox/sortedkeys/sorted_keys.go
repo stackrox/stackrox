@@ -12,12 +12,24 @@ type SortedKeys [][]byte
 // Sort sorts an input list of keys to create a sorted keys. If you know the keys are already sorted, you can simply
 // cast like SortedKeys(keys) instead of using Sort().
 func Sort(in [][]byte) SortedKeys {
+	if len(in) == 0 {
+		return in
+	}
 	ret := make([][]byte, len(in))
 	copy(ret, in)
 	sort.Slice(ret, func(i, j int) bool {
 		return bytes.Compare(ret[i], ret[j]) < 0
 	})
-	return ret
+	// dedupe values
+	deduped := ret[:1]
+	dedIdx := 0
+	for retIdx := 1; retIdx < len(ret); retIdx++ {
+		if !bytes.Equal(ret[retIdx], deduped[dedIdx]) {
+			deduped = append(deduped, ret[retIdx])
+			dedIdx++
+		}
+	}
+	return deduped
 }
 
 // Find returns the index of the input key, or -1 if it is not found.
@@ -49,14 +61,7 @@ func (sk SortedKeys) Remove(key []byte) (SortedKeys, bool) {
 
 // Union combines two sets of sorted keys.
 func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
-	var maxLen int
-	if len(sk) > len(other) {
-		maxLen = len(sk)
-	} else {
-		maxLen = len(other)
-	}
-
-	newKeys := make([][]byte, 0, maxLen)
+	newKeys := make([][]byte, 0, len(sk)+len(other))
 	otherIdx := 0
 	thisIdx := 0
 	thisInBounds := thisIdx < len(sk)
@@ -145,17 +150,19 @@ func (sk SortedKeys) positionOf(key []byte) (int, bool) {
 }
 
 func (sk SortedKeys) insertAt(key []byte, idx int) SortedKeys {
-	leadingValues := append(append([][]byte{}, sk[:idx]...), key)
+	ret := make([][]byte, 0, len(sk)+1)
+	ret = append(append(ret, sk[:idx]...), key)
 	if len(sk) == idx {
-		return leadingValues // no values after the insertion index.
+		return ret // no values after the insertion index.
 	}
-	return append(leadingValues, sk[idx:]...)
+	return append(ret, sk[idx:]...)
 }
 
 func (sk SortedKeys) removeAt(idx int) SortedKeys {
-	leadingValues := append([][]byte{}, sk[:idx]...)
+	ret := make([][]byte, 0, len(sk)-1)
+	ret = append(ret, sk[:idx]...)
 	if len(sk)-1 == idx {
-		return leadingValues // no values after the removed index.
+		return ret // no values after the removed index.
 	}
-	return append(leadingValues, sk[idx+1:]...)
+	return append(ret, sk[idx+1:]...)
 }

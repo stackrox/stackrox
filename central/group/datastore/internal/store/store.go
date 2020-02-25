@@ -12,6 +12,7 @@ var groupsBucket = []byte("groups")
 //go:generate mockgen-wrapper
 type Store interface {
 	Get(props *storage.GroupProperties) (*storage.Group, error)
+	GetFiltered(func(*storage.GroupProperties) bool) ([]*storage.Group, error)
 	GetAll() ([]*storage.Group, error)
 
 	Walk(authProviderID string, attributes map[string][]string) ([]*storage.Group, error)

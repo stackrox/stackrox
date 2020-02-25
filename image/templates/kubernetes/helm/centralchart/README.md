@@ -3,8 +3,14 @@
 
 This Helm chart is for StackRox Central
 
-You can render this chart with
+Run the following command to render this chart:
+- for Helm v2
 ```
 helm install --name central .
 ```
+- for Helm v3
+```
+helm install central .
+```
+
 {{- end}}

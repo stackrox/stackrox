@@ -13,6 +13,14 @@ type Result struct {
 	Fields  map[string]interface{}
 }
 
+// NewResult returns a new search result
+func NewResult() *Result {
+	return &Result{
+		Matches: make(map[string][]string),
+		Fields:  make(map[string]interface{}),
+	}
+}
+
 // GetProtoMatchesMap offloads the values of the input map into SearchResult_Matches types.
 func GetProtoMatchesMap(m map[string][]string) map[string]*v1.SearchResult_Matches {
 	matches := make(map[string]*v1.SearchResult_Matches)

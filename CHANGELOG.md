@@ -2,6 +2,41 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+- Collector images shipped with versions of the StackRox platform prior to this were affected by CVE-2019-5482, CVE-2019-5481 and CVE-2019-5436. The cause was an older version of curl that was vulnerable to buffer overflow and double free vulnerabilities in the FTP handler. We have upgraded curl to a version that does not suffer from these vulnerabilties. The curl program is only used to download new collector modules from a fixed set of URLs that do not make use of FTP, therefore according to our assessment there never existed a risk of an attacker exploiting this vulnerability.
+
+## [39.0]
+### Added
+- `roxctl central cert` can be used to download Central's TLS certificate, which is then passed to `roxctl --ca`.
+- The Scanner deployment has been split into two separate deployments: Scanner and Scanner DB. The Scanner deployment is now
+  controlled by a Horizontal Pod Autoscaler (HPA) that will automatically scale up the scanner as the number of requests increase.
+- Added a feature to report telemetry about a StackRox installation.  This will default to off in existing installations and can be enabled through the System Configuration page.
+- Added a feature to download a diagnostic bundle.  This can be accessed through the System Configuration page or through `roxctl central debug download-diagnostics`
+- A new `ScannerBundle` resource type (for the purposes of StackRox RBAC) is introduced. The resource definition for this is:
+    Read permission: Download the scanner bundle (with `roxctl scanner generate`)
+    Write permission: N/A
+- Related to above, `roxctl scanner generate` now requires users to have read permissions to the newly created `ScannerBundle` resource.
+  Previously, this endpoint was accessible to any authenticated user.
+- OIDC auth providers now support refresh tokens, in order to keep you logged in beyond the ID token expiration time
+  configured in your identity provider (sometimes only 15 minutes or less). In order to use refresh tokens, a client
+  secret must be specified in the OIDC auth provider configuration.
+
+### Changed
+- UseStartTLS field in the Email notifier configuration has been deprecated in lieu of an enum which supports several
+different authentication methods
+- `roxctl central generate k8s` and `roxctl central generate openshift` no longer contain prompts for the monitoring stack because
+  it is now deprecated
+- The scanner v2 preview is now removed
+- The scanner's updater now pulls from https://definitions.stackrox.io, and not https://storage.googleapis.com/definitions.stackrox.io/ like it previously would.
+- Fixed https://stack-rox.atlassian.net/browse/ROX-3985.
+- Collector images shipped with versions of the StackRox platform prior to this were affected by CVE-2017-14062. The cause was an older version of libidn (parsing of internationalized domain names) that was vulnerable due to a possible buffer overflow. We have upgraded libidn to a version that no longer suffers from this vulnerability. Since libidn is only used by curl, and curl is only used to download new collector modules from a fixed set of URLs that do not make use of international domain names, according to our assessment there never existed a risk of an attacker exploiting this vulnerability.
+
+## [38.0]
+### Added
+- Added a REST endpoint `/v1/group` that can be used to retrieve a single group by exact property match (cf. ROX-3928).
+- Scanner version updated to 2.0.4
+- Collector version updated to 3.0.2
+
+## [37.0]
 ### Changed
 - The "NIST 800-190" standard has been renamed to "NIST SP 800-190", for correctness.
 The ID continues to be the same, so no API calls will need to be updated.

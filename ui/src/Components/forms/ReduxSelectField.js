@@ -9,17 +9,19 @@ const ReduxSelect = ({
     placeholder,
     disabled,
     customComponents,
-    styles
+    styles,
+    defaultValue
 }) => (
     <Select
         key={name}
         onChange={onChange}
         options={options}
         placeholder={placeholder}
-        value={value}
+        value={value || defaultValue}
         isDisabled={disabled}
         components={customComponents}
         styles={styles}
+        menuPlacement="auto"
     />
 );
 
@@ -33,16 +35,27 @@ ReduxSelect.propTypes = {
     placeholder: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
     customComponents: PropTypes.shape({}),
-    styles: PropTypes.shape({})
+    styles: PropTypes.shape({}),
+    defaultValue: PropTypes.string
 };
 
 ReduxSelect.defaultProps = {
     disabled: false,
     customComponents: {},
-    styles: defaultSelectStyles
+    styles: defaultSelectStyles,
+    defaultValue: null
 };
 
-const ReduxSelectField = ({ name, options, placeholder, disabled, customComponents, styles }) => (
+const ReduxSelectField = ({
+    name,
+    options,
+    placeholder,
+    disabled,
+    customComponents,
+    styles,
+    value,
+    onChange
+}) => (
     <Field
         key={name}
         name={name}
@@ -52,6 +65,8 @@ const ReduxSelectField = ({ name, options, placeholder, disabled, customComponen
         placeholder={placeholder}
         disabled={disabled}
         styles={styles}
+        defaultValue={value}
+        onChange={onChange}
         className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-50 focus:border-base-300 w-full font-400"
     />
 );
@@ -62,14 +77,18 @@ ReduxSelectField.propTypes = {
     placeholder: PropTypes.string,
     disabled: PropTypes.bool,
     customComponents: PropTypes.shape({}),
-    styles: PropTypes.shape({})
+    styles: PropTypes.shape({}),
+    value: PropTypes.string,
+    onChange: PropTypes.func
 };
 
 ReduxSelectField.defaultProps = {
     placeholder: 'Select one...',
     disabled: false,
     customComponents: {},
-    styles: defaultSelectStyles
+    styles: defaultSelectStyles,
+    value: null,
+    onChange: null
 };
 
 export default ReduxSelectField;

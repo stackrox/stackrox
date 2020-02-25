@@ -21,7 +21,7 @@ export const PagerDots = ({ onPageChange, pageCount, currentPage, className }) =
         onPageChange(page);
     };
     return (
-        <div className={`absolute z-10 pin-r pin-b m-2 ${className}`}>
+        <div className={`absolute z-10 right-0 bottom-0 m-2 ${className}`}>
             {Array(pageCount)
                 .fill()
                 .map((_, page) => (

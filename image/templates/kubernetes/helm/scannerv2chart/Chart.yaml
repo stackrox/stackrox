@@ -1,6 +1,0 @@
-name: scanner-v2
-description: StackRox Scanner V2
-version: {{ .Version }}
-maintainers:
- - name: stackrox
-   email: support@stackrox.com

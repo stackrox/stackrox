@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const (
@@ -47,6 +47,8 @@ metadata:
   labels:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: sensor
+  annotations:
+    sensor-upgrader.stackrox.io/last-upgrade-id: abcd
   name: sensor
   namespace: stackrox
   resourceVersion: "444536"
@@ -201,12 +203,9 @@ webhooks:
 )
 
 func fromYAML(t *testing.T, yamlStr string) *unstructured.Unstructured {
-	jsonBytes, err := yaml.ToJSON([]byte(yamlStr))
+	obj, err := k8sutil.UnstructuredFromYAML(yamlStr)
 	require.NoError(t, err)
-
-	obj, _, err := unstructured.UnstructuredJSONScheme.Decode(jsonBytes, nil, nil)
-	require.NoError(t, err)
-	return obj.(*unstructured.Unstructured)
+	return obj
 }
 
 func TestNormalizeObjects_EqualAfterNormalize(t *testing.T) {

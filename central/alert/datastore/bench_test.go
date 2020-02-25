@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -16,18 +18,18 @@ import (
 
 func BenchmarkDBs(b *testing.B) {
 	b.Run("badger", func(b *testing.B) {
-		db, _, err := badgerhelper.NewTemp("alert_bench_test", false)
+		db, _, err := badgerhelper.NewTemp("alert_bench_test")
 		require.NoError(b, err)
-		benchmarkLoad(b, badgerStore.New(db))
+		benchmarkLoad(b, badgerStore.New(db), commentsStore.New(globaldb.GetGlobalDB()))
 	})
 }
 
-func benchmarkLoad(b *testing.B, s store.Store) {
+func benchmarkLoad(b *testing.B, s store.Store, c commentsStore.Store) {
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
 	idx := index.New(tmpIndex)
 
-	datastore, err := New(s, idx, search.New(s, idx))
+	datastore, err := New(s, c, idx, search.New(s, idx))
 	require.NoError(b, err)
 	datastoreImpl := datastore.(*datastoreImpl)
 

@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -28,7 +28,7 @@ type snapshotter struct {
 	opts Options
 }
 
-func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
+func (s *snapshotter) SnapshotState() ([]k8sutil.Object, error) {
 	coreV1Client := s.ctx.ClientSet().CoreV1()
 
 	snapshotSecret, err := coreV1Client.Secrets(common.Namespace).Get(secretName, metav1.GetOptions{})
@@ -66,7 +66,7 @@ func (s *snapshotter) SnapshotState() ([]k8sobjects.Object, error) {
 	return objects, nil
 }
 
-func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sobjects.Object, error) {
+func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sutil.Object, error) {
 	if processID := secret.Labels[common.UpgradeProcessIDLabelKey]; processID != s.ctx.ProcessID() {
 		return nil, errors.Errorf("state snapshot secret belongs to wrong upgrade process %q, expected %s", processID, s.ctx.ProcessID())
 	}
@@ -97,13 +97,13 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sobjects.Object, e
 
 	universalDeserializer := s.ctx.UniversalDecoder()
 
-	result := make([]k8sobjects.Object, 0, len(objBytes))
+	result := make([]k8sutil.Object, 0, len(objBytes))
 	for _, serialized := range objBytes {
 		runtimeObj, _, err := universalDeserializer.Decode(serialized, nil, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not deserialize object in stored snapshot")
 		}
-		obj, _ := runtimeObj.(k8sobjects.Object)
+		obj, _ := runtimeObj.(k8sutil.Object)
 		if obj == nil {
 			return nil, errors.Errorf("object of kind %v does not have object metadata", runtimeObj.GetObjectKind().GroupVersionKind())
 		}
@@ -113,7 +113,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]k8sobjects.Object, e
 	return result, nil
 }
 
-func (s *snapshotter) createStateSnapshot() ([]k8sobjects.Object, *v1.Secret, error) {
+func (s *snapshotter) createStateSnapshot() ([]k8sutil.Object, *v1.Secret, error) {
 	objs, err := s.ctx.ListCurrentObjects()
 	if err != nil {
 		return nil, nil, err

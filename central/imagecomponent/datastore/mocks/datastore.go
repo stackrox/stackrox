@@ -162,15 +162,20 @@ func (mr *MockDataStoreMockRecorder) SearchRawImageComponents(arg0, arg1 interfa
 }
 
 // Upsert mocks base method
-func (m *MockDataStore) Upsert(arg0 context.Context, arg1 *storage.ImageComponent) error {
+func (m *MockDataStore) Upsert(arg0 context.Context, arg1 ...*storage.ImageComponent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Upsert", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert
-func (mr *MockDataStoreMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Upsert(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), varargs...)
 }

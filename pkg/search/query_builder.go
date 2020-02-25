@@ -48,7 +48,7 @@ func ExactMatchString(query string) string {
 
 // RegexQueryString returns the "regex" form of the query.
 func RegexQueryString(query string) string {
-	return fmt.Sprintf("%s%s", RegexPrefix, strings.ToLower(query))
+	return fmt.Sprintf("%s%s", RegexPrefix, query)
 }
 
 // NegateQueryString negates the given query.

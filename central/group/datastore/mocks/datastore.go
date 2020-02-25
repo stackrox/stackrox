@@ -64,6 +64,21 @@ func (mr *MockDataStoreMockRecorder) GetAll(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockDataStore)(nil).GetAll), ctx)
 }
 
+// GetFiltered mocks base method
+func (m *MockDataStore) GetFiltered(ctx context.Context, filter func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFiltered", ctx, filter)
+	ret0, _ := ret[0].([]*storage.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFiltered indicates an expected call of GetFiltered
+func (mr *MockDataStoreMockRecorder) GetFiltered(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFiltered", reflect.TypeOf((*MockDataStore)(nil).GetFiltered), ctx, filter)
+}
+
 // Walk mocks base method
 func (m *MockDataStore) Walk(ctx context.Context, authProviderID string, attributes map[string][]string) ([]*storage.Group, error) {
 	m.ctrl.T.Helper()

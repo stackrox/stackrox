@@ -8,15 +8,18 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
+// Next Tag: 16
 message CVE {
     enum ScoreVersion {
         V2 = 0; // No unset for automatic backwards compatibility
         V3 = 1;
+        UNKNOWN = 2;
     }
     enum CVEType {
         UNKNOWN_CVE = 0;
         IMAGE_CVE   = 1;
         K8S_CVE     = 2;
+        ISTIO_CVE   = 3;
     }
 
     message Reference {
@@ -26,16 +29,19 @@ message CVE {
 
     string                    id            = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
     float                     cvss          = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
+    float                     impact_score  = 14 [(gogoproto.moretags) = "search:\"Impact Score,store\""];
     CVEType                   type          = 3 [(gogoproto.moretags) = "search:\"CVE Type,store\""];
     string                    summary       = 4;
     string                    link          = 5;
-    google.protobuf.Timestamp published_on  = 6;
+    google.protobuf.Timestamp published_on  = 6 [(gogoproto.moretags) = "search:\"CVE Published On,store\""];
+    google.protobuf.Timestamp created_at    = 15 [(gogoproto.moretags) = "search:\"CVE Created Time,store\""];
     google.protobuf.Timestamp last_modified = 7;
     repeated Reference        references    = 8;
 
     ScoreVersion              score_version = 9;
     CVSSV2                    cvss_v2       = 10;
     CVSSV3                    cvss_v3       = 11;
+    bool                      suppressed    = 12 [(gogoproto.moretags) = "search:\"CVE Suppressed,store\""];
 }
 
 message CVSSV2 {

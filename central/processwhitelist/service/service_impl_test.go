@@ -14,9 +14,11 @@ import (
 	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/role/resources"
+	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -59,7 +61,10 @@ type ProcessWhitelistServiceTestSuite struct {
 	db              *bbolt.DB
 	reprocessor     *mocks.MockLoop
 	resultDatastore *resultsMocks.MockDataStore
+	connectionMgr   *connectionMocks.MockManager
 	mockCtrl        *gomock.Controller
+
+	envIsolator *testutils.EnvIsolator
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
@@ -82,12 +87,17 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 
 	suite.datastore = datastore.New(wlStore, indexer, searcher, suite.resultDatastore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
-	suite.service = New(suite.datastore, suite.reprocessor)
+	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.service = New(suite.datastore, suite.reprocessor, suite.connectionMgr)
+
+	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.SensorBasedDetection.EnvVar(), "true")
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 	suite.mockCtrl.Finish()
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
@@ -246,6 +256,9 @@ func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 				RemoveElements: fixtures.MakeWhitelistItems(c.toRemove...),
 			}
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+			for range c.expectedSuccessKeys {
+				suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+			}
 			response, err := suite.service.UpdateProcessWhitelists(hasWriteCtx, request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessWhitelistKey

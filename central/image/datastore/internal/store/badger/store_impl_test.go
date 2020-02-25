@@ -8,16 +8,12 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestImageStore(t *testing.T) {
-	if features.ManagedDB.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(ImageStoreTestSuite))
 }
 
@@ -31,7 +27,7 @@ type ImageStoreTestSuite struct {
 }
 
 func (suite *ImageStoreTestSuite) SetupSuite() {
-	db, dir, err := badgerhelper.NewTemp(suite.T().Name()+".db", false)
+	db, dir, err := badgerhelper.NewTemp(suite.T().Name() + ".db")
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}
@@ -63,7 +59,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	// Test Add
 	for _, d := range images {
-		suite.NoError(suite.store.UpsertImage(d))
+		suite.NoError(suite.store.Upsert(d, nil))
 	}
 
 	for _, d := range images {
@@ -84,7 +80,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		suite.NoError(suite.store.UpsertImage(d))
+		suite.NoError(suite.store.Upsert(d, nil))
 	}
 
 	for _, d := range images {

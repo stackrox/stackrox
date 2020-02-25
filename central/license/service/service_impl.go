@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -29,6 +30,9 @@ var (
 		},
 		user.With(): {
 			"/v1.LicenseService/GetActiveLicenseExpiration",
+		},
+		idcheck.ScannerOnly(): {
+			"/v1.LicenseService/GetActiveLicenseKey",
 		},
 	})
 )
@@ -59,6 +63,13 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 		return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 	}
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
+}
+
+func (s *service) GetActiveLicenseKey(context.Context, *v1.Empty) (*v1.GetActiveLicenseKeyResponse, error) {
+	if s.lockdownMode {
+		return nil, status.Error(codes.Unavailable, "this API is not available without an active license")
+	}
+	return &v1.GetActiveLicenseKeyResponse{LicenseKey: s.licenseMgr.GetActiveLicenseKey()}, nil
 }
 
 func (s *service) GetLicenses(ctx context.Context, req *v1.GetLicensesRequest) (*v1.GetLicensesResponse, error) {
@@ -102,7 +113,7 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 
 func (s *service) GetActiveLicenseExpiration(ctx context.Context, _ *v1.Empty) (*v1.GetActiveLicenseExpirationResponse, error) {
 	if s.lockdownMode {
-		return nil, status.Errorf(codes.Unavailable, "this API is not available without an active license")
+		return nil, status.Error(codes.Unavailable, "this API is not available without an active license")
 	}
 
 	activeLicense := s.licenseMgr.GetActiveLicense()

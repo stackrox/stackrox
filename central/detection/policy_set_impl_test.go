@@ -1,126 +1,87 @@
 package detection
 
 import (
-	"errors"
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	datastoreMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
-	matcherMocks "github.com/stackrox/rox/central/searchbasedpolicies/matcher/mocks"
+	mocks2 "github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/suite"
+	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/detection/mocks"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestPolicySet(t *testing.T) {
-	suite.Run(t, new(PolicyTestSuite))
+type compiledPolicyWrapper struct {
+	detection.CompiledPolicy
+
+	policy *storage.Policy
 }
 
-type PolicyTestSuite struct {
-	suite.Suite
-
-	mockController     *gomock.Controller
-	mockDataStore      *datastoreMocks.MockDataStore
-	mockMatcherBuilder *matcherMocks.MockBuilder
+func wrapPolicy(policy *storage.Policy) compiledPolicyWrapper {
+	return compiledPolicyWrapper{
+		policy: policy,
+	}
 }
 
-func (suite *PolicyTestSuite) SetupTest() {
-	suite.mockController = gomock.NewController(suite.T())
-	suite.mockDataStore = datastoreMocks.NewMockDataStore(suite.mockController)
-	suite.mockMatcherBuilder = matcherMocks.NewMockBuilder(suite.mockController)
+func (w compiledPolicyWrapper) Policy() *storage.Policy {
+	return w.policy
 }
 
-func (suite *PolicyTestSuite) TearDownTest() {
-	suite.mockController.Finish()
-}
+func TestPolicySet_RemoveNotifier(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(suite.mockDataStore, NewPolicyCompiler(suite.mockMatcherBuilder))
+	policySetMock := mocks.NewMockPolicySet(mockCtrl)
+	policyDatastoreMock := mocks2.NewMockDataStore(mockCtrl)
 
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(goodPolicy).Return(nil, nil)
+	policySet := &setImpl{
+		PolicySet:   policySetMock,
+		policyStore: policyDatastoreMock,
+	}
 
-	err := policySet.UpsertPolicy(goodPolicy)
-	suite.NoError(err, "insertion should succeed")
+	policySetMock.EXPECT().GetCompiledPolicies().Return(map[string]detection.CompiledPolicy{
+		"policy1": wrapPolicy(&storage.Policy{
+			Id:        "policy1",
+			Notifiers: []string{"notifier1", "notifier2"},
+		}),
+		"policy2": wrapPolicy(&storage.Policy{
+			Id:        "policy2",
+			Notifiers: []string{"notifier2", "notifier3"},
+		}),
+		"policy3": wrapPolicy(&storage.Policy{
+			Id:        "policy3",
+			Notifiers: []string{"notifier1", "notifier2", "notifier3"},
+		}),
+		"policy4": wrapPolicy(&storage.Policy{
+			Id:        "policy4",
+			Notifiers: []string{"notifier1", "notifier3"},
+		}),
+	})
 
-	hasMatch := false
-	suite.NoError(policySet.ForEach(FunctionAsExecutor(func(compiled CompiledPolicy) error {
-		if compiled.Policy().GetId() == "1" {
-			hasMatch = true
-		}
+	var updatedPolicies []*storage.Policy
+	policyDatastoreMock.EXPECT().UpdatePolicy(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, policy *storage.Policy) error {
+		updatedPolicies = append(updatedPolicies, policy)
 		return nil
-	})))
-	suite.True(hasMatch, "policy set should contain a matching policy")
-}
+	})
 
-func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(suite.mockDataStore, NewPolicyCompiler(suite.mockMatcherBuilder))
+	require.NoError(t, policySet.RemoveNotifier("notifier2"))
 
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(goodPolicy).Return(nil, nil)
-
-	err := policySet.UpsertPolicy(goodPolicy)
-	suite.NoError(err, "insertion should succeed")
-
-	err = policySet.ForOne("1", FunctionAsExecutor(func(compiled CompiledPolicy) error {
-		if compiled.Policy().GetId() != "1" {
-			return errors.New("wrong id served")
-		}
-		return nil
-	}))
-	suite.NoError(err, "for one should succeed since the policy exists")
-}
-
-func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(suite.mockDataStore, NewPolicyCompiler(suite.mockMatcherBuilder))
-
-	err := policySet.ForOne("1", FunctionAsExecutor(func(compiled CompiledPolicy) error {
-		return nil
-	}))
-	suite.Error(err, "for one should fail since no policies exist")
-}
-
-func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(suite.mockDataStore, NewPolicyCompiler(suite.mockMatcherBuilder))
-
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(badPolicy).Return(nil, errors.New("cant create matcher"))
-
-	err := policySet.UpsertPolicy(badPolicy)
-	suite.Error(err, "insertion should not succeed since the compile is set to fail")
-
-	hasMatch := false
-	suite.NoError(policySet.ForEach(FunctionAsExecutor(func(compiled CompiledPolicy) error {
-		if compiled.Policy().GetId() == "1" {
-			hasMatch = true
-		}
-		return nil
-	})))
-	suite.False(hasMatch, "policy set should not contain a matching policy")
-}
-
-var goodPolicy = &storage.Policy{
-	Id:         "1",
-	Name:       "latest",
-	Severity:   storage.Severity_LOW_SEVERITY,
-	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "latest",
+	expectedUpdates := []*storage.Policy{
+		{
+			Id:        "policy1",
+			Notifiers: []string{"notifier1"},
 		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
+		{
+			Id:        "policy2",
+			Notifiers: []string{"notifier3"},
 		},
-	},
-}
+		{
+			Id:        "policy3",
+			Notifiers: []string{"notifier1", "notifier3"},
+		},
+	}
 
-var badPolicy = &storage.Policy{
-	Id:         "2",
-	Name:       "latest",
-	Severity:   storage.Severity_LOW_SEVERITY,
-	Categories: []string{"Image Assurance", "Privileges Capabilities"},
-	Fields: &storage.PolicyFields{
-		ImageName: &storage.ImageNamePolicy{
-			Tag: "^^[/",
-		},
-		SetPrivileged: &storage.PolicyFields_Privileged{
-			Privileged: true,
-		},
-	},
+	assert.ElementsMatch(t, expectedUpdates, updatedPolicies)
 }

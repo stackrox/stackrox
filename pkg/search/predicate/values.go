@@ -2,9 +2,6 @@ package predicate
 
 import (
 	"strconv"
-	"time"
-
-	"github.com/gogo/protobuf/types"
 )
 
 func parseInt(value string) (int64, error) {
@@ -29,12 +26,4 @@ func parseFloat(value string) (float64, error) {
 		return 0.0, err
 	}
 	return f64, nil
-}
-
-func parseTimestamp(value string) (*types.Timestamp, error) {
-	tVal, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return nil, err
-	}
-	return types.TimestampProto(tVal)
 }

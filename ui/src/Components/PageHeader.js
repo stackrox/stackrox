@@ -8,7 +8,7 @@ const renderSubHeader = subHeader => {
 
 const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => (
     <div
-        className={`flex h-18 px-4 bg-base-100 w-full flex-no-shrink z-10 border-b border-base-400 ${classes}`}
+        className={`flex h-18 px-4 bg-base-100 w-full flex-shrink-0 z-10 border-b border-base-400 ${classes}`}
         style={bgStyle}
         data-test-id="page-header"
     >

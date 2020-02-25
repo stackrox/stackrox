@@ -83,3 +83,9 @@ func WriteError(w http.ResponseWriter, err error) {
 	w.WriteHeader(StatusFromError(err))
 	_ = new(jsonpb.Marshaler).Marshal(w, st.Proto())
 }
+
+// WriteErrorf is a convenience method that is equivalent to calling
+// `WriteError(w, Errorf(statusCode, format, args...)`.
+func WriteErrorf(w http.ResponseWriter, statusCode int, format string, args ...interface{}) {
+	WriteError(w, Errorf(statusCode, format, args...))
+}

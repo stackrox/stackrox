@@ -31,6 +31,10 @@ export const availableAuthProviders = [
     }
 ];
 
+export function getAuthProviderLabelByValue(value) {
+    return availableAuthProviders.find(e => e.value === value).label;
+}
+
 export const defaultMinimalReadAccessResources = [
     'Alert',
     'Cluster',

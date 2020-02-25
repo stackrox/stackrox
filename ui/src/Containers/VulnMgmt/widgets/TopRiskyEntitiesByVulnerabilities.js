@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
-import sortBy from 'lodash/sortBy';
 
 import queryService from 'modules/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -23,11 +22,12 @@ import {
     severityTextColorMap,
     severityColorLegend
 } from 'constants/severityColors';
-import {
-    getSeverityByCvss,
-    getPriorityFieldByEntity,
-    getNameFieldByEntity
-} from 'utils/vulnerabilityUtils';
+import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
+import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
+import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
+
+const ENTITY_COUNT = 25;
+const VULN_COUNT = 100;
 
 const TopRiskyEntitiesByVulnerabilities = ({
     entityContext,
@@ -52,11 +52,11 @@ const TopRiskyEntitiesByVulnerabilities = ({
         .pushList(selectedEntityType)
         .setSort([
             {
-                id: getPriorityFieldByEntity(selectedEntityType),
+                id: entitySortFieldsMap[selectedEntityType].PRIORITY,
                 desc: false
             },
             {
-                id: getNameFieldByEntity(selectedEntityType),
+                id: entitySortFieldsMap[selectedEntityType].NAME,
                 desc: false
             }
         ])
@@ -72,13 +72,19 @@ const TopRiskyEntitiesByVulnerabilities = ({
         fragment vulnFields on EmbeddedVulnerability {
             cve
             cvss
-            isFixable
+            isFixable(query: $scopeQuery)
             severity
         }
     `;
     const DEPLOYMENT_QUERY = gql`
-        query topRiskyDeployments($query: String, $vulnQuery: String) {
-            results: deployments(query: $query) {
+        query topRiskyDeployments(
+            $query: String
+            $vulnQuery: String
+            $scopeQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: deployments(query: $query, pagination: $entityPagination) {
                 id
                 name
                 clusterName
@@ -90,7 +96,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns(query: $vulnQuery) {
+                vulns(query: $vulnQuery, pagination: $vulnPagination) {
                     ...vulnFields
                 }
             }
@@ -99,8 +105,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const CLUSTER_QUERY = gql`
-        query topRiskyClusters($query: String, $vulnQuery: String) {
-            results: clusters(query: $query) {
+        query topRiskyClusters(
+            $query: String
+            $scopeQuery: String
+            $vulnQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: clusters(query: $query, pagination: $entityPagination) {
                 id
                 name
                 priority
@@ -110,7 +122,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns(query: $vulnQuery) {
+                vulns(query: $vulnQuery, pagination: $vulnPagination) {
                     ...vulnFields
                 }
             }
@@ -119,8 +131,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const NAMESPACE_QUERY = gql`
-        query topRiskyNamespaces($query: String, $vulnQuery: String) {
-            results: namespaces(query: $query) {
+        query topRiskyNamespaces(
+            $query: String
+            $scopeQuery: String
+            $vulnQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: namespaces(query: $query, pagination: $entityPagination) {
                 metadata {
                     clusterName
                     name
@@ -133,7 +151,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns(query: $vulnQuery) {
+                vulns(query: $vulnQuery, pagination: $vulnPagination) {
                     ...vulnFields
                 }
             }
@@ -142,8 +160,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const IMAGE_QUERY = gql`
-        query topRiskyImages($query: String, $vulnQuery: String) {
-            results: images(query: $query) {
+        query topRiskyImages(
+            $query: String
+            $scopeQuery: String
+            $vulnQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: images(query: $query, pagination: $entityPagination) {
                 id
                 name {
                     fullName
@@ -155,7 +179,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns(query: $vulnQuery) {
+                vulns(query: $vulnQuery, pagination: $vulnPagination) {
                     ...vulnFields
                 }
             }
@@ -164,8 +188,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     `;
 
     const COMPONENT_QUERY = gql`
-        query topRiskyComponents($query: String, $vulnQuery: String) {
-            results: components(query: $query) {
+        query topRiskyComponents(
+            $query: String
+            $scopeQuery: String
+            $vulnQuery: String
+            $entityPagination: Pagination
+            $vulnPagination: Pagination
+        ) {
+            results: components(query: $query, pagination: $entityPagination) {
                 id
                 name
                 priority
@@ -175,7 +205,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                         fixable
                     }
                 }
-                vulns(query: $vulnQuery) {
+                vulns(query: $vulnQuery, pagination: $vulnPagination) {
                     ...vulnFields
                 }
             }
@@ -195,19 +225,13 @@ const TopRiskyEntitiesByVulnerabilities = ({
     function getAverageSeverity(vulns) {
         if (vulns.length === 0) return 0;
 
-        // 1. sort the vulns in reverse CVSS order
-        const sortedVulns = sortBy(vulns, vuln => {
-            return vuln.cvss;
-        }).reverse();
-        const topVulns = sortedVulns.slice(0, 100);
-
-        // 2. grab up to the first 5 vulns (the ones with the highest CVSS)
-        const total = topVulns.reduce((acc, curr) => {
+        // 1. total the CVSS scores of the top X vulns returned
+        const total = vulns.reduce((acc, curr) => {
             return acc + parseFloat(curr.cvss);
         }, 0);
 
-        // 3. Take the average of those top 5 (or total, if less than 5)
-        const avgScore = total / topVulns.length;
+        // 2. Take the average of those top 5 (or total, if less than 5)
+        const avgScore = total / vulns.length;
 
         return avgScore.toFixed(1);
     }
@@ -221,7 +245,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         }
         const riskPriority =
             selectedEntityType === entityTypes.NAMESPACE
-                ? datum.metadata && datum.metadata.priority
+                ? (datum.metadata && datum.metadata.priority) || 0
                 : datum.priority;
         const severityKey = getSeverityByCvss(datum.avgSeverity);
         const severityTextColor = severityTextColorMap[severityKey];
@@ -265,7 +289,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
             .filter(datum => datum.vulns && datum.vulns.length > 0)
             .map(result => {
                 const entityId = result.id || result.metadata.id;
-                const vulnCount = result.vulns.length;
+                const vulnCount = result?.vulnCounter?.all?.total;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
                 const avgSeverity = getAverageSeverity(result.vulns);
                 const color = severityColorMap[getSeverityByCvss(avgSeverity)];
@@ -286,18 +310,45 @@ const TopRiskyEntitiesByVulnerabilities = ({
     }
     let results = [];
 
-    const vulnQuery = cveFilter === 'Fixable' ? { 'Fixed By': 'r/.*' } : '';
+    const vulnQuery = cveFilter === 'Fixable' ? { Fixable: true } : '';
     const variables = {
         query: queryService.entityContextToQueryString(entityContext),
-        vulnQuery: queryService.objectToWhereClause(vulnQuery)
+        vulnQuery: queryService.objectToWhereClause(vulnQuery),
+        entityPagination: queryService.getPagination(
+            {
+                id: 'Priority',
+                desc: false
+            },
+            WIDGET_PAGINATION_START_OFFSET,
+            ENTITY_COUNT
+        ),
+        vulnPagination: queryService.getPagination(
+            {
+                id: cveSortFields.CVSS_SCORE,
+                desc: true
+            },
+            WIDGET_PAGINATION_START_OFFSET,
+            VULN_COUNT
+        ),
+        scopeQuery: queryService.entityContextToQueryString(entityContext)
     };
-    const { data, loading } = useQuery(query, { variables });
+    const { data, loading, error } = useQuery(query, { variables });
 
     let content = <Loader />;
 
     if (!isGQLLoading(loading, data)) {
         results = processData(data);
-        if (!results || results.length === 0) {
+        if (error) {
+            content = (
+                <NoResultsMessage
+                    message={`An error occurred in retrieving ${pluralize(
+                        selectedEntityType.toLowerCase()
+                    )}. Please refresh the page. If this problem continues, please contact support.`}
+                    className="p-6"
+                    icon="warn"
+                />
+            );
+        } else if (results && results.length === 0) {
             content = (
                 <NoResultsMessage
                     message={`No ${pluralize(
@@ -311,9 +362,10 @@ const TopRiskyEntitiesByVulnerabilities = ({
             content = (
                 <Scatterplot
                     data={results}
-                    xMultiple={10}
-                    yMultiple={10}
-                    yAxisTitle="Average CVSS Score"
+                    lowerX={0}
+                    xMultiple={20}
+                    yMultiple={5}
+                    yAxisTitle="Weighted CVSS Score"
                     xAxisTitle="Critical Vulnerabilities & Exposures"
                     legendData={!small ? severityColorLegend : []}
                 />

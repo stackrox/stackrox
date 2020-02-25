@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "central";
 
 import "internalapi/compliance/compliance_data.proto";
+import "storage/alert.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
 import "storage/namespace_metadata.proto";
@@ -14,7 +15,6 @@ import "storage/rbac.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
 import "storage/image_integration.proto";
-
 
 package central;
 
@@ -31,6 +31,12 @@ enum ResourceAction {
 message ReprocessDeployment {
     string deployment_id = 1;
     bool   risk_only     = 2;
+}
+
+message AlertResults {
+    string deployment_id          = 1;
+    repeated storage.Alert alerts = 2;
+    storage.LifecycleStage stage  = 3;
 }
 
 message SensorEvent {
@@ -56,6 +62,7 @@ message SensorEvent {
         storage.OrchestratorMetadata    orchestrator_metadata   = 12;
         storage.ImageIntegration        image_integration       = 13;
         ReprocessDeployment             reprocess_deployment    = 17;
+        AlertResults                    alert_results           = 18;
     }
 }
 

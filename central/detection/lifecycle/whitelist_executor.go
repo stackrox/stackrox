@@ -5,9 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/detection"
 )
 
 type whitelistExecutor struct {

@@ -2,7 +2,6 @@ package net
 
 import (
 	"net"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -31,7 +30,7 @@ func TestIPv6(t *testing.T) {
 func TestInvalid(t *testing.T) {
 	addr := IPAddress{}
 	assert.False(t, addr.IsValid())
-	assert.True(t, strings.Contains(addr.String(), "<nil>"))
+	assert.Empty(t, addr.String())
 	assert.Equal(t, InvalidFamily, addr.Family())
 	assert.Nil(t, addr.AsNetIP())
 }

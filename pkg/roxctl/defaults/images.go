@@ -7,11 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 )
 
-// ScannerV2DBImage is the Docker image name for the DB we use with scanner v2.
-func ScannerV2DBImage() string {
-	return fmt.Sprintf("%s/scanner-v2-db:%s", getRegistry(), version.GetScannerV2Version())
-}
-
 // ScannerImage is the Docker image name for the scanner image. Image
 // repo changes depending on whether or not this is a release build.
 func ScannerImage() string {
@@ -21,12 +16,6 @@ func ScannerImage() string {
 // ScannerDBImage is the Docker image name for the scanner db image
 func ScannerDBImage() string {
 	return fmt.Sprintf("%s/scanner-db:%s", getRegistry(), version.GetScannerVersion())
-}
-
-// ScannerV2Image is the Docker image name for the scanner v2 image. Image
-// repo changes depending on whether or not this is a release build.
-func ScannerV2Image() string {
-	return fmt.Sprintf("%s/scanner-v2:%s", getRegistry(), version.GetScannerV2Version())
 }
 
 // MainImage is the Docker image name for the "main" image. Image repo

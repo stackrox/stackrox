@@ -4,19 +4,20 @@ import gql from 'graphql-tag';
 import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
-    getPolicyQueryVar,
+    vulMgmtPolicyQuery,
+    getScopeQuery,
     tryUpdateQueryWithVulMgmtPolicyClause
 } from '../VulnMgmtPolicyQueryUtil';
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, entityContext }) => {
+const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, entityContext }) => {
     const overviewQuery = gql`
-        query getCluster($id: ID!, $policyQuery: String) {
+        query getCluster($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: cluster(id: $id) {
                 id
                 name
@@ -27,10 +28,10 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                         id
                         name
                         description
-                        policyStatus
-                        latestViolation
+                        policyStatus(query: $scopeQuery)
+                        latestViolation(query: $scopeQuery)
                         severity
-                        deploymentCount
+                        deploymentCount(query: $scopeQuery)
                         lifecycleStages
                         enforcementActions
                     }
@@ -38,6 +39,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                 #createdAt
                 status {
                     orchestratorMetadata {
+                        buildDate
                         version
                     }
                 }
@@ -48,7 +50,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
                 imageCount
                 componentCount
                 vulnCount
-                vulnerabilities: vulns {
+                vulnerabilities: vulns(query: $query) {
                     ...cveFields
                 }
             }
@@ -62,12 +64,13 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
             search && search['Vulnerability Type'] ? 'vulns: k8sVulns' : listFieldName;
 
         return gql`
-        query getCluster_${entityListType}($id: ID!, $pagination: Pagination, $query: String${getPolicyQueryVar(
-            entityListType
-        )}) {
+        query getCluster_${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: cluster(id: $id) {
                 id
+                ${defaultCountKeyMap[entityListType]}(query: $query)
                 ${parsedListFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${fragment}
@@ -77,8 +80,9 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
-            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
+            ...vulMgmtPolicyQuery,
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 
@@ -101,7 +105,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, sort, page, enti
     );
 };
 
-VulmMgmtDeployment.propTypes = entityComponentPropTypes;
-VulmMgmtDeployment.defaultProps = entityComponentDefaultProps;
+VulmMgmtEntityCluster.propTypes = entityComponentPropTypes;
+VulmMgmtEntityCluster.defaultProps = entityComponentDefaultProps;
 
-export default VulmMgmtDeployment;
+export default VulmMgmtEntityCluster;

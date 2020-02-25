@@ -99,7 +99,7 @@ var adminNames = setPkg.NewFrozenStringSet("admin", "administrator", "root")
 
 // CheckDeploymentsDoNotHaveClusterAccess checks that no deployments are launched with effective cluster admin access.
 func CheckDeploymentsDoNotHaveClusterAccess(ctx framework.ComplianceContext, pr *storage.PolicyRule) {
-	clusterEvaluator := makeClusterEvaluator(ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings())
+	clusterEvaluator := k8srbac.MakeClusterEvaluator(ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings())
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		// Check deployment
 		if !isKubeSystem(deployment) && clusterEvaluator.ForSubject(k8srbac.GetSubjectForDeployment(deployment)).Grants(pr) {
@@ -203,7 +203,7 @@ func listSubjectsWithAccess(predicate func(sub *storage.Subject) bool, roles []*
 		}
 	}
 
-	clusterEvaluator := makeClusterEvaluator(roles, bindings)
+	clusterEvaluator := k8srbac.MakeClusterEvaluator(roles, bindings)
 	subjectsWithAccess := k8srbac.NewSubjectSet()
 	for _, subject := range allSubjects.ToSlice() {
 		if clusterEvaluator.ForSubject(subject).Grants(pr) {
@@ -211,23 +211,4 @@ func listSubjectsWithAccess(predicate func(sub *storage.Subject) bool, roles []*
 		}
 	}
 	return subjectsWithAccess
-}
-
-func makeClusterEvaluator(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) k8srbac.Evaluator {
-	// Collect cluster roles.
-	var clusterRoles []*storage.K8SRole
-	for _, role := range roles {
-		if role.GetClusterRole() {
-			clusterRoles = append(clusterRoles, role)
-		}
-	}
-
-	// Collect cluster role bindings.
-	var clusterBindings []*storage.K8SRoleBinding
-	for _, binding := range bindings {
-		if binding.GetClusterRole() {
-			clusterBindings = append(clusterBindings, binding)
-		}
-	}
-	return k8srbac.NewEvaluator(clusterRoles, clusterBindings)
 }

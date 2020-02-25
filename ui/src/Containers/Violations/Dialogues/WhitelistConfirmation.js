@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { whitelistDeployments } from 'services/PoliciesService';
 import pluralize from 'pluralize';
 import Dialog from 'Components/Dialog';
-import dialogues from '../dialogues';
 
 // Filter the alerts displayed down to the ones checked, and group them into a map from policy ID to a list of
 // deployment names, then whitelist every policy ID, deployment name pair in the map.
@@ -28,17 +27,7 @@ function whitelistAlerts(checkedAlertIds, alerts) {
     );
 }
 
-function WhitelistConfirmation({
-    dialogue,
-    setDialogue,
-    alerts,
-    checkedAlertIds,
-    setCheckedAlertIds
-}) {
-    if (dialogue !== dialogues.whitelist) {
-        return null;
-    }
-
+function WhitelistConfirmation({ setDialogue, alerts, checkedAlertIds, setCheckedAlertIds }) {
     function closeAndClear() {
         setDialogue(null);
         setCheckedAlertIds([]);
@@ -55,7 +44,7 @@ function WhitelistConfirmation({
     const numSelectedRows = checkedAlertIds.length;
     return (
         <Dialog
-            isOpen={dialogue === dialogues.whitelist}
+            isOpen
             text={`Are you sure you want to whitelist ${numSelectedRows} ${pluralize(
                 'violation',
                 numSelectedRows
@@ -67,7 +56,6 @@ function WhitelistConfirmation({
 }
 
 WhitelistConfirmation.propTypes = {
-    dialogue: PropTypes.string,
     setDialogue: PropTypes.func.isRequired,
     alerts: PropTypes.arrayOf(
         PropTypes.shape({
@@ -81,10 +69,6 @@ WhitelistConfirmation.propTypes = {
     ).isRequired,
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     setCheckedAlertIds: PropTypes.func.isRequired
-};
-
-WhitelistConfirmation.defaultProps = {
-    dialogue: undefined
 };
 
 export default WhitelistConfirmation;

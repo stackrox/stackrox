@@ -11,7 +11,7 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
-// Next Tag: 12
+// Next Tag: 13
 message Image {
     string    id                           = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name                         = 1;
@@ -21,16 +21,16 @@ message Image {
 
     // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_components {
-        int32 components                   = 7 [(gogoproto.moretags) = "search:\"Component Count,store\""];
+        int32 components                   = 7 [(gogoproto.moretags) = "search:\"Component Count,store,hidden\""];
     }
 
     // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_cves {
-        int32 cves                         = 8 [(gogoproto.moretags) = "search:\"CVE Count,store\""];
+        int32 cves                         = 8 [(gogoproto.moretags) = "search:\"CVE Count,store,hidden\""];
     }
     // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_fixable {
-        int32 fixable_cves                 = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store\""];
+        int32 fixable_cves                 = 9 [(gogoproto.moretags) = "search:\"Fixable CVE Count,store,hidden\""];
     }
 
     google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
@@ -39,6 +39,7 @@ message Image {
 
     reserved 6;  // was map<string,string> clusterns_scopes
     int64 priority                         = 11;
+    float risk_score                       = 12 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
 }
 
 message ImageScan {
@@ -56,15 +57,16 @@ message EmbeddedImageScanComponent {
         int32 layer_index                   = 5;
     }
     int64                          priority = 6;
-    enum SourceType {
-        OS     = 0;
-        PYTHON = 1;
-        JAVA   = 2;
-        RUBY   = 3;
-        NODEJS = 4;
-    }
     SourceType                      source   = 7;
     string                          location = 8;
+}
+
+enum SourceType {
+    OS     = 0;
+    PYTHON = 1;
+    JAVA   = 2;
+    RUBY   = 3;
+    NODEJS = 4;
 }
 
 message License {
@@ -82,24 +84,25 @@ message EmbeddedVulnerability {
 
     enum VulnerabilityType {
         UNKNOWN_VULNERABILITY = 0;
-        IMAGE_VULNERABILITY = 1;
-        K8S_VULNERABILITY = 2;
-        ISTIO_VULNERABILITY = 3;
+        IMAGE_VULNERABILITY   = 1;
+        K8S_VULNERABILITY     = 2;
+        ISTIO_VULNERABILITY   = 3;
     }
 
-    string cve                              = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
-    float  cvss                             = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
-    string summary                          = 3;
-    string link                             = 4;
+    string                    cve                = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
+    float                     cvss               = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
+    string                    summary            = 3;
+    string                    link               = 4;
     oneof set_fixed_by {
-        string fixed_by                     = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
+        string                fixed_by           = 5 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
     }
-    ScoreVersion score_version              = 8;
-    CVSSV2 cvss_v2                          = 6;
-    CVSSV3 cvss_v3                          = 7;
-    google.protobuf.Timestamp published_on  = 9;
-    google.protobuf.Timestamp last_modified = 10;
-    VulnerabilityType vulnerability_type    = 11;
+    ScoreVersion              score_version      = 8;
+    CVSSV2                    cvss_v2            = 6;
+    CVSSV3                    cvss_v3            = 7;
+    google.protobuf.Timestamp published_on       = 9 [(gogoproto.moretags) = "search:\"CVE Published On,store\""];
+    google.protobuf.Timestamp last_modified      = 10;
+    VulnerabilityType vulnerability_type         = 11;
+    bool                      suppressed         = 12 [(gogoproto.moretags) = "search:\"CVE Suppressed,store\""];
 }
 
 message ImageMetadata {
@@ -115,7 +118,7 @@ message ImageMetadata {
 }
 
 message V2Metadata {
-    string                    digest = 1;
+    string                    digest      = 1;
 }
 
 message V1Metadata {
@@ -172,4 +175,6 @@ message ImageComponentEdge {
     oneof has_layer_index {
         int32 layer_index = 2;
     }
+
+    string location = 3 [(gogoproto.moretags) = "search:\"Component Location,store\""];
 }

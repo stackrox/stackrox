@@ -18,9 +18,12 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-// TO DO: factor this out from config management
-import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { getCveExportName } from 'utils/vulnerabilityUtils';
 
+import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
+
+import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -64,6 +67,17 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
 
     const metadataKeyValuePairs = [];
 
+    function customCsvExportHandler() {
+        const { useCase } = workflowState;
+        const pageEntityType = workflowState.getCurrentEntityType();
+        const entityName = safeData.name;
+        const csvName = getCveExportName(useCase, pageEntityType, entityName);
+
+        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
+
+        exportCvesAsCsv(csvName, stateWithFixable);
+    }
+
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -88,12 +102,18 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const deploymentStats = [
         <RiskScore key="risk-score" score={priority} />,
         <React.Fragment key="policy-status">
-            <span className="pr-1">Policy status:</span>
+            <span className="pb-2">Policy status:</span>
             <StatusChip status={policyStatus} />
         </React.Fragment>
     ];
-
-    const newEntityContext = { ...entityContext, [entityTypes.DEPLOYMENT]: id };
+    const currentEntity = { [entityTypes.DEPLOYMENT]: id };
+    const newEntityContext = { ...entityContext, ...currentEntity };
+    const cveActions = (
+        <FixableCveExportButton
+            disabled={!fixableCves || !fixableCves.length}
+            clickHandler={customCsvExportHandler}
+        />
+    );
 
     let deploymentFindingsContent = null;
     if (entityContext[entityTypes.POLICY]) {
@@ -101,7 +121,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             <ViolationsAcrossThisDeployment
                 deploymentID={id}
                 policyID={entityContext[entityTypes.POLICY]}
-                message="No policies failed across this deployment"
+                message="This deployment has not failed on this policy"
             />
         );
     } else {
@@ -127,6 +147,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                                 entityTypes.CVE,
                                 fixableCves.length
                             )} found across this deployment`}
+                            headerActions={cveActions}
                             rows={fixableCves}
                             entityType={entityTypes.CVE}
                             noDataText="No fixable CVEs available in this deployment"
@@ -147,22 +168,23 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget pdf-page"
+                                className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={deploymentStats}
                                 title="Details & Metadata"
                                 labels={labels}
                                 annotations={annotations}
+                                bgClass
                             />
                         </div>
                         <div className="s-1">
-                            <PolicyViolationsBySeverity entityContext={newEntityContext} />
+                            <PolicyViolationsBySeverity entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <CvesByCvssScore entityContext={newEntityContext} />
+                            <CvesByCvssScore entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
-                            <RecentlyDetectedVulnerabilities entityContext={newEntityContext} />
+                            <RecentlyDetectedVulnerabilities entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <MostCommonVulnerabiltiesInDeployment deploymentId={id} />
@@ -170,7 +192,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                         <div className="s-1">
                             <TopRiskiestImagesAndComponents
                                 limit={5}
-                                entityContext={newEntityContext}
+                                entityContext={currentEntity}
                             />
                         </div>
                     </div>
@@ -184,7 +206,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                 entityType={entityTypes.DEPLOYMENT}
                 entityContext={newEntityContext}
                 data={safeData}
-                altCountKeyMap={{ [entityTypes.POLICY]: 'failingPolicyCount' }}
             />
         </div>
     );

@@ -21,16 +21,19 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	downgradingServer "github.com/stackrox/rox/pkg/grpc/http1downgrade/server"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -206,17 +209,20 @@ type Config struct {
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
 
-	InsecureLocalEndpoint string
-	PublicEndpoint        string
+	PublicEndpoint string
 
 	PlaintextEndpoints EndpointsConfig
+	SecureEndpoints    EndpointsConfig
+
+	GRPCMetrics metrics.GRPCMetrics
+	HTTPMetrics metrics.HTTPMetrics
 }
 
 // NewAPI returns an API object.
 func NewAPI(config Config) API {
 	return &apiImpl{
 		config:             config,
-		requestInfoHandler: requestinfo.NewDefaultRequestInfoHandler(),
+		requestInfoHandler: requestinfo.NewRequestInfoHandler(),
 	}
 }
 
@@ -258,6 +264,9 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	u = append(u, a.config.UnaryInterceptors...)
 	u = append(u, a.unaryRecovery())
+	if features.Telemetry.Enabled() && a.config.GRPCMetrics != nil {
+		u = append(u, a.config.GRPCMetrics.UnaryMonitoringInterceptor)
+	}
 	return u
 }
 
@@ -285,13 +294,10 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	return s
 }
 
-func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
-	lis, err := net.Listen("tcp", a.config.InsecureLocalEndpoint)
-	if err != nil {
-		return err
-	}
+func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContextFunc {
+	lis, dialContext := pipeconn.NewPipeListener()
 
-	log.Infof("Launching backend GRPC listener on %v", a.config.InsecureLocalEndpoint)
+	log.Info("Launching backend gRPC listener")
 	// Launch the GRPC listener
 	go func() {
 		if err := server.Serve(lis); err != nil {
@@ -299,11 +305,14 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) error {
 		}
 		log.Fatal("The local API server should never terminate")
 	}()
-	return nil
+	return dialContext
 }
 
-func (a *apiImpl) connectToLocalEndpoint() (*grpc.ClientConn, error) {
-	return grpc.Dial(a.config.InsecureLocalEndpoint, grpc.WithInsecure(),
+func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (*grpc.ClientConn, error) {
+	return grpc.Dial("", grpc.WithInsecure(),
+		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
+			return dialCtxFunc(ctx)
+		}),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())))
 }
 
@@ -323,17 +332,20 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	postAuthHTTPInterceptor := contextutil.HTTPInterceptor(a.config.PostAuthContextEnrichers...)
 
 	mux := http.NewServeMux()
-	for _, route := range a.config.CustomRoutes {
-		mux.Handle(route.Route, httpInterceptors(route.Handler(postAuthHTTPInterceptor)))
-	}
+	allRoutes := a.config.CustomRoutes
 	for _, apiService := range a.apiServices {
 		srvWithRoutes, _ := apiService.(APIServiceWithCustomRoutes)
 		if srvWithRoutes == nil {
 			continue
 		}
-		for _, route := range srvWithRoutes.CustomRoutes() {
-			mux.Handle(route.Route, httpInterceptors(route.Handler(postAuthHTTPInterceptor)))
+		allRoutes = append(allRoutes, srvWithRoutes.CustomRoutes()...)
+	}
+	for _, route := range allRoutes {
+		handler := httpInterceptors(route.Handler(postAuthHTTPInterceptor))
+		if a.config.HTTPMetrics != nil {
+			handler = a.config.HTTPMetrics.WrapHandler(handler, route.Route)
 		}
+		mux.Handle(route.Route, handler)
 	}
 
 	if a.config.AuthProviders != nil {
@@ -352,6 +364,35 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 	mux.Handle("/v1/", gziphandler.GzipHandler(gwMux))
 	return mux
+}
+
+func endpointsFromConfig(cfg EndpointsConfig, httpHandler http.Handler, grpcServer *grpc.Server, tlsConf *tls.Config) []endpointServersConfig {
+	var endpointSrvCfgs []endpointServersConfig
+	for _, endpoint := range cfg.MultiplexedEndpoints {
+		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+			httpHandler: httpHandler,
+			grpcServer:  grpcServer,
+			endpoint:    endpoint,
+			tlsConf:     tlsConf,
+		})
+	}
+
+	for _, endpoint := range cfg.HTTPEndpoints {
+		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+			httpHandler: httpHandler,
+			endpoint:    endpoint,
+			tlsConf:     tlsConf,
+		})
+	}
+
+	for _, endpoint := range cfg.GRPCEndpoints {
+		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
+			grpcServer: grpcServer,
+			endpoint:   endpoint,
+			tlsConf:    tlsConf,
+		})
+	}
+	return endpointSrvCfgs
 }
 
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
@@ -382,15 +423,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		service.RegisterServiceServer(grpcServer)
 	}
 
-	var localConn *grpc.ClientConn
-	if a.config.InsecureLocalEndpoint != "" {
-		if err := a.listenOnLocalEndpoint(grpcServer); err != nil {
-			log.Panicf("Could not listen on local endpoint: %v", err)
-		}
-		localConn, err = a.connectToLocalEndpoint()
-		if err != nil {
-			log.Panicf("Could not connect to local endpoint: %v", err)
-		}
+	dialCtxFunc := a.listenOnLocalEndpoint(grpcServer)
+	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)
+	if err != nil {
+		log.Panicf("Could not connect to local endpoint: %v", err)
 	}
 
 	httpHandler := a.muxer(localConn)
@@ -404,29 +440,11 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		},
 	}
 
-	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.MultiplexedEndpoints {
-		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-			httpHandler: httpHandler,
-			grpcServer:  grpcServer,
-			endpoint:    plaintextEndpoint,
-		})
-	}
+	secureEndpointSrvCfgs := endpointsFromConfig(a.config.SecureEndpoints, httpHandler, grpcServer, tlsConf)
+	endpointSrvCfgs = append(endpointSrvCfgs, secureEndpointSrvCfgs...)
 
-	if len(a.config.PlaintextEndpoints.HTTPEndpoints) > 0 {
-		for _, plaintextEndpoint := range a.config.PlaintextEndpoints.HTTPEndpoints {
-			endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-				httpHandler: httpHandler,
-				endpoint:    plaintextEndpoint,
-			})
-		}
-	}
-
-	for _, plaintextEndpoint := range a.config.PlaintextEndpoints.GRPCEndpoints {
-		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-			grpcServer: grpcServer,
-			endpoint:   plaintextEndpoint,
-		})
-	}
+	plaintextEndpointSrvCfgs := endpointsFromConfig(a.config.PlaintextEndpoints, httpHandler, grpcServer, nil)
+	endpointSrvCfgs = append(endpointSrvCfgs, plaintextEndpointSrvCfgs...)
 
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range endpointSrvCfgs {

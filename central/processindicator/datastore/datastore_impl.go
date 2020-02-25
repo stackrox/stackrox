@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/debug"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/txn"
 )
 
 const (
@@ -79,7 +79,14 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 
 	// If there are no indicators to remove, short-circuit the rest of the code path.
 	if len(removedIndicators) == 0 {
-		return ds.indexer.AddProcessIndicators(indicators)
+		if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
+			return err
+		}
+		indicatorIDs := make([]string, 0, len(indicators))
+		for _, i := range indicators {
+			indicatorIDs = append(indicatorIDs, i.GetId())
+		}
+		return ds.storage.AckKeysIndexed(indicatorIDs...)
 	}
 
 	removedIndicatorsSet := set.NewStringSet(removedIndicators...)
@@ -96,8 +103,12 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 
 	// This removes indicators that previously existed in the index.
 	if removedIndicatorsSet.Cardinality() > 0 {
-		if err := ds.indexer.DeleteProcessIndicators(removedIndicatorsSet.AsSlice()); err != nil {
+		removedSlice := removedIndicatorsSet.AsSlice()
+		if err := ds.indexer.DeleteProcessIndicators(removedSlice); err != nil {
 			return err
+		}
+		if err := ds.storage.AckKeysIndexed(removedSlice...); err != nil {
+			return errors.Wrap(err, "error acknowledging removed process indexing")
 		}
 	}
 
@@ -105,29 +116,13 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return err
 	}
 
-	return nil
-}
-
-func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.ProcessIndicator) error {
-	if ok, err := indicatorSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(i).Allowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return errors.New("permission denied")
+	filteredKeys := make([]string, 0, len(filteredIndicators))
+	for _, fi := range filteredIndicators {
+		filteredKeys = append(filteredKeys, fi.GetId())
 	}
 
-	removedIndicator, err := ds.storage.AddProcessIndicator(i)
-	if err != nil {
-		return errors.Wrap(err, "adding indicator to bolt")
-	}
-
-	if removedIndicator != "" {
-		if err := ds.indexer.DeleteProcessIndicator(removedIndicator); err != nil {
-			return errors.Wrap(err, "removing process indicator")
-		}
-	}
-
-	if err := ds.indexer.AddProcessIndicator(i); err != nil {
-		return errors.Wrap(err, "adding indicator to index")
+	if err := ds.storage.AckKeysIndexed(filteredKeys...); err != nil {
+		return errors.Wrap(err, "error acknowledging added process indexing")
 	}
 
 	return nil
@@ -168,7 +163,13 @@ func (ds *datastoreImpl) removeIndicators(ids []string) error {
 	if err := ds.storage.RemoveProcessIndicators(ids); err != nil {
 		return err
 	}
-	return ds.indexer.DeleteProcessIndicators(ids)
+	if err := ds.indexer.DeleteProcessIndicators(ids); err != nil {
+		return err
+	}
+	if err := ds.storage.AckKeysIndexed(ids...); err != nil {
+		return errors.Wrap(err, "error acknowledging indicator removal")
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error {
@@ -284,56 +285,94 @@ func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
 	return concurrency.WaitInContext(&ds.stoppedSig, cancelWhen)
 }
 
-func (ds *datastoreImpl) buildIndex() error {
-	defer debug.FreeOSMemory()
-	log.Info("[STARTUP] Determining if process indicator db/indexer reconciliation is needed")
+func (ds *datastoreImpl) fullReindex() error {
+	log.Info("[STARTUP] Reindexing all processes")
 
-	dbTxNum, err := ds.storage.GetTxnCount()
-	if err != nil {
-		return err
-	}
-	indexerTxNum := ds.indexer.GetTxnCount()
-
-	if !txn.ReconciliationNeeded(dbTxNum, indexerTxNum) {
-		log.Info("[STARTUP] Reconciliation for process indicators is not needed")
-		return nil
-	}
-
-	log.Info("[STARTUP] Indexing process indicators")
-
-	if err := ds.indexer.ResetIndex(); err != nil {
-		return err
-	}
-
-	processes := make([]*storage.ProcessIndicator, 0, maxBatchSize)
-	err = ds.storage.WalkAll(func(pi *storage.ProcessIndicator) error {
-		processes = append(processes, pi)
-		if len(processes) == maxBatchSize {
-			if err := ds.indexer.AddProcessIndicators(processes); err != nil {
+	indicators := make([]*storage.ProcessIndicator, 0, maxBatchSize)
+	var count int
+	err := ds.storage.WalkAll(func(pi *storage.ProcessIndicator) error {
+		indicators = append(indicators, pi)
+		if len(indicators) == maxBatchSize {
+			if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
 				return err
 			}
-			processes = processes[:0]
+			count += maxBatchSize
+			indicators = indicators[:0]
+			log.Infof("[STARTUP] Successfully indexed %d processes", count)
 		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
+	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
+		return err
+	}
+	count += len(indicators)
+	log.Infof("[STARTUP] Successfully indexed all %d processes", count)
 
-	// This implies that we didn't have a multiple of batch size so be sure to index the final bits
-	if len(processes) != 0 {
+	// Clear the keys because we just re-indexed everything
+	keys, err := ds.storage.GetKeysToIndex()
+	if err != nil {
+		return err
+	}
+	if err := ds.storage.AckKeysIndexed(keys...); err != nil {
+		return err
+	}
+
+	// Write out that initial indexing is complete
+	if err := ds.indexer.MarkInitialIndexingComplete(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
+
+	needsFullIndexing, err := ds.indexer.NeedsInitialIndexing()
+	if err != nil {
+		return err
+	}
+	if needsFullIndexing {
+		return ds.fullReindex()
+	}
+	log.Info("[STARTUP] Determining if process db/indexer reconciliation is needed")
+	processesToIndex, err := ds.storage.GetKeysToIndex()
+	if err != nil {
+		return errors.Wrap(err, "error retrieving keys to index")
+	}
+
+	log.Infof("[STARTUP] Found %d Processes to index", len(processesToIndex))
+
+	processBatcher := batcher.New(len(processesToIndex), maxBatchSize)
+	for start, end, valid := processBatcher.Next(); valid; start, end, valid = processBatcher.Next() {
+		processes, missingIndices, err := ds.storage.GetBatchProcessIndicators(processesToIndex[start:end])
+		if err != nil {
+			return err
+		}
 		if err := ds.indexer.AddProcessIndicators(processes); err != nil {
 			return err
 		}
+		if len(missingIndices) > 0 {
+			idsToRemove := make([]string, 0, len(missingIndices))
+			for _, missingIdx := range missingIndices {
+				idsToRemove = append(idsToRemove, processesToIndex[start:end][missingIdx])
+			}
+			if err := ds.indexer.DeleteProcessIndicators(idsToRemove); err != nil {
+				return err
+			}
+		}
+
+		// Ack keys so that even if central restarts, we don't need to reindex them again
+		if err := ds.storage.AckKeysIndexed(processesToIndex[start:end]...); err != nil {
+			return err
+		}
+		log.Infof("[STARTUP] Successfully indexed %d/%d processes", end, len(processesToIndex))
 	}
 
-	if err := ds.storage.IncTxnCount(); err != nil {
-		return err
-	}
-	if err := ds.indexer.SetTxnCount(dbTxNum + 1); err != nil {
-		return err
-	}
-	log.Info("[STARTUP] Successfully indexed process indicators")
+	log.Info("[STARTUP] Successfully indexed all out of sync processes")
 	return nil
 }
 

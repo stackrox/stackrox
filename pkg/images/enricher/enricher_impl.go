@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/integration"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
-	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -22,7 +21,6 @@ type enricherImpl struct {
 	metadataLimiter *rate.Limiter
 	metadataCache   expiringcache.Cache
 
-	syncSemaphore    *semaphore.Weighted
 	asyncRateLimiter *rate.Limiter
 	scanCache        expiringcache.Cache
 
@@ -178,12 +176,13 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 			return ScanTriggered, nil
 		}
 	} else {
-		_ = e.syncSemaphore.Acquire(context.Background(), 1)
-		defer e.syncSemaphore.Release(1)
-
 		if e.populateFromCache(ctx, image) {
 			return ScanSucceeded, nil
 		}
+
+		sema := scanner.MaxConcurrentScanSemaphore()
+		_ = sema.Acquire(context.Background(), 1)
+		defer sema.Release(1)
 
 		var err error
 		scanStartTime := time.Now()
@@ -223,24 +222,36 @@ func FillScanStats(i *storage.Image) {
 		i.SetComponents = &storage.Image_Components{
 			Components: int32(len(i.GetScan().GetComponents())),
 		}
-		var numVulns int32
-		var numFixableVulns int32
+
 		var fixedByProvided bool
+		vulns := make(map[string]bool)
 		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int32(len(c.GetVulns()))
 			for _, v := range c.GetVulns() {
-				if v.GetSetFixedBy() != nil {
-					fixedByProvided = true
-					if v.GetFixedBy() != "" {
-						numFixableVulns++
-					}
+				if _, ok := vulns[v.GetCve()]; !ok {
+					vulns[v.GetCve()] = false
+				}
+
+				if v.GetSetFixedBy() == nil {
+					continue
+				}
+
+				fixedByProvided = true
+				if v.GetFixedBy() != "" {
+					vulns[v.GetCve()] = true
 				}
 			}
 		}
+
 		i.SetCves = &storage.Image_Cves{
-			Cves: numVulns,
+			Cves: int32(len(vulns)),
 		}
-		if numVulns == 0 || fixedByProvided {
+		if int32(len(vulns)) == 0 || fixedByProvided {
+			var numFixableVulns int32
+			for _, fixable := range vulns {
+				if fixable {
+					numFixableVulns++
+				}
+			}
 			i.SetFixable = &storage.Image_FixableCves{
 				FixableCves: numFixableVulns,
 			}

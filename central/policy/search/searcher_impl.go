@@ -10,16 +10,24 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.SORTPolicyName.String(),
+	}
+
 	policySAC = sac.ForResource(resources.Policy)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage store.Store
-	indexer index.Indexer
+	storage  store.Store
+	indexer  index.Indexer
+	searcher search.Searcher
 }
 
 func (ds *searcherImpl) buildIndex() error {
@@ -28,15 +36,6 @@ func (ds *searcherImpl) buildIndex() error {
 		return err
 	}
 	return ds.indexer.AddPolicies(policies)
-}
-
-// Search retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	_, results, err := ds.searchPolicies(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
 }
 
 // SearchRawPolicies retrieves Policies from the indexer and storage
@@ -59,14 +58,11 @@ func (ds *searcherImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.
 }
 
 func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, []search.Result, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, nil, err
-	}
-
-	results, err := ds.indexer.Search(q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	var policies []*storage.Policy
 	var newResults []search.Result
 	for _, result := range results {
@@ -84,6 +80,14 @@ func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*sto
 	return policies, newResults, nil
 }
 
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+		return nil, err
+	}
+
+	return ds.searcher.Search(ctx, q)
+}
+
 // ConvertPolicy returns proto search result from a policy object and the internal search result
 func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
@@ -93,4 +97,12 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 		FieldToMatches: search.GetProtoMatchesMap(result.Matches),
 		Score:          result.Score,
 	}
+}
+
+// Format the search functionality of the indexer to be filtered (for sac) and paginated.
+func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+	safeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(unsafeSearcher)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(safeSearcher)
+	paginatedSearcher := paginated.Paginated(transformedSortFieldSearcher)
+	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }

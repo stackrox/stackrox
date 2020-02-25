@@ -27,26 +27,32 @@ type validatorTestSuite struct {
 
 	license *licenseproto.License
 
-	pubKey1, pubKey2 []byte
+	pubKey1, pubKey2, pubKey3 []byte
 
-	signer    cryptoutils.Signer
-	validator Validator
+	signer1, signer2, signer3 cryptoutils.Signer
+	validator                 Validator
 }
 
 func TestValidator(t *testing.T) {
 	suite.Run(t, new(validatorTestSuite))
 }
 
-func (s *validatorTestSuite) SetupSuite() {
+func (s *validatorTestSuite) generatePublicKeyAndSigner() ([]byte, cryptoutils.Signer) {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
 
-	s.pubKey1, err = x509.MarshalPKIXPublicKey(&key.PublicKey)
+	marshalled, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
 	s.Require().NoError(err)
+	return marshalled, cryptoutils.NewECDSASigner(key, crypto.SHA256)
+}
 
-	s.signer = cryptoutils.NewECDSASigner(key, crypto.SHA256)
+func (s *validatorTestSuite) SetupSuite() {
+	var err error
+
+	s.pubKey1, s.signer1 = s.generatePublicKeyAndSigner()
+
 	s.validator = newValidator()
-	err = s.validator.RegisterSigningKey(EC256, s.pubKey1, SigningKeyRestrictions{
+	err = s.validator.RegisterSigningKey(EC256, s.pubKey1, &SigningKeyRestrictions{
 		MaxDuration:                             7 * 24 * time.Hour,
 		EnforcementURLs:                         []string{"https://license-enforcement.stackrox.io/api/v1/validate"},
 		AllowNoNodeLimit:                        true,
@@ -55,21 +61,21 @@ func (s *validatorTestSuite) SetupSuite() {
 	})
 	s.Require().NoError(err)
 
-	otherKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	s.pubKey2, s.signer2 = s.generatePublicKeyAndSigner()
+
+	s.Require().NoError(s.validator.RegisterSigningKey(EC256, s.pubKey2, &SigningKeyRestrictions{}))
 	s.Require().NoError(err)
 
-	s.pubKey2, err = x509.MarshalPKIXPublicKey(&otherKey.PublicKey)
-	s.Require().NoError(err)
+	s.pubKey3, s.signer3 = s.generatePublicKeyAndSigner()
 
-	err = s.validator.RegisterSigningKey(EC256, s.pubKey2, SigningKeyRestrictions{})
-	s.Require().NoError(err)
+	s.Require().NoError(s.validator.RegisterSigningKey(EC256, s.pubKey3, nil))
+
 }
 
 func (s *validatorTestSuite) SetupTest() {
 	s.license = &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
-			SigningKeyId:    license.SigningKeyFingerprint(s.pubKey1),
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
@@ -85,40 +91,45 @@ func (s *validatorTestSuite) SetupTest() {
 	}
 }
 
-func (s *validatorTestSuite) generateLicenseKey() string {
+func (s *validatorTestSuite) generateLicenseKey(pubKey []byte, signer cryptoutils.Signer) string {
+	s.license.Metadata.SigningKeyId = license.SigningKeyFingerprint(pubKey)
 	licenseBytes, err := proto.Marshal(s.license)
 	s.Require().NoError(err)
 
-	signatureBytes, err := s.signer.Sign(licenseBytes, rand.Reader)
+	signatureBytes, err := signer.Sign(licenseBytes, rand.Reader)
 	s.Require().NoError(err)
 
 	return license.EncodeLicenseKey(licenseBytes, signatureBytes)
 }
 
 func (s *validatorTestSuite) TestValid() {
-	licenseKey := s.generateLicenseKey()
+	licenseKey := s.generateLicenseKey(s.pubKey1, s.signer1)
 	validated, err := s.validator.ValidateLicenseKey(licenseKey)
 	s.NoError(err)
 	s.Equal(s.license, validated)
 }
 
 func (s *validatorTestSuite) TestInvalidSigningKeyID() {
-	s.license.Metadata.SigningKeyId = "test/key/2"
-	licenseKey := s.generateLicenseKey()
+	licenseKey := s.generateLicenseKey([]byte("blah"), s.signer1)
 	_, err := s.validator.ValidateLicenseKey(licenseKey)
 	s.Error(err)
 }
 
 func (s *validatorTestSuite) TestInvalidSignature() {
-	s.license.Metadata.SigningKeyId = license.SigningKeyFingerprint(s.pubKey2)
-	licenseKey := s.generateLicenseKey()
+	licenseKey := s.generateLicenseKey(s.pubKey2, s.signer1)
 	_, err := s.validator.ValidateLicenseKey(licenseKey)
 	s.Error(err)
 }
 
 func (s *validatorTestSuite) TestViolatesRestrictions() {
 	s.license.Restrictions.NotValidAfter = protoconv.ConvertTimeToTimestamp(time.Now().Add(14 * 24 * time.Hour))
-	licenseKey := s.generateLicenseKey()
+	licenseKey := s.generateLicenseKey(s.pubKey1, s.signer1)
 	_, err := s.validator.ValidateLicenseKey(licenseKey)
 	s.Error(err)
+}
+
+func (s *validatorTestSuite) TestNoRestrictions() {
+	licenseKey := s.generateLicenseKey(s.pubKey3, s.signer3)
+	_, err := s.validator.ValidateLicenseKey(licenseKey)
+	s.NoError(err)
 }

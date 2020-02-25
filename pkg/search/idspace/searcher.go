@@ -4,55 +4,31 @@ import (
 	"context"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/dackbox/edges"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 )
 
+// Transformer represents a process of converting from one id-space to another.
+type Transformer interface {
+	Transform(from ...string) ([]string, error)
+}
+
 // TransformIDs applies a transformation to all of the ids of the results before returning them.
-func TransformIDs(searcher search.Searcher, idTransformer func(string) (string, error)) search.Searcher {
+func TransformIDs(searcher search.Searcher, transformer Transformer) search.Searcher {
 	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		results, err := searcher.Search(ctx, q)
 		if err != nil {
 			return results, err
 		}
 
-		errorlist := errorhelpers.NewErrorList("error transforming some ids")
-		seenIds := set.NewStringSet()
-		outputResults := make([]search.Result, 0, len(results))
-		for idx := range results {
-			newID, err := idTransformer(results[idx].ID)
-			if err != nil {
-				errorlist.AddError(err)
-				continue
-			}
-			if seenIds.Contains(newID) {
-				continue
-			}
-			seenIds.Add(newID)
-			newResult := results[idx]
-			newResult.ID = newID
-			outputResults = append(outputResults, newResult)
+		transformed, err := transformer.Transform(search.ResultsToIDs(results)...)
+		if err != nil {
+			return results, err
 		}
-		return outputResults, errorlist.ToError()
+
+		transformedResults := make([]search.Result, len(transformed))
+		for index, id := range transformed {
+			transformedResults[index].ID = id
+		}
+		return transformedResults, nil
 	})
-}
-
-// EdgeIDToParentID gets the parent id from the input edge id.
-func EdgeIDToParentID(edgeID string) (string, error) {
-	paresedEdgeID, err := edges.FromString(edgeID)
-	if err != nil {
-		return "", err
-	}
-	return paresedEdgeID.ParentID, nil
-}
-
-// EdgeIDToChildID gets the child id from the input edge id.
-func EdgeIDToChildID(edgeID string) (string, error) {
-	paresedEdgeID, err := edges.FromString(edgeID)
-	if err != nil {
-		return "", err
-	}
-	return paresedEdgeID.ChildID, nil
 }

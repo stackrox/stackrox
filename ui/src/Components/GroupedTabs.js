@@ -48,7 +48,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                 >
                     {showGroupTab && (
                         <span
-                            className="truncate absolute pin-t z-10 border-l border-t border-r border-base-400 text-2xs tracking-wide py-1 px-2 rounded-t-lg text-base-500 w-full"
+                            className="truncate absolute top-0 z-10 border-l border-t border-r border-base-400 text-2xs tracking-wide py-1 px-2 rounded-t-lg text-base-500 w-full"
                             style={{ transform: 'translateY(-100%)' }}
                         >
                             {group}

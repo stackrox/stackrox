@@ -19,7 +19,7 @@ var (
 
 func initialize() {
 	storage := store.Singleton()
-	indexer := index.New(globalindex.GetGlobalIndex())
+	indexer := index.New(globalindex.GetGlobalTmpIndex())
 	var err error
 	ad, err = New(storage, indexer, search.New(storage, indexer))
 	if err != nil {

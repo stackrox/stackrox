@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
 	"github.com/stackrox/rox/central/cve/store"
@@ -23,9 +24,11 @@ type DataStore interface {
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error)
 
-	// Upserting and Deleting for only occur for CVEs not linked to an image component.
-	// CVEs linked to an image component will be written by the image store.
-	Upsert(ctx context.Context, cve *storage.CVE) error
+	Suppress(ctx context.Context, ids ...string) error
+	Unsuppress(ctx context.Context, ids ...string) error
+
+	Upsert(ctx context.Context, cves ...*storage.CVE) error
+	UpsertClusterCVEs(ctx context.Context, cves ...converter.ClusterCVEParts) error
 	Delete(ctx context.Context, ids ...string) error
 }
 

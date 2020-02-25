@@ -73,8 +73,10 @@ spec:
       value: stackrox
     - name: StackRox admin username
       value: "admin"
+  {{if .GCPMarketplace}}
     - name: StackRox admin password
       value: "{{.Values.secrets.password}}"
+  {{end}}
 
   selector:
     matchLabels:

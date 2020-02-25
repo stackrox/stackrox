@@ -5,11 +5,13 @@ import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { FieldArray, reduxForm } from 'redux-form';
 
+import Labeled from 'Components/Labeled';
+import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import CollapsibleCard from 'Components/CollapsibleCard';
-import Field from './Field';
+import { getAuthProviderLabelByValue } from 'constants/accessControl';
 import RuleGroups from './RuleGroups';
 import CreateRoleModal from './CreateRoleModal';
-import formDescriptor from './formDescriptor';
+import ConfigurationFormFields from './ConfigurationFormFields';
 
 class Form extends Component {
     static propTypes = {
@@ -18,19 +20,14 @@ class Form extends Component {
         initialValues: PropTypes.shape({
             type: PropTypes.string,
             active: PropTypes.bool
-        }),
-        selectedAuthProvider: PropTypes.shape({}),
+        }).isRequired,
+        change: PropTypes.func.isRequired,
         roles: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
                 globalAccess: PropTypes.string
             })
         ).isRequired
-    };
-
-    static defaultProps = {
-        initialValues: null,
-        selectedAuthProvider: null
     };
 
     constructor(props) {
@@ -54,15 +51,12 @@ class Form extends Component {
     renderRuleGroupsComponent = props => <RuleGroups toggleModal={this.toggleModal} {...props} />;
 
     render() {
-        const { handleSubmit, initialValues, onSubmit, roles } = this.props;
-        const fields = formDescriptor[initialValues.type];
-        if (!fields) return null;
+        const { handleSubmit, onSubmit, initialValues, roles, change } = this.props;
         return (
             <>
                 <form
                     className="w-full justify-between overflow-auto h-full p-4"
                     onSubmit={handleSubmit(onSubmit)}
-                    initialvalues={initialValues}
                 >
                     <CollapsibleCard
                         title="1. Configuration"
@@ -70,25 +64,26 @@ class Form extends Component {
                         open={!initialValues.active}
                     >
                         <div className="w-full h-full px-4 py-3">
-                            {fields.map((field, index) => (
-                                <Field key={index} disabled={initialValues.active} {...field} />
-                            ))}
+                            <ConfigurationFormFields
+                                providerType={initialValues.type}
+                                disabled={!!initialValues.active}
+                                change={change}
+                            />
                         </div>
                     </CollapsibleCard>
                     <div className="mt-4">
                         <CollapsibleCard
-                            // Use the "type" here because the user usually hasn't typed a name yet.
-                            title={`2. Assign StackRox roles to your ${initialValues.type} users`}
+                            // Use the "type" here because the user usually hasn't typed a c yet.
+                            title={`2. Assign StackRox roles to your ${getAuthProviderLabelByValue(
+                                initialValues.type
+                            )} users`}
                             titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >
                             <div className="p-2">
                                 <div className="w-full p-2">
-                                    <Field
-                                        label="Minimum access role"
-                                        type="select"
-                                        jsonPath="defaultRole"
-                                        options={roles}
-                                    />
+                                    <Labeled label="Minimum access role">
+                                        <ReduxSelectField name="defaultRole" options={roles} />
+                                    </Labeled>
                                     <p className="pb-2">
                                         The minimum access role is granted to all users who sign in
                                         with this authentication provider.

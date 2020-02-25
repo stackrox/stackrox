@@ -43,12 +43,12 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Image
 }
 
 type tenable struct {
+	types.ScanSemaphore
+
 	client *http.Client
 
-	config *storage.TenableConfig
-
-	reg *dockerRegistry.Registry
-
+	config      *storage.TenableConfig
+	reg         *dockerRegistry.Registry
 	integration *storage.ImageIntegration
 }
 
@@ -89,6 +89,8 @@ func newScanner(integration *storage.ImageIntegration) (*tenable, error) {
 		reg:         reg,
 		config:      config,
 		integration: integration,
+
+		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
 	return scanner, nil
 }

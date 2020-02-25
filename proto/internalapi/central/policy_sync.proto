@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "storage/policy.proto";
+
+package central;
+
+message PolicySync {
+    repeated storage.Policy policies = 1;
+}

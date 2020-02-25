@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"

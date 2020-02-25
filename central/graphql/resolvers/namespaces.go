@@ -27,29 +27,30 @@ func init() {
 		schema.AddQuery("namespaceCount(query: String): Int!"),
 		schema.AddExtraResolver("Namespace", "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver("Namespace", `subjects(query: String, pagination: Pagination): [Subject!]!`),
-		schema.AddExtraResolver("Namespace", `subjectCount: Int!`),
-		schema.AddExtraResolver("Namespace", `serviceAccountCount: Int!`),
+		schema.AddExtraResolver("Namespace", `subjectCount(query: String): Int!`),
+		schema.AddExtraResolver("Namespace", `serviceAccountCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!`),
-		schema.AddExtraResolver("Namespace", `k8sroleCount: Int!`),
+		schema.AddExtraResolver("Namespace", `k8sroleCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `k8sroles(query: String, pagination: Pagination): [K8SRole!]!`),
 		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus(query: String): PolicyStatus!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String, pagination: Pagination): [Policy!]!`),
-		schema.AddExtraResolver("Namespace", `failingPolicyCounter: PolicyCounter`),
+		schema.AddExtraResolver("Namespace", `failingPolicyCounter(query: String): PolicyCounter`),
 		schema.AddExtraResolver("Namespace", `images(query: String, pagination: Pagination): [Image!]!`),
-		schema.AddExtraResolver("Namespace", `imageCount: Int!`),
+		schema.AddExtraResolver("Namespace", `imageCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
 		schema.AddExtraResolver("Namespace", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `vulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
 		schema.AddExtraResolver("Namespace", `vulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Namespace", `vulnCounter: VulnerabilityCounter!`),
+		schema.AddExtraResolver("Namespace", `vulnCounter(query: String): VulnerabilityCounter!`),
 		schema.AddExtraResolver("Namespace", `secrets(query: String, pagination: Pagination): [Secret!]!`),
 		schema.AddExtraResolver("Namespace", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
 		schema.AddExtraResolver("Namespace", "cluster: Cluster!"),
-		schema.AddExtraResolver("Namespace", `secretCount: Int!`),
-		schema.AddExtraResolver("Namespace", `deploymentCount: Int!`),
+		schema.AddExtraResolver("Namespace", `secretCount(query: String): Int!`),
+		schema.AddExtraResolver("Namespace", `deploymentCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `risk: Risk`),
 		schema.AddExtraResolver("Namespace", "latestViolation(query: String): Time"),
+		schema.AddExtraResolver("Namespace", `unusedVarSink(query: String): Int`),
 	)
 }
 
@@ -67,7 +68,7 @@ func (resolver *namespaceResolver) getClusterNamespaceQuery() *v1.Query {
 		ProtoQuery()
 }
 
-func (resolver *namespaceResolver) getNamespaceConjunctionQuery(args rawQuery) (*v1.Query, error) {
+func (resolver *namespaceResolver) getNamespaceConjunctionQuery(args RawQuery) (*v1.Query, error) {
 	q1 := resolver.getClusterNamespaceQuery()
 	if args.String() == "" {
 		return q1, nil
@@ -91,7 +92,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 }
 
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
-func (resolver *Resolver) Namespaces(ctx context.Context, args paginatedQuery) ([]*namespaceResolver, error) {
+func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Namespaces")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
@@ -119,7 +120,7 @@ func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args 
 }
 
 // NamespaceCount returns count of all clusters across infrastructure
-func (resolver *Resolver) NamespaceCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) NamespaceCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NamespaceCount")
 	if err := readNamespaces(ctx); err != nil {
 		return 0, err
@@ -135,7 +136,7 @@ func (resolver *Resolver) NamespaceCount(ctx context.Context, args rawQuery) (in
 	return int32(len(results)), nil
 }
 
-func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComplianceResults")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -155,7 +156,7 @@ func (resolver *namespaceResolver) ComplianceResults(ctx context.Context, args r
 }
 
 // SubjectCount returns the count of Subjects which have any permission on this namespace or the cluster it belongs to
-func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) SubjectCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "SubjectCount")
 	if err := readK8sSubjects(ctx); err != nil {
 		return 0, err
@@ -163,7 +164,13 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, err
 	if err := readK8sRoleBindings(ctx); err != nil {
 		return 0, err
 	}
-	subjects, err := resolver.getSubjects(ctx, search.EmptyQuery())
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	subjects, err := resolver.getSubjects(ctx, q)
 	if err != nil {
 		return 0, err
 	}
@@ -171,7 +178,7 @@ func (resolver *namespaceResolver) SubjectCount(ctx context.Context) (int32, err
 }
 
 // Subjects returns the Subjects which have any permission in namespace or cluster wide
-func (resolver *namespaceResolver) Subjects(ctx context.Context, args paginatedQuery) ([]*subjectResolver, error) {
+func (resolver *namespaceResolver) Subjects(ctx context.Context, args PaginatedQuery) ([]*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Subjects")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
@@ -184,6 +191,10 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args paginatedQ
 	if err != nil {
 		return nil, err
 	}
+
+	pagination := baseQuery.GetPagination()
+	baseQuery.Pagination = nil
+
 	subjects, err := resolver.getSubjects(ctx, baseQuery)
 	if err != nil {
 		return nil, err
@@ -191,16 +202,30 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args paginatedQ
 	for _, subject := range subjects {
 		resolvers = append(resolvers, &subjectResolver{resolver.root, subject})
 	}
-	return resolvers, nil
+
+	paginatedResolvers, err := paginationWrapper{
+		pv: pagination,
+	}.paginate(resolvers, nil)
+	return paginatedResolvers.([]*subjectResolver), err
 }
 
 // ServiceAccountCount returns the count of ServiceAccounts which have any permission on this cluster namespace
-func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ServiceAccountCount")
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getClusterNamespaceQuery()
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	q, err = search.AddAsConjunction(resolver.getClusterNamespaceQuery(), q)
+	if err != nil {
+		return 0, err
+	}
+
 	results, err := resolver.root.ServiceAccountsDataStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -209,7 +234,7 @@ func (resolver *namespaceResolver) ServiceAccountCount(ctx context.Context) (int
 }
 
 // ServiceAccounts returns the ServiceAccounts which have any permission on this cluster namespace
-func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args paginatedQuery) ([]*serviceAccountResolver, error) {
+func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args PaginatedQuery) ([]*serviceAccountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ServiceAccounts")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
@@ -217,16 +242,26 @@ func (resolver *namespaceResolver) ServiceAccounts(ctx context.Context, args pag
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.ServiceAccounts(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.ServiceAccounts(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // K8sRoleCount returns count of K8s roles in this cluster namespace
-func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "K8sRoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
 	}
-	q := resolver.getClusterNamespaceQuery()
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	q, err = search.AddAsConjunction(resolver.getClusterNamespaceQuery(), q)
+	if err != nil {
+		return 0, err
+	}
+
 	results, err := resolver.root.K8sRoleStore.Search(ctx, q)
 	if err != nil {
 		return 0, err
@@ -235,7 +270,7 @@ func (resolver *namespaceResolver) K8sRoleCount(ctx context.Context) (int32, err
 }
 
 // K8sRoles returns count of K8s roles in this cluster namespace
-func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args paginatedQuery) ([]*k8SRoleResolver, error) {
+func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "K8sRoles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -243,19 +278,23 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args paginatedQ
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.K8sRoles(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.K8sRoles(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) ImageCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+}
+
+func (resolver *namespaceResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ImageCount")
-	if err := readNamespaces(ctx); err != nil {
-		return 0, err
-	}
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return imageLoader.CountFromQuery(ctx, resolver.getClusterNamespaceQuery())
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
@@ -274,7 +313,7 @@ func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q 
 }
 
 // PolicyCount returns count of policies applicable to this namespace
-func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyCount")
 
 	query, err := args.AsV1QueryOrEmpty()
@@ -291,7 +330,7 @@ func (resolver *namespaceResolver) PolicyCount(ctx context.Context, args rawQuer
 }
 
 // Policies returns all the policies applicable to this namespace
-func (resolver *namespaceResolver) Policies(ctx context.Context, args paginatedQuery) ([]*policyResolver, error) {
+func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Policies")
 
 	if err := readPolicies(ctx); err != nil {
@@ -314,12 +353,22 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args paginatedQ
 }
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
-func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context) (*PolicyCounterResolver, error) {
+func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	query := resolver.getClusterNamespaceQuery()
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, query)
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	q, err = search.AddAsConjunction(q, resolver.getClusterNamespaceQuery())
+	if err != nil {
+		return nil, err
+	}
+
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
 	if err != nil {
 		return nil, nil
 	}
@@ -327,7 +376,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context) (*P
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster
-func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args rawQuery) (*policyStatusResolver, error) {
+func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatus")
 
 	if err := readPolicies(ctx); err != nil {
@@ -371,107 +420,57 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 				AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery()))
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args paginatedQuery) ([]*imageResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *namespaceResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Components")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.Images(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Components(ctx context.Context, args paginatedQuery) ([]*EmbeddedImageScanComponentResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Components")
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *namespaceResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "ComponentCount")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.Components(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *namespaceResolver) ComponentCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ComponentCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
-	}
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return 0, err
-	}
-	nested, err := search.AddAsConjunction(resolver.getClusterNamespaceQuery(), query)
-	if err != nil {
-		return 0, err
-	}
-	comps, err := components(ctx, resolver.root, nested)
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(comps)), nil
-}
-
-func (resolver *namespaceResolver) Vulns(ctx context.Context, args paginatedQuery) ([]*EmbeddedVulnerabilityResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Vulns")
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *namespaceResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Vulns")
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.Vulnerabilities(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) VulnCount(ctx context.Context, args rawQuery) (int32, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCount")
-	if err := readImages(ctx); err != nil {
-		return 0, err
-	}
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return 0, err
-	}
-	nested, err := search.AddAsConjunction(resolver.getClusterNamespaceQuery(), query)
-	if err != nil {
-		return 0, err
-	}
-	vulns, err := vulnerabilities(ctx, resolver.root, nested)
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(vulns)), nil
+func (resolver *namespaceResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCount")
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.VulnerabilityCount(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *namespaceResolver) VulnCounter(ctx context.Context) (*VulnerabilityCounterResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "VulnCounter")
-	if err := readImages(ctx); err != nil {
-		return nil, err
-	}
+func (resolver *namespaceResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "VulnCounter")
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	images, err := imageLoader.FromQuery(ctx, resolver.getClusterNamespaceQuery())
-	if err != nil {
-		return nil, err
-	}
-	return mapImagesToVulnerabilityCounter(images), nil
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *namespaceResolver) Secrets(ctx context.Context, args paginatedQuery) ([]*secretResolver, error) {
+func (resolver *namespaceResolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*secretResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Secrets")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.Secrets(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Secrets(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Deployments(ctx context.Context, args paginatedQuery) ([]*deploymentResolver, error) {
+func (resolver *namespaceResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -479,7 +478,7 @@ func (resolver *namespaceResolver) Deployments(ctx context.Context, args paginat
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
 
-	return resolver.root.Deployments(ctx, paginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Deployments(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolver, error) {
@@ -490,20 +489,26 @@ func (resolver *namespaceResolver) Cluster(ctx context.Context) (*clusterResolve
 	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetMetadata().GetClusterId()))
 }
 
-func (resolver *namespaceResolver) SecretCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) SecretCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "SecretCount")
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
 	}
-	return resolver.data.GetNumSecrets(), nil
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.SecretCount(ctx, RawQuery{Query: &query})
 }
 
-func (resolver *namespaceResolver) DeploymentCount(ctx context.Context) (int32, error) {
+func (resolver *namespaceResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
-	return resolver.data.GetNumDeployments(), nil
+
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+
+	return resolver.root.DeploymentCount(ctx, RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) Risk(ctx context.Context) (*riskResolver, error) {
@@ -554,7 +559,7 @@ func (resolver *namespaceResolver) getNamespaceRisk(ctx context.Context) (*stora
 	return risk, true, nil
 }
 
-func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args rawQuery) (*graphql.Time, error) {
+func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Latest Violation")
 
 	q, err := resolver.getNamespaceConjunctionQuery(args)
@@ -563,4 +568,8 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args raw
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
+}
+
+func (resolver *namespaceResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+	return nil
 }

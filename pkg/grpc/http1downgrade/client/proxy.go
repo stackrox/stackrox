@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpcweb"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/net/http2"
@@ -74,9 +75,7 @@ func createTransport(tlsClientConf *tls.Config) (http.RoundTripper, error) {
 
 	if tlsClientConf != nil {
 		clientConfForTransport := tlsClientConf.Clone()
-		nextProtos := append([]string{}, clientconn.NextProtos...)
-		nextProtos = append(nextProtos, tlsClientConf.NextProtos...)
-		nextProtos = append(nextProtos, "http/1.1", "http/1.0")
+		nextProtos := sliceutils.ConcatStringSlices(clientconn.NextProtos, tlsClientConf.NextProtos, []string{"http/1.1", "http/1.0"})
 		clientConfForTransport.NextProtos = sliceutils.StringUnique(nextProtos)
 		transport.TLSClientConfig = clientConfForTransport
 	}
@@ -90,10 +89,10 @@ func createTransport(tlsClientConf *tls.Config) (http.RoundTripper, error) {
 	return transport, nil
 }
 
-func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server, error) {
+func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server, pipeconn.DialContextFunc, error) {
 	transport, err := createTransport(tlsClientConf)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating transport")
+		return nil, nil, errors.Wrap(err, "creating transport")
 	}
 	proxy := createReverseProxy(endpoint, transport, tlsClientConf == nil)
 
@@ -102,13 +101,10 @@ func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server
 		Handler: h2c.NewHandler(nonBufferingHandler(proxy), &http2srv),
 	}
 	if err := http2.ConfigureServer(srv, &http2srv); err != nil {
-		return nil, errors.Wrap(err, "configuring HTTP/2 server")
+		return nil, nil, errors.Wrap(err, "configuring HTTP/2 server")
 	}
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		return nil, errors.Wrap(err, "listening on local endpoint")
-	}
+	listener, dialCtx := pipeconn.NewPipeListener()
 
 	srv.Addr = listener.Addr().String()
 	go func() {
@@ -117,17 +113,20 @@ func createClientProxy(endpoint string, tlsClientConf *tls.Config) (*http.Server
 		}
 	}()
 
-	return srv, nil
+	return srv, dialCtx, nil
 }
 
 // ConnectViaProxy establishes a gRPC client connection via a HTTP/2 proxy that handles endpoints behind HTTP/1 proxies.
 func ConnectViaProxy(ctx context.Context, endpoint string, tlsClientConf *tls.Config, extraOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
-	proxySrv, err := createClientProxy(endpoint, tlsClientConf)
+	proxySrv, dialCtx, err := createClientProxy(endpoint, tlsClientConf)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating client proxy")
 	}
 
-	dialOpts := make([]grpc.DialOption, 0, len(extraOpts)+1)
+	dialOpts := make([]grpc.DialOption, 0, len(extraOpts)+2)
+	dialOpts = append(dialOpts, grpc.WithContextDialer(func(ctx context.Context, target string) (net.Conn, error) {
+		return dialCtx(ctx)
+	}))
 	if tlsClientConf != nil {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(newCredsFromSideChannel(endpoint, credentials.NewTLS(tlsClientConf))))
 	}

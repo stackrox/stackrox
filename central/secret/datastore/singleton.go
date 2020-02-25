@@ -20,7 +20,7 @@ var (
 
 func initialize() {
 	store := store.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetGlobalIndex())
+	indexer := index.New(globalindex.GetGlobalTmpIndex())
 	var err error
 	ad, err = New(store, indexer, search.New(store, indexer))
 	if err != nil {

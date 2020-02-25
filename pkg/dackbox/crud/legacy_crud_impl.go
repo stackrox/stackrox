@@ -10,8 +10,6 @@ import (
 var batchSize = 100
 
 type legacyCrudImpl struct {
-	counter *TxnCounter
-
 	duckBox *dackbox.DackBox
 
 	reader     Reader
@@ -168,10 +166,7 @@ func (b *legacyCrudImpl) Upsert(msg proto.Message) error {
 		return err
 	}
 
-	if err := branch.Commit(); err != nil {
-		return err
-	}
-	return b.IncTxnCount()
+	return branch.Commit()
 }
 
 func (b *legacyCrudImpl) UpsertBatch(msgs []proto.Message) error {
@@ -190,8 +185,7 @@ func (b *legacyCrudImpl) UpsertBatch(msgs []proto.Message) error {
 			return err
 		}
 	}
-
-	return b.IncTxnCount()
+	return nil
 }
 
 func (b *legacyCrudImpl) Delete(id string) error {
@@ -206,7 +200,7 @@ func (b *legacyCrudImpl) Delete(id string) error {
 	if err := branch.Commit(); err != nil {
 		return err
 	}
-	return b.IncTxnCount()
+	return nil
 }
 
 func (b *legacyCrudImpl) DeleteBatch(ids []string) error {
@@ -225,16 +219,7 @@ func (b *legacyCrudImpl) DeleteBatch(ids []string) error {
 			return err
 		}
 	}
-
-	return b.IncTxnCount()
-}
-
-func (b *legacyCrudImpl) GetTxnCount() uint64 {
-	return b.counter.GetTxnCount()
-}
-
-func (b *legacyCrudImpl) IncTxnCount() error {
-	return b.counter.IncTxnCount()
+	return nil
 }
 
 func (b *legacyCrudImpl) GetKeys() ([]string, error) {

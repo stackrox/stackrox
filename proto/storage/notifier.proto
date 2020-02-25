@@ -5,6 +5,7 @@ option java_package = "io.stackrox.proto.storage";
 
 import "protobuf/gogoproto/gogo.proto";
 import "storage/common.proto";
+import "storage/policy.proto";
 
 package storage;
 
@@ -39,6 +40,12 @@ message Jira {
     string username   = 2;
     string password   = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string issue_type = 4;
+    message PriorityMapping {
+        Severity severity      = 1;
+        string   priority_name = 2;
+    }
+    repeated PriorityMapping priority_mappings   = 5;
+    string                   default_fields_json = 6;
 }
 
 message Email {
@@ -47,8 +54,14 @@ message Email {
     string username  = 3;
     string password  = 4 [(gogoproto.moretags) = "scrub:\"always\""];
     bool disableTLS  = 5;
-    bool useSTARTTLS = 6;
+    bool DEPRECATED_useStartTLS = 6; // useStartTLS has been deprecated for startTLSAuthMethod
     string from      = 7;
+    enum AuthMethod {
+        DISABLED = 0;
+        PLAIN    = 1;
+        LOGIN    = 2;
+    }
+    AuthMethod startTLSAuthMethod = 8;
 }
 
 message Splunk {

@@ -9,12 +9,12 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -30,25 +30,39 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
-func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error) {
+func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
+	s := set.NewStringSet()
+	for _, slice := range alertSlices {
+		for _, alert := range slice {
+			s.Add(alert.GetDeployment().GetId())
+		}
+	}
+	return s
+}
+
+func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
-		return
+		return nil, err
 	}
-	modified = len(newAlerts) > 0 || len(updatedAlerts) > 0 || len(staleAlerts) > 0
+
+	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, staleAlerts)
 
 	// Mark any old alerts no longer generated as stale, and insert new alerts.
 	err = d.notifyAndUpdateBatch(ctx, newAlerts)
 	if err != nil {
-		return
+		return nil, err
 	}
 	err = d.updateBatch(ctx, updatedAlerts)
 	if err != nil {
-		return
+		return nil, err
 	}
 	err = d.markAlertsStale(ctx, staleAlerts)
-	return
+	if err != nil {
+		return nil, err
+	}
+	return modifiedDeployments, nil
 }
 
 // UpdateBatch updates all of the alerts in the datastore.

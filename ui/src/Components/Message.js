@@ -5,13 +5,13 @@ import * as Icon from 'react-feather';
 function Message(props) {
     const messageClasses = {
         warn:
-            'warn-message p-4 rounded-sm text-warning-800 items-center border border-warning-700 bg-warning-200 leading-normal flex-no-shrink w-full',
+            'warn-message p-4 rounded-sm text-warning-800 items-center border border-warning-700 bg-warning-200 leading-normal flex-shrink-0 w-full',
         error:
-            'error-message p-4 rounded-sm text-alert-800 items-center border border-alert-700 bg-alert-200 leading-normal flex-no-shrink w-full',
+            'error-message p-4 rounded-sm text-alert-800 items-center border border-alert-700 bg-alert-200 leading-normal flex-shrink-0 w-full',
         info:
-            'info-message p-4 rounded-sm text-success-800 items-center border border-success-700 bg-success-200 leading-normal flex-no-shrink w-full',
+            'info-message p-4 rounded-sm text-success-800 items-center border border-success-700 bg-success-200 leading-normal flex-shrink-0 w-full',
         guidance:
-            'guidance-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-no-shrink w-full'
+            'guidance-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full'
     };
 
     const borderColor = {
@@ -31,7 +31,7 @@ function Message(props) {
     return (
         <div className={`flex ${messageClasses[props.type]}`}>
             <div
-                className={`flex items-center justify-start flex-no-shrink pr-4 border-r ${
+                className={`flex items-center justify-start flex-shrink-0 pr-4 border-r ${
                     borderColor[props.type]
                 }`}
             >

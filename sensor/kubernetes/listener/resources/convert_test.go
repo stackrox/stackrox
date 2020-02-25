@@ -566,6 +566,7 @@ func TestConvert(t *testing.T) {
 									Node: "mynode",
 								},
 								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+								ImageDigest:     "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							},
 						},
 						Ports: []*storage.PortConfig{
@@ -641,6 +642,7 @@ func TestConvert(t *testing.T) {
 									Node:             "mynode",
 								},
 								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+								ImageDigest:     "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 							},
 						},
 					},

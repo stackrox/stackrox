@@ -5,6 +5,7 @@ import (
 )
 
 // Store provides storage functionality for alerts.
+//go:generate mockgen-wrapper
 type Store interface {
 	ListDeployment(id string) (*storage.ListDeployment, bool, error)
 	ListDeployments() ([]*storage.ListDeployment, error)
@@ -18,7 +19,8 @@ type Store interface {
 	UpsertDeployment(deployment *storage.Deployment) error
 	RemoveDeployment(id string) error
 
-	GetTxnCount() (txNum uint64, err error)
-	IncTxnCount() error
+	AckKeysIndexed(keys ...string) error
+	GetKeysToIndex() ([]string, error)
+
 	GetDeploymentIDs() ([]string, error)
 }

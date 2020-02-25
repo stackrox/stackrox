@@ -10,7 +10,7 @@ metadata:
     owner: stackrox
     email: support@stackrox.com
 spec:
-  replicas: 1
+  replicas: 3
   minReadySeconds: 15
   selector:
     matchLabels:
@@ -53,13 +53,18 @@ spec:
       containers:
       - name: scanner
         image: {{.Values.image}}
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         resources:
           requests:
-            memory: "2500Mi"
+            memory: "1500Mi"
             cpu: "1000m"
           limits:
-            memory: "4000Mi"
-            cpu: "3000m"
+            memory: "3000Mi"
+            cpu: "2000m"
         command:
         - /scanner
         ports:
@@ -92,18 +97,8 @@ spec:
         - name: proxy-config-volume
           mountPath: /run/secrets/stackrox.io/proxy-config/
           readOnly: true
-      - name: db
-        image: {{.Values.dbImage}}
-        resources:
-          limits:
-            cpu: 2
-            memory: 4Gi
-          requests:
-            cpu: 200m
-            memory: 200Mi
-        volumeMounts:
-          - name: db-data
-            mountPath: /var/lib/postgresql/data
+        - name: scanner-db-password
+          mountPath: /run/secrets/stackrox.io/secrets
       serviceAccount: scanner
       volumes:
       - name: scanner-config-volume
@@ -112,11 +107,130 @@ spec:
       - name: scanner-tls-volume
         secret:
           secretName: scanner-tls
-      - name: db-data
-        emptyDir: {}
       - name: vuln-temp-db
         emptyDir: {}
       - name: proxy-config-volume
         secret:
           secretName: proxy-config
           optional: true
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: scanner-db
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: scanner-db
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      namespace: {{.Values.namespace}}
+      labels:
+        app.kubernetes.io/name: stackrox
+        app: scanner-db
+    spec:
+      {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 25
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/compute
+                    operator: In
+                    values:
+                    - "true"
+            - weight: 75
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/infra
+                    operator: NotIn
+                    values:
+                    - "true"
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: NotIn
+                    values:
+                    - "true"
+      {{- end}}
+      initContainers:
+        - name: init-db
+          image: {{.Values.dbImage}}
+          command:
+          - /bin/sh
+          - -c
+          - |
+            mkdir -p /var/lib/postgresql/data
+            chmod 700 /var/lib/postgresql/data
+            chown -R postgres:postgres /var/lib/postgresql
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+          securityContext:
+            runAsUser: 0
+      containers:
+      - name: db
+        command: ["/usr/local/bin/docker-entrypoint.sh", "postgres", "-c", "config_file=/etc/postgresql.conf"]
+        image: {{.Values.dbImage}}
+        ports:
+        - name: https-db
+          containerPort: 5432
+        resources:
+          limits:
+            cpu: 2
+            memory: 4Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        securityContext:
+          runAsUser: 70
+          runAsGroup: 70
+        volumeMounts:
+          - name: db-data
+            mountPath: /var/lib/postgresql/data
+          - name: scanner-db-tls-volume
+            mountPath: /run/secrets/stackrox.io/certs
+          - name: scanner-db-password
+            mountPath: /run/secrets/stackrox.io/secrets
+      serviceAccount: scanner
+      securityContext:
+        fsGroup: 70
+      volumes:
+      - name: scanner-config-volume
+        configMap:
+          name: scanner-config
+      - name: scanner-tls-volume
+        secret:
+          secretName: scanner-tls
+      - name: scanner-db-tls-volume
+        secret:
+          secretName: scanner-db-tls
+          defaultMode: 0640
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: db-data
+        emptyDir: {}
+      - name: scanner-db-password
+        secret:
+          secretName: scanner-db-password

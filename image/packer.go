@@ -8,6 +8,7 @@ import (
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -57,25 +58,24 @@ func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.T
 	return tpl.Parse(contents)
 }
 
-func mustGetChart(box packr.Box, prefix string) *chart.Chart {
-	ch, err := getChart(box, prefix)
+func mustGetChart(box packr.Box, prefixes ...string) *chart.Chart {
+	ch, err := getChart(box, prefixes)
 	utils.Must(err)
 	return ch
 }
 
 // GetCentralChart returns the Helm chart for Central
 func GetCentralChart() *chart.Chart {
-	return mustGetChart(K8sBox, "helm/centralchart/")
+	prefixes := []string{"helm/centralchart/"}
+	if features.DiagnosticBundle.Enabled() {
+		prefixes = append(prefixes, "helm/centralchart-diagnostics/")
+	}
+	return mustGetChart(K8sBox, prefixes...)
 }
 
 // GetScannerChart returns the Helm chart for the scanner
 func GetScannerChart() *chart.Chart {
 	return mustGetChart(K8sBox, "helm/scannerchart/")
-}
-
-// GetScannerV2Chart returns the Helm chart for ScannerV2
-func GetScannerV2Chart() *chart.Chart {
-	return mustGetChart(K8sBox, "helm/scannerv2chart/")
 }
 
 // GetMonitoringChart returns the Helm chart for Monitoring
@@ -85,32 +85,34 @@ func GetMonitoringChart() *chart.Chart {
 
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
 // or it will fail
-func getChart(box packr.Box, prefix string) (*chart.Chart, error) {
+func getChart(box packr.Box, prefixes []string) (*chart.Chart, error) {
 	var chartFiles []*chartutil.BufferedFile
-	err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
-		trimmedPath := strings.TrimPrefix(name, prefix)
-		data := []byte(file.String())
-		// if chart file, then render the version into it
-		if trimmedPath == "Chart.yaml" {
-			t, err := template.New("chart").Parse(file.String())
-			if err != nil {
-				return err
+	for _, prefix := range prefixes {
+		err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
+			trimmedPath := strings.TrimPrefix(name, prefix)
+			data := []byte(file.String())
+			// if chart file, then render the version into it
+			if trimmedPath == "Chart.yaml" {
+				t, err := template.New("chart").Parse(file.String())
+				if err != nil {
+					return err
+				}
+				data, err = templates.ExecuteToBytes(t, map[string]string{
+					"Version": version.GetMainVersion(),
+				})
+				if err != nil {
+					return err
+				}
 			}
-			data, err = templates.ExecuteToBytes(t, map[string]string{
-				"Version": version.GetMainVersion(),
+			chartFiles = append(chartFiles, &chartutil.BufferedFile{
+				Name: trimmedPath,
+				Data: data,
 			})
-			if err != nil {
-				return err
-			}
-		}
-		chartFiles = append(chartFiles, &chartutil.BufferedFile{
-			Name: trimmedPath,
-			Data: data,
+			return nil
 		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 	return chartutil.LoadFiles(chartFiles)
 }

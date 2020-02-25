@@ -11,6 +11,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/badgerutils"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/odirect"
@@ -132,6 +133,9 @@ func backupBadger(ctx context.Context, db *badger.DB, out io.Writer) error {
 	version := binenc.BigEndian.EncodeUint32(backupVersion)
 	if _, err := out.Write(version); err != nil {
 		return errors.Wrap(err, "error writing version to output")
+	}
+	if err := dackbox.RemoveReindexBucket(db); err != nil {
+		return errors.Wrap(err, "error dropping backup key")
 	}
 
 	stream := db.NewStream()

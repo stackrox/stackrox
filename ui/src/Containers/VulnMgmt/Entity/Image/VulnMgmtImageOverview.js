@@ -1,6 +1,8 @@
 import React, { useContext } from 'react';
-import CollapsibleSection from 'Components/CollapsibleSection';
+import pluralize from 'pluralize';
+import cloneDeep from 'lodash/cloneDeep';
 
+import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
@@ -8,18 +10,18 @@ import RiskScore from 'Components/RiskScore';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import CVETable from 'Containers/Images/CVETable';
 import workflowStateContext from 'Containers/workflowStateContext';
+import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
+import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
+import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityToColumns } from 'constants/listColumns';
 import { resourceLabels } from 'messages/common';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { getCveExportName } from 'utils/vulnerabilityUtils';
 
-import pluralize from 'pluralize';
-import cloneDeep from 'lodash/cloneDeep';
-import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
-import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-
+import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 
@@ -47,7 +49,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     safeData.componentCount = scan && scan.components && scan.components.length;
 
     const layers = metadata ? cloneDeep(metadata.v1.layers) : [];
-    const cves = [];
+    const fixableCves = [];
 
     // If we have a scan, then we can try and assume we have layers
     if (scan) {
@@ -58,7 +60,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         scan.components.forEach(component => {
             component.vulns.forEach(cve => {
                 if (cve.isFixable) {
-                    cves.push(cve);
+                    fixableCves.push(cve);
                 }
             });
 
@@ -84,6 +86,17 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
         }
     ];
 
+    function customCsvExportHandler() {
+        const { useCase } = workflowState;
+        const pageEntityType = workflowState.getCurrentEntityType();
+        const entityName = safeData.name.fullName;
+        const csvName = getCveExportName(useCase, pageEntityType, entityName);
+
+        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
+
+        exportCvesAsCsv(csvName, stateWithFixable);
+    }
+
     const imageStats = [<RiskScore key="risk-score" score={priority} />];
     if (topVuln) {
         const { cvss, scoreVersion } = topVuln;
@@ -105,8 +118,14 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             />
         );
     }
-
-    const newEntityContext = { ...entityContext, [entityTypes.IMAGE]: data.id };
+    const currentEntity = { [entityTypes.IMAGE]: data.id };
+    const newEntityContext = { ...entityContext, ...currentEntity };
+    const cveActions = (
+        <FixableCveExportButton
+            disabled={!fixableCves || !fixableCves.length}
+            clickHandler={customCsvExportHandler}
+        />
+    );
 
     return (
         <div className="flex h-full">
@@ -115,19 +134,20 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget pdf-page"
+                                className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details & Metadata"
+                                bgClass
                             />
                         </div>
                         <div className="s-1">
-                            <CvesByCvssScore entityContext={newEntityContext} />
+                            <CvesByCvssScore entityContext={currentEntity} />
                         </div>
                         <div className="s-1">
                             <TopRiskiestImagesAndComponents
                                 limit={5}
-                                entityContext={newEntityContext}
+                                entityContext={currentEntity}
                             />
                         </div>
                     </div>
@@ -140,11 +160,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                         >
                             <TabContent>
                                 <TableWidget
-                                    header={`${cves.length} fixable ${pluralize(
+                                    header={`${fixableCves.length} fixable ${pluralize(
                                         resourceLabels.CVE,
-                                        cves.length
+                                        fixableCves.length
                                     )} found across this image`}
-                                    rows={cves}
+                                    headerActions={cveActions}
+                                    rows={fixableCves}
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this image"
                                     className="bg-base-100"

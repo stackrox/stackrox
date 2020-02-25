@@ -8,11 +8,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/deployment/mappings"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
-	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
@@ -24,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -63,7 +62,7 @@ type serviceImpl struct {
 func (s *serviceImpl) whitelistResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessWhitelistResults, error) {
 	whitelistResults, err := s.processWhitelistResults.GetWhitelistResults(ctx, deployment.GetId())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return whitelistResults, nil
 }
@@ -157,7 +156,7 @@ func (s *serviceImpl) CountDeployments(ctx context.Context, request *v1.RawQuery
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	deployments, err := newSplitQueryExecutor(parsedQuery, ranking.DeploymentRanker(), s.datastore, s.risks).getListDeployments(ctx)
+	deployments, err := s.datastore.Search(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -174,11 +173,8 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.Pagination, maxDeploymentsReturned)
-	sortedQuery := paginated.FillDefaultSortOption(parsedQuery, &v1.QuerySortOption{
-		Field: search.Priority.String(),
-	})
 
-	deployments, err := newSplitQueryExecutor(sortedQuery, ranking.DeploymentRanker(), s.datastore, s.risks).getListDeployments(ctx)
+	deployments, err := s.datastore.SearchListDeployments(ctx, parsedQuery)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -213,7 +209,7 @@ func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.Deploymen
 }
 
 func labelsMapFromSearchResults(results []search.Result) (map[string]*v1.DeploymentLabelsResponse_LabelValues, []string) {
-	labelField, ok := mappings.OptionsMap.Get(search.Label.String())
+	labelField, ok := deployments.OptionsMap.Get(search.Label.String())
 	if !ok {
 		utils.Should(errors.Errorf("could not find label %q in options map", search.Label.String()))
 		return nil, nil

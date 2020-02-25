@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -157,8 +158,7 @@ func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.Netwo
 					}
 				}
 
-				b := append([]byte{}, k...)
-				keysToDelete = append(keysToDelete, b)
+				keysToDelete = append(keysToDelete, sliceutils.ByteClone(k))
 				return nil
 			})
 	})

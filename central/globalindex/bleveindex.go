@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/blevesearch/bleve"
+	_ "github.com/blevesearch/bleve/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
 	_ "github.com/blevesearch/bleve/analysis/analyzer/standard" // Import the standard analyzer so that it can be referred to from proto files
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/index/store/moss"
@@ -17,7 +18,6 @@ import (
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/blevehelper"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -39,6 +39,16 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// IndexPersisted describes if the index should be persisted
+type IndexPersisted int
+
+const (
+	// PersistedIndex means that the index should be persisted
+	PersistedIndex IndexPersisted = iota
+	// EphemeralIndex means that the index will be rebuilt on Central start
+	EphemeralIndex
+)
+
 func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 	labels := make([]search.FieldLabel, 0, len(options.Original()))
 	for k, v := range options.Original() {
@@ -56,7 +66,7 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	return initializeIndices(filepath.Join(tmpDir, scorchPath))
+	return initializeIndices(filepath.Join(tmpDir, scorchPath), EphemeralIndex)
 }
 
 func kvConfigForMoss() map[string]interface{} {
@@ -73,8 +83,8 @@ func MemOnlyIndex() (bleve.Index, error) {
 }
 
 // InitializeIndices initializes the index in the specified path.
-func InitializeIndices(scorchPath string) (bleve.Index, error) {
-	globalIndex, err := initializeIndices(scorchPath)
+func InitializeIndices(scorchPath string, persisted IndexPersisted) (bleve.Index, error) {
+	globalIndex, err := initializeIndices(scorchPath, persisted)
 	if err != nil {
 		return nil, err
 	}
@@ -82,10 +92,11 @@ func InitializeIndices(scorchPath string) (bleve.Index, error) {
 	return globalIndex, nil
 }
 
-func initializeIndices(scorchPath string) (bleve.Index, error) {
+func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.Index, error) {
 	kvconfig := map[string]interface{}{
-		// Persist the index
-		"unsafe_batch": false,
+		// Determines if we should persist the index
+		// false means persisted and true means *not* persisted
+		"unsafe_batch": indexPersisted == EphemeralIndex,
 	}
 
 	var globalIndex bleve.Index
@@ -97,33 +108,32 @@ func initializeIndices(scorchPath string) (bleve.Index, error) {
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		globalIndex, err = bleve.OpenUsing(scorchPath, kvconfig)
-		if err != nil {
-			log.Errorf("Error opening Bleve index: %v. Removing index and retrying from scratch...", err)
-			if globalIndex != nil {
-				_ = globalIndex.Close()
-			}
-			if err := os.RemoveAll(scorchPath); err != nil {
-				log.Panicf("error removing scorch path: %v", err)
-			}
-			return initializeIndices(scorchPath)
-		}
-
-		// This implies that the index mapping has changed and therefore we should reindex everything
-		// This can only happen on upgrades
-		if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping()) {
-			log.Info("[STARTUP] Found new index mapping. Removing index and rebuilding")
-			if err := globalIndex.Close(); err != nil {
-				log.Errorf("error closing global index: %v", err)
-			}
-			if err := os.RemoveAll(scorchPath); err != nil {
-				log.Errorf("error removing scorch path: %v", err)
-			}
-			return initializeIndices(scorchPath)
-		}
+		return globalIndex, nil
 	}
-	globalIndex.SetName(blevehelper.GlobalIndexName)
+	globalIndex, err := bleve.OpenUsing(scorchPath, kvconfig)
+	if err != nil {
+		log.Errorf("Error opening Bleve index: %q %v. Removing index and retrying from scratch...", scorchPath, err)
+		if globalIndex != nil {
+			_ = globalIndex.Close()
+		}
+		if err := os.RemoveAll(scorchPath); err != nil {
+			log.Panicf("error removing scorch path: %v", err)
+		}
+		return initializeIndices(scorchPath, indexPersisted)
+	}
+
+	// This implies that the index mapping has changed and therefore we should reindex everything
+	// This can only happen on upgrades
+	if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping()) {
+		log.Info("[STARTUP] Found new index mapping. Removing index and rebuilding")
+		if err := globalIndex.Close(); err != nil {
+			log.Errorf("error closing global index: %v", err)
+		}
+		if err := os.RemoveAll(scorchPath); err != nil {
+			log.Errorf("error removing scorch path: %v", err)
+		}
+		return initializeIndices(scorchPath, indexPersisted)
+	}
 
 	return globalIndex, nil
 }

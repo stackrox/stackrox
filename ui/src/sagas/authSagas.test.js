@@ -31,6 +31,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.fetchAuthProviders.success(authProviders))
@@ -45,6 +46,7 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
@@ -61,7 +63,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.ANONYMOUS_ACCESS),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), false],
+                [call(AuthService.getAccessToken), null],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
@@ -73,8 +76,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), true],
-                [call(AuthService.fetchAuthStatus), 'ok'],
+                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.checkAuthStatus), 'ok'],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.login())
@@ -86,8 +89,9 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), true],
-                [call(AuthService.fetchAuthStatus), throwError(new Error('401'))],
+                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.checkAuthStatus), throwError(new Error('401'))],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
@@ -95,20 +99,20 @@ describe('Auth Sagas', () => {
             .silentRun());
 
     it('should clear the token when user logs out', () => {
-        const clearTokenMock = jest.fn();
+        const logout = jest.fn();
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
+                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.logout), dynamic(logout)],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(actions.logout())
             .silentRun()
             .then(() => {
-                expect(clearTokenMock.mock.calls.length).toBe(1);
+                expect(logout.mock.calls.length).toBe(1);
             });
     });
 
@@ -119,6 +123,7 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                [call(AuthService.logout), null],
                 [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
@@ -152,6 +157,7 @@ describe('Auth Sagas', () => {
                         response: { licenses: [{ status: LICENSE_STATUS.VALID }] }
                     }
                 ],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(push(requestedLocation))
@@ -173,7 +179,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), true],
+                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
@@ -186,7 +193,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors([{ name: 'ap1' }], AUTH_STATUS.LOGGED_IN),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
-                [call(AuthService.isTokenPresent), true],
+                [call(AuthService.getAccessToken), 'my-token'],
+                [call(AuthService.logout), null],
                 [call(fetchUserRolePermissions), { response: {} }]
             ])
             .not.put(actions.logout())

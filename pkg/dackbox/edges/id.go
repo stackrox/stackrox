@@ -18,11 +18,11 @@ func FromString(str string) (EdgeID, error) {
 	if len(nameAndVersionEncoded) != 2 {
 		return EdgeID{}, fmt.Errorf("invalid id: %s", str)
 	}
-	parentID, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[0])
+	parentID, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[0])
 	if err != nil {
 		return EdgeID{}, err
 	}
-	childID, err := base64.URLEncoding.DecodeString(nameAndVersionEncoded[1])
+	childID, err := base64.RawURLEncoding.DecodeString(nameAndVersionEncoded[1])
 	if err != nil {
 		return EdgeID{}, err
 	}
@@ -31,7 +31,7 @@ func FromString(str string) (EdgeID, error) {
 
 // ToString serializes the EdgeID to a string.
 func (cID EdgeID) ToString() string {
-	nameEncoded := base64.URLEncoding.EncodeToString([]byte(cID.ParentID))
-	versionEncoded := base64.URLEncoding.EncodeToString([]byte(cID.ChildID))
+	nameEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ParentID))
+	versionEncoded := base64.RawURLEncoding.EncodeToString([]byte(cID.ChildID))
 	return fmt.Sprintf("%s:%s", nameEncoded, versionEncoded)
 }

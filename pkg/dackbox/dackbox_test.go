@@ -23,11 +23,11 @@ type DackBoxTestSuite struct {
 
 func (s *DackBoxTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = badgerhelper.NewTemp("reference", true)
+	s.db, s.dir, err = badgerhelper.NewTemp("reference")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
-	s.sdb, err = NewDackBox(s.db, []byte{})
+	s.sdb, err = NewDackBox(s.db, nil, []byte{}, []byte{}, []byte{})
 	if err != nil {
 		s.FailNowf("failed to create counter: %+v", err.Error())
 	}

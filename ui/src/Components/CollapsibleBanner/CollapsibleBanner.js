@@ -7,7 +7,7 @@ import * as Icon from 'react-feather';
 
 import { NextArrow, PrevArrow } from 'Components/CollapsibleBanner/BannerArrows';
 
-const triggerClassName = 'flex w-full justify-center absolute pin-b';
+const triggerClassName = 'flex w-full justify-center absolute bottom-0';
 const triggerIconClassName = 'text-primary-600 h-4';
 const triggerElementStyle = {
     top: '-11px' // adjusts position of the trigger element further up to overlap the border

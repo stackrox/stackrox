@@ -36,8 +36,9 @@ type Crud interface {
 	Delete(id string) error
 	DeleteBatch(ids []string) error
 
-	GetTxnCount() (txNum uint64)
-	IncTxnCount() error
+	AddKeysToIndex(tx badgerhelper.TxWrapper, keys ...[]byte) error
+	AckKeysIndexed(keys ...string) error
+	GetKeysToIndex() ([]string, error)
 
 	GetKeys() ([]string, error)
 }
@@ -59,7 +60,7 @@ func NewCRUD(db *badger.DB, prefix []byte, keyFunc keyFunc, alloc allocFunc) Cru
 
 	return &crudImpl{
 		db:        db,
-		txnHelper: helper,
+		TxnHelper: helper,
 		prefix:    prefix,
 
 		keyFunc:         keyFunc,
@@ -77,7 +78,7 @@ func NewCRUDWithPartial(db *badger.DB, prefix []byte, keyFunc keyFunc, alloc all
 
 	return &crudImpl{
 		db:              db,
-		txnHelper:       helper,
+		TxnHelper:       helper,
 		prefix:          prefix,
 		prefixString:    string(prefix),
 		keyFunc:         keyFunc,

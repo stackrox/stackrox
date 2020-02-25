@@ -70,7 +70,6 @@ class K8sRbacTest extends BaseSpecification {
         for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
             def sa = s.serviceAccount
 
-            println "Looking for SR Service Account: ${sa}"
             assert orchestratorSAs.find {
                 it.name == sa.name &&
                     it.namespace == sa.namespace &&
@@ -115,17 +114,27 @@ class K8sRbacTest extends BaseSpecification {
 
         expect:
         "SR should have the service account and its relationship to the deployment"
-        def stackroxSAs = ServiceAccountService.getServiceAccounts()
-        for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
-            def sa = s.serviceAccount
-            if ( sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace ) {
-                assert(s.deploymentRelationshipsCount == 1)
-                assert(s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME)
-                assert(s.clusterRolesCount == 0)
-                assert(s.scopedRolesCount == 1)
-                assert(s.scopedRolesList[0].getRoles(0).name == ROLE_NAME)
+        Timer t = new Timer(45, 2)
+        def passed = false
+        while (t.IsValid() && !passed) {
+            def stackroxSAs = ServiceAccountService.getServiceAccounts()
+            for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
+                def sa = s.serviceAccount
+                if ( sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace ) {
+                    passed = s.deploymentRelationshipsCount == 1 && \
+                        s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME && \
+                        s.clusterRolesCount == 0 && s.scopedRolesCount == 1 && \
+                        s.scopedRolesList[0].getRoles(0).name == ROLE_NAME
+                    if (passed) {
+                        break
+                    }
+                }
             }
         }
+        if (!passed) {
+            println "Failed to find the correct service account values"
+        }
+        assert passed
 
         cleanup:
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
@@ -142,42 +151,36 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     def "Verify scraped roles"() {
-        given:
-        "list of roles from the orchestrator"
-        def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
-
         expect:
         "SR should have the same roles"
-        def stackroxRoles = RbacService.getRoles()
-        Timer t = new Timer(15, 2)
-        while (t.IsValid() && stackroxRoles.size() != orchestratorRoles.size()) {
-            stackroxRoles = RbacService.getRoles()
-            orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
-        }
 
-        stackroxRoles.size() == orchestratorRoles.size()
-        println "All roles scraped in ${t.SecondsSince()}s"
-        for (Rbac.K8sRole r : stackroxRoles) {
-            println "Looking for SR Role: ${r.name} (${r.namespace})"
-            K8sRole role =  orchestratorRoles.find {
-                it.name == r.name &&
-                        it.clusterRole == r.clusterRole &&
-                        it.namespace == r.namespace
+        withRetry(20, 5) {
+            def stackroxRoles = RbacService.getRoles()
+            def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
+
+            stackroxRoles.size() == orchestratorRoles.size()
+            for (Rbac.K8sRole stackroxRole : stackroxRoles) {
+                println "Looking for SR Role: ${stackroxRole.name} (${stackroxRole.namespace})"
+                K8sRole role = orchestratorRoles.find {
+                    it.name == stackroxRole.name &&
+                            it.clusterRole == stackroxRole.clusterRole &&
+                            it.namespace == stackroxRole.namespace
+                }
+                assert role
+                assert role.labels == stackroxRole.labelsMap
+                role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
+                assert role.annotations == stackroxRole.annotationsMap
+                for (int i = 0; i < role.rules.size(); i++) {
+                    def oRule = role.rules.get(i) as K8sPolicyRule
+                    def sRule = stackroxRole.rulesList.get(i) as Rbac.PolicyRule
+                    assert oRule.verbs == sRule.verbsList &&
+                            oRule.apiGroups == sRule.apiGroupsList &&
+                            oRule.resources == sRule.resourcesList &&
+                            oRule.nonResourceUrls == sRule.nonResourceUrlsList &&
+                            oRule.resourceNames == sRule.resourceNamesList
+                }
+                assert RbacService.getRole(stackroxRole.id) == stackroxRole
             }
-            assert role
-            assert role.labels == r.labelsMap
-            role.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-            assert role.annotations == r.annotationsMap
-            for (int i = 0; i < role.rules.size(); i++) {
-                def oRule = role.rules.get(i) as K8sPolicyRule
-                def sRule = r.rulesList.get(i) as Rbac.PolicyRule
-                assert oRule.verbs == sRule.verbsList &&
-                        oRule.apiGroups == sRule.apiGroupsList &&
-                        oRule.resources == sRule.resourcesList &&
-                        oRule.nonResourceUrls == sRule.nonResourceUrlsList &&
-                        oRule.resourceNames == sRule.resourceNamesList
-            }
-            assert RbacService.getRole(r.id) == r
         }
     }
 
@@ -222,57 +225,62 @@ class K8sRbacTest extends BaseSpecification {
     }
 
     def "Verify scraped bindings"() {
-        given:
-        "list of bindings from the orchestrator"
-        def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
-
         expect:
         "SR should have the same bindings"
-        // Wait until all roles have arrived so that all the role bindings role refs will be valid
-        def stackroxRoles = RbacService.getRoles()
-        def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
-        Timer t = new Timer(15, 2)
-        while (t.IsValid() && stackroxRoles.size() != orchestratorRoles.size()) {
-            stackroxRoles = RbacService.getRoles()
-            orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
-        }
-        assert stackroxRoles.size() == orchestratorRoles.size()
+        Timer t = new Timer(45, 2)
+        def passed = false
+        while (t.IsValid() && !passed) {
+            def stackroxBindings = RbacService.getRoleBindings()
+            def orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
 
-        // Wait until all role bindings arrive
-        def stackroxBindings = RbacService.getRoleBindings()
-        // I'll be back
-        Timer t2 = new Timer(15, 2)
-        while (t2.IsValid() && stackroxBindings.size() != orchestratorBindings.size()) {
-            stackroxBindings = RbacService.getRoleBindings()
-            orchestratorBindings = orchestrator.getRoleBindings() + orchestrator.getClusterRoleBindings()
-        }
+            if (stackroxBindings.size() != orchestratorBindings.size()) {
+                continue
+            }
+            println "All bindings scraped in ${t.SecondsSince()}s"
+            passed = true
+            for (Rbac.K8sRoleBinding b : stackroxBindings) {
+                K8sRoleBinding binding =  orchestratorBindings.find {
+                    it.name == b.name &&
+                            it.namespace == b.namespace
+                }
+                if (binding == null || b.labelsMap != binding.labels) {
+                    passed = false
+                    break
+                }
+                binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
+                if (b.annotationsMap != binding.annotations ||
+                        b.roleId != binding.roleRef.uid || b.subjectsCount != binding.subjects.size()) {
+                    passed = false
+                    break
+                }
+                def allMatching = true
+                for (int i = 0; i < binding.subjects.size(); i++) {
+                    def oSubject = binding.subjects.get(i) as K8sSubject
+                    def sSubject = b.subjectsList.get(i) as Rbac.Subject
+                    if (!(sSubject.name == oSubject.name &&
+                            oSubject.namespace == null ?
+                            sSubject.namespace == "" :
+                            sSubject.namespace == oSubject.namespace &&
+                                    CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
+                                    oSubject.kind)) {
+                        allMatching = false
+                    }
+                }
+                if (!allMatching) {
+                    passed = false
+                    break
+                }
 
-        assert stackroxBindings.size() == orchestratorBindings.size()
-        println "All bindings scraped in ${t.SecondsSince()}s"
-        for (Rbac.K8sRoleBinding b : stackroxBindings) {
-            println "Looking for SR Bindings: ${b.name} (${b.namespace})"
-            K8sRoleBinding binding =  orchestratorBindings.find {
-                it.name == b.name &&
-                        it.namespace == b.namespace
+                if (RbacService.getRoleBinding(b.id) != b) {
+                    passed = false
+                    break
+                }
             }
-            assert binding
-            assert b.labelsMap == binding.labels
-            binding.annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
-            assert b.annotationsMap == binding.annotations
-            assert b.roleId == binding.roleRef.uid
-            assert b.subjectsCount == binding.subjects.size()
-            for (int i = 0; i < binding.subjects.size(); i++) {
-                def oSubject = binding.subjects.get(i) as K8sSubject
-                def sSubject = b.subjectsList.get(i) as Rbac.Subject
-                assert sSubject.name == oSubject.name &&
-                        oSubject.namespace == null ?
-                                sSubject.namespace == "" :
-                                sSubject.namespace == oSubject.namespace &&
-                        CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, sSubject.kind.toString()) ==
-                        oSubject.kind
-            }
-            assert RbacService.getRoleBinding(b.id) == b
         }
+        if (!passed) {
+            println "Failed to verify scraped bindings"
+        }
+        assert passed
     }
 
     def "Verify returned subject list is complete"() {
@@ -293,7 +301,6 @@ class K8sRbacTest extends BaseSpecification {
         assert stackroxSubjects.size() == orchestratorSubjects.size()
         println "All subjects scraped in ${t.SecondsSince()}s"
         for (Rbac.Subject sub : stackroxSubjects) {
-            println "Looking for SR Subject: ${sub.name} (${sub.namespace})"
             K8sSubject subject = orchestratorSubjects.find {
                 it.name == sub.name &&
                         it.namespace == sub.namespace &&

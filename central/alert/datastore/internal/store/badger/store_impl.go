@@ -5,11 +5,11 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/central/alert/convert"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	generic "github.com/stackrox/rox/pkg/badgerhelper/crud"
 	"github.com/stackrox/rox/pkg/logging"
@@ -141,14 +141,6 @@ func (b *storeImpl) UpsertAlert(alert *storage.Alert) error {
 	return b.alertCRUD.Upsert(alert)
 }
 
-func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
-	return b.alertCRUD.GetTxnCount(), nil
-}
-
-func (b *storeImpl) IncTxnCount() error {
-	return b.alertCRUD.IncTxnCount()
-}
-
 // DeleteAlert removes an alert
 func (b *storeImpl) DeleteAlert(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Alert")
@@ -173,4 +165,12 @@ func (b *storeImpl) WalkAll(fn func(*storage.ListAlert) error) error {
 			return fn(&alert)
 		})
 	})
+}
+
+func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+	return b.alertCRUD.AckKeysIndexed(keys...)
+}
+
+func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+	return b.alertCRUD.GetKeysToIndex()
 }

@@ -48,6 +48,13 @@ func paginate(offset, limit int, results []search.Result, err error) ([]search.R
 		return nil, nil
 	}
 
+	if offset < 0 {
+		offset = 0
+	}
+	if limit < 0 {
+		limit = 0
+	}
+
 	remnants := len(results) - offset
 	if remnants <= 0 {
 		return nil, nil

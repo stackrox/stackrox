@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
@@ -85,18 +86,27 @@ type networkFlowManager struct {
 	enrichedLastSentState map[networkConnIndicator]timestamp.MicroTS
 
 	done        concurrency.Signal
-	flowUpdates chan *central.NetworkFlowUpdate
+	flowUpdates chan *central.MsgFromSensor
 }
 
-func (m *networkFlowManager) Start() {
+func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor) error {
+	return nil
+}
+
+func (m *networkFlowManager) Start() error {
 	go m.enrichConnections()
+	return nil
 }
 
-func (m *networkFlowManager) Stop() {
+func (m *networkFlowManager) Stop(_ error) {
 	m.done.Signal()
 }
 
-func (m *networkFlowManager) FlowUpdates() <-chan *central.NetworkFlowUpdate {
+func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (m *networkFlowManager) ResponsesC() <-chan *central.MsgFromSensor {
 	return m.flowUpdates
 }
 
@@ -128,80 +138,101 @@ func (m *networkFlowManager) enrichAndSend() {
 	select {
 	case <-m.done.Done():
 		return
-	case m.flowUpdates <- protoToSend:
+	case m.flowUpdates <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+			NetworkFlowUpdate: protoToSend,
+		},
+	}:
 		return
 	}
 }
 
+func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+	if !isFresh {
+		status.used = true
+	}
+
+	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
+	if !ok {
+		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+		return
+	}
+
+	lookupResults := m.clusterEntities.LookupByEndpoint(conn.remote)
+	if len(lookupResults) == 0 {
+		if isFresh {
+			return
+		}
+
+		var port uint16
+		if conn.incoming {
+			port = conn.local.Port
+		} else {
+			port = conn.remote.IPAndPort.Port
+		}
+
+		// Fake a lookup result with an empty deployment ID.
+		lookupResults = []clusterentities.LookupResult{
+			{
+				Entity: networkgraph.Entity{
+					Type: storage.NetworkEntityInfo_INTERNET,
+				},
+				ContainerPorts: []uint16{port},
+			},
+		}
+	} else {
+		status.used = true
+		if conn.incoming {
+			// Only report incoming connections from outside of the cluster. These are already taken care of by the
+			// corresponding outgoing connection from the other end.
+			return
+		}
+	}
+
+	for _, lookupResult := range lookupResults {
+		for _, port := range lookupResult.ContainerPorts {
+			indicator := networkConnIndicator{
+				dstPort:  port,
+				protocol: conn.remote.L4Proto.ToProtobuf(),
+			}
+
+			if conn.incoming {
+				indicator.srcEntity = lookupResult.Entity
+				indicator.dstEntity = networkgraph.EntityForDeployment(container.DeploymentID)
+			} else {
+				indicator.srcEntity = networkgraph.EntityForDeployment(container.DeploymentID)
+				indicator.dstEntity = lookupResult.Entity
+			}
+
+			// Multiple connections from a collector can result in a single enriched connection
+			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
+			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
+				enrichedConnections[indicator] = status.lastSeen
+			}
+		}
+	}
+}
+
+func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+	hostConns.mutex.Lock()
+	defer hostConns.mutex.Unlock()
+
+	for conn, status := range hostConns.connections {
+		m.enrichConnection(&conn, status, enrichedConnections)
+		if status.used && status.lastSeen != timestamp.InfiniteFuture {
+			// connections that are no longer active and have already been used can be deleted.
+			delete(hostConns.connections, conn)
+		}
+	}
+}
+
 func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]timestamp.MicroTS {
-	conns := m.getAllConnections()
+	allHostConns := m.getAllHostConnections()
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
-	for conn, status := range conns {
-		isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
-		if !isFresh {
-			status.used = true
-		}
-
-		container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-		if !ok {
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
-			continue
-		}
-
-		lookupResults := m.clusterEntities.LookupByEndpoint(conn.remote)
-		if len(lookupResults) == 0 {
-			if isFresh {
-				continue
-			}
-
-			var port uint16
-			if conn.incoming {
-				port = conn.local.Port
-			} else {
-				port = conn.remote.IPAndPort.Port
-			}
-
-			// Fake a lookup result with an empty deployment ID.
-			lookupResults = []clusterentities.LookupResult{
-				{
-					Entity: networkgraph.Entity{
-						Type: storage.NetworkEntityInfo_INTERNET,
-					},
-					ContainerPorts: []uint16{port},
-				},
-			}
-		} else {
-			status.used = true
-			if conn.incoming {
-				// Only report incoming connections from outside of the cluster. These are already taken care of by the
-				// corresponding outgoing connection from the other end.
-				continue
-			}
-		}
-
-		for _, lookupResult := range lookupResults {
-			for _, port := range lookupResult.ContainerPorts {
-				indicator := networkConnIndicator{
-					dstPort:  port,
-					protocol: conn.remote.L4Proto.ToProtobuf(),
-				}
-
-				if conn.incoming {
-					indicator.srcEntity = lookupResult.Entity
-					indicator.dstEntity = networkgraph.EntityForDeployment(container.DeploymentID)
-				} else {
-					indicator.srcEntity = networkgraph.EntityForDeployment(container.DeploymentID)
-					indicator.dstEntity = lookupResult.Entity
-				}
-
-				// Multiple connections from a collector can result in a single enriched connection
-				// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-				if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
-					enrichedConnections[indicator] = status.lastSeen
-				}
-			}
-		}
+	for _, hostConns := range allHostConns {
+		m.enrichHostConnections(hostConns, enrichedConnections)
 	}
 
 	return enrichedConnections
@@ -233,31 +264,18 @@ func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, pr
 	}
 }
 
-func (m *networkFlowManager) getAllConnections() map[connection]*connStatus {
-	// Phase 1: get a snapshot of all *hostConnections.
-	var allHostConns []*hostConnections
-	concurrency.WithLock(&m.connectionsByHostMutex, func() {
-		allHostConns = make([]*hostConnections, 0, len(m.connectionsByHost))
-		for _, hostConns := range m.connectionsByHost {
-			allHostConns = append(allHostConns, hostConns)
-		}
-	})
+func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
+	// Get a snapshot of all *hostConnections. This allows us to lock the individual mutexes without having to hold
+	// two locks simultaneously.
+	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
 
-	// Phase 2: Merge all connections from all *hostConnections into a single map. This two-phase approach avoids
-	// holding two locks simultaneously.
-	allConnections := make(map[connection]*connStatus)
-	for _, hostConns := range allHostConns {
-		concurrency.WithLock(&hostConns.mutex, func() {
-			for conn, status := range hostConns.connections {
-				allConnections[conn] = status
-				if status.lastSeen != timestamp.InfiniteFuture && status.used {
-					delete(hostConns.connections, conn) // connection not active, no longer needed
-				}
-			}
-		})
+	allHostConns := make([]*hostConnections, 0, len(m.connectionsByHost))
+	for _, hostConns := range m.connectionsByHost {
+		allHostConns = append(allHostConns, hostConns)
 	}
 
-	return allConnections
+	return allHostConns
 }
 
 func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo, int64) {

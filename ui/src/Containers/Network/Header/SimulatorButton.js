@@ -40,11 +40,11 @@ class SimulatorButton extends Component {
             <button
                 type="button"
                 data-test-id={`simulator-button-${this.props.creatingOrSimulating ? 'on' : 'off'}`}
-                className={`flex-no-shrink border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
+                className={`flex items-center flex-shrink-0 border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
                 onClick={this.toggleSimulation}
             >
-                <span className="pr-2">Network Policy Simulator</span>
                 <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
+                <span className="pl-2">Network Policy Simulator</span>
             </button>
         );
     }

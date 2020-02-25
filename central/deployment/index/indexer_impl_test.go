@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -645,8 +646,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 		suite.NoError(suite.indexer.AddDeployment(d))
 	}
 
-	reversedIds := make([]string, len(ids))
-	copy(reversedIds, ids)
+	reversedIds := sliceutils.StringClone(ids)
 	sort.Sort(sort.Reverse(sort.StringSlice(reversedIds)))
 
 	var cases = []struct {
@@ -742,6 +742,50 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 			} else {
 				assert.Equal(t, reversedIds[c.from:c.from+c.size], resultIDs)
 			}
+		})
+	}
+}
+
+func TestEnumComparisonSearch(t *testing.T) {
+	bleveIndex, err := globalindex.TempInitializeIndices("")
+	require.NoError(t, err)
+	indexer := New(bleveIndex)
+
+	cases := []struct {
+		prefix          string
+		queryLevel      storage.PermissionLevel
+		deploymentLevel storage.PermissionLevel
+		expectedMatch   bool
+	}{
+		{
+			prefix:          ">=",
+			queryLevel:      storage.PermissionLevel_DEFAULT,
+			deploymentLevel: storage.PermissionLevel_CLUSTER_ADMIN,
+			expectedMatch:   true,
+		},
+		{
+			prefix:          ">=",
+			queryLevel:      storage.PermissionLevel_DEFAULT,
+			deploymentLevel: storage.PermissionLevel_DEFAULT,
+			expectedMatch:   true,
+		},
+		{
+			prefix:          ">=",
+			queryLevel:      storage.PermissionLevel_DEFAULT,
+			deploymentLevel: storage.PermissionLevel_NONE,
+			expectedMatch:   false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(fmt.Sprintf("%s%s-%s", c.prefix, c.queryLevel, c.deploymentLevel), func(t *testing.T) {
+			d := fixtures.GetDeployment()
+			d.ServiceAccountPermissionLevel = c.deploymentLevel
+			require.NoError(t, indexer.AddDeployment(d))
+
+			q := search.NewQueryBuilder().AddStringsHighlighted(search.ServiceAccountPermissionLevel, c.prefix+c.queryLevel.String()).ProtoQuery()
+			results, err := indexer.Search(q)
+			require.NoError(t, err)
+			assert.Equal(t, c.expectedMatch, len(results) == 1)
 		})
 	}
 }

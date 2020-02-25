@@ -111,86 +111,37 @@ func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method
-func (m *MockStore) Upsert(component *storage.ImageComponent) error {
+func (m *MockStore) Upsert(component ...*storage.ImageComponent) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", component)
+	varargs := []interface{}{}
+	for _, a := range component {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Upsert", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert
-func (mr *MockStoreMockRecorder) Upsert(component interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(component ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), component)
-}
-
-// UpsertBatch mocks base method
-func (m *MockStore) UpsertBatch(components []*storage.ImageComponent) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertBatch", components)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertBatch indicates an expected call of UpsertBatch
-func (mr *MockStoreMockRecorder) UpsertBatch(components interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertBatch", reflect.TypeOf((*MockStore)(nil).UpsertBatch), components)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), component...)
 }
 
 // Delete mocks base method
-func (m *MockStore) Delete(id string) error {
+func (m *MockStore) Delete(ids ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", id)
+	varargs := []interface{}{}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete
-func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Delete(ids ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
-}
-
-// DeleteBatch mocks base method
-func (m *MockStore) DeleteBatch(ids []string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteBatch", ids)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteBatch indicates an expected call of DeleteBatch
-func (mr *MockStoreMockRecorder) DeleteBatch(ids interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBatch", reflect.TypeOf((*MockStore)(nil).DeleteBatch), ids)
-}
-
-// GetTxnCount mocks base method
-func (m *MockStore) GetTxnCount() (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxnCount")
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxnCount indicates an expected call of GetTxnCount
-func (mr *MockStoreMockRecorder) GetTxnCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockStore)(nil).GetTxnCount))
-}
-
-// IncTxnCount mocks base method
-func (m *MockStore) IncTxnCount() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncTxnCount")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IncTxnCount indicates an expected call of IncTxnCount
-func (mr *MockStoreMockRecorder) IncTxnCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTxnCount", reflect.TypeOf((*MockStore)(nil).IncTxnCount))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), ids...)
 }

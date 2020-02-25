@@ -92,3 +92,8 @@ func (e *ErrorList) String() string {
 	}
 	return err.Error()
 }
+
+// ErrorStrings returns all the error strings in this ErrorList as a slice, ignoring the start string.
+func (e *ErrorList) ErrorStrings() []string {
+	return e.errors
+}

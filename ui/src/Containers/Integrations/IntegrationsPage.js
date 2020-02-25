@@ -188,12 +188,12 @@ class IntegrationsPage extends Component {
 
         return (
             <div className="h-full flex flex-col md:w-full bg-base-200" id="integrationsPage">
-                <div className="flex flex-no-shrink">
+                <div className="flex flex-shrink-0">
                     <PageHeader header="Integrations" subHeader="Setup & Configuration" />
                 </div>
                 <div className="w-full h-full overflow-auto">
                     <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Images
                         </h2>
                         <div className="flex flex-col items-center w-full">
@@ -204,7 +204,7 @@ class IntegrationsPage extends Component {
                     </section>
 
                     <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Plugins
                         </h2>
                         <div className="flex flex-col items-center w-full">
@@ -213,7 +213,7 @@ class IntegrationsPage extends Component {
                     </section>
 
                     <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             External Backups
                         </h2>
                         <div className="flex flex-col items-center w-full">
@@ -222,7 +222,7 @@ class IntegrationsPage extends Component {
                     </section>
 
                     <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authentication Tokens
                         </h2>
                         <div className="flex flex-col items-center w-full">
@@ -231,7 +231,7 @@ class IntegrationsPage extends Component {
                     </section>
 
                     <section className="mb-6">
-                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 top-0 px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authorization Plugins
                         </h2>
                         <div className="flex flex-col items-center w-full">

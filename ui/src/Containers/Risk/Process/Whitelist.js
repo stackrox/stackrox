@@ -42,7 +42,7 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
     return (
         <li
             key={containerName}
-            className="bg-base-100 text-base-600 rounded border border-base-400 mb-3"
+            className="bg-base-100 text-base-600 rounded border border-base-400"
         >
             <div className="text-base-600 font-700 text-lg flex justify-between items-center border-b border-base-300 p-3">
                 <span>{key.containerName}</span>

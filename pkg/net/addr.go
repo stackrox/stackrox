@@ -119,7 +119,11 @@ func (a IPAddress) AsNetIP() net.IP {
 
 // String returns the string representation of this IP address.
 func (a IPAddress) String() string {
-	return a.AsNetIP().String()
+	netIP := a.AsNetIP()
+	if netIP == nil {
+		return ""
+	}
+	return netIP.String()
 }
 
 // IsValid checks if the IP address is valid, i.e., is non-nil.

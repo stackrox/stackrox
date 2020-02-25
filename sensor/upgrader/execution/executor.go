@@ -2,6 +2,7 @@ package execution
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -46,13 +47,7 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 			return errors.Wrapf(err, "converting object %s to unstructured", act.ObjectRef)
 		}
 
-		ann := obj.GetAnnotations()
-		if ann == nil {
-			ann = make(map[string]string)
-		}
-		ann[common.LastUpgradeIDAnnotationKey] = e.ctx.ProcessID()
-		obj.SetAnnotations(ann)
-		obj.SetResourceVersion("")
+		k8sutil.SetAnnotation(&obj, common.LastUpgradeIDAnnotationKey, e.ctx.ProcessID())
 	}
 
 	switch act.ActionName {
@@ -66,7 +61,24 @@ func (e *executor) executeAction(act plan.ActionDesc) error {
 		}
 	case plan.UpdateAction:
 		if _, err := client.Update(&obj, metaV1.UpdateOptions{}); err != nil {
-			return err
+			// The upgrader is very focused on getting the Kubernetes objects to the end state
+			// obtained from the bundle. Hence, it doesn't make sense for us to bother with
+			// the resourceVersion, since our update is NOT a function of the original object.
+			// However, for some objects (specifically, we've observed this with the admission webhook),
+			// the update is rejected by the Kube API server unless a resourceVersion is specified.
+			// To mitigate this, we try all updates with the resourceVersion specified. If we hit a conflict,
+			// then we unset the resourceVersion and try again.
+			// Of course, if there is a conflict with a resource like an admission controller, this will still fail --
+			// however, that should be relatively rare, and in those cases, the upgrade can be retried.
+			if !k8sErrors.IsConflict(err) {
+				return err
+			}
+			log.Warnf("The update for object %v hit a conflict. Trying again without setting resourceVersion: %v", act.ObjectRef, err)
+			obj.SetResourceVersion("")
+			_, err := client.Update(&obj, metaV1.UpdateOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "updating after clearing resourceVersion of object %v", act.ObjectRef)
+			}
 		}
 	case plan.DeleteAction:
 		if err := client.Delete(act.ObjectRef.Name, kubernetes.DeleteBackgroundOption); err != nil {

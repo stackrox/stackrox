@@ -24,7 +24,7 @@ function RuntimeMessages({ processViolation }) {
     const processesList = processes.map(process => <ProcessMessage process={process} />);
 
     return (
-        <div className="mb-4" key={message}>
+        <div className="mb-4" key={message} data-testid="runtime-processes">
             <ProcessesCollapsibleCard title={message}>
                 <div>
                     <div className="flex flex-1 bg-primary-100">

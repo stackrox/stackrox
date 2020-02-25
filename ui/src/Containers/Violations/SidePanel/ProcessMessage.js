@@ -1,19 +1,24 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 
-function KeyValue({ key, value }) {
+import dateTimeFormat from 'constants/dateTimeFormat';
+import { knownBackendFlags } from 'utils/featureFlags';
+
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
+import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
+
+function KeyValue({ label, value }) {
     return (
         <div>
-            <span className="font-700">{key}</span> {value}
+            <span className="font-700">{label}</span> {value}
         </div>
     );
 }
 
 KeyValue.propTypes = {
-    key: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
     value: PropTypes.string.isRequired
 };
 
@@ -25,26 +30,34 @@ function ProcessMessage({ process }) {
     if (Array.isArray(lineage) && lineage.length) {
         ancestors = (
             <div className="flex flex-1 text-base-600 px-4 py-2">
-                <KeyValue key="Ancestors:" value={lineage.join(', ')} />
+                <KeyValue label="Ancestors:" value={lineage.join(', ')} />
             </div>
         );
     }
     return (
-        <div className="border-t border-base-300" key={process.id}>
+        <div className="border-t border-base-300" label={process.id}>
             <div className="flex text-base-600">
                 <span className="py-2 px-2 bg-caution-200">{execFilePath}</span>
             </div>
             <div className="flex flex-1 text-base-600 px-4 py-2 justify-between">
-                <KeyValue key="Container ID:" value={containerId} />
-                <KeyValue key="Time:" value={timeFormat} />
+                <KeyValue label="Container ID:" value={containerId} />
+                <KeyValue label="Time:" value={timeFormat} />
             </div>
             <div className="flex flex-1 text-base-600 px-4 py-2">
-                <KeyValue key="User ID:" value={uid} />
+                <KeyValue label="User ID:" value={uid} />
             </div>
             <div className="flex flex-1 text-base-600 px-4 py-2">
-                <KeyValue key="Arguments:" value={args} />
+                <KeyValue label="Arguments:" value={args} />
             </div>
             {ancestors}
+            <div className="mb-4 p-2">
+                <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
+                    <div className="mb-3">
+                        <AnalystTags type="Process" />
+                    </div>
+                    <AnalystComments type="Process" />
+                </FeatureEnabled>
+            </div>
         </div>
     );
 }

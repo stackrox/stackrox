@@ -57,10 +57,12 @@ func watchdog(action string, ch <-chan struct{}, timeout time.Duration, stacktra
 }
 
 func panicOnTimeout(action string, do func(), timeout time.Duration) {
-	ch := make(chan struct{})
-	go watchdog(action, ch, timeout, debug.GetLazyStacktrace(2))
+	if timeout > 0 {
+		ch := make(chan struct{})
+		go watchdog(action, ch, timeout, debug.GetLazyStacktrace(2))
+		defer close(ch)
+	}
 	do()
-	close(ch)
 }
 
 // Mutex is a watchdog-enabled version of sync.Mutex.

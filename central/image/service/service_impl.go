@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/enricher"
@@ -20,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -37,9 +37,12 @@ var (
 			"/v1.ImageService/CountImages",
 			"/v1.ImageService/ListImages",
 		},
+		idcheck.SensorsOnly(): {
+			"/v1.ImageService/ScanImageInternal",
+		},
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
-			"/v1.ImageService/ScanImage",
 			"/v1.ImageService/DeleteImages",
+			"/v1.ImageService/ScanImage",
 		},
 		user.With(permissions.View(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
@@ -133,6 +136,29 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
+// ScanImage handles an image request from Sensor
+func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	img := types.ToImage(request.GetImage())
+
+	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{}, img); err != nil {
+		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
+		// purposefully, don't return here because we still need to save it into the DB so there is a reference
+		// even if we weren't able to enrich it
+	}
+
+	// Save the image if we received an ID from sensor
+	// Otherwise, our inferred ID may not match
+	if img.GetId() != "" {
+		if err := s.datastore.UpsertImage(ctx, img); err != nil {
+			return nil, err
+		}
+	}
+
+	return &v1.ScanImageInternalResponse{
+		Image: img,
+	}, nil
+}
+
 // ScanImage scans an image and returns the result
 func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageRequest) (*storage.Image, error) {
 	if request.GetImageName() == "" {
@@ -155,12 +181,13 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	if !enrichmentResult.ImageUpdated || (enrichmentResult.ScanResult != enricher.ScanSucceeded) {
 		return nil, status.Error(codes.Internal, "scan could not be completed. Please check that an applicable registry and scanner is integrated")
 	}
 
 	// Save the image
-	img.Id = stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
+	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {
 		if err := s.datastore.UpsertImage(ctx, img); err != nil {
 			return nil, err

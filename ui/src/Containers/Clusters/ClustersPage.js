@@ -25,7 +25,6 @@ import {
 } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import RowActionButton from 'Components/RowActionButton';
-
 import useInterval from 'hooks/useInterval';
 import { actions as clustersActions } from 'reducers/clusters';
 import { selectors } from 'reducers';
@@ -39,6 +38,7 @@ import {
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { clustersPath } from 'routePaths';
+import { sortVersion } from 'sorters/sorters';
 
 import ClustersSidePanel from './ClustersSidePanel';
 
@@ -329,40 +329,47 @@ const ClustersPage = ({
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'type',
             Header: 'Orchestrator',
             Cell: ({ original }) => formatClusterType(original.type),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'collectionMethod',
             Header: 'Runtime collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'admissionController',
             Header: 'Admission Controller created',
             Cell: ({ original }) => formatConfiguredField(original.admissionController),
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
             className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'status.lastContact',
             Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'status.upgradeStatus',
             Header: 'Upgrade status',
             Cell: ({ original }) => getUpgradeStatusField(original),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
         },
         {
+            accessor: 'status.sensorVersion',
             Header: 'Current Sensor version',
             Cell: ({ original }) => formatSensorVersion(original.status),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
+            sortMethod: sortVersion
         },
         {
             Header: '',

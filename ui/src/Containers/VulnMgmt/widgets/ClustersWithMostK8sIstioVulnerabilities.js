@@ -82,41 +82,41 @@ const processData = (data, workflowState, limit) => {
             const clusterUrl = workflowState.resetPage(entityTypes.CLUSTER, id).toUrl();
             const indicationTooltipText = isGKECluster
                 ? 'These CVEs might have been patched by GKE. Please check the GKE release notes or security bulletin to find out more.'
-                : 'These CVEs were not patched in the current Kubernetes version of this cluster';
+                : 'These CVEs were not patched in the current Kubernetes version of this cluster.';
 
             const indicatorIcon = isGKECluster ? (
-                <HelpCircle className="h-4 w-4 text-warning-700 ml-2" />
+                <HelpCircle className="w-4 h-4 text-warning-700 ml-2" />
             ) : (
-                <AlertCircle className="h-4 w-4 text-alert-700 ml-2" />
+                <AlertCircle className="w-4 h-4 text-alert-700 ml-2" />
             );
 
             const k8sIstioContent = (
                 <div className="flex">
-                    <div className="flex flex-1 items-center justify-left mr-2">
+                    <div className="flex flex-1 items-center justify-left mr-8">
+                        <img src={kubeSVG} alt="kube" className="pr-2" />
                         <FixableCVECount
                             cves={k8sCveCount}
                             url={k8sUrl}
                             fixableUrl={k8sFixableUrl}
                             fixable={k8sFixableCount}
                             orientation="vertical"
+                            showZero
                         />
-                        <img src={kubeSVG} alt="kube" className="pl-2" />
                         <Tooltip placement="top" overlay={<div>{indicationTooltipText}</div>}>
                             {indicatorIcon}
                         </Tooltip>
                     </div>
-                    {!!istioCveCount && (
-                        <div className="flex flex-1 items-center justify-left pr-1">
-                            <FixableCVECount
-                                cves={istioCveCount}
-                                url={istioUrl}
-                                fixableUrl={istioFixableUrl}
-                                fixable={istioFixableCount}
-                                orientation="vertical"
-                            />
-                            <img src={istioSVG} alt="istio" className="pl-2" />
-                        </div>
-                    )}
+                    <div className="flex items-center justify-left pr-2">
+                        <img src={istioSVG} alt="istio" className="pr-2" />
+                        <FixableCVECount
+                            cves={istioCveCount}
+                            url={istioUrl}
+                            fixableUrl={istioFixableUrl}
+                            fixable={istioFixableCount}
+                            orientation="vertical"
+                            showZero
+                        />
+                    </div>
                 </div>
             );
 
@@ -151,7 +151,8 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext, limit }) => {
 
     const viewAllURL = workflowState
         .pushList(entityTypes.CLUSTER)
-        .setSort([{ id: 'vulnCounter.all.total', desc: true }])
+        // @TODO: re-enable sorting again, after this fields is available for sorting in back-end pagination
+        // .setSort([{ id: 'vulnCounter.all.total', desc: true }])
         .toUrl();
 
     return (

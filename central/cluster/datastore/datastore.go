@@ -11,15 +11,18 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/simplecache"
 )
 
 var (
@@ -34,8 +37,10 @@ var (
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
+	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 	CountClusters(ctx context.Context) (int, error)
+	Exists(ctx context.Context, id string) (bool, error)
 
 	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
@@ -60,23 +65,24 @@ func New(
 	ns nodeDataStore.GlobalDataStore,
 	ss secretDataStore.DataStore,
 	cm connection.Manager,
-	notifier notifierProcessor.Processor) (DataStore, error) {
+	notifier notifierProcessor.Processor,
+	graphProvider graph.Provider,
+	clusterRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: search.New(storage, indexer),
-		ads:      ads,
-		dds:      dds,
-		ns:       ns,
-		ss:       ss,
-		cm:       cm,
-		notifier: notifier,
+		storage:       storage,
+		indexer:       indexer,
+		searcher:      search.New(storage, indexer, graphProvider, clusterRanker),
+		ads:           ads,
+		dds:           dds,
+		ns:            ns,
+		ss:            ss,
+		cm:            cm,
+		notifier:      notifier,
+		clusterRanker: clusterRanker,
+
+		cache: simplecache.New(),
 	}
 	if err := ds.buildIndex(); err != nil {
-		return ds, err
-	}
-
-	if err := ds.initializeRanker(); err != nil {
 		return ds, err
 	}
 

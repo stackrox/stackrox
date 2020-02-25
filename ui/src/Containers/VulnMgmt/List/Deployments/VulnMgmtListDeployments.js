@@ -7,7 +7,11 @@ import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
@@ -66,7 +70,7 @@ export function getDeploymentTableColumns(workflowState) {
                         vulnCounter={vulnCounter}
                         url={url}
                         fixableUrl={fixableUrl}
-                        hideLink={pdf}
+                        hideLink={pdf || inFindingsSection}
                     />
                 );
             },
@@ -75,45 +79,51 @@ export function getDeploymentTableColumns(workflowState) {
         },
         {
             Header: `Latest Violation`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
             accessor: 'latestViolation',
-            sortField: deploymentSortFields.LATEST_VIOLATION
+            sortField: deploymentSortFields.LATEST_VIOLATION,
+            sortable: false
         },
-        {
-            Header: `Policies`,
-            entityType: entityTypes.POLICY,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'failingPolicyCount',
-            Cell: ({ original, pdf }) => (
-                <TableCountLink
-                    entityType={entityTypes.POLICY}
-                    count={original.failingPolicyCount}
-                    textOnly={inFindingsSection || pdf}
-                    selectedRowId={original.id}
-                    entityTypeText="failing policy"
-                />
-            ),
-            sortField: deploymentSortFields.POLICIES
-        },
+        // @TODD, restore the Policy Counts column once its performance is improved,
+        //   or remove the comment if we determine that it cannot be made performant
+        //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
+        // {
+        //     Header: `Policies`,
+        //     entityType: entityTypes.POLICY,
+        //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
+        //     className: `w-1/10 ${defaultColumnClassName}`,
+        //     accessor: 'policyCount',
+        //     Cell: ({ original, pdf }) => (
+        //         <TableCountLink
+        //             entityType={entityTypes.POLICY}
+        //             count={original.policyCount}
+        //             textOnly={inFindingsSection || pdf}
+        //             selectedRowId={original.id}
+        //             entityTypeText="policy"
+        //         />
+        //     ),
+        //     sortField: deploymentSortFields.POLICY_COUNT,
+        //     sortable: false
+        // },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
-                const policyLabel = <StatusChip status={policyStatus} />;
+                const policyLabel = <StatusChip status={policyStatus} asString={pdf} />;
 
                 return policyLabel;
             },
             id: 'policyStatus',
             accessor: 'policyStatus',
-            sortField: deploymentSortFields.POLICY_STATUS
+            sortField: deploymentSortFields.POLICY_STATUS,
+            sortable: false
         },
         {
             Header: `Cluster`,
@@ -162,7 +172,7 @@ export function getDeploymentTableColumns(workflowState) {
                 />
             ),
             accessor: 'imageCount',
-            sortField: deploymentSortFields.IMAGES
+            sortField: deploymentSortFields.IMAGE_COUNT
         },
         {
             Header: `Risk Priority`,
@@ -175,9 +185,9 @@ export function getDeploymentTableColumns(workflowState) {
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
-        query getDeployments($query: String, $policyQuery: String, $pagination: Pagination) {
+        query getDeployments($query: String, $scopeQuery: String, $pagination: Pagination) {
             results: deployments(query: $query, pagination: $pagination) {
                 ...deploymentFields
             }
@@ -188,9 +198,6 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
     const tableSort = sort || defaultDeploymentSort;
     const queryOptions = {
         variables: {
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            }),
             query: queryService.objectToWhereClause(search),
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
@@ -199,6 +206,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data }) => {
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             idAttribute="id"

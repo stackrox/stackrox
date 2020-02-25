@@ -369,7 +369,7 @@ func TestWhitelistCheck(t *testing.T) {
 				ContainerName: c.nameContainerGroup.ContainerName,
 			}
 			deployments.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(deployment, true, nil)
-			whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
+			whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, true, nil)
 			err := service.setSuspicious(hasReadCtx, []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)

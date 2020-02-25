@@ -17,7 +17,7 @@ func generateDelete(props GeneratorProperties) (Code, Code) {
 	implementation := renderDeleteFunctionSignature(renderFuncBStarIndexer(), props).Block(
 		metricLine("Remove", props.Object),
 		ifErrReturnError(Id("b").Dot("index").Dot("Delete").Call(Id("id"))),
-		Return(incrementTxnCount(props.NeedsTxManager)),
+		Return(Nil()),
 	)
 
 	return interfaceMethod, implementation
@@ -38,7 +38,7 @@ func generateDeleteMany(props GeneratorProperties) (Code, Code) {
 			Id("batch").Dot("Delete").Call(Id("id")),
 		),
 		ifErrReturnError(bIndex().Dot("Batch").Call(Id("batch"))),
-		Return(incrementTxnCount(props.NeedsTxManager)),
+		Return(Nil()),
 	)
 
 	return interfaceMethod, implementation

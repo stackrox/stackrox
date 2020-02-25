@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Trash2 } from 'react-feather';
+import { Download, Trash2 } from 'react-feather';
 import PanelButton from './PanelButton';
 
 export default {
@@ -31,5 +31,16 @@ export const disabledPanelButton = () => (
         disabled
     >
         Delete Cluster
+    </PanelButton>
+);
+
+export const withTextAlwaysVisibleAtAllWindowWidths = () => (
+    <PanelButton
+        icon={<Download className="h-4 w-4 ml-1" />}
+        className="btn btn-tertiary ml-2"
+        onClick={fn}
+        alwaysVisibleText
+    >
+        Download Data
     </PanelButton>
 );

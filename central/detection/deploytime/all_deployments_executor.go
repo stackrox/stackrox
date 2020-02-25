@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/detection"
+	"github.com/stackrox/rox/pkg/detection/deploytime"
 )
 
-func newAllDeploymentsExecutor(executorCtx context.Context, deployments datastore.DataStore) alertCollectingExecutor {
+func newAllDeploymentsExecutor(executorCtx context.Context, deployments datastore.DataStore) deploytime.AlertCollectingExecutor {
 	return &allDeploymentsExecutor{
 		deployments: deployments,
 		executorCtx: executorCtx,
@@ -49,7 +50,7 @@ func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) erro
 		if !compiled.AppliesTo(dep) {
 			continue
 		}
-		d.alerts = append(d.alerts, policyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations.AlertViolations))
+		d.alerts = append(d.alerts, deploytime.PolicyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations.AlertViolations))
 	}
 	return nil
 }

@@ -2,10 +2,12 @@ package manager
 
 import (
 	"context"
+	"crypto/sha256"
 	"io/ioutil"
 	"sort"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deploymentenvs"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/license/validator"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -413,14 +416,24 @@ func (m *manager) updateStore() error {
 	return err
 }
 
-func (m *manager) GetActiveLicense() *licenseproto.License {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+func (m *manager) GetActiveLicenseKey() string {
+	var key string
+	concurrency.WithRLock(&m.mutex, func() {
+		if m.activeLicense != nil {
+			key = m.activeLicense.licenseKey
+		}
+	})
+	return key
+}
 
-	if m.activeLicense == nil {
-		return nil
-	}
-	return m.activeLicense.licenseProto
+func (m *manager) GetActiveLicense() *licenseproto.License {
+	var licenseProto *licenseproto.License
+	concurrency.WithRLock(&m.mutex, func() {
+		if m.activeLicense != nil {
+			licenseProto = proto.Clone(m.activeLicense.licenseProto).(*licenseproto.License)
+		}
+	})
+	return licenseProto
 }
 
 func (m *manager) GetAllLicenses() []*v1.LicenseInfo {
@@ -576,4 +589,32 @@ func (m *manager) GetLicenseStatus() v1.Metadata_LicenseStatus {
 	defer m.mutex.RUnlock()
 
 	return m.licenseStatus
+}
+
+func (m *manager) SignWithLicenseKeyHash(licenseID string, payload []byte) ([]byte, error) {
+	var licenseKey string
+	concurrency.WithRLock(&m.mutex, func() {
+		licData := m.licenses[licenseID]
+		if licData != nil {
+			licenseKey = licData.licenseKey
+		}
+	})
+	if licenseKey == "" {
+		return nil, errors.Errorf("unknown license %q", licenseID)
+	}
+
+	normalizedKey, err := license.NormalizeLicenseKey(licenseKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to normalize license key")
+	}
+
+	keyFP := sha256.Sum256([]byte(normalizedKey))
+
+	sigInput := make([]byte, 0, 2*len(keyFP)+len(payload))
+	sigInput = append(sigInput, keyFP[:]...)
+	sigInput = append(sigInput, payload...)
+	sigInput = append(sigInput, keyFP[:]...)
+
+	signature := sha256.Sum256(sigInput)
+	return signature[:], nil
 }

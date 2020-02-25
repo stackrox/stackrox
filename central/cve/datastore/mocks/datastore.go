@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	converter "github.com/stackrox/rox/central/cve/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -161,16 +162,78 @@ func (mr *MockDataStoreMockRecorder) SearchRawCVEs(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawCVEs), arg0, arg1)
 }
 
-// Upsert mocks base method
-func (m *MockDataStore) Upsert(arg0 context.Context, arg1 *storage.CVE) error {
+// Suppress mocks base method
+func (m *MockDataStore) Suppress(arg0 context.Context, arg1 ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Suppress", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Suppress indicates an expected call of Suppress
+func (mr *MockDataStoreMockRecorder) Suppress(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Suppress", reflect.TypeOf((*MockDataStore)(nil).Suppress), varargs...)
+}
+
+// Unsuppress mocks base method
+func (m *MockDataStore) Unsuppress(arg0 context.Context, arg1 ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Unsuppress", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unsuppress indicates an expected call of Unsuppress
+func (mr *MockDataStoreMockRecorder) Unsuppress(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsuppress", reflect.TypeOf((*MockDataStore)(nil).Unsuppress), varargs...)
+}
+
+// Upsert mocks base method
+func (m *MockDataStore) Upsert(arg0 context.Context, arg1 ...*storage.CVE) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Upsert", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert
-func (mr *MockDataStoreMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Upsert(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), arg0, arg1)
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), varargs...)
+}
+
+// UpsertClusterCVEs mocks base method
+func (m *MockDataStore) UpsertClusterCVEs(arg0 context.Context, arg1 ...converter.ClusterCVEParts) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpsertClusterCVEs", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertClusterCVEs indicates an expected call of UpsertClusterCVEs
+func (mr *MockDataStoreMockRecorder) UpsertClusterCVEs(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertClusterCVEs", reflect.TypeOf((*MockDataStore)(nil).UpsertClusterCVEs), varargs...)
 }

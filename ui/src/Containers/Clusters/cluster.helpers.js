@@ -1,5 +1,6 @@
 import dateFns from 'date-fns';
 import get from 'lodash/get';
+import cloneDeep from 'lodash/cloneDeep';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -245,7 +246,22 @@ export function getUpgradeStatusDetail(upgradeStatus) {
     return get(upgradeStatus, 'mostRecentProcess.progress.upgradeStatusDetail', '');
 }
 
+/**
+ * wrapper for original parseUpgradeStatus functionality
+ *   - to avoid bug where upgrade status handler for one cluster
+ *     was being used for another cluster in table when triggering upgrade action
+ *     because of JS shallow copy
+ *
+ * @param   {object}  upgradeStatus  structure from API with upgradability properties
+ *
+ * @return  {object}                 deee-copy of the appropriate upgrade state from FE map of states
+ */
 export function parseUpgradeStatus(upgradeStatus) {
+    const state = findUpgradeState(upgradeStatus);
+    return cloneDeep(state);
+}
+
+function findUpgradeState(upgradeStatus) {
     const upgradability = get(upgradeStatus, 'upgradability', undefined);
     if (!upgradability) {
         return null;

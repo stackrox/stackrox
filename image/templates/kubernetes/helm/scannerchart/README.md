@@ -3,8 +3,14 @@
 
 This Helm chart is for StackRox Scanner
 
-You can render this chart with
+Run the following command to render this chart:
+- for Helm v2
 ```
 helm install --name scanner .
 ```
+- for Helm v3
+```
+helm install scanner .
+```
+
 {{- end}}

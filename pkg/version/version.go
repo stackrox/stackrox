@@ -27,11 +27,6 @@ func GetScannerVersion() string {
 	return internal.ScannerVersion
 }
 
-// GetScannerV2Version returns the current ScannerV2 tag.
-func GetScannerV2Version() string {
-	return internal.ScannerV2Version
-}
-
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
 	BuildDate        time.Time `json:"BuildDate"`
@@ -41,7 +36,6 @@ type Versions struct {
 	MainVersion      string    `json:"MainVersion"`
 	Platform         string    `json:"Platform"`
 	ScannerVersion   string    `json:"ScannerVersion"`
-	ScannerV2Version string    `json:"ScannerV2Version,omitempty"`
 }
 
 // GetAllVersions returns all of the various pieces of version information.
@@ -54,7 +48,6 @@ func GetAllVersions() Versions {
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   GetScannerVersion(),
-		ScannerV2Version: GetScannerV2Version(),
 	}
 	return v
 }

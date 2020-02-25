@@ -14,7 +14,7 @@ type readerImpl struct {
 }
 
 // ExistsIn returns whether a data for a given key exists in a given transaction.
-func (rc readerImpl) ExistsIn(key []byte, dackTxn *dackbox.Transaction) (bool, error) {
+func (rc *readerImpl) ExistsIn(key []byte, dackTxn *dackbox.Transaction) (bool, error) {
 	_, err := dackTxn.BadgerTxn().Get(key)
 	if err == badger.ErrKeyNotFound {
 		return false, nil
@@ -25,7 +25,7 @@ func (rc readerImpl) ExistsIn(key []byte, dackTxn *dackbox.Transaction) (bool, e
 }
 
 // CountIn returns the number of objects in the transaction with the given prefix.
-func (rc readerImpl) CountIn(prefix []byte, dackTxn *dackbox.Transaction) (int, error) {
+func (rc *readerImpl) CountIn(prefix []byte, dackTxn *dackbox.Transaction) (int, error) {
 	return badgerhelper.BucketKeyCount(dackTxn.BadgerTxn(), prefix)
 }
 
@@ -37,7 +37,7 @@ var foreachOptions = badgerhelper.ForEachOptions{
 }
 
 // ReadAllIn returns all objects with the given prefix in the given transaction.
-func (rc readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]proto.Message, error) {
+func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]proto.Message, error) {
 	var ret []proto.Message
 	err := badgerhelper.BucketForEach(dackTxn.BadgerTxn(), prefix, foreachOptions, func(k, v []byte) error {
 		// Read in the base data to the result.
@@ -58,8 +58,24 @@ func (rc readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]p
 	return ret, err
 }
 
+var keysForeachOptions = badgerhelper.ForEachOptions{
+	IteratorOptions: &badger.IteratorOptions{
+		PrefetchValues: false,
+	},
+}
+
+// ReadAllIn returns all objects with the given prefix in the given transaction.
+func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([][]byte, error) {
+	var ret [][]byte
+	err := badgerhelper.BucketKeyForEach(dackTxn.BadgerTxn(), prefix, keysForeachOptions, func(k []byte) error {
+		ret = append(ret, append([]byte{}, k...))
+		return nil
+	})
+	return ret, err
+}
+
 // ReadIn returns the object saved under the given key in the given transaction.
-func (rc readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Message, error) {
+func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Message, error) {
 	// Read the top level object from the DB.
 	item, err := dackTxn.BadgerTxn().Get(key)
 	if err != badger.ErrKeyNotFound && err != nil {
@@ -78,7 +94,7 @@ func (rc readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Mes
 }
 
 // ReadIn returns the object saved under the given key in the given transaction.
-func (rc readerImpl) readInPartials(key []byte, msg proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
+func (rc *readerImpl) readInPartials(key []byte, msg proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
 	// Merge in any partial objects.
 	var err error
 	for _, partial := range rc.partials {
@@ -99,7 +115,7 @@ type partialReaderImpl struct {
 }
 
 // ReadIn reads in partial data to a higher level object.
-func (rp partialReaderImpl) ReadPartialIn(key []byte, mergeTo proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
+func (rp *partialReaderImpl) ReadPartialIn(key []byte, mergeTo proto.Message, dackTxn *dackbox.Transaction) (proto.Message, error) {
 	toKeys := dackTxn.Graph().GetRefsFrom(key)
 	partials := make([]proto.Message, 0, len(toKeys))
 	for _, key := range toKeys {

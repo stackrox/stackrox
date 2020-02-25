@@ -5,8 +5,10 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 func init() {
@@ -20,7 +22,8 @@ const (
 )
 
 var (
-	metricMap = make(map[string]prometheus.Gauge)
+	metricMap     = make(map[string]prometheus.Gauge)
+	metricMapLock sync.Mutex
 
 	bleveDiskUsage = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -42,22 +45,21 @@ func newGauge(name string) prometheus.Gauge {
 func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 	for k, v := range m {
 		currPrefix := parentPrefix + "_" + k
-		if subMap, ok := v.(map[string]interface{}); ok {
-			walkStatsMap(currPrefix, subMap)
-			continue
-		}
-
 		switch value := v.(type) {
+		case map[string]interface{}:
+			walkStatsMap(currPrefix, value)
 		case uint64:
-			gauge, ok := metricMap[currPrefix]
-			if !ok {
-				gauge = newGauge(currPrefix)
-				metricMap[currPrefix] = gauge
+			concurrency.WithLock(&metricMapLock, func() {
+				gauge, ok := metricMap[currPrefix]
+				if !ok {
+					gauge = newGauge(currPrefix)
+					metricMap[currPrefix] = gauge
 
-				// Register the gauge the first time
-				prometheus.MustRegister(gauge)
-			}
-			gauge.Set(float64(value))
+					// Register the gauge the first time
+					prometheus.MustRegister(gauge)
+				}
+				gauge.Set(float64(value))
+			})
 		default:
 			log.Warnf("Unhandled metric %q", currPrefix)
 		}

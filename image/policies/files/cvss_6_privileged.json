@@ -1,7 +1,7 @@
 {
   "id": "93f4b2dd-ef5a-419e-8371-38aed480fb36",
   "name": "Fixable CVSS >= 6 and Privileged",
-  "description": "Alert on deployments with vulnerabilities with a CVSS score >= 6 and running in Privileged Mode",
+  "description": "Alert on deployments running in privileged mode with fixable vulnerabilities with a CVSS of at least 6",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": [
     "DEPLOY"
@@ -18,6 +18,6 @@
     "privileged": true,
     "fixedBy": ".*"
   },
-  "rationale": "If an image has a vulnerability with a CVSS score greater than 6 and the corresponding container is running as privileged, the container may pose an unnecessarily high risk of exploitation and privilege escalation.",
-  "remediation": "Speak with your security team to identify and mitigate the vulnerabilities or run your container with fewer privileges."
+  "rationale": "Known vulnerabilities make it easier for adversaries to exploit your application, and highly privileged containers pose greater risk. You can fix these high-severity vulnerabilities by updating to a newer version of the affected component(s).",
+  "remediation": "Use your package manager to update to a fixed version in future builds, run your container with lower privileges, or speak with your security team to mitigate the vulnerabilities."
 }

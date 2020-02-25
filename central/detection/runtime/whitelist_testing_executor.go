@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/pkg/detection"
 )
 
 type whitelistTestingExecutor interface {

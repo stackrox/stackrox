@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
+import dialogues from './dialogues';
+
 import ViolationsPageHeader from './ViolationsPageHeader';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import ViolationsSidePanel from './SidePanel/ViolationsSidePanel';
 import ResolveConfirmation from './Dialogues/ResolveConfirmation';
 import WhitelistConfirmation from './Dialogues/WhitelistConfirmation';
+import TagConfirmation from './Dialogues/TagConfirmation';
 
 function ViolationsPage({
     history,
@@ -86,20 +89,29 @@ function ViolationsPage({
                     />
                 </div>
             </div>
-            <WhitelistConfirmation
-                dialogue={dialogue}
-                setDialogue={setDialogue}
-                alerts={currentAlerts}
-                checkedAlertIds={checkedAlertIds}
-                setCheckedAlertIds={setCheckedAlertIds}
-            />
-            <ResolveConfirmation
-                dialogue={dialogue}
-                setDialogue={setDialogue}
-                checkedAlertIds={checkedAlertIds}
-                setCheckedAlertIds={setCheckedAlertIds}
-                runtimeAlerts={runtimeAlerts}
-            />
+            {dialogue === dialogues.whitelist && (
+                <WhitelistConfirmation
+                    setDialogue={setDialogue}
+                    alerts={currentAlerts}
+                    checkedAlertIds={checkedAlertIds}
+                    setCheckedAlertIds={setCheckedAlertIds}
+                />
+            )}
+            {dialogue === dialogues.resolve && (
+                <ResolveConfirmation
+                    setDialogue={setDialogue}
+                    checkedAlertIds={checkedAlertIds}
+                    setCheckedAlertIds={setCheckedAlertIds}
+                    runtimeAlerts={runtimeAlerts}
+                />
+            )}
+            {dialogue === dialogues.tag && (
+                <TagConfirmation
+                    setDialogue={setDialogue}
+                    checkedAlertIds={checkedAlertIds}
+                    setCheckedAlertIds={setCheckedAlertIds}
+                />
+            )}
         </section>
     );
 }

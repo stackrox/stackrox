@@ -1,10 +1,10 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 var (
@@ -13,11 +13,10 @@ var (
 
 // Manager processes network connections coming in from collector, enriches them and sends them to Central
 type Manager interface {
-	Start()
-	Stop()
-	FlowUpdates() <-chan *central.NetworkFlowUpdate
 	UnregisterCollector(hostname string, sequenceID int64)
 	RegisterCollector(hostname string) (HostNetworkInfo, int64)
+
+	common.SensorComponent
 }
 
 // HostNetworkInfo processes network connections from a single host aka collector.

@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	backupMaxTimeout = 60 * time.Minute
+	backupMaxTimeout = 4 * time.Hour
 	testMaxTimeout   = 5 * time.Second
 )
 
@@ -68,11 +68,13 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 		return nil, err
 	}
 
-	creds := credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(conf.GetRegion()),
-		Credentials: creds,
-	})
+	awsConfig := &aws.Config{
+		Region: aws.String(conf.GetRegion()),
+	}
+	if !conf.GetUseIam() {
+		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
+	}
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, err
 	}

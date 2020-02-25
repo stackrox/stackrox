@@ -3,6 +3,7 @@ package service
 import (
 	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(processWhitelistDataStore.Singleton(), reprocessor.Singleton())
+	as = New(processWhitelistDataStore.Singleton(), reprocessor.Singleton(), connection.ManagerSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

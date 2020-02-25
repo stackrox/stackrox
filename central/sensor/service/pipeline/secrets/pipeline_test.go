@@ -8,7 +8,6 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,7 +38,7 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRun() {
 	ctx := context.Background()
 	secret := fixtures.GetSecret()
-	suite.clusters.EXPECT().GetCluster(ctx, "clusterid").Return(&storage.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
+	suite.clusters.EXPECT().GetClusterName(ctx, "clusterid").Return("clustername", true, nil)
 	suite.secrets.EXPECT().UpsertSecret(ctx, secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)

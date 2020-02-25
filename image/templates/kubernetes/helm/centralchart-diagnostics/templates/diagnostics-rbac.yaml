@@ -1,0 +1,31 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-central-diagnostics
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-central-diagnostics
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: stackrox-central-diagnostics
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: {{.Values.namespace}}

@@ -26,6 +26,8 @@ import (
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configService "github.com/stackrox/rox/central/config/service"
 	"github.com/stackrox/rox/central/cve/fetcher"
+	"github.com/stackrox/rox/central/cve/handler"
+	cveService "github.com/stackrox/rox/central/cve/service"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -41,6 +43,7 @@ import (
 	backupRestoreService "github.com/stackrox/rox/central/globaldb/v2backuprestore/service"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
+	"github.com/stackrox/rox/central/grpc/metrics"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -60,9 +63,11 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	processWhitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	processWhitelistService "github.com/stackrox/rox/central/processwhitelist/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
@@ -89,6 +94,7 @@ import (
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
@@ -148,8 +154,7 @@ const (
 
 	grpcServerWatchdogTimeout = 20 * time.Second
 
-	publicAPIEndpoint     = ":8443"
-	insecureLocalEndpoint = "127.0.0.1:8444"
+	publicAPIEndpoint = ":8443"
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
 
@@ -311,15 +316,23 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		backupRestoreService.Singleton(),
 	}
 
+	if features.Dackbox.Enabled() {
+		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+	}
+
+	if features.Telemetry.Enabled() {
+		servicesToRegister = append(servicesToRegister, telemetryService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
-	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), autoTriggerUpgrades); err != nil {
+	if err := connection.ManagerSingleton().Start(clusterDataStore.Singleton(), policyDataStore.Singleton(), processWhitelistDataStore.Singleton(), autoTriggerUpgrades); err != nil {
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
 	if features.VulnMgmtUI.Enabled() {
 		m := fetcher.SingletonManager()
 		if env.OfflineModeEnv.Setting() != "true" {
-			go m.Fetch()
+			go m.Fetch(false)
 		}
 	}
 
@@ -372,7 +385,9 @@ func startGRPCServer(factory serviceFactory) {
 		log.Panicf("Could not initialize auth provider registry: %v", err)
 	}
 
-	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, registry)
+	basicAuthMgr := userpass.CreateManager()
+
+	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
 	serviceMTLSExtractor, err := service.NewExtractor()
 	if err != nil {
@@ -387,19 +402,20 @@ func startGRPCServer(factory serviceFactory) {
 	idExtractors := []authn.IdentityExtractor{
 		serviceMTLSExtractor, // internal services
 		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
-		userpass.IdentityExtractorOrPanic(basicAuthProvider),
+		userpass.IdentityExtractorOrPanic(basicAuthMgr, basicAuthProvider),
 		serviceTokenExtractor,
 		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:          factory.CustomRoutes(),
-		TLS:                   tlsconfig.ManagerInstance().TLSConfigurer(),
-		IdentityExtractors:    idExtractors,
-		AuthProviders:         registry,
-		InsecureLocalEndpoint: insecureLocalEndpoint,
-		PublicEndpoint:        publicAPIEndpoint,
-		Auditor:               audit.New(processor.Singleton()),
+		CustomRoutes:       factory.CustomRoutes(),
+		TLS:                tlsconfig.ManagerInstance().TLSConfigurer(),
+		IdentityExtractors: idExtractors,
+		AuthProviders:      registry,
+		PublicEndpoint:     publicAPIEndpoint,
+		Auditor:            audit.New(processor.Singleton()),
+		GRPCMetrics:        metrics.GRPCSingleton(),
+		HTTPMetrics:        metrics.HTTPSingleton(),
 	}
 
 	// This helps validate that SAC is being used correctly.
@@ -421,7 +437,15 @@ func startGRPCServer(factory serviceFactory) {
 		log.Panicf("Could not parse plaintext endpoints specification: %v", err)
 	}
 	if err := config.PlaintextEndpoints.Validate(); err != nil {
-		log.Panicf("Could not validate plaintext endpoints specificaton: %v", err)
+		log.Panicf("Could not validate plaintext endpoints specification: %v", err)
+	}
+
+	if err := config.SecureEndpoints.AddFromParsedSpec(env.SecureEndpoints.Setting()); err != nil {
+		log.Panicf("Could not parse secure endpoints specification: %v", err)
+	}
+
+	if err := config.SecureEndpoints.Validate(); err != nil {
+		log.Panicf("Could not validate secure endpoints specification: %v", err)
 	}
 
 	server := pkgGRPC.NewAPI(config)
@@ -494,7 +518,7 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/api/extensions/scanner/zip",
-			Authorizer:    user.With(),
+			Authorizer:    user.With(permissions.View(resources.ScannerBundle)),
 			ServerHandler: scanner.Handler(),
 			Compression:   false,
 		},
@@ -537,6 +561,12 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/compliance/export/csv",
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
 			ServerHandler: complianceHandlers.CSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/vm/export/csv",
+			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
+			ServerHandler: handler.CSVHandler(),
 			Compression:   true,
 		},
 		{

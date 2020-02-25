@@ -37,6 +37,33 @@ func (suite *BuildRequestTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *BuildRequestTestSuite) TestBuildDefault() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+			Options:  suite.mockOptions1,
+		},
+		{
+			IsDefault: true,
+			Searcher:  suite.mockSearcher2,
+			Options:   suite.mockOptions2,
+		},
+	}
+
+	q1 := search.EmptyQuery()
+
+	expected := &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec:  &searcherSpecs[1],
+			Query: search.EmptyQuery(),
+		},
+	}
+
+	actual, err := build(q1, searcherSpecs)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
 func (suite *BuildRequestTestSuite) TestBuildBase() {
 	searcherSpecs := []SearcherSpec{
 		{

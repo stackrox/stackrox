@@ -21,7 +21,7 @@ export const selectors = {
         body: '.Collapsible__contentInner'
     },
     securityBestPractices: '[data-test-id="deployment-security-practices"]',
-    runtimeProcessCards: '.Collapsible',
+    runtimeProcessCards: '[data-testid="runtime-processes"]',
     lifeCycleColumn: '.rt-thead.-header:contains("Lifecycle")',
     whitelistDeploymentButton: '[data-test-id="whitelist-deployment-button"]',
     resolveButton: '[data-test-id="resolve-button"]',

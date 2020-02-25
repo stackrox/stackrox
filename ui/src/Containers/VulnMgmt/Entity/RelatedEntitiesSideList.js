@@ -4,18 +4,9 @@ import PropTypes from 'prop-types';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'modules/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
-import entityTypes from 'constants/entityTypes';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
 import pluralize from 'pluralize';
-
-const defaultCountKeyMap = {
-    [entityTypes.COMPONENT]: 'componentCount',
-    [entityTypes.CVE]: 'vulnCount',
-    [entityTypes.IMAGE]: 'imageCount',
-    [entityTypes.POLICY]: 'policyCount',
-    [entityTypes.DEPLOYMENT]: 'deploymentCount',
-    [entityTypes.NAMESPACE]: 'namespaceCount'
-};
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
     const workflowState = useContext(workflowStateContext);

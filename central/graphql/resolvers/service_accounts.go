@@ -46,7 +46,7 @@ func (resolver *Resolver) ServiceAccount(ctx context.Context, args struct{ graph
 }
 
 // ServiceAccounts gets service accounts based on a query
-func (resolver *Resolver) ServiceAccounts(ctx context.Context, args paginatedQuery) ([]*serviceAccountResolver, error) {
+func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQuery) ([]*serviceAccountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccounts")
 	if err := readServiceAccounts(ctx); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	bindings, roles, err := resolver.getRolesAndBindings(ctx, rawQuery{})
+	bindings, roles, err := resolver.getRolesAndBindings(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
@@ -85,7 +85,7 @@ func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, e
 	return int32(len(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject))), nil
 }
 
-func (resolver *serviceAccountResolver) Roles(ctx context.Context, args rawQuery) ([]*k8SRoleResolver, error) {
+func (resolver *serviceAccountResolver) Roles(ctx context.Context, args RawQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (resolver *serviceAccountResolver) Roles(ctx context.Context, args rawQuery
 	return resolver.root.wrapK8SRoles(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject), nil)
 }
 
-func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, args rawQuery) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {
+func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, args RawQuery) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
 	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 	if err != nil {
@@ -126,7 +126,7 @@ func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context,
 	return bindings, roles, nil
 }
 
-func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args RawQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
-	namespaces, err := resolver.root.Namespaces(ctx, paginatedQuery{})
+	namespaces, err := resolver.root.Namespaces(ctx, PaginatedQuery{})
 	if err != nil {
 		return evaluators, err
 	}
@@ -252,7 +252,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretCount(ctx context.Context
 	return int32(len(resolver.data.ImagePullSecrets)), nil
 }
 
-func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
+func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Context, args RawQuery) ([]*secretResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "ImagePullSecretObjects")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
@@ -271,7 +271,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Conte
 	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
 }
 
-func (resolver *serviceAccountResolver) getConjunctionQuery(args rawQuery, q2 *v1.Query) (*v1.Query, error) {
+func (resolver *serviceAccountResolver) getConjunctionQuery(args RawQuery, q2 *v1.Query) (*v1.Query, error) {
 	if args.Query == nil {
 		return q2, nil
 	}

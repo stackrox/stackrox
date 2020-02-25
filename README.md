@@ -21,15 +21,14 @@ documentation.
 The following tools are necessary to build image(s):
 
  * [Make](https://www.gnu.org/software/make/)
- * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.17.2 or higher. Note that bazel is broken from version 0.26.0 but works for 0.25.2. Get the installer script under `Assets` section from this [link](https://github.com/bazelbuild/bazel/releases/tag/0.25.2).
- Install XCode before Bazel if you are building on a Mac.
- * [Go](https://golang.org/dl/) 1.12.
- * Various Go linters that can be installed using `make dev`.
+ * [Go](https://golang.org/dl/)
+   * Get the version specified in [EXPECTED_GO_VERSION](./EXPECTED_GO_VERSION).
+ * Various Go linters that can be installed using `make reinstall-dev-tools`.
  * UI build tooling as specified in [ui/README.md](ui/README.md#Build-Tooling).
 
 ### How to Build
 ```bash
-make main-image
+make image
 ```
 
 This will create `stackrox/main` with a tag defined by `make tag`.
@@ -169,7 +168,7 @@ appended to the end: i.e., `2.4.22.0-rc.1`).
 By convention, we do not currently use a `v` prefix for release tags (that is,
 we push tags like `0.5`, not `v0.5`).
 
-### Prep the relase
+### Prep the release
 Proceed with the steps that under the section of the release type you're making:
 non-patch or patch.
 

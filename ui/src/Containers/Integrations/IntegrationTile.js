@@ -23,7 +23,7 @@ class IntegrationTile extends Component {
     renderIndicator = () => {
         if (this.props.numIntegrations === 0) return null;
         return (
-            <span className="flex h-6 absolute pin-r pin-t m-2 p-2 items-center justify-center text-success-600 font-700 text-xl border-2 border-success-500">
+            <span className="flex h-6 absolute right-0 top-0 m-2 p-2 items-center justify-center text-success-600 font-700 text-xl border-2 border-success-500">
                 {this.props.numIntegrations}
             </span>
         );

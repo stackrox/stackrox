@@ -23,6 +23,8 @@ const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
         results: deployments(query: $query, pagination: $pagination) {
             id
             name
+            clusterName
+            namespaceName: namespace
             failingPolicies(query: $policyQuery) {
                 id
                 severity
@@ -41,28 +43,63 @@ const processData = (data, workflowState, limit) => {
     // @TODO, remove the chained .slice() call after backend pagination is available
     const sortedDeployments = sortDeploymentsByPolicyViolations(results).slice(0, limit);
 
-    return sortedDeployments.map(({ id, name, policySeverityCounts }) => {
-        const text = name;
-        const { critical, high, medium, low } = policySeverityCounts;
-        return {
-            text,
-            url: workflowState.pushRelatedEntity(entityTypes.DEPLOYMENT, id).toUrl(),
-            component: (
-                <>
-                    <div className="mr-4">
-                        <LabelChip text={`${low} L`} type="base" size="small" />
-                    </div>
-                    <div className="mr-4">
-                        <LabelChip text={`${medium} M`} type="warning" size="small" />
-                    </div>
-                    <div className="mr-4">
-                        <LabelChip text={`${high} H`} type="caution" size="small" />
-                    </div>
-                    <LabelChip text={`${critical} C`} type="alert" size="small" />
-                </>
-            )
-        };
-    });
+    return sortedDeployments.map(
+        ({ id, name, clusterName, namespaceName, policySeverityCounts }) => {
+            const text = name;
+            const { critical, high, medium, low } = policySeverityCounts;
+            const tooltipTitle = name;
+            const tooltipSubtitle = `${clusterName} / ${namespaceName}`;
+            const tooltipBody = (
+                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                    <li className="py-1 flex flex-col" key="description">
+                        <span className="text-base-600 font-700 mr-2">Failing Policies:</span>
+                        <span className="font-600">{`Critical: ${critical}`}</span>
+                        <span className="font-600">{`High: ${high}`}</span>
+                        <span className="font-600">{`Medium: ${medium}`}</span>
+                        <span className="font-600">{`Low: ${low}`}</span>
+                    </li>
+                </ul>
+            );
+            return {
+                text,
+                url: workflowState.pushRelatedEntity(entityTypes.DEPLOYMENT, id).toUrl(),
+                component: (
+                    <>
+                        <div className="mr-4">
+                            <LabelChip text={`${low} L`} type="base" size="small" fade={!low} />
+                        </div>
+                        <div className="mr-4">
+                            <LabelChip
+                                text={`${medium} M`}
+                                type="warning"
+                                size="small"
+                                fade={!medium}
+                            />
+                        </div>
+                        <div className="mr-4">
+                            <LabelChip
+                                text={`${high} H`}
+                                type="caution"
+                                size="small"
+                                fade={!high}
+                            />
+                        </div>
+                        <LabelChip
+                            text={`${critical} C`}
+                            type="alert"
+                            size="small"
+                            fade={!critical}
+                        />
+                    </>
+                ),
+                tooltip: {
+                    title: tooltipTitle,
+                    subtitle: tooltipSubtitle,
+                    body: tooltipBody
+                }
+            };
+        }
+    );
 };
 
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
@@ -80,11 +117,11 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
     const workflowState = useContext(workflowStateContext);
     const viewAllURL = workflowState
         .pushList(entityTypes.DEPLOYMENT)
-        .setSort([
-            { id: 'policyStatus', desc: false },
-            { id: 'failingPolicyCount', desc: true },
-            { id: 'name', desc: false }
-        ])
+        // @TODO: re-enable sorting again, after these fields are available for sorting in back-end pagination
+        // .setSort([
+        //     { id: 'failingPolicyCount', desc: true },
+        //     { id: 'name', desc: false }
+        // ])
         .toUrl();
 
     if (!loading) {

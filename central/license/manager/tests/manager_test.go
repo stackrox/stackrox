@@ -359,6 +359,7 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal("license2", newActiveLicense.GetMetadata().GetId())
+	s.Equal("KEY2", s.mgr.GetActiveLicenseKey())
 
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
@@ -436,6 +437,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
+	s.Empty(s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_EXPIRED, s.mgr.GetLicenseStatus())
 }
 
@@ -489,6 +491,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
@@ -540,6 +543,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
@@ -606,6 +610,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 
 	activeLicense = s.mgr.GetActiveLicense()
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
@@ -691,6 +696,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 
 	activeLicense = s.mgr.GetActiveLicense()
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
+	s.Equal("KEY2", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
@@ -735,6 +741,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
+	s.Empty(s.mgr.GetActiveLicenseKey())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
@@ -757,6 +764,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 
 	newActiveLicense = s.mgr.GetActiveLicense()
 	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
@@ -810,6 +818,7 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+	s.Equal("KEY1", s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
@@ -833,5 +842,6 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 
 	newActiveLicense = s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
+	s.Empty(s.mgr.GetActiveLicenseKey())
 	s.Equal(v1.Metadata_EXPIRED, s.mgr.GetLicenseStatus())
 }

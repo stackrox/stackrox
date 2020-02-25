@@ -1,6 +1,7 @@
 package predicate
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -10,118 +11,147 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 var (
 	timestampPtrType = reflect.TypeOf((*types.Timestamp)(nil))
 )
 
-func createBasePredicate(fieldType reflect.Type, value string) (internalPredicate, error) {
+func resultIfNullValue(value string) (*search.Result, bool) {
+	if value == "-" {
+		return &search.Result{}, true
+	}
+	return nil, false
+}
+
+func formatSingleMatchf(key, template string, val ...interface{}) map[string][]string {
+	return map[string][]string{
+		key: {fmt.Sprintf(template, val...)},
+	}
+}
+
+func createBasePredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
 	switch fieldType.Kind() {
 	case reflect.Ptr:
-		return createPtrPredicate(fieldType, value)
-	case reflect.Array:
-		return createSlicePredicate(fieldType, value)
-	case reflect.Slice:
-		return createSlicePredicate(fieldType, value)
+		return createPtrPredicate(fullPath, fieldType, value)
+	case reflect.Array, reflect.Slice:
+		return createSlicePredicate(fullPath, fieldType, value)
 	case reflect.Map:
-		return createMapPredicate(fieldType, value)
+		return createMapPredicate(fullPath, fieldType, value)
 	case reflect.Bool:
-		return createBoolPredicate(value)
+		return createBoolPredicate(fullPath, value)
 	case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
 		if enum, ok := reflect.Zero(fieldType).Interface().(protoreflect.ProtoEnum); ok {
-			return createEnumPredicate(value, enum)
+			return createEnumPredicate(fullPath, value, enum)
 		}
-		return createIntPredicate(value)
+		return createIntPredicate(fullPath, value)
 	case reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8, reflect.Uint:
-		return createUintPredicate(value)
+		return createUintPredicate(fullPath, value)
 	case reflect.Float64, reflect.Float32:
-		return createFloatPredicate(value)
+		return createFloatPredicate(fullPath, value)
 	case reflect.String:
-		return createStringPredicate(value)
+		return createStringPredicate(fullPath, value)
 	}
 	return nil, errors.New("unrecognized field")
 }
 
-func createPtrPredicate(fieldType reflect.Type, value string) (internalPredicate, error) {
+func createPtrPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
 	// Special case for pointer to timestamp.
 	if fieldType == timestampPtrType {
-		return createTimestampPredicate(value)
+		return createTimestampPredicate(fullPath, value)
 	}
 
 	// Reroute to element type.
-	basePred, err := createBasePredicate(fieldType.Elem(), value)
+	basePred, err := createBasePredicate(fullPath, fieldType.Elem(), value)
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
-			return false
+			return resultIfNullValue(value)
 		}
 		return basePred(instance.Elem())
 	}, nil
 }
 
-func createSlicePredicate(fieldType reflect.Type, value string) (internalPredicate, error) {
-	basePred, err := createBasePredicate(fieldType.Elem(), value)
+func createSlicePredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
+	basePred, err := createBasePredicate(fullPath, fieldType.Elem(), value)
 	if err != nil {
 		return nil, err
 	}
 
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
-			return false
+			return resultIfNullValue(value)
 		}
 		for i := 0; i < instance.Len(); i++ {
-			if basePred(instance.Index(i)) {
-				return true
+			if res, match := basePred(instance.Index(i)); match {
+				return res, true
 			}
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createMapPredicate(fieldType reflect.Type, value string) (internalPredicate, error) {
-	keyPred, err := createBasePredicate(fieldType.Key(), value)
+func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
+	key, value := stringutils.Split2(value, "=")
+
+	keyPred, err := createBasePredicate(fullPath, fieldType.Key(), key)
 	if err != nil {
 		return nil, err
 	}
-	valPred, err := createBasePredicate(fieldType.Elem(), value)
+	valPred, err := createBasePredicate(fullPath, fieldType.Elem(), value)
 	if err != nil {
 		return nil, err
 	}
 
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
-			return false
+			return resultIfNullValue(value)
 		}
+
+		// The expectation is that we only support searching on map[string]string for now
 		iter := instance.MapRange()
 		for iter.Next() {
 			key := iter.Key()
 			val := iter.Value()
-			if keyPred(key) || valPred(val) {
-				return true
+			keyResult, keyMatch := keyPred(key)
+			if !keyMatch {
+				continue
 			}
+			valueResult, valueMatch := valPred(val)
+			if !valueMatch {
+				continue
+			}
+
+			return MergeResults(keyResult, valueResult), true
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createBoolPredicate(value string) (internalPredicate, error) {
+func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
 	boolValue, err := strconv.ParseBool(value)
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Kind() != reflect.Bool {
-			return false
+			return nil, false
 		}
-		return instance.Bool() == boolValue
+		if instance.Bool() != boolValue {
+			return nil, false
+		}
+		return &search.Result{
+			Matches: formatSingleMatchf(fullPath, "%t", instance.Bool()),
+		}, true
 	}, nil
 }
 
-func createEnumPredicate(value string, enumRef protoreflect.ProtoEnum) (internalPredicate, error) {
+func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum) (internalPredicate, error) {
 	// Map the enum strings to integer values.
 	enumDesc, err := protoreflect.GetEnumDescriptor(enumRef)
 	if err != nil {
@@ -138,7 +168,7 @@ func createEnumPredicate(value string, enumRef protoreflect.ProtoEnum) (internal
 	if hasIntValue {
 		int64Value = int64(int32Value)
 	} else {
-		return nil, errors.Errorf("unrecognized enum value: %s", value)
+		return nil, errors.Errorf("unrecognized enum value: %s in %+v", value, nameToNumber)
 	}
 
 	// Generate the comparator for the integer values.
@@ -146,16 +176,20 @@ func createEnumPredicate(value string, enumRef protoreflect.ProtoEnum) (internal
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			return comparator(instance.Int(), int64Value)
+			if comparator(instance.Int(), int64Value) {
+				return &search.Result{
+					Matches: formatSingleMatchf(fullPath, "%d", instance.Int()),
+				}, true
+			}
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createIntPredicate(value string) (internalPredicate, error) {
+func createIntPredicate(fullPath, value string) (internalPredicate, error) {
 	cmpStr, value := getNumericComparator(value)
 	comparator, err := intComparator(cmpStr)
 	if err != nil {
@@ -165,16 +199,21 @@ func createIntPredicate(value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			return comparator(instance.Int(), intValue)
+			if !comparator(instance.Int(), intValue) {
+				return nil, false
+			}
+			return &search.Result{
+				Matches: formatSingleMatchf(fullPath, "%d", instance.Int()),
+			}, true
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createUintPredicate(value string) (internalPredicate, error) {
+func createUintPredicate(fullPath, value string) (internalPredicate, error) {
 	cmpStr, value := getNumericComparator(value)
 	comparator, err := uintComparator(cmpStr)
 	if err != nil {
@@ -184,16 +223,21 @@ func createUintPredicate(value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-			return comparator(instance.Uint(), uintValue)
+			if !comparator(instance.Uint(), uintValue) {
+				return nil, false
+			}
+			return &search.Result{
+				Matches: formatSingleMatchf(fullPath, "%d", instance.Uint()),
+			}, true
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createFloatPredicate(value string) (internalPredicate, error) {
+func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
 	cmpStr, value := getNumericComparator(value)
 	comparator, err := floatComparator(cmpStr)
 	if err != nil {
@@ -203,66 +247,72 @@ func createFloatPredicate(value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
-			return comparator(instance.Float(), floatValue)
+			if !comparator(instance.Float(), floatValue) {
+				return nil, false
+			}
+			return &search.Result{
+				Matches: formatSingleMatchf(fullPath, "%0.f", instance.Float()),
+			}, true
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createTimestampPredicate(value string) (internalPredicate, error) {
-	cmpStr, value := getNumericComparator(value)
-	comparator, err := timestampComparator(cmpStr)
-	if err != nil {
-		return nil, err
-	}
-	timestampValue, err := parseTimestamp(value)
-	if err != nil {
-		return nil, err
-	}
-	return func(instance reflect.Value) bool {
-		return comparator(instance.Interface(), timestampValue)
-	}, nil
-}
-
-func createStringPredicate(value string) (internalPredicate, error) {
+func createStringPredicate(fullPath, value string) (internalPredicate, error) {
 	if strings.HasPrefix(value, search.RegexPrefix) {
 		value = strings.TrimPrefix(value, search.RegexPrefix)
-		return stringRegexPredicate(value)
-	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
-		return stringExactPredicate(value[1 : len(value)-1])
+		return stringRegexPredicate(fullPath, value)
+	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
+		return stringExactPredicate(fullPath, value[1:len(value)-1])
 	}
-	return stringPrefixPredicate(value)
+	return stringPrefixPredicate(fullPath, value)
 }
 
-func stringRegexPredicate(value string) (func(value reflect.Value) bool, error) {
+func stringRegexPredicate(fullPath, value string) (internalPredicate, error) {
 	matcher, err := regexp.Compile(value)
 	if err != nil {
 		return nil, err
 	}
-	return wrapStringPredicate(func(instance string) bool {
-		return matcher.MatchString(instance)
+	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
+		if !regexutils.MatchWholeString(matcher, instance) {
+			return nil, false
+		}
+
+		return &search.Result{
+			Matches: formatSingleMatchf(fullPath, instance),
+		}, true
 	}), nil
 }
 
-func stringExactPredicate(value string) (func(value reflect.Value) bool, error) {
-	return wrapStringPredicate(func(instance string) bool {
-		return instance == value
+func stringExactPredicate(fullPath, value string) (internalPredicate, error) {
+	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
+		if instance != value {
+			return nil, false
+		}
+		return &search.Result{
+			Matches: formatSingleMatchf(fullPath, instance),
+		}, true
 	}), nil
 }
 
-func stringPrefixPredicate(value string) (internalPredicate, error) {
-	return wrapStringPredicate(func(instance string) bool {
-		return strings.HasPrefix(instance, value)
+func stringPrefixPredicate(fullPath, value string) (internalPredicate, error) {
+	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
+		if value != search.WildcardString && !strings.HasPrefix(instance, value) {
+			return nil, false
+		}
+		return &search.Result{
+			Matches: formatSingleMatchf(fullPath, instance),
+		}, true
 	}), nil
 }
 
-func wrapStringPredicate(pred func(string) bool) internalPredicate {
-	return func(instance reflect.Value) bool {
+func wrapStringPredicate(pred func(string) (*search.Result, bool)) internalPredicate {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Kind() != reflect.String {
-			return false
+			return nil, false
 		}
 		return pred(instance.String())
 	}

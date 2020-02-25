@@ -2,11 +2,11 @@ package authproviders
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/logging"
@@ -223,11 +223,11 @@ func (r *registryImpl) ExchangeToken(ctx context.Context, externalToken, typ, st
 		return "", "", status.Errorf(codes.NotFound, "could not locate auth provider %q", providerID)
 	}
 
-	claim, opts, clientState, err := provider.Backend().ExchangeToken(ctx, externalToken, state)
+	authResp, clientState, err := provider.Backend().ExchangeToken(ctx, externalToken, state)
 	if err != nil {
 		return "", "", err
 	}
-	token, err := provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: claim}, opts...)
+	token, err := issueTokenForResponse(ctx, provider, authResp)
 	if err != nil {
 		return "", "", err
 	}
@@ -262,4 +262,32 @@ func (r *registryImpl) deletedNoLock(provider Provider) {
 		return
 	}
 	backend.OnDisable(provider)
+}
+
+func (r *registryImpl) resolveProviderAndBackend(providerType, providerID string) (Provider, Backend, error) {
+	provider := r.getAuthProvider(providerID)
+	if provider == nil {
+		return nil, nil, errors.Errorf("provider with ID %q not found", providerID)
+	}
+	if provider.Type() != providerType {
+		return nil, nil, errors.Errorf("provider with ID %q has unexpected type %q (expected: %q)", provider.ID(), provider.Type(), providerType)
+	}
+	backend := provider.Backend()
+	if !provider.Enabled() {
+		backend = nil
+	}
+	return provider, backend, nil
+}
+
+func issueTokenForResponse(ctx context.Context, provider Provider, authResp *AuthResponse) (*tokens.TokenInfo, error) {
+	if authResp == nil {
+		return nil, errors.New("nil authentication response")
+	}
+
+	tokenOpts := make([]tokens.Option, 0, len(authResp.ExtraOpts)+1)
+	if !authResp.Expiration.IsZero() {
+		tokenOpts = append(tokenOpts, tokens.WithExpiry(authResp.Expiration))
+	}
+	tokenOpts = append(tokenOpts, authResp.ExtraOpts...)
+	return provider.Issuer().Issue(ctx, tokens.RoxClaims{ExternalUser: authResp.Claims}, tokenOpts...)
 }

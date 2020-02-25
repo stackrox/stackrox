@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import Truncate from 'react-truncate';
 import { Link } from 'react-router-dom';
+
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 
 function formatAsPercent(x) {
@@ -62,7 +63,7 @@ class SunburstDetailSection extends Component {
             bullets = rootData;
         }
         return (
-            <div className="py-2 px-3 fc:border-b fc:border-base-300 fc:pb-3 fc:mb-1">
+            <div className="py-2 px-3 lc:border-none lc:mb-0 lc:pb-0">
                 {bullets.map(
                     (
                         {
@@ -81,7 +82,7 @@ class SunburstDetailSection extends Component {
                         return (
                             <div
                                 key={text}
-                                className={`widget-detail-bullet font-600 ${
+                                className={`widget-detail-bullet border-b border-base-300 pb-3 mb-1 font-600 ${
                                     parentDatum && parentDatum.name && idx === 0
                                         ? 'text-base-500'
                                         : ''
@@ -99,7 +100,10 @@ class SunburstDetailSection extends Component {
                                         </Truncate>
                                     </Link>
                                 )}
-                                <span className="flex w-full word-break leading-tight">
+                                <span
+                                    className="flex w-full word-break leading-tight"
+                                    style={color ? { color } : null}
+                                >
                                     <Truncate lines={4} ellipsis={<>...</>}>
                                         {!link && text}
                                     </Truncate>
@@ -136,7 +140,7 @@ class SunburstDetailSection extends Component {
 
     render() {
         return (
-            <div className="border-base-300 border-l flex flex-col justify-between w-3/5 text-sm">
+            <div className="border-base-300 border-l flex flex-1 flex-col justify-between w-3/5 text-sm">
                 {this.getContent()}
                 {this.getLockHint()}
             </div>

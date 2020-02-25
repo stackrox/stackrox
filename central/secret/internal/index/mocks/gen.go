@@ -92,18 +92,33 @@ func (mr *MockIndexerMockRecorder) DeleteSecrets(arg0 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecrets", reflect.TypeOf((*MockIndexer)(nil).DeleteSecrets), arg0)
 }
 
-// ResetIndex mocks base method
-func (m *MockIndexer) ResetIndex() error {
+// MarkInitialIndexingComplete mocks base method
+func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetIndex")
+	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ResetIndex indicates an expected call of ResetIndex
-func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete
+func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
+}
+
+// NeedsInitialIndexing mocks base method
+func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing
+func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
 }
 
 // Search mocks base method

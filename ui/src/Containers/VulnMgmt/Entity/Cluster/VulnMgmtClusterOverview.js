@@ -12,9 +12,12 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import entityTypes from 'constants/entityTypes';
-import { overviewLimit } from 'constants/workflowPages.constants';
+import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { getCveExportName } from 'utils/vulnerabilityUtils';
 
+import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedVulnerabilities from '../../widgets/RecentlyDetectedVulnerabilities';
 import TopRiskiestImagesAndComponents from '../../widgets/TopRiskiestImagesAndComponents';
@@ -36,6 +39,7 @@ const emptyCluster = {
     priority: 0,
     status: {
         orchestratorMetadata: {
+            buildDate: '',
             version: 'N/A'
         }
     },
@@ -49,22 +53,25 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
 
-    const {
-        priority,
-        policyStatus,
-        createdAt,
-        status,
-        istioEnabled,
-        vulnerabilities,
-        id
-    } = safeData;
+    const { priority, policyStatus, status, istioEnabled, vulnerabilities, id } = safeData;
 
     if (!status || !policyStatus) return null;
 
     const { orchestratorMetadata = null } = status;
-    const { version = 'N/A' } = orchestratorMetadata;
+    const { buildDate = '', version = 'N/A' } = orchestratorMetadata;
     const { failingPolicies } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
+
+    function customCsvExportHandler() {
+        const { useCase } = workflowState;
+        const pageEntityType = workflowState.getCurrentEntityType();
+        const entityName = safeData.name;
+        const csvName = getCveExportName(useCase, pageEntityType, entityName);
+
+        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
+
+        exportCvesAsCsv(csvName, stateWithFixable);
+    }
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {
@@ -75,8 +82,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
     const metadataKeyValuePairs = [
         {
-            key: 'Created',
-            value: <DateTimeField date={createdAt} />
+            key: 'Build Date',
+            value: <DateTimeField date={buildDate} asString />
         },
         {
             key: 'K8s version',
@@ -96,7 +103,14 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         </React.Fragment>
     ];
 
-    const newEntityContext = { ...entityContext, [entityTypes.CLUSTER]: id };
+    const currentEntity = { [entityTypes.CLUSTER]: id };
+    const newEntityContext = { ...entityContext, ...currentEntity };
+    const cveActions = (
+        <FixableCveExportButton
+            disabled={!fixableCves || !fixableCves.length}
+            clickHandler={customCsvExportHandler}
+        />
+    );
 
     return (
         <div className="flex h-full">
@@ -114,32 +128,32 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                         <div className="sx-1 lg:sx-2 sy-1 h-55">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.NAMESPACE}
-                                limit={overviewLimit}
+                                limit={OVERVIEW_LIMIT}
                                 riskEntityTypes={[
                                     entityTypes.NAMESPACE,
                                     entityTypes.DEPLOYMENT,
                                     entityTypes.IMAGE
                                 ]}
-                                entityContext={newEntityContext}
+                                entityContext={currentEntity}
                                 small
                             />
                         </div>
                         <div className="s-1">
                             <RecentlyDetectedVulnerabilities
-                                limit={overviewLimit}
-                                entityContext={newEntityContext}
+                                limit={OVERVIEW_LIMIT}
+                                entityContext={currentEntity}
                             />
                         </div>
                         <div className="s-1">
                             <TopRiskiestImagesAndComponents
-                                limit={overviewLimit}
-                                entityContext={newEntityContext}
+                                limit={OVERVIEW_LIMIT}
+                                entityContext={currentEntity}
                             />
                         </div>
                         <div className="s-1">
                             <DeploymentsWithMostSeverePolicyViolations
-                                limit={overviewLimit}
-                                entityContext={newEntityContext}
+                                limit={OVERVIEW_LIMIT}
+                                entityContext={currentEntity}
                             />
                         </div>
                     </div>
@@ -171,6 +185,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                         entityTypes.CVE,
                                         fixableCves.length
                                     )} found across this cluster`}
+                                    headerActions={cveActions}
                                     rows={fixableCves}
                                     entityType={entityTypes.CVE}
                                     noDataText="No fixable CVEs available in this cluster"

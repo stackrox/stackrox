@@ -85,7 +85,7 @@ func (s *serviceImpl) GetMyPermissions(ctx context.Context, _ *v1.Empty) (*stora
 
 func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
+		return nil, status.Error(codes.InvalidArgument, "Setting global access is not supported.")
 	}
 	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
@@ -96,7 +96,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.E
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
-		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
+		return nil, status.Error(codes.InvalidArgument, "Setting global access is not supported.")
 	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {

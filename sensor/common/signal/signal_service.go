@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc"
 )
 
@@ -27,14 +29,32 @@ type Service interface {
 	pkgGRPC.APIService
 	sensorAPI.SignalServiceServer
 
-	Indicators() <-chan *central.SensorEvent
+	common.SensorComponent
 }
 
 type serviceImpl struct {
 	queue      chan *v1.Signal
-	indicators chan *central.SensorEvent
+	indicators chan *central.MsgFromSensor
 
 	processPipeline Pipeline
+}
+
+func (s *serviceImpl) Start() error {
+	return nil
+}
+
+func (s *serviceImpl) Stop(err error) {}
+
+func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	return nil
+}
+
+func (s *serviceImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return s.indicators
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -56,10 +76,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // PushSignals handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
 	return s.receiveMessages(stream)
-}
-
-func (s *serviceImpl) Indicators() <-chan *central.SensorEvent {
-	return s.indicators
 }
 
 // TODO(ROX-3281) this is a workaround for these collector issues

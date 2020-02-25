@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { ChevronRight, ArrowLeft } from 'react-feather';
 import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
@@ -9,8 +10,8 @@ const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
 );
 
-function getBackLink(workflowState, enabled) {
-    const url = enabled ? null : workflowState.pop().toUrl();
+const BackLink = ({ workflowState, enabled }) => {
+    const url = !enabled ? null : workflowState.pop().toUrl();
     return url ? (
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"
@@ -25,7 +26,7 @@ function getBackLink(workflowState, enabled) {
             entityType={workflowState.getCurrentEntity().entityType}
         />
     );
-}
+};
 
 const getUrl = (workflowState, steps) => {
     // TODO: do this with .call
@@ -57,16 +58,20 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
             </div>
         );
     });
-    const backButtonEnabled = !!workflowEntities.length > 1;
+    const backButtonEnabled = !!(workflowEntities.length > 1);
     return (
         <span
             style={{ flex: '10 1' }}
             className="flex items-center font-700 leading-normal text-base-600 tracking-wide truncate"
         >
-            {getBackLink(workflowState, backButtonEnabled)}
+            <BackLink workflowState={workflowState} enabled={backButtonEnabled} />
             {breadCrumbLinks}
         </span>
     );
+};
+
+BreadCrumbLinks.propTypes = {
+    workflowEntities: PropTypes.arrayOf(PropTypes.shape({})).isRequired
 };
 
 export default BreadCrumbLinks;

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 const optionsClass =
-    'flex items-center relative text-left px-2 py-3 border-b border-primary-300 hover:bg-base-200 capitalize';
+    'flex items-center relative text-left px-2 py-3 text-sm border-b border-primary-300 hover:bg-base-200 capitalize';
 
 const Menu = ({
     buttonClass,
@@ -83,12 +83,13 @@ const Menu = ({
                 type="button"
                 onClick={onClickHandler()}
                 disabled={disabled}
+                data-testid="menu-button"
             >
                 {buttonContent}
             </button>
             {isMenuOpen && (
                 <div
-                    className={`absolute bg-white flex flex-col flex-no-wrap menu pin-r z-50 min-w-43 bg-base-100 shadow ${menuClassName}`}
+                    className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-50 min-w-32 bg-base-100 shadow ${menuClassName}`}
                     data-test-id="menu-list"
                 >
                     {grouped ? renderGroupedOptions(options) : renderOptions(options)}

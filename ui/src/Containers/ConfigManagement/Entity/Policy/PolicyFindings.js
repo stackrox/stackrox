@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 
-import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
+import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import DeploymentViolations from './DeploymentViolations';
 
 const PolicyFindings = ({ entityContext = {}, policyId, alerts }) => {

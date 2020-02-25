@@ -38,6 +38,7 @@ class ProtectedRoute extends Component {
                 return <LocationComponent {...props} />;
             case AUTH_STATUS.LOGGED_OUT:
             case AUTH_STATUS.AUTH_PROVIDERS_LOADING_ERROR:
+            case AUTH_STATUS.LOGIN_AUTH_PROVIDERS_LOADING_ERROR:
                 return (
                     <Redirect
                         to={{

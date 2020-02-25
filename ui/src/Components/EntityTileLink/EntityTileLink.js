@@ -15,7 +15,8 @@ const EntityTileLink = ({
     icon,
     url,
     loading,
-    isError
+    isError,
+    short
 }) => {
     const text = `${count} ${
         count === 1 ? entityType : `${pluralize(resourceLabels[entityType] || '')}`
@@ -29,6 +30,7 @@ const EntityTileLink = ({
             position={position}
             icon={icon}
             url={url}
+            short={short}
             loading={loading}
             isError={isError}
         />
@@ -44,7 +46,8 @@ EntityTileLink.propTypes = {
     url: PropTypes.string.isRequired,
     loading: PropTypes.bool,
     isError: PropTypes.bool,
-    position: PropTypes.oneOf(Object.values(POSITION))
+    position: PropTypes.oneOf(Object.values(POSITION)),
+    short: PropTypes.bool
 };
 
 EntityTileLink.defaultProps = {
@@ -53,7 +56,8 @@ EntityTileLink.defaultProps = {
     loading: false,
     superText: null,
     subText: null,
-    icon: null
+    icon: null,
+    short: false
 };
 
 export default EntityTileLink;

@@ -6,6 +6,7 @@ if [ -d "/var/lib/stackrox/.restore" ]; then
 	echo "Database restore directory found. Moving database files to their desired location."
 	mkdir /var/lib/stackrox/.backup
 	mv /var/lib/stackrox/* /var/lib/stackrox/.backup  # this will ignore hidden directories such as .backup and .restore.
+	rm -rf /var/lib/stackrox/scorch.bleve # Remove the index because a restore needs to rebuild it anyways
 	mv /var/lib/stackrox/.restore/* /var/lib/stackrox/
 	rmdir /var/lib/stackrox/.restore
 else

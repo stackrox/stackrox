@@ -1,12 +1,7 @@
 package badgerhelper
 
 import (
-	"encoding/binary"
-	"time"
-
 	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/conv"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -16,15 +11,10 @@ var (
 // NewTxnHelper returns a db wrapper that will increment txn counts
 func NewTxnHelper(db *badger.DB, objectType []byte) (*TxnHelper, error) {
 	wrapper := &TxnHelper{
-		db:  db,
-		key: append(transactionPrefix, objectType...),
+		db:     db,
+		prefix: append(transactionPrefix, objectType...),
 	}
 
-	val, err := wrapper.getInitialValue()
-	if err != nil {
-		return nil, err
-	}
-	wrapper.currVal = val
 	return wrapper, nil
 }
 
@@ -32,54 +22,59 @@ func NewTxnHelper(db *badger.DB, objectType []byte) (*TxnHelper, error) {
 type TxnHelper struct {
 	db *badger.DB
 
-	lock sync.Mutex
-
-	key []byte
-
-	currVal uint64
+	prefix []byte
 }
 
-func (b *TxnHelper) getInitialValue() (uint64, error) {
-	var value uint64
-	err := b.db.View(func(tx *badger.Txn) error {
-		item, err := tx.Get(b.key)
-		if err != nil && err != badger.ErrKeyNotFound {
+// TxWrapper wraps a txn to expose the Set interface
+type TxWrapper interface {
+	Set(k, v []byte) error
+}
+
+// AddKeysToIndex adds the keys not yet indexed to the DB
+func (b *TxnHelper) AddKeysToIndex(tx TxWrapper, keys ...[]byte) error {
+	for _, k := range keys {
+		if err := tx.Set(GetBucketKey(b.prefix, k), []byte{0}); err != nil {
 			return err
 		}
-		if item != nil {
-			if err := item.Value(func(v []byte) error {
-				value = binary.BigEndian.Uint64(v)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	return value, err
-}
-
-// Merge function to add two uint64 numbers
-func inc(existing, new []byte) []byte {
-	return conv.Itob(binary.BigEndian.Uint64(existing) + binary.BigEndian.Uint64(new))
-}
-
-// IncTxnCount increases the number of transactions for the specific object type
-func (b *TxnHelper) IncTxnCount() error {
-	m := b.db.GetMergeOperator(b.key, inc, 200*time.Millisecond)
-	defer m.Stop()
-	if err := m.Add(conv.Itob(1)); err != nil {
-		return err
 	}
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	b.currVal++
 	return nil
 }
 
-// GetTxnCount retrieves the number of transactions for the specific object type
-func (b *TxnHelper) GetTxnCount() uint64 {
-	b.lock.Lock()
-	defer b.lock.Unlock()
-	return b.currVal
+// AddStringKeysToIndex is a wrapper around AddKeysToIndex but with a string slice instead of a []byte slice
+func (b *TxnHelper) AddStringKeysToIndex(tx TxWrapper, keys ...string) error {
+	byteKeys := make([][]byte, 0, len(keys))
+	for _, k := range keys {
+		byteKeys = append(byteKeys, []byte(k))
+	}
+	return b.AddKeysToIndex(tx, byteKeys...)
+}
+
+// AckKeysIndexed acknowledges that keys were indexed
+func (b *TxnHelper) AckKeysIndexed(keys ...string) error {
+	batch := b.db.NewWriteBatch()
+	defer batch.Cancel()
+
+	for _, k := range keys {
+		if err := batch.Delete(GetBucketKey(b.prefix, []byte(k))); err != nil {
+			return err
+		}
+	}
+	return batch.Flush()
+}
+
+// GetKeysToIndex retrieves the number of keys to index
+func (b *TxnHelper) GetKeysToIndex() ([]string, error) {
+	var keys []string
+	err := b.db.View(func(tx *badger.Txn) error {
+		return BucketKeyForEach(tx, b.prefix, ForEachOptions{
+			StripKeyPrefix: true,
+		}, func(k []byte) error {
+			keys = append(keys, string(k))
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
 }

@@ -48,6 +48,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labels: [Label!]!",
 		"name: String!",
 		"namespace: String!",
+		"namespaceId: String!",
 		"type: String!",
 	}))
 	utils.Must(builder.AddType("Alert_Deployment_Container", []string{
@@ -73,16 +74,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sourceId: String!",
 	}))
 	utils.Must(builder.AddType("CVE", []string{
+		"createdAt: Time",
 		"cvss: Float!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
 		"id: ID!",
+		"impactScore: Float!",
 		"lastModified: Time",
 		"link: String!",
 		"publishedOn: Time",
 		"references: [CVE_Reference]!",
 		"scoreVersion: CVE_ScoreVersion!",
 		"summary: String!",
+		"suppressed: Boolean!",
 		"type: CVE_CVEType!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
@@ -348,6 +352,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
 		"containingPodId: String!",
+		"imageDigest: String!",
 		"instanceId: ContainerInstanceID",
 		"started: Time",
 	}))
@@ -381,7 +386,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"ports: [PortConfig]!",
 		"priority: Int!",
 		"replicas: Int!",
+		"riskScore: Float!",
 		"serviceAccount: String!",
+		"serviceAccountPermissionLevel: PermissionLevel!",
 		"stateTimestamp: Int!",
 		"tolerations: [Toleration]!",
 		"type: String!",
@@ -400,10 +407,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"password: String!",
 		"sender: String!",
 		"server: String!",
-		"useSTARTTLS: Boolean!",
+		"startTLSAuthMethod: Email_AuthMethod!",
 		"username: String!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EmbeddedImageScanComponent_SourceType(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Email_AuthMethod(0)))
 	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
@@ -451,19 +458,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: ImageName",
 		"notPullable: Boolean!",
 		"priority: Int!",
+		"riskScore: Float!",
 		"scan: ImageScan",
 	}))
 	utils.Must(builder.AddType("ImageComponent", []string{
 		"id: ID!",
-		"license: ImageComponent_License",
+		"license: License",
 		"name: String!",
 		"priority: Int!",
+		"riskScore: Float!",
+		"source: SourceType!",
 		"version: String!",
-	}))
-	utils.Must(builder.AddType("ImageComponent_License", []string{
-		"name: String!",
-		"type: String!",
-		"url: String!",
 	}))
 	utils.Must(builder.AddType("ImageLayer", []string{
 		"author: String!",
@@ -499,10 +504,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Jira", []string{
+		"defaultFieldsJson: String!",
 		"issueType: String!",
 		"password: String!",
+		"priorityMappings: [Jira_PriorityMapping]!",
 		"url: String!",
 		"username: String!",
+	}))
+	utils.Must(builder.AddType("Jira_PriorityMapping", []string{
+		"priorityName: String!",
+		"severity: Severity!",
 	}))
 	utils.Must(builder.AddType("K8SRole", []string{
 		"annotations: [Label!]!",
@@ -666,6 +677,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notifiers: [String!]!",
 		"rationale: String!",
 		"remediation: String!",
+		"sORTEnforcement: Boolean!",
+		"sORTLifecycleStage: String!",
+		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
 		"whitelists: [Whitelist]!",
@@ -895,6 +909,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"secrets: [String!]!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
 		"httpEndpoint: String!",
@@ -1256,6 +1271,11 @@ func (resolver *alert_DeploymentResolver) Namespace(ctx context.Context) string 
 	return value
 }
 
+func (resolver *alert_DeploymentResolver) NamespaceId(ctx context.Context) string {
+	value := resolver.data.GetNamespaceId()
+	return value
+}
+
 func (resolver *alert_DeploymentResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
@@ -1472,6 +1492,11 @@ func (resolver *Resolver) wrapCVEs(values []*storage.CVE, err error) ([]*cVEReso
 	return output, nil
 }
 
+func (resolver *cVEResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
 func (resolver *cVEResolver) Cvss(ctx context.Context) float64 {
 	value := resolver.data.GetCvss()
 	return float64(value)
@@ -1490,6 +1515,11 @@ func (resolver *cVEResolver) CvssV3(ctx context.Context) (*cVSSV3Resolver, error
 func (resolver *cVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
+}
+
+func (resolver *cVEResolver) ImpactScore(ctx context.Context) float64 {
+	value := resolver.data.GetImpactScore()
+	return float64(value)
 }
 
 func (resolver *cVEResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
@@ -1519,6 +1549,11 @@ func (resolver *cVEResolver) ScoreVersion(ctx context.Context) string {
 
 func (resolver *cVEResolver) Summary(ctx context.Context) string {
 	value := resolver.data.GetSummary()
+	return value
+}
+
+func (resolver *cVEResolver) Suppressed(ctx context.Context) bool {
+	value := resolver.data.GetSuppressed()
 	return value
 }
 
@@ -3588,6 +3623,11 @@ func (resolver *containerInstanceResolver) ContainingPodId(ctx context.Context) 
 	return value
 }
 
+func (resolver *containerInstanceResolver) ImageDigest(ctx context.Context) string {
+	value := resolver.data.GetImageDigest()
+	return value
+}
+
 func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*containerInstanceIDResolver, error) {
 	value := resolver.data.GetInstanceId()
 	return resolver.root.wrapContainerInstanceID(value, true, nil)
@@ -3854,10 +3894,22 @@ func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
 	return int32(value)
 }
 
+func (resolver *deploymentResolver) RiskScore(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
 func (resolver *deploymentResolver) ServiceAccount(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetServiceAccount()
 	return value
+}
+
+func (resolver *deploymentResolver) ServiceAccountPermissionLevel(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetServiceAccountPermissionLevel()
+	return value.String()
 }
 
 func (resolver *deploymentResolver) StateTimestamp(ctx context.Context) int32 {
@@ -3992,9 +4044,9 @@ func (resolver *emailResolver) Server(ctx context.Context) string {
 	return value
 }
 
-func (resolver *emailResolver) UseSTARTTLS(ctx context.Context) bool {
-	value := resolver.data.GetUseSTARTTLS()
-	return value
+func (resolver *emailResolver) StartTLSAuthMethod(ctx context.Context) string {
+	value := resolver.data.GetStartTLSAuthMethod()
+	return value.String()
 }
 
 func (resolver *emailResolver) Username(ctx context.Context) string {
@@ -4002,20 +4054,20 @@ func (resolver *emailResolver) Username(ctx context.Context) string {
 	return value
 }
 
-func toEmbeddedImageScanComponent_SourceType(value *string) storage.EmbeddedImageScanComponent_SourceType {
+func toEmail_AuthMethod(value *string) storage.Email_AuthMethod {
 	if value != nil {
-		return storage.EmbeddedImageScanComponent_SourceType(storage.EmbeddedImageScanComponent_SourceType_value[*value])
+		return storage.Email_AuthMethod(storage.Email_AuthMethod_value[*value])
 	}
-	return storage.EmbeddedImageScanComponent_SourceType(0)
+	return storage.Email_AuthMethod(0)
 }
 
-func toEmbeddedImageScanComponent_SourceTypes(values *[]string) []storage.EmbeddedImageScanComponent_SourceType {
+func toEmail_AuthMethods(values *[]string) []storage.Email_AuthMethod {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.EmbeddedImageScanComponent_SourceType, len(*values))
+	output := make([]storage.Email_AuthMethod, len(*values))
 	for i, v := range *values {
-		output[i] = toEmbeddedImageScanComponent_SourceType(&v)
+		output[i] = toEmail_AuthMethod(&v)
 	}
 	return output
 }
@@ -4446,6 +4498,12 @@ func (resolver *imageResolver) Priority(ctx context.Context) int32 {
 	return int32(value)
 }
 
+func (resolver *imageResolver) RiskScore(ctx context.Context) float64 {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetScan()
@@ -4480,9 +4538,9 @@ func (resolver *imageComponentResolver) Id(ctx context.Context) graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *imageComponentResolver) License(ctx context.Context) (*imageComponent_LicenseResolver, error) {
+func (resolver *imageComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
 	value := resolver.data.GetLicense()
-	return resolver.root.wrapImageComponent_License(value, true, nil)
+	return resolver.root.wrapLicense(value, true, nil)
 }
 
 func (resolver *imageComponentResolver) Name(ctx context.Context) string {
@@ -4495,46 +4553,18 @@ func (resolver *imageComponentResolver) Priority(ctx context.Context) int32 {
 	return int32(value)
 }
 
+func (resolver *imageComponentResolver) RiskScore(ctx context.Context) float64 {
+	value := resolver.data.GetRiskScore()
+	return float64(value)
+}
+
+func (resolver *imageComponentResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
 func (resolver *imageComponentResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
-	return value
-}
-
-type imageComponent_LicenseResolver struct {
-	root *Resolver
-	data *storage.ImageComponent_License
-}
-
-func (resolver *Resolver) wrapImageComponent_License(value *storage.ImageComponent_License, ok bool, err error) (*imageComponent_LicenseResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &imageComponent_LicenseResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapImageComponent_Licenses(values []*storage.ImageComponent_License, err error) ([]*imageComponent_LicenseResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*imageComponent_LicenseResolver, len(values))
-	for i, v := range values {
-		output[i] = &imageComponent_LicenseResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *imageComponent_LicenseResolver) Name(ctx context.Context) string {
-	value := resolver.data.GetName()
-	return value
-}
-
-func (resolver *imageComponent_LicenseResolver) Type(ctx context.Context) string {
-	value := resolver.data.GetType()
-	return value
-}
-
-func (resolver *imageComponent_LicenseResolver) Url(ctx context.Context) string {
-	value := resolver.data.GetUrl()
 	return value
 }
 
@@ -4817,6 +4847,11 @@ func (resolver *Resolver) wrapJiras(values []*storage.Jira, err error) ([]*jiraR
 	return output, nil
 }
 
+func (resolver *jiraResolver) DefaultFieldsJson(ctx context.Context) string {
+	value := resolver.data.GetDefaultFieldsJson()
+	return value
+}
+
 func (resolver *jiraResolver) IssueType(ctx context.Context) string {
 	value := resolver.data.GetIssueType()
 	return value
@@ -4827,6 +4862,11 @@ func (resolver *jiraResolver) Password(ctx context.Context) string {
 	return value
 }
 
+func (resolver *jiraResolver) PriorityMappings(ctx context.Context) ([]*jira_PriorityMappingResolver, error) {
+	value := resolver.data.GetPriorityMappings()
+	return resolver.root.wrapJira_PriorityMappings(value, nil)
+}
+
 func (resolver *jiraResolver) Url(ctx context.Context) string {
 	value := resolver.data.GetUrl()
 	return value
@@ -4835,6 +4875,39 @@ func (resolver *jiraResolver) Url(ctx context.Context) string {
 func (resolver *jiraResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
+}
+
+type jira_PriorityMappingResolver struct {
+	root *Resolver
+	data *storage.Jira_PriorityMapping
+}
+
+func (resolver *Resolver) wrapJira_PriorityMapping(value *storage.Jira_PriorityMapping, ok bool, err error) (*jira_PriorityMappingResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &jira_PriorityMappingResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapJira_PriorityMappings(values []*storage.Jira_PriorityMapping, err error) ([]*jira_PriorityMappingResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*jira_PriorityMappingResolver, len(values))
+	for i, v := range values {
+		output[i] = &jira_PriorityMappingResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *jira_PriorityMappingResolver) PriorityName(ctx context.Context) string {
+	value := resolver.data.GetPriorityName()
+	return value
+}
+
+func (resolver *jira_PriorityMappingResolver) Severity(ctx context.Context) string {
+	value := resolver.data.GetSeverity()
+	return value.String()
 }
 
 type k8SRoleResolver struct {
@@ -6026,6 +6099,21 @@ func (resolver *policyResolver) Rationale(ctx context.Context) string {
 
 func (resolver *policyResolver) Remediation(ctx context.Context) string {
 	value := resolver.data.GetRemediation()
+	return value
+}
+
+func (resolver *policyResolver) SORTEnforcement(ctx context.Context) bool {
+	value := resolver.data.GetSORTEnforcement()
+	return value
+}
+
+func (resolver *policyResolver) SORTLifecycleStage(ctx context.Context) string {
+	value := resolver.data.GetSORTLifecycleStage()
+	return value
+}
+
+func (resolver *policyResolver) SORTName(ctx context.Context) string {
+	value := resolver.data.GetSORTName()
 	return value
 }
 
@@ -7670,6 +7758,24 @@ func toSeverities(values *[]string) []storage.Severity {
 	output := make([]storage.Severity, len(*values))
 	for i, v := range *values {
 		output[i] = toSeverity(&v)
+	}
+	return output
+}
+
+func toSourceType(value *string) storage.SourceType {
+	if value != nil {
+		return storage.SourceType(storage.SourceType_value[*value])
+	}
+	return storage.SourceType(0)
+}
+
+func toSourceTypes(values *[]string) []storage.SourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toSourceType(&v)
 	}
 	return output
 }

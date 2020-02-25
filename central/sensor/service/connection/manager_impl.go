@@ -49,6 +49,8 @@ type manager struct {
 	connectionsByClusterIDMutex sync.RWMutex
 
 	clusters            ClusterManager
+	policies            PolicyManager
+	whitelists          WhitelistManager
 	autoTriggerUpgrades *concurrency.Flag
 }
 
@@ -77,8 +79,10 @@ func (m *manager) initializeUpgradeControllers() error {
 	return nil
 }
 
-func (m *manager) Start(clusterManager ClusterManager, autoTriggerUpgrades *concurrency.Flag) error {
+func (m *manager) Start(clusterManager ClusterManager, policyManager PolicyManager, whitelistManager WhitelistManager, autoTriggerUpgrades *concurrency.Flag) error {
 	m.clusters = clusterManager
+	m.policies = policyManager
+	m.whitelists = whitelistManager
 	m.autoTriggerUpgrades = autoTriggerUpgrades
 	err := m.initializeUpgradeControllers()
 	if err != nil {
@@ -142,7 +146,7 @@ func (m *manager) replaceConnection(ctx context.Context, clusterID string, newCo
 }
 
 func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
-	conn := newConnection(clusterID, eventPipeline, m.clusters)
+	conn := newConnection(ctx, clusterID, eventPipeline, m.clusters, m.policies, m.whitelists)
 
 	oldConnection, err := m.replaceConnection(ctx, clusterID, conn)
 	if err != nil {
@@ -154,7 +158,7 @@ func (m *manager) HandleConnection(ctx context.Context, clusterID string, eventP
 		oldConnection.Terminate(errors.New("replaced by new connection"))
 	}
 
-	err = conn.Run(ctx, server)
+	err = conn.Run(ctx, server, conn.capabilities)
 	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
@@ -234,4 +238,29 @@ func (m *manager) GetActiveConnections() []SensorConnection {
 	}
 
 	return result
+}
+
+func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
+		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {
+			log.Errorf("error broadcasting message to cluster %q", clusterID)
+		}
+	}
+}
+
+func (m *manager) SendMessage(clusterID string, msg *central.MsgToSensor) error {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	connAndUpgradeCtrl, ok := m.connectionsByClusterID[clusterID]
+	if !ok {
+		return errors.Errorf("no cluster %q connection exists", clusterID)
+	}
+	if connAndUpgradeCtrl.connection == nil {
+		return errors.Errorf("no valid cluster %q connection", clusterID)
+	}
+	return connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg)
 }

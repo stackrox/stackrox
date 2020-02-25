@@ -21,6 +21,7 @@ type ComplianceDataRepository interface {
 	UnresolvedAlerts() []*storage.ListAlert
 	NetworkPolicies() map[string]*storage.NetworkPolicy
 	NetworkGraph() *v1.NetworkGraph
+	// Policies returns all policies, keyed by their name.
 	Policies() map[string]*storage.Policy
 	Images() []*storage.ListImage
 	ImageIntegrations() []*storage.ImageIntegration

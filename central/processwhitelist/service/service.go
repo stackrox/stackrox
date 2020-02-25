@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -24,9 +25,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store datastore.DataStore, reprocessor reprocessor.Loop) Service {
+func New(store datastore.DataStore, reprocessor reprocessor.Loop, connectionManager connection.Manager) Service {
 	return &serviceImpl{
-		dataStore:   store,
-		reprocessor: reprocessor,
+		dataStore:         store,
+		reprocessor:       reprocessor,
+		connectionManager: connectionManager,
 	}
 }

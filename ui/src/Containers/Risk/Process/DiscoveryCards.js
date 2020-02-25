@@ -2,6 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import orderBy from 'lodash/orderBy';
 
+import { knownBackendFlags } from 'utils/featureFlags';
+
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
+import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 import ProcessDiscoveryCard from './DiscoveryCard';
 import Binaries from './Binaries';
 
@@ -12,13 +17,21 @@ function DiscoveryCards({ deploymentId, processGroup, processEpoch, setProcessEp
         ['desc', 'asc']
     );
     return sortedProcessGroups.map((pg, i, list) => (
-        <div className={`px-3 pt-5 ${i === list.length - 1 ? 'pb-5' : ''}`} key={pg.name}>
+        <div className={`px-3 ${i === list.length - 1 ? '' : 'pb-5'}`} key={pg.name}>
             <ProcessDiscoveryCard
                 process={pg}
                 deploymentId={deploymentId}
                 processEpoch={processEpoch}
                 setProcessEpoch={setProcessEpoch}
             >
+                <div className="p-2">
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
+                        <div className="mb-3">
+                            <AnalystTags type="Process" />
+                        </div>
+                        <AnalystComments type="Process" />
+                    </FeatureEnabled>
+                </div>
                 <Binaries processes={pg.groups} />
             </ProcessDiscoveryCard>
         </div>

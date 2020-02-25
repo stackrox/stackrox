@@ -4,6 +4,7 @@ metadata:
   name: stackrox-sensor-psp
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 rules:
   - apiGroups:
       - policy
@@ -21,6 +22,7 @@ metadata:
   namespace: stackrox
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -39,6 +41,7 @@ metadata:
   name: stackrox-sensor
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 spec:
   privileged: false
   allowPrivilegeEscalation: false
@@ -74,6 +77,7 @@ metadata:
   name: stackrox-collector-psp
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 rules:
   - apiGroups:
       - policy
@@ -91,6 +95,7 @@ metadata:
   namespace: stackrox
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -106,6 +111,7 @@ metadata:
   name: stackrox-collector
   labels:
     auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
 spec:
   privileged: true
   allowPrivilegeEscalation: true

@@ -7,13 +7,14 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deploymentenvs"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/sensor/common/clusterstatus"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -26,17 +27,38 @@ var (
 type updaterImpl struct {
 	client *kubernetes.Clientset
 
-	updates chan *central.ClusterStatusUpdate
+	updates chan *central.MsgFromSensor
 	stopSig concurrency.Signal
 }
 
-func (u *updaterImpl) Start() {
+func (u *updaterImpl) Start() error {
 	go u.run()
+	return nil
+}
+
+func (u *updaterImpl) Stop(_ error) {
+	u.stopSig.Signal()
+}
+
+func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (u *updaterImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	return nil
+}
+
+func (u *updaterImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return u.updates
 }
 
 func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	select {
-	case u.updates <- msg:
+	case u.updates <- &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_ClusterStatusUpdate{
+			ClusterStatusUpdate: msg,
+		},
+	}:
 		return true
 	case <-u.stopSig.Done():
 		return false
@@ -76,14 +98,6 @@ func (u *updaterImpl) run() {
 	}
 
 	u.sendMessage(updateMessage)
-}
-
-func (u *updaterImpl) Stop() {
-	u.stopSig.Signal()
-}
-
-func (u *updaterImpl) Updates() <-chan *central.ClusterStatusUpdate {
-	return u.updates
 }
 
 func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
@@ -127,10 +141,10 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 }
 
 // NewUpdater returns a new ready-to-use updater.
-func NewUpdater() clusterstatus.Updater {
+func NewUpdater() common.SensorComponent {
 	return &updaterImpl{
 		client:  client.MustCreateClientSet(),
-		updates: make(chan *central.ClusterStatusUpdate),
+		updates: make(chan *central.MsgFromSensor),
 		stopSig: concurrency.NewSignal(),
 	}
 }

@@ -8,6 +8,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -18,14 +19,17 @@ var (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error)
+	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
 func New(storage store.Store, indexer index.Indexer) (Searcher, error) {
 	ds := &searcherImpl{
-		storage: storage,
-		indexer: indexer,
+		storage:           storage,
+		indexer:           indexer,
+		formattedSearcher: formatSearcher(indexer),
 	}
+
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
 	}

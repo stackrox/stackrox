@@ -335,7 +335,7 @@ var cisDocker = Standard{
 				{
 					ID:          "4_7",
 					Name:        "4.7",
-					Description: "Ensure update instructions are not use alone in the Dockerfile",
+					Description: "Ensure update instructions are not used alone in the Dockerfile",
 				},
 				{
 					ID:          "4_8",

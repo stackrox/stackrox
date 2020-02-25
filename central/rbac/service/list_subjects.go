@@ -1,23 +1,17 @@
 package service
 
 import (
-	"time"
-
-	"github.com/blevesearch/bleve"
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/search/predicate"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var subjectFactory = predicate.NewFactory("subject", (*storage.Subject)(nil))
 
 func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.ListSubjectsResponse, error) {
 	subjectsToList, err := getFilteredSubjectsByRoleBinding(rawQuery, bindings)
@@ -69,64 +63,18 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 	return GetFilteredSubjects(parsed, subjectsToFilter)
 }
 
-// GetFilteredSubjects filters subjects based on a proto query
+// GetFilteredSubjects filters subjects based on a proto query. This function modifies subjectsToFilter
 func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) ([]*storage.Subject, error) {
-	// Create a temporary index.
-	tempIndex, err := globalindex.MemOnlyIndex()
-	defer utils.IgnoreError(tempIndex.Close)
-
+	pred, err := subjectFactory.GeneratePredicate(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "initializing temp index")
+		return nil, err
 	}
-	tempIndexer := indexerImpl{index: tempIndex}
 
-	// Index all of the subjects, and map by name.
-	subjectsByName := make(map[string]*storage.Subject)
+	filteredSubjects := subjectsToFilter[:0]
 	for _, subject := range subjectsToFilter {
-		subjectsByName[subject.GetName()] = subject
-		if err := tempIndexer.Add(subject); err != nil {
-			return nil, errors.Wrap(err, "inserting into temp index")
+		if pred.Matches(subject) {
+			filteredSubjects = append(filteredSubjects, subject)
 		}
 	}
-
-	// Run the search.
-	resultNames, err := tempIndexer.Search(query)
-	if err != nil {
-		return nil, errors.Wrap(err, "searching temp index")
-	}
-
-	// Collect the resulting subjects of the search.
-	subjectsToUse := make([]*storage.Subject, 0)
-	for _, result := range resultNames {
-		subjectsToUse = append(subjectsToUse, subjectsByName[result.ID])
-	}
-	return subjectsToUse, nil
-}
-
-// Utils to temporarily index subjects.
-
-// Wrapper to index subjects within.
-type subjectWrapper struct {
-	// Json name of this field must match what is used in k8srole/search/options/map
-	*storage.Subject `json:"subject"`
-	Type             string `json:"type"`
-}
-
-func wrap(subject *storage.Subject) *subjectWrapper {
-	return &subjectWrapper{Type: v1.SearchCategory_SUBJECTS.String(), Subject: subject}
-}
-
-// Index implementation
-type indexerImpl struct {
-	index bleve.Index
-}
-
-func (i *indexerImpl) Add(subject *storage.Subject) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Subject")
-	return i.index.Index(subject.GetName(), wrap(subject))
-}
-
-func (i *indexerImpl) Search(subjectQuery *v1.Query) ([]search.Result, error) {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Subject")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_SUBJECTS, subjectQuery, i.index, mapping.OptionsMap)
+	return filteredSubjects, nil
 }

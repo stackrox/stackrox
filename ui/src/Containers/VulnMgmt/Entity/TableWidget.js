@@ -25,9 +25,18 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
         hasNestedTable,
         defaultSorted,
         className,
+        headerActions,
         ...widgetProps
     } = { ...rest };
-    const headerComponents = (
+    const paginationComponent = (
+        <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
+    );
+    const headerComponents = headerActions ? (
+        <div className="flex">
+            {headerActions}
+            {paginationComponent}
+        </div>
+    ) : (
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
     function onRowClick(row) {

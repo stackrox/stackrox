@@ -315,6 +315,8 @@ spec:
         securityContext:
           runAsUser: 0
           readOnlyRootFilesystem: true
+          seLinuxOptions:
+            type: "container_runtime_t"
         volumeMounts:
         - mountPath: /etc/ssl/
           name: etc-ssl
@@ -328,6 +330,9 @@ spec:
           readOnly: true
         - mountPath: /host/usr/bin
           name: usr-bin
+          readOnly: true
+        - mountPath: /host/usr/sbin
+          name: usr-sbin
           readOnly: true
         - mountPath: /host/usr/lib
           name: usr-lib
@@ -422,6 +427,9 @@ spec:
       - hostPath:
           path: /usr/lib
         name: usr-lib
+      - hostPath:
+          path: /usr/sbin
+        name: usr-sbin
       - hostPath:
           path: /var/lib
         name: var-lib

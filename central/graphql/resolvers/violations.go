@@ -19,11 +19,12 @@ func init() {
 		schema.AddQuery("violations(query: String, pagination: Pagination): [Alert!]!"),
 		schema.AddQuery("violationCount(query: String): Int!"),
 		schema.AddQuery("violation(id: ID!): Alert"),
+		schema.AddExtraResolver("Alert", `unusedVarSink(query: String): Int`),
 	)
 }
 
 // Violations returns a list of all violations, or those that match the requested query
-func (resolver *Resolver) Violations(ctx context.Context, args paginatedQuery) ([]*alertResolver, error) {
+func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) ([]*alertResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Violations")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args paginatedQuery) (
 }
 
 // ViolationCount returns count of all violations, or those that match the requested query
-func (resolver *Resolver) ViolationCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) ViolationCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ViolationCount")
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
@@ -71,6 +72,10 @@ func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Aler
 	return alert
 }
 
+func (resolver *alertResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
+	return nil
+}
+
 func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*graphql.Time, error) {
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
@@ -97,4 +102,25 @@ func getLatestViolationTime(ctx context.Context, root *Resolver, q *v1.Query) (*
 	}
 
 	return timestamp(alerts[0].GetTime())
+}
+
+func anyActiveDeployAlerts(ctx context.Context, root *Resolver, q *v1.Query) (bool, error) {
+	if err := readAlerts(ctx); err != nil {
+		return false, err
+	}
+
+	alertsQuery := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddStrings(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).
+		ProtoQuery()
+
+	q, err := search.AddAsConjunction(q, alertsQuery)
+	if err != nil {
+		return false, err
+	}
+	q.Pagination = &v1.QueryPagination{
+		Limit: 1,
+	}
+
+	results, err := root.ViolationsDataStore.Search(ctx, q)
+	return len(results) != 0, err
 }

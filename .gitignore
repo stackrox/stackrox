@@ -1,6 +1,7 @@
 # Deployment
 sensor*.zip
 tmp
+/central-bundle/
 
 # needed for Cypress test mock zip file
 !sensor-kubernetes-cluster-testinstance.zip

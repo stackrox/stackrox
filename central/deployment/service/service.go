@@ -18,7 +18,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Service provides the interface to the microservice that serves alert data.
+// Service provides the interface to the microservice that serves deployment data.
 type Service interface {
 	grpc.APIService
 

@@ -58,7 +58,6 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	if err != nil {
 		return err
 	}
-	s.riskReprocessor.ReprocessRisk()
 	return nil
 }
 
@@ -127,7 +126,7 @@ func (s *pipelineImpl) validateInput(role *storage.K8SRole) error {
 func (s *pipelineImpl) enrichCluster(ctx context.Context, role *storage.K8SRole) error {
 	role.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ctx, role.GetClusterId())
+	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, role.GetClusterId())
 	switch {
 	case err != nil:
 		log.Errorf("Couldn't get name of cluster: %v", err)
@@ -136,7 +135,7 @@ func (s *pipelineImpl) enrichCluster(ctx context.Context, role *storage.K8SRole)
 		log.Errorf("Couldn't find cluster '%q'", role.GetClusterId())
 		return err
 	default:
-		role.ClusterName = cluster.GetName()
+		role.ClusterName = clusterName
 	}
 	return nil
 }

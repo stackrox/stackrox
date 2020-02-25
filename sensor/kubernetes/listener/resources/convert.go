@@ -77,6 +77,7 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	} else if !ok {
 		return nil
 	}
+	wrap.ClusterId = env.ClusterID.Setting()
 	return wrap
 }
 

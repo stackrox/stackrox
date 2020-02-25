@@ -5,15 +5,16 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/deployment/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
@@ -65,7 +66,8 @@ func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Lo
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration, enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
+func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration,
+	enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
 		deploymenRiskTickerDuration:    deploymentRiskDuration,
@@ -126,6 +128,14 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
+	if features.SensorBasedDetection.Enabled() {
+		l.connManager.BroadcastMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_ReassessPolicies{
+				ReassessPolicies: &central.ReassessPolicies{},
+			},
+		})
+		return
+	}
 	select {
 	case l.shortChan <- struct{}{}:
 	case <-l.stopped.Done():
@@ -144,7 +154,7 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 		return
 	}
 
-	path, ok := mappings.OptionsMap.Get(search.ClusterID.String())
+	path, ok := deployments.OptionsMap.Get(search.ClusterID.String())
 	if !ok {
 		panic("No Cluster ID option for deployments")
 	}
@@ -210,7 +220,11 @@ func (l *loopImpl) loop() {
 		case <-l.shortChan:
 			l.sendDeployments(false, 0)
 		case <-l.enrichAndDetectTicker.C:
-			l.sendDeployments(false, l.enrichAndDetectInjectionPeriod)
+			if features.SensorBasedDetection.Enabled() {
+				l.ShortCircuit()
+			} else {
+				l.sendDeployments(false, l.enrichAndDetectInjectionPeriod)
+			}
 		case <-l.deploymentRiskTicker.C:
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {

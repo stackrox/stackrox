@@ -3,10 +3,10 @@ package search
 import (
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/compliance/standards/index"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/options/deployments"
 )
 
 // Options is exposed for e2e test
@@ -29,5 +29,5 @@ var SearchOptionsMultiMap = search.MultiMapFromMapsFiltered(
 	nodeMappings.OptionsMap,
 	namespaceMappings.OptionsMap,
 	index.ControlOptions,
-	deploymentMappings.OptionsMap,
+	deployments.OptionsMap,
 )

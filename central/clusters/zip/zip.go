@@ -2,7 +2,10 @@ package zip
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -16,8 +19,10 @@ import (
 	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
+	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -30,6 +35,7 @@ import (
 const (
 	additionalCAsDir       = "/usr/local/share/ca-certificates"
 	additionalCAsZipSubdir = "additional-cas"
+	centralCA              = "default-central-ca.crt"
 )
 
 var (
@@ -95,7 +101,40 @@ func (z zipHandler) getAdditionalCAs() ([]*zip.File, error) {
 		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
 	}
 
+	if caFile, err := getDefaultCertCA(); err != nil {
+		log.Errorf("Error obtaining default CA cert: %v", err)
+	} else if caFile != nil {
+		files = append(files, caFile)
+	}
+
 	return files, nil
+}
+
+func getDefaultCertCA() (*zip.File, error) {
+	certFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSCertFileName)
+	keyFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSKeyFileName)
+
+	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
+		return nil, err
+	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, err
+	}
+
+	lastInChain, err := x509.ParseCertificate(cert.Certificate[len(cert.Certificate)-1])
+	if err != nil {
+		return nil, err
+	}
+
+	// Only add cert to bundle if it is not trusted by system roots.
+	if _, err := lastInChain.Verify(x509.VerifyOptions{}); err != nil {
+		pemEncodedCert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: lastInChain.Raw})
+		return zip.NewFile(path.Join(additionalCAsZipSubdir, centralCA), pemEncodedCert, 0), nil
+	}
+
+	return nil, nil
 }
 
 // ServeHTTP serves a ZIP file for the cluster upon request.

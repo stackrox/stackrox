@@ -65,3 +65,15 @@ message Subject {
     string name         = 2 [(gogoproto.moretags) = "search:\"Subject\""];
     string namespace    = 3;
 }
+
+// For any update to PermissionLevel, also update:
+// - pkg/searchbasedpolicies/builders/k8s_rbac.go
+// - ui/src/messages/common.js
+enum PermissionLevel {
+    UNSET = 0;
+    NONE = 1;
+    DEFAULT = 2;
+    ELEVATED_IN_NAMESPACE = 3;
+    ELEVATED_CLUSTER_WIDE = 4;
+    CLUSTER_ADMIN = 5;
+}

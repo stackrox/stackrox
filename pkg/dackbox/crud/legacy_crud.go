@@ -2,9 +2,7 @@ package crud
 
 import (
 	"github.com/gogo/protobuf/proto"
-	generic "github.com/stackrox/rox/pkg/badgerhelper/crud"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 // allocFunc returns an object of the type for the store
@@ -14,32 +12,24 @@ type keyFunc func(msg proto.Message) []byte
 
 type partialConvert func(msg proto.Message) proto.Message
 
-// NewCRUD returns a new Crud instance for the given bucket reference.
-func NewCRUD(duckBox *dackbox.DackBox, prefix []byte, keyFunc keyFunc, alloc allocFunc) generic.Crud {
-	helper, err := NewTxnCounter(duckBox, prefix)
-	utils.Must(err)
+func newCrud(duckBox *dackbox.DackBox, prefix []byte, keyFunc keyFunc, alloc allocFunc) *legacyCrudImpl {
 	return &legacyCrudImpl{
-		counter:  helper,
 		duckBox:  duckBox,
 		prefix:   prefix,
 		reader:   NewReader(WithAllocFunction(ProtoAllocFunction(alloc))),
 		upserter: NewUpserter(WithKeyFunction(PrefixKey(prefix, ProtoKeyFunction(keyFunc)))),
-		deleter:  NewDeleter(GCAllChildren()),
+		deleter:  NewDeleter(),
 	}
 }
 
-// NewCRUDWithPartial creates a CRUD store with a partial bucket as well
-func NewCRUDWithPartial(duckBox *dackbox.DackBox, prefix []byte, keyFunc keyFunc, alloc allocFunc,
-	partialPrefix []byte, partialAlloc allocFunc, partialConverter partialConvert) generic.Crud {
-	helper, err := NewTxnCounter(duckBox, prefix)
-	utils.Must(err)
+func newCrudWithPartial(duckBox *dackbox.DackBox, prefix []byte, keyFunc keyFunc, alloc allocFunc,
+	partialPrefix []byte, partialAlloc allocFunc, partialConverter partialConvert) *legacyCrudImpl {
 
 	splitFunc := func(msg proto.Message) (proto.Message, []proto.Message) {
 		return msg, []proto.Message{partialConverter(msg)}
 	}
 
 	return &legacyCrudImpl{
-		counter:    helper,
 		duckBox:    duckBox,
 		prefix:     prefix,
 		listPrefix: partialPrefix,
@@ -58,6 +48,14 @@ func NewCRUDWithPartial(duckBox *dackbox.DackBox, prefix []byte, keyFunc keyFunc
 				),
 			),
 		),
-		deleter: NewDeleter(GCAllChildren()),
+		deleter: NewDeleter(
+			WithPartialDeleter(
+				NewPartialDeleter(
+					WithDeleter(
+						NewDeleter(),
+					),
+				),
+			),
+		),
 	}
 }

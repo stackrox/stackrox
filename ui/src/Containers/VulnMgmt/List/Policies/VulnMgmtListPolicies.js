@@ -1,11 +1,16 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 import { Power, Bell, BellOff, Trash2 } from 'react-feather';
 import { connect } from 'react-redux';
 
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import Dialog from 'Components/Dialog';
 import IconWithState from 'Components/IconWithState';
@@ -24,7 +29,7 @@ import { deletePolicies } from 'services/PoliciesService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { policySortFields } from 'constants/sortFields';
 
-import { POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { UNSCOPED_POLICY_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 export const defaultPolicySort = [
     // @TODO: remove this fake default sort on Policy name, when latest violation is available
@@ -54,7 +59,7 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: 'statuses',
-            headerClassName: 'w-12 invisible',
+            headerClassName: 'w-16 invisible',
             className: `w-16 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { disabled, notifiers } = original;
@@ -81,25 +86,25 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Description`,
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
             accessor: 'description',
             id: 'description',
-            sortField: policySortFields.DESCRIPTION
+            sortable: false
         },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
-            Cell: ({ original }) => (
+            Cell: ({ original, pdf }) => (
                 <div className="flex justify-center w-full">
-                    <StatusChip status={original.policyStatus} />
+                    <StatusChip status={original.policyStatus} asString={pdf} />
                 </div>
             ),
             id: 'policyStatus',
             accessor: 'policyStatus',
-            sortField: policySortFields.POLICY_STATUS
+            sortField: policySortFields.POLICY_STATUS,
+            sortable: false
         },
         {
             Header: `Last Updated`,
@@ -114,14 +119,15 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Latest Violation`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
-            accessor: 'latestViolation' // ,
-            // sortField: policySortFields.LATEST_VIOLATION
+            accessor: 'latestViolation',
+            sortField: policySortFields.LATEST_VIOLATION,
+            sortable: false
         },
         {
             Header: `Severity`,
@@ -130,14 +136,13 @@ export function getPolicyTableColumns(workflowState) {
             Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
             accessor: 'severity',
             id: 'severity',
-            sortField: policySortFields.DESCRIPTION
+            sortField: policySortFields.SEVERITY
         },
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.DEPLOYMENT}
@@ -148,13 +153,13 @@ export function getPolicyTableColumns(workflowState) {
             ),
             accessor: 'deploymentCount',
             id: 'deploymentCount',
-            sortField: policySortFields.DEPLOYMENTS
+            sortField: policySortFields.DEPLOYMENTS,
+            sortable: false // not performant as of 2020-01-28
         },
         {
-            Header: `Lifecyle`,
+            Header: `Lifecycle`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { lifecycleStages } = original;
                 if (!lifecycleStages || !lifecycleStages.length) return 'No lifecycle stages';
@@ -172,10 +177,9 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Enforcement`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { enforcementActions } = original;
-                return enforcementActions || enforcementActions.length ? 'Yes' : 'No';
+                return enforcementActions && enforcementActions.length ? 'Yes' : 'No';
             },
             accessor: 'enforcementActions',
             id: 'enforcementActions',
@@ -186,21 +190,29 @@ export function getPolicyTableColumns(workflowState) {
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, removeToast }) => {
+const VulnMgmtPolicies = ({
+    selectedRowId,
+    search,
+    sort,
+    page,
+    data,
+    totalResults,
+    addToast,
+    removeToast,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const [selectedPolicyIds, setSelectedPolicyIds] = useState([]);
     const [bulkActionPolicyIds, setBulkActionPolicyIds] = useState([]);
 
-    // seed refresh trigger var with simple number
-    const [refreshTrigger, setRefreshTrigger] = useState(0);
-
     const POLICIES_QUERY = gql`
-        query getPolicies($policyQuery: String, $pagination: Pagination) {
+        query getPolicies($policyQuery: String, $scopeQuery: String, $pagination: Pagination) {
             results: policies(query: $policyQuery, pagination: $pagination) {
-                ...policyFields
+                ...unscopedPolicyFields
             }
             count: policyCount(query: $policyQuery)
         }
-        ${POLICY_LIST_FRAGMENT}
+        ${UNSCOPED_POLICY_LIST_FRAGMENT}
     `;
 
     const tableSort = sort || defaultPolicySort;
@@ -250,7 +262,7 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, r
                 hideDialog();
             })
             .catch(evt => {
-                addToast(`Could not suppress all of the selected policies: ${evt.message}`);
+                addToast(`Could not delete all of the selected policies: ${evt.message}`);
                 setTimeout(removeToast, 3000);
             });
     }
@@ -285,6 +297,7 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, r
         <>
             <WorkflowListPage
                 data={data}
+                totalResults={totalResults}
                 query={POLICIES_QUERY}
                 queryOptions={queryOptions}
                 idAttribute="id"
@@ -315,10 +328,16 @@ const VulnMgmtPolicies = ({ selectedRowId, search, sort, page, data, addToast, r
     );
 };
 
-VulnMgmtPolicies.propTypes = workflowListPropTypes;
+VulnMgmtPolicies.propTypes = {
+    ...workflowListPropTypes,
+    refreshTrigger: PropTypes.number,
+    setRefreshTrigger: PropTypes.func
+};
 VulnMgmtPolicies.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
+    refreshTrigger: 0,
+    setRefreshTrigger: null
 };
 
 const mapDispatchToProps = {

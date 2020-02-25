@@ -684,7 +684,7 @@ const NetworkGraph = ({
     const normalizedElements = CytoscapeComponent.normalizeElements(elements);
 
     const loader = !normalizedElements && (
-        <div className="absolute flex h-full items-center justify-center pin-t w-full pointer-events-none">
+        <div className="absolute flex h-full items-center justify-center top-0 w-full pointer-events-none">
             <GraphLoader isLoading />
         </div>
     );

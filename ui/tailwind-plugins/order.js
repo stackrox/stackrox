@@ -1,18 +1,18 @@
-const _ = require("lodash");
+const map = require('lodash/map');
 
-module.exports = function({
+module.exports = function getOrderClasses({
     positive = {},
     negative = {},
-    variants = ["responsive"]
+    variants = ['responsive']
 }) {
-    return function({ e, addUtilities }) {
+    return function f({ e, addUtilities }) {
         addUtilities(
             [
-                ..._.map(positive, (value, name) => ({
+                ...map(positive, (value, name) => ({
                     [`.${e(`order-${name}`)}`]: { order: value }
                 })),
 
-                ..._.map(negative, (value, name) => ({
+                ...map(negative, (value, name) => ({
                     [`.${e(`-order${name}`)}`]: { order: value }
                 }))
             ],

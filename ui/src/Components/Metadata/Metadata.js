@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import MetadataStatsList from 'Components/MetadataStatsList';
 import Widget from 'Components/Widget';
 import ResourceCountPopper from 'Components/ResourceCountPopper';
+import { useTheme } from 'Containers/ThemeProvider';
 
 const renderName = data => {
     return data.map(({ name }) => (
@@ -21,8 +22,11 @@ const Metadata = ({
     annotations,
     whitelists,
     secrets,
+    bgClass,
+    className,
     ...rest
 }) => {
+    const { isDarkMode } = useTheme();
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="border-b border-base-300 py-3" key={key}>
             <span className="text-base-600 font-700 mr-2">{key}:</span>
@@ -34,8 +38,10 @@ const Metadata = ({
         labels || annotations || whitelists || secrets ? ' border-r' : ''
     }`;
 
+    const widgetClassName = `${className} ${!isDarkMode && bgClass ? 'bg-counts-widget' : ''}`;
+
     return (
-        <Widget header={title} {...rest}>
+        <Widget header={title} className={widgetClassName} {...rest}>
             <div className="flex flex-col w-full">
                 {statTiles && statTiles.length > 0 && <MetadataStatsList statTiles={statTiles} />}
                 <div className="flex w-full h-full">
@@ -98,7 +104,9 @@ Metadata.propTypes = {
     labels: PropTypes.arrayOf(PropTypes.shape({})),
     annotations: PropTypes.arrayOf(PropTypes.shape({})),
     whitelists: PropTypes.arrayOf(PropTypes.shape({})),
-    secrets: PropTypes.arrayOf(PropTypes.shape({}))
+    secrets: PropTypes.arrayOf(PropTypes.shape({})),
+    bgClass: PropTypes.bool,
+    className: PropTypes.string
 };
 
 Metadata.defaultProps = {
@@ -107,7 +115,9 @@ Metadata.defaultProps = {
     labels: null,
     annotations: null,
     whitelists: null,
-    secrets: null
+    secrets: null,
+    bgClass: false,
+    className: ''
 };
 
 export default Metadata;

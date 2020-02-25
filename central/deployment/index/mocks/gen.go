@@ -92,32 +92,33 @@ func (mr *MockIndexerMockRecorder) DeleteDeployments(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDeployments", reflect.TypeOf((*MockIndexer)(nil).DeleteDeployments), arg0)
 }
 
-// GetTxnCount mocks base method
-func (m *MockIndexer) GetTxnCount() uint64 {
+// MarkInitialIndexingComplete mocks base method
+func (m *MockIndexer) MarkInitialIndexingComplete() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxnCount")
-	ret0, _ := ret[0].(uint64)
-	return ret0
-}
-
-// GetTxnCount indicates an expected call of GetTxnCount
-func (mr *MockIndexerMockRecorder) GetTxnCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockIndexer)(nil).GetTxnCount))
-}
-
-// ResetIndex mocks base method
-func (m *MockIndexer) ResetIndex() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResetIndex")
+	ret := m.ctrl.Call(m, "MarkInitialIndexingComplete")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ResetIndex indicates an expected call of ResetIndex
-func (mr *MockIndexerMockRecorder) ResetIndex() *gomock.Call {
+// MarkInitialIndexingComplete indicates an expected call of MarkInitialIndexingComplete
+func (mr *MockIndexerMockRecorder) MarkInitialIndexingComplete() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetIndex", reflect.TypeOf((*MockIndexer)(nil).ResetIndex))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkInitialIndexingComplete", reflect.TypeOf((*MockIndexer)(nil).MarkInitialIndexingComplete))
+}
+
+// NeedsInitialIndexing mocks base method
+func (m *MockIndexer) NeedsInitialIndexing() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NeedsInitialIndexing")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NeedsInitialIndexing indicates an expected call of NeedsInitialIndexing
+func (mr *MockIndexerMockRecorder) NeedsInitialIndexing() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NeedsInitialIndexing", reflect.TypeOf((*MockIndexer)(nil).NeedsInitialIndexing))
 }
 
 // Search mocks base method
@@ -138,18 +139,4 @@ func (mr *MockIndexerMockRecorder) Search(arg0 interface{}, arg1 ...interface{})
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), varargs...)
-}
-
-// SetTxnCount mocks base method
-func (m *MockIndexer) SetTxnCount(arg0 uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetTxnCount", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetTxnCount indicates an expected call of SetTxnCount
-func (mr *MockIndexerMockRecorder) SetTxnCount(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxnCount", reflect.TypeOf((*MockIndexer)(nil).SetTxnCount), arg0)
 }

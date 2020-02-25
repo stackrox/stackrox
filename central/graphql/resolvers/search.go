@@ -47,25 +47,27 @@ func (s *sortOption) AsV1SortOption() *v1.SortOption {
 	}
 }
 
-type pagination struct {
+// Pagination struct contains limit, offset and sort options
+type Pagination struct {
 	Offset     *int32
 	Limit      *int32
 	SortOption *sortOption
 }
 
-func (r *pagination) AsV1Pagination() *v1.Pagination {
+// AsV1Pagination returns a proto Pagination struct
+func (r *Pagination) AsV1Pagination() *v1.Pagination {
 	if r == nil {
 		return nil
 	}
 	return &v1.Pagination{
 		Offset: func() int32 {
-			if r.Offset == nil {
+			if r.Offset == nil || *r.Offset < 0 {
 				return 0
 			}
 			return *r.Offset
 		}(),
 		Limit: func() int32 {
-			if r.Limit == nil {
+			if r.Limit == nil || *r.Limit < 0 {
 				return 0
 			}
 			return *r.Limit
@@ -74,12 +76,14 @@ func (r *pagination) AsV1Pagination() *v1.Pagination {
 	}
 }
 
-type paginatedQuery struct {
+// PaginatedQuery represents a query with pagination info
+type PaginatedQuery struct {
 	Query      *string
-	Pagination *pagination
+	Pagination *Pagination
 }
 
-func (r *paginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
+// AsV1QueryOrEmpty returns a proto query or empty proto query if pagination query is empty
+func (r *PaginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	var q *v1.Query
 	if r == nil || r.Query == nil {
 		q := search.EmptyQuery()
@@ -94,25 +98,29 @@ func (r *paginatedQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	return q, nil
 }
 
-func (r *paginatedQuery) String() string {
+// String returns a String representation of PaginatedQuery
+func (r *PaginatedQuery) String() string {
 	if r == nil || r.Query == nil {
 		return ""
 	}
 	return *r.Query
 }
 
-type rawQuery struct {
+// RawQuery represents a raw query
+type RawQuery struct {
 	Query *string
 }
 
-func (r rawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
+// AsV1QueryOrEmpty returns a proto query or empty proto query if raw query is empty
+func (r RawQuery) AsV1QueryOrEmpty() (*v1.Query, error) {
 	if r.Query == nil {
 		return search.EmptyQuery(), nil
 	}
 	return search.ParseQuery(*r.Query, search.MatchAllIfEmpty())
 }
 
-func (r rawQuery) String() string {
+// String returns a String representation of RawQuery
+func (r RawQuery) String() string {
 	if r.Query == nil {
 		return ""
 	}
@@ -133,6 +141,8 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore,
 		v1.SearchCategory_ROLES:            resolver.K8sRoleStore,
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore,
+		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore,
+		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore,
 	}
 
 	return searchers
@@ -152,6 +162,8 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_SERVICE_ACCOUNTS: resolver.ServiceAccountsDataStore.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:            resolver.K8sRoleStore.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
+		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore.SearchImageComponents,
+		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore.SearchCVEs,
 	}
 
 	return searchfuncs

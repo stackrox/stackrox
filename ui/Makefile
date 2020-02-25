@@ -7,7 +7,7 @@ deps: package.json
 	yarn install --frozen-lockfile
 	@touch deps
 
-SOURCES := $(shell ls *.json) tailwind.js yarn.lock
+SOURCES := $(shell ls *.json) tailwind.config.js yarn.lock
 SOURCES += $(shell find public)
 SOURCES += $(shell find src -name '*.js' -print)
 SOURCES += $(shell find src -name '*.css' -print)

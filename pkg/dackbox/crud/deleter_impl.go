@@ -5,37 +5,57 @@ import (
 )
 
 type deleterImpl struct {
-	gCFunc KeyMatchFunction
+	removeFromIndex bool
+	shared          bool
+	partials        []PartialDeleter
 }
 
 // DeleteIn deletes the data for the input key on the input transaction.
-func (dc deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error {
-	// Get the currently stored dependent keys.
-	partialKeys := dackTxn.Graph().GetRefsFrom(key)
-
+func (dc *deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error {
+	// If shared, check that no more references exist for the object before deleting.
+	if dc.shared {
+		if dackTxn.Graph().CountRefsTo(key) > 0 {
+			return nil
+		}
+	}
+	// If indexed, add the key to the set of dirty keys.
+	if dc.removeFromIndex {
+		if err := dackTxn.MarkDirty(key, nil); err != nil {
+			return err
+		}
+	}
 	// Remove the key from the id map and the DB.
-	err := dackTxn.Graph().DeleteRefs(key)
-	if err != nil {
+	partialKeys := dackTxn.Graph().GetRefsFrom(key)
+	if err := dackTxn.Graph().DeleteRefs(key); err != nil {
 		return err
 	}
-	err = dackTxn.BadgerTxn().Delete(key)
-	if err != nil {
+	if err := dackTxn.BadgerTxn().Delete(key); err != nil {
 		return err
 	}
+	// Delete the partial objects. This needs to come after the shared check so that we can clean objects up in line.
+	for _, partial := range dc.partials {
+		if err := partial.DeletePartialsIn(partialKeys, dackTxn); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	// Remove any dependent keys
-	if dc.gCFunc == nil {
-		return nil
-	}
+type partialDeleterImpl struct {
+	matchFunction KeyMatchFunction
+
+	deleter Deleter
+}
+
+// DeleteIn deletes the data for the input key on the input transaction.
+func (dc *partialDeleterImpl) DeletePartialsIn(partialKeys [][]byte, dackTxn *dackbox.Transaction) error {
+	// Get the currently stored dependent keys.
 	for _, partialKey := range partialKeys {
-		if !dc.gCFunc(partialKey) {
+		if dc.matchFunction != nil && !dc.matchFunction(partialKey) {
 			continue
 		}
-		if dackTxn.Graph().CountRefsTo(partialKey) == 0 {
-			// No need to go through the partial write config since we don't need the key function.
-			if err := dc.DeleteIn(partialKey, dackTxn); err != nil {
-				return err
-			}
+		if err := dc.deleter.DeleteIn(partialKey, dackTxn); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,6 +29,9 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 				log.Error(err)
 			}
 			result[i].Started = startTime
+		}
+		if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
+			result[i].ImageDigest = digest
 		}
 	}
 	return result

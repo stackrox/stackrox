@@ -1,12 +1,15 @@
 package config
 
 import (
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
 )
 
 var (
@@ -16,10 +19,8 @@ var (
 // Handler executes the input scrape commands, and reconciles scrapes with input ComplianceReturns,
 // outputing the ScrapeUpdates we expect to be sent back to central.
 type Handler interface {
-	Stop()
-
 	GetConfig() *storage.DynamicClusterConfig
-	SendCommand(cluster *central.ClusterConfig) bool
+	common.SensorComponent
 }
 
 // NewCommandHandler returns a new instance of a Handler using the input image and Orchestrator.
@@ -36,21 +37,37 @@ type configHandlerImpl struct {
 	stopC concurrency.ErrorSignal
 }
 
-func (c *configHandlerImpl) Stop() {
+func (c *configHandlerImpl) Start() error {
+	return nil
+}
+
+func (c *configHandlerImpl) Stop(_ error) {
 	c.stopC.Signal()
 }
 
-func (c *configHandlerImpl) SendCommand(config *central.ClusterConfig) bool {
+func (c *configHandlerImpl) Capabilities() []centralsensor.SensorCapability {
+	return nil
+}
+
+func (c *configHandlerImpl) ResponsesC() <-chan *central.MsgFromSensor {
+	return nil
+}
+
+func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	config := msg.GetClusterConfig()
+	if config == nil {
+		return nil
+	}
+
 	select {
 	case <-c.stopC.Done():
-		return false
+		return errors.New("could not process new cluster config")
 	default:
 		log.Infof("Received configuration from Central: %s", protoutils.NewWrapper(config))
-
 		c.lock.Lock()
+		defer c.lock.Unlock()
 		c.config = config.Config
-		c.lock.Unlock()
-		return true
+		return nil
 	}
 }
 

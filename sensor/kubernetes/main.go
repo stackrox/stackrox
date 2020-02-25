@@ -7,20 +7,26 @@ import (
 
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
-	"github.com/stackrox/rox/sensor/common/roxmetadata"
+	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/sensor"
+	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
+	"github.com/stackrox/rox/sensor/kubernetes/telemetry"
 	k8sUpgrade "github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
@@ -49,17 +55,43 @@ func main() {
 
 	configHandler := config.NewCommandHandler()
 
-	s := sensor.NewSensor(
-		listener.New(configHandler),
-		enforcer.MustCreate(),
-		orchestrator.New(),
+	enforcer := enforcer.MustCreate()
+	policyDetector := detector.New(enforcer)
+	listener := listener.New(configHandler, policyDetector)
+
+	o := orchestrator.New()
+	complianceService := compliance.NewService(o)
+	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
+
+	processSignals := signalService.New(policyDetector)
+
+	components := []common.SensorComponent{
+		listener,
+		enforcer,
 		manager.Singleton(),
-		roxmetadata.Singleton(),
 		networkpolicies.NewCommandHandler(),
 		clusterstatus.NewUpdater(),
-		configHandler,
 		upgradeCmdHandler,
+		complianceCommandHandler,
+		processSignals,
+	}
+
+	if features.DiagnosticBundle.Enabled() || features.Telemetry.Enabled() {
+		components = append(components, telemetry.NewCommandHandler())
+	}
+
+	s := sensor.NewSensor(
+		configHandler,
+		policyDetector,
+		components...,
 	)
+
+	s.AddAPIServices(
+		service.Singleton(),
+		processSignals,
+		complianceService,
+	)
+
 	s.Start()
 
 	for {

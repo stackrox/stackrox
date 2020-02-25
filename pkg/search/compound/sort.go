@@ -62,9 +62,9 @@ func trySortComplex(rs *searchRequestSpec, p *v1.QueryPagination, specs []Search
 			q := search.EmptyQuery()
 			q.Pagination = p
 			return &searchRequestSpec{
-				and: []*searchRequestSpec{
-					rs,
-					{
+				leftJoinWithRightOrder: &joinRequestSpec{
+					left: rs,
+					right: &searchRequestSpec{
 						base: &baseRequestSpec{
 							Spec:  &spec,
 							Query: q,

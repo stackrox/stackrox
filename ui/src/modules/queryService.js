@@ -50,6 +50,8 @@ function entityContextToQueryObject(entityContext) {
         } else if (key === entityTypes.COMPONENT) {
             const parsedComponentID = entityContext[key].split(':').map(atob);
             [entityQueryObj[`${key} NAME`], entityQueryObj[`${key} VERSION`]] = parsedComponentID;
+        } else if (key === entityTypes.CVE) {
+            entityQueryObj[key] = entityContext[key];
         } else {
             entityQueryObj[`${key} ID`] = entityContext[key];
         }
@@ -70,7 +72,7 @@ function getQueryBasedOnSearchContext(query, searchParam) {
     return searchParam && query && query[searchParam] ? query[searchParam] : query || {};
 }
 
-function getListFieldName(entityType, listType) {
+function getListFieldName(entityType, listType, useCase) {
     // TODO: Back end should rename these fields and these exceptions should be removed
     if (entityType === entityTypes.COMPONENT) {
         if (listType === entityTypes.CVE) {
@@ -101,6 +103,9 @@ function getListFieldName(entityType, listType) {
         }
 
         if (listType === entityTypes.POLICY) {
+            if (useCase === useCases.VULN_MANAGEMENT) {
+                return 'policies';
+            }
             return 'failingPolicies';
         }
     }
@@ -187,10 +192,10 @@ function getFragment(entityType, useCase) {
     return fragmentMap[entityType];
 }
 
-function getFragmentInfo(entityType, listType, appContext) {
-    const listFieldName = getListFieldName(entityType, listType);
+function getFragmentInfo(entityType, listType, useCase) {
+    const listFieldName = getListFieldName(entityType, listType, useCase);
     const fragmentName = getFragmentName(listType);
-    const fragment = getFragment(listType, appContext);
+    const fragment = getFragment(listType, useCase);
 
     return {
         listFieldName,
@@ -202,18 +207,21 @@ function getFragmentInfo(entityType, listType, appContext) {
 function getPagination(sort, page, pageSize = defaultPageSize) {
     const sortObj = Array.isArray(sort) ? sort[0] : sort; // Back end can't support multiple sort right now, so just taking first sort
 
-    if (!sortObj || !sortObj.id) return null;
+    if (!sortObj) return null;
     const offset = page * pageSize;
     const limit = pageSize;
-    const { id: field, desc: reversed } = sortObj;
-    return {
+    const paginationObj = {
         offset,
-        limit,
-        sortOption: {
-            field,
-            reversed
-        }
+        limit
     };
+
+    if (!sortObj.id) return paginationObj;
+
+    paginationObj.sortOption = {
+        field: sortObj.id,
+        reversed: sortObj.desc
+    };
+    return paginationObj;
 }
 
 export default {

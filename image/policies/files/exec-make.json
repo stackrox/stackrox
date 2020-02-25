@@ -1,7 +1,7 @@
 {
   "id": "101952d3-ec69-4ebe-bfa3-ff26b6e4c29d",
   "name": "Compiler Tool Execution",
-  "description": "Detects execution of binaries which are used to compile software",
+  "description": "Alert when binaries used to compile software are executed at runtime",
   "categories": [
     "Package Management"
   ],
@@ -14,6 +14,6 @@
       "name": "make|gcc|llc|llvm-.*"
     }
   },
-  "rationale": "Usage of compilation tools during runtime may indicate usage of infrastructure to build software.",
-  "remediation": "Avoid packaging compiler tools container image."
+  "rationale": "Use of compilation tools during runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Compile all necessary application code during the image build process. Avoid packaging software build tools in container images. Use your distribution's package manager to remove compilers and other build tools from images."
 }

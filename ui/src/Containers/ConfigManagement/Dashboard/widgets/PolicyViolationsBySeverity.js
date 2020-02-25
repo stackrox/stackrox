@@ -135,7 +135,8 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         const highCount = getCount(severities.HIGH_SEVERITY);
         const mediumCount = getCount(severities.MEDIUM_SEVERITY);
         const lowCount = getCount(severities.LOW_SEVERITY);
-        const passingCount = data.length - policiesInViolation.length;
+        const passingCount =
+            data.filter(policy => !policy.disabled).length - policiesInViolation.length;
 
         const links = [];
 
@@ -165,6 +166,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     .query({
                         [searchParam]: {
                             Severity: severities.HIGH_SEVERITY,
+                            Disabled: 'False',
                             [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
                         }
                     })
@@ -181,6 +183,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     .query({
                         [searchParam]: {
                             Severity: severities.MEDIUM_SEVERITY,
+                            Disabled: 'False',
                             [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
                         }
                     })
@@ -197,6 +200,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     .query({
                         [searchParam]: {
                             Severity: severities.LOW_SEVERITY,
+                            Disabled: 'False',
                             [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
                         }
                     })
@@ -212,6 +216,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 link: url
                     .query({
                         [searchParam]: {
+                            Disabled: 'False',
                             [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS
                         }
                     })

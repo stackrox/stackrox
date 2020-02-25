@@ -146,13 +146,73 @@ func (rs resultSet) subtract(other resultSet) resultSet {
 	}
 }
 
+func (rs resultSet) leftJoinWithRightOrder(other resultSet) resultSet {
+	order := rs.order
+	if other.order != nil {
+		order = make(map[string]int)
+		maxIdx := 0
+		// Add the `rs` results that having ordering in `other`.
+		for _, result := range rs.results {
+			idx, ok := other.order[result.ID]
+			if !ok {
+				continue
+			}
+
+			order[result.ID] = idx
+
+			if idx > maxIdx {
+				maxIdx = idx
+			}
+		}
+
+		maxIdx++
+
+		// Now add the `rs` results that do not have ordering in `other`.
+		for _, result := range rs.results {
+			if _, ok := other.order[result.ID]; !ok {
+				order[result.ID] = maxIdx
+				maxIdx++
+			}
+		}
+	}
+
+	newResults := make([]search.Result, 0, len(rs.results))
+	thatIdx := 0
+	thisIdx := 0
+	thisInBounds := thisIdx < len(rs.results)
+	thatInBounds := thatIdx < len(other.results)
+	for thisInBounds {
+		cmp := -1
+		if thatInBounds {
+			cmp = strings.Compare(rs.results[thisIdx].ID, other.results[thatIdx].ID)
+		}
+
+		if cmp == 0 {
+			newResults = append(newResults, rs.results[thisIdx])
+			thatIdx++
+			thisIdx++
+		} else if cmp < 0 {
+			newResults = append(newResults, rs.results[thisIdx])
+			thisIdx++
+		} else {
+			thatIdx++
+		}
+		thisInBounds = thisIdx < len(rs.results)
+		thatInBounds = thatIdx < len(other.results)
+	}
+
+	return resultSet{
+		results: newResults,
+		order:   order,
+	}
+}
+
 func (rs *resultSet) asResultSlice() []search.Result {
 	ret := rs.results
 	if rs.order != nil {
-		ret = make([]search.Result, len(rs.results))
-		for _, res := range rs.results {
-			ret[rs.order[res.ID]] = res
-		}
+		sort.SliceStable(ret, func(i, j int) bool {
+			return rs.order[ret[i].ID] < rs.order[ret[j].ID]
+		})
 	}
 	return ret
 }

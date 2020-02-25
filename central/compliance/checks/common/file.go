@@ -23,6 +23,17 @@ func HasOwnershipGroup(f *compliance.File, group string) bool {
 	return f.GetGroupName() == group
 }
 
+// OptionalSystemdOwnershipCheck checks the users and groups of the file if it exists. If it does not exist, then the check passes
+func OptionalSystemdOwnershipCheck(name, file, user, group string) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
+		DataDependencies:   []string{"HostScraped"},
+	}
+	return framework.NewCheckFromFunc(md, systemdOwnershipCheckFunc(file, user, group, true))
+}
+
 // SystemdOwnershipCheck checks the users and groups of the file
 func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
@@ -31,7 +42,7 @@ func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
 		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
-	return framework.NewCheckFromFunc(md, systemdOwnershipCheckFunc(file, user, group))
+	return framework.NewCheckFromFunc(md, systemdOwnershipCheckFunc(file, user, group, false))
 }
 
 // OwnershipCheck checks the users and groups of the file
@@ -45,7 +56,7 @@ func OwnershipCheck(name, file, user, group string) framework.Check {
 	return framework.NewCheckFromFunc(md, ownershipCheckFunc(file, user, group, false))
 }
 
-// OptionalOwnershipCheck checks the users and groups of the file
+// OptionalOwnershipCheck checks the users and groups of the file if it exists. If it does not exist, then the check passes
 func OptionalOwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
@@ -98,11 +109,15 @@ func recursiveOwnershipCheckFunc(path, user, group string, optional bool) framew
 	})
 }
 
-func systemdOwnershipCheckFunc(path, user, group string) framework.CheckFunc {
+func systemdOwnershipCheckFunc(path, user, group string, optional bool) framework.CheckFunc {
 	return PerNodeCheck(func(ctx framework.ComplianceContext, returnData *compliance.ComplianceReturn) {
 		f, ok := returnData.SystemdFiles[path]
 		if !ok {
-			framework.FailNowf(ctx, "File %q could not be found in scraped data", path)
+			if optional {
+				framework.PassNowf(ctx, "Service %q does not exist on host, therefore check is not applicable", path)
+			} else {
+				framework.FailNowf(ctx, "Service %q could not be found in scraped data", path)
+			}
 		}
 		ownershipCheck(ctx, f, user, group)
 	})
@@ -157,6 +172,17 @@ func OptionalPermissionCheck(name, file string, permissions uint32) framework.Ch
 	return framework.NewCheckFromFunc(md, permissionCheckFunc(file, permissions, true))
 }
 
+// OptionalSystemdPermissionCheck checks the permissions of the file
+func OptionalSystemdPermissionCheck(name, file string, permissions uint32) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
+		DataDependencies:   []string{"HostScraped"},
+	}
+	return framework.NewCheckFromFunc(md, systemdPermissionCheckFunc(file, permissions, true))
+}
+
 // SystemdPermissionCheck checks the permissions of the file
 func SystemdPermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
@@ -165,7 +191,7 @@ func SystemdPermissionCheck(name, file string, permissions uint32) framework.Che
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
-	return framework.NewCheckFromFunc(md, systemdPermissionCheckFunc(file, permissions))
+	return framework.NewCheckFromFunc(md, systemdPermissionCheckFunc(file, permissions, false))
 }
 
 // RecursivePermissionCheck recursively checks the permissions of the file
@@ -179,11 +205,15 @@ func RecursivePermissionCheck(name, file string, permissions uint32) framework.C
 	return framework.NewCheckFromFunc(md, recursivePermissionCheckFunc(file, permissions))
 }
 
-func systemdPermissionCheckFunc(path string, permissions uint32) framework.CheckFunc {
+func systemdPermissionCheckFunc(path string, permissions uint32, optional bool) framework.CheckFunc {
 	return PerNodeCheck(func(ctx framework.ComplianceContext, returnData *compliance.ComplianceReturn) {
 		f, ok := returnData.SystemdFiles[path]
 		if !ok {
-			framework.FailNowf(ctx, "File %q could not be found in scraped data", path)
+			if optional {
+				framework.PassNowf(ctx, "Service %q does not exist on host, therefore check is not applicable", path)
+			} else {
+				framework.FailNowf(ctx, "Service %q could not be found in scraped data", path)
+			}
 		}
 		permissionCheck(ctx, f, permissions)
 	})

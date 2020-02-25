@@ -40,13 +40,13 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	return f
 }
 
-func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, map[string]string, error) {
-	be, config, err := newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
+func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
+	be, err := newBackend(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	be.factory = f
-	return be, config, nil
+	return be, nil
 }
 
 func (f *factory) processACSRequest(r *http.Request) (string, error) {

@@ -320,6 +320,7 @@ func processFlagWraps(argSlice *argSlice, fws []flagWrap) {
 			if flag == nil {
 				utils.Must(errors.Errorf("invalid flag dependency %q", dep))
 			}
+			//lint:ignore SA5011 flag is definitely not nil because utils.Must panics.
 			if !argSlice.flagNameIsSetExplicitly(flag.Name) {
 				depUnmet = true
 				break

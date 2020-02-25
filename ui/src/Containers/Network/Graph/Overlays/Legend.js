@@ -111,7 +111,7 @@ const Legend = () => {
     return (
         <div
             data-test-id="legend"
-            className="env-graph-legend absolute pin-b pin-l mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
+            className="env-graph-legend absolute bottom-0 left-0 mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
         >
             {renderLegendButton()}
             <LegendContent isOpen={isOpen} toggleLegend={toggleLegend} />

@@ -6,8 +6,9 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
+	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,7 +38,7 @@ func SingletonPolicySet() detection.PolicySet {
 }
 
 func initialize() {
-	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detection.NewPolicyCompiler(matcher.ImageBuilderSingleton()))
+	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detectionPkg.NewPolicyCompiler(searchbasedpolicies.ImageBuilderSingleton()))
 	policies, err := policyDataStore.Singleton().GetPolicies(policyCtx)
 	utils.Must(err)
 

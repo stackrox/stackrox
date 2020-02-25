@@ -7,4 +7,4 @@ import (
 )
 
 // OptionsMap defines the search options for Vulnerabilities stored in images.
-var OptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "cve", (*storage.CVE)(nil))
+var OptionsMap = search.Walk(v1.SearchCategory_VULNERABILITIES, "c_v_e", (*storage.CVE)(nil))

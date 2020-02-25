@@ -7,7 +7,11 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import DateTimeField from 'Components/DateTimeField';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -84,8 +88,8 @@ export function getImageTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
-            accessor: 'topVuln.cvss'
-            // sortField: TBD
+            accessor: 'topVuln.cvss',
+            sortField: imageSortFields.CVSS
         },
         {
             Header: `Created`,
@@ -113,15 +117,16 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: 'Image Status',
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { deploymentCount } = original;
                 const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
-                return <StatusChip status={imageStatus} />;
+                return <StatusChip status={imageStatus} asString={pdf} />;
             },
-            accessor: 'deploymentCount'
-            // sortField: TBD,
+            accessor: 'deploymentCount',
+            sortField: imageSortFields.IMAGE_STATUS,
+            sortable: false
         },
         {
             Header: `Deployments`,
@@ -136,8 +141,8 @@ export function getImageTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
-            accessor: 'deploymentCount'
-            // sortField: imageSortFields.STATUS,
+            accessor: 'deploymentCount',
+            sortField: imageSortFields.DEPLOYMENT_COUNT
         },
         {
             Header: `Components`,
@@ -164,14 +169,14 @@ export function getImageTableColumns(workflowState) {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'priority'
-            // sortField: TBD
+            accessor: 'priority',
+            sortField: imageSortFields.PRIORITY
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtImages = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
         query getImages($query: String, $pagination: Pagination) {
             results: images(query: $query, pagination: $pagination) {
@@ -193,6 +198,7 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data }) => {
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.IMAGE}

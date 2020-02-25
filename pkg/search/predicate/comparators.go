@@ -3,8 +3,6 @@ package predicate
 import (
 	"fmt"
 	"strings"
-
-	"github.com/gogo/protobuf/types"
 )
 
 // Produce a predicate for the given numerical or date time query.
@@ -61,23 +59,6 @@ func floatComparator(cmp string) (func(a, b float64) bool, error) {
 		return func(a, b float64) bool { return a > b }, nil
 	case "":
 		return func(a, b float64) bool { return a == b }, nil
-	default:
-		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)
-	}
-}
-
-func timestampComparator(cmp string) (func(interface{}, *types.Timestamp) bool, error) {
-	switch cmp {
-	case lessThanOrEqualTo:
-		return func(instance interface{}, value *types.Timestamp) bool { return value.Compare(instance) >= 0 }, nil
-	case greaterThanOrEqualTo:
-		return func(instance interface{}, value *types.Timestamp) bool { return value.Compare(instance) <= 0 }, nil
-	case lessThan:
-		return func(instance interface{}, value *types.Timestamp) bool { return value.Compare(instance) > 0 }, nil
-	case greaterThan:
-		return func(instance interface{}, value *types.Timestamp) bool { return value.Compare(instance) < 0 }, nil
-	case "":
-		return func(instance interface{}, value *types.Timestamp) bool { return value.Compare(instance) == 0 }, nil
 	default:
 		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)
 	}

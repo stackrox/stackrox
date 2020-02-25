@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 
+	"github.com/graph-gophers/graphql-go"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
+
+type idQuery struct {
+	ID *graphql.ID
+}
 
 // StringListEntryResolver represents a set of values keyed by a string
 type stringListEntryResolver struct {
@@ -297,6 +302,12 @@ func (pw paginationWrapper) paginate(datSlice interface{}, err error) (interface
 
 	offset := int(pw.pv.GetOffset())
 	limit := int(pw.pv.GetLimit())
+	if offset < 0 {
+		offset = 0
+	}
+	if limit < 0 {
+		limit = 0
+	}
 
 	remnants := datValue.Len() - offset
 	if remnants <= 0 {

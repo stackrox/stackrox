@@ -25,4 +25,5 @@ enum ServiceType {
     MONITORING_CLIENT_SERVICE = 7;
     BENCHMARK_SERVICE         = 8;
     SCANNER_SERVICE           = 9;
+    SCANNER_DB_SERVICE        = 10;
 }

@@ -28,9 +28,32 @@ var (
 	basicAuthProviderID = "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
 )
 
+// CreateManager creates and returns a manager for user/password authentication.
+func CreateManager() *basicAuthn.Manager {
+	adminRole := role.DefaultRolesByName[role.Admin]
+	if adminRole == nil {
+		log.Panic("Could not look up admin role")
+	}
+
+	mgr := basicAuthn.NewManager(nil, adminRole)
+
+	wh := &watchHandler{
+		manager: mgr,
+	}
+
+	watchOpts := k8scfgwatch.Options{
+		Interval: watchInterval,
+		Force:    true,
+	}
+
+	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), htpasswdDir, k8scfgwatch.DeduplicateWatchErrors(wh), watchOpts)
+
+	return mgr
+}
+
 // RegisterAuthProviderOrPanic sets up basic authentication with the builtin htpasswd file. It panics if the basic auth
 // feature is not enabled, or if it is called twice on the same registry.
-func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Registry) authproviders.Provider {
+func RegisterAuthProviderOrPanic(ctx context.Context, mgr *basicAuthn.Manager, registry authproviders.Registry) authproviders.Provider {
 	err := registry.RegisterBackendFactory(ctx, basicAuthProvider.TypeName, basicAuthProvider.NewFactory)
 	if err != nil {
 		log.Warnf("Could not register basic auth provider factory: %v", err)
@@ -57,7 +80,7 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
 		authproviders.DoNotStore(),
 	}
-	provider, err := registry.CreateProvider(ctx, options...)
+	provider, err := registry.CreateProvider(basicAuthProvider.ContextWithBasicAuthManager(ctx, mgr), options...)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)
 	}
@@ -65,18 +88,18 @@ func RegisterAuthProviderOrPanic(ctx context.Context, registry authproviders.Reg
 }
 
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
-func IdentityExtractorOrPanic(authProvider authproviders.Provider) authn.IdentityExtractor {
+func IdentityExtractorOrPanic(mgr *basicAuthn.Manager, authProvider authproviders.Provider) authn.IdentityExtractor {
 	adminRole := role.DefaultRolesByName[role.Admin]
 	if adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}
-	extractor, err := basicAuthn.NewExtractor(nil, adminRole, authProvider)
+	extractor, err := basicAuthn.NewExtractor(mgr, authProvider)
 	if err != nil {
 		log.Panicf("Could not create identity extractor for basic auth: %v", err)
 	}
 
 	wh := &watchHandler{
-		extractor: extractor,
+		manager: mgr,
 	}
 
 	watchOpts := k8scfgwatch.Options{

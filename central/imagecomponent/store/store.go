@@ -14,12 +14,6 @@ type Store interface {
 
 	Exists(id string) (bool, error)
 
-	Upsert(component *storage.ImageComponent) error
-	UpsertBatch(components []*storage.ImageComponent) error
-
-	Delete(id string) error
-	DeleteBatch(ids []string) error
-
-	GetTxnCount() (txNum uint64, err error)
-	IncTxnCount() error
+	Upsert(component ...*storage.ImageComponent) error
+	Delete(ids ...string) error
 }

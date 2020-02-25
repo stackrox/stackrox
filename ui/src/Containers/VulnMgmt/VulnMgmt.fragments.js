@@ -34,11 +34,11 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         # createdAt
         namespaceCount
         deploymentCount
-        policyCount(query: $policyQuery)
-        policyStatus(query: $policyQuery) {
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $scopeQuery) {
             status
         }
-        latestViolation(query: $policyQuery)
+        latestViolation(query: $scopeQuery)
         priority
     }
 `;
@@ -52,13 +52,13 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         envImpact
         impactScore
         summary
-        fixedByVersion
-        isFixable
-        lastScanned
+        fixedByVersion(query: $scopeQuery)
+        isFixable(query: $scopeQuery)
+        createdAt
         publishedOn
-        deploymentCount
-        imageCount
-        componentCount
+        deploymentCount(query: $query)
+        imageCount(query: $query)
+        componentCount(query: $query)
     }
 `;
 
@@ -91,7 +91,7 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         vulnerabilities: vulns {
             cve
             cvss
-            isFixable
+            isFixable(query: $scopeQuery)
         }
         deployAlerts {
             policy {
@@ -99,8 +99,9 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
             }
             time
         }
-        failingPolicyCount(query: $policyQuery)
-        policyStatus(query: $policyQuery)
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        # failingPolicyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $scopeQuery)
         clusterName
         clusterId
         namespace
@@ -109,7 +110,7 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         serviceAccountID
         secretCount
         imageCount
-        latestViolation(query: $policyQuery)
+        latestViolation(query: $scopeQuery)
         priority
     }
 `;
@@ -120,7 +121,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
         name {
             fullName
         }
-        deploymentCount
+        deploymentCount(query: $query)
         priority
         topVuln {
             cvss
@@ -133,7 +134,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
         }
         scan {
             scanTime
-            components {
+            components(query: $query) {
                 name
             }
         }
@@ -167,6 +168,8 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         id
         name
         version
+        location(query: $scopeQuery)
+        source
         vulnCounter {
             all {
                 total
@@ -193,8 +196,8 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
             cvss
             scoreVersion
         }
-        imageCount
-        deploymentCount
+        imageCount(query: $query)
+        deploymentCount(query: $query)
         priority
     }
 `;
@@ -230,31 +233,48 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
                 total
             }
         }
-        deploymentCount: numDeployments
-        imageCount
-        policyCount(query: $policyQuery)
-        policyStatus(query: $policyQuery) {
+        deploymentCount
+        imageCount(query: $query)
+        # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
+        policyStatus(query: $scopeQuery) {
             status
         }
-        latestViolation(query: $policyQuery)
+        latestViolation(query: $scopeQuery)
     }
 `;
 
-export const POLICY_LIST_FRAGMENT = gql`
-    fragment policyFields on Policy {
+export const POLICY_LIST_FRAGMENT_CORE = gql`
+    fragment corePolicyFields on Policy {
         id
         disabled
         notifiers
         name
         description
-        policyStatus
         lastUpdated
-        latestViolation
         severity
-        deploymentCount
         lifecycleStages
         enforcementActions
     }
+`;
+
+export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
+    fragment unscopedPolicyFields on Policy {
+        ...corePolicyFields
+        deploymentCount(query: $scopeQuery)
+        latestViolation(query: $scopeQuery)
+        policyStatus(query: $scopeQuery)
+    }
+    ${POLICY_LIST_FRAGMENT_CORE}
+`;
+
+export const POLICY_LIST_FRAGMENT = gql`
+    fragment policyFields on Policy {
+        ...corePolicyFields
+        deploymentCount(query: $scopeQuery)
+        latestViolation(query: $scopeQuery)
+        policyStatus(query: $scopeQuery)
+    }
+    ${POLICY_LIST_FRAGMENT_CORE}
 `;
 
 export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`

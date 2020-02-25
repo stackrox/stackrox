@@ -4,13 +4,14 @@ import ReactTable from 'react-table';
 import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
 
-export const defaultHeaderClassName =
-    'px-2 py-4 pb-3 font-700 text-base-600 hover:bg-primary-200 hover:z-1 hover:text-primary-700 select-none relative text-left border-r-0 leading-normal';
+export const nonSortableHeaderClassName =
+    'px-2 py-4 pb-3 font-700 text-base-600 select-none relative text-left border-r-0 leading-normal';
+export const defaultHeaderClassName = `${nonSortableHeaderClassName} hover:bg-primary-200 hover:z-1 hover:text-primary-700`;
 export const defaultColumnClassName =
     'p-2 flex items-center font-600 text-base-600 text-left border-r-0 leading-normal';
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
-    'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center';
+    'rt-tr-actions hidden right-0 p-0 mr-2 w-auto text-left self-center';
 export const pageSize = 50;
 
 class Table extends Component {
@@ -102,7 +103,7 @@ class Table extends Component {
                 defaultSorted={defaultSorted}
                 className={`flex flex-1 overflow-auto border-0 w-full h-full ${
                     rest.expanded ? 'expanded' : ''
-                }`}
+                } `}
                 resizable={false}
                 sortable
                 defaultSortDesc={false}

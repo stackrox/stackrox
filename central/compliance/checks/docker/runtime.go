@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func init() {
@@ -20,7 +21,7 @@ func init() {
 		runningContainerCheck("CIS_Docker_v1_2_0:5_3", capabilities, "has extra capabilities enabled"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_4", privileged, "is not running in privileged mode"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_5", sensitiveHostMounts, "does not mount any sensitive host directories"),
-		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:5_6", "Check containers to ensure SSH is not running within them"),
+		runningContainerCheck("CIS_Docker_v1_2_0:5_6", ssh, "does not have ssh process running"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_7", privilegedPorts, "does not bind to a privileged host port"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_8", necessaryPorts, "does not bind to any host ports"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_9", sharedNetwork, "does not use the 'host' network mode"),
@@ -139,11 +140,12 @@ func capabilities(ctx framework.ComplianceContext, container types.ContainerJSON
 }
 
 func cgroup(ctx framework.ComplianceContext, container types.ContainerJSON) {
-	if container.HostConfig.CgroupParent != "docker" && container.HostConfig.CgroupParent != "" {
-		framework.Failf(ctx, "Container %q has the cgroup parent set to %s", container.Name, container.HostConfig.CgroupParent)
-	} else {
+	if container.HostConfig.CgroupParent == "docker" ||
+		container.HostConfig.CgroupParent == "" || strings.Contains(container.HostConfig.CgroupParent, "kube") {
 		framework.Passf(ctx, "Container %q has the cgroup parent set to %q", container.Name, container.HostConfig.CgroupParent)
+		return
 	}
+	framework.Notef(ctx, "Container %q has the cgroup parent set to %q", container.Name, container.HostConfig.CgroupParent)
 }
 
 func cpuShares(ctx framework.ComplianceContext, container types.ContainerJSON) {
@@ -357,6 +359,24 @@ func sharedNetwork(ctx framework.ComplianceContext, container types.ContainerJSO
 	}
 }
 
+func ssh(ctx framework.ComplianceContext, container types.ContainerJSON) {
+	var fail bool
+	for _, indicator := range ctx.Data().ProcessIndicators() {
+		if strings.HasPrefix(container.ID, indicator.GetSignal().GetContainerId()) {
+			process := indicator.GetSignal().GetExecFilePath()
+			if strings.Contains(process, "ssh") {
+				fail = true
+				processWithArgs := fmt.Sprintf("%s %s", process, indicator.GetSignal().GetArgs())
+				framework.Failf(ctx, "Container %q has ssh process running: %q", container.Name, processWithArgs)
+			}
+		}
+	}
+
+	if !fail {
+		framework.Passf(ctx, "Container %q has no ssh process running", container.Name)
+	}
+}
+
 func ulimit(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if len(container.HostConfig.Ulimits) > 0 {
 		var ulimits []string
@@ -385,10 +405,22 @@ func utsNamespace(ctx framework.ComplianceContext, container types.ContainerJSON
 	}
 }
 
+func isRootUser(user string) bool {
+	return user == "" || user == "root" || user == "0"
+}
+
 func usersInContainer(ctx framework.ComplianceContext, container types.ContainerJSON) {
-	if container.Config != nil && (container.Config.User == "" || container.Config.User == "root") {
+	user := container.Config.User
+
+	if isRootUser(user) {
+		framework.Failf(ctx, "Container %q is running as the root user", container.Name)
+		return
+	}
+
+	user, _ = stringutils.Split2(user, ":")
+	if isRootUser(user) {
 		framework.Failf(ctx, "Container %q is running as the root user", container.Name)
 	} else {
-		framework.Passf(ctx, "Container %q is running as the user %q", container.Name, container.Config.User)
+		framework.Passf(ctx, "Container %q is running as the user %q", container.Name, user)
 	}
 }

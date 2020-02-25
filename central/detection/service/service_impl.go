@@ -9,7 +9,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
@@ -18,6 +17,8 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/detection"
+	deploytimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -28,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -108,7 +108,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 	if enrichResult.ImageUpdated {
-		img.Id = stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
+		img.Id = utils.GetImageID(img)
 		if img.GetId() != "" {
 			if err := s.imageDatastore.UpsertImage(ctx, img); err != nil {
 				return nil, err
@@ -125,11 +125,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
-// getImageID looks for any possible IDs from the image including from the fetched metadata
-func getImageID(image *storage.Image) string {
-	return stringutils.FirstNonEmpty(image.GetId(), image.GetMetadata().GetV2().GetDigest(), image.GetMetadata().GetV1().GetDigest())
-}
-
 func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
 	if err != nil {
@@ -137,13 +132,13 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]
-		img.Id = getImageID(img)
+		img.Id = utils.GetImageID(img)
 		if err := s.imageDatastore.UpsertImage(ctx, images[idx]); err != nil {
 			return nil, err
 		}
 	}
 
-	detectionCtx := deploytime.DetectionContext{
+	detectionCtx := deploytimePkg.DetectionContext{
 		EnforcementOnly: enrichmentContext.EnforcementOnly,
 	}
 
@@ -259,15 +254,15 @@ func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clu
 	if clusterID == "" {
 		return nil
 	}
-	cluster, exists, err := s.clusters.GetCluster(ctx, clusterID)
+	clusterName, exists, err := s.clusters.GetClusterName(ctx, clusterID)
 	if err != nil {
 		return err
 	}
 	if !exists {
 		return status.Errorf(codes.InvalidArgument, "cluster with ID %q does not exist", clusterID)
 	}
-	deployment.ClusterId = cluster.GetId()
-	deployment.ClusterName = cluster.GetName()
+	deployment.ClusterId = clusterID
+	deployment.ClusterName = clusterName
 	return nil
 }
 

@@ -146,19 +146,6 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "CIS_Docker_v1_2_0:5_24",
-			container: types.ContainerJSON{
-				ContainerJSONBase: &types.ContainerJSONBase{
-					HostConfig: &types.HostConfig{
-						Resources: types.Resources{
-							CgroupParent: "random",
-						},
-					},
-				},
-			},
-			status: framework.FailStatus,
-		},
-		{
 			name: "CIS_Docker_v1_2_0:5_11",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
@@ -421,6 +408,54 @@ func TestDockerRuntimeChecks(t *testing.T) {
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &types.HostConfig{
 						Privileged: true,
+					},
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:5_6",
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					ID: "17e5fdec203e131d823ee0167089847976b9a71f7ad2cafbe45b60ec2bf427b7",
+					State: &types.ContainerState{
+						Running: true,
+					},
+				},
+			},
+			status: framework.PassStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:5_6",
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					ID: "860a6347711e0989ab0ccdcbe618bcad7cbbb440c27d0d6b02d02388940dd276",
+					State: &types.ContainerState{
+						Running: true,
+					},
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:5_6",
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					ID: "828b7beae96bb06b275ef589ad6f861e40fc61f7a64c1239526b1ac8df241000",
+					State: &types.ContainerState{
+						Running: true,
+					},
+				},
+			},
+			status: framework.PassStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:5_6",
+			container: types.ContainerJSON{
+				ContainerJSONBase: &types.ContainerJSONBase{
+					ID: "13ea7ce738f4d5921bd2503618a59dfcb48029149d7cbf712063adabbed8e0d2",
+					State: &types.ContainerState{
+						Running: true,
 					},
 				},
 			},
@@ -692,6 +727,107 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			},
 			status: framework.FailStatus,
 		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "0",
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "0:0",
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "0:70",
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "70:70",
+				},
+			},
+			status: framework.PassStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "root:root",
+				},
+			},
+			status: framework.FailStatus,
+		},
+		{
+			name: "CIS_Docker_v1_2_0:4_1",
+			container: types.ContainerJSON{
+				Config: &types.Config{
+					User: "stackrox:stackrox",
+				},
+			},
+			status: framework.PassStatus,
+		},
+	}
+
+	indicators := []*storage.ProcessIndicator{
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  "0",
+			ContainerName: "a",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "13ea7ce738f4",
+				Pid:          15,
+				Name:         "ssh",
+				ExecFilePath: "/usr/bin/ssh",
+			},
+		},
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  "1",
+			ContainerName: "b",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "860a6347711e",
+				Pid:          32,
+				Name:         "sshd",
+				ExecFilePath: "/bin/sshd",
+			},
+		},
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  "2",
+			ContainerName: "c",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "828b7beae96b",
+				Pid:          16,
+				Name:         "ssh",
+				ExecFilePath: "/bin/bash",
+			},
+		},
+		{
+			Id:            uuid.NewV4().String(),
+			DeploymentId:  "3",
+			ContainerName: "d",
+			Signal: &storage.ProcessSignal{
+				ContainerId:  "17e5fdec203e",
+				Pid:          33,
+				Name:         "sshd",
+				ExecFilePath: "/bin/zsh",
+			},
+		},
 	}
 
 	for _, cIt := range cases {
@@ -753,6 +889,8 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
 				DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
 			})
+
+			data.EXPECT().ProcessIndicators().AnyTimes().Return(indicators)
 
 			run, err := framework.NewComplianceRun(check)
 			require.NoError(t, err)

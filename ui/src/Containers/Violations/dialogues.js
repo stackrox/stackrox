@@ -1,6 +1,7 @@
 const dialogues = {
     resolve: 'resolveDialogue',
-    whitelist: 'whitelistDialogue'
+    whitelist: 'whitelistDialogue',
+    tag: 'tagDialogue'
 };
 
 export default dialogues;

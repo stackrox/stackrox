@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/mappings"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -464,7 +464,7 @@ func (a *aggregatorImpl) getSearchFuncs() map[v1.ComplianceAggregation_Scope]sea
 		},
 		v1.ComplianceAggregation_DEPLOYMENT: {
 			searchFunc: a.deployments.Search,
-			optionsMap: deploymentMappings.OptionsMap,
+			optionsMap: deployments.OptionsMap,
 		},
 	}
 }

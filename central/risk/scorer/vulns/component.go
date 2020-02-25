@@ -31,6 +31,9 @@ func ProcessComponent(component *storage.EmbeddedImageScanComponent) (min, max, 
 	min = math.MaxFloat32
 	max = -math.MaxFloat32
 	for _, vuln := range component.GetVulns() {
+		if vuln.GetSuppressed() {
+			continue
+		}
 		// Sometimes if the vuln doesn't have a CVSS score then it is unknown and we'll exclude it during scoring
 		if vuln.GetCvss() == 0 || !strings.HasPrefix(vuln.GetCve(), "CVE") {
 			continue

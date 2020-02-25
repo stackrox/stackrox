@@ -7,7 +7,11 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import StatusChip from 'Components/StatusChip';
 import DateTimeField from 'Components/DateTimeField';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -15,6 +19,7 @@ import { NAMESPACE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments'
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { namespaceSortFields } from 'constants/sortFields';
+import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultNamespaceSort = [
     // @TODO, uncomment the primary sort field for Namespaces, after its available for backend pagination/sorting
@@ -68,7 +73,7 @@ export function getNamespaceTableColumns(workflowState) {
                 );
             },
             accessor: 'vulnCounter.all.total',
-            sortField: namespaceSortFields.CVES
+            sortField: namespaceSortFields.CVE_COUNT
         },
         {
             Header: `Cluster`,
@@ -91,7 +96,7 @@ export function getNamespaceTableColumns(workflowState) {
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <TableCountLink
@@ -102,12 +107,13 @@ export function getNamespaceTableColumns(workflowState) {
                 />
             ),
             accessor: 'deploymentCount',
-            sortField: namespaceSortFields.DEPLOYMENTS
+            sortField: namespaceSortFields.DEPLOYMENT_COUNT,
+            sortable: false
         },
         {
             Header: `Images`,
             entityType: entityTypes.IMAGE,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <TableCountLink
@@ -118,66 +124,82 @@ export function getNamespaceTableColumns(workflowState) {
                 />
             ),
             accessor: 'imageCount',
-            sortField: namespaceSortFields.IMAGES
+            sortField: namespaceSortFields.IMAGES,
+            sortable: false
         },
-        {
-            Header: `Policies`,
-            entityType: entityTypes.POLICY,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => (
-                <TableCountLink
-                    entityType={entityTypes.POLICY}
-                    count={original.policyCount}
-                    textOnly={pdf}
-                    selectedRowId={original.metadata.id}
-                />
-            ),
-            accessor: 'policyCount',
-            sortField: namespaceSortFields.POLICIES
-        },
+        // @TODD, restore the Policy Counts column once its performance is improved,
+        //   or remove the comment if we determine that it cannot be made performant
+        //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
+        // {
+        //     Header: `Policies`,
+        //     entityType: entityTypes.POLICY,
+        //     headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
+        //     className: `w-1/8 ${defaultColumnClassName}`,
+        //     Cell: ({ original, pdf }) => (
+        //         <TableCountLink
+        //             entityType={entityTypes.POLICY}
+        //             count={original.policyCount}
+        //             textOnly={pdf}
+        //             selectedRowId={original.metadata.id}
+        //         />
+        //     ),
+        //     accessor: 'policyCount',
+        //     sortField: namespaceSortFields.POLICY_COUNT,
+        //     sortable: false
+        // },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
-                const policyLabel = <StatusChip status={policyStatus && policyStatus.status} />;
+                const policyLabel = (
+                    <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
+                );
 
                 return policyLabel;
             },
             id: 'policyStatus',
             accessor: 'policyStatus.status',
-            sortField: namespaceSortFields.POLICY_STATUS
+            sortField: namespaceSortFields.POLICY_STATUS,
+            sortable: false
         },
         {
             Header: `Latest Violation`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
             accessor: 'latestViolation',
-            sortField: namespaceSortFields.LATEST_VIOLATION
+            sortField: namespaceSortFields.LATEST_VIOLATION,
+            sortable: false
         },
         {
             Header: `Risk Priority`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'metadata.priority',
-            sortField: namespaceSortFields.PRIORITY
+            sortField: namespaceSortFields.PRIORITY,
+            sortable: false
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
 }
 
-const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
+const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
-        query getNamespaces($query: String, $policyQuery: String, $pagination: Pagination) {
+        query getNamespaces(
+            $query: String
+            $policyQuery: String
+            $scopeQuery: String
+            $pagination: Pagination
+        ) {
             results: namespaces(query: $query, pagination: $pagination) {
                 ...namespaceFields
+                unusedVarSink(query: $policyQuery)
             }
             count: namespaceCount(query: $query)
         }
@@ -187,9 +209,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            }),
+            ...vulMgmtPolicyQuery,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
@@ -197,6 +217,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data }) => {
     return (
         <WorkflowListPage
             data={data}
+            totalResults={totalResults}
             query={query}
             queryOptions={queryOptions}
             entityListType={entityTypes.NAMESPACE}

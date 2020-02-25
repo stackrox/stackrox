@@ -5,7 +5,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	cveSAC "github.com/stackrox/rox/central/cve/sac"
+	"github.com/stackrox/rox/central/dackbox"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentSAC "github.com/stackrox/rox/central/deployment/sac"
+	imageSAC "github.com/stackrox/rox/central/image/sac"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/index/mappings"
 	"github.com/stackrox/rox/central/namespace/store"
@@ -13,11 +17,16 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/derivedfields/counter"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/search/derivedfields"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
 //go:generate mockgen-wrapper
@@ -36,18 +45,16 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance using the provided store and indexer
-func New(store store.Store, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore) (DataStore, error) {
+func New(store store.Store, graphProvider graph.Provider, indexer index.Indexer, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
 		store:             store,
 		indexer:           indexer,
-		formattedSearcher: formatSearcher(indexer),
+		formattedSearcher: formatSearcher(indexer, graphProvider, namespaceRanker),
 		deployments:       deploymentDataStore,
+		namespaceRanker:   namespaceRanker,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
-	}
-	if err := ds.initializeRanker(); err != nil {
-		return ds, err
 	}
 	return ds, nil
 }
@@ -69,16 +76,8 @@ type datastoreImpl struct {
 	indexer           index.Indexer
 	formattedSearcher search.Searcher
 	namespaceRanker   *ranking.Ranker
-	deploymentRanker  *ranking.Ranker
 
 	deployments deploymentDataStore.DataStore
-}
-
-func (b *datastoreImpl) initializeRanker() error {
-	b.namespaceRanker = ranking.NamespaceRanker()
-	b.deploymentRanker = ranking.DeploymentRanker()
-
-	return nil
 }
 
 func (b *datastoreImpl) buildIndex() error {
@@ -230,42 +229,31 @@ func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*s
 
 func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadata) {
 	for _, ns := range nss {
-		b.aggregateDeploymentScores(ns.GetId())
-	}
-	for _, ns := range nss {
 		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
 	}
-}
-
-func (b *datastoreImpl) aggregateDeploymentScores(namespaceID string) {
-	aggregateScore := float32(0.0)
-	deploymentReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment),
-		))
-
-	searchResults, err := b.deployments.Search(deploymentReadCtx,
-		search.NewQueryBuilder().
-			AddExactMatches(search.NamespaceID, namespaceID).ProtoQuery())
-	if err != nil {
-		log.Error("deployment search for namespace risk calculation failed")
-		return
-	}
-
-	for _, r := range searchResults {
-		aggregateScore += b.deploymentRanker.GetScoreForID(r.ID)
-	}
-	b.namespaceRanker.Add(namespaceID, aggregateScore)
 }
 
 // Helper functions which format our searching.
 ///////////////////////////////////////////////
 
-func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher) search.Searcher {
+func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider graph.Provider, namespaceRanker *ranking.Ranker) search.Searcher {
 	filteredSearcher := namespaceSACSearchHelper.FilteredSearcher(unsafeSearcher) // Make the UnsafeSearcher safe.
-
-	paginatedSearcher := paginated.Paginated(filteredSearcher)
+	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher, namespaceRanker)
+	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 	return defaultSortedSearcher
+}
+
+func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
+	if !features.Dackbox.Enabled() {
+		return searcher
+	}
+
+	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, namespaceRanker)
+
+	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
+		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToDeploymentPath, deploymentSAC.GetSACFilter(graphProvider)),
+		search.ImageCount.String():      counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToImagePath, imageSAC.GetSACFilter(graphProvider)),
+		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.NamespaceToCVEPath, cveSAC.GetSACFilters(graphProvider)...),
+	})
 }

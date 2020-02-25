@@ -3,7 +3,6 @@ package requestinfo
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -20,8 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/monoclock"
-	"golang.org/x/crypto/ed25519"
+	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
@@ -30,10 +28,7 @@ import (
 )
 
 const (
-	requestInfoMDKey    = `rox-requestinfo`
-	requestInfoSigMDKey = `rox-requestinfo-sig`
-
-	maxTimeDelta = 2 * time.Second
+	requestInfoMDKey = `rox-requestinfo`
 )
 
 var (
@@ -82,11 +77,6 @@ type RequestInfo struct {
 	HTTPRequest *HTTPRequest
 }
 
-type serializedRequestInfo struct {
-	RequestInfo
-	RequestMonotime time.Duration
-}
-
 // ExtractCertInfo gets the cert info from a cert.
 func ExtractCertInfo(fullCert *x509.Certificate) CertInfo {
 	return CertInfo{
@@ -113,27 +103,11 @@ func extractCertInfoChains(fullCertChains [][]*x509.Certificate) [][]CertInfo {
 
 // Handler takes care of populating the context with a RequestInfo, as well as handling the
 // serialization/deserialization for the HTTP/1.1 gateway.
-type Handler struct {
-	signer cryptoutils.Signer
-	clock  monoclock.MonoClock
-}
+type Handler struct{}
 
-// NewRequestInfoHandler creates a new request info handler using the given signer for signing requestinfo transmitted
-// as GRPC metadata.
-func NewRequestInfoHandler(signer cryptoutils.Signer) *Handler {
-	return &Handler{
-		signer: signer,
-		clock:  monoclock.New(),
-	}
-}
-
-// NewDefaultRequestInfoHandler creates a new request info handler using a default signer.
-func NewDefaultRequestInfoHandler() *Handler {
-	_, pk, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		log.Panic("Could not generate an ED25519 private key!")
-	}
-	return NewRequestInfoHandler(cryptoutils.NewED25519Signer(pk))
+// NewRequestInfoHandler creates a new request info handler.
+func NewRequestInfoHandler() *Handler {
+	return &Handler{}
 }
 
 func slimHTTPRequest(req *http.Request) *HTTPRequest {
@@ -149,7 +123,7 @@ func slimHTTPRequest(req *http.Request) *HTTPRequest {
 func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
 	tlsState := req.TLS
 
-	var ri serializedRequestInfo
+	var ri RequestInfo
 
 	ri.HTTPRequest = slimHTTPRequest(req)
 
@@ -170,25 +144,16 @@ func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD
 		ri.VerifiedChains = extractCertInfoChains(tlsState.VerifiedChains)
 	}
 
-	// Set timestamp
-	ri.RequestMonotime = h.clock.SinceEpoch()
-
-	// Encode to GOB and sign.
+	// Encode to GOB.
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(ri); err != nil {
 		log.Errorf("UNEXPECTED: failed to encode request info to GOB: %v", err)
 		return nil
 	}
 	encodedRI := buf.Bytes()
-	sig, err := h.signer.Sign(encodedRI, rand.Reader)
-	if err != nil {
-		log.Errorf("UNEXPECTED: failed to sign request info GOB: %v", err)
-		return nil
-	}
 
 	return metadata.MD{
-		requestInfoMDKey:    []string{base64.URLEncoding.EncodeToString(encodedRI)},
-		requestInfoSigMDKey: []string{base64.URLEncoding.EncodeToString(sig)},
+		requestInfoMDKey: []string{base64.URLEncoding.EncodeToString(encodedRI)},
 	}
 }
 
@@ -217,8 +182,8 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 		return nil, nil
 	}
 
-	if srcIP := sourceIP(ctx); srcIP == nil || !srcIP.IsLoopback() {
-		return nil, fmt.Errorf("RequestInfo metadata received via non-local connection from %v", srcIP)
+	if srcAddr := sourceAddr(ctx); srcAddr == nil || srcAddr.Network() != pipeconn.Network {
+		return nil, fmt.Errorf("RequestInfo metadata received via non-pipe connection from %v", srcAddr)
 	}
 
 	riRaw, err := base64.URLEncoding.DecodeString(riB64)
@@ -226,28 +191,12 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 		return nil, errors.Wrap(err, "could not decode request info")
 	}
 
-	riSigB64 := md.Get(requestInfoSigMDKey)
-	riSig, err := base64.URLEncoding.DecodeString(riSigB64)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not decode request info signature")
-	}
-
-	if err := h.signer.Verify(riRaw, riSig); err != nil {
-		return nil, errors.Wrap(err, "could not validate request info")
-	}
-
-	var serializedRI serializedRequestInfo
-	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&serializedRI); err != nil {
+	var reqInfo RequestInfo
+	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&reqInfo); err != nil {
 		return nil, errors.Wrap(err, "could not decode request info")
 	}
 
-	timeDelta := h.clock.SinceEpoch() - serializedRI.RequestMonotime
-	if timeDelta < 0 || timeDelta > maxTimeDelta {
-		log.Errorf("UNEXPECTED: decoded request info has invalid time delta %v", timeDelta)
-		return nil, fmt.Errorf("decoded request info has invalid time delta %v", timeDelta)
-	}
-
-	return &serializedRI.RequestInfo, nil
+	return &reqInfo, nil
 }
 
 // UpdateContextForGRPC provides the context updater logic when used with GRPC interceptors.
@@ -257,7 +206,7 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 		// This should only happen if someone is trying to spoof a RequestInfo. Log, but don't return any details in the
 		// error message.
 		log.Errorf("error extracting RequestInfo from incoming metadata: %v", err)
-		return nil, status.Errorf(codes.InvalidArgument, "malformed request")
+		return nil, status.Error(codes.InvalidArgument, "malformed request")
 	}
 
 	tlsState := tlsStateFromContext(ctx)
@@ -305,21 +254,12 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 	})
 }
 
-func sourceIP(ctx context.Context) net.IP {
+func sourceAddr(ctx context.Context) net.Addr {
 	p, _ := peer.FromContext(ctx)
 	if p == nil {
 		return nil
 	}
-	switch addr := p.Addr.(type) {
-	case *net.TCPAddr:
-		return addr.IP
-	case *net.UDPAddr:
-		return addr.IP
-	case *net.IPAddr:
-		return addr.IP
-	default:
-		return nil
-	}
+	return p.Addr
 }
 
 func metadataFromHeader(header http.Header) metadata.MD {

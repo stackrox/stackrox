@@ -11,8 +11,7 @@ import { sortVersion } from 'sorters/sorters';
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
 const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
 
-// eslint-disable-next-line func-names
-const columnsForStandards = (function getColumnsForStandards() {
+const columnsForStandard = (function getColumnsForStandards() {
     const ret = {};
     Object.entries(standardBaseTypes).forEach(([baseType, columnName]) => {
         ret[baseType] = {
@@ -23,14 +22,6 @@ const columnsForStandards = (function getColumnsForStandards() {
     });
     return ret;
 })();
-
-const complianceColumns = [
-    columnsForStandards[standardTypes.CIS_Docker_v1_2_0],
-    columnsForStandards[standardTypes.CIS_Kubernetes_v1_5],
-    columnsForStandards[standardTypes.HIPAA_164],
-    columnsForStandards[standardTypes.NIST_800_190],
-    columnsForStandards[standardTypes.PCI_DSS_3_2]
-];
 
 const clusterColumns = [
     {
@@ -44,7 +35,12 @@ const clusterColumns = [
         Header: 'Cluster',
         Cell: ({ original }) => getNameCell(original.name)
     },
-    ...complianceColumns,
+    columnsForStandard[standardTypes.CIS_Docker_v1_2_0],
+    columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
+    columnsForStandard[standardTypes.HIPAA_164],
+    columnsForStandard[standardTypes.NIST_800_190],
+    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -90,9 +86,10 @@ const nodeColumns = [
         accessor: 'cluster',
         Header: 'Cluster'
     },
-    columnsForStandards[standardTypes.CIS_Docker_v1_2_0],
-    columnsForStandards[standardTypes.CIS_Kubernetes_v1_5],
-    columnsForStandards[standardTypes.NIST_800_190],
+    columnsForStandard[standardTypes.CIS_Docker_v1_2_0],
+    columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
+    columnsForStandard[standardTypes.NIST_800_190],
+    columnsForStandard[standardTypes.NIST_SP_800_53],
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -115,9 +112,10 @@ const namespaceColumns = [
         accessor: 'cluster',
         Header: 'Cluster'
     },
-    columnsForStandards[standardTypes.HIPAA_164],
-    columnsForStandards[standardTypes.NIST_800_190],
-    columnsForStandards[standardTypes.PCI_DSS_3_2],
+    columnsForStandard[standardTypes.HIPAA_164],
+    columnsForStandard[standardTypes.NIST_800_190],
+    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -146,9 +144,10 @@ const deploymentColumns = [
         Header: 'Namespace',
         Cell: ({ original }) => getNameCell(original.namespace)
     },
-    columnsForStandards[standardTypes.HIPAA_164],
-    columnsForStandards[standardTypes.NIST_800_190],
-    columnsForStandards[standardTypes.PCI_DSS_3_2],
+    columnsForStandard[standardTypes.HIPAA_164],
+    columnsForStandard[standardTypes.NIST_800_190],
+    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -178,19 +177,30 @@ const controlColumns = [
     }
 ];
 
-const entityToColumns = (function getEntityToColumns() {
-    const ret = {
-        [resourceTypes.CLUSTER]: clusterColumns,
-        [resourceTypes.NODE]: nodeColumns,
-        [resourceTypes.NAMESPACE]: namespaceColumns,
-        [resourceTypes.DEPLOYMENT]: deploymentColumns,
-        [standardEntityTypes.CONTROL]: controlColumns
-    };
+const entityTypesToColumns = {
+    [resourceTypes.CLUSTER]: clusterColumns,
+    [resourceTypes.NODE]: nodeColumns,
+    [resourceTypes.NAMESPACE]: namespaceColumns,
+    [resourceTypes.DEPLOYMENT]: deploymentColumns,
+    [standardEntityTypes.CONTROL]: controlColumns
+};
 
-    Object.entries(standardBaseTypes).forEach(([baseType, standardName]) => {
-        ret[baseType] = getStandardColumns(standardName);
-    });
-    return ret;
-})();
+function filterColumnsByStandardType(columns, excludedStandardTypes) {
+    if (!columns || !columns.length) {
+        return columns;
+    }
+    if (!excludedStandardTypes || !excludedStandardTypes.length) {
+        return columns;
+    }
+    return columns.filter(
+        column => !excludedStandardTypes.find(standardType => standardType === column.accessor)
+    );
+}
 
-export default entityToColumns;
+export function getColumnsByEntity(entityID, excludedStandardTypes) {
+    return filterColumnsByStandardType(entityTypesToColumns[entityID], excludedStandardTypes);
+}
+
+export function getColumnsByStandard(standardID) {
+    return filterColumnsByStandardType(getStandardColumns(standardBaseTypes[standardID]));
+}

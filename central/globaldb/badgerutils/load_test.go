@@ -12,7 +12,7 @@ import (
 )
 
 func testLoad(t *testing.T, backupfile, key, value string) {
-	db, path, err := badgerhelper.NewTemp(backupfile, false)
+	db, path, err := badgerhelper.NewTemp(backupfile)
 	require.NoError(t, err)
 	defer func() {
 		_ = os.RemoveAll(path)

@@ -45,6 +45,15 @@ func ParseLicenseKey(key string) ([]byte, []byte, error) {
 	return licenseProtoBytes, signatureBytes, nil
 }
 
+// NormalizeLicenseKey transforms a license key into its canonical representation.
+func NormalizeLicenseKey(key string) (string, error) {
+	licenseBytes, sigBytes, err := ParseLicenseKey(key)
+	if err != nil {
+		return "", err
+	}
+	return EncodeLicenseKey(licenseBytes, sigBytes), nil
+}
+
 // UnmarshalLicense takes a byte slice containing a serialized license proto and unmarshals it, failing if there are any
 // extra bytes.
 func UnmarshalLicense(licenseBytes []byte) (*licenseproto.License, error) {

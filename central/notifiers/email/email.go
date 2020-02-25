@@ -73,6 +73,33 @@ func (a *plainAuthUnencrypted) Next(fromServer []byte, more bool) ([]byte, error
 	return nil, nil
 }
 
+type loginAuth struct {
+	username, password string
+}
+
+func loginAuthMethod(username, password string) smtp.Auth {
+	return &loginAuth{username, password}
+}
+
+func (a *loginAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+	return "LOGIN", []byte(a.username), nil
+}
+
+func (a *loginAuth) Next(fromServer []byte, more bool) ([]byte, error) {
+	if more {
+		serverStr := string(fromServer)
+		switch serverStr {
+		case "Username:":
+			return []byte(a.username), nil
+		case "Password:":
+			return []byte(a.password), nil
+		default:
+			return nil, fmt.Errorf("unknown value request %q from server", serverStr)
+		}
+	}
+	return nil, nil
+}
+
 type smtpServer struct {
 	host string
 	port int
@@ -95,6 +122,9 @@ func validate(email *storage.Email) error {
 	}
 	if email.GetPassword() == "" {
 		errorList.AddString("Password must be specified")
+	}
+	if !email.GetDisableTLS() && email.GetStartTLSAuthMethod() != storage.Email_DISABLED {
+		errorList.AddString("TLS must be disabled to use a StartTLS Auth Method")
 	}
 	return errorList.ToError()
 }
@@ -241,7 +271,7 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		}
 	}()
 
-	if e.config.GetUseSTARTTLS() {
+	if e.config.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 		if err = client.StartTLS(e.tlsConfig()); err != nil {
 			log.Errorf("SMTP STARTTLS failed: %v", err)
 			return err
@@ -314,7 +344,7 @@ func (e *email) connection() (conn net.Conn, auth smtp.Auth, err error) {
 	defer cancel()
 
 	if e.config.GetDisableTLS() {
-		if e.config.GetUseSTARTTLS() {
+		if e.config.GetStartTLSAuthMethod() != storage.Email_DISABLED {
 			return e.startTLSConn(ctx)
 		}
 		return e.unencryptedConn(ctx)
@@ -345,7 +375,12 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 	// Hence, we can use the stdlib authenticator, which treats
 	// STARTTLS as TLS for purposes of deciding whether it's safe to
 	// transmit a password.
-	auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+	switch e.notifier.GetEmail().GetStartTLSAuthMethod() {
+	case storage.Email_PLAIN:
+		auth = smtp.PlainAuth("", e.config.GetUsername(), e.config.GetPassword(), e.smtpServer.host)
+	case storage.Email_LOGIN:
+		auth = loginAuthMethod(e.config.GetUsername(), e.config.GetPassword())
+	}
 	conn, err = proxy.AwareDialContext(dialCtx, e.smtpServer.endpoint())
 	return
 }

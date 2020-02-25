@@ -12,13 +12,13 @@ type Store interface {
 	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)
 	GetImage(sha string) (*storage.Image, bool, error)
-	GetImagesBatch(shas []string) ([]*storage.Image, error)
+	GetImagesBatch(shas []string) ([]*storage.Image, []int, error)
 
 	Exists(id string) (bool, error)
 
-	UpsertImage(image *storage.Image) error
-	DeleteImage(id string) error
+	Upsert(image *storage.Image, listImage *storage.ListImage) error
+	Delete(id string) error
 
-	GetTxnCount() (txNum uint64, err error)
-	IncTxnCount() error
+	AckKeysIndexed(keys ...string) error
+	GetKeysToIndex() ([]string, error)
 }

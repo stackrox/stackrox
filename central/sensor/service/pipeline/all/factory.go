@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
@@ -11,13 +12,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/policyrefresh"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/rolebindings"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -34,7 +35,8 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		return nil, err
 	}
 
-	return NewClusterPipeline(clusterID, deploymentevents.GetPipeline(),
+	pipelines := []pipeline.Fragment{
+		deploymentevents.GetPipeline(),
 		processindicators.GetPipeline(),
 		networkpolicies.GetPipeline(),
 		namespaces.GetPipeline(),
@@ -47,6 +49,11 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		roles.GetPipeline(),
 		rolebindings.GetPipeline(),
 		reprocessing.GetPipeline(),
-		policyrefresh.GetPipeline(), // Needs to be after roles, rolebindings, and serviceaccounts pipelines.
-	), nil
+	}
+
+	if features.SensorBasedDetection.Enabled() {
+		pipelines = append(pipelines, alerts.GetPipeline())
+	}
+
+	return NewClusterPipeline(clusterID, pipelines...), nil
 }

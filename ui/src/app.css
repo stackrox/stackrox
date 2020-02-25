@@ -214,8 +214,13 @@
     background-image: none !important;
 }
 
-@tailwind preflight;
+@tailwind base;
+@tailwind components;
 @tailwind utilities;
+
+html {
+  line-height: 1.15;
+}
 
 body {
     -webkit-font-smoothing: antialiased;
@@ -243,7 +248,7 @@ select {
 }
 
 button[disabled] {
-    @apply .opacity-25 .pointer-events-none !important;
+    @apply opacity-25 pointer-events-none !important;
 }
 
 .content-box {
@@ -251,7 +256,7 @@ button[disabled] {
 }
 
 .pills {
-    @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden !important;
+    @apply flex flex-col flex-auto rounded-sm border border-base-300 overflow-hidden !important;
 }
 
 @screen md {
@@ -269,7 +274,7 @@ button[disabled] {
 }
 
 .disabled {
-    @apply opacity-50 .cursor-not-allowed .pointer-events-none !important;
+    @apply opacity-50 cursor-not-allowed pointer-events-none !important;
 }
 
 .border-collapse {
@@ -306,16 +311,16 @@ h6 {
 }
 
 .react-modal-overlay {
-    @apply .fixed .pin-t .pin-l .w-full .h-full z-60 !important;
+    @apply fixed top-0 left-0 w-full h-full z-60 !important;
     background-color: hsla(225, 41%, 32%, 0.82);
 }
 
 .pill {
-    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600 !important;
+    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm whitespace-no-wrap flex-1 text-center text-xs text-base-500 font-600 !important;
 }
 
 .pill-active {
-    @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600 !important;
+    @apply select-none cursor-pointer p-2 m-2 bg-base-300 rounded-sm whitespace-no-wrap flex-1 text-center text-xs text-base-700 font-600 !important;
 }
 
 .transition {
@@ -354,25 +359,25 @@ h6 {
 }
 
 .tab-row {
-    box-shadow: inset 0 -1px 0 0 config('colors.base-400'), 0 15px 30px 0 config('colors.base-200');
+    box-shadow: inset 0 -1px 0 0 theme('colors.base-400'), 0 15px 30px 0 theme('colors.base-200');
 }
 
 .tab {
-    box-shadow: inset -1px 0px 0px 0px config('colors.base-400'),
-        inset 0px -1px 0px 0px config('colors.base-400');
+    box-shadow: inset -1px 0px 0px 0px theme('colors.base-400'),
+        inset 0px -1px 0px 0px theme('colors.base-400');
 }
 
 .tab-active {
-    box-shadow: inset 0px 2px 0px 0px config('colors.primary-400'),
-        inset -1px 0px 0px 0px config('colors.base-400');
+    box-shadow: inset 0px 2px 0px 0px theme('colors.primary-400'),
+        inset -1px 0px 0px 0px theme('colors.base-400');
 }
 
 .pill:hover {
-    @apply .text-primary-500 !important;
+    @apply text-primary-500 !important;
 }
 
 .pill-active {
-    @apply .text-primary-500 !important;
+    @apply text-primary-500 !important;
 }
 
 .transform-rotate-half-turn {
@@ -410,8 +415,8 @@ h6 {
 
 /* will clean this up at some point... */
 .panel-actions:not(:empty) + div:before {
-    @apply bg-base-300 absolute .rounded-full;
-    content: '';
+    @apply bg-base-300 absolute rounded-full;
+    content: "";
     left: 9px;
     top: 50%;
     width: 2px;
@@ -467,33 +472,33 @@ h6 {
 }
 
 .react-select__option {
-    @apply .px-2 .cursor-pointer !important;
+    @apply px-2 cursor-pointer !important;
 }
 
 .react-select__menu {
-    @apply .m-0 !important;
+    @apply m-0 !important;
 }
 
 .react-select__menu-notice--no-options {
-    @apply .text-left !important;
+    @apply text-left !important;
 }
 
 .react-select__control--is-focused,
 .react-select__control--is-focused:hover {
-    @apply .border-base-400 !important;
+    @apply border-base-400 !important;
 }
 
 .react-select__value-container--is-multi {
-    @apply .pb-0 pl-1 !important;
+    @apply pb-0 pl-1 !important;
 }
 
 .react-select__input input {
-    @apply .text-base-600 .font-600 !important;
+    @apply text-base-600 font-600 !important;
     margin-left: -2px !important;
 }
 
 .react-select__indicators {
-    @apply .cursor-pointer;
+    @apply cursor-pointer;
 }
 
 .react-select__multi-value__label {
@@ -501,15 +506,15 @@ h6 {
 }
 
 .react-select__multi-value__remove {
-    @apply .cursor-pointer;
+    @apply cursor-pointer;
 }
 
 .react-select__multi-value__remove:hover {
-    @apply .shadow-inner;
+    @apply shadow-inner;
 }
 
 .react-select__menu-list {
-    @apply .p-0 !important;
+    @apply p-0 !important;
 }
 
 .severity-tile {
@@ -556,6 +561,10 @@ h6 {
     background-color: rgb(234, 245, 255) !important;
     color: hsla(225, 14%, 43%, 1) !important;
     text-align: inherit !important;
+}
+
+.p-0 .rc-tooltip-inner {
+    padding: 0 !important;
 }
 
 .rc-tooltip-arrow {
@@ -615,15 +624,15 @@ h6 {
 }
 
 .simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
-    box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
+    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
+    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
+    box-shadow: inset 0px 0px 0px 4px theme('colors.alert-600');
 }
 
 .simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
-    box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
+    -webkit-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
+    -moz-box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
+    box-shadow: inset 0px 0px 0px 4px theme('colors.success-600');
 }
 
 .top-navigation {
@@ -635,36 +644,36 @@ h6 {
 }
 
 .btn-class {
-    @apply .inline-flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
+    @apply inline-flex px-1 rounded-sm font-600 uppercase text-center items-center min-w-24 justify-center border-2 !important;
     line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 
 .btn-sm {
-    @apply .btn-class .py-1 .text-xs !important;
+    @apply btn-class py-1 text-xs !important;
 }
 
 .btn {
-    @apply .btn-class .py-2 .text-sm !important;
+    @apply btn-class py-2 text-sm !important;
 }
 
 .btn-icon {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .justify-center .bg-base-200 .border !important;
+    @apply flex py-2 px-2 rounded-sm font-600 uppercase text-center text-sm items-center justify-center bg-base-200 border !important;
 }
 
 .btn-success {
-    @apply .text-success-700 .border-success-500 .bg-success-200 !important;
+    @apply text-success-700 border-success-500 bg-success-200 !important;
 }
 
 .btn-success:hover {
-    @apply .btn-success .bg-success-300 .text-success-800 !important;
+    @apply btn-success bg-success-300 text-success-800 !important;
 }
 
 .btn-alert {
-    @apply .text-alert-100 .border-alert-600 .bg-alert-600 !important;
+    @apply text-alert-100 border-alert-600 bg-alert-600 !important;
 }
 
 .btn-alert:hover {
-    @apply .btn-alert .border-alert-700 .bg-alert-700 !important;
+    @apply btn-alert border-alert-700 bg-alert-700 !important;
 }
 
 .btn-primary {
@@ -672,7 +681,7 @@ h6 {
 }
 
 .btn-primary:hover {
-    @apply .btn-primary .bg-primary-100 .bg-base-200 border-primary-400 !important;
+    @apply btn-primary bg-primary-100 bg-base-200 border-primary-400 !important;
 }
 
 .btn-tertiary {
@@ -680,15 +689,15 @@ h6 {
 }
 
 .btn-tertiary:hover {
-    @apply .btn-tertiary .bg-tertiary-700 .bg-base-200 border-tertiary-600 !important;
+    @apply btn-tertiary bg-tertiary-700 bg-base-200 border-tertiary-600 !important;
 }
 
 .btn-base {
-    @apply .text-base-600 .border-base-300 .bg-base-100 text-base-600 !important;
+    @apply text-base-600 border-base-300 bg-base-100 text-base-600 !important;
 }
 
 .btn-base:hover {
-    @apply .btn-base .bg-base-200 border-base-400 text-base-700 !important;
+    @apply btn-base bg-base-200 border-base-400 text-base-700 !important;
 }
 
 /* Network Graph CSS Classes */
@@ -767,7 +776,7 @@ h6 {
 
 /* React Select override */
 .hide-dropdown > div:last-child {
-    @apply .hidden;
+    @apply hidden;
 }
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
@@ -794,7 +803,7 @@ h6 {
 } */
 
 .ReactTable .-pagination {
-    @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
+    @apply shadow-none border-t shadow-underline pt-2 pb-2 pl-0 pr-0 !important;
 }
 
 .ReactTable input[type='checkbox'] {
@@ -809,7 +818,7 @@ h6 {
 
 .ReactTable .rt-thead {
     position: sticky;
-    @apply .pin-t .bg-base-100 !important;
+    @apply top-0 bg-base-100 !important;
     z-index: 5 !important;
 }
 
@@ -818,11 +827,11 @@ h6 {
 }
 
 .ReactTable .rt-thead .rt-th:focus {
-    @apply .outline-none !important;
+    @apply outline-none !important;
 }
 
 .ReactTable .rt-thead.-header {
-    @apply .shadow-none !important;
+    @apply shadow-none !important;
 }
 
 .ReactTable .rt-thead.-header .rt-tr {
@@ -833,7 +842,7 @@ h6 {
 
 .ReactTable .rt-thead .rt-th.-sort-desc,
 .ReactTable .rt-thead .rt-th.-sort-asc {
-    @apply .shadow-none !important;
+    @apply shadow-none !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
@@ -849,57 +858,46 @@ h6 {
 }
 .ReactTable .rt-tbody,
 .ReactTable .rt-thead {
-    @apply .px-3 !important;
+    @apply px-3 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr {
-    @apply .min-h-12 bg-base-100 !important;
+    @apply min-h-12 bg-transparent !important;
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300');
+    box-shadow: 0px -1px 0 0 theme('colors.base-300'), inset 0px -1px 0 0 theme('colors.base-300');
     @apply .whitespace-normal !important;
 }
 
 .ReactTable.expanded .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config('colors.base-300'),
-        inset 0px -1px 0 -1px config('colors.base-300');
+    box-shadow: 0px -1px 0 0 theme('colors.base-300'),
+        inset 0px -1px 0 -1px theme('colors.base-300');
     @apply .whitespace-normal !important;
 }
 
-.ReactTable.expanded .rt-tbody .rt-tr:hover > .rt-td {
-    @apply .bg-base-200 !important;
+.ReactTable .rt-tbody .rt-tr-group:hover {
+    @apply bg-base-200 !important;
     z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config('colors.base-400'),
-        inset 0px -1px 0 -1px config('colors.base-400');
-}
-
-.ReactTable.expanded .rt-tbody .rt-tr-group:hover {
-    @apply .bg-base-200 !important;
-    z-index: 3 !important;
-}
-
-.ReactTable .rt-tbody .rt-tr:hover > .rt-td {
-    @apply .bg-base-200 !important;
-    z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400');
+    box-shadow: 0px -2px 0 0 theme('colors.base-400'),
+        inset 0px -3px 0 -1px theme('colors.base-400');
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
     @apply .text-tertiary-700 .bg-tertiary-200 !important;
-    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'),
-        inset 0px -1px 0 0 config('colors.tertiary-400');
+    box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
+        inset 0px -1px 0 0 theme('colors.tertiary-400');
     z-index: 4 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-    @apply .flex-no-grow .cursor-pointer !important;
+    @apply flex-grow-0 cursor-pointer !important;
     border: none !important;
 }
 
 .ReactTable .rt-tr {
-    @apply .relative !important;
+    @apply relative !important;
 }
 
 .ReactTable .rt-tbody .rt-td.rt-tr-actions {
@@ -910,21 +908,21 @@ h6 {
     width: 0 !important;
     overflow: inherit !important;
     flex: 0 !important;
-    @apply .flex-row-reverse .pin-l .min-w-0 .m-0 !important;
+    @apply flex-row-reverse left-0 min-w-0 m-0 !important;
 }
 
 .ReactTable .rt-tr:hover .rt-tr-actions {
-    @apply .flex !important;
+    @apply flex !important;
 }
 
 .ReactTable .-previous .-btn,
 .ReactTable .-next .-btn {
-    @apply .bg-primary-100 .rounded-none .text-primary-600 !important;
+    @apply bg-primary-100 rounded-none text-primary-600 !important;
 }
 
 .ReactTable .-previous .-btn:hover,
 .ReactTable .-next .-btn:hover {
-    @apply .bg-primary-300 .text-base-100 .rounded-none !important;
+    @apply bg-primary-300 text-base-100 rounded-none !important;
 }
 
 /* will clean up and refactor all selectors at some point */
@@ -934,8 +932,8 @@ h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'),
-        11px 0 8px -4px config('colors.base-100');
+    box-shadow: 0px -1px 0 0 theme('colors.base-300'), inset 0px -1px 0 0 theme('colors.base-300'),
+        11px 0 8px -4px theme('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th:first-child {
@@ -943,7 +941,7 @@ h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config('colors.base-100');
+    box-shadow: 11px 0 8px -4px theme('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-tr {
@@ -959,8 +957,8 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1;
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'),
-        11px 0 8px -4px config('colors.base-100');
+    box-shadow: 0px -1px 0 0 theme('colors.base-300'), inset 0px -1px 0 0 theme('colors.base-300'),
+        11px 0 8px -4px theme('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column {
@@ -968,26 +966,19 @@ h6 {
     position: sticky !important;
     left: 0;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config('colors.base-100');
+    box-shadow: 11px 0 8px -4px theme('colors.base-100');
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column:hover {
-    @apply .bg-primary-200 !important;
-}
-
-.ReactTable .rt-tbody .rt-tr:hover .rt-td.sticky-column,
-.ReactTable .rt-tbody .rt-tr:hover .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400'),
-        11px 0 8px -4px config('colors.base-200');
-    z-index: 2 !important;
+    @apply bg-primary-200 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'),
-        inset 0px -1px 0 0 config('colors.tertiary-400'),
-        11px 0 8px -4px config('colors.tertiary-200');
+    box-shadow: 0px -1px 0 0 theme('colors.tertiary-400'),
+        inset 0px -1px 0 0 theme('colors.tertiary-400'),
+        11px 0 8px -4px theme('colors.tertiary-200');
     z-index: 4 !important;
 }
 
@@ -1000,19 +991,19 @@ h6 {
 .cve-table .rt-table .rt-thead,
 .dockerfile-table .rt-table .rt-tbody,
 .dockerfile-table .rt-table .rt-thead {
-    @apply .p-0 !important;
+    @apply p-0 !important;
 }
 
 .cve-table .rt-tbody .rt-tr,
 .cve-table .rt-thead .rt-tr,
 .dockerfile-table .cve-table .rt-tbody .rt-tr,
 .dockerfile-table .cve-table .rt-thead .rt-tr {
-    @apply .min-h-0 !important;
+    @apply min-h-0 !important;
 }
 
 .cve-table .rt-thead .rt-th:first-child,
 .dockerfile-table .cve-table .rt-thead .rt-th:first-child {
-    @apply .shadow-none !important;
+    @apply shadow-none !important;
 }
 
 .table-reset-padding .ReactTable .rt-tbody {
@@ -1025,11 +1016,11 @@ h6 {
 
 .redoc-wrap,
 .redoc-wrap .menu-content {
-    @apply .h-full !important;
+    @apply h-full !important;
 }
 
 .redoc-wrap .api-content {
-    @apply .overflow-auto !important;
+    @apply overflow-auto !important;
 }
 
 /* CHECKBOX TOGGLE SWITCH */
@@ -1060,7 +1051,7 @@ h6 {
 }
 
 .form-switch-label:before {
-    @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
+    @apply absolute block bg-base-100 inset-y-0 w-6 border rounded -ml-1;
 
     right: 50%;
     content: '';
@@ -1077,7 +1068,7 @@ h6 {
 
 .form-switch .form-switch-checkbox:checked + .form-switch-label:before,
 .form-switch-reverse .form-switch-checkbox + .form-switch-label:before {
-    @apply pin-r;
+    @apply right-0;
 }
 
 /* TOGGLE SWITCH */
@@ -1096,7 +1087,7 @@ h6 {
     position: absolute;
 }
 .toggle-switch-label {
-    @apply block overflow-hidden cursor-pointer bg-transparent border rounded-full h-6  shadow-inner;
+    @apply block overflow-hidden cursor-pointer bg-transparent border rounded-full h-6 shadow-inner;
 
     transition: background-color 0.2s ease-in;
 }
@@ -1104,7 +1095,7 @@ h6 {
     @apply h-4;
 }
 .toggle-switch-label:before {
-    @apply absolute block bg-base-100 pin-y w-6 border rounded-full -ml-1;
+    @apply absolute block bg-base-100 inset-y-0 w-6 border rounded-full -ml-1;
 
     content: '';
     right: 50%;
@@ -1124,7 +1115,7 @@ h6 {
     @apply bg-alert-600;
 }
 .toggle-switch-checkbox:checked + .toggle-switch-label:before {
-    @apply pin-r;
+    @apply right-0;
 }
 
 /* React-vis */
@@ -1264,7 +1255,7 @@ h6 {
 }
 
 .horizontal-bar-responsive .horizontal-bar-legend {
-    @apply items-center .justify-between flex absolute w-full;
+    @apply items-center justify-between flex absolute w-full;
     bottom: -13px;
     padding-top: 3px;
 }
@@ -1300,4 +1291,16 @@ h6 {
     background: url('images/counts-widget-blocks.svg');
     background-repeat: repeat-x;
     background-position: bottom right;
+}
+
+/* multi-line truncation:
+   (not available in Tailwind)
+   see https://css-tricks.com/almanac/properties/l/line-clamp/
+*/
+.line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding-bottom: 1px; /* necessary to fix bug where descenders are cut off */
 }

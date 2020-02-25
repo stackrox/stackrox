@@ -4,16 +4,9 @@ import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
 
-const uploadFile = (fileName, selector) => {
-    cy.get(selector).then(subject => {
-        cy.fixture(fileName).then(content => {
-            const el = subject[0];
-            const testFile = new File([content], fileName);
-            const dataTransfer = new DataTransfer();
-
-            dataTransfer.items.add(testFile);
-            el.files = dataTransfer.files;
-        });
+const uploadYAMLFile = (fileName, selector) => {
+    cy.fixture(fileName).then(fileContent => {
+        cy.get(selector).upload({ fileContent, fileName, mimeType: 'text/yaml', encoding: 'utf8' });
     });
 };
 
@@ -101,7 +94,7 @@ describe('Network page', () => {
         cy.wait('@networkGraph');
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
-        uploadFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
+        uploadYAMLFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
 
         cy.get(networkPageSelectors.simulatorSuccessMessage).should('not.be.visible');
     });
@@ -114,7 +107,7 @@ describe('Network page', () => {
         cy.wait('@networkGraph');
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
-        uploadFile('network/policywithnamespace.yaml', 'input[type="file"]');
+        uploadYAMLFile('network/policywithnamespace.yaml', 'input[type="file"]');
 
         cy.get(networkPageSelectors.simulatorSuccessMessage).should('be.visible');
     });

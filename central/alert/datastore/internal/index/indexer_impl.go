@@ -3,12 +3,13 @@
 package index
 
 import (
+	"bytes"
+	bleve "github.com/blevesearch/bleve"
 	mappings "github.com/stackrox/rox/central/alert/mappings"
 	metrics "github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	batcher "github.com/stackrox/rox/pkg/batcher"
-	blevehelper "github.com/stackrox/rox/pkg/blevehelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	search "github.com/stackrox/rox/pkg/search"
 	blevesearch "github.com/stackrox/rox/pkg/search/blevesearch"
@@ -20,7 +21,7 @@ const batchSize = 5000
 const resourceName = "ListAlert"
 
 type indexerImpl struct {
-	index *blevehelper.BleveWrapper
+	index bleve.Index
 }
 
 type listAlertWrapper struct {
@@ -30,13 +31,13 @@ type listAlertWrapper struct {
 
 func (b *indexerImpl) AddListAlert(listalert *storage.ListAlert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ListAlert")
-	if err := b.index.Index.Index(listalert.GetId(), &listAlertWrapper{
+	if err := b.index.Index(listalert.GetId(), &listAlertWrapper{
 		ListAlert: listalert,
 		Type:      v1.SearchCategory_ALERTS.String(),
 	}); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) AddListAlerts(listalerts []*storage.ListAlert) error {
@@ -51,7 +52,7 @@ func (b *indexerImpl) AddListAlerts(listalerts []*storage.ListAlert) error {
 			return err
 		}
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) processBatch(listalerts []*storage.ListAlert) error {
@@ -72,7 +73,7 @@ func (b *indexerImpl) DeleteListAlert(id string) error {
 	if err := b.index.Delete(id); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
 func (b *indexerImpl) DeleteListAlerts(ids []string) error {
@@ -84,23 +85,22 @@ func (b *indexerImpl) DeleteListAlerts(ids []string) error {
 	if err := b.index.Batch(batch); err != nil {
 		return err
 	}
-	return b.index.IncTxnCount()
+	return nil
 }
 
-func (b *indexerImpl) ResetIndex() error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Reset, "ListAlert")
-	return blevesearch.ResetIndex(v1.SearchCategory_ALERTS, b.index.Index)
+func (b *indexerImpl) MarkInitialIndexingComplete() error {
+	return b.index.SetInternal([]byte(resourceName), []byte("old"))
+}
+
+func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
+	data, err := b.index.GetInternal([]byte(resourceName))
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal([]byte("old"), data), nil
 }
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ListAlert")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index.Index, mappings.OptionsMap, opts...)
-}
-
-func (b *indexerImpl) GetTxnCount() uint64 {
-	return b.index.GetTxnCount()
-}
-
-func (b *indexerImpl) SetTxnCount(seq uint64) error {
-	return b.index.SetTxnCount(seq)
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap, opts...)
 }

@@ -68,10 +68,10 @@ func StripPrefix(prefix []byte, val []byte) []byte {
 
 // HasPrefix returns if the given key has the given prefix.
 func HasPrefix(prefix []byte, val []byte) bool {
-	if len(val) < len(prefix)+1 {
+	if len(val) < len(prefix)+len(separator) {
 		return false
 	}
-	return bytes.Equal(append(append([]byte{}, prefix...), separator...), val[:len(prefix)+1])
+	return bytes.Equal(prefix, val[:len(prefix)]) && bytes.Equal(separator, val[len(prefix):len(prefix)+len(separator)])
 }
 
 // BucketForEach ensures that the prefix iterated over has the bucket prefix

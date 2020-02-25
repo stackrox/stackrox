@@ -19,6 +19,6 @@ type Store interface {
 	DeleteAlert(id string) error
 	DeleteAlerts(ids ...string) error
 
-	GetTxnCount() (txNum uint64, err error)
-	IncTxnCount() error
+	AckKeysIndexed(keys ...string) error
+	GetKeysToIndex() ([]string, error)
 }

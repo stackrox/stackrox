@@ -4,39 +4,32 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
+	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
+	"github.com/stackrox/rox/central/cve/converter"
 	vulnDackBox "github.com/stackrox/rox/central/cve/dackbox"
 	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/dackbox/crud"
+	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
 const batchSize = 100
 
 type storeImpl struct {
-	counter *crud.TxnCounter
-	dacky   *dackbox.DackBox
-
-	reader   crud.Reader
-	upserter crud.Upserter
-	deleter  crud.Deleter
+	keyFence concurrency.KeyFence
+	dacky    *dackbox.DackBox
 }
 
 // New returns a new Store instance.
-func New(dacky *dackbox.DackBox) (store.Store, error) {
-	counter, err := crud.NewTxnCounter(dacky, vulnDackBox.Bucket)
-	if err != nil {
-		return nil, err
-	}
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, error) {
 	return &storeImpl{
-		counter:  counter,
+		keyFence: keyFence,
 		dacky:    dacky,
-		reader:   vulnDackBox.Reader,
-		upserter: vulnDackBox.Upserter,
-		deleter:  vulnDackBox.Deleter,
 	}, nil
 }
 
@@ -44,7 +37,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
 
-	exists, err := b.reader.ExistsIn(badgerhelper.GetBucketKey(vulnDackBox.Bucket, []byte(id)), dackTxn)
+	exists, err := vulnDackBox.Reader.ExistsIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
 	if err != nil {
 		return false, err
 	}
@@ -58,7 +51,7 @@ func (b *storeImpl) Count() (int, error) {
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
 
-	count, err := b.reader.CountIn(vulnDackBox.Bucket, dackTxn)
+	count, err := vulnDackBox.Reader.CountIn(vulnDackBox.Bucket, dackTxn)
 	if err != nil {
 		return 0, err
 	}
@@ -72,7 +65,7 @@ func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
 
-	msgs, err := b.reader.ReadAllIn(vulnDackBox.Bucket, dackTxn)
+	msgs, err := vulnDackBox.Reader.ReadAllIn(vulnDackBox.Bucket, dackTxn)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +83,8 @@ func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
 
-	msg, err := b.reader.ReadIn(badgerhelper.GetBucketKey(vulnDackBox.Bucket, []byte(id)), dackTxn)
-	if err != nil {
+	msg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
+	if err != nil || msg == nil {
 		return nil, false, err
 	}
 
@@ -104,10 +97,10 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
 
-	msgs := make([]proto.Message, 0, len(ids)/2)
+	msgs := make([]proto.Message, 0, len(ids))
 	missing := make([]int, 0, len(ids)/2)
 	for idx, id := range ids {
-		msg, err := b.reader.ReadIn(badgerhelper.GetBucketKey(vulnDackBox.Bucket, []byte(id)), dackTxn)
+		msg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,35 +119,73 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
 	return ret, missing, nil
 }
 
-// UpdateImage updates a image to bolt.
-func (b *storeImpl) Upsert(cve *storage.CVE) error {
+func (b *storeImpl) Upsert(cves ...*storage.CVE) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
+	keysToUpsert := make([][]byte, 0, len(cves))
+	for _, vuln := range cves {
+		keysToUpsert = append(keysToUpsert, vulnDackBox.KeyFunc(vuln))
+	}
+	lockedKeySet := concurrency.DiscreteKeySet(keysToUpsert...)
+
+	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
+		batch := batcher.New(len(cves), batchSize)
+		for {
+			start, end, ok := batch.Next()
+			if !ok {
+				break
+			}
+
+			if err := b.upsertNoBatch(cves[start:end]...); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 	dackTxn := b.dacky.NewTransaction()
 	defer dackTxn.Discard()
 
-	err := b.upserter.UpsertIn(nil, cve, dackTxn)
-	if err != nil {
-		return err
+	for _, cve := range cves {
+		err := vulnDackBox.Upserter.UpsertIn(nil, cve, dackTxn)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := dackTxn.Commit(); err != nil {
 		return err
 	}
-	return b.counter.IncTxnCount()
+	return nil
 }
 
-func (b *storeImpl) UpsertBatch(cves []*storage.CVE) error {
+func (b *storeImpl) UpsertClusterCVEs(parts ...converter.ClusterCVEParts) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
-	for batch := 0; batch < len(cves); batch += batchSize {
+	keysToUpdate := gatherKeysForCVEParts(parts...)
+	lockedKeySet := concurrency.DiscreteKeySet(keysToUpdate...)
+	b.keyFence.Lock(lockedKeySet)
+	defer b.keyFence.Unlock(lockedKeySet)
+
+	for batch := 0; batch < len(parts); batch += batchSize {
 		dackTxn := b.dacky.NewTransaction()
 		defer dackTxn.Discard()
 
-		for idx := batch; idx < len(cves) && idx < batch+batchSize; idx++ {
-			err := b.upserter.UpsertIn(nil, cves[idx], dackTxn)
-			if err != nil {
+		for idx := batch; idx < len(parts) && idx < batch+batchSize; idx++ {
+			if err := vulnDackBox.Upserter.UpsertIn(nil, parts[idx].CVE, dackTxn); err != nil {
 				return err
+			}
+
+			for _, child := range parts[idx].Children {
+				if err := clusterCVEEdgeDackBox.Upserter.UpsertIn(nil, child.Edge, dackTxn); err != nil {
+					return err
+				}
+
+				if err := dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(parts[idx].CVE)); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -162,43 +193,58 @@ func (b *storeImpl) UpsertBatch(cves []*storage.CVE) error {
 			return err
 		}
 	}
-	return b.counter.IncTxnCount()
+	return nil
 }
 
-func (b *storeImpl) Delete(id string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "CVE")
-
-	dackTxn := b.dacky.NewTransaction()
-	defer dackTxn.Discard()
-
-	err := b.deleter.DeleteIn(badgerhelper.GetBucketKey(vulnDackBox.Bucket, []byte(id)), dackTxn)
-	if err != nil {
-		return err
-	}
-
-	if err := dackTxn.Commit(); err != nil {
-		return err
-	}
-	return b.counter.IncTxnCount()
-}
-
-func (b *storeImpl) DeleteBatch(ids []string) error {
+func (b *storeImpl) Delete(ids ...string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
 
-	for batch := 0; batch < len(ids); batch += batchSize {
-		dackTxn := b.dacky.NewTransaction()
-		defer dackTxn.Discard()
+	keysToUpsert := make([][]byte, 0, len(ids))
+	for _, id := range ids {
+		keysToUpsert = append(keysToUpsert, vulnDackBox.BucketHandler.GetKey(id))
+	}
+	lockedKeySet := concurrency.DiscreteKeySet(keysToUpsert...)
 
-		for idx := batch; idx < len(ids) && idx < batch+batchSize; idx++ {
-			err := b.deleter.DeleteIn(badgerhelper.GetBucketKey(vulnDackBox.Bucket, []byte(ids[idx])), dackTxn)
-			if err != nil {
+	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
+		batch := batcher.New(len(ids), batchSize)
+		for {
+			start, end, ok := batch.Next()
+			if !ok {
+				break
+			}
+
+			if err := b.deleteNoBatch(ids[start:end]...); err != nil {
 				return err
 			}
 		}
+		return nil
+	})
+}
 
-		if err := dackTxn.Commit(); err != nil {
+func (b *storeImpl) deleteNoBatch(ids ...string) error {
+	dackTxn := b.dacky.NewTransaction()
+	defer dackTxn.Discard()
+
+	for _, id := range ids {
+		err := vulnDackBox.Deleter.DeleteIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
+		if err != nil {
 			return err
 		}
 	}
-	return b.counter.IncTxnCount()
+
+	if err := dackTxn.Commit(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func gatherKeysForCVEParts(parts ...converter.ClusterCVEParts) [][]byte {
+	var allKeys [][]byte
+	for _, part := range parts {
+		allKeys = append(allKeys, vulnDackBox.KeyFunc(part.CVE))
+		for _, child := range part.Children {
+			allKeys = append(allKeys, clusterDackBox.BucketHandler.GetKey(child.ClusterID))
+		}
+	}
+	return sortedkeys.Sort(allKeys)
 }

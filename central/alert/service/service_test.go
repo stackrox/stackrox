@@ -58,7 +58,7 @@ func (s *baseSuite) SetupTest() {
 	s.whitelistMock = whitelistMocks.NewMockDataStore(s.mockCtrl)
 	s.datastoreMock = dataStoreMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.datastoreMock, s.whitelistMock, s.notifierMock)
+	s.service = New(s.datastoreMock, s.whitelistMock, s.notifierMock, nil)
 }
 
 func (s *baseSuite) TearDownTest() {
@@ -965,7 +965,7 @@ func (s *patchAlertTests) SetupTest() {
 	s.notifierMock = notifierMocks.NewMockProcessor(s.mockCtrl)
 	s.whitelistMock = whitelistMocks.NewMockDataStore(s.mockCtrl)
 
-	s.service = New(s.storage, s.whitelistMock, s.notifierMock)
+	s.service = New(s.storage, s.whitelistMock, s.notifierMock, nil)
 }
 
 func (s *patchAlertTests) TearDownTest() {

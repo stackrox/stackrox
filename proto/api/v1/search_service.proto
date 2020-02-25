@@ -32,6 +32,9 @@ enum SearchCategory {
     RISKS                    = 19;
     IMAGE_COMPONENTS         = 20;
     VULNERABILITIES          = 21;
+    COMPONENT_VULN_EDGE      = 22;
+    IMAGE_COMPONENT_EDGE     = 23;
+    CLUSTER_VULN_EDGE        = 24;
 }
 
 enum SearchDataType {

@@ -8,14 +8,22 @@ import (
 	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
+	componentDatastoreMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestImageDataStore(t *testing.T) {
+	if features.Dackbox.Enabled() {
+		return
+	}
 	suite.Run(t, new(ImageDataStoreTestSuite))
 }
 
@@ -29,8 +37,11 @@ type ImageDataStoreTestSuite struct {
 	mockSearcher *searchMock.MockSearcher
 	mockStore    *storeMock.MockStore
 
-	datastore DataStore
-	mockRisks *riskDatastoreMocks.MockDataStore
+	datastore      DataStore
+	mockComponents *componentDatastoreMocks.MockDataStore
+	mockRisks      *riskDatastoreMocks.MockDataStore
+
+	imageRanker *ranking.Ranker
 
 	mockCtrl *gomock.Controller
 }
@@ -45,16 +56,19 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 		sac.ResourceScopeKeys(resources.Image, resources.Risk)))
 
-	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
-	suite.mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
-
 	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
 	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
-	suite.mockStore.EXPECT().GetTxnCount().Return(uint64(1), nil)
+	suite.mockStore.EXPECT().GetKeysToIndex().Return(nil, nil)
+
+	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
+	suite.mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	suite.mockComponents = componentDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockRisks = riskDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.imageRanker = ranking.NewRanker()
 
 	var err error
-	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockRisks)
+	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
 	suite.Require().NoError(err)
 }
 
@@ -71,8 +85,9 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 
 	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
 
-	suite.mockStore.EXPECT().UpsertImage(image).Return(nil)
+	suite.mockStore.EXPECT().Upsert(image, nil).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed(image.GetId()).Return(nil)
 
 	err := suite.datastore.UpsertImage(suite.hasWriteCtx, image)
 	suite.NoError(err)
@@ -91,8 +106,9 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 	}
 
 	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
-	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
+	suite.mockStore.EXPECT().Upsert(upsertedImage, nil).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed(upsertedImage.GetId()).Return(nil)
 
 	err := suite.datastore.UpsertImage(suite.hasWriteCtx, newImage)
 	suite.NoError(err)
@@ -150,9 +166,118 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 	}
 
 	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
-	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
+	suite.mockStore.EXPECT().Upsert(upsertedImage, nil).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed(upsertedImage.GetId()).Return(nil)
 
 	err := suite.datastore.UpsertImage(suite.hasWriteCtx, newImage)
 	suite.NoError(err)
+}
+
+func (suite *ImageDataStoreTestSuite) TestDeleteImagesWithoutDackBox() {
+	isolator := testutils.NewEnvIsolator(suite.T())
+	isolator.Setenv(features.Dackbox.EnvVar(), "false")
+	defer isolator.RestoreAll()
+
+	suite.mockStore.EXPECT().Delete("id1").Return(nil)
+	suite.mockIndexer.EXPECT().DeleteImage("id1").Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed("id1")
+
+	suite.mockStore.EXPECT().Delete("id2").Return(nil)
+	suite.mockIndexer.EXPECT().DeleteImage("id2").Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed("id2")
+
+	suite.NoError(suite.datastore.DeleteImages(suite.hasWriteCtx, "id1", "id2"))
+}
+
+func TestImageReindexSuite(t *testing.T) {
+	suite.Run(t, new(ImageReindexSuite))
+}
+
+type ImageReindexSuite struct {
+	suite.Suite
+
+	mockIndexer  *indexMock.MockIndexer
+	mockSearcher *searchMock.MockSearcher
+	mockStore    *storeMock.MockStore
+
+	mockComponents *componentDatastoreMocks.MockDataStore
+	mockRisks      *riskDatastoreMocks.MockDataStore
+
+	imageRanker *ranking.Ranker
+
+	ctx context.Context
+
+	mockCtrl *gomock.Controller
+}
+
+func (suite *ImageReindexSuite) SetupTest() {
+	suite.ctx = sac.WithAllAccess(context.Background())
+
+	suite.mockCtrl = gomock.NewController(suite.T())
+
+	suite.mockSearcher = searchMock.NewMockSearcher(suite.mockCtrl)
+	suite.mockStore = storeMock.NewMockStore(suite.mockCtrl)
+	suite.mockStore.EXPECT().GetKeysToIndex().Return(nil, nil)
+
+	suite.mockIndexer = indexMock.NewMockIndexer(suite.mockCtrl)
+	suite.mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	suite.mockComponents = componentDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.mockRisks = riskDatastoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.imageRanker = ranking.NewRanker()
+}
+
+func (suite *ImageReindexSuite) TestReconciliationFullReindex() {
+	suite.mockIndexer.EXPECT().NeedsInitialIndexing().Return(true, nil)
+
+	img1 := fixtures.GetImage()
+	img1.Id = "A"
+	img2 := fixtures.GetImage()
+	img2.Id = "B"
+
+	suite.mockStore.EXPECT().GetImages().Return([]*storage.Image{img1, img2}, nil)
+	suite.mockIndexer.EXPECT().AddImages([]*storage.Image{img1, img2}).Return(nil)
+
+	suite.mockStore.EXPECT().GetKeysToIndex().Return([]string{"D", "E"}, nil)
+	suite.mockStore.EXPECT().AckKeysIndexed([]string{"D", "E"}).Return(nil)
+
+	suite.mockIndexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
+
+	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	suite.Require().NoError(err)
+}
+
+func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
+	suite.mockStore.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	img1 := fixtures.GetImage()
+	img1.Id = "A"
+	img2 := fixtures.GetImage()
+	img2.Id = "B"
+	img3 := fixtures.GetImage()
+	img3.Id = "C"
+
+	imageList := []*storage.Image{img1, img2, img3}
+
+	suite.mockStore.EXPECT().GetImagesBatch([]string{"A", "B", "C"}).Return(imageList, nil, nil)
+	suite.mockIndexer.EXPECT().AddImages(imageList).Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	suite.Require().NoError(err)
+
+	// Make deploymentlist just A,B so C should be deleted
+	imageList = imageList[:1]
+	suite.mockStore.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	suite.mockStore.EXPECT().GetImagesBatch([]string{"A", "B", "C"}).Return(imageList, []int{2}, nil)
+	suite.mockIndexer.EXPECT().AddImages(imageList).Return(nil)
+	suite.mockIndexer.EXPECT().DeleteImages([]string{"C"}).Return(nil)
+	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	suite.Require().NoError(err)
 }

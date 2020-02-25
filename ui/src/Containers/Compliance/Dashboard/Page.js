@@ -7,6 +7,8 @@ import StandardsAcrossEntity from 'Containers/Compliance/widgets/StandardsAcross
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import WaveBackground from 'images/wave-bg.svg';
 import WaveBackground2 from 'images/wave-bg-2.svg';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import DashboardHeader from './Header';
 
 const ComplianceDashboardPage = () => {
@@ -22,13 +24,13 @@ const ComplianceDashboardPage = () => {
     return (
         <section>
             <DashboardHeader
-                classes={`bg-gradient-horizontal z-10 sticky pin-t ${
+                classes={`bg-gradient-horizontal z-10 sticky top-0 ${
                     isDarkMode ? 'text-base-600' : 'text-base-100'
                 }`}
                 bgStyle={bgStyle}
             />
             <img
-                className="absolute pin-l pointer-events-none z-10 w-full"
+                className="absolute left-0 pointer-events-none z-10 w-full"
                 id="wave-bg2"
                 src={WaveBackground2}
                 style={{ mixBlendMode: 'lighten', top: '-60px' }}
@@ -40,7 +42,7 @@ const ComplianceDashboardPage = () => {
                 id="capture-dashboard"
             >
                 <img
-                    className="absolute pin-l pointer-events-none w-full"
+                    className="absolute left-0 pointer-events-none w-full"
                     id="wave-bg"
                     src={WaveBackground}
                     style={{ top: '-130px' }}
@@ -86,6 +88,12 @@ const ComplianceDashboardPage = () => {
                         standardType={standardTypes.NIST_800_190}
                         className="pdf-page"
                     />
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
+                        <ComplianceByStandard
+                            standardType={standardTypes.NIST_SP_800_53}
+                            className="pdf-page"
+                        />
+                    </FeatureEnabled>
                     <ComplianceByStandard
                         standardType={standardTypes.PCI_DSS_3_2}
                         className="pdf-page"

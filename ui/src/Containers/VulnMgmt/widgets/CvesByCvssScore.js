@@ -18,11 +18,11 @@ import {
 } from 'constants/severityColors';
 
 const CVES_QUERY = gql`
-    query getCvesByCVSS($query: String) {
+    query getCvesByCVSS($query: String, $scopeQuery: String) {
         results: vulnerabilities(query: $query) {
             cve
             cvss
-            isFixable
+            isFixable(query: $scopeQuery)
             severity
             summary
         }
@@ -32,7 +32,8 @@ const CVES_QUERY = gql`
 const CvesByCvssScore = ({ entityContext }) => {
     const { loading, data = {} } = useQuery(CVES_QUERY, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
+            query: queryService.entityContextToQueryString(entityContext),
+            scopeQuery: queryService.entityContextToQueryString(entityContext)
         }
     });
 
@@ -63,27 +64,26 @@ const CvesByCvssScore = ({ entityContext }) => {
     }
 
     function getSunburstData(vulns) {
-        return severityColorLegend.map(({ title, color }) => {
+        return severityColorLegend.map(({ title, color, textColor }) => {
             const severity = title.toUpperCase();
             return {
                 name: title,
                 color,
                 children: getChildren(vulns, severity),
-                labelValue: severity,
-                textColor: color,
+                textColor,
                 value: 0
             };
         });
     }
 
     function getSidePanelData(vulns) {
-        return severityColorLegend.map(({ title, color }) => {
+        return severityColorLegend.map(({ title, textColor }) => {
             const severity = title.toUpperCase();
             const category = vulns.filter(vuln => vuln.severity === severity);
             const text = `${category.length} rated as ${title}`;
             return {
                 text,
-                color
+                textColor
             };
         });
     }
@@ -96,7 +96,7 @@ const CvesByCvssScore = ({ entityContext }) => {
             content = <NoComponentVulnMessage />;
         } else {
             const sunburstData = getSunburstData(data.results);
-            const sidePanelData = getSidePanelData(data.results);
+            const sidePanelData = getSidePanelData(data.results).reverse();
             header = <ViewAllButton url={viewAllURL} />;
             content = (
                 <Sunburst

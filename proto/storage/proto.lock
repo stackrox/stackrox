@@ -1165,6 +1165,38 @@
                 "type": "google.protobuf.Timestamp"
               }
             ]
+          },
+          {
+            "name": "ClusterCVEEdge",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "is_fixable",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster CVE Fixable,store,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "fixed_by",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster CVE Fixed By,store,hidden\\"
+                  }
+                ]
+              }
+            ]
           }
         ],
         "imports": [
@@ -1792,6 +1824,10 @@
               {
                 "name": "V3",
                 "integer": 1
+              },
+              {
+                "name": "UNKNOWN",
+                "integer": 2
               }
             ]
           },
@@ -1808,6 +1844,10 @@
               {
                 "name": "K8S_CVE",
                 "integer": 2
+              },
+              {
+                "name": "ISTIO_CVE",
+                "integer": 3
               }
             ]
           },
@@ -2039,6 +2079,17 @@
                 ]
               },
               {
+                "id": 14,
+                "name": "impact_score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Impact Score,store\\"
+                  }
+                ]
+              },
+              {
                 "id": 3,
                 "name": "type",
                 "type": "CVEType",
@@ -2062,7 +2113,24 @@
               {
                 "id": 6,
                 "name": "published_on",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Published On,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 15,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Created Time,store\\"
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -2089,6 +2157,17 @@
                 "id": 11,
                 "name": "cvss_v3",
                 "type": "CVSSV3"
+              },
+              {
+                "id": 12,
+                "name": "suppressed",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Suppressed,store\\"
+                  }
+                ]
               }
             ],
             "messages": [
@@ -2474,6 +2553,17 @@
                 ]
               },
               {
+                "id": 28,
+                "name": "service_account_permission_level",
+                "type": "PermissionLevel",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Service Account Permission Level,store\\"
+                  }
+                ]
+              },
+              {
                 "id": 25,
                 "name": "automount_service_account_token",
                 "type": "bool"
@@ -2502,7 +2592,18 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "hash:\\\"ignore\\"
+                    "value": "hash:\\\"ignore\\\" sensorhash:\\\"ignore\\"
+                  }
+                ]
+              },
+              {
+                "id": 29,
+                "name": "risk_score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Risk Score,hidden\\"
                   }
                 ]
               }
@@ -2791,6 +2892,17 @@
                 "id": 4,
                 "name": "started",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "image_digest",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Container Image Digest,hidden\\"
+                  }
+                ]
               }
             ]
           },
@@ -3210,6 +3322,9 @@
             "path": "storage/taints.proto"
           },
           {
+            "path": "storage/rbac.proto"
+          },
+          {
             "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
@@ -3438,7 +3553,7 @@
       "def": {
         "enums": [
           {
-            "name": "EmbeddedImageScanComponent.SourceType",
+            "name": "SourceType",
             "enum_fields": [
               {
                 "name": "OS"
@@ -3577,6 +3692,17 @@
                 "id": 11,
                 "name": "priority",
                 "type": "int64"
+              },
+              {
+                "id": 12,
+                "name": "risk_score",
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Risk Score,hidden\\"
+                  }
+                ]
               }
             ],
             "reserved_ids": [
@@ -3747,7 +3873,13 @@
               {
                 "id": 9,
                 "name": "published_on",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Published On,store\\"
+                  }
+                ]
               },
               {
                 "id": 10,
@@ -3758,6 +3890,17 @@
                 "id": 11,
                 "name": "vulnerability_type",
                 "type": "VulnerabilityType"
+              },
+              {
+                "id": 12,
+                "name": "suppressed",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Suppressed,store\\"
+                  }
+                ]
               }
             ]
           },
@@ -4028,6 +4171,17 @@
                 "id": 2,
                 "name": "layer_index",
                 "type": "int32"
+              },
+              {
+                "id": 3,
+                "name": "location",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Location,store\\"
+                  }
+                ]
               }
             ]
           }
@@ -4100,26 +4254,26 @@
                 "id": 5,
                 "name": "priority",
                 "type": "int64"
-              }
-            ],
-            "messages": [
+              },
               {
-                "name": "License",
-                "fields": [
+                "id": 6,
+                "name": "source",
+                "type": "SourceType",
+                "options": [
                   {
-                    "id": 1,
-                    "name": "name",
-                    "type": "string"
-                  },
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Source,store\\"
+                  }
+                ]
+              },
+              {
+                "id": 7,
+                "name": "risk_score",
+                "type": "float",
+                "options": [
                   {
-                    "id": 2,
-                    "name": "type",
-                    "type": "string"
-                  },
-                  {
-                    "id": 3,
-                    "name": "url",
-                    "type": "string"
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Risk Score,hidden\\"
                   }
                 ]
               }
@@ -4159,6 +4313,9 @@
           }
         ],
         "imports": [
+          {
+            "path": "storage/image.proto"
+          },
           {
             "path": "protobuf/gogoproto/gogo.proto"
           }
@@ -4262,11 +4419,6 @@
                 "type": "AnchoreConfig"
               },
               {
-                "id": 19,
-                "name": "scannerv2",
-                "type": "ScannerV2Config"
-              },
-              {
                 "id": 20,
                 "name": "ibm",
                 "type": "IBMRegistryConfig"
@@ -4286,6 +4438,9 @@
                 "name": "skip_test_integration",
                 "type": "bool"
               }
+            ],
+            "reserved_ids": [
+              19
             ]
           },
           {
@@ -4332,16 +4487,6 @@
           },
           {
             "name": "ClairConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "endpoint",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "ScannerV2Config",
             "fields": [
               {
                 "id": 1,
@@ -5344,6 +5489,24 @@
     {
       "protopath": "notifier.proto",
       "def": {
+        "enums": [
+          {
+            "name": "Email.AuthMethod",
+            "enum_fields": [
+              {
+                "name": "DISABLED"
+              },
+              {
+                "name": "PLAIN",
+                "integer": 1
+              },
+              {
+                "name": "LOGIN",
+                "integer": 2
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "Notifier",
@@ -5473,6 +5636,34 @@
                 "id": 4,
                 "name": "issue_type",
                 "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "priority_mappings",
+                "type": "PriorityMapping",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "default_fields_json",
+                "type": "string"
+              }
+            ],
+            "messages": [
+              {
+                "name": "PriorityMapping",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "severity",
+                    "type": "Severity"
+                  },
+                  {
+                    "id": 2,
+                    "name": "priority_name",
+                    "type": "string"
+                  }
+                ]
               }
             ]
           },
@@ -5512,13 +5703,18 @@
               },
               {
                 "id": 6,
-                "name": "useSTARTTLS",
+                "name": "DEPRECATED_useStartTLS",
                 "type": "bool"
               },
               {
                 "id": 7,
                 "name": "from",
                 "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "startTLSAuthMethod",
+                "type": "AuthMethod"
               }
             ]
           },
@@ -5649,6 +5845,9 @@
           },
           {
             "path": "storage/common.proto"
+          },
+          {
+            "path": "storage/policy.proto"
           }
         ],
         "package": {
@@ -5745,34 +5944,6 @@
               {
                 "name": "GREATER_THAN",
                 "integer": 4
-              }
-            ]
-          },
-          {
-            "name": "PermissionLevel",
-            "enum_fields": [
-              {
-                "name": "UNSET"
-              },
-              {
-                "name": "NONE",
-                "integer": 1
-              },
-              {
-                "name": "DEFAULT",
-                "integer": 2
-              },
-              {
-                "name": "ELEVATED_IN_NAMESPACE",
-                "integer": 3
-              },
-              {
-                "name": "ELEVATED_CLUSTER_WIDE",
-                "integer": 4
-              },
-              {
-                "name": "CLUSTER_ADMIN",
-                "integer": 5
               }
             ]
           }
@@ -5908,7 +6079,46 @@
               {
                 "id": 15,
                 "name": "last_updated",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Policy Last Updated\\"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "SORT_name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"SORT_Policy,hidden,analyzer=keyword\\"
+                  }
+                ]
+              },
+              {
+                "id": 17,
+                "name": "SORT_lifecycleStage",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"SORT_Lifecycle Stage,hidden\\"
+                  }
+                ]
+              },
+              {
+                "id": 18,
+                "name": "SORT_enforcement",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"SORT_Enforcement,hidden\\"
+                  }
+                ]
               }
             ]
           },
@@ -6412,6 +6622,9 @@
           },
           {
             "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/rbac.proto"
           }
         ],
         "package": {
@@ -6876,6 +7089,34 @@
               {
                 "name": "GROUP",
                 "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "PermissionLevel",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "NONE",
+                "integer": 1
+              },
+              {
+                "name": "DEFAULT",
+                "integer": 2
+              },
+              {
+                "name": "ELEVATED_IN_NAMESPACE",
+                "integer": 3
+              },
+              {
+                "name": "ELEVATED_CLUSTER_WIDE",
+                "integer": 4
+              },
+              {
+                "name": "CLUSTER_ADMIN",
+                "integer": 5
               }
             ]
           }
@@ -8144,6 +8385,10 @@
               {
                 "name": "SCANNER_SERVICE",
                 "integer": 9
+              },
+              {
+                "name": "SCANNER_DB_SERVICE",
+                "integer": 10
               }
             ]
           }
@@ -8307,6 +8552,36 @@
         "imports": [
           {
             "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "telemetry.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "TelemetryConfiguration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "last_set_time",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {

@@ -61,7 +61,7 @@ class TableGroup extends Component {
                     </div>
                     <h1 className="p-3 pl-0 font-600 text-lg leading-normal">{name}</h1>
                 </div>
-                <div className="flex items-center flex-no-shrink italic font-700 text-sm p-3 pr-4 opacity-50">{`${
+                <div className="flex items-center flex-shrink-0 italic font-700 text-sm p-3 pr-4 opacity-50">{`${
                     rows.length
                 } ${pluralize(this.props.entityType, rows.length)}`}</div>
             </div>
@@ -82,11 +82,11 @@ class TableGroup extends Component {
                         key={group.name}
                         triggerDisabled={group.rows.length === 0}
                         triggerClassName="table-group block bg-base-100 hover:bg-tertiary-200 hover:text-tertiary-800 z-10 relative hover:z-20"
-                        triggerOpenedClassName="table-group-active bg-tertiary-300 text-tertiary-900 block z-30 pin-t sticky"
+                        triggerOpenedClassName="table-group-active bg-tertiary-300 text-tertiary-900 block z-30 top-0 sticky"
                         trigger={this.renderWhenClosed(group)}
                         triggerWhenOpen={this.renderWhenOpened(group)}
                         transitionTime={0.001}
-                        contentOuterClassName="before before:absolute before:bg-tertiary-300 before:h-full before:pin-l before:w-2 before:z-10 px-1 relative"
+                        contentOuterClassName="before before:absolute before:bg-tertiary-300 before:h-full before:left-0 before:w-2 before:z-10 px-1 relative"
                     >
                         {this.renderSubTable(group)}
                     </Collapsible>

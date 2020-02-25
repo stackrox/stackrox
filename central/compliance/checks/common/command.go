@@ -68,6 +68,15 @@ func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, 
 type CommandEvaluationFunc func(framework.ComplianceContext, []string, string, string, string)
 type helperEvaluationFunc func([]string, string, string, string) (message string, passes bool)
 
+// Info returns info with values set for the flag. Info is used when there is no strict determination of if the check is met
+func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal string) {
+	if len(values) == 0 {
+		framework.Notef(ctx, "%q is to the default value of %q", key, defaultVal)
+		return
+	}
+	framework.Notef(ctx, "%q is set to %q", key, msgfmt.FormatStrings(values...))
+}
+
 // Set checks whether or not a value is set in the command line
 func Set(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
 	resultWrapper(ctx, values, key, target, defaultVal, set)

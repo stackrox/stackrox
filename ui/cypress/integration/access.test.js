@@ -1,4 +1,6 @@
 import { selectors, url } from '../constants/AccessPage';
+import * as api from '../constants/apiEndpoints';
+
 import withAuth from '../helpers/basicAuth';
 
 describe('Access Control Page', () => {
@@ -6,15 +8,59 @@ describe('Access Control Page', () => {
         withAuth();
 
         beforeEach(() => {
+            cy.server();
+            // TODO-ivan: remove once ROX_REFRESH_TOKENS is enabled by default
+            cy.route('GET', api.featureFlags, {
+                featureFlags: [
+                    { name: 'Refresh tokens', envVar: 'ROX_REFRESH_TOKENS', enabled: true },
+                    { name: 'Vuln Mgmt', envVar: 'ROX_VULN_MGMT_UI', enabled: false }
+                ]
+            }).as('featureFlags');
+
             cy.visit(url);
             cy.get(selectors.tabs.authProviders).click();
         });
 
         it('should open the new auth provider panel', () => {
-            cy.get(selectors.authProviders.addProvider).select(selectors.authProviders.newAuth0);
-            cy.get(selectors.authProviders.newAuthProviderPanel).contains(
-                'Create New auth0 Auth Provider'
+            cy.get(selectors.authProviders.addProviderSelect).select(
+                selectors.authProviders.newAuth0Option
             );
+            cy.get(selectors.authProviders.newAuthProviderPanel).contains(
+                'Create New Auth0 Auth Provider'
+            );
+        });
+
+        it('should open the new OIDC provider form with client secret', () => {
+            cy.get(selectors.authProviders.addProviderSelect).select(
+                selectors.authProviders.newOidcOption
+            );
+            cy.get(selectors.authProviders.newAuthProviderPanel).contains(
+                'Create New OpenID Connect Auth Provider'
+            );
+
+            // client secret should be marked as required as HTTP POST should be default callback
+            cy.get(selectors.authProviders.clientSecretLabel).should(p => {
+                expect(p.text()).to.contain('(required)');
+            });
+            cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('not.be.disabled');
+            cy.get(selectors.authProviders.clientSecretInput).should('not.be.disabled');
+
+            // select Fragment
+            cy.get(selectors.authProviders.fragmentCallbackRadio).check();
+
+            // client secret fields will get disabled
+            cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('be.disabled');
+            cy.get(selectors.authProviders.clientSecretInput).should('be.disabled');
+
+            // select HTTP POST back
+            cy.get(selectors.authProviders.httpPostCallbackRadio).check();
+
+            // opt out from client secret usage
+            cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).check();
+            cy.get(selectors.authProviders.clientSecretInput).should('be.disabled');
+            cy.get(selectors.authProviders.clientSecretLabel).should(p => {
+                expect(p.text()).not.to.contain('(required)');
+            });
         });
     });
 

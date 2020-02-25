@@ -17,7 +17,7 @@ var (
 func Singleton() GlobalDataStore {
 	initGlobalDataStoreInstance.Do(func() {
 		var err error
-		indexer := index.New(globalindex.GetGlobalIndex())
+		indexer := index.New(globalindex.GetGlobalTmpIndex())
 		globalDataStoreInstance, err = New(globalstore.Singleton(), indexer)
 		utils.Must(err)
 	})

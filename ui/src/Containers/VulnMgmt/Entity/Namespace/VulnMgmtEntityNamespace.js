@@ -3,20 +3,21 @@ import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
-    getPolicyQueryVar,
-    tryUpdateQueryWithVulMgmtPolicyClause
+    vulMgmtPolicyQuery,
+    tryUpdateQueryWithVulMgmtPolicyClause,
+    getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulnMgmtNamespace = ({ entityId, entityListType, search, sort, page, entityContext }) => {
     const overviewQuery = gql`
-        query getNamespace($id: ID!, $policyQuery: String) {
+        query getNamespace($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: namespace(id: $id) {
                 metadata {
                     priority
@@ -34,18 +35,18 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
                         id
                         name
                         description
-                        policyStatus
-                        latestViolation
+                        policyStatus(query: $scopeQuery)
+                        latestViolation(query: $scopeQuery)
                         severity
-                        deploymentCount
+                        deploymentCount(query: $scopeQuery)
                         lifecycleStages
                         enforcementActions
                     }
                 }
                 policyCount(query: $policyQuery)
                 vulnCount
-                deploymentCount: numDeployments
-                imageCount
+                deploymentCount 
+                imageCount 
                 componentCount
                 vulnerabilities: vulns {
                     ...cveFields
@@ -57,25 +58,28 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, entityContext, so
 
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
-        query getNamespace${entityListType}($id: ID!, $query: String${getPolicyQueryVar(
-            entityListType
-        )}) {
+        query getNamespace${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: namespace(id: $id) {
                 metadata {
                     id
                 }
-                ${listFieldName}(query: $query) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}(query: $query)
+                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${fragment}
     `;
     }
+    const newEntityContext = { ...entityContext, [entityTypes.NAMESPACE]: entityId };
 
     const queryOptions = {
         variables: {
             id: entityId,
-            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
-            policyQuery: queryService.objectToWhereClause({ Category: 'Vulnerability Management' })
+            query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, newEntityContext),
+            ...vulMgmtPolicyQuery,
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 

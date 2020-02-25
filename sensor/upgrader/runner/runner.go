@@ -2,6 +2,7 @@ package runner
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/utils"
@@ -40,10 +41,10 @@ type runner struct {
 	// "Status" fields.
 	mostRecentlyExecutedStageIdx int
 	err                          error
-	preUpgradeObjs               []k8sobjects.Object
-	preUpgradeState              map[k8sobjects.ObjectRef]k8sobjects.Object
+	preUpgradeObjs               []k8sutil.Object
+	preUpgradeState              map[k8sobjects.ObjectRef]k8sutil.Object
 	bundleContents               bundle.Contents
-	postUpgradeObjs              []k8sobjects.Object
+	postUpgradeObjs              []k8sutil.Object
 	executionPlan                *plan.ExecutionPlan
 }
 

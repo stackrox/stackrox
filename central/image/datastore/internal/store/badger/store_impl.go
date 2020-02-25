@@ -126,27 +126,27 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 }
 
 // GetImagesBatch returns image with given sha.
-func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, error) {
+func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
 	for i, s := range digests {
 		digests[i] = types.NewDigest(s).Digest()
 	}
 
-	msgs, _, err := b.imageCRUD.ReadBatch(digests)
+	msgs, missingIndices, err := b.imageCRUD.ReadBatch(digests)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	images := make([]*storage.Image, 0, len(msgs))
 	for _, m := range msgs {
 		images = append(images, m.(*storage.Image))
 	}
-	return images, nil
+	return images, missingIndices, nil
 }
 
 // UpdateImage updates a image to bolt.
-func (b *storeImpl) UpsertImage(image *storage.Image) error {
+func (b *storeImpl) Upsert(image *storage.Image, _ *storage.ListImage) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	if !b.noUpdateTimestamps {
@@ -156,19 +156,11 @@ func (b *storeImpl) UpsertImage(image *storage.Image) error {
 }
 
 // DeleteImage deletes an image a all it's data (but maintains the orch digest to registry digest mapping).
-func (b *storeImpl) DeleteImage(id string) error {
+func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	digest := types.NewDigest(id).Digest()
 	return b.imageCRUD.Delete(digest)
-}
-
-func (b *storeImpl) GetTxnCount() (txNum uint64, err error) {
-	return b.imageCRUD.GetTxnCount(), nil
-}
-
-func (b *storeImpl) IncTxnCount() error {
-	return b.imageCRUD.IncTxnCount()
 }
 
 func convertImageToListImage(i *storage.Image) *storage.ListImage {
@@ -207,4 +199,12 @@ func convertImageToListImage(i *storage.Image) *storage.ListImage {
 		}
 	}
 	return listImage
+}
+
+func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+	return b.imageCRUD.AckKeysIndexed(keys...)
+}
+
+func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+	return b.imageCRUD.GetKeysToIndex()
 }

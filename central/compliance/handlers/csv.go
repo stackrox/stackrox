@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 type options struct {
@@ -104,7 +105,7 @@ func (c *csvResults) write(writer *csv.Writer) {
 		// second has more values, so first is lesser
 		return len(second) > 0
 	})
-	header := append([]string{}, c.header...)
+	header := sliceutils.StringClone(c.header)
 	header[0] = "\uFEFF" + header[0]
 	_ = writer.Write(header)
 	for _, v := range c.values {

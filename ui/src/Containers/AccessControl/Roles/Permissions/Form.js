@@ -15,7 +15,7 @@ const Form = ({ handleSubmit, initialValues, onSubmit }) => {
             initialValues={initialValues}
         >
             <div className="mb-4 flex flex-wrap md:flex-no-wrap items-center">
-                <div className="flex-no-shrink w-full md:w-1/3 pr-8 mb-4 md:mb-0">
+                <div className="flex-shrink-0 w-full md:w-1/3 pr-8 mb-4 md:mb-0">
                     <div className="py-2 text-base-600 font-700 text-lg">Role Name</div>
                     <div data-test-id="role-name" className="pb-2">
                         <ReduxTextField name="name" disabled={disableNameField} />

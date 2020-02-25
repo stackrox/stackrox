@@ -115,7 +115,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	if request.GetClusterId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cluster id is required")
 	}
-	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
+	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -155,11 +155,11 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 
 func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
+		return nil, status.Error(codes.InvalidArgument, "cluster ID must be specified")
 	}
 
 	// Check that the cluster exists. If not there is nothing to we can process.
-	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
+	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -191,7 +191,7 @@ func (s *serviceImpl) GetNetworkGraphEpoch(_ context.Context, req *v1.GetNetwork
 
 func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
+		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
 	}
 
 	clusterID := request.GetClusterId()
@@ -229,11 +229,11 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 
 func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
 	}
 
 	// Check that the cluster exists. If not there is nothing to we can process.
-	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
+	exists, err := s.clusterStore.Exists(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -304,16 +304,16 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
 	if request.GetClusterId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
+		return nil, status.Error(codes.InvalidArgument, "Cluster ID must be specified")
 	}
 	if len(request.GetNotifierIds()) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
+		return nil, status.Error(codes.InvalidArgument, "Notifier IDs must be specified")
 	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
+		return nil, status.Error(codes.InvalidArgument, "Modification must have contents")
 	}
 
-	cluster, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
+	clusterName, exists, err := s.clusterStore.GetClusterName(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve cluster: %s", err.Error())
 	}
@@ -344,7 +344,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			continue
 		}
 
-		err = netpolNotifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), cluster.GetName())
+		err = netpolNotifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), clusterName)
 		if err != nil {
 			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
 		}

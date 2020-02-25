@@ -15,9 +15,13 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/central/telemetry/gatherers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -27,15 +31,27 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+type logsMode int
+
 const (
 	cpuProfileDuration = 30 * time.Second
+
+	noLogs logsMode = iota
+	localLogs
+	fullK8sIntrospectionData
+
+	centralClusterPrefix = "_central-cluster"
+
+	diagnosticsPullTimeout = 10 * time.Second
 )
 
 var (
@@ -47,7 +63,13 @@ var (
 			"/v1.DebugService/SetLogLevel",
 		},
 	})
+
+	mainClusterConfig = k8sintrospect.DefaultConfig
 )
+
+func init() {
+	mainClusterConfig.PathPrefix = centralClusterPrefix
+}
 
 // Service provides the interface to the gRPC service for debugging
 type Service interface {
@@ -58,11 +80,19 @@ type Service interface {
 }
 
 // New returns a Service that implements v1.DebugServiceServer
-func New() Service {
-	return &serviceImpl{}
+func New(clusters datastore.DataStore, sensorConnMgr connection.Manager, telemetryGatherer *gatherers.RoxGatherer) Service {
+	return &serviceImpl{
+		clusters:          clusters,
+		sensorConnMgr:     sensorConnMgr,
+		telemetryGatherer: telemetryGatherer,
+	}
 }
 
-type serviceImpl struct{}
+type serviceImpl struct {
+	sensorConnMgr     connection.Manager
+	clusters          datastore.DataStore
+	telemetryGatherer *gatherers.RoxGatherer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -243,6 +273,20 @@ func getVersion(zipWriter *zip.Writer) error {
 	return err
 }
 
+func writeTelemetryData(zipWriter *zip.Writer, telemetryInfo *data.TelemetryData) error {
+	if telemetryInfo == nil {
+		return errors.New("no telemetry data provided")
+	}
+
+	w, err := zipWriter.Create("telemetry-data.json")
+	if err != nil {
+		return err
+	}
+	jsonEnc := json.NewEncoder(w)
+	jsonEnc.SetIndent("", "  ")
+	return jsonEnc.Encode(telemetryInfo)
+}
+
 // DebugHandler is an HTTP handler that outputs debugging information
 func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	customRoutes := []routes.CustomRoute{
@@ -253,7 +297,7 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 		},
 	}
 
-	if features.Telemetry.Enabled() {
+	if features.DiagnosticBundle.Enabled() {
 		customRoutes = append(customRoutes,
 			routes.CustomRoute{
 				Route:         "/api/extensions/diagnostics",
@@ -266,7 +310,7 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 	return customRoutes
 }
 
-func writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, withLogs, withCPUProfile bool) {
+func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, logs logsMode, withCPUProfile bool) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
@@ -307,8 +351,21 @@ func writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename s
 		}
 	}
 
-	if withLogs {
+	if logs == fullK8sIntrospectionData {
+		if err := s.getK8sDiagnostics(ctx, zipWriter); err != nil {
+			log.Error(err)
+			logs = localLogs // fallback to local logs
+		}
+	}
+	if logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
+			log.Error(err)
+		}
+	}
+
+	if s.telemetryGatherer != nil {
+		telemetryData := s.telemetryGatherer.Gather(ctx)
+		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
 	}
@@ -319,7 +376,7 @@ func writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename s
 }
 
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
-	withLogs := true
+	logs := localLogs
 	for _, p := range r.URL.Query()["logs"] {
 		v, err := strconv.ParseBool(p)
 		if err != nil {
@@ -327,16 +384,20 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "invalid log value: %q\n", p)
 			return
 		}
-		withLogs = v
+		if v {
+			logs = localLogs
+		} else {
+			logs = noLogs
+		}
 	}
 
 	filename := time.Now().Format("stackrox_debug_2006_01_02_15_04_05.zip")
 
-	writeZippedDebugDump(r.Context(), w, filename, withLogs, true)
+	s.writeZippedDebugDump(r.Context(), w, filename, logs, true)
 }
 
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
-	writeZippedDebugDump(r.Context(), w, filename, true, false)
+	s.writeZippedDebugDump(r.Context(), w, filename, fullK8sIntrospectionData, false)
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import renderKeyValues from './GenericNotifier/GenericNotifier';
+import renderPriorityMapping from './Jira/Jira';
 
 const skipTestIntegration = {
     label: 'Create integration without testing',
@@ -212,14 +213,14 @@ const formDescriptors = {
                 placeholder: 'user@example.com'
             },
             {
-                label: 'Password',
+                label: 'Password or API Token',
                 jsonpath: 'jira.password',
                 type: 'password',
                 placeholder: ''
             },
             {
                 label: 'Issue Type',
-                jsonpath: 'jira.issue_type',
+                jsonpath: 'jira.issueType',
                 type: 'text',
                 placeholder: 'Task, Sub-task, Story, Bug, or Epic'
             },
@@ -239,6 +240,17 @@ const formDescriptors = {
                 label: 'Label/Annotation Key for Project',
                 jsonpath: 'labelKey',
                 type: 'text'
+            },
+            {
+                label: 'Priority Mapping',
+                jsonpath: 'jira.priorityMappings',
+                type: 'list',
+                listRender: renderPriorityMapping
+            },
+            {
+                label: 'Default Fields JSON (necessary if required fields)',
+                jsonpath: 'jira.defaultFieldsJson',
+                type: 'textarea'
             }
         ],
         email: [
@@ -296,10 +308,25 @@ const formDescriptors = {
                 placeholder: ''
             },
             {
-                label: 'Enable STARTTLS',
-                jsonpath: 'email.useSTARTTLS',
-                type: 'toggle',
-                placeholder: ''
+                label: 'Use STARTTLS (requires TLS to be disabled)',
+                jsonpath: 'email.startTLSAuthMethod',
+                type: 'select',
+                placeholder: '',
+                options: [
+                    {
+                        label: 'Disabled',
+                        value: 'DISABLED'
+                    },
+                    {
+                        label: 'Plain',
+                        value: 'PLAIN'
+                    },
+                    {
+                        label: 'Login',
+                        value: 'LOGIN'
+                    }
+                ],
+                default: 'DISABLED'
             }
         ],
         slack: [
@@ -634,27 +661,6 @@ const formDescriptors = {
                 jsonpath: 'clair.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com'
-            }
-        ],
-        scanner: [
-            {
-                label: 'Integration Name',
-                jsonpath: 'name',
-                type: 'text',
-                placeholder: 'StackRox Scanner V2'
-            },
-            {
-                label: 'Types',
-                jsonpath: 'categories',
-                type: 'multiselect',
-                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
-                placeholder: ''
-            },
-            {
-                label: 'Endpoint',
-                jsonpath: 'scannerv2.endpoint',
-                type: 'text',
-                placeholder: 'http://scanner-v2.stackrox:8228'
             }
         ],
         clairify: [

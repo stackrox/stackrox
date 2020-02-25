@@ -2,7 +2,11 @@ import React from 'react';
 import gql from 'graphql-tag';
 
 import queryService from 'modules/queryService';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    nonSortableHeaderClassName,
+    defaultColumnClassName
+} from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
 import TableCountLink from 'Components/workflow/TableCountLink';
@@ -15,6 +19,7 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import removeEntityContextColumns from 'utils/tableUtils';
+import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultClusterSort = [
     // @TODO, uncomment the primary sort field for Clusters, after its available for backend pagination/sorting
@@ -32,9 +37,16 @@ export const defaultClusterSort = [
 // eslint-disable-next-line
 const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     const query = gql`
-        query getClusters($query: String, $policyQuery: String, $pagination: Pagination) {
+        query getClusters(
+            $query: String
+            $policyQuery: String
+            $scopeQuery: String
+            $pagination: Pagination
+        ) {
             results: clusters(query: $query, pagination: $pagination) {
                 ...clusterFields
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
             }
             count: clusterCount(query: $query)
         }
@@ -42,17 +54,15 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
     `;
 
     // @TODO: uncomment once Clusters pagination is fixed on the back end
-    // const tableSort = sort || defaultClusterSort;
+    const tableSort = sort || defaultClusterSort;
     const queryOptions = {
         variables: {
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            }),
+            ...vulMgmtPolicyQuery,
             query: queryService.objectToWhereClause(search),
             // @TODO: delete the following line
             //        and uncomment the line after that, once Clusters pagination is fixed on the back end
-            pagination: queryService.getPagination({}, page, LIST_PAGE_SIZE)
-            // pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
+            // pagination: queryService.getPagination({}, page, LIST_PAGE_SIZE)
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };
 
@@ -96,14 +106,15 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                     );
                 },
                 accessor: 'vulnCounter.all.total',
-                sortField: clusterSortFields.CLUSTER
+                sortField: clusterSortFields.CVE_COUNT
             },
             {
                 Header: `K8S Version`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                accessor: 'status.orchestratorMetadata.version'
-                // sortField: clusterSortFields.K8SVERSION
+                accessor: 'status.orchestratorMetadata.version',
+                sortField: clusterSortFields.K8SVERSION,
+                sortable: false
             },
             // TODO: enable this column after data is available from the API
             // {
@@ -127,8 +138,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                         selectedRowId={original.id}
                     />
                 ),
-                accessor: 'namespaceCount'
-                // sortField: clusterSortFields.NAMESPACE
+                accessor: 'namespaceCount',
+                sortField: clusterSortFields.NAMESPACE_COUNT
             },
             {
                 Header: `Deployments`,
@@ -145,59 +156,68 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                     />
                 ),
                 id: 'deploymentCount',
-                accessor: 'deploymentCount'
-                // sortField: clusterSortFields.DEPLOYMENTS
+                accessor: 'deploymentCount',
+                sortField: clusterSortFields.DEPLOYMENT_COUNT
             },
-            {
-                Header: `Policies`,
-                entityType: entityTypes.POLICY,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-                className: `w-1/10 ${defaultColumnClassName}`,
-                // eslint-disable-next-line
-                Cell: ({ original, pdf }) => (
-                    <TableCountLink
-                        entityType={entityTypes.POLICY}
-                        count={original.policyCount}
-                        textOnly={pdf}
-                        selectedRowId={original.id}
-                    />
-                ),
-                id: 'policyCount',
-                accessor: 'policyCount'
-                // sortField: clusterSortFields.POLICIES
-            },
+            // @TODD, restore the Policy Counts column once its performance is improved,
+            //   or remove the comment if we determine that it cannot be made performant
+            //   (see https://stack-rox.atlassian.net/browse/ROX-4080)
+            // {
+            //     Header: `Policies`,
+            //     entityType: entityTypes.POLICY,
+            //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
+            //     className: `w-1/10 ${defaultColumnClassName}`,
+            //     // eslint-disable-next-line
+            //     Cell: ({ original, pdf }) => (
+            //         <TableCountLink
+            //             entityType={entityTypes.POLICY}
+            //             count={original.policyCount}
+            //             textOnly={pdf}
+            //             selectedRowId={original.id}
+            //         />
+            //     ),
+            //     id: 'policyCount',
+            //     accessor: 'policyCount',
+            //     sortField: clusterSortFields.POLICY_COUNT,
+            //     sortable: false
+            // },
             {
                 Header: `Policy Status`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 // eslint-disable-next-line
-                Cell: ({ original }) => {
+                Cell: ({ original, pdf }) => {
                     const { policyStatus } = original;
-                    const policyLabel = <StatusChip status={policyStatus && policyStatus.status} />;
+                    const policyLabel = (
+                        <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
+                    );
 
                     return policyLabel;
                 },
                 id: 'policyStatus',
-                accessor: 'policyStatus.status'
-                // sortField: clusterSortFields.POLICY_STATUS
+                accessor: 'policyStatus.status',
+                sortField: clusterSortFields.POLICY_STATUS,
+                sortable: false
             },
             {
                 Header: `Latest Violation`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
                 Cell: ({ original, pdf }) => {
                     const { latestViolation } = original;
                     return <DateTimeField date={latestViolation} asString={pdf} />;
                 },
-                accessor: 'latestViolation'
-                // sortField: clusterSortFields.LATEST_VIOLATION
+                accessor: 'latestViolation',
+                sortField: clusterSortFields.LATEST_VIOLATION,
+                sortable: false
             },
             {
                 Header: `Risk Priority`,
-                headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+                headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
                 className: `w-1/10 ${defaultColumnClassName}`,
-                accessor: 'priority'
-                // sortField: clusterSortFields.PRIORITY
+                accessor: 'priority',
+                sortField: clusterSortFields.PRIORITY,
+                sortable: false
             }
         ];
         return removeEntityContextColumns(tableColumns, workflowState);

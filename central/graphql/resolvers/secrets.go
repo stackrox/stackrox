@@ -41,7 +41,7 @@ func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) 
 }
 
 // Secrets gets a list of all secrets
-func (resolver *Resolver) Secrets(ctx context.Context, args paginatedQuery) ([]*secretResolver, error) {
+func (resolver *Resolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*secretResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Secrets")
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (resolver *Resolver) Secrets(ctx context.Context, args paginatedQuery) ([]*
 }
 
 // SecretCount gets count of all secrets
-func (resolver *Resolver) SecretCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) SecretCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SecretCount")
 	if err := readSecrets(ctx); err != nil {
 		return 0, err
@@ -83,7 +83,7 @@ func (resolver *Resolver) SecretCount(ctx context.Context, args rawQuery) (int32
 	return int32(len(results)), nil
 }
 
-func (resolver *secretResolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
+func (resolver *secretResolver) Deployments(ctx context.Context, args RawQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Secrets, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 		return 0, err
 	}
 
-	q, err := resolver.getDeploymentQuery(rawQuery{})
+	q, err := resolver.getDeploymentQuery(RawQuery{})
 	if err != nil {
 		return 0, err
 	}
@@ -114,7 +114,7 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 	return int32(len(results)), err
 }
 
-func (resolver *secretResolver) getDeploymentQuery(args rawQuery) (*v1.Query, error) {
+func (resolver *secretResolver) getDeploymentQuery(args RawQuery) (*v1.Query, error) {
 	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

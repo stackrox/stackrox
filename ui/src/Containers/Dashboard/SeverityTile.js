@@ -11,7 +11,7 @@ const SeverityTile = ({ severity, count, index, color }) => {
         };
         return (
             <div>
-                <div className="absolute pin-l pin-t m-2">
+                <div className="absolute left-0 top-0 m-2">
                     <div className="h-3 w-3 border-2 border-base-100" style={backgroundStyle} />
                 </div>
                 <div className="text-6xl font-sans text-primary-800 mb-2">{count}</div>

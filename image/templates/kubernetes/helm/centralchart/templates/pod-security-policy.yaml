@@ -2,6 +2,8 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: stackrox-central-psp
+  labels:
+    app.kubernetes.io/name: stackrox
 rules:
   - apiGroups:
       - policy
@@ -17,6 +19,8 @@ kind: RoleBinding
 metadata:
   name: stackrox-central-psp
   namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -30,6 +34,8 @@ apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
   name: stackrox-central
+  labels:
+    app.kubernetes.io/name: stackrox
 spec:
   privileged: false
   allowPrivilegeEscalation: false

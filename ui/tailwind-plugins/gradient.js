@@ -7,8 +7,8 @@ How to use in markup
 ----------------------------------------------------------------------------
 */
 
-module.exports = function({ variants }) {
-    return function({ addUtilities }) {
+module.exports = function getGradientClasses({ variants }) {
+    return function f({ addUtilities }) {
         const utilities = {
             [`.bg-gradient-horizontal`]: {
                 backgroundImage: `linear-gradient(to right, var(--start, purple), var(--end, blue))`

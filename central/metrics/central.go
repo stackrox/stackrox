@@ -105,6 +105,14 @@ var (
 		Name:      "total_db_cache_operations_counter",
 		Help:      "A counter of the total number of DB cache operations performed on Central",
 	}, []string{"Operation", "Type"})
+
+	datastoreFunctionDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "datastore_function_duration",
+		Help:      "Histogram of how long a datastore function takes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Type", "Function"})
 )
 
 func startTimeToMS(t time.Time) float64 {
@@ -169,4 +177,9 @@ func ObserveRiskProcessingDuration(startTime time.Time, riskObjectType string) {
 // IncrementDBCacheCounter is a counter for how many times a DB cache hits and misses
 func IncrementDBCacheCounter(op string, t string) {
 	totalCacheOperationsCounter.With(prometheus.Labels{"Operation": op, "Type": t}).Inc()
+}
+
+// SetDatastoreFunctionDuration is a histogram for datastore function timing
+func SetDatastoreFunctionDuration(start time.Time, resourceType, function string) {
+	datastoreFunctionDurationHistogramVec.With(prometheus.Labels{"Type": resourceType, "Function": function}).Observe(startTimeToMS(start))
 }

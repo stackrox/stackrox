@@ -8,14 +8,14 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(): {
+		allow.Anonymous(): {
 			"/v1.FeatureFlagService/GetFeatureFlags",
 		},
 	})

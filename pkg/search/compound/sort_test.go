@@ -190,8 +190,8 @@ func (suite *SortingTestSuite) TestHandlesAndWithoutMatch() {
 	q := search.EmptyQuery()
 	q.Pagination = pagination
 	expectedSearchSpec := &searchRequestSpec{
-		and: []*searchRequestSpec{
-			{
+		leftJoinWithRightOrder: &joinRequestSpec{
+			left: &searchRequestSpec{
 				and: []*searchRequestSpec{
 					{
 						base: &baseRequestSpec{
@@ -207,7 +207,7 @@ func (suite *SortingTestSuite) TestHandlesAndWithoutMatch() {
 					},
 				},
 			},
-			{
+			right: &searchRequestSpec{
 				base: &baseRequestSpec{
 					Spec:  &searcherSpecs[1],
 					Query: q,

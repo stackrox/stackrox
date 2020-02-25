@@ -48,6 +48,9 @@ var (
 			"Errorf": "New",
 			"Wrapf":  "Wrap",
 		},
+		"google.golang.org/grpc/status": {
+			"Errorf": "Error",
+		},
 	}
 
 	generatedCodeRegex = regexp.MustCompile(`// Code generated .* DO NOT EDIT\.$`)
@@ -75,7 +78,7 @@ func isNeedlessVarArgsCall(fun *types.Func, call *ast.CallExpr) (bool, string, s
 		}
 	}
 	replacement, match := methodsToReplacement[name]
-	return match, name, replacement
+	return match, fmt.Sprintf("\"%s\".%s", fun.Pkg().Path(), name), replacement
 }
 
 func isGeneratedFile(fset *token.FileSet, f *ast.File) bool {

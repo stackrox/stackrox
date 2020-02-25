@@ -24,6 +24,8 @@ func executeRec(ctx context.Context, tree *searchRequestSpec) (resultSet, error)
 		return executeBooleanRec(ctx, tree.boolean)
 	} else if tree.base != nil {
 		return executeBase(ctx, tree.base)
+	} else if tree.leftJoinWithRightOrder != nil {
+		return executeLeftJoinWithRightOrderRec(ctx, tree.leftJoinWithRightOrder)
 	}
 	return resultSet{}, errors.New("search request tree empty")
 }
@@ -70,6 +72,23 @@ func executeBooleanRec(ctx context.Context, boolean *booleanRequestSpec) (result
 		return resultSet{}, err
 	}
 	return musts.subtract(mustNots), nil
+}
+
+func executeLeftJoinWithRightOrderRec(ctx context.Context, parts *joinRequestSpec) (resultSet, error) {
+	left, err := executeRec(ctx, parts.left)
+	if err != nil {
+		return resultSet{}, err
+	}
+
+	right, err := executeRec(ctx, parts.right)
+	if err != nil {
+		return resultSet{}, err
+	}
+	if len(right.results) == 0 {
+		return left, nil
+	}
+
+	return left.leftJoinWithRightOrder(right), nil
 }
 
 func executeBase(ctx context.Context, base *baseRequestSpec) (resultSet, error) {

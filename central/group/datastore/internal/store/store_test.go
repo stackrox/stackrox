@@ -23,7 +23,7 @@ type GroupStoreTestSuite struct {
 	sto Store
 }
 
-func (s *GroupStoreTestSuite) SetupSuite() {
+func (s *GroupStoreTestSuite) SetupTest() {
 	db, err := bolthelper.NewTemp(s.T().Name() + ".db")
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 
@@ -31,7 +31,7 @@ func (s *GroupStoreTestSuite) SetupSuite() {
 	s.sto = New(db)
 }
 
-func (s *GroupStoreTestSuite) TearDownSuite() {
+func (s *GroupStoreTestSuite) TearDownTest() {
 	if s.db != nil {
 		testutils.TearDownDB(s.db)
 	}
@@ -372,4 +372,144 @@ func (s *GroupStoreTestSuite) TestWalk() {
 	for _, a := range groups {
 		s.NoError(s.sto.Remove(a.GetProps()))
 	}
+}
+
+func (s *GroupStoreTestSuite) TestGetAll() {
+	groups := []*storage.Group{
+		{
+			RoleName: "role1",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+			},
+			RoleName: "role2",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute1",
+			},
+			RoleName: "role3",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute1",
+				Value:          "Value1",
+			},
+			RoleName: "role4",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute2",
+				Value:          "Value1",
+			},
+			RoleName: "role5",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvide2",
+				Key:            "Attribute1",
+				Value:          "Value1",
+			},
+			RoleName: "role6",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvide2",
+				Key:            "Attribute2",
+				Value:          "Value1",
+			},
+			RoleName: "role7",
+		},
+	}
+
+	for _, a := range groups {
+		s.NoError(s.sto.Upsert(a))
+	}
+
+	actualGroups, err := s.sto.GetAll()
+	s.NoError(err)
+	s.ElementsMatch(groups, actualGroups)
+
+	actualGroups, err = s.sto.GetFiltered(nil)
+	s.NoError(err)
+	s.ElementsMatch(groups, actualGroups)
+
+	actualGroups, err = s.sto.GetFiltered(func(*storage.GroupProperties) bool { return true })
+	s.NoError(err)
+	s.ElementsMatch(groups, actualGroups)
+}
+
+func (s *GroupStoreTestSuite) TestGetFiltered() {
+	groups := []*storage.Group{
+		{
+			RoleName: "role1",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+			},
+			RoleName: "role2",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute1",
+			},
+			RoleName: "role3",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute1",
+				Value:          "Value1",
+			},
+			RoleName: "role4",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute2",
+				Value:          "Value1",
+			},
+			RoleName: "role5",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvide2",
+				Key:            "Attribute1",
+				Value:          "Value1",
+			},
+			RoleName: "role6",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvide2",
+				Key:            "Attribute2",
+				Value:          "Value1",
+			},
+			RoleName: "role7",
+		},
+	}
+
+	for _, a := range groups {
+		s.NoError(s.sto.Upsert(a))
+	}
+
+	actualGroups, err := s.sto.GetFiltered(func(*storage.GroupProperties) bool { return false })
+	s.NoError(err)
+	s.Empty(actualGroups)
+
+	// Test with a selective filter
+	actualGroups, err = s.sto.GetFiltered(func(props *storage.GroupProperties) bool {
+		return props.GetAuthProviderId() == "authProvider1" || props.GetKey() == "Attribute2"
+	})
+	expectedGroups := []*storage.Group{
+		groups[1], groups[2], groups[3], groups[4], groups[6],
+	}
+	s.NoError(err)
+	s.ElementsMatch(expectedGroups, actualGroups)
 }

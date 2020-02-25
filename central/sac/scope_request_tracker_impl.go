@@ -84,11 +84,11 @@ func (srt *ScopeRequestTrackerImpl) PerformChecks(ctx context.Context) error {
 			clusterID := accessScope.Attributes.Cluster.ID
 			if clusterID != "" {
 				// This won't loop infinitely because the clusterContext never invokes the auth plugin client
-				cluster, _, err := srt.clusterDataStore.GetCluster(clusterContext, clusterID)
+				clusterName, _, err := srt.clusterDataStore.GetClusterName(clusterContext, clusterID)
 				if err != nil {
 					return err
 				}
-				accessScope.Attributes.Cluster.Name = cluster.GetName()
+				accessScope.Attributes.Cluster.Name = clusterName
 			}
 			accessScopeList = append(accessScopeList, accessScope)
 			requestMap[accessScope] = append(requestMap[accessScope], node)

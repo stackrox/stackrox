@@ -1,6 +1,7 @@
 package badgerhelper
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -36,7 +38,7 @@ func GetDefaultOptions(path string) badger.Options {
 }
 
 // New returns an instance of the persistent BadgerDB store
-func New(path string, managed bool) (*badger.DB, error) {
+func New(path string) (*badger.DB, error) {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, 0700)
 		if err != nil {
@@ -49,30 +51,36 @@ func New(path string, managed bool) (*badger.DB, error) {
 	}
 
 	options := GetDefaultOptions(path).WithLogger(nullLogger{})
-	if managed {
-		return badger.OpenManaged(options)
-	}
 	return badger.Open(options)
 }
 
 // NewWithDefaults returns an instance of the persistent BadgerDB store instantiated at the default filesystem location.
-func NewWithDefaults(managed bool) (*badger.DB, error) {
-	return New(DefaultBadgerPath, managed)
+func NewWithDefaults() (*badger.DB, error) {
+	return New(DefaultBadgerPath)
 }
 
 // NewTemp creates a new DB, but places it in the host temporary directory.
-func NewTemp(name string, managed bool) (*badger.DB, string, error) {
+func NewTemp(name string) (*badger.DB, string, error) {
 	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("badgerdb-%s", strings.Replace(name, "/", "_", -1)))
 	if err != nil {
 		return nil, "", err
 	}
-	db, err := New(tmpDir, managed)
+	db, err := New(tmpDir)
 	return db, tmpDir, err
 }
 
 // BucketKeyCount returns the number of objects in a "Bucket"
 func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) (int, error) {
 	return Count(txn, GetBucketKey(keyPrefix, nil))
+}
+
+// GetPrefix returns the first prefix found on the input key, and it's remainder afterwards.
+func GetPrefix(key []byte) (prefix []byte) {
+	idx := bytes.Index(key, separator)
+	if idx == -1 {
+		return nil
+	}
+	return sliceutils.ByteClone(key[:idx])
 }
 
 // Count gets the number of keys with a specific prefix
@@ -83,6 +91,23 @@ func Count(txn *badger.Txn, keyPrefix []byte) (int, error) {
 		return nil
 	})
 	return count, err
+}
+
+// CountWithBytes gets the number of keys with a specific prefix and the size in bytes of the specified prefix
+// Count gets the number of keys with a specific prefix
+func CountWithBytes(txn *badger.Txn, keyPrefix []byte) (int, int, error) {
+	var count int
+	var size int64
+	opts := ForEachOptions{
+		IteratorOptions: DefaultIteratorOptions(),
+	}
+	opts.IteratorOptions.PrefetchValues = false
+	err := ForEachItemWithPrefix(txn, keyPrefix, opts, func(k []byte, item *badger.Item) error {
+		count++
+		size += item.KeySize() + item.ValueSize()
+		return nil
+	})
+	return count, int(size), err
 }
 
 // GetBucketKey returns a key which combines the prefix and the id with a separator

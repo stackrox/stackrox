@@ -12,9 +12,6 @@ import (
 )
 
 func getBundleType(params *apiparams.Scanner) string {
-	if params.ScannerV2Config.Enable {
-		return "scanner-v2"
-	}
 	return "scanner"
 }
 

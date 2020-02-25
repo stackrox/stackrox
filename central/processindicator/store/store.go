@@ -13,13 +13,11 @@ type Store interface {
 	GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error)
 	GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error)
 
-	AddProcessIndicator(*storage.ProcessIndicator) (string, error)
 	AddProcessIndicators(...*storage.ProcessIndicator) ([]string, error)
-	RemoveProcessIndicator(id string) error
 	RemoveProcessIndicators(id []string) error
 
-	GetTxnCount() (txNum uint64, err error)
-	IncTxnCount() error
+	AckKeysIndexed(keys ...string) error
+	GetKeysToIndex() ([]string, error)
 
 	WalkAll(func(pi *storage.ProcessIndicator) error) error
 }

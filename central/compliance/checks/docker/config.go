@@ -10,8 +10,8 @@ func init() {
 		common.SystemdOwnershipCheck("CIS_Docker_v1_2_0:3_1", "docker.service", "root", "root"),
 		common.SystemdPermissionCheck("CIS_Docker_v1_2_0:3_2", "docker.service", 0644),
 
-		common.SystemdOwnershipCheck("CIS_Docker_v1_2_0:3_3", "docker.socket", "root", "root"),
-		common.SystemdPermissionCheck("CIS_Docker_v1_2_0:3_4", "docker.socket", 0644),
+		common.OptionalSystemdOwnershipCheck("CIS_Docker_v1_2_0:3_3", "docker.socket", "root", "root"),
+		common.OptionalSystemdPermissionCheck("CIS_Docker_v1_2_0:3_4", "docker.socket", 0644),
 
 		common.OwnershipCheck("CIS_Docker_v1_2_0:3_5", "/etc/docker", "root", "root"),
 		common.PermissionCheck("CIS_Docker_v1_2_0:3_6", "/etc/docker", 0755),
@@ -34,11 +34,11 @@ func init() {
 		common.OptionalOwnershipCheck("CIS_Docker_v1_2_0:3_17", "/etc/docker/daemon.json", "root", "root"),
 		common.OptionalPermissionCheck("CIS_Docker_v1_2_0:3_18", "/etc/docker/daemon.json", 0644),
 
-		common.OwnershipCheck("CIS_Docker_v1_2_0:3_19", "/etc/default/docker", "root", "root"),
+		common.OptionalOwnershipCheck("CIS_Docker_v1_2_0:3_19", "/etc/default/docker", "root", "root"),
 
-		common.OwnershipCheck("CIS_Docker_v1_2_0:3_20", "/etc/sysconfig/docker", "root", "root"),
-		common.PermissionCheck("CIS_Docker_v1_2_0:3_21", "/etc/sysconfig/docker", 0644),
+		common.OptionalOwnershipCheck("CIS_Docker_v1_2_0:3_20", "/etc/sysconfig/docker", "root", "root"),
+		common.OptionalPermissionCheck("CIS_Docker_v1_2_0:3_21", "/etc/sysconfig/docker", 0644),
 
-		common.PermissionCheck("CIS_Docker_v1_2_0:3_22", "/etc/default/docker", 0644),
+		common.OptionalPermissionCheck("CIS_Docker_v1_2_0:3_22", "/etc/default/docker", 0644),
 	)
 }

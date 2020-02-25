@@ -25,7 +25,8 @@ var (
 
 const (
 	scannerDefsSubZipName = "scanner-defs.zip"
-	k8sIstioCveZipName    = "k8s-istio.zip"
+	// K8sIstioCveZipName represent the zip bundle for k8s/istio cves
+	K8sIstioCveZipName = "k8s-istio.zip"
 )
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +58,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 
 func updateK8sIstioCVEs(zipPath string) {
 	mgr := fetcher.SingletonManager()
-	mgr.Update(zipPath)
+	mgr.Update(zipPath, false)
 }
 
 func copyReqBodyToFile(filePath string, r *http.Request) error {
@@ -115,7 +116,7 @@ func handleZipContentsFromOfflineDump(zipPath string) error {
 			}
 			scannerDefsFileFound = true
 			continue
-		} else if zipF.Name == k8sIstioCveZipName {
+		} else if zipF.Name == K8sIstioCveZipName {
 			updateK8sIstioCVEs(zipPath)
 		}
 	}

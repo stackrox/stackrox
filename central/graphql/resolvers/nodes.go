@@ -67,7 +67,7 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 }
 
 // Nodes returns resolvers for a matching nodes, or nil if no node is found in any cluster
-func (resolver *Resolver) Nodes(ctx context.Context, args paginatedQuery) ([]*nodeResolver, error) {
+func (resolver *Resolver) Nodes(ctx context.Context, args PaginatedQuery) ([]*nodeResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Nodes")
 	if err := readNodes(ctx); err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (resolver *Resolver) Nodes(ctx context.Context, args paginatedQuery) ([]*no
 }
 
 // NodeCount returns count of nodes across clusters
-func (resolver *Resolver) NodeCount(ctx context.Context, args rawQuery) (int32, error) {
+func (resolver *Resolver) NodeCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "NodeCount")
 	if err := readNodes(ctx); err != nil {
 		return 0, err
@@ -119,7 +119,7 @@ func (resolver *nodeResolver) Cluster(ctx context.Context) (*clusterResolver, er
 	return resolver.root.wrapCluster(resolver.root.ClusterDataStore.GetCluster(ctx, resolver.data.GetClusterId()))
 }
 
-func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQuery) ([]*controlResultResolver, error) {
+func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args RawQuery) ([]*controlResultResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "ComplianceResults")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -137,7 +137,7 @@ func (resolver *nodeResolver) ComplianceResults(ctx context.Context, args rawQue
 	return *output, nil
 }
 
-func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context, args rawQuery) (*complianceControlCountResolver, error) {
+func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context, args RawQuery) (*complianceControlCountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "NodeComplianceControlCount")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (resolver *nodeResolver) NodeComplianceControlCount(ctx context.Context, ar
 	return getComplianceControlCountFromAggregationResults(results), nil
 }
 
-func (resolver *nodeResolver) ControlStatus(ctx context.Context, args rawQuery) (string, error) {
+func (resolver *nodeResolver) ControlStatus(ctx context.Context, args RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "ControlStatus")
 	if err := readCompliance(ctx); err != nil {
 		return "Fail", err
@@ -168,7 +168,7 @@ func (resolver *nodeResolver) ControlStatus(ctx context.Context, args rawQuery) 
 	return getControlStatusFromAggregationResult(r[0]), nil
 }
 
-func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args rawQuery) ([]*v1.ComplianceAggregation_Result, error) {
+func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult(ctx context.Context, scope []v1.ComplianceAggregation_Scope, args RawQuery) ([]*v1.ComplianceAggregation_Result, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (resolver *nodeResolver) getNodeLastSuccessfulComplianceRunAggregatedResult
 	return r, nil
 }
 
-func (resolver *nodeResolver) FailingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+func (resolver *nodeResolver) FailingControls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "FailingControls")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -212,7 +212,7 @@ func (resolver *nodeResolver) FailingControls(ctx context.Context, args rawQuery
 	return resolvers, nil
 }
 
-func (resolver *nodeResolver) PassingControls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+func (resolver *nodeResolver) PassingControls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "PassingControls")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
@@ -229,7 +229,7 @@ func (resolver *nodeResolver) PassingControls(ctx context.Context, args rawQuery
 	return resolvers, nil
 }
 
-func (resolver *nodeResolver) Controls(ctx context.Context, args rawQuery) ([]*complianceControlResolver, error) {
+func (resolver *nodeResolver) Controls(ctx context.Context, args RawQuery) ([]*complianceControlResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Nodes, "Controls")
 	if err := readCompliance(ctx); err != nil {
 		return nil, err

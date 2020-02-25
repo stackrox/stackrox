@@ -127,14 +127,14 @@ func (s *pipelineImpl) validateInput(np *storage.NetworkPolicy) error {
 func (s *pipelineImpl) enrichCluster(ctx context.Context, np *storage.NetworkPolicy) error {
 	np.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ctx, np.ClusterId)
+	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, np.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", np.ClusterId)
 	default:
-		np.ClusterName = cluster.GetName()
+		np.ClusterName = clusterName
 	}
 	return nil
 }

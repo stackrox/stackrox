@@ -44,6 +44,7 @@ const PoliciesTile = ({ match, location }) => {
                         url={policiesURL}
                         loading={loading}
                         position="first"
+                        short
                     />
                 );
             }}

@@ -2,6 +2,7 @@ import React from 'react';
 import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
 
+import { useTheme } from 'Containers/ThemeProvider';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
 import LabelChip from 'Components/LabelChip';
@@ -9,7 +10,6 @@ import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
-import { truncate } from 'utils/textUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
 const emptyCve = {
@@ -22,7 +22,7 @@ const emptyCve = {
     imageCount: 0,
     isFixable: false,
     lastModified: '',
-    lastScanned: '',
+    createdAt: '',
     link: '',
     publishedOn: '',
     scoreVersion: '',
@@ -31,6 +31,7 @@ const emptyCve = {
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
+    const { isDarkMode } = useTheme();
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCve, ...data };
 
@@ -42,7 +43,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         isFixable,
         summary,
         link,
-        lastScanned,
+        createdAt,
         publishedOn,
         lastModified,
         scoreVersion
@@ -82,8 +83,8 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
 
     const scanningDetails = [
         {
-            key: 'Scanned',
-            value: lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A'
+            key: 'Discovered Time',
+            value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
         },
         {
             key: 'Published',
@@ -102,8 +103,6 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const severityStyle = getSeverityChipType(cvss);
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
-    const truncatedSummary = truncate(summary);
-
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
@@ -114,7 +113,11 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                             headerComponents={linkToMoreInfo}
                             className="bg-base-100 min-h-48 lg:s-2 pdf-page pdf-stretch"
                         >
-                            <div className="flex flex-col w-full bg-counts-widget">
+                            <div
+                                className={`flex flex-col w-full ${
+                                    isDarkMode ? '' : 'bg-counts-widget'
+                                }`}
+                            >
                                 <div className="bg-tertiary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between">
                                     <div className="w-full flex-grow p-4">
                                         <span className="text-tertiary-800">{cve}</span>
@@ -146,7 +149,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-4 pb-12 leading-loose">{truncatedSummary}</div>
+                                <div className="p-4 pb-12 leading-loose">{summary}</div>
                             </div>
                         </Widget>
                         <Metadata

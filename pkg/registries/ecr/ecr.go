@@ -134,19 +134,13 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 
 	endpoint := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion())
 
-	var err error
-	var sess *session.Session
-	if conf.GetUseIam() {
-		sess, err = session.NewSession(&aws.Config{
-			Region: aws.String(conf.GetRegion()),
-		})
-	} else {
-		creds := credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
-		sess, err = session.NewSession(&aws.Config{
-			Region:      aws.String(conf.GetRegion()),
-			Credentials: creds,
-		})
+	awsConfig := &aws.Config{
+		Region: aws.String(conf.GetRegion()),
 	}
+	if !conf.GetUseIam() {
+		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
+	}
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,7 @@
 {
   "id": "d7a275e1-1bba-47e7-92a1-42340c759883",
   "name": "Ubuntu Package Manager Execution",
-  "description": "Detects execution of binaries which are components of the Debian/Ubuntu package management system.",
+  "description": "Alert when Debian/Ubuntu package manager programs are executed at runtime",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
     "RUNTIME"
@@ -14,6 +14,6 @@
       "name": "apt-get|apt|dpkg"
     }
   },
-  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
-  "remediation": "Run `apt-get remove -y --allow-remove-essential apt` in the image build for production containers."
+  "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Run `apt-get remove -y --allow-remove-essential apt` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable."
 }

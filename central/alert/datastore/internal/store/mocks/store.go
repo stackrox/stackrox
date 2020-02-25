@@ -187,31 +187,35 @@ func (mr *MockStoreMockRecorder) DeleteAlerts(ids ...interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAlerts", reflect.TypeOf((*MockStore)(nil).DeleteAlerts), ids...)
 }
 
-// GetTxnCount mocks base method
-func (m *MockStore) GetTxnCount() (uint64, error) {
+// AckKeysIndexed mocks base method
+func (m *MockStore) AckKeysIndexed(keys ...string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxnCount")
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTxnCount indicates an expected call of GetTxnCount
-func (mr *MockStoreMockRecorder) GetTxnCount() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxnCount", reflect.TypeOf((*MockStore)(nil).GetTxnCount))
-}
-
-// IncTxnCount mocks base method
-func (m *MockStore) IncTxnCount() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IncTxnCount")
+	varargs := []interface{}{}
+	for _, a := range keys {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AckKeysIndexed", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// IncTxnCount indicates an expected call of IncTxnCount
-func (mr *MockStoreMockRecorder) IncTxnCount() *gomock.Call {
+// AckKeysIndexed indicates an expected call of AckKeysIndexed
+func (mr *MockStoreMockRecorder) AckKeysIndexed(keys ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncTxnCount", reflect.TypeOf((*MockStore)(nil).IncTxnCount))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckKeysIndexed", reflect.TypeOf((*MockStore)(nil).AckKeysIndexed), keys...)
+}
+
+// GetKeysToIndex mocks base method
+func (m *MockStore) GetKeysToIndex() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeysToIndex")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeysToIndex indicates an expected call of GetKeysToIndex
+func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
 }

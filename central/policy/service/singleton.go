@@ -10,7 +10,8 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -27,12 +28,13 @@ func initialize() {
 		notifierDataStore.Singleton(),
 		reprocessor.Singleton(),
 		buildTimeDetection.SingletonPolicySet(),
-		matcher.DeploymentBuilderSingleton(),
-		matcher.ImageBuilderSingleton(),
+		searchbasedpolicies.DeploymentBuilderSingleton(),
+		searchbasedpolicies.ImageBuilderSingleton(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
 		enrichment.ImageMetadataCacheSingleton(),
-		enrichment.ImageScanCacheSingleton())
+		enrichment.ImageScanCacheSingleton(),
+		connection.ManagerSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

@@ -5,6 +5,8 @@ import cluster from 'images/side-panel-icons/cluster.svg';
 import deployment from 'images/side-panel-icons/deployment.svg';
 import group from 'images/side-panel-icons/group.svg';
 import image from 'images/side-panel-icons/image.svg';
+import cve from 'images/side-panel-icons/cve.svg';
+import component from 'images/side-panel-icons/image-layer.svg';
 import namespace from 'images/side-panel-icons/namespace.svg';
 import node from 'images/side-panel-icons/node.svg';
 import policy from 'images/side-panel-icons/policy.svg';
@@ -18,6 +20,8 @@ const imageMap = {
     [entityTypes.DEPLOYMENT]: deployment,
     [entityTypes.SUBJECT]: group,
     [entityTypes.IMAGE]: image,
+    [entityTypes.COMPONENT]: component,
+    [entityTypes.CVE]: cve,
     [entityTypes.NAMESPACE]: namespace,
     [entityTypes.NODE]: node,
     [entityTypes.POLICY]: policy,
@@ -27,9 +31,14 @@ const imageMap = {
     [entityTypes.CONTROL]: control
 };
 
-const EntityIcon = ({ className, entityType }) => {
-    return <img className={className} src={imageMap[entityType]} alt={`${entityType} entity`} />;
-};
+const EntityIcon = ({ className, entityType }) => (
+    <img
+        className={className}
+        src={imageMap[entityType]}
+        alt={`${entityType} entity`}
+        data-testid="entity-icon"
+    />
+);
 
 EntityIcon.propTypes = {
     className: PropTypes.string,

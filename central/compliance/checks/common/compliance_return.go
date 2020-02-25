@@ -38,9 +38,9 @@ func CommandLineFileOwnership(name string, processName, flag, user, group string
 			}
 			arg := GetArgForFlag(process.Args, flag)
 			if arg == nil {
-				framework.FailNowf(ctx, "Could not find flag %q in process %q", flag, processName)
+				framework.PassNowf(ctx, "Could not find flag %q in process %q and thus file ownership does not need to be checked", flag, processName)
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "Could not find file %q for flag %q", msgfmt.FormatStrings(arg.GetValues()...), flag)
+				framework.FailNowf(ctx, "File %q specified by flag %q could not be found. Please check manually.", msgfmt.FormatStrings(arg.GetValues()...), flag)
 			}
 			CheckRecursiveOwnership(ctx, arg.GetFile(), user, group)
 		}))
@@ -61,9 +61,9 @@ func CommandLineFilePermissions(name string, processName, flag string, perms uin
 			}
 			arg := GetArgForFlag(process.Args, flag)
 			if arg == nil {
-				framework.PassNowf(ctx, "Flag %q was not found in process %q", flag, processName)
+				framework.PassNowf(ctx, "Flag %q was not found in process %q and thus file permissions do not need to be checked", flag, processName)
 			} else if arg.GetFile() == nil {
-				framework.FailNowf(ctx, "File %q has not been specified for flag %q", msgfmt.FormatStrings(arg.GetValues()...), flag)
+				framework.FailNowf(ctx, "File %q specified by flag %q could not be found. Please check manually.", msgfmt.FormatStrings(arg.GetValues()...), flag)
 			}
 			CheckRecursivePermissions(ctx, arg.GetFile(), perms)
 		}))

@@ -127,6 +127,15 @@ class ComplianceTest extends BaseSpecification {
                         ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
                                  "visualization for active network connections is possible."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
+                new Control(
+                        "HIPAA_164:310_d",
+                        ["Runtime support is enabled (or collector service is running) for cluster remote. Network " +
+                                 "visualization for active network connections is possible."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
+                new Control(
+                        "CIS_Docker_v1_2_0:2_6",
+                        ["Docker daemon is not exposed over TCP"],
+                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE),
         ]
 
         expect:
@@ -692,13 +701,13 @@ class ComplianceTest extends BaseSpecification {
                 new Control(
                         "NIST_800_190:4_1_1",
                         ["Build time policies that disallows images with a critical CVSS score is enabled and enforced",
-                         "At least one build time policy is enabled and enforced",
+                         "At least one policy in lifecycle \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "NIST_800_190:4_1_2",
                         ["Policies are in place to detect and enforce \"Privileges\" category issues.",
-                         "At least one build time policy is enabled and enforced",
+                         "At least one policy in lifecycle \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(

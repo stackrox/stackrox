@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Tooltip } from 'react-tippy';
 import { throttle } from 'lodash';
 import 'rc-tooltip/assets/bootstrap.css';
+
 import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-12 border-b border-base-400';
@@ -19,6 +20,7 @@ export const TooltipDiv = ({ header, isUpperCase, id }) => {
             {header}
         </div>
     );
+
     const tooltipFn = () => {
         setAllowTooltip(false);
         if (
@@ -29,15 +31,12 @@ export const TooltipDiv = ({ header, isUpperCase, id }) => {
             setAllowTooltip(true);
         }
     };
+    const throttledTooltipFn = () => throttle(tooltipFn, 100);
 
     function setWindowResize() {
-        window.addEventListener('resize', throttle(tooltipFn, 100));
+        window.addEventListener('resize', throttledTooltipFn);
 
-        const cleanup = () => {
-            window.removeEventListener('resize');
-        };
-
-        return cleanup;
+        return window.removeEventListener('resize', throttledTooltipFn);
     }
 
     if (allowTooltip) {

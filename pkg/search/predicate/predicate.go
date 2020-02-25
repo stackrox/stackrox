@@ -1,28 +1,56 @@
 package predicate
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
+// MergeResults merges predicate result into a single result
+// If the results slice passed is of length 0, then it will return a nil result
+func MergeResults(results ...*search.Result) *search.Result {
+	res := search.NewResult()
+	for _, r := range results {
+		if r == nil {
+			continue
+		}
+		for k, v := range r.Matches {
+			res.Matches[k] = append(res.Matches[k], v...)
+		}
+	}
+	return res
+}
+
 // Predicate represents a method that accesses data in some interface.
-type Predicate func(instance interface{}) bool
+type Predicate func(instance interface{}) (*search.Result, bool)
+
+// Matches is a utility function to just return a bool
+func (p Predicate) Matches(instance interface{}) bool {
+	_, matches := p(instance)
+	return matches
+}
 
 // Factory object stores the specs for each when walking the query.
 type Factory struct {
 	searchFields FieldMap
+	searchPaths  wrappedOptionsMap
 	exampleObj   interface{}
 }
 
 // NewFactory returns a new predicat factory for the type of the given object.
-func NewFactory(obj interface{}) Factory {
+func NewFactory(prefix string, obj interface{}) Factory {
 	return Factory{
 		searchFields: mapSearchTagsToFieldPaths(obj),
-		exampleObj:   obj,
+		searchPaths: wrappedOptionsMap{
+			optionsMap: search.Walk(v1.SearchCategory(-1), prefix, obj),
+			prefix:     fmt.Sprintf("%s.", prefix),
+		},
+		exampleObj: obj,
 	}
 }
 
@@ -36,16 +64,17 @@ func (tb Factory) GeneratePredicate(query *v1.Query) (Predicate, error) {
 	return wrapInternal(ip), nil
 }
 
-type internalPredicate func(reflect.Value) bool
+type internalPredicate func(reflect.Value) (*search.Result, bool)
 
 func wrapInternal(ip internalPredicate) Predicate {
-	return func(in interface{}) bool {
-		return ip(reflect.ValueOf(in))
+	return func(in interface{}) (*search.Result, bool) {
+		val := reflect.ValueOf(in)
+		return ip(val)
 	}
 }
 
 func (tb Factory) generatePredicateInternal(query *v1.Query) (internalPredicate, error) {
-	if query.GetQuery() == nil {
+	if query == nil || query.GetQuery() == nil {
 		return alwaysTrue, nil
 	}
 	switch query.GetQuery().(type) {
@@ -99,11 +128,16 @@ func (tb Factory) boolean(q *v1.BooleanQuery) (internalPredicate, error) {
 		return nil, err
 	}
 
-	return func(instance reflect.Value) bool {
-		if !must(instance) || mustNot(instance) {
-			return false
+	return func(instance reflect.Value) (*search.Result, bool) {
+		mustRes, mustMatch := must(instance)
+		if !mustMatch {
+			return nil, false
 		}
-		return true
+		mustNotRes, mustNotMatch := mustNot(instance)
+		if mustNotMatch {
+			return nil, false
+		}
+		return MergeResults(mustRes, mustNotRes), true
 	}, nil
 }
 
@@ -133,9 +167,13 @@ func (tb Factory) matchNone(q *v1.MatchNoneQuery) (internalPredicate, error) {
 func (tb Factory) match(q *v1.MatchFieldQuery) (internalPredicate, error) {
 	fp := tb.searchFields.Get(strings.ToLower(q.GetField()))
 	if fp == nil {
-		return nil, fmt.Errorf("field %s does not exist", q.GetField())
+		return alwaysTrue, nil
 	}
-	return tb.createPredicate(fp, q.GetValue())
+	sp, ok := tb.searchPaths.Get(q.GetField())
+	if !ok {
+		return tb.createPredicate("", fp, q.GetValue())
+	}
+	return tb.createPredicate(sp.GetFieldPath(), fp, q.GetValue())
 }
 
 func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, error) {
@@ -143,10 +181,16 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	var commonPath FieldPath
 	for _, fieldQuery := range q.GetQuery() {
 		path := tb.searchFields.Get(fieldQuery.GetField())
+		if path == nil {
+			return alwaysTrue, nil
+		}
 		if commonPath == nil {
-			commonPath = path
+			commonPath = path[:len(path)-1]
 		} else {
 			for idx, field := range path {
+				if idx > len(commonPath)-1 {
+					break
+				}
 				if commonPath[idx].Name != field.Name {
 					commonPath = commonPath[:idx]
 					break
@@ -155,11 +199,29 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 		}
 	}
 
+	predRootTy := reflect.TypeOf(tb.exampleObj)
+	if len(commonPath) > 0 {
+		predRootTy = commonPath[len(commonPath)-1].Type
+		switch predRootTy.Kind() {
+		case reflect.Array, reflect.Slice:
+			predRootTy = predRootTy.Elem() // root type may be a pointer, but not a slice.
+		}
+	}
+
 	// Produce a predicate for each of the fields. Use the non common path.
 	var preds []internalPredicate
 	for _, fieldQuery := range q.GetQuery() {
 		path := tb.searchFields.Get(fieldQuery.GetField())
-		pred, err := tb.createPredicate(path[len(commonPath):], fieldQuery.GetValue())
+		if path == nil {
+			return alwaysTrue, nil
+		}
+		var fieldPath string
+		searchField, ok := tb.searchPaths.Get(fieldQuery.GetField())
+		if ok {
+			fieldPath = searchField.GetFieldPath()
+		}
+
+		pred, err := tb.createPredicateWithRootType(predRootTy, fieldPath, path[len(commonPath):], fieldQuery.GetValue())
 		if err != nil {
 			return nil, err
 		}
@@ -167,22 +229,33 @@ func (tb Factory) matchLinked(q *v1.MatchLinkedFieldsQuery) (internalPredicate, 
 	}
 
 	// Package all the of predicates as an AND on the common path.
-	linked, err := createLinkedNestedPredicate(commonPath[len(commonPath)-1].Type, preds...)
-	if err != nil {
-		return nil, err
+	var linked internalPredicate
+	if len(commonPath) > 0 {
+		var err error
+		linked, err = createLinkedNestedPredicate(commonPath[len(commonPath)-1].Type, preds...)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		linked = andOf(preds...)
 	}
+
 	return createPathPredicate(reflect.TypeOf(tb.exampleObj), commonPath, linked)
 }
 
-func (tb Factory) createPredicate(path FieldPath, value string) (internalPredicate, error) {
+func (tb Factory) createPredicate(fullPath string, path FieldPath, value string) (internalPredicate, error) {
+	return tb.createPredicateWithRootType(reflect.TypeOf(tb.exampleObj), fullPath, path, value)
+}
+
+func (tb Factory) createPredicateWithRootType(rootTy reflect.Type, fullPath string, path FieldPath, value string) (internalPredicate, error) {
 	// Create the predicate for the search field value.
-	pred, err := createBasePredicate(path[len(path)-1].Type, value)
+	pred, err := createBasePredicate(fullPath, path[len(path)-1].Type, value)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a wrapper predicate which traces the field path down to the value.
-	pred, err = createPathPredicate(reflect.TypeOf(tb.exampleObj), path, pred)
+	pred, err = createPathPredicate(rootTy, path, pred)
 	if err != nil {
 		return nil, err
 	}
@@ -193,33 +266,40 @@ func (tb Factory) createPredicate(path FieldPath, value string) (internalPredica
 /////////////////////////
 
 func orOf(preds ...internalPredicate) internalPredicate {
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
+		var results []*search.Result
 		for _, pred := range preds {
-			if pred(instance) {
-				return true
+			if res, match := pred(instance); match {
+				results = append(results, res)
 			}
 		}
-		return false
+		if len(results) > 0 {
+			return MergeResults(results...), true
+		}
+		return nil, false
 	}
 }
 
 func andOf(preds ...internalPredicate) internalPredicate {
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
+		var results []*search.Result
 		for _, pred := range preds {
-			if !pred(instance) {
-				return false
+			result, ok := pred(instance)
+			if !ok {
+				return nil, false
 			}
+			results = append(results, result)
 		}
-		return true
+		return MergeResults(results...), true
 	}
 }
 
-func alwaysFalse(_ reflect.Value) bool {
-	return false
+func alwaysFalse(_ reflect.Value) (*search.Result, bool) {
+	return nil, false
 }
 
-func alwaysTrue(_ reflect.Value) bool {
-	return true
+func alwaysTrue(_ reflect.Value) (*search.Result, bool) {
+	return &search.Result{}, true
 }
 
 // Recursive predicate manufacturing from the input field path.
@@ -242,16 +322,14 @@ func createPathPredicate(parentType reflect.Type, path FieldPath, pred internalP
 
 func createNestedPredicate(parentType reflect.Type, field reflect.StructField, pred internalPredicate) (internalPredicate, error) {
 	switch parentType.Kind() {
-	case reflect.Array:
-		return createSliceNestedPredicate(parentType, field, pred)
-	case reflect.Slice:
+	case reflect.Array, reflect.Slice:
 		return createSliceNestedPredicate(parentType, field, pred)
 	case reflect.Ptr:
 		return createPtrNestedPredicate(parentType, field, pred)
 	case reflect.Map:
 		return createMapNestedPredicate(parentType, field, pred)
 	case reflect.Struct:
-		return createStructFieldNestedPredicate(field, pred), nil
+		return createStructFieldNestedPredicate(field, parentType, pred), nil
 	case reflect.Interface:
 		return createInterfaceFieldNestedPredicate(field, pred), nil
 	default:
@@ -267,16 +345,22 @@ func createSliceNestedPredicate(parentType reflect.Type, field reflect.StructFie
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() || instance.IsZero() {
-			return false
+			return nil, false
 		}
-		for i := 0; i < instance.Len(); i++ {
-			if nested(instance.Index(i)) {
-				return true
+		var results []*search.Result
+		length := instance.Len()
+		for i := 0; i < length; i++ {
+			idx := instance.Index(i)
+			if res, matches := nested(idx); matches {
+				results = append(results, res)
 			}
 		}
-		return false
+		if len(results) > 0 {
+			return MergeResults(results...), true
+		}
+		return nil, false
 	}, nil
 }
 
@@ -285,14 +369,15 @@ func createPtrNestedPredicate(parentType reflect.Type, field reflect.StructField
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() { // Need to special handle pointers to nil. Good ole typed nils.
-			return false
+			return nil, false
 		}
-		if nested(instance.Elem()) {
-			return true
+		elem := instance.Elem()
+		if res, matches := nested(elem); matches {
+			return res, true
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
@@ -301,49 +386,67 @@ func createMapNestedPredicate(parentType reflect.Type, field reflect.StructField
 	if err != nil {
 		return nil, err
 	}
-	nestedElem, err := createNestedPredicate(parentType.Elem(), field, pred)
+	parentTypeElem := parentType.Elem()
+	nestedElem, err := createNestedPredicate(parentTypeElem, field, pred)
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() || instance.IsZero() {
-			return false
+			return nil, false
 		}
 		for _, key := range instance.MapKeys() {
 			valueAt := instance.MapIndex(key)
-			if nestedKey(key) || nestedElem(valueAt) {
-				return true
+			res, match := nestedKey(key)
+			if match {
+				return res, true
+			}
+			res, match = nestedElem(valueAt)
+			if match {
+				return res, true
 			}
 		}
-		return false
+		return nil, false
 	}, nil
 }
 
-func createStructFieldNestedPredicate(field reflect.StructField, pred internalPredicate) internalPredicate {
-	return func(instance reflect.Value) bool {
-		nextValue := instance.FieldByName(field.Name)
-		if nextValue.IsZero() {
-			return false // Field either does not exist, or wasn't populated.
+func nilCheck(f reflect.Value) bool {
+	switch f.Kind() {
+	case reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return f.IsNil()
+	}
+	return false
+}
+
+func createStructFieldNestedPredicate(field reflect.StructField, structTy reflect.Type, pred internalPredicate) internalPredicate {
+	return func(instance reflect.Value) (*search.Result, bool) {
+		if instance.Type() != structTy {
+			utils.Should(errors.Errorf("unexpected type mismatch for nested struct field: got %s, expected %s", instance.Type(), structTy))
+			return nil, false
+		}
+		nextValue := instance.FieldByIndex(field.Index)
+		if nilCheck(nextValue) {
+			return nil, false
 		}
 		return pred(nextValue)
 	}
 }
 
 func createInterfaceFieldNestedPredicate(field reflect.StructField, pred internalPredicate) internalPredicate {
-	return func(instance reflect.Value) bool {
+	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() || instance.IsZero() {
-			return false
+			return nil, false
 		}
 		concrete := instance.Elem()
 		if concrete.Type().Kind() == reflect.Ptr {
 			concrete = concrete.Elem()
 		}
 		if concrete.Type().Kind() != reflect.Struct {
-			return false
+			return nil, false
 		}
 		nextValue := concrete.FieldByName(field.Name)
 		if nextValue.IsZero() {
-			return false // Field either does not exist, or wasn't populated.
+			return nil, false // Field either does not exist, or wasn't populated.
 		}
 		return pred(nextValue)
 	}

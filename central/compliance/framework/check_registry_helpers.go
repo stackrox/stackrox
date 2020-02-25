@@ -2,6 +2,7 @@ package framework
 
 import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -26,4 +27,12 @@ func MustRegisterChecks(checks ...Check) {
 // it panics.
 func MustRegisterNewCheck(metadata CheckMetadata, checkFn CheckFunc) {
 	MustRegisterChecks(NewCheckFromFunc(metadata, checkFn))
+}
+
+// MustRegisterNewCheckIfFlagEnabled calls MustRegisterNewCheck if the given feature flag is enabled.
+func MustRegisterNewCheckIfFlagEnabled(metadata CheckMetadata, checkFn CheckFunc, flag features.FeatureFlag) {
+	if !flag.Enabled() {
+		return
+	}
+	MustRegisterNewCheck(metadata, checkFn)
 }

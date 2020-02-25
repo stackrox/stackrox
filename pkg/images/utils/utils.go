@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
@@ -166,13 +167,23 @@ func ExtractImageDigest(imageStr string) string {
 	return ""
 }
 
+type nameHolder interface {
+	GetName() *storage.ImageName
+	GetId() string
+}
+
 // GetFullyQualifiedFullName takes in an id and image name and returns the full name including sha256 if it exists
-func GetFullyQualifiedFullName(img *storage.Image) string {
-	if img.GetId() == "" {
-		return img.GetName().GetFullName()
+func GetFullyQualifiedFullName(holder nameHolder) string {
+	if holder.GetId() == "" {
+		return holder.GetName().GetFullName()
 	}
-	if idx := strings.Index(img.GetName().GetFullName(), "@"); idx != -1 {
-		return img.GetName().GetFullName()
+	if idx := strings.Index(holder.GetName().GetFullName(), "@"); idx != -1 {
+		return holder.GetName().GetFullName()
 	}
-	return fmt.Sprintf("%s@%s", img.GetName().GetFullName(), img.GetId())
+	return fmt.Sprintf("%s@%s", holder.GetName().GetFullName(), holder.GetId())
+}
+
+// GetImageID returns the id of the image based on the currently set values
+func GetImageID(img *storage.Image) string {
+	return stringutils.FirstNonEmpty(img.GetId(), img.GetMetadata().GetV2().GetDigest(), img.GetMetadata().GetV1().GetDigest())
 }

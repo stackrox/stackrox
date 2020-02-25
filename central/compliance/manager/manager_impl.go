@@ -335,7 +335,7 @@ func (m *manager) AddSchedule(ctx context.Context, spec *storage.ComplianceRunSc
 		return nil, errors.New("permission denied")
 	}
 
-	if _, ok, err := m.clusterStore.GetCluster(ctx, spec.GetClusterId()); !ok || err != nil {
+	if ok, err := m.clusterStore.Exists(ctx, spec.GetClusterId()); !ok || err != nil {
 		if err == nil {
 			err = errors.New("no such cluster")
 		}
@@ -373,7 +373,7 @@ func (m *manager) UpdateSchedule(ctx context.Context, spec *storage.ComplianceRu
 		return nil, errors.New("permission denied")
 	}
 
-	if _, ok, err := m.clusterStore.GetCluster(ctx, spec.GetClusterId()); !ok || err != nil {
+	if ok, err := m.clusterStore.Exists(ctx, spec.GetClusterId()); !ok || err != nil {
 		if err == nil {
 			err = errors.New("no such cluster")
 		}

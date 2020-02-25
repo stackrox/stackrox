@@ -3,11 +3,17 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/imagecomponent/index"
+	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
+	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
+	imageIndexer "github.com/stackrox/rox/central/image/index"
+	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/store"
+	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/idspace"
 )
 
 // Searcher provides search functionality on existing image components.
@@ -19,10 +25,21 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, indexer index.Indexer) Searcher {
+func New(storage store.Store, graphProvider idspace.GraphProvider,
+	cveIndexer cveIndexer.Indexer,
+	componentCVEEdgeIndexer componentCVEEdgeIndexer.Indexer,
+	componentIndexer componentIndexer.Indexer,
+	imageComponentEdgeIndexer imageComponentEdgeIndexer.Indexer,
+	imageIndexer imageIndexer.Indexer,
+	deploymentIndexer deploymentIndexer.Indexer) Searcher {
 	return &searcherImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: formatSearcher(indexer),
+		storage: storage,
+		searcher: formatSearcher(graphProvider,
+			cveIndexer,
+			componentCVEEdgeIndexer,
+			componentIndexer,
+			imageComponentEdgeIndexer,
+			imageIndexer,
+			deploymentIndexer),
 	}
 }

@@ -24,7 +24,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -62,7 +62,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite), features.ManagedDB.Enabled())
+	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
 	suite.storage = badgerStore.New(db)
 
@@ -87,10 +87,10 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks.MockStore, *indexMocks.MockIndexer, *searchMocks.MockSearcher) {
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
-	mockStorage.EXPECT().GetTxnCount().Return(uint64(1), nil)
+	mockStorage.EXPECT().GetKeysToIndex().Return(nil, nil)
 
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
-	mockIndexer.EXPECT().GetTxnCount().Return(uint64(1))
+	mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
@@ -172,7 +172,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAddWithOldIndicator(
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicator(suite.hasWriteCtx, indicators[0]))
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
 
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators[1], repeatIndicator))
@@ -454,23 +454,14 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsGet() {
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAdd() {
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
-	indexMock.EXPECT().AddProcessIndicator(gomock.Any()).Times(0)
+	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
+	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Times(0)
 
-	err := suite.datastore.AddProcessIndicator(suite.hasNoneCtx, &storage.ProcessIndicator{})
+	err := suite.datastore.AddProcessIndicators(suite.hasNoneCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
 
-	err = suite.datastore.AddProcessIndicator(suite.hasReadCtx, &storage.ProcessIndicator{})
+	err = suite.datastore.AddProcessIndicators(suite.hasReadCtx, &storage.ProcessIndicator{})
 	suite.Error(err, "expected an error trying to write without permissions")
-}
-
-func (suite *IndicatorDataStoreTestSuite) TestAllowsAdd() {
-	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().AddProcessIndicator(gomock.Any()).Return("", nil)
-	indexMock.EXPECT().AddProcessIndicator(gomock.Any()).Return(nil)
-
-	err := suite.datastore.AddProcessIndicator(suite.hasWriteCtx, &storage.ProcessIndicator{})
-	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
@@ -490,13 +481,14 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil, nil)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 
-	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{})
+	storeMock.EXPECT().AckKeysIndexed("id").Return(nil)
+
+	err := suite.datastore.AddProcessIndicators(suite.hasWriteCtx, &storage.ProcessIndicator{Id: "id"})
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByDeployment() {
-	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().RemoveProcessIndicator(gomock.Any()).Times(0)
+	_, indexMock, _ := suite.setupDataStoreWithMocks()
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Times(0)
 
 	err := suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasNoneCtx, "Joseph Rules")
@@ -511,6 +503,8 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByDeployment() {
 	searchMock.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{{ID: "jkldfjk"}}, nil)
 	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
+
+	storeMock.EXPECT().AckKeysIndexed("jkldfjk").Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, "eoiurvbf")
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -543,10 +537,67 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByStaleContainers() {
 	storeMock.EXPECT().RemoveProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().DeleteProcessIndicators(gomock.Any()).Return(nil)
 
+	storeMock.EXPECT().AckKeysIndexed("jkldfjk").Return(nil)
+
 	deploy1 := &storage.Deployment{
 		Id:   uuid.NewV4().String(),
 		Name: "eoiurvbf",
 	}
 	err := suite.datastore.RemoveProcessIndicatorsOfStaleContainers(suite.hasWriteCtx, deploy1)
 	suite.NoError(err, "expected no error trying to write with permissions")
+}
+
+func TestProcessIndicatorReindexSuite(t *testing.T) {
+	suite.Run(t, new(ProcessIndicatorReindexSuite))
+}
+
+type ProcessIndicatorReindexSuite struct {
+	suite.Suite
+
+	storage  *storeMocks.MockStore
+	indexer  *indexMocks.MockIndexer
+	searcher *searchMocks.MockSearcher
+
+	mockCtrl *gomock.Controller
+}
+
+func (suite *ProcessIndicatorReindexSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
+	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
+	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
+}
+
+func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
+	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	pi1 := fixtures.GetProcessIndicator()
+	pi1.Id = "A"
+	pi2 := fixtures.GetProcessIndicator()
+	pi2.Id = "B"
+	pi3 := fixtures.GetProcessIndicator()
+	pi3.Id = "C"
+
+	processes := []*storage.ProcessIndicator{pi1, pi2, pi3}
+
+	suite.storage.EXPECT().GetBatchProcessIndicators([]string{"A", "B", "C"}).Return(processes, nil, nil)
+	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err := New(suite.storage, suite.indexer, suite.searcher, nil)
+	suite.NoError(err)
+
+	// Make listAlerts just A,B so C should be deleted
+	processes = processes[:1]
+	suite.storage.EXPECT().GetKeysToIndex().Return([]string{"A", "B", "C"}, nil)
+	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
+
+	suite.storage.EXPECT().GetBatchProcessIndicators([]string{"A", "B", "C"}).Return(processes, []int{2}, nil)
+	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
+	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
+
+	_, err = New(suite.storage, suite.indexer, suite.searcher, nil)
+	suite.NoError(err)
 }

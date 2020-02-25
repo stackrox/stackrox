@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
+	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
@@ -33,15 +34,22 @@ type DataStore interface {
 	MarkAlertStale(ctx context.Context, id string) error
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
+
+	GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error)
+
+	AddAlertComment(ctx context.Context, request *storage.Comment) (string, error)
+	UpdateAlertComment(ctx context.Context, request *storage.Comment) error
+	RemoveAlertComment(ctx context.Context, request *storage.Comment) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store, commentsStorage commentsStore.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:    storage,
-		indexer:    indexer,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:         storage,
+		commentsStorage: commentsStorage,
+		indexer:         indexer,
+		searcher:        searcher,
+		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err

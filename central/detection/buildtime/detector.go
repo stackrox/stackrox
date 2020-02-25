@@ -1,8 +1,8 @@
 package buildtime
 
 import (
-	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/detection"
 )
 
 // Detector provides an interface for running build time policy violations.

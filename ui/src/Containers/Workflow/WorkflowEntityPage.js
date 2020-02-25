@@ -5,9 +5,11 @@ import { useQuery } from 'react-apollo';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
+import Message from 'Components/Message';
 import { useTheme } from 'Containers/ThemeProvider';
 import queryService from 'modules/queryService';
 
+import { LIST_PAGE_SIZE, defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
 import vulnMgmtDefaultSorts from '../VulnMgmt/VulnMgmt.defaultSorts';
 
@@ -15,7 +17,7 @@ export const entityGridContainerBaseClassName =
     'mx-4 grid-dense grid-auto-fit grid grid-gap-6 mb-4 xxxl:grid-gap-8';
 
 // to separate out column number related classes from the rest of the grid classes for easy column customization (see policyOverview component)
-export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 lg:grid-columns-2 xl:grid-columns-3`;
+export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 lg:grid-columns-2 xxl:grid-columns-3`;
 
 const useCaseDefaultSorts = {
     [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts
@@ -34,7 +36,8 @@ const WorkflowEntityPage = ({
     entityContext,
     search,
     sort,
-    page
+    page,
+    setRefreshTrigger
 }) => {
     const { isDarkMode } = useTheme();
     const enhancedQueryOptions =
@@ -45,7 +48,11 @@ const WorkflowEntityPage = ({
     if (entityListType) {
         // sorting stuff
         const appliedSort = sort || useCaseDefaultSorts[useCase][entityListType];
-        enhancedQueryOptions.variables.pagination = queryService.getPagination(appliedSort, page);
+        enhancedQueryOptions.variables.pagination = queryService.getPagination(
+            appliedSort,
+            page,
+            LIST_PAGE_SIZE
+        );
 
         const { listFieldName, fragmentName, fragment } = queryService.getFragmentInfo(
             entityType,
@@ -68,15 +75,20 @@ const WorkflowEntityPage = ({
         );
     }
 
-    const { loading, data } = useQuery(query, enhancedQueryOptions);
+    const { loading, data, error } = useQuery(query, enhancedQueryOptions);
     if (loading) return <Loader transparent />;
+    if (error)
+        return <Message type="error" message={error.message || 'An unknown error has occurred.'} />;
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
     const { result } = data;
 
     const listData = entityListType ? result[fieldName] : null;
+    const listCountKey = defaultCountKeyMap[entityListType];
+    const totalResults = result[listCountKey];
     return entityListType ? (
         <ListComponent
             entityListType={entityListType}
+            totalResults={totalResults}
             data={listData}
             search={search}
             sort={sort}
@@ -90,7 +102,11 @@ const WorkflowEntityPage = ({
             }`}
         >
             <div className="w-full min-h-full" id="capture-widgets">
-                <OverviewComponent data={result} entityContext={entityContext} />
+                <OverviewComponent
+                    data={result}
+                    entityContext={entityContext}
+                    setRefreshTrigger={setRefreshTrigger}
+                />
             </div>
         </div>
     );
@@ -109,7 +125,8 @@ WorkflowEntityPage.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.string),
-    page: PropTypes.number
+    page: PropTypes.number,
+    setRefreshTrigger: PropTypes.func
 };
 
 WorkflowEntityPage.defaultProps = {
@@ -118,7 +135,8 @@ WorkflowEntityPage.defaultProps = {
     entityContext: {},
     search: null,
     sort: null,
-    page: 1
+    page: 1,
+    setRefreshTrigger: null
 };
 
 export default WorkflowEntityPage;

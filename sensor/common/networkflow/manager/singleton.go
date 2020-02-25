@@ -18,7 +18,7 @@ func newManager() Manager {
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterentities.StoreInstance(),
-		flowUpdates:       make(chan *central.NetworkFlowUpdate),
+		flowUpdates:       make(chan *central.MsgFromSensor),
 	}
 }
 

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+package central;
+
+
+
+message PullTelemetryDataRequest {
+    enum TelemetryDataType {
+        UNKNOWN         = 0;
+        KUBERNETES_INFO = 1;
+        CLUSTER_INFO    = 2;
+    }
+
+    string request_id           = 1;
+    TelemetryDataType data_type = 2;
+}
+
+message TelemetryResponsePayload {
+    message EndOfStream {
+        string error_message = 1;  // empty indicates success
+    }
+
+    message KubernetesInfo {
+        message File {
+            string path    = 1;
+            bytes contents = 2;  // compression (if any) is handled at the gRPC level
+        }
+
+        repeated File files = 1;
+    }
+
+    message ClusterInfo {
+        bytes chunk = 1;
+    }
+
+    oneof payload {
+        EndOfStream    end_of_stream   = 1;
+        KubernetesInfo kubernetes_info = 2;
+        ClusterInfo    cluster_info    = 3;
+    }
+}
+
+message PullTelemetryDataResponse {
+    string request_id                  = 1;
+    TelemetryResponsePayload payload   = 2;
+}

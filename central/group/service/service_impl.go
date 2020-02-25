@@ -50,11 +50,39 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetGroups(ctx context.Context, _ *v1.Empty) (*v1.GetGroupsResponse, error) {
-	groups, err := s.groups.GetAll(ctx)
+func (s *serviceImpl) GetGroups(ctx context.Context, req *v1.GetGroupsRequest) (*v1.GetGroupsResponse, error) {
+	var authProvider, key, value *string
+	if m, ok := req.GetAuthProviderIdOpt().(*v1.GetGroupsRequest_AuthProviderId); ok {
+		authProvider = &m.AuthProviderId
+	}
+	if m, ok := req.GetKeyOpt().(*v1.GetGroupsRequest_Key); ok {
+		key = &m.Key
+	}
+	if m, ok := req.GetValueOpt().(*v1.GetGroupsRequest_Value); ok {
+		value = &m.Value
+	}
+
+	var filter func(*storage.GroupProperties) bool
+	if authProvider != nil || key != nil || value != nil {
+		filter = func(props *storage.GroupProperties) bool {
+			if authProvider != nil && *authProvider != props.GetAuthProviderId() {
+				return false
+			}
+			if key != nil && *key != props.GetKey() {
+				return false
+			}
+			if value != nil && *value != props.GetValue() {
+				return false
+			}
+			return true
+		}
+	}
+
+	groups, err := s.groups.GetFiltered(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
+
 	return &v1.GetGroupsResponse{Groups: groups}, nil
 }
 

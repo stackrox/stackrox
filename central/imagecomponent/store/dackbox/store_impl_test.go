@@ -7,16 +7,13 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestImageStore(t *testing.T) {
-	if !features.ManagedDB.Enabled() {
-		t.Skip()
-	}
 	suite.Run(t, new(ImageStoreTestSuite))
 }
 
@@ -32,15 +29,15 @@ type ImageStoreTestSuite struct {
 
 func (suite *ImageStoreTestSuite) SetupSuite() {
 	var err error
-	suite.db, suite.dir, err = badgerhelper.NewTemp("reference", true)
+	suite.db, suite.dir, err = badgerhelper.NewTemp("reference")
 	if err != nil {
 		suite.FailNowf("failed to create DB: %+v", err.Error())
 	}
-	suite.dacky, err = dackbox.NewDackBox(suite.db, []byte("ref_"))
+	suite.dacky, err = dackbox.NewDackBox(suite.db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
-	suite.store, err = New(suite.dacky)
+	suite.store, err = New(suite.dacky, concurrency.NewKeyFence())
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
@@ -79,9 +76,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		d.Name += "1"
 	}
 
-	for _, d := range components {
-		suite.NoError(suite.store.Upsert(d))
-	}
+	suite.NoError(suite.store.Upsert(components...))
 
 	for _, d := range components {
 		got, exists, err := suite.store.Get(d.GetId())

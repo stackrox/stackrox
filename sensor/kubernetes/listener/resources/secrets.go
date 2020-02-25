@@ -285,7 +285,7 @@ func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) 
 }
 
 // Process processes a secret resource event, and returns the sensor events to emit in response.
-func (*secretDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (*secretDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	secret := obj.(*v1.Secret)
 
 	// Filter out service account tokens because we have a service account field.

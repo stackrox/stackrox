@@ -5,61 +5,43 @@ package singleton
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/license/publickeys"
 	"github.com/stackrox/rox/pkg/license/validator"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
-func init() {
+func getDevSigningKeyRestrictions(earliestNotValidBefore, latestNotValidAfter time.Time) validator.SigningKeyRestrictions {
+	return validator.SigningKeyRestrictions{
+		EarliestNotValidBefore:                  earliestNotValidBefore,
+		LatestNotValidAfter:                     latestNotValidAfter,
+		MaxDuration:                             30 * 24 * time.Hour,
+		AllowOffline:                            true,
+		MaxNodeLimit:                            50,
+		BuildFlavors:                            []string{"development"},
+		AllowNoDeploymentEnvironmentRestriction: true,
+	}
+}
 
-	registerSigningKeyRegisterFuncs(
-		func(v validator.Validator) error {
-			return v.RegisterSigningKey(
-				validator.EC256,
-				// projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/6
-				[]byte{
-					0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-					0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03,
-					0x42, 0x00, 0x04, 0x20, 0x03, 0xfc, 0x0d, 0x61, 0x6c, 0x5f, 0x9a, 0x7d,
-					0x5b, 0xcc, 0x01, 0x10, 0xf1, 0x2d, 0x29, 0xae, 0x21, 0x84, 0x8f, 0xf2,
-					0x6b, 0x2c, 0xaa, 0xed, 0x9e, 0xd2, 0xec, 0xd8, 0xf6, 0x08, 0x4a, 0x56,
-					0xc3, 0x31, 0xfc, 0xe1, 0x82, 0x9a, 0x2f, 0x64, 0xd3, 0xe3, 0xb7, 0xa0,
-					0x7d, 0x63, 0xed, 0x04, 0xfd, 0x92, 0xc1, 0xae, 0x48, 0x0a, 0xeb, 0xfb,
-					0xb0, 0x00, 0x8a, 0xf4, 0xbb, 0x8d, 0x70,
-				},
-				validator.SigningKeyRestrictions{
-					EarliestNotValidBefore:                  timeutil.MustParse(time.RFC3339, "2019-12-01T00:00:00Z"),
-					LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2020-04-01T00:00:00Z"),
-					MaxDuration:                             30 * 24 * time.Hour,
-					AllowOffline:                            true,
-					MaxNodeLimit:                            50,
-					BuildFlavors:                            []string{"development"},
-					AllowNoDeploymentEnvironmentRestriction: true,
-				})
+func init() {
+	registerValidatorRegistrationArgs(
+		validatorRegistrationArgs{
+			publickeys.Dev,
+			func() validator.SigningKeyRestrictions {
+				return getDevSigningKeyRestrictions(
+					timeutil.MustParse(time.RFC3339, "2019-12-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2020-04-01T00:00:00Z"),
+				)
+			},
 		},
 		// OLD VERSION - NO LONGER USED FOR NEW LICENSES
-		func(v validator.Validator) error {
-			return v.RegisterSigningKey(
-				validator.EC256,
-				// projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/4
-				[]byte{
-					0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-					0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03,
-					0x42, 0x00, 0x04, 0xd6, 0x11, 0xd2, 0xbe, 0xfb, 0x44, 0x42, 0xce, 0xe5,
-					0xe7, 0x08, 0xec, 0x2d, 0xe8, 0x7c, 0x77, 0x5a, 0xd8, 0xe9, 0x58, 0xcf,
-					0x44, 0x4d, 0x8e, 0xcf, 0xc5, 0x9c, 0x74, 0x94, 0x1f, 0x84, 0x4a, 0x6d,
-					0x22, 0xdb, 0xe1, 0x2c, 0x66, 0xc1, 0x1f, 0x05, 0x76, 0x8f, 0xeb, 0x92,
-					0x57, 0x96, 0x04, 0xa2, 0xd9, 0x27, 0x6e, 0xd7, 0x37, 0x41, 0xf1, 0xc6,
-					0xad, 0xe5, 0x46, 0x22, 0x13, 0xab, 0x09,
-				},
-				validator.SigningKeyRestrictions{
-					EarliestNotValidBefore:                  timeutil.MustParse(time.RFC3339, "2019-09-01T00:00:00Z"),
-					LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2020-01-01T00:00:00Z"),
-					MaxDuration:                             30 * 24 * time.Hour,
-					AllowOffline:                            true,
-					MaxNodeLimit:                            50,
-					BuildFlavors:                            []string{"development"},
-					AllowNoDeploymentEnvironmentRestriction: true,
-				})
+		validatorRegistrationArgs{
+			publickeys.DevOld,
+			func() validator.SigningKeyRestrictions {
+				return getDevSigningKeyRestrictions(
+					timeutil.MustParse(time.RFC3339, "2019-09-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2020-01-01T00:00:00Z"),
+				)
+			},
 		},
 	)
 }

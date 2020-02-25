@@ -1,13 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import pluralize from 'pluralize';
 
-import * as Icon from 'react-feather';
+import { knownBackendFlags } from 'utils/featureFlags';
 
+import { Tag, Check, BellOff } from 'react-feather';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { pageSize } from 'Components/TableV2';
 import TablePagination from 'Components/TablePaginationV2';
 import TableHeader from 'Components/TableHeader';
+import FeatureEnabled from 'Containers/FeatureEnabled';
 import ViolationsTable from './ViolationsTable';
 import dialogues from './dialogues';
 
@@ -36,18 +39,40 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
     function showWhitelistConfirmationDialog() {
         setDialogue(dialogues.whitelist);
     }
+    function showTagConfirmationDialog() {
+        setDialogue(dialogues.tag);
+    }
 
     let checkedRuntimeAlerts = 0;
     checkedAlertIds.forEach(id => {
         if (runtimeAlerts.has(id)) checkedRuntimeAlerts += 1;
     });
-    const whitelistCount = checkedAlertIds.length;
+    const numCheckedAlertIds = checkedAlertIds.length;
+    const whitelistCount = numCheckedAlertIds;
     return (
         <React.Fragment>
+            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
+                {numCheckedAlertIds !== 0 && (
+                    <PanelButton
+                        icon={<Tag className="h-4 ml-1" />}
+                        className="btn btn-base ml-2"
+                        onClick={showTagConfirmationDialog}
+                        tooltip={`Add Tags for ${pluralize(
+                            'Violation',
+                            numCheckedAlertIds
+                        )} (${numCheckedAlertIds})`}
+                    >
+                        {`Add Tags for ${pluralize(
+                            'Violation',
+                            numCheckedAlertIds
+                        )} (${numCheckedAlertIds})`}
+                    </PanelButton>
+                )}
+            </FeatureEnabled>
             {checkedRuntimeAlerts !== 0 && (
                 <PanelButton
-                    icon={<Icon.Check className="h-4 ml-1" />}
-                    className="btn btn-base"
+                    icon={<Check className="h-4 ml-1" />}
+                    className="btn btn-base ml-2"
                     onClick={showResolveConfirmationDialog}
                     tooltip={`Mark as Resolved (${checkedRuntimeAlerts})`}
                 >
@@ -56,8 +81,8 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
             )}
             {whitelistCount !== 0 && (
                 <PanelButton
-                    icon={<Icon.BellOff className="h-4 ml-1" />}
-                    className="btn btn-base"
+                    icon={<BellOff className="h-4 ml-1" />}
+                    className="btn btn-base ml-2"
                     onClick={showWhitelistConfirmationDialog}
                     tooltip={`Whitelist (${whitelistCount})`}
                 >

@@ -12,7 +12,7 @@ import (
 
 type signingKey struct {
 	verifier     cryptoutils.SignatureVerifier
-	restrictions SigningKeyRestrictions
+	restrictions *SigningKeyRestrictions
 }
 
 func newValidator() *validator {
@@ -26,7 +26,7 @@ type validator struct {
 	verifiersByKeyID map[string]*signingKey
 }
 
-func (v *validator) RegisterSigningKey(algo string, raw []byte, restrictions SigningKeyRestrictions) error {
+func (v *validator) RegisterSigningKey(algo string, raw []byte, restrictions *SigningKeyRestrictions) error {
 	keyID := licensePkg.SigningKeyFingerprint(raw)
 
 	verifierCreator := signatureVerifierByName[algo]
@@ -86,8 +86,10 @@ func (v *validator) ValidateLicenseKey(licenseKey string) (*licenseproto.License
 		return nil, errors.Wrap(err, "verifying license signature")
 	}
 
-	if err := signingKey.restrictions.Check(license.GetRestrictions()); err != nil {
-		return nil, errors.Wrap(err, "license violated restrictions for signing key")
+	if signingKey.restrictions != nil {
+		if err := signingKey.restrictions.Check(license.GetRestrictions()); err != nil {
+			return nil, errors.Wrap(err, "license violated restrictions for signing key")
+		}
 	}
 
 	return license, nil

@@ -60,10 +60,18 @@ function CveToPolicyShortForm({
     const onSeverityChange = wrapSelectEvent('severity', handleChange);
     const onLifeCycleChange = wrapSelectEvent('lifecycleStages', handleChange);
 
+    // values for accessibilty and testing selector hooks
+    const identifierForNameField = 'policy-name-to-use';
+    const identifierForSeverityField = 'severity-to-use';
+    const identifierForLifecycleField = 'lifecycle-to-use';
+
     return (
         <form className="w-full mb-4" data-testid="policy-short-form">
             <div className="mb-4">
-                <label htmlFor="name" className="block py-2 text-base-600 font-700">
+                <label
+                    htmlFor={identifierForNameField}
+                    className="block py-2 text-base-600 font-700"
+                >
                     Policy Name{' '}
                     <span
                         aria-label="Required"
@@ -80,12 +88,16 @@ function CveToPolicyShortForm({
                         options={existingPolicies}
                         placeholder="Type a name, or select an existing policy"
                         value={selectedPolicy}
+                        data-testid={identifierForNameField}
                     />
                 </div>
             </div>
             <div className="mb-4 flex justify-between">
                 <div className="flex flex-col w-full mr-1">
-                    <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
+                    <label
+                        htmlFor={identifierForSeverityField}
+                        className="block py-2 text-base-600 font-700"
+                    >
                         Severity{' '}
                         <span
                             aria-label="Required"
@@ -107,11 +119,15 @@ function CveToPolicyShortForm({
                             triggerClass="border-l border-base-300"
                             value={policy.severity}
                             disabled={!!policy.id}
+                            data-testid={identifierForSeverityField}
                         />
                     </div>
                 </div>
                 <div className="flex flex-col w-full ml-1">
-                    <label htmlFor="clusterType" className="block py-2 text-base-600 font-700">
+                    <label
+                        htmlFor={identifierForLifecycleField}
+                        className="block py-2 text-base-600 font-700"
+                    >
                         Lifecycle Stage{' '}
                         <span
                             aria-label="Required"
@@ -131,6 +147,7 @@ function CveToPolicyShortForm({
                             className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
                             value={policy.lifecycleStages}
                             disabled={!!policy.id}
+                            data-testid={identifierForLifecycleField}
                         />
                     </div>
                 </div>

@@ -17,7 +17,7 @@ var (
 
 func initialize() {
 	storage := store.New(globaldb.GetGlobalDB())
-	indexer := index.New(globalindex.GetGlobalIndex())
+	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	searcher, err := search.New(storage, indexer)
 	if err != nil {

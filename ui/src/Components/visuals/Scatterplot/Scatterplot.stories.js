@@ -76,3 +76,22 @@ export const withSetXandYDomains = () => {
         </MemoryRouter>
     );
 };
+
+export const withExtraPaddingOnUpperBounds = () => {
+    return (
+        <MemoryRouter>
+            <div className="w-full h-64">
+                <Scatterplot
+                    data={data}
+                    lowerX={0}
+                    lowerY={0}
+                    xMultiple={5}
+                    yMultiple={2}
+                    shouldPadX
+                    shouldPadY
+                    legendData={legendData}
+                />
+            </div>
+        </MemoryRouter>
+    );
+};

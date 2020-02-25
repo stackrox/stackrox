@@ -15,8 +15,14 @@ export const selectors = {
         roles: '[data-test-id="tab"]:contains("Roles and Permissions")'
     },
     authProviders: {
-        addProvider: 'select:contains("Add an Auth Provider")',
-        newAuth0: 'auth0',
-        newAuthProviderPanel: '[data-test-id="auth-provider-panel"]'
+        addProviderSelect: 'select:contains("Add an Auth Provider")',
+        newAuth0Option: 'auth0',
+        newOidcOption: 'OpenID Connect',
+        newAuthProviderPanel: '[data-test-id="auth-provider-panel"]',
+        clientSecretLabel: 'p:contains("Client Secret")',
+        doNotUseClientSecretCheckbox: 'input[name="config.do_not_use_client_secret"]',
+        clientSecretInput: 'input[name="config.client_secret"]',
+        fragmentCallbackRadio: '#fragment-radio',
+        httpPostCallbackRadio: '#post-radio'
     }
 };

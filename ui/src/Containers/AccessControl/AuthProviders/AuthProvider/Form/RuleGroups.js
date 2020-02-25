@@ -9,8 +9,11 @@ import uniqBy from 'lodash/uniqBy';
 
 import { components } from 'react-select';
 import * as Icon from 'react-feather';
+
+import Labeled from 'Components/Labeled';
+import ReduxSelectField from 'Components/forms/ReduxSelectField';
+import ReduxSelectCreatableField from 'Components/forms/ReduxSelectCreatableField';
 import { selectMenuOnTopStyles } from 'Components/ReactSelect';
-import Field from './Field';
 
 const defaultKeyOptions = ['userid', 'name', 'email', 'groups'];
 
@@ -110,37 +113,37 @@ class RuleGroups extends Component {
                 {fields.map((group, idx, value) => (
                     <div className="flex" key={idx}>
                         <div className="w-full">
-                            <Field
-                                jsonPath={`${group}.props.key`}
-                                type="selectcreatable"
-                                label="Key"
-                                options={keyOptions}
-                                styles={selectMenuOnTopStyles}
-                            />
+                            <Labeled label="Key">
+                                <ReduxSelectCreatableField
+                                    name={`${group}.props.key`}
+                                    options={keyOptions}
+                                    styles={selectMenuOnTopStyles}
+                                />
+                            </Labeled>
                         </div>
                         <div className="w-full">
-                            <Field
-                                jsonPath={`${group}.props.value`}
-                                type="selectcreatable"
-                                label="Value"
-                                options={this.getFilteredValueOptions(valueOptions, idx)}
-                                styles={selectMenuOnTopStyles}
-                            />
+                            <Labeled label="Value">
+                                <ReduxSelectCreatableField
+                                    name={`${group}.props.value`}
+                                    options={this.getFilteredValueOptions(valueOptions, idx)}
+                                    styles={selectMenuOnTopStyles}
+                                />
+                            </Labeled>
                         </div>
                         <div className="flex items-center mt-2">
                             <Icon.ArrowRight className="h-4 w-4" />
                         </div>
                         <div className="w-full">
-                            <Field
-                                jsonPath={`${group}.roleName`}
-                                type="select"
-                                label="Role"
-                                options={roles}
-                                customComponents={{
-                                    MenuList: this.renderMenuListComponent
-                                }}
-                                styles={selectMenuOnTopStyles}
-                            />
+                            <Labeled label="Role">
+                                <ReduxSelectField
+                                    name={`${group}.roleName`}
+                                    options={roles}
+                                    customComponents={{
+                                        MenuList: this.renderMenuListComponent
+                                    }}
+                                    styles={selectMenuOnTopStyles}
+                                />
+                            </Labeled>
                         </div>
                         <button className="pl-2 pr-2 mt-2" type="button">
                             <Icon.Trash2 className="h-4 w-4" onClick={deleteRule(value, idx)} />

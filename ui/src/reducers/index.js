@@ -29,6 +29,7 @@ import cli, { selectors as cliSelectors } from './cli';
 import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 import license, { selectors as licenseSelectors } from './license';
 import systemConfig, { selectors as systemConfigSelectors } from './systemConfig';
+import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 
 // Reducers
 
@@ -58,7 +59,8 @@ const appReducer = combineReducers({
     attributes,
     pdfDownload,
     license,
-    systemConfig
+    systemConfig,
+    telemetryConfig
 });
 
 const rootReducer = combineReducers({
@@ -99,6 +101,7 @@ const getCLI = state => getApp(state).cli;
 const getPdfDownload = state => getApp(state).pdfDownload;
 const getLicense = state => getApp(state).license;
 const getSystemConfig = state => getApp(state).systemConfig;
+const getTelemetryConfig = state => getApp(state).telemetryConfig;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -127,7 +130,8 @@ const boundSelectors = {
     ...bindSelectors(getCLI, cliSelectors),
     ...bindSelectors(getPdfDownload, pdfDownloadSelectors),
     ...bindSelectors(getLicense, licenseSelectors),
-    ...bindSelectors(getSystemConfig, systemConfigSelectors)
+    ...bindSelectors(getSystemConfig, systemConfigSelectors),
+    ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors)
 };
 
 export const selectors = {

@@ -37,6 +37,8 @@ func Creator() (string, func(integration *storage.ImageIntegration) (types.Image
 }
 
 type clair struct {
+	types.ScanSemaphore
+
 	client                *http.Client
 	endpoint              string
 	protoImageIntegration *storage.ImageIntegration
@@ -71,6 +73,8 @@ func newScanner(integration *storage.ImageIntegration) (*clair, error) {
 		client:                client,
 		endpoint:              endpoint,
 		protoImageIntegration: integration,
+
+		ScanSemaphore: types.NewDefaultSemaphore(),
 	}
 	return scanner, nil
 }

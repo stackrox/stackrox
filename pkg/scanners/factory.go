@@ -9,7 +9,6 @@ import (
 	dtrScanner "github.com/stackrox/rox/pkg/scanners/dtr"
 	googleScanner "github.com/stackrox/rox/pkg/scanners/google"
 	quayScanner "github.com/stackrox/rox/pkg/scanners/quay"
-	"github.com/stackrox/rox/pkg/scanners/scannerv2"
 	tenableScanner "github.com/stackrox/rox/pkg/scanners/tenable"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
@@ -36,9 +35,6 @@ func NewFactory(set registries.Set) Factory {
 
 	anchoreScannerType, anchoreScannerCreator := anchoreScanner.Creator(set)
 	reg.creators[anchoreScannerType] = anchoreScannerCreator
-
-	scannerV2Type, scannerV2Creator := scannerv2.Creator(set)
-	reg.creators[scannerV2Type] = scannerV2Creator
 
 	clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)
 	reg.creators[clairifyScannerType] = clairifyScannerCreator

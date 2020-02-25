@@ -80,7 +80,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                 const entityPage = getEntityPage();
                 return (
                     <Panel
-                        className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-108 md:relative"
+                        className="bg-primary-200 z-40 w-full h-full absolute right-0 top-0 md:w-1/2 min-w-108 md:relative"
                         headerTextComponent={headerTextComponent}
                         onClose={closeSidePanel}
                         id="side-panel"

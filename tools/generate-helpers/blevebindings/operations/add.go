@@ -20,14 +20,14 @@ func generateAdd(props GeneratorProperties) (Code, Code) {
 
 	implementation := renderAddFunctionSignature(renderFuncBStarIndexer(), props).Block(
 		metricLine("Add", props.Object),
-		ifErrReturnError(Id("b").Dot("index").Dot("Index").Dot("Index").Call(
+		ifErrReturnError(Id("b").Dot("index").Dot("Index").Call(
 			Id(strings.ToLower(props.Singular)).Dot(props.IDFunc).Call(),
 			Op("&").Id(wrapperType).Values(Dict{
 				Id("Type"):       Qual(packagenames.V1, props.SearchCategory).Dot("String").Call(),
 				Id(props.Object): Id(strings.ToLower(props.Singular)),
 			}),
 		)),
-		Return(incrementTxnCount(props.NeedsTxManager)),
+		Return(Nil()),
 	)
 
 	return interfaceMethod, implementation

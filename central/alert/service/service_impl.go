@@ -11,17 +11,20 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -74,9 +77,10 @@ var (
 
 // serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
-	dataStore  datastore.DataStore
-	notifier   notifierProcessor.Processor
-	whitelists whitelistDatastore.DataStore
+	dataStore         datastore.DataStore
+	notifier          notifierProcessor.Processor
+	whitelists        whitelistDatastore.DataStore
+	connectionManager connection.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -220,8 +224,21 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 				ClusterId:     alert.GetDeployment().GetClusterId(),
 				Namespace:     alert.GetDeployment().GetNamespace(),
 			}
-			if _, err := s.whitelists.UpdateProcessWhitelistElements(ctx, key, items, nil, false); err != nil {
+			whitelist, err := s.whitelists.UpdateProcessWhitelistElements(ctx, key, items, nil, false)
+			if err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
+			}
+			if features.SensorBasedDetection.Enabled() {
+				err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), &central.MsgToSensor{
+					Msg: &central.MsgToSensor_WhitelistSync{
+						WhitelistSync: &central.WhitelistSync{
+							Whitelists: []*storage.ProcessWhitelist{whitelist},
+						},
+					},
+				})
+				if err != nil {
+					log.Errorf("error syncing whitelist with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
+				}
 			}
 		}
 	}

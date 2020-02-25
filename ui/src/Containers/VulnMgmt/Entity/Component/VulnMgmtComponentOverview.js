@@ -10,7 +10,10 @@ import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+import { getCveExportName } from 'utils/vulnerabilityUtils';
 
+import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from '../TableWidget';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
@@ -49,7 +52,25 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         );
     }
 
-    const newEntityContext = { ...entityContext, [entityTypes.COMPONENT]: id };
+    function customCsvExportHandler() {
+        const { useCase } = workflowState;
+        const pageEntityType = workflowState.getCurrentEntityType();
+        const entityName = safeData.name;
+        const csvName = getCveExportName(useCase, pageEntityType, entityName);
+
+        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
+
+        exportCvesAsCsv(csvName, stateWithFixable);
+    }
+
+    const currentEntity = { [entityTypes.COMPONENT]: id };
+    const newEntityContext = { ...entityContext, ...currentEntity };
+    const cveActions = (
+        <FixableCveExportButton
+            disabled={!fixableCVEs || !fixableCVEs.length}
+            clickHandler={customCsvExportHandler}
+        />
+    );
 
     return (
         <div className="flex h-full">
@@ -58,16 +79,15 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 bg-counts-widget pdf-page"
+                                className="h-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={componentStats}
                                 title="Details & Metadata"
+                                bgClass
                             />
                         </div>
                         <div className="s-1">
-                            <CvesByCvssScore
-                                entityContext={{ ...entityContext, [entityTypes.COMPONENT]: id }}
-                            />
+                            <CvesByCvssScore entityContext={currentEntity} />
                         </div>
                     </div>
                 </CollapsibleSection>
@@ -78,6 +98,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                                 entityTypes.CVE,
                                 fixableCVEs.length
                             )} found across this component`}
+                            headerActions={cveActions}
                             rows={fixableCVEs}
                             entityType={entityTypes.CVE}
                             noDataText="No fixable CVEs available in this component"

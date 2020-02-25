@@ -11,4 +11,9 @@ const useCaseLabels = {
     DEPLOYMENT: 'Deployment'
 };
 
+export const useCaseShortLabels = {
+    [useCaseTypes.CONFIG_MANAGEMENT]: 'CM',
+    [useCaseTypes.VULN_MANAGEMENT]: 'VM'
+};
+
 export default useCaseLabels;

@@ -15,6 +15,8 @@ import { useCaseEntityMap } from 'modules/entityRelationships';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
+import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
+
 import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap } from './UseCaseComponentMaps';
 
@@ -42,6 +44,10 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const sidePanelSort = workflowState.sort[sortParams.sidePanel];
     const sidePanelPaging = workflowState.paging[pagingParams.sidePanel];
 
+    function customCsvExportHandler(fileName) {
+        return exportCvesAsCsv(fileName, workflowState);
+    }
+
     const [fadeIn, setFadeIn] = useState(false);
     useEffect(() => setFadeIn(false), []);
 
@@ -68,6 +74,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
     if (pageEntity) {
         entityContext[pageEntity.entityType] = pageEntity.entityId;
     }
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col bg-base-200" style={style}>
@@ -80,13 +87,10 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 page={useCase}
                                 disabled={!!sidePanelEntityId}
                                 pdfId="capture-widgets"
+                                customCsvExportHandler={customCsvExportHandler}
                             />
                         </div>
-                        <EntitiesMenu
-                            text="All Entities"
-                            options={useCaseEntityMap[useCase]}
-                            grouped
-                        />
+                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
                     </div>
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
@@ -104,6 +108,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                             search={pageSearch}
                             sort={pageSort}
                             page={pagePaging}
+                            entityContext={entityContext}
                         />
                     </div>
 

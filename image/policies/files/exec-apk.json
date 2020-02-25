@@ -1,7 +1,7 @@
 {
   "id": "d63564bd-c184-40bc-9f30-39711e010b82",
   "name": "Alpine Linux Package Manager Execution",
-  "description": "Alert on deployments with the Alpine Linux package manager (apk) is executed in runtime",
+  "description": "Alert when the Alpine Linux package manager (apk) is executed at runtime",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
     "RUNTIME"
@@ -14,6 +14,6 @@
       "name": "apk"
     }
   },
-  "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
-  "remediation": "Run `apk --purge del apk-tools` in the image build for production containers."
+  "rationale": "Use of package managers at runtime indicates that new software may be being introduced into containers while they are running.",
+  "remediation": "Run `apk --purge del apk-tools` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable."
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -25,6 +27,8 @@ type backendImpl struct {
 	acsURLPath string
 	sp         saml2.SAMLServiceProvider
 	id         string
+
+	config map[string]string
 }
 
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {
@@ -47,9 +51,9 @@ func (p *backendImpl) loginURL(clientState string) (string, error) {
 	return authURL, nil
 }
 
-func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints []string, config map[string]string) (*backendImpl, map[string]string, error) {
+func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints []string, config map[string]string) (*backendImpl, error) {
 	if len(uiEndpoints) != 1 {
-		return nil, nil, errors.New("SAML requires exactly one UI endpoint")
+		return nil, errors.New("SAML requires exactly one UI endpoint")
 	}
 	p := &backendImpl{
 		acsURLPath: acsURLPath,
@@ -65,7 +69,7 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 
 	spIssuer := config["sp_issuer"]
 	if spIssuer == "" {
-		return nil, nil, errors.New("no ServiceProvider issuer specified")
+		return nil, errors.New("no ServiceProvider issuer specified")
 	}
 	p.sp.ServiceProviderIssuer = spIssuer
 
@@ -75,18 +79,18 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 
 	if config["idp_metadata_url"] != "" {
 		if !stringutils.AllEmpty(config["idp_issuer"], config["idp_cert_pem"], config["idp_sso_url"], config["idp_nameid_format"]) {
-			return nil, nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL, certificate data and Name/ID format must be left blank")
+			return nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL, certificate data and Name/ID format must be left blank")
 		}
 		if err := configureIDPFromMetadataURL(ctx, &p.sp, config["idp_metadata_url"]); err != nil {
-			return nil, nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
+			return nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
 		}
 		effectiveConfig["idp_metadata_url"] = config["idp_metadata_url"]
 	} else {
 		if !stringutils.AllNotEmpty(config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]) {
-			return nil, nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
+			return nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
 		}
 		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"], config["idp_nameid_format"]); err != nil {
-			return nil, nil, errors.Wrap(err, "could not configure auth provider from settings")
+			return nil, errors.Wrap(err, "could not configure auth provider from settings")
 		}
 		effectiveConfig["idp_issuer"] = config["idp_issuer"]
 		effectiveConfig["idp_sso_url"] = config["idp_sso_url"]
@@ -94,50 +98,63 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 		effectiveConfig["idp_nameid_format"] = config["idp_nameid_format"]
 	}
 
-	return p, effectiveConfig, nil
+	p.config = effectiveConfig
+
+	return p, nil
 }
 
-func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
+func (p *backendImpl) Config(redact bool) map[string]string {
+	return maputil.CloneStringStringMap(p.config)
+}
+
+func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
+	return newCfg
+}
+
+func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.AuthResponse, error) {
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	var opts []tokens.Option
+	var expiry time.Time
 	if ai.SessionNotOnOrAfter != nil {
-		opts = append(opts, tokens.WithExpiry(*ai.SessionNotOnOrAfter))
+		expiry = *ai.SessionNotOnOrAfter
 	}
 
 	claim := saml2AssertionInfoToExternalClaim(ai)
-	return claim, opts, nil
+	return &authproviders.AuthResponse{
+		Claims:     claim,
+		Expiration: expiry,
+	}, nil
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
 	if r.URL.Path != p.acsURLPath {
-		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodPost {
-		return nil, nil, "", httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
+		return nil, "", httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
 	}
 
 	samlResponse := r.FormValue("SAMLResponse")
 	if samlResponse == "" {
-		return nil, nil, "", httputil.NewError(http.StatusBadRequest, "no SAML response transmitted")
+		return nil, "", httputil.NewError(http.StatusBadRequest, "no SAML response transmitted")
 	}
 
-	claims, opts, err := p.consumeSAMLResponse(samlResponse)
+	authResp, err := p.consumeSAMLResponse(samlResponse)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, "", err
 	}
 
 	relayState := r.FormValue("RelayState")
 	_, clientState := idputil.SplitState(relayState)
 
-	return claims, opts, clientState, err
+	return authResp, clientState, err
 }
 
-func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
-	return nil, nil, "", errors.New("not implemented")
+func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {
+	return nil, "", errors.New("not implemented")
 }
 
 func (p *backendImpl) RefreshURL() string {

@@ -16,3 +16,19 @@ spec:
   selector:
     app: scanner
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanner-db
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+spec:
+  ports:
+  - name: http-db
+    port: 5432
+    targetPort: 5432
+  selector:
+    app: scanner-db
+  type: ClusterIP

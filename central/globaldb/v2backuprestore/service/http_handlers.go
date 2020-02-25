@@ -92,7 +92,7 @@ func (s *service) handleResumeRestore(req *http.Request) error {
 	queryValues := req.URL.Query()
 	processID := queryValues.Get("id")
 	if processID == "" {
-		return status.Errorf(codes.InvalidArgument, "need to specify a restore process ID for resuming")
+		return status.Error(codes.InvalidArgument, "need to specify a restore process ID for resuming")
 	}
 
 	attemptID := queryValues.Get("attemptId")

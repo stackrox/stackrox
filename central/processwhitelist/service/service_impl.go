@@ -8,9 +8,12 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -34,8 +37,9 @@ var (
 )
 
 type serviceImpl struct {
-	dataStore   datastore.DataStore
-	reprocessor reprocessor.Loop
+	dataStore         datastore.DataStore
+	reprocessor       reprocessor.Loop
+	connectionManager connection.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -66,11 +70,11 @@ func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetPr
 	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	whitelist, err := s.dataStore.GetProcessWhitelist(ctx, request.GetKey())
+	whitelist, exists, err := s.dataStore.GetProcessWhitelist(ctx, request.GetKey())
 	if err != nil {
 		return nil, err
 	}
-	if whitelist == nil {
+	if !exists {
 		return nil, status.Errorf(codes.NotFound, "No process whitelist with key %+v found", request.GetKey())
 	}
 	return whitelist, nil
@@ -95,6 +99,20 @@ func bulkUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*storage.
 	return response
 }
 
+func (s *serviceImpl) sendWhitelistToSensor(pw *storage.ProcessWhitelist) {
+	if features.SensorBasedDetection.Enabled() {
+		err := s.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
+			Msg: &central.MsgToSensor_WhitelistSync{
+				WhitelistSync: &central.WhitelistSync{
+					Whitelists: []*storage.ProcessWhitelist{pw},
+				}},
+		})
+		if err != nil {
+			log.Errorf("Error sending process whitelist to cluster %q: %v", pw.GetKey().GetClusterId(), err)
+		}
+	}
+}
+
 func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessWhitelistKey) {
 	deploymentIDs := set.NewStringSet()
 	for _, key := range keys {
@@ -108,13 +126,22 @@ func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.U
 		return s.dataStore.UpdateProcessWhitelistElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
 	}
 	defer s.reprocessDeploymentRisks(request.GetKeys())
-	return bulkUpdate(request.GetKeys(), updateFunc), nil
+	resp := bulkUpdate(request.GetKeys(), updateFunc)
+	for _, w := range resp.GetWhitelists() {
+		s.sendWhitelistToSensor(w)
+	}
+	return resp, nil
 }
 
 func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.LockProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
 		return s.dataStore.UserLockProcessWhitelist(ctx, key, request.GetLocked())
 	}
+
 	defer s.reprocessDeploymentRisks(request.GetKeys())
-	return bulkUpdate(request.GetKeys(), updateFunc), nil
+	resp := bulkUpdate(request.GetKeys(), updateFunc)
+	for _, w := range resp.GetWhitelists() {
+		s.sendWhitelistToSensor(w)
+	}
+	return resp, nil
 }

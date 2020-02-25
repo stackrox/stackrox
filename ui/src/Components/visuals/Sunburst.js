@@ -3,8 +3,9 @@ import { Sunburst, DiscreteColorLegend, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import SunburstDetailSection from 'Components/visuals/SunburstDetailSection';
 import { withRouter } from 'react-router-dom';
+
+import SunburstDetailSection from 'Components/visuals/SunburstDetailSection';
 
 // Get array of node ancestor names
 function getKeyPath(node) {
@@ -22,11 +23,10 @@ function highlightPathData(data, highlightedNames) {
         data.children.map(child => highlightPathData(child, highlightedNames));
     }
     /* eslint-disable */
-  data.style = {
-    ...data.style,
-    fillOpacity:
-      highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
-  };
+    data.style = {
+        ...data.style,
+        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
+    };
     /* eslint-enable */
     return data;
 }

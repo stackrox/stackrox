@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/upgrader/common"
@@ -323,7 +324,7 @@ func (c *UpgradeContext) Validator() validation.Schema {
 }
 
 // ParseAndValidateObject parses and validates (against the server's OpenAPI schema) a serialized Kubernetes object.
-func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sobjects.Object, error) {
+func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sutil.Object, error) {
 	obj, _, err := c.UniversalDecoder().Decode(data, nil, nil)
 	if err != nil {
 		return nil, err
@@ -331,14 +332,14 @@ func (c *UpgradeContext) ParseAndValidateObject(data []byte) (k8sobjects.Object,
 	if err := c.schemaValidator.ValidateBytes(data); err != nil {
 		return nil, errors.Wrap(err, "schema validation failed")
 	}
-	k8sObj, _ := obj.(k8sobjects.Object)
+	k8sObj, _ := obj.(k8sutil.Object)
 	if k8sObj == nil {
 		return nil, errors.Errorf("object of kind %v is not a Kubernetes API object", obj.GetObjectKind().GroupVersionKind())
 	}
 	return k8sObj, nil
 }
 
-func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sobjects.Object, error) {
+func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sutil.Object, error) {
 	objs, ok := unpackListReflect(listObj)
 	if ok {
 		return objs, nil
@@ -351,7 +352,7 @@ func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sobjects.Object
 		return nil, errors.Wrapf(err, "converting object of kind %v to a generic list", listObj.GetObjectKind().GroupVersionKind())
 	}
 
-	objs = make([]k8sobjects.Object, 0, len(list.Items))
+	objs = make([]k8sutil.Object, 0, len(list.Items))
 	for _, item := range list.Items {
 		objs = append(objs, &item)
 	}
@@ -364,12 +365,12 @@ func (c *UpgradeContext) Owner() *k8sobjects.ObjectRef {
 }
 
 // List lists all Kubernetes options of resources of the given purpose, applying the given list options.
-func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav1.ListOptions) ([]k8sobjects.Object, error) {
+func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav1.ListOptions) ([]k8sutil.Object, error) {
 	if listOpts == nil {
 		listOpts = &metav1.ListOptions{}
 	}
 
-	var result []k8sobjects.Object
+	var result []k8sutil.Object
 
 	for _, resourceType := range c.resources {
 		if resourceType.Purpose&resourcePurpose != resourcePurpose {
@@ -393,7 +394,7 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 }
 
 // ListCurrentObjects returns all Kubernetes objects that are relevant for the upgrade process.
-func (c *UpgradeContext) ListCurrentObjects() ([]k8sobjects.Object, error) {
+func (c *UpgradeContext) ListCurrentObjects() ([]k8sutil.Object, error) {
 	listOpts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
 	}

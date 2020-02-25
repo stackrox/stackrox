@@ -28,6 +28,7 @@ export const standardEntityTypes = {
 export const standardTypes = {
     PCI_DSS_3_2: 'PCI_DSS_3_2',
     NIST_800_190: 'NIST_800_190',
+    NIST_SP_800_53: 'NIST_SP_800_53',
     HIPAA_164: 'HIPAA_164',
     CIS_Kubernetes_v1_5: 'CIS_Kubernetes_v1_5',
     CIS_Docker_v1_1_0: 'CIS_Docker_v1_1_0',
@@ -37,6 +38,7 @@ export const standardTypes = {
 export const standardBaseTypes = {
     [standardTypes.PCI_DSS_3_2]: 'PCI',
     [standardTypes.NIST_800_190]: 'NIST SP 800-190',
+    [standardTypes.NIST_SP_800_53]: 'NIST SP 800-53',
     [standardTypes.HIPAA_164]: 'HIPAA',
     [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker',
     [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker',
@@ -48,9 +50,8 @@ export const searchCategories = {
     NODE: 'NODES',
     CLUSTER: 'CLUSTERS',
     CONTROL: 'COMPLIANCE',
-    // @TODO, replace the following with "CVES" or "VULNERABILTIIES" when those categories are available
-    CVE: 'IMAGES',
-    COMPONENT: 'IMAGES',
+    CVE: 'VULNERABILITIES',
+    COMPONENT: 'IMAGE_COMPONENTS',
     DEPLOYMENT: 'DEPLOYMENTS',
     SECRET: 'SECRETS',
     POLICY: 'POLICIES',

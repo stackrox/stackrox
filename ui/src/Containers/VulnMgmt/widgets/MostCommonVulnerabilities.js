@@ -14,16 +14,16 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import queryService from 'modules/queryService';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
-import { parseCVESearch } from 'utils/vulnerabilityUtils';
+import { cveSortFields } from 'constants/sortFields';
+import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 
 const MOST_COMMON_VULNERABILITIES = gql`
-    query mostCommonVulnerabilities($query: String) {
-        results: vulnerabilities(query: $query) {
-            id: cve
+    query mostCommonVulnerabilities($query: String, $vulnPagination: Pagination) {
+        results: vulnerabilities(query: $query, pagination: $vulnPagination) {
+            id
             cve
             cvss
             scoreVersion
-            imageCount
             isFixable
             deploymentCount
             summary
@@ -34,7 +34,7 @@ const MOST_COMMON_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState, limit) => {
-    const results = sortBy(data.results, ['deploymentCount', 'cvss', 'envImpact']).slice(-limit); // @TODO: Remove when we have pagination on Vulnerabilities
+    const results = sortBy(data.results, ['deploymentCount', 'cvss']).slice(-limit); // @TODO: Remove when we have pagination on Vulnerabilities
     return results.map(
         ({
             id,
@@ -48,7 +48,7 @@ const processData = (data, workflowState, limit) => {
             lastScanned
         }) => {
             const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
-            const tooltipHeader = lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A';
+            const tooltipTitle = lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A';
             const tooltipBody = (
                 <ul className="flex-1 list-reset border-base-300 overflow-hidden">
                     <li className="py-1 flex flex-col" key="description">
@@ -70,7 +70,7 @@ const processData = (data, workflowState, limit) => {
                 }`,
                 url,
                 hint: {
-                    title: tooltipHeader,
+                    title: tooltipTitle,
                     body: tooltipBody,
                     footer: tooltipFooter
                 }
@@ -82,14 +82,20 @@ const processData = (data, workflowState, limit) => {
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
 
-    const parsedSearch = parseCVESearch(search); // hack until isFixable is allowed in search
-
-    const queryObject = { ...entityContextObject, ...parsedSearch }; // Combine entity context and search
+    const queryObject = { ...entityContextObject, ...search }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
     const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
         variables: {
-            query
+            query,
+            vulnPagination: queryService.getPagination(
+                {
+                    id: cveSortFields.DEPLOYMENT_COUNT,
+                    desc: true
+                },
+                WIDGET_PAGINATION_START_OFFSET,
+                limit
+            )
         }
     });
 
@@ -110,9 +116,8 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     const viewAllURL = workflowState
         .pushList(entityTypes.CVE)
         .setSort([
-            { id: 'deploymentCount', desc: true },
-            { id: 'cvss', desc: true },
-            { id: 'envImpact', desc: true }
+            { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
+            { id: cveSortFields.CVSS_SCORE, desc: true }
         ])
         .toUrl();
 

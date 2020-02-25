@@ -10,15 +10,18 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -50,6 +53,8 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		graphEvaluator: graphEvaluator,
 		deployments:    deployments,
 		clusters:       clusters,
+
+		reprocessor: reprocessor.Singleton(),
 	}
 }
 
@@ -62,6 +67,7 @@ type pipelineImpl struct {
 
 	deployments deploymentDataStore.DataStore
 	clusters    clusterDataStore.DataStore
+	reprocessor reprocessor.Loop
 
 	graphEvaluator graph.Evaluator
 }
@@ -134,12 +140,31 @@ func compareMap(m1, m2 map[string]string) bool {
 	return true
 }
 
-func (s *pipelineImpl) rewriteInstancesAndPersist(ctx context.Context, oldDeployment *storage.Deployment, newDeployment *storage.Deployment) error {
-	// Using the index of Container is save as this is ensured by the hash
-	for i, c := range newDeployment.GetContainers() {
-		oldDeployment.Containers[i].Instances = c.Instances
+func hasNewImageReferences(oldDeployment, newDeployment *storage.Deployment) bool {
+	oldImages := set.NewStringSet()
+	for _, c := range oldDeployment.GetContainers() {
+		for _, i := range c.GetInstances() {
+			if i.GetImageDigest() != "" {
+				oldImages.Add(i.GetImageDigest())
+			}
+		}
 	}
-	return s.deployments.UpsertDeploymentIntoStoreOnly(ctx, oldDeployment)
+	newImages := set.NewStringSet()
+	for _, c := range newDeployment.GetContainers() {
+		for _, i := range c.GetInstances() {
+			if i.GetImageDigest() != "" {
+				newImages.Add(i.GetImageDigest())
+			}
+		}
+	}
+	return !newImages.Equal(oldImages)
+}
+
+func (s *pipelineImpl) rewriteInstancesAndPersist(ctx context.Context, oldDeployment *storage.Deployment, newDeployment *storage.Deployment) error {
+	if hasNewImageReferences(oldDeployment, newDeployment) {
+		return s.deployments.UpsertDeployment(ctx, newDeployment)
+	}
+	return s.deployments.UpsertDeploymentIntoStoreOnly(ctx, newDeployment)
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -152,6 +177,12 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	var err error
 	deployment.Hash, err = hashstructure.Hash(deployment, &hashstructure.HashOptions{})
 	if err != nil {
+		return err
+	}
+
+	// Fill in cluster information.
+	if err := s.clusterEnrichment.do(ctx, deployment); err != nil {
+		log.Errorf("Couldn't get cluster identity: %s", err)
 		return err
 	}
 
@@ -174,30 +205,29 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
 
-	// Fill in cluster information.
-	if err := s.clusterEnrichment.do(ctx, deployment); err != nil {
-		log.Errorf("Couldn't get cluster identity: %s", err)
-		return err
-	}
-
 	// Add/Update/Remove the deployment from persistence depending on the deployment action.
 	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 		return err
 	}
 
-	// Update the deployments images with the latest version from storage.
-	s.updateImages.do(ctx, deployment)
+	if !features.SensorBasedDetection.Enabled() {
+		// Update the deployments images with the latest version from storage.
+		s.updateImages.do(ctx, deployment)
 
-	// Process the deployment (alert generation, enforcement action generation)
-	// Only pass in the enforcement injector (which is a signal to the lifecycle manager
-	// that it should inject enforcement) on creates.
-	var injectorToPass common.MessageInjector
-	create := action == central.ResourceAction_CREATE_RESOURCE
-	if create {
-		injectorToPass = injector
-	}
-	if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{UseNonBlockingCallsWherePossible: true}, deployment, create, injectorToPass); err != nil {
-		return err
+		// Process the deployment (alert generation, enforcement action generation)
+		// Only pass in the enforcement injector (which is a signal to the lifecycle manager
+		// that it should inject enforcement) on creates.
+		var injectorToPass common.MessageInjector
+		create := action == central.ResourceAction_CREATE_RESOURCE
+		if create {
+			injectorToPass = injector
+		}
+		if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{UseNonBlockingCallsWherePossible: true}, deployment, create, injectorToPass); err != nil {
+			return err
+		}
+	} else {
+		// Update risk asynchronously
+		s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
 	}
 	if incrementNetworkGraphEpoch {
 		s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())

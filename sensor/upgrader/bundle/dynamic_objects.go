@@ -5,9 +5,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +22,7 @@ func readFile(openFn OpenFunc) ([]byte, error) {
 	return ioutil.ReadAll(reader)
 }
 
-func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (k8sobjects.Object, error) {
+func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents Contents) (k8sutil.Object, error) {
 	dataMap := make(map[string][]byte)
 
 	// If the object is optional, perform a first pass to check if all files are present (and return nil if files are
@@ -49,7 +49,7 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 		dataMap[fileName] = fileData
 	}
 
-	var obj k8sobjects.Object
+	var obj k8sutil.Object
 
 	switch objDesc.Kind {
 	case common.OpaqueSecret:
@@ -96,8 +96,8 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	return obj, nil
 }
 
-func createDynamicObjects(bundleContents Contents) ([]k8sobjects.Object, error) {
-	var allObjects []k8sobjects.Object
+func createDynamicObjects(bundleContents Contents) ([]k8sutil.Object, error) {
+	var allObjects []k8sutil.Object
 	for _, objDesc := range common.DynamicBundleObjects {
 		obj, err := createDynamicObject(objDesc, bundleContents)
 		if err != nil {

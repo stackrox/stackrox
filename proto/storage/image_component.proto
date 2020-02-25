@@ -3,22 +3,19 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "storage/image.proto";
 import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
 message ImageComponent {
-    message License {
-        string name = 1;
-        string type = 2;
-        string url  = 3;
-    }
-
     string                         id           = 1 [(gogoproto.moretags) = "search:\"Component ID,store\""];
     string                         name         = 2 [(gogoproto.moretags) = "search:\"Component Name,store\""];
     string                         version      = 3 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License                        license      = 4;
     int64                          priority     = 5;
+    SourceType                     source       = 6 [(gogoproto.moretags) = "search:\"Component Source,store\""];
+    float                          risk_score   = 7 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
 }
 
 message ComponentCVEEdge {

@@ -216,3 +216,61 @@ func (mr *MockDataStoreMockRecorder) DeleteAlerts(ctx interface{}, ids ...interf
 	varargs := append([]interface{}{ctx}, ids...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAlerts", reflect.TypeOf((*MockDataStore)(nil).DeleteAlerts), varargs...)
 }
+
+// GetAlertComments mocks base method
+func (m *MockDataStore) GetAlertComments(ctx context.Context, alertID string) ([]*storage.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAlertComments", ctx, alertID)
+	ret0, _ := ret[0].([]*storage.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAlertComments indicates an expected call of GetAlertComments
+func (mr *MockDataStoreMockRecorder) GetAlertComments(ctx, alertID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlertComments", reflect.TypeOf((*MockDataStore)(nil).GetAlertComments), ctx, alertID)
+}
+
+// AddAlertComment mocks base method
+func (m *MockDataStore) AddAlertComment(ctx context.Context, request *storage.Comment) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddAlertComment", ctx, request)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddAlertComment indicates an expected call of AddAlertComment
+func (mr *MockDataStoreMockRecorder) AddAlertComment(ctx, request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlertComment", reflect.TypeOf((*MockDataStore)(nil).AddAlertComment), ctx, request)
+}
+
+// UpdateAlertComment mocks base method
+func (m *MockDataStore) UpdateAlertComment(ctx context.Context, request *storage.Comment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAlertComment", ctx, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAlertComment indicates an expected call of UpdateAlertComment
+func (mr *MockDataStoreMockRecorder) UpdateAlertComment(ctx, request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlertComment", reflect.TypeOf((*MockDataStore)(nil).UpdateAlertComment), ctx, request)
+}
+
+// RemoveAlertComment mocks base method
+func (m *MockDataStore) RemoveAlertComment(ctx context.Context, request *storage.Comment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveAlertComment", ctx, request)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveAlertComment indicates an expected call of RemoveAlertComment
+func (mr *MockDataStoreMockRecorder) RemoveAlertComment(ctx, request interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComment", reflect.TypeOf((*MockDataStore)(nil).RemoveAlertComment), ctx, request)
+}

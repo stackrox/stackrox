@@ -16,6 +16,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { severityLabels } from 'messages/common';
 import queryService from 'modules/queryService';
+import { policySortFields } from 'constants/sortFields';
 
 const FREQUENTLY_VIOLATED_POLICIES = gql`
     query frequentlyViolatedPolicies($query: String) {
@@ -100,7 +101,11 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
 
     const viewAllURL = workflowState
         .pushList(entityTypes.POLICY)
-        .setSort([{ id: 'policyStatus', desc: false }, { id: 'severity', desc: false }])
+        .setSort([
+            // @TODO to uncomment once Policy Status field is sortable on backend
+            // { id: policySortFields.POLICY_STATUS, desc: false },
+            { id: policySortFields.SEVERITY, desc: false }
+        ])
         .toUrl();
 
     return (

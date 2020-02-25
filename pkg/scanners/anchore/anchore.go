@@ -40,12 +40,13 @@ var (
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error)) {
 	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error) {
-		scan, err := newScanner(integration, set)
-		return scan, err
+		return newScanner(integration, set)
 	}
 }
 
 type anchore struct {
+	scannerTypes.ScanSemaphore
+
 	client                *anchoreClient.APIClient
 	conf                  *storage.AnchoreConfig
 	protoImageIntegration *storage.ImageIntegration
@@ -96,6 +97,8 @@ func newScanner(ii *storage.ImageIntegration, activeRegistries registries.Set) (
 		conf:                  conf,
 		protoImageIntegration: ii,
 		activeRegistries:      activeRegistries,
+
+		ScanSemaphore: scannerTypes.NewDefaultSemaphore(),
 	}
 	return scanner, nil
 }

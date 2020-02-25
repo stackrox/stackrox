@@ -119,14 +119,14 @@ func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 func (s *pipelineImpl) enrichCluster(ctx context.Context, secret *storage.Secret) error {
 	secret.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ctx, secret.GetClusterId())
+	clusterName, clusterExists, err := s.clusters.GetClusterName(ctx, secret.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
 	case !clusterExists:
 		log.Warnf("Couldn't find cluster '%s'", secret.GetClusterId())
 	default:
-		secret.ClusterName = cluster.GetName()
+		secret.ClusterName = clusterName
 	}
 	return nil
 }

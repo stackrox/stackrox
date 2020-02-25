@@ -25,7 +25,7 @@ const renderKeyValues = ({ fields }) => (
                     name={`${pair}.key`}
                     component="input"
                     type="text"
-                    className="border-2 rounded p-2 my-1 mr-1 border-base-300 w-1/3 font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                    className="border-2 rounded p-2 my-1 mr-1 bg-base-100 border-base-300 w-1/3 font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
                     placeholder="Key"
                 />
                 <Field
@@ -33,7 +33,7 @@ const renderKeyValues = ({ fields }) => (
                     name={`${pair}.value`}
                     component="input"
                     type="text"
-                    className="border-2 rounded p-2 my-1 border-base-300 w-1/2 font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
+                    className="border-2 rounded p-2 my-1 bg-base-100 border-base-300 w-1/2 font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
                     placeholder="Value"
                 />
                 <button

@@ -56,7 +56,8 @@ type storeImpl struct {
 	crud generic.Crud
 }
 
-type deleter interface {
+type txWrapper interface {
+	Set(k, v []byte) error
 	Delete(id []byte) error
 }
 
@@ -176,8 +177,7 @@ func (b *storeImpl) addProcessIndicator(tx *badger.Txn, batch *badger.WriteBatch
 		return "", err
 	}
 
-	uniqueKey := []byte(secondaryKey)
-	fullyQualifiedUniqueKey := badgerhelper.GetBucketKey(uniqueProcessesBucket, uniqueKey)
+	fullyQualifiedUniqueKey := badgerhelper.GetBucketKey(uniqueProcessesBucket, secondaryKey)
 
 	uniqueKeyItem, err := tx.Get(fullyQualifiedUniqueKey)
 	if err != nil && err != badger.ErrKeyNotFound {
@@ -191,15 +191,18 @@ func (b *storeImpl) addProcessIndicator(tx *badger.Txn, batch *badger.WriteBatch
 			return "", err
 		}
 		oldIDString = string(oldIDBytes)
-		if err := removeProcessIndicator(tx, batch, oldIDString); err != nil {
+		if err := b.removeProcessIndicator(tx, batch, oldIDString); err != nil {
 			return "", errors.Wrap(err, "Removing old indicator")
 		}
 	}
 
-	if err := batch.SetEntry(&badger.Entry{Key: fullyQualifiedIndicatorID, Value: data}); err != nil {
+	if err := b.AddKeysToIndex(batch, indicatorID); err != nil {
+		return "", errors.Wrap(err, "error adding keys to index")
+	}
+	if err := batch.Set(fullyQualifiedIndicatorID, data); err != nil {
 		return "", errors.Wrap(err, "inserting into indicator bucket")
 	}
-	if err := batch.SetEntry(&badger.Entry{Key: fullyQualifiedUniqueKey, Value: indicatorID}); err != nil {
+	if err := batch.Set(fullyQualifiedUniqueKey, indicatorID); err != nil {
 		return "", errors.Wrap(err, "inserting into unique field bucket")
 	}
 	return oldIDString, nil
@@ -233,15 +236,7 @@ func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (st
 	if err := batch.Flush(); err != nil {
 		return "", errors.Wrap(err, "error flushing process indicator")
 	}
-	if oldIDString != "" {
-		if err := b.IncTxnCount(); err != nil {
-			return oldIDString, err
-		}
-	}
-	if err != nil {
-		return "", err
-	}
-	return oldIDString, b.IncTxnCount()
+	return oldIDString, nil
 }
 
 func (b *storeImpl) batchAddProcessIndicators(start, end int, indicators []*storage.ProcessIndicator, dataBytes [][]byte) ([]string, error) {
@@ -312,16 +307,10 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 		}
 		deletedIndicators = append(deletedIndicators, batchedIndicators...)
 	}
-	if len(deletedIndicators) > 0 {
-		// Purposefully increment the txn count here as it will be a call in the datastore
-		if err := b.IncTxnCount(); err != nil {
-			log.Errorf("error incrementing txn count: %v", err)
-		}
-	}
-	return deletedIndicators, b.IncTxnCount()
+	return deletedIndicators, nil
 }
 
-func removeProcessIndicator(tx *badger.Txn, deleter deleter, id string) error {
+func (b *storeImpl) removeProcessIndicator(tx *badger.Txn, txWrapper txWrapper, id string) error {
 	indicator, exists, err := getProcessIndicator(tx, id)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing indicator")
@@ -335,25 +324,20 @@ func removeProcessIndicator(tx *badger.Txn, deleter deleter, id string) error {
 	if err != nil {
 		return err
 	}
+
+	if err := b.crud.AddKeysToIndex(txWrapper, []byte(id)); err != nil {
+		return errors.Wrap(err, "error adding key to index")
+	}
+
 	fullyQualifiedSecondaryKey := badgerhelper.GetBucketKey(uniqueProcessesBucket, secondaryKey)
-	if err := deleter.Delete(fullyQualifiedSecondaryKey); err != nil {
+	if err := txWrapper.Delete(fullyQualifiedSecondaryKey); err != nil {
 		return errors.Wrap(err, "deleting from unique bucket")
 	}
-	if err := deleter.Delete(badgerhelper.GetBucketKey(processIndicatorBucket, []byte(id))); err != nil {
+
+	if err := txWrapper.Delete(badgerhelper.GetBucketKey(processIndicatorBucket, []byte(id))); err != nil {
 		return errors.Wrap(err, "removing indicator")
 	}
 	return nil
-}
-
-func (b *storeImpl) RemoveProcessIndicator(id string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicator")
-	err := b.DB.Update(func(tx *badger.Txn) error {
-		return removeProcessIndicator(tx, tx, id)
-	})
-	if err != nil {
-		return err
-	}
-	return b.IncTxnCount()
 }
 
 func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
@@ -362,7 +346,7 @@ func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
 	defer batch.Cancel()
 	for _, id := range ids {
 		if err := badgerhelper.RetryableUpdate(b.DB, func(tx *badger.Txn) error {
-			return removeProcessIndicator(tx, batch, id)
+			return b.removeProcessIndicator(tx, batch, id)
 		}); err != nil {
 			return err
 		}
@@ -370,15 +354,15 @@ func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
 	if err := batch.Flush(); err != nil {
 		return errors.Wrap(err, "error on flushing removed process indicators")
 	}
-	return b.IncTxnCount()
+	return nil
 }
 
-func (b *storeImpl) GetTxnCount() (uint64, error) {
-	return b.crud.GetTxnCount(), nil
+func (b *storeImpl) AckKeysIndexed(keys ...string) error {
+	return b.crud.AckKeysIndexed(keys...)
 }
 
-func (b *storeImpl) IncTxnCount() error {
-	return b.crud.IncTxnCount()
+func (b *storeImpl) GetKeysToIndex() ([]string, error) {
+	return b.crud.GetKeysToIndex()
 }
 
 func (b *storeImpl) WalkAll(fn func(pi *storage.ProcessIndicator) error) error {

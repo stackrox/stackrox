@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,26 +24,34 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(datastore.Singleton(), lifecycle.SingletonManager(), riskManager.Singleton())
+	return NewPipeline(datastore.Singleton(), lifecycle.SingletonManager(), riskManager.Singleton(), reprocessor.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(deployments datastore.DataStore, manager lifecycle.Manager, riskManager riskManager.Manager) pipeline.Fragment {
+func NewPipeline(deployments datastore.DataStore, manager lifecycle.Manager, riskManager riskManager.Manager, riskReprocessor reprocessor.Loop) pipeline.Fragment {
 	return &pipelineImpl{
-		riskManager: riskManager,
-		manager:     manager,
-		deployments: deployments,
+		riskManager:     riskManager,
+		riskReprocessor: riskReprocessor,
+		manager:         manager,
+		deployments:     deployments,
 	}
 }
 
 type pipelineImpl struct {
-	deployments datastore.DataStore
-	riskManager riskManager.Manager
-	manager     lifecycle.Manager
+	deployments     datastore.DataStore
+	riskManager     riskManager.Manager
+	riskReprocessor reprocessor.Loop
+	manager         lifecycle.Manager
 }
 
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, _ *reconciliation.StoreMap) error {
-	// Nothing to reconcile
+	// Run reprocessing once sync has completed
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := s.deployments.Search(ctx, query)
+	if err != nil {
+		return err
+	}
+	s.riskReprocessor.ReprocessRiskForDeployments(search.ResultsToIDs(results)...)
 	return nil
 }
 

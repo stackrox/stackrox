@@ -11,8 +11,8 @@ import (
 type partialConvert func(msg proto.Message) proto.Message
 
 type crudImpl struct {
-	txnHelper *badgerhelper.TxnHelper
-	db        *badger.DB
+	*badgerhelper.TxnHelper
+	db *badger.DB
 
 	prefix          []byte
 	prefixString    string
@@ -210,6 +210,10 @@ func (c *crudImpl) runUpdate(msg proto.Message, mustExist bool) error {
 		return err
 	}
 	err = c.db.Update(func(tx *badger.Txn) error {
+		// Include keys to index within this transaction to avoid creating two txns
+		if err := c.AddKeysToIndex(tx, c.keyFunc(msg)); err != nil {
+			return err
+		}
 		if err := c.update(tx, id, data, mustExist); err != nil {
 			return err
 		}
@@ -222,7 +226,7 @@ func (c *crudImpl) runUpdate(msg proto.Message, mustExist bool) error {
 	if err != nil {
 		return errors.Wrapf(err, "error updating %s in badger", string(c.prefix))
 	}
-	return c.IncTxnCount()
+	return nil
 }
 
 func (c *crudImpl) Upsert(msg proto.Message) error {
@@ -241,6 +245,10 @@ func (c *crudImpl) updateBatch(msgs []proto.Message, mustExist bool) error {
 
 	for i := 0; i < len(ids); i++ {
 		err := c.db.Update(func(tx *badger.Txn) error {
+			// Include keys to index within this transaction to avoid creating a new txn
+			if err := c.AddKeysToIndex(tx, c.keyFunc(msgs[i])); err != nil {
+				return err
+			}
 			if err := c.update(tx, ids[i], data[i], mustExist); err != nil {
 				return err
 			}
@@ -255,7 +263,7 @@ func (c *crudImpl) updateBatch(msgs []proto.Message, mustExist bool) error {
 			return errors.Wrapf(err, "error updating many %s in Badger", string(c.prefix))
 		}
 	}
-	return c.txnHelper.IncTxnCount()
+	return nil
 }
 
 func (c *crudImpl) UpsertBatch(msgs []proto.Message) error {
@@ -266,6 +274,10 @@ func (c *crudImpl) Delete(id string) error {
 	key := c.getKey(id)
 	partialKey := c.getPartialKey(id)
 	err := c.db.Update(func(tx *badger.Txn) error {
+		// Include keys to index within this transaction to avoid creating a new txn
+		if err := c.AddStringKeysToIndex(tx, id); err != nil {
+			return err
+		}
 		if err := tx.Delete(key); err != nil {
 			return err
 		}
@@ -277,7 +289,7 @@ func (c *crudImpl) Delete(id string) error {
 	if err != nil {
 		return errors.Wrapf(err, "error deleting %s in badger", c.prefixString)
 	}
-	return c.IncTxnCount()
+	return nil
 }
 
 func (c *crudImpl) DeleteBatch(ids []string) error {
@@ -292,6 +304,9 @@ func (c *crudImpl) DeleteBatch(ids []string) error {
 	defer batch.Cancel()
 
 	for i := 0; i < len(keys); i++ {
+		if err := c.AddStringKeysToIndex(batch, ids[i]); err != nil {
+			return errors.Wrap(err, "error adding id to be indexed")
+		}
 		if err := batch.Delete(keys[i]); err != nil {
 			return errors.Wrapf(err, "error deleting keys in %s", c.prefixString)
 		}
@@ -305,15 +320,7 @@ func (c *crudImpl) DeleteBatch(ids []string) error {
 		return errors.Wrapf(err, "error flushing batch in %s", c.prefixString)
 	}
 
-	return c.IncTxnCount()
-}
-
-func (c *crudImpl) GetTxnCount() uint64 {
-	return c.txnHelper.GetTxnCount()
-}
-
-func (c *crudImpl) IncTxnCount() error {
-	return errors.Wrapf(c.txnHelper.IncTxnCount(), "error incrementing txn count in %s", string(c.prefixString))
+	return nil
 }
 
 func (c *crudImpl) GetKeys() ([]string, error) {

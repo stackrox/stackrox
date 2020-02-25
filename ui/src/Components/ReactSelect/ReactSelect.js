@@ -74,7 +74,8 @@ function withAdjustedBehavior(SelectComponent) {
             value: PropTypes.any, // eslint-disable-line react/forbid-prop-types
             /* See react-select docs */
             options: PropTypes.arrayOf(PropTypes.object),
-            styles: PropTypes.shape({})
+            styles: PropTypes.shape({}),
+            'data-testid': PropTypes.string
         };
 
         static defaultProps = {
@@ -86,7 +87,8 @@ function withAdjustedBehavior(SelectComponent) {
             optionValue: null,
             value: null,
             options: [],
-            styles: defaultSelectStyles
+            styles: defaultSelectStyles,
+            'data-testid': ''
         };
 
         state = {
@@ -158,6 +160,7 @@ function withAdjustedBehavior(SelectComponent) {
                 optionValue,
                 options,
                 styles,
+                'data-testid': inputId,
                 ...rest
             } = this.props;
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
@@ -174,6 +177,7 @@ function withAdjustedBehavior(SelectComponent) {
                     value={valueToPass}
                     options={options}
                     styles={styles}
+                    inputId={inputId}
                     {...rest}
                 />
             );

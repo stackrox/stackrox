@@ -9,9 +9,31 @@ var (
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", false)
 
-	// ManagedDB enabled the newly StackRox managed DB transaction sequencing.
-	ManagedDB = registerFeature("Use managed sequencing for the embedded Badger DB", "ROX_MANAGED_DB", false)
+	// Dackbox enables the id graph layer on top of badger.
+	Dackbox = registerFeature("Use DackBox layer for the embedded Badger DB", "ROX_DACKBOX", false)
 
 	// Telemetry enables the telemetry features
-	Telemetry = registerFeature("Enable support for telemetry", "ROX_TELEMETRY", false)
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	Telemetry = registerFeature("Enable support for telemetry", "ROX_TELEMETRY", true)
+
+	// DiagnosticBundle enables support for obtaining extended diagnostic information.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	DiagnosticBundle = registerFeature("Enable support for diagnostic bundle download", "ROX_DIAGNOSTIC_BUNDLE", true)
+
+	// AnalystNotesUI enables the Analyst Notes UI.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", false)
+
+	// EventTimelineUI enables the Event Timeline UI.
+	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
+	EventTimelineUI = registerFeature("Enable Event Timeline UI", "ROX_EVENT_TIMELINE_UI", false)
+
+	// NistSP800_53 enables the NIST SP 800-53 compliance standard.
+	NistSP800_53 = registerFeature("NIST SP 800-53", "ROX_NIST_800_53", false)
+
+	// RefreshTokens enables supports for refresh tokens & OIDC code flow.
+	RefreshTokens = registerFeature("Refresh tokens", "ROX_REFRESH_TOKENS", true)
+
+	// SensorBasedDetection enables detection in Sensor and will not enrich or detect in Central for deployments
+	SensorBasedDetection = registerFeature("Sensor Based Detection", "ROX_SENSOR_DETECTION", false)
 )

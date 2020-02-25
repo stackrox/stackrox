@@ -14,8 +14,7 @@ import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-// TO DO: factor this out from config management
-import ViolationsAcrossThisDeployment from 'Containers/ConfigManagement/Entity/widgets/ViolationsAcrossThisDeployment';
+import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
@@ -46,7 +45,7 @@ const emptyPolicy = {
 };
 
 const noop = () => {};
-const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
+const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
@@ -76,6 +75,9 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
     function togglePolicy() {
         updatePolicyDisabledState(id, !currentDisabledState).then(() => {
             setCurrentDisabledState(!currentDisabledState);
+            if (typeof setRefreshTrigger === 'function') {
+                setRefreshTrigger(Math.random());
+            }
         });
     }
     const policyActionButtons = (
@@ -154,10 +156,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
         },
         {
             key: 'Enforcement',
-            value:
-                enforcementActions || (enforcementActions && enforcementActions.length)
-                    ? 'Yes'
-                    : 'No'
+            value: enforcementActions && enforcementActions.length ? 'Yes' : 'No'
         },
         {
             key: 'Lifecycle',
@@ -208,7 +207,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                     header={`${failingDeployments.length} ${pluralize(
                         entityTypes.DEPLOYMENT,
                         failingDeployments.length
-                    )} have failed across this policy`}
+                    )} ${failingDeployments.length ? 'have' : 'has'} failed across this policy`}
                     rows={failingDeployments}
                     entityType={entityTypes.DEPLOYMENT}
                     noDataText="No deployments have failed across this policy"
@@ -231,12 +230,12 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                 <CollapsibleSection title="Policy Summary" headerComponents={policyActionButtons}>
                     {/* using a different container class here because we want default 3 columns instead of 2 */}
                     <div
-                        className={`${entityGridContainerBaseClassName} grid-columns-2 lg:grid-columns-3 xl:grid-columns-4`}
+                        className={`${entityGridContainerBaseClassName} grid-columns-2 lg:grid-columns-3`}
                     >
                         <div className="sx-2">
                             <Widget
                                 header="Description, Rationale, & Remediation"
-                                className="bg-base-100 min-h-48 w-full pdf-page pdf-stretch"
+                                className="bg-base-100 min-h-48 w-full h-full pdf-page pdf-stretch"
                             >
                                 <div className="flex flex-col w-full">
                                     <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
@@ -245,11 +244,11 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                                         </div>
                                         <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
                                             <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span>Severity:</span>
+                                                <span className="mb-2 text-xl">Severity:</span>
                                                 <SeverityLabel severity={severity} />
                                             </span>
                                             <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
-                                                <span>Status:</span>
+                                                <span className="mb-2 text-xl">Status:</span>
                                                 <StatusChip status={policyStatus} />
                                             </span>
                                         </div>
@@ -274,9 +273,9 @@ const VulnMgmtPolicyOverview = ({ data, entityContext }) => {
                                 </div>
                             </Widget>
                         </div>
-                        <div className="s-1">
+                        <div className="sx-1">
                             <Metadata
-                                className="h-full w-full min-w-48 bg-base-100 min-h-48 pdf-page"
+                                className="h-full w-full min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={details}
                                 title="Details"
                             />

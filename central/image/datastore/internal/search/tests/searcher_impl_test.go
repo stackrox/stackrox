@@ -18,6 +18,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
@@ -35,6 +37,7 @@ type searcherSuite struct {
 
 	badgerDB   *badger.DB
 	bleveIndex bleve.Index
+	dacky      *dackbox.DackBox
 
 	store    store.Store
 	indexer  index.Indexer
@@ -42,6 +45,9 @@ type searcherSuite struct {
 }
 
 func TestSearcher(t *testing.T) {
+	if features.Dackbox.Enabled() {
+		return
+	}
 	suite.Run(t, new(searcherSuite))
 }
 
@@ -71,12 +77,15 @@ func (s *searcherSuite) SetupTest() {
 
 	s.indexer = index.New(s.bleveIndex)
 
-	s.badgerDB, _, err = badgerhelper.NewTemp(testutils.DBFileName(s), features.ManagedDB.Enabled())
+	s.badgerDB, _, err = badgerhelper.NewTemp(testutils.DBFileName(s))
+	s.Require().NoError(err)
+
+	s.dacky, err = dackbox.NewDackBox(s.badgerDB, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	s.Require().NoError(err)
 
 	s.store = badgerStore.New(s.badgerDB, false)
 
-	s.searcher = New(s.store, s.indexer)
+	s.searcher = New(s.store, nil, nil, nil, nil, nil, s.indexer)
 }
 
 func (s *searcherSuite) TestNoAccess() {
@@ -89,7 +98,7 @@ func (s *searcherSuite) TestNoAccess() {
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -126,7 +135,7 @@ func (s *searcherSuite) TestNoAccess() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.UpsertImage(img))
+	s.Require().NoError(s.store.Upsert(img, nil))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -164,7 +173,7 @@ func (s *searcherSuite) TestHasAccess() {
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -201,7 +210,7 @@ func (s *searcherSuite) TestHasAccess() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.UpsertImage(img))
+	s.Require().NoError(s.store.Upsert(img, nil))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -227,7 +236,7 @@ func (s *searcherSuite) TestPagination() {
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -277,7 +286,7 @@ func (s *searcherSuite) TestPagination() {
 	}
 
 	for _, img := range imgs {
-		s.Require().NoError(s.store.UpsertImage(img))
+		s.Require().NoError(s.store.Upsert(img, nil))
 		s.Require().NoError(s.indexer.AddImage(img))
 	}
 
@@ -344,7 +353,7 @@ func (s *searcherSuite) TestNoClusterNSScopes() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.UpsertImage(img))
+	s.Require().NoError(s.store.Upsert(img, nil))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -426,7 +435,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deploymentDS, err := datastore.NewBadger(s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
 	s.Require().NoError(err)
 
 	for _, deployment := range deployments {
@@ -437,7 +446,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.UpsertImage(img))
+	s.Require().NoError(s.store.Upsert(img, nil))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterA").ProtoQuery()

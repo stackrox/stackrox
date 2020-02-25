@@ -24,13 +24,13 @@ type ProviderOption func(*providerImpl) error
 // WithBackendFromFactory adds a backend from the factory to the provider.
 func WithBackendFromFactory(ctx context.Context, factory BackendFactory) ProviderOption {
 	return func(pr *providerImpl) error {
-		backend, effectiveConfig, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
+		backend, err := factory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.Type)
 		}
 
 		pr.backend = backend
-		pr.storedInfo.Config = effectiveConfig
+		pr.storedInfo.Config = backend.Config(false)
 		return nil
 	}
 }

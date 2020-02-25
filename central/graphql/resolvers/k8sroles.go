@@ -44,7 +44,7 @@ func (resolver *k8SRoleResolver) Cluster(ctx context.Context) (*clusterResolver,
 }
 
 // K8sRoles return k8s roles based on a query
-func (resolver *Resolver) K8sRoles(ctx context.Context, arg paginatedQuery) ([]*k8SRoleResolver, error) {
+func (resolver *Resolver) K8sRoles(ctx context.Context, arg PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8sRoles")
 
 	if err := readK8sRoles(ctx); err != nil {
@@ -126,7 +126,7 @@ func (resolver *k8SRoleResolver) SubjectCount(ctx context.Context) (int32, error
 		return 0, err
 	}
 
-	subjects, err := resolver.getSubjects(ctx, rawQuery{})
+	subjects, err := resolver.getSubjects(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
@@ -134,7 +134,7 @@ func (resolver *k8SRoleResolver) SubjectCount(ctx context.Context) (int32, error
 }
 
 // Subjects returns the set of subjects granted permissions to by a given k8s role
-func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([]*subjectWithClusterIDResolver, error) {
+func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args RawQuery) ([]*subjectWithClusterIDResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "Subjects")
 
 	if err := readK8sSubjects(ctx); err != nil {
@@ -148,7 +148,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context, args rawQuery) ([
 	return wrapSubjects(resolver.data.GetClusterId(), resolver.data.GetClusterName(), subjects), nil
 }
 
-func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, args rawQuery) ([]*storage.Subject, error) {
+func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, args RawQuery) ([]*storage.Subject, error) {
 	subjects := make([]*storage.Subject, 0)
 
 	filterQ, err := args.AsV1QueryOrEmpty()
@@ -168,7 +168,7 @@ func (resolver *k8SRoleResolver) getSubjects(ctx context.Context, args rawQuery)
 }
 
 // ServiceAccounts returns the set of service accounts granted permissions to by a given k8s role
-func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args rawQuery) ([]*serviceAccountResolver, error) {
+func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context, args RawQuery) ([]*serviceAccountResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.K8sRoles, "ServiceAccounts")
 
 	if err := readServiceAccounts(ctx); err != nil {
@@ -185,14 +185,14 @@ func (resolver *k8SRoleResolver) ServiceAccountCount(ctx context.Context) (int32
 	if err := readServiceAccounts(ctx); err != nil {
 		return 0, err
 	}
-	serviceAccounts, err := resolver.getServiceAccounts(ctx, rawQuery{})
+	serviceAccounts, err := resolver.getServiceAccounts(ctx, RawQuery{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(serviceAccounts)), nil
 }
 
-func (resolver *k8SRoleResolver) getServiceAccounts(ctx context.Context, args rawQuery) ([]*storage.ServiceAccount, error) {
+func (resolver *k8SRoleResolver) getServiceAccounts(ctx context.Context, args RawQuery) ([]*storage.ServiceAccount, error) {
 	filterQ, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err

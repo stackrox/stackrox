@@ -11,7 +11,7 @@ import (
 )
 
 type watchHandler struct {
-	extractor *basic.Extractor
+	manager *basic.Manager
 }
 
 func (h *watchHandler) OnChange(dir string) (interface{}, error) {
@@ -38,7 +38,7 @@ func (h *watchHandler) OnStableUpdate(val interface{}, err error) {
 			log.Info("htpasswd file found. Updating basic auth credentials")
 		}
 	}
-	h.extractor.SetHashFile(hashFile)
+	h.manager.SetHashFile(hashFile)
 }
 
 func (h *watchHandler) OnWatchError(err error) {

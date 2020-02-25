@@ -14,9 +14,11 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceSearch "github.com/stackrox/rox/central/compliance/search"
+	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	componentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -31,6 +33,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -80,6 +83,11 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
 	}
 
+	if features.Dackbox.Enabled() {
+		searchfuncs[v1.SearchCategory_IMAGE_COMPONENTS] = s.components.SearchImageComponents
+		searchfuncs[v1.SearchCategory_VULNERABILITIES] = s.cves.SearchCVEs
+	}
+
 	return searchfuncs
 }
 
@@ -98,6 +106,11 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
 		v1.SearchCategory_ROLES:            s.roles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
+	}
+
+	if features.Dackbox.Enabled() {
+		searchers[v1.SearchCategory_IMAGE_COMPONENTS] = s.components
+		searchers[v1.SearchCategory_VULNERABILITIES] = s.cves
 	}
 
 	return searchers
@@ -137,6 +150,8 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		v1.SearchCategory_SERVICE_ACCOUNTS: resources.ServiceAccount,
 		v1.SearchCategory_ROLES:            resources.K8sRole,
 		v1.SearchCategory_ROLEBINDINGS:     resources.K8sRoleBinding,
+		v1.SearchCategory_IMAGE_COMPONENTS: resources.Image,
+		v1.SearchCategory_VULNERABILITIES:  resources.Image,
 	}
 
 	return searchCategoryToResource
@@ -156,6 +171,8 @@ type serviceImpl struct {
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore
 	clusters        clusterDataStore.DataStore
+	cves            cveDataStore.DataStore
+	components      componentDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer

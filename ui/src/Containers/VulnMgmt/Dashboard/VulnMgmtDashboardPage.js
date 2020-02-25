@@ -3,16 +3,15 @@ import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
 import entityTypes from 'constants/entityTypes';
+import { createOptions } from 'utils/workflowUtils';
 import DashboardLayout from 'Components/DashboardLayout';
-import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import RadioButtonGroup from 'Components/RadioButtonGroup';
 import workflowStateContext from 'Containers/workflowStateContext';
-
-import { dashboardLimit } from 'constants/workflowPages.constants';
-import PoliciesCountTile from './PoliciesCountTile';
-import CvesCountTile from './CvesCountTile';
-
+import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
+import DashboardMenu from 'Components/DashboardMenu';
+import PoliciesCountTile from '../Components/PoliciesCountTile';
+import CvesCountTile from '../Components/CvesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestImagesAndComponents from '../widgets/TopRiskiestImagesAndComponents';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
@@ -21,7 +20,13 @@ import MostCommonVulnerabilities from '../widgets/MostCommonVulnerabilities';
 import DeploymentsWithMostSeverePolicyViolations from '../widgets/DeploymentsWithMostSeverePolicyViolations';
 import ClustersWithMostK8sIstioVulnerabilities from '../widgets/ClustersWithMostK8sIstioVulnerabilities';
 
-// layout-specific graph widget counts
+const entityMenuTypes = [
+    entityTypes.CLUSTER,
+    entityTypes.NAMESPACE,
+    entityTypes.DEPLOYMENT,
+    entityTypes.IMAGE,
+    entityTypes.COMPONENT
+];
 
 const VulnDashboardPage = ({ history }) => {
     const workflowState = useContext(workflowStateContext);
@@ -44,12 +49,12 @@ const VulnDashboardPage = ({ history }) => {
         if (newValue === 'Fixable') {
             targetUrl = workflowState
                 .setSearch({
-                    IsFixable: 'true'
+                    Fixable: 'true'
                 })
                 .toUrl();
         } else {
             const allSearch = { ...searchState };
-            delete allSearch.IsFixable;
+            delete allSearch.Fixable;
 
             targetUrl = workflowState.setSearch(allSearch).toUrl();
         }
@@ -57,26 +62,11 @@ const VulnDashboardPage = ({ history }) => {
         history.push(targetUrl);
     }
 
-    const entityMenuTypes = [
-        entityTypes.CLUSTER,
-        entityTypes.NAMESPACE,
-        entityTypes.DEPLOYMENT,
-        entityTypes.IMAGE,
-        entityTypes.COMPONENT
-    ];
-
-    const cveFilter = searchState.IsFixable ? 'Fixable' : 'All';
+    const cveFilter = searchState.Fixable ? 'Fixable' : 'All';
 
     const headerComponents = (
         <>
-            <div className="flex">
-                <PoliciesCountTile />
-                <CvesCountTile />
-                <div className="flex w-32">
-                    <EntitiesMenu text="Application & Infrastructure" options={entityMenuTypes} />
-                </div>
-            </div>
-            <div className="flex items-center pr-2 ml-6 pl-3 border-l border-base-400">
+            <div className="flex items-center">
                 <RadioButtonGroup
                     buttons={cveFilterButtons}
                     headerText="Filter CVEs"
@@ -89,6 +79,16 @@ const VulnDashboardPage = ({ history }) => {
                     pdfId="capture-dashboard"
                 />
             </div>
+            <div className="flex h-full ml-3 pl-3 border-l border-base-400">
+                <PoliciesCountTile />
+                <CvesCountTile />
+                <div className="flex w-32">
+                    <DashboardMenu
+                        text="Application & Infrastructure"
+                        options={createOptions(entityMenuTypes, workflowState)}
+                    />
+                </div>
+            </div>
         </>
     );
     return (
@@ -100,19 +100,19 @@ const VulnDashboardPage = ({ history }) => {
                 />
             </div>
             <div className="s-2">
-                <TopRiskiestImagesAndComponents limit={dashboardLimit} />
+                <TopRiskiestImagesAndComponents limit={DASHBOARD_LIMIT} />
             </div>
             <div className="s-2">
                 <FrequentlyViolatedPolicies />
             </div>
             <div className="s-2">
-                <RecentlyDetectedVulnerabilities search={searchState} limit={dashboardLimit} />
+                <RecentlyDetectedVulnerabilities search={searchState} limit={DASHBOARD_LIMIT} />
             </div>
             <div className="sx-2 sy-4">
                 <MostCommonVulnerabilities search={searchState} />
             </div>
             <div className="s-2">
-                <DeploymentsWithMostSeverePolicyViolations limit={dashboardLimit} />
+                <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
             </div>
             <div className="s-2">
                 <ClustersWithMostK8sIstioVulnerabilities />

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
+	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
@@ -15,16 +15,15 @@ const (
 	lastModifiedDateTime = "2006-05-02T15:04Z"
 )
 
-func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
-
-	cves := []nvd.CVEEntry{
+func TestNvdCVEsToProtoCVEs(t *testing.T) {
+	cves := []*schema.NVDCVEFeedJSON10DefCVEItem{
 		{
-			CVE: nvd.CVE{
-				Metadata: nvd.CVEMetadata{
-					CVEID: "cve-2019-1",
+			CVE: &schema.CVEJSON40{
+				CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+					ID: "cve-2019-1",
 				},
-				References: nvd.ReferenceData{
-					Reference: []nvd.CVEReference{
+				References: &schema.CVEJSON40References{
+					ReferenceData: []*schema.CVEJSON40Reference{
 						{
 							URL: "Reference1",
 						},
@@ -33,8 +32,8 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 						},
 					},
 				},
-				Descriptions: nvd.CVEDescription{
-					Description: []nvd.DescriptionData{
+				Description: &schema.CVEJSON40Description{
+					DescriptionData: []*schema.CVEJSON40LangString{
 						{
 							Lang:  "en",
 							Value: "Description1",
@@ -46,37 +45,37 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 					},
 				},
 			},
-			LastModifiedDateTime: lastModifiedDateTime,
-			PublishedDateTime:    publishedDateTime,
-			Impact: nvd.Impact{
-				BaseMetricV2: nvd.BaseMetricV2{
-					CVSSv2: nvd.CVSSv2{
-						VectorString:     "AV:N/AC:L/Au:N/C:C/I:C/A:C",
-						Score:            10,
-						AccessVector:     "NETWORK",
-						AccessComplexity: "LOW",
-						Authentication:   "NONE",
-						ConfImpact:       "COMPLETE",
-						IntegImpact:      "COMPLETE",
-						AvailImpact:      "COMPLETE",
+			LastModifiedDate: lastModifiedDateTime,
+			PublishedDate:    publishedDateTime,
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV2: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV2{
+					CVSSV2: &schema.CVSSV20{
+						VectorString:          "AV:N/AC:L/Au:N/C:C/I:C/A:C",
+						BaseScore:             10,
+						AccessVector:          "NETWORK",
+						AccessComplexity:      "LOW",
+						Authentication:        "NONE",
+						ConfidentialityImpact: "COMPLETE",
+						IntegrityImpact:       "COMPLETE",
+						AvailabilityImpact:    "COMPLETE",
 					},
 					Severity:            "HIGH",
 					ExploitabilityScore: 10,
 					ImpactScore:         10,
 				},
-				BaseMetricV3: nvd.BaseMetricV3{
-					CVSSv3: nvd.CVSSv3{
-						VectorString:       "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-						Score:              9.8,
-						AttackVector:       "NETWORK",
-						AttackComplexity:   "LOW",
-						PrivilegesRequired: "NONE",
-						UserInteraction:    "NONE",
-						Scope:              "UNCHANGED",
-						ConfImpact:         "HIGH",
-						IntegImpact:        "HIGH",
-						AvailImpact:        "HIGH",
-						Severity:           "CRITICAL",
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						VectorString:          "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+						BaseScore:             9.8,
+						AttackVector:          "NETWORK",
+						AttackComplexity:      "LOW",
+						PrivilegesRequired:    "NONE",
+						UserInteraction:       "NONE",
+						Scope:                 "UNCHANGED",
+						ConfidentialityImpact: "HIGH",
+						IntegrityImpact:       "HIGH",
+						AvailabilityImpact:    "HIGH",
+						BaseSeverity:          "CRITICAL",
 					},
 					ExploitabilityScore: 3.9,
 					ImpactScore:         5.9,
@@ -84,12 +83,12 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 			},
 		},
 		{
-			CVE: nvd.CVE{
-				Metadata: nvd.CVEMetadata{
-					CVEID: "cve-2019-2",
+			CVE: &schema.CVEJSON40{
+				CVEDataMeta: &schema.CVEJSON40CVEDataMeta{
+					ID: "cve-2019-2",
 				},
-				References: nvd.ReferenceData{
-					Reference: []nvd.CVEReference{
+				References: &schema.CVEJSON40References{
+					ReferenceData: []*schema.CVEJSON40Reference{
 						{
 							URL: "Reference3",
 						},
@@ -98,8 +97,8 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 						},
 					},
 				},
-				Descriptions: nvd.CVEDescription{
-					Description: []nvd.DescriptionData{
+				Description: &schema.CVEJSON40Description{
+					DescriptionData: []*schema.CVEJSON40LangString{
 						{
 							Lang:  "en",
 							Value: "Description3",
@@ -111,37 +110,37 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 					},
 				},
 			},
-			LastModifiedDateTime: lastModifiedDateTime,
-			PublishedDateTime:    publishedDateTime,
-			Impact: nvd.Impact{
-				BaseMetricV2: nvd.BaseMetricV2{
-					CVSSv2: nvd.CVSSv2{
-						VectorString:     "AV:N/AC:L/Au:S/C:N/I:P/A:N",
-						Score:            4,
-						AccessVector:     "NETWORK",
-						AccessComplexity: "LOW",
-						Authentication:   "SINGLE",
-						ConfImpact:       "NONE",
-						IntegImpact:      "PARTIAL",
-						AvailImpact:      "NONE",
+			LastModifiedDate: lastModifiedDateTime,
+			PublishedDate:    publishedDateTime,
+			Impact: &schema.NVDCVEFeedJSON10DefImpact{
+				BaseMetricV2: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV2{
+					CVSSV2: &schema.CVSSV20{
+						VectorString:          "AV:N/AC:L/Au:S/C:N/I:P/A:N",
+						BaseScore:             4,
+						AccessVector:          "NETWORK",
+						AccessComplexity:      "LOW",
+						Authentication:        "SINGLE",
+						ConfidentialityImpact: "NONE",
+						IntegrityImpact:       "PARTIAL",
+						AvailabilityImpact:    "NONE",
 					},
 					Severity:            "MEDIUM",
 					ExploitabilityScore: 8,
 					ImpactScore:         2.9,
 				},
-				BaseMetricV3: nvd.BaseMetricV3{
-					CVSSv3: nvd.CVSSv3{
-						VectorString:       "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:N",
-						Score:              7.7,
-						AttackVector:       "NETWORK",
-						AttackComplexity:   "LOW",
-						PrivilegesRequired: "LOW",
-						UserInteraction:    "NONE",
-						Scope:              "CHANGED",
-						ConfImpact:         "NONE",
-						IntegImpact:        "HIGH",
-						AvailImpact:        "NONE",
-						Severity:           "HIGH",
+				BaseMetricV3: &schema.NVDCVEFeedJSON10DefImpactBaseMetricV3{
+					CVSSV3: &schema.CVSSV30{
+						VectorString:          "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:N",
+						BaseScore:             7.7,
+						AttackVector:          "NETWORK",
+						AttackComplexity:      "LOW",
+						PrivilegesRequired:    "LOW",
+						UserInteraction:       "NONE",
+						Scope:                 "CHANGED",
+						ConfidentialityImpact: "NONE",
+						IntegrityImpact:       "HIGH",
+						AvailabilityImpact:    "NONE",
+						BaseSeverity:          "HIGH",
 					},
 					ExploitabilityScore: 3.1,
 					ImpactScore:         4,
@@ -150,13 +149,13 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 		},
 	}
 
-	expectedVuls := []storage.EmbeddedVulnerability{
+	expectedVuls := []storage.CVE{
 		{
-			Cve:          "cve-2019-1",
-			Cvss:         float32(cves[0].Impact.BaseMetricV3.CVSSv3.Score),
+			Id:           "cve-2019-1",
+			Cvss:         float32(cves[0].Impact.BaseMetricV3.CVSSV3.BaseScore),
 			Summary:      "Description1",
 			Link:         "https://nvd.nist.gov/vuln/detail/cve-2019-1",
-			ScoreVersion: storage.EmbeddedVulnerability_V3,
+			ScoreVersion: storage.CVE_V3,
 			CvssV2: &storage.CVSSV2{
 				Vector:              "AV:N/AC:L/Au:N/C:C/I:C/A:C",
 				AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
@@ -167,7 +166,7 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 				Availability:        storage.CVSSV2_IMPACT_COMPLETE,
 				ExploitabilityScore: float32(cves[0].Impact.BaseMetricV2.ExploitabilityScore),
 				ImpactScore:         float32(cves[0].Impact.BaseMetricV2.ImpactScore),
-				Score:               float32(cves[0].Impact.BaseMetricV2.CVSSv2.Score),
+				Score:               float32(cves[0].Impact.BaseMetricV2.CVSSV2.BaseScore),
 				Severity:            storage.CVSSV2_HIGH,
 			},
 			CvssV3: &storage.CVSSV3{
@@ -182,17 +181,17 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 				Confidentiality:     storage.CVSSV3_IMPACT_HIGH,
 				Integrity:           storage.CVSSV3_IMPACT_HIGH,
 				Availability:        storage.CVSSV3_IMPACT_HIGH,
-				Score:               float32(cves[0].Impact.BaseMetricV3.CVSSv3.Score),
+				Score:               float32(cves[0].Impact.BaseMetricV3.CVSSV3.BaseScore),
 				Severity:            storage.CVSSV3_CRITICAL,
 			},
-			VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+			Type: storage.CVE_K8S_CVE,
 		},
 		{
-			Cve:          "cve-2019-2",
-			Cvss:         float32(cves[1].Impact.BaseMetricV3.CVSSv3.Score),
+			Id:           "cve-2019-2",
+			Cvss:         float32(cves[1].Impact.BaseMetricV3.CVSSV3.BaseScore),
 			Summary:      "Description3",
 			Link:         "https://nvd.nist.gov/vuln/detail/cve-2019-2",
-			ScoreVersion: storage.EmbeddedVulnerability_V3,
+			ScoreVersion: storage.CVE_V3,
 			CvssV2: &storage.CVSSV2{
 				Vector:              "AV:N/AC:L/Au:S/C:N/I:P/A:N",
 				AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
@@ -203,7 +202,7 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 				Availability:        storage.CVSSV2_IMPACT_NONE,
 				ExploitabilityScore: float32(cves[1].Impact.BaseMetricV2.ExploitabilityScore),
 				ImpactScore:         float32(cves[1].Impact.BaseMetricV2.ImpactScore),
-				Score:               float32(cves[1].Impact.BaseMetricV2.CVSSv2.Score),
+				Score:               float32(cves[1].Impact.BaseMetricV2.CVSSV2.BaseScore),
 				Severity:            storage.CVSSV2_MEDIUM,
 			},
 			CvssV3: &storage.CVSSV3{
@@ -218,10 +217,10 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 				Confidentiality:     storage.CVSSV3_IMPACT_NONE,
 				Integrity:           storage.CVSSV3_IMPACT_HIGH,
 				Availability:        storage.CVSSV3_IMPACT_NONE,
-				Score:               float32(cves[1].Impact.BaseMetricV3.CVSSv3.Score),
+				Score:               float32(cves[1].Impact.BaseMetricV3.CVSSV3.BaseScore),
 				Severity:            storage.CVSSV3_HIGH,
 			},
-			VulnerabilityType: storage.EmbeddedVulnerability_K8S_VULNERABILITY,
+			Type: storage.CVE_K8S_CVE,
 		},
 	}
 
@@ -236,7 +235,7 @@ func TestNvdCVEsToEmbeddedVulnerabilities(t *testing.T) {
 		assert.Nil(t, err)
 		expectedVul.LastModified = protoconv.ConvertTimeToTimestamp(ts)
 
-		actualVul, err := NvdCveToEmbeddedVulnerability(&cves[i], K8s)
+		actualVul, err := NvdCVEToProtoCVE(cves[i], K8s)
 		assert.Nil(t, err)
 		assert.Equal(t, actualVul, expectedVul)
 	}

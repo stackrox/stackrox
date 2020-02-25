@@ -94,9 +94,9 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	node = proto.Clone(node).(*storage.Node)
 	node.ClusterId = clusterID
-	cluster, ok, err := p.clusterStore.GetCluster(ctx, clusterID)
+	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {
-		node.ClusterName = cluster.GetName()
+		node.ClusterName = clusterName
 	}
 	return store.UpsertNode(node)
 }

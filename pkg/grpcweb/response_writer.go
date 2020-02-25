@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -42,7 +43,7 @@ func (w *responseWriter) Flush() {
 	}
 
 	w.prepareHeadersIfNecessary()
-	if flusher, _ := w.w.(http.Flusher); w != nil {
+	if flusher, _ := w.w.(http.Flusher); flusher != nil {
 		flusher.Flush()
 	}
 }
@@ -54,7 +55,7 @@ func (w *responseWriter) prepareHeadersIfNecessary() {
 	}
 
 	hdr := w.w.Header()
-	w.announcedTrailers = append([]string{}, hdr["Trailer"]...)
+	w.announcedTrailers = sliceutils.StringClone(hdr["Trailer"])
 	// Trailers are sent in a data frame, so don't announce trailers as otherwise downstream proxies might get confused.
 	hdr.Del("Trailer")
 

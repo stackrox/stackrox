@@ -71,6 +71,7 @@ export const entityComponentDefaultProps = {
 
 export const workflowListPropTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})),
+    totalResults: PropTypes.number,
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
@@ -78,12 +79,13 @@ export const workflowListPropTypes = {
 };
 
 export const workflowListDefaultProps = {
+    data: null,
+    totalResults: null,
     search: null,
     entityContext: {},
     sort: null,
     page: 0,
-    selectedRowId: null,
-    data: null
+    selectedRowId: null
 };
 
 export const workflowEntityPropTypes = {

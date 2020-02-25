@@ -15,6 +15,7 @@ import (
 
 var commandsToRetrieve = []string{
 	"dockerd",
+	"dockerd-current",
 
 	"federation-apiserver",
 	"federation-controller-manager",
@@ -165,7 +166,7 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 
 		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
 		if flagsWithFiles.Contains(key) {
-			f, exists, err := file.EvaluatePath(key, false)
+			f, exists, err := file.EvaluatePath(key, false, true)
 			if exists && err == nil {
 				arg.File = f
 			}

@@ -17,7 +17,7 @@ import (
 const maxGRPCSize = 4194304
 
 func getImageStore(b *testing.B) store.Store {
-	db, _, err := badgerhelper.NewTemp(b.Name()+".db", false)
+	db, _, err := badgerhelper.NewTemp(b.Name() + ".db")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -28,14 +28,14 @@ func BenchmarkAddImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, store.UpsertImage(image))
+		require.NoError(b, store.Upsert(image, nil))
 	}
 }
 
 func BenchmarkGetImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	require.NoError(b, store.UpsertImage(image))
+	require.NoError(b, store.Upsert(image, nil))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.GetImage(image.GetId())
 		require.True(b, exists)
@@ -46,7 +46,7 @@ func BenchmarkGetImage(b *testing.B) {
 func BenchmarkListImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	require.NoError(b, store.UpsertImage(image))
+	require.NoError(b, store.Upsert(image, nil))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.ListImage(image.GetId())
 		require.True(b, exists)

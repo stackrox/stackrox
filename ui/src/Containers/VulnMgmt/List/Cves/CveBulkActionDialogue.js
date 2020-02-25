@@ -13,6 +13,7 @@ import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.
 import queryService from 'modules/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
+import { splitCvesByType } from 'utils/vulnerabilityUtils';
 
 import CveToPolicyShortForm from './CveToPolicyShortForm';
 
@@ -32,7 +33,7 @@ const emptyPolicy = {
 const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [messageObj, setMessageObj] = useState(null);
 
-    // the combined CVEs are used for both the policy object and the GraphQL query var
+    // the combined CVEs are used for the GraphQL query var
     const cvesStr = bulkActionCveIds.join(',');
 
     // prepare policy object
@@ -49,6 +50,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 id: cve
                 cve
                 summary
+                vulnerabilityType
             }
         }
     `;
@@ -89,6 +91,13 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             ? policyData.results.map(pol => ({ ...pol, value: pol.id, label: pol.name }))
             : [];
 
+    const { IMAGE_VULNERABILITY: allowedCves, K8S_VULNERABILITY: disallowedCves } = splitCvesByType(
+        cveItems
+    );
+
+    // only the allowed CVEs are combined for use in the policy
+    const allowedCvesStr = allowedCves.join(',');
+
     function handleChange(event) {
         if (get(policy, event.target.name) !== undefined) {
             const newPolicyFields = { ...policy };
@@ -107,8 +116,8 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         if (existingPolicy) {
             // it matches an existing policy's ID, so must have been selected from existing list
             const newCveList = existingPolicy.fields.cve
-                ? `${existingPolicy.fields.cve},${cvesStr}`
-                : cvesStr;
+                ? `${existingPolicy.fields.cve},${allowedCvesStr}`
+                : allowedCvesStr;
             const newFields = { ...existingPolicy.fields, cve: newCveList };
 
             const newPolicy = { ...existingPolicy, fields: newFields, id: value };
@@ -173,33 +182,58 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
     return (
         <CustomDialogue
-            className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
+            className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2 ignore-react-onclickoutside"
             title="Add To Policy"
             text=""
-            onConfirm={addToPolicy}
+            onConfirm={allowedCves.length > 0 ? addToPolicy : null}
             confirmText="Save Policy"
             confirmDisabled={messageObj}
             onCancel={closeWithoutSaving}
         >
-            {/* TODO: replace with working form, this is a temporary placeholder only */}
-            <div className="p-4">
-                {messageObj && <Message type={messageObj.type} message={messageObj.message} />}
-                <CveToPolicyShortForm
-                    policy={policy}
-                    handleChange={handleChange}
-                    existingPolicies={existingPolicies}
-                    selectedPolicy={policyIdentifer}
-                    setSelectedPolicy={setSelectedPolicy}
-                />
-                <div className="pt-2">
-                    <h3 className="mb-2">{`${
-                        bulkActionCveIds.length
-                    } CVEs listed below will be added to this policy:`}</h3>
-                    {cveLoading && <Loader />}
-                    {!cveLoading && (
-                        <InfoList items={cveItems} renderItem={renderCve} extraClassNames="h-48" />
-                    )}
-                </div>
+            <div className="overflow-auto p-4">
+                {!cveLoading && allowedCves.length === 0 ? (
+                    <p>The selected CVEs cannot be added to a policy.</p>
+                ) : (
+                    <>
+                        {messageObj && (
+                            <Message type={messageObj.type} message={messageObj.message} />
+                        )}
+                        <CveToPolicyShortForm
+                            policy={policy}
+                            handleChange={handleChange}
+                            existingPolicies={existingPolicies}
+                            selectedPolicy={policyIdentifer}
+                            setSelectedPolicy={setSelectedPolicy}
+                        />
+                        <div className="pt-2">
+                            <h3 className="mb-2">{`${
+                                allowedCves.length
+                            } CVEs listed below will be added to this policy:`}</h3>
+                            {cveLoading && <Loader />}
+                            {!cveLoading && (
+                                <InfoList
+                                    items={allowedCves}
+                                    renderItem={renderCve}
+                                    extraClassNames="h-48"
+                                />
+                            )}
+                        </div>
+                        {!cveLoading && disallowedCves.length > 0 && (
+                            <div className="pt-2">
+                                <h3 className="mb-2">
+                                    {`The following ${
+                                        disallowedCves.length
+                                    } CVEs cannot be added to a policy.`}
+                                </h3>
+                                <InfoList
+                                    items={disallowedCves}
+                                    renderItem={renderCve}
+                                    extraClassNames="h-24"
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </CustomDialogue>
     );

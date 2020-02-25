@@ -11,12 +11,12 @@ import (
 
 type nodeDispatcher struct {
 	serviceStore    *serviceStore
-	deploymentStore *deploymentStore
+	deploymentStore *DeploymentStore
 	nodeStore       *nodeStore
 	endpointManager *endpointManager
 }
 
-func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *deploymentStore, nodeStore *nodeStore, endpointManager *endpointManager) *nodeDispatcher {
+func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, endpointManager *endpointManager) *nodeDispatcher {
 	return &nodeDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
@@ -37,7 +37,7 @@ func convertTaints(taints []v1.Taint) []*storage.Taint {
 	return roxTaints
 }
 
-func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) []*central.SensorEvent {
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)

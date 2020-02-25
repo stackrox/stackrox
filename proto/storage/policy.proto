@@ -8,6 +8,7 @@ import "storage/scope.proto";
 import "storage/image.proto";
 import "protobuf/gogoproto/gogo.proto";
 import "storage/deployment.proto";
+import "storage/rbac.proto";
 
 package storage;
 
@@ -27,7 +28,12 @@ message Policy {
     Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
     repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
     repeated string notifiers                      = 14;
-    google.protobuf.Timestamp last_updated         = 15;
+    google.protobuf.Timestamp last_updated         = 15 [(gogoproto.moretags) = "search:\"Policy Last Updated\""];
+
+    // Following are helper fields used for sorting policies by name which is a multi-word field
+    string SORT_name                               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
+    string SORT_lifecycleStage                     = 17 [(gogoproto.moretags) = "search:\"SORT_Lifecycle Stage,hidden\""];
+    bool   SORT_enforcement                        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
 }
 
 message ListPolicy {
@@ -190,18 +196,6 @@ message PortPolicy {
 // K8S RBAC Permission level configuration.
 message PermissionPolicy {
     PermissionLevel permission_level = 1;
-}
-
-// For any update to PermissionLevel, also update:
-// - central/searchbasedpolicies/builders/k8s_rbac.go
-// - ui/src/messages/common.js
-enum PermissionLevel {
-    UNSET = 0;
-    NONE = 1;
-    DEFAULT = 2;
-    ELEVATED_IN_NAMESPACE = 3;
-    ELEVATED_CLUSTER_WIDE = 4;
-    CLUSTER_ADMIN = 5;
 }
 
 message ImageNamePolicy {

@@ -24,5 +24,6 @@ func init() {
 		sensorEventDurationHistogramVec,
 		riskProcessingHistogramVec,
 		totalCacheOperationsCounter,
+		datastoreFunctionDurationHistogramVec,
 	)
 }

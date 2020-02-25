@@ -5,6 +5,7 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
 
+import queryService from 'modules/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 
@@ -15,14 +16,14 @@ import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
 const MOST_COMMON_VULNERABILITIES = gql`
-    query mostCommonVulnerabilitiesInDeployment($query: String) {
+    query mostCommonVulnerabilitiesInDeployment($query: String, $scopeQuery: String) {
         results: vulnerabilities(query: $query) {
             id: cve
             cve
             cvss
             scoreVersion
             imageCount
-            isFixable
+            isFixable(query: $scopeQuery)
             envImpact
             deployments {
                 id
@@ -46,7 +47,16 @@ const processData = (data, workflowState, deploymentId, limit) => {
 };
 
 const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
-    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES);
+    const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
+        variables: {
+            query: queryService.objectToWhereClause({
+                'Deployment ID': deploymentId
+            }),
+            scopeQuery: queryService.objectToWhereClause({
+                'Deployment ID': deploymentId
+            })
+        }
+    });
 
     let content = <Loader />;
 

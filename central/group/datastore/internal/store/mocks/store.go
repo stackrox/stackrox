@@ -48,6 +48,21 @@ func (mr *MockStoreMockRecorder) Get(props interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), props)
 }
 
+// GetFiltered mocks base method
+func (m *MockStore) GetFiltered(arg0 func(*storage.GroupProperties) bool) ([]*storage.Group, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFiltered", arg0)
+	ret0, _ := ret[0].([]*storage.Group)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFiltered indicates an expected call of GetFiltered
+func (mr *MockStoreMockRecorder) GetFiltered(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFiltered", reflect.TypeOf((*MockStore)(nil).GetFiltered), arg0)
+}
+
 // GetAll mocks base method
 func (m *MockStore) GetAll() ([]*storage.Group, error) {
 	m.ctrl.T.Helper()

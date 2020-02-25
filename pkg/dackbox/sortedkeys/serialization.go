@@ -1,9 +1,8 @@
 package sortedkeys
 
 import (
+	"encoding/binary"
 	"errors"
-
-	"github.com/stackrox/rox/pkg/binenc"
 )
 
 // Unmarshal unmarshals a set of SortedKeys.
@@ -30,8 +29,9 @@ func Unmarshal(marshalled []byte) (SortedKeys, error) {
 // Marshal marshals the sorted keys.
 func (sk SortedKeys) Marshal() []byte {
 	var marshalled []byte
+	encodedLength := make([]byte, 2)
 	for _, key := range sk {
-		encodedLength := encodeLength(len(key))
+		encodeLength(len(key), encodedLength)
 		marshalled = append(marshalled, encodedLength...)
 		marshalled = append(marshalled, key...)
 	}
@@ -39,9 +39,9 @@ func (sk SortedKeys) Marshal() []byte {
 }
 
 func decodeLength(b []byte) int {
-	return int(binenc.BigEndian.Uint16(b))
+	return int(binary.BigEndian.Uint16(b))
 }
 
-func encodeLength(length int) []byte {
-	return binenc.BigEndian.EncodeUint16(uint16(length))
+func encodeLength(length int, encodedLength []byte) {
+	binary.BigEndian.PutUint16(encodedLength, uint16(length))
 }

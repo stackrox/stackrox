@@ -33,3 +33,7 @@ export function hasSearchModifier(searchOptions, modifier) {
         option => option.type === 'categoryOption' && option.value === modifier
     );
 }
+
+export function doesSearchContain(search, key) {
+    return !!(key && search && Object.keys(search).find(searchItem => searchItem === key));
+}

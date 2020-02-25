@@ -19,7 +19,7 @@ var (
 
 func initialize() {
 	store := store.Singleton()
-	index := index.New(globalindex.GetGlobalIndex())
+	index := index.New(globalindex.GetGlobalTmpIndex())
 	var err error
 	ad, err = New(store, index, search.New(store, index))
 	if err != nil {

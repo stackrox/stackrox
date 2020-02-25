@@ -36,6 +36,7 @@ const CISControlsTile = ({ match, location }) => {
             url={controlsURL}
             loading={loading}
             position="middle"
+            short
         />
     );
 };

@@ -1,18 +1,31 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
+import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import queryService from 'modules/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
+import { getScopeQuery, vulMgmtPolicyQuery } from '../VulnMgmtPolicyQueryUtil';
 
-const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulmMgmtEntityPolicy = ({
+    entityId,
+    entityListType,
+    search,
+    entityContext,
+    sort,
+    page,
+    setRefreshTrigger
+}) => {
+    const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
+    const queryVarConcat = entityContext[entityTypes.POLICY] ? '' : ', query: $scopeQuery';
     const overviewQuery = gql`
-        query getPolicy($id: ID!, $policyQuery: String) {
+        query getPolicy($id: ID!, $scopeQuery: String) {
             result: policy(id: $id) {
                 id
                 name
@@ -117,6 +130,11 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                         source
                         type
                     }
+                    imageAgeDays
+                    scanAgeDays
+                    noScanExists
+                    readOnlyRootFs
+                    whitelistEnabled
                 }
                 scope {
                     cluster
@@ -144,8 +162,8 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
                     }
                     name
                 }
-                deploymentCount
-                deployments {
+                deploymentCount${queryVarParam}
+                deployments${queryVarParam} {
                     ...deploymentFields
                 }
             }
@@ -154,11 +172,18 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
+        // we don't need to filter the count key or entity list when coming from a specific policy since we're already filtering through policy ID
+        // @TODO: rethink entity context and when it accumulates entity info -- currently it holds info from list -> selected row, but not when you
+        // hit the external link and view it as an entity page
         return gql`
-        query getPolicy${entityListType}($id: ID!, $query: String, $policyQuery: String) {
+        query getPolicy${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: policy(id: $id) {
                 id
-                ${listFieldName}(query: $query) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}${queryVarParam}
+                ${listFieldName}(pagination: $pagination${queryVarConcat}) { ...${fragmentName} }
+                unusedVarSink(query: $policyQuery)
+                unusedVarSink(query: $scopeQuery)
+                unusedVarSink(query: $query)
             }
         }
         ${fragment}
@@ -168,10 +193,9 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause(search),
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            })
+            query: queryService.objectToWhereClause({ ...search }),
+            ...vulMgmtPolicyQuery,
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 
@@ -190,11 +214,15 @@ const VulmMgmtEntityPolicy = ({ entityId, entityListType, search, entityContext,
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };
 
-VulmMgmtEntityPolicy.propTypes = workflowEntityPropTypes;
+VulmMgmtEntityPolicy.propTypes = {
+    ...workflowEntityPropTypes,
+    setRefreshTrigger: PropTypes.func
+};
 VulmMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
 
 export default VulmMgmtEntityPolicy;

@@ -45,6 +45,7 @@ func noVolume() *cobra.Command {
 		}
 		return OutputZip(cfg)
 	}
+	c.Hidden = true
 	return c
 }
 

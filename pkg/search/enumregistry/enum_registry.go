@@ -106,5 +106,4 @@ func IsEnum(fieldPath string) bool {
 func init() {
 	enumMap = make(map[string]map[string]int32)
 	reverseEnumMap = make(map[string]map[int32]string)
-
 }
