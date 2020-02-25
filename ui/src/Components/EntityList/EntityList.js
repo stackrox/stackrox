@@ -64,11 +64,6 @@ const EntityList = ({
         history.push(workflowState.setPage(newPage).toUrl());
     }
 
-    if (rowData.length) {
-        const query = {}; // TODO: improve sep. of concerns in pdfUtils
-        createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
-    }
-
     // render section
     const entityLabel = entityLabels[entityType] || 'results';
     const noDataText = `No ${pluralize(entityLabel)} found. Please refine your search.`;

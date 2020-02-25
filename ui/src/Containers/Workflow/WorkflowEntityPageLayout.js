@@ -75,6 +75,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
         entityContext[pageEntity.entityType] = pageEntity.entityId;
     }
 
+    const pdfId = pageListType ? 'capture-list' : 'capture-widgets';
+
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-1 flex-col bg-base-200" style={style}>
@@ -86,7 +88,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 type={pageListType}
                                 page={useCase}
                                 disabled={!!sidePanelEntityId}
-                                pdfId="capture-widgets"
+                                pdfId={pdfId}
                                 customCsvExportHandler={customCsvExportHandler}
                             />
                         </div>
@@ -99,7 +101,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                         className={`${
                             sidePanelEntityId ? 'overlay' : ''
                         } h-full w-full overflow-auto`}
-                        id="capture-widgets"
+                        id={pdfId}
                     >
                         <EntityComponent
                             entityType={pageEntityType}
