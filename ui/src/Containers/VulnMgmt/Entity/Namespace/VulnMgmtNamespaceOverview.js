@@ -17,8 +17,6 @@ import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widge
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-import { getCveExportName } from 'utils/vulnerabilityUtils';
 
 import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -58,17 +56,6 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
     const metadataKeyValuePairs = [];
 
-    function customCsvExportHandler() {
-        const { useCase } = workflowState;
-        const pageEntityType = workflowState.getCurrentEntityType();
-        const entityName = safeData.metadata.name;
-        const csvName = getCveExportName(useCase, pageEntityType, entityName);
-
-        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
-
-        exportCvesAsCsv(csvName, stateWithFixable);
-    }
-
     if (!entityContext[entityTypes.CLUSTER]) {
         const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
         metadataKeyValuePairs.push({
@@ -90,7 +77,8 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const cveActions = (
         <FixableCveExportButton
             disabled={!fixableCves || !fixableCves.length}
-            clickHandler={customCsvExportHandler}
+            workflowState={workflowState}
+            entityName={safeData.metadata.name}
         />
     );
 

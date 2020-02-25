@@ -14,8 +14,6 @@ import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCv
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-import { getCveExportName } from 'utils/vulnerabilityUtils';
 
 import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
@@ -62,17 +60,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const { failingPolicies } = policyStatus;
     const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
-    function customCsvExportHandler() {
-        const { useCase } = workflowState;
-        const pageEntityType = workflowState.getCurrentEntityType();
-        const entityName = safeData.name;
-        const csvName = getCveExportName(useCase, pageEntityType, entityName);
-
-        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
-
-        exportCvesAsCsv(csvName, stateWithFixable);
-    }
-
     function yesNoMaybe(value) {
         if (!value && value !== false) {
             return '—';
@@ -108,7 +95,8 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const cveActions = (
         <FixableCveExportButton
             disabled={!fixableCves || !fixableCves.length}
-            clickHandler={customCsvExportHandler}
+            workflowState={workflowState}
+            entityName={safeData.name}
         />
     );
 

@@ -10,8 +10,6 @@ import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
-import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
-import { getCveExportName } from 'utils/vulnerabilityUtils';
 
 import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from '../TableWidget';
@@ -52,23 +50,13 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         );
     }
 
-    function customCsvExportHandler() {
-        const { useCase } = workflowState;
-        const pageEntityType = workflowState.getCurrentEntityType();
-        const entityName = safeData.name;
-        const csvName = getCveExportName(useCase, pageEntityType, entityName);
-
-        const stateWithFixable = workflowState.setSearch({ 'Fixed By': 'r/.*' });
-
-        exportCvesAsCsv(csvName, stateWithFixable);
-    }
-
     const currentEntity = { [entityTypes.COMPONENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
     const cveActions = (
         <FixableCveExportButton
             disabled={!fixableCVEs || !fixableCVEs.length}
-            clickHandler={customCsvExportHandler}
+            workflowState={workflowState}
+            entityName={safeData.name}
         />
     );
 
