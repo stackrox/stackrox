@@ -61,7 +61,6 @@ func (rs resultSet) intersect(other resultSet) resultSet {
 		thisInBounds = thisIdx < len(rs.results)
 		thatInBounds = thatIdx < len(other.results)
 	}
-
 	return resultSet{
 		results: newResults,
 		order:   order,
@@ -103,7 +102,6 @@ func (rs resultSet) union(other resultSet) resultSet {
 		thisInBounds = thisIdx < len(rs.results)
 		thatInBounds = thatIdx < len(other.results)
 	}
-
 	return resultSet{
 		results: newResults,
 		order:   order,
@@ -200,7 +198,6 @@ func (rs resultSet) leftJoinWithRightOrder(other resultSet) resultSet {
 		thisInBounds = thisIdx < len(rs.results)
 		thatInBounds = thatIdx < len(other.results)
 	}
-
 	return resultSet{
 		results: newResults,
 		order:   order,
@@ -220,22 +217,22 @@ func (rs *resultSet) asResultSlice() []search.Result {
 // Merge any retrieved fields from one result to another. Helpful if fields have been requested in the results.
 func mergeTo(to, from *search.Result) {
 	if to.Matches == nil && from.Matches != nil {
-		to.Matches = from.Matches
-	} else {
-		for k, vs := range from.Matches {
-			if _, toHas := to.Matches[k]; !toHas {
-				to.Matches[k] = vs
-			}
+		to.Matches = make(map[string][]string)
+	}
+	for k, vs := range from.Matches {
+		if _, toHas := to.Matches[k]; toHas {
+			to.Matches[k] = append(to.Matches[k], vs...)
+		} else {
+			to.Matches[k] = append([]string{}, vs...)
 		}
 	}
 
 	if to.Fields == nil && from.Fields != nil {
-		to.Fields = from.Fields
-	} else {
-		for k, vs := range from.Fields {
-			if _, toHas := to.Fields[k]; !toHas {
-				to.Fields[k] = vs
-			}
+		to.Fields = make(map[string]interface{})
+	}
+	for k, vs := range from.Fields {
+		if _, toHas := to.Fields[k]; !toHas {
+			to.Fields[k] = vs
 		}
 	}
 }

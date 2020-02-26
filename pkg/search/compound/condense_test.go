@@ -193,6 +193,63 @@ func (suite *CondenseRequestTestSuite) TestCondenseBoolean() {
 	suite.Equal(expected, actual)
 }
 
+func (suite *CondenseRequestTestSuite) TestNotCondensable() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+		},
+	}
+
+	expectedQ1 := search.NewQueryBuilder().
+		AddLinkedFieldsWithHighlightValues(
+			[]search.FieldLabel{"s1field", "s3field"},
+			[]string{"s1value", "s3value"},
+			[]bool{true, true}).
+		ProtoQuery()
+
+	expectedQ3 := search.NewQueryBuilder().
+		AddExactMatches("s3field", "s3value").
+		ProtoQuery()
+
+	expectedQ4 := search.NewQueryBuilder().
+		AddExactMatches("s4field", "s4value").
+		ProtoQuery()
+
+	expected := &searchRequestSpec{
+		or: []*searchRequestSpec{
+			{
+				and: []*searchRequestSpec{
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: expectedQ3,
+						},
+					},
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[1],
+							Query: expectedQ4,
+						},
+					},
+				},
+			},
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: expectedQ1,
+				},
+			},
+		},
+	}
+
+	actual, err := condense(expected)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
 func (suite *CondenseRequestTestSuite) TestCondenseComplex() {
 	searcherSpecs := []SearcherSpec{
 		{

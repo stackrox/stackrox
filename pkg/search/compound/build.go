@@ -31,21 +31,15 @@ func buildSingleSpec(q *v1.Query, spec SearcherSpec) (*searchRequestSpec, error)
 	}, nil
 }
 
-func buildDefaultSpec(specs []SearcherSpec) (*searchRequestSpec, error) {
-	var spec *SearcherSpec
-	for _, considered := range specs {
-		if considered.IsDefault {
-			spec = &considered
-			break
-		}
-	}
-	if spec == nil {
-		spec = &specs[0]
+func buildDefaultSpec(specs []SearcherSpec, query *v1.Query) (*searchRequestSpec, error) {
+	spec := getDefaultSpec(specs)
+	if query == nil {
+		query = search.EmptyQuery()
 	}
 	return &searchRequestSpec{
 		base: &baseRequestSpec{
 			Spec:  spec,
-			Query: &v1.Query{},
+			Query: query,
 		},
 	}, nil
 }
@@ -59,7 +53,7 @@ type treeBuilder []SearcherSpec
 
 func (tb treeBuilder) walkSpecsRec(q *v1.Query) (*searchRequestSpec, error) {
 	if q == nil || q.GetQuery() == nil {
-		return buildDefaultSpec(tb)
+		return buildDefaultSpec(tb, nil)
 	}
 
 	if _, isDisjunction := q.GetQuery().(*v1.Query_Disjunction); isDisjunction {
@@ -71,7 +65,7 @@ func (tb treeBuilder) walkSpecsRec(q *v1.Query) (*searchRequestSpec, error) {
 	} else if _, isBase := q.GetQuery().(*v1.Query_BaseQuery); isBase {
 		return tb.base(q.GetBaseQuery())
 	}
-	return nil, fmt.Errorf("unrecognized query type: %T", q.GetQuery())
+	return buildDefaultSpec(tb, q)
 }
 
 func (tb treeBuilder) or(q *v1.DisjunctionQuery) (*searchRequestSpec, error) {
@@ -136,9 +130,10 @@ func (tb treeBuilder) base(q *v1.BaseQuery) (*searchRequestSpec, error) {
 }
 
 func (tb treeBuilder) docID(q *v1.DocIDQuery) *searchRequestSpec {
+	spec := getDefaultSpec(tb)
 	return &searchRequestSpec{
 		base: &baseRequestSpec{
-			Spec: &tb[0],
+			Spec: spec,
 			Query: &v1.Query{
 				Query: &v1.Query_BaseQuery{
 					BaseQuery: &v1.BaseQuery{
@@ -153,62 +148,86 @@ func (tb treeBuilder) docID(q *v1.DocIDQuery) *searchRequestSpec {
 }
 
 func (tb treeBuilder) matchNone(q *v1.MatchNoneQuery) *searchRequestSpec {
+	spec := getDefaultSpec(tb)
 	return &searchRequestSpec{
 		base: &baseRequestSpec{
-			Spec:  &tb[0],
+			Spec:  spec,
 			Query: search.MatchNoneQuery(),
 		},
 	}
 }
 
 func (tb treeBuilder) match(q *v1.MatchFieldQuery) (*searchRequestSpec, error) {
-	// For other query types, we need to find the searcher that can handle it.
-	for _, searcherSpec := range tb {
-		if matchQueryMatchesOptions(q, searcherSpec.Options) {
-			return &searchRequestSpec{
-				base: &baseRequestSpec{
-					Spec: &searcherSpec,
-					Query: &v1.Query{
-						Query: &v1.Query_BaseQuery{
-							BaseQuery: &v1.BaseQuery{
-								Query: &v1.BaseQuery_MatchFieldQuery{
-									MatchFieldQuery: q,
-								},
-							},
+	spec := getMatchedSpec(tb, q)
+	return &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec: spec,
+			Query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: q,
 						},
 					},
 				},
-			}, nil
-		}
-	}
-	return nil, errors.New("query had fields not handled by any searcher")
+			},
+		},
+	}, nil
 }
 
 func (tb treeBuilder) matchLinked(q *v1.MatchLinkedFieldsQuery) (*searchRequestSpec, error) {
 	// For other query types, we need to find the searcher that can handle it.
-	for _, searcherSpec := range tb {
-		if linkedMatchQueryMatchesOptions(q, searcherSpec.Options) {
-			return &searchRequestSpec{
-				base: &baseRequestSpec{
-					Spec: &searcherSpec,
-					Query: &v1.Query{
-						Query: &v1.Query_BaseQuery{
-							BaseQuery: &v1.BaseQuery{
-								Query: &v1.BaseQuery_MatchLinkedFieldsQuery{
-									MatchLinkedFieldsQuery: q,
-								},
-							},
+	spec := getLinkedMatchedSpec(tb, q)
+	return &searchRequestSpec{
+		base: &baseRequestSpec{
+			Spec: spec,
+			Query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchLinkedFieldsQuery{
+							MatchLinkedFieldsQuery: q,
 						},
 					},
 				},
-			}, nil
-		}
-	}
-	return nil, errors.New("query had linked fields not handled by any searcher")
+			},
+		},
+	}, nil
 }
 
 // Static helper functions.
 ///////////////////////////
+
+func getDefaultSpec(specs []SearcherSpec) *SearcherSpec {
+	var spec *SearcherSpec
+	for _, considered := range specs {
+		if considered.IsDefault {
+			spec = &considered
+			break
+		}
+	}
+	if spec == nil {
+		spec = &specs[0]
+	}
+	return spec
+}
+
+func getMatchedSpec(specs []SearcherSpec, query *v1.MatchFieldQuery) *SearcherSpec {
+	for _, searcherSpec := range specs {
+		if matchQueryMatchesOptions(query, searcherSpec.Options) {
+			return &searcherSpec
+		}
+	}
+	return getDefaultSpec(specs)
+}
+
+func getLinkedMatchedSpec(specs []SearcherSpec, query *v1.MatchLinkedFieldsQuery) *SearcherSpec {
+	for _, searcherSpec := range specs {
+		if linkedMatchQueryMatchesOptions(query, searcherSpec.Options) {
+			return &searcherSpec
+		}
+	}
+	return getDefaultSpec(specs)
+}
 
 // Base match query is chill if it matches a field in the option map.
 func matchQueryMatchesOptions(q *v1.MatchFieldQuery, merp search.OptionsMap) bool {

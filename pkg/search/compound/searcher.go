@@ -3,6 +3,7 @@ package compound
 import (
 	"context"
 
+	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -37,16 +38,13 @@ type compoundSearcherImpl struct {
 // Search constructs and executes the necessary queries on the searchers that the compound searcher is configured to
 // use.
 func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	// Filter unsupported fields.
-	p := q.GetPagination()
-	q, _ = search.FilterQueryWithMap(q, cs.combined)
-	if q == nil {
-		q = search.EmptyQuery()
+	var local *v1.Query
+	if q != nil {
+		local = proto.Clone(q).(*v1.Query)
 	}
-	q.Pagination = p
 
 	// Construct a tree that matches subqueries with specifications.
-	req, err := build(q, cs.specs)
+	req, err := build(local, cs.specs)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +56,7 @@ func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]sear
 	}
 
 	// Add the sorting as necessary to the condensed tree.
-	sorted, err := addSorting(condensed, q.GetPagination(), cs.specs)
+	sorted, err := addSorting(condensed, local.GetPagination(), cs.specs)
 	if err != nil {
 		return nil, err
 	}

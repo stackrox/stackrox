@@ -291,6 +291,85 @@ func (suite *BuildRequestTestSuite) TestBuildDisjunction() {
 	suite.Equal(expected, actual)
 }
 
+func (suite *BuildRequestTestSuite) TestBuildLinkedDisjunction() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+			Options:  suite.mockOptions1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+			Options:  suite.mockOptions2,
+		},
+	}
+
+	q1 := search.DisjunctionQuery(
+		search.NewQueryBuilder().
+			AddLinkedFieldsWithHighlightValues(
+				[]search.FieldLabel{"s1field", "s3field"},
+				[]string{"s1value", "s3value"},
+				[]bool{true, true}).
+			ProtoQuery(),
+		search.NewQueryBuilder().
+			AddExactMatches("s3field", "s3value").
+			AddExactMatches("s4field", "s4value").
+			ProtoQuery(),
+	)
+
+	suite.mockOptions1.EXPECT().Get("s1field").Return(nil, true)
+	suite.mockOptions1.EXPECT().Get("s3field").Return(nil, true)
+
+	suite.mockOptions1.EXPECT().Get("s3field").Return(nil, true)
+	suite.mockOptions1.EXPECT().Get("s4field").Return(nil, false)
+	suite.mockOptions2.EXPECT().Get("s4field").Return(nil, true)
+
+	expectedQ1 := search.NewQueryBuilder().
+		AddLinkedFieldsWithHighlightValues(
+			[]search.FieldLabel{"s1field", "s3field"},
+			[]string{"s1value", "s3value"},
+			[]bool{true, true}).
+		ProtoQuery()
+
+	expectedQ3 := search.NewQueryBuilder().
+		AddExactMatches("s3field", "s3value").
+		ProtoQuery()
+
+	expectedQ4 := search.NewQueryBuilder().
+		AddExactMatches("s4field", "s4value").
+		ProtoQuery()
+
+	expected := &searchRequestSpec{
+		or: []*searchRequestSpec{
+			{
+				base: &baseRequestSpec{
+					Spec:  &searcherSpecs[0],
+					Query: expectedQ1,
+				},
+			},
+			{
+				and: []*searchRequestSpec{
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[0],
+							Query: expectedQ3,
+						},
+					},
+					{
+						base: &baseRequestSpec{
+							Spec:  &searcherSpecs[1],
+							Query: expectedQ4,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	actual, err := build(q1, searcherSpecs)
+	suite.Nil(err)
+	suite.Equal(expected, actual)
+}
+
 func (suite *BuildRequestTestSuite) TestBuildBoolean() {
 	searcherSpecs := []SearcherSpec{
 		{

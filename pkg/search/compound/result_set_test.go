@@ -160,15 +160,27 @@ func (suite *ResultSetTestSuite) TestLeftJoin() {
 	results1 := []search.Result{
 		{
 			ID: "1",
+			Matches: map[string][]string{
+				"1": {"a", "b"},
+			},
 		},
 		{
 			ID: "2",
+			Matches: map[string][]string{
+				"2": {"a", "b"},
+			},
 		},
 		{
 			ID: "3",
+			Matches: map[string][]string{
+				"3": {"a", "b"},
+			},
 		},
 		{
 			ID: "5",
+			Matches: map[string][]string{
+				"5": {"a", "b"},
+			},
 		},
 	}
 
@@ -187,15 +199,27 @@ func (suite *ResultSetTestSuite) TestLeftJoin() {
 	expected := []search.Result{
 		{
 			ID: "5",
+			Matches: map[string][]string{
+				"5": {"a", "b"},
+			},
 		},
 		{
 			ID: "1",
+			Matches: map[string][]string{
+				"1": {"a", "b"},
+			},
 		},
 		{
 			ID: "2",
+			Matches: map[string][]string{
+				"2": {"a", "b"},
+			},
 		},
 		{
 			ID: "3",
+			Matches: map[string][]string{
+				"3": {"a", "b"},
+			},
 		},
 	}
 
