@@ -2,7 +2,6 @@ import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import sortBy from 'lodash/sortBy';
 import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -18,7 +17,7 @@ import queryService from 'modules/queryService';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
-// import { entitySortFieldsMap } from 'constants/sortFields';
+import { entitySortFieldsMap } from 'constants/sortFields';
 
 const TOP_RISKIEST_IMAGES = gql`
     query topRiskiestImages($query: String, $pagination: Pagination) {
@@ -100,7 +99,7 @@ const getTextByEntityType = (entityType, data) => {
     }
 };
 
-const processData = (data, entityType, workflowState, limit) => {
+const processData = (data, entityType, workflowState) => {
     const results = data.results
         .sort((a, b) => {
             const d = a.priority - b.priority;
@@ -176,8 +175,8 @@ const processData = (data, entityType, workflowState, limit) => {
                 }
             };
         });
-    const processedData = sortBy(results, ['priority']).slice(0, limit); // @TODO: Remove when we have pagination on image components
-    return processedData;
+
+    return results;
 };
 
 const getQueryBySelectedEntity = entityType => {
@@ -229,8 +228,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
 
     const viewAllURL = workflowState
         .pushList(selectedEntity)
-        // @TODO to uncomment once priority is sortable for both image and components
-        // .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
+        .setSort([{ id: entitySortFieldsMap[selectedEntity].PRIORITY, desc: false }])
         .toUrl();
 
     const headerComponents = <ViewAllButton url={viewAllURL} />;
