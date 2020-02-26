@@ -210,7 +210,16 @@ export class WorkflowState {
     getSkimmedStack() {
         const { useCase, stateStack, search, sort, paging } = this;
         const newStateStack = skimStack(stateStack);
-        return new WorkflowState(useCase, newStateStack, search, sort, paging);
+        const newSearch = search[searchParams.sidePanel]
+            ? { [searchParams.page]: search[searchParams.sidePanel] }
+            : null;
+        const newSort = sort[sortParams.sidePanel]
+            ? { [sortParams.page]: sort[sortParams.sidePanel] }
+            : null;
+        const newPaging = paging[pagingParams.sidePanel]
+            ? { [pagingParams.page]: paging[pagingParams.sidePanel] }
+            : null;
+        return new WorkflowState(useCase, newStateStack, newSearch, newSort, newPaging);
     }
 
     // Resets the current state based on minimal parameters

@@ -617,15 +617,32 @@ describe('WorkflowState', () => {
         ]);
 
         // skims to latest entity page + related entity list
-        workflowState = new WorkflowState(useCase, [
-            new WorkflowEntity(entityTypes.IMAGE),
-            new WorkflowEntity(entityTypes.IMAGE, entityId1),
-            new WorkflowEntity(entityTypes.DEPLOYMENT)
-        ]);
-        expect(workflowState.getSkimmedStack().stateStack).toEqual([
+        workflowState = new WorkflowState(
+            useCase,
+            [
+                new WorkflowEntity(entityTypes.IMAGE),
+                new WorkflowEntity(entityTypes.IMAGE, entityId1),
+                new WorkflowEntity(entityTypes.DEPLOYMENT)
+            ],
+            searchParamValues,
+            sortParamValues,
+            pagingParamValues
+        );
+
+        const skimmedWorkflowState = workflowState.getSkimmedStack();
+        expect(skimmedWorkflowState.stateStack).toEqual([
             { t: entityTypes.IMAGE, i: entityId1 },
             { t: entityTypes.DEPLOYMENT }
         ]);
+        expect(skimmedWorkflowState.search[searchParams.page]).toEqual(
+            searchParamValues[searchParams.sidePanel]
+        );
+        expect(skimmedWorkflowState.sort[sortParams.page]).toEqual(
+            sortParamValues[sortParams.sidePanel]
+        );
+        expect(skimmedWorkflowState.paging[pagingParams.page]).toEqual(
+            pagingParamValues[pagingParams.sidePanel]
+        );
     });
 
     describe('getCurrentEntityType', () => {
