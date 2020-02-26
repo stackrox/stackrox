@@ -116,8 +116,8 @@ func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error)
 }
 
 // Match decides if the image is contained within this registry
-func (r *Registry) Match(image *storage.Image) bool {
-	return urlfmt.TrimHTTPPrefixes(r.registry) == image.GetName().GetRegistry()
+func (r *Registry) Match(image *storage.ImageName) bool {
+	return urlfmt.TrimHTTPPrefixes(r.registry) == image.GetRegistry()
 }
 
 // Global returns whether or not this registry is available from all clusters

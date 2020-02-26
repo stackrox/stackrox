@@ -24,7 +24,7 @@ func (*fakeScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
-func (*fakeScanner) Match(image *storage.Image) bool {
+func (*fakeScanner) Match(image *storage.ImageName) bool {
 	panic("implement me")
 }
 

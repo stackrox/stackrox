@@ -162,8 +162,8 @@ func (d *tenable) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this registry
-func (d *tenable) Match(image *storage.Image) bool {
-	return registry == image.GetName().GetRegistry()
+func (d *tenable) Match(image *storage.ImageName) bool {
+	return registry == image.GetRegistry()
 }
 
 func (d *tenable) Type() string {

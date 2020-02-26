@@ -195,8 +195,8 @@ func (d *dtr) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this registry
-func (d *dtr) Match(image *storage.Image) bool {
-	return d.registry == image.GetName().GetRegistry()
+func (d *dtr) Match(image *storage.ImageName) bool {
+	return d.registry == image.GetRegistry()
 }
 
 func (d *dtr) Type() string {

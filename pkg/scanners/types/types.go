@@ -12,7 +12,7 @@ type ImageScanner interface {
 	// It is a blocking call; if the scanner has not scanned the image yet,
 	// the function blocks until it does. It returns an error if it fails to do so.
 	GetScan(image *storage.Image) (*storage.ImageScan, error)
-	Match(image *storage.Image) bool
+	Match(image *storage.ImageName) bool
 	Test() error
 	Type() string
 	Name() string

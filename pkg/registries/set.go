@@ -8,7 +8,7 @@ import (
 // Set provides an interface for reading the active set of image integrations.
 type Set interface {
 	GetAll() []types.ImageRegistry
-	Match(image *storage.Image) bool
+	Match(image *storage.ImageName) bool
 	GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
 	Clear()

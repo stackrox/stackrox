@@ -15,7 +15,7 @@ type Config struct {
 
 // ImageRegistry is the interface that all image registries must implement
 type ImageRegistry interface {
-	Match(image *storage.Image) bool
+	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
 	Global() bool

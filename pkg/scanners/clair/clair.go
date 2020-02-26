@@ -149,7 +149,7 @@ func (c *clair) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *clair) Match(image *storage.Image) bool {
+func (c *clair) Match(image *storage.ImageName) bool {
 	return true
 }
 

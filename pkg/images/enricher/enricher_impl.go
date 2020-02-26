@@ -68,7 +68,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	if !registry.Global() {
 		return false, nil
 	}
-	if !registry.Match(image) {
+	if !registry.Match(image.GetName()) {
 		return false, nil
 	}
 
@@ -142,7 +142,7 @@ func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.I
 }
 
 func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) (ScanResult, error) {
-	if !scanner.Match(image) {
+	if !scanner.Match(image.GetName()) {
 		return ScanNotDone, nil
 	}
 

@@ -41,7 +41,7 @@ func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
 	integrations := e.getSortedRegistriesNoLock()
 	for _, i := range integrations {
-		if i.Match(image) {
+		if i.Match(image.GetName()) {
 			return i.Config()
 		}
 	}
@@ -49,7 +49,7 @@ func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config
 }
 
 // Match returns whether a registry in the set has the given image.
-func (e *setImpl) Match(image *storage.Image) bool {
+func (e *setImpl) Match(image *storage.ImageName) bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 

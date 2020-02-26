@@ -177,7 +177,7 @@ func (c *clairify) scan(image *storage.Image) error {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *clairify) Match(image *storage.Image) bool {
+func (c *clairify) Match(image *storage.ImageName) bool {
 	return c.activeRegistries.Match(image)
 }
 

@@ -254,8 +254,8 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 }
 
 // Match decides if the image is contained within this scanner
-func (c *googleScanner) Match(image *storage.Image) bool {
-	return image.GetName().GetRegistry() == c.registry && strings.HasPrefix(image.GetName().GetRemote(), c.project)
+func (c *googleScanner) Match(image *storage.ImageName) bool {
+	return image.GetRegistry() == c.registry && strings.HasPrefix(image.GetRemote(), c.project)
 }
 
 func (c *googleScanner) Type() string {

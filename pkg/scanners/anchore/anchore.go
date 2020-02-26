@@ -317,7 +317,7 @@ func (a *anchore) triggerScan(image *storage.Image) error {
 }
 
 // Match decides if the image is contained within this scanner
-func (a *anchore) Match(image *storage.Image) bool {
+func (a *anchore) Match(image *storage.ImageName) bool {
 	return a.activeRegistries.Match(image)
 }
 
