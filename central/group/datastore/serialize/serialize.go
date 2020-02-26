@@ -1,20 +1,21 @@
 package serialize
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/binenc"
 )
 
-// KeySeparator is the separator between the group key
-const KeySeparator = "\x00"
-
 // PropsKey is the key function for GroupProperties objects
-func PropsKey(props *storage.GroupProperties) string {
-	return StringKey(props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+func PropsKey(props *storage.GroupProperties) []byte {
+	return BytesKey(props.GetAuthProviderId(), props.GetKey(), props.GetValue())
 }
 
-// StringKey is the key function for GroupProperties objects with direct input values.
+// BytesKey is the key function for GroupProperties objects with direct input values, returning the key as a byte slice.
+func BytesKey(authProviderID, attrKey, attrValue string) []byte {
+	return binenc.EncodeBytesList([]byte(authProviderID), []byte(attrKey), []byte(attrValue))
+}
+
+// StringKey is the key function for GroupProperties objects with direct input values, returning the key as a string.
 func StringKey(authProviderID, attrKey, attrValue string) string {
-	return strings.Join([]string{authProviderID, attrKey, attrValue}, KeySeparator)
+	return string(BytesKey(authProviderID, attrKey, attrValue))
 }

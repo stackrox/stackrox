@@ -5,6 +5,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
+	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -18,7 +19,7 @@ type storeImpl struct {
 func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		k := serializeKey(props)
+		k := serializePkg.PropsKey(props)
 		v := buc.Get(k)
 		if v == nil {
 			return nil
@@ -67,7 +68,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 		for _, check := range toSearch {
-			serializedKey := serializeKey(check)
+			serializedKey := serializePkg.PropsKey(check)
 			if serializedVal := buc.Get(serializedKey); serializedVal != nil {
 				grp, err := deserialize(serializedKey, serializedVal)
 				if err != nil {
@@ -114,7 +115,7 @@ func (s *storeImpl) Upsert(group *storage.Group) error {
 // Remove removes the group with matching properties from the store.
 // Returns an error if no such group exists.
 func (s *storeImpl) Remove(props *storage.GroupProperties) error {
-	key := serializeKey(props)
+	key := serializePkg.PropsKey(props)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		return removeInTransaction(tx, key)
@@ -126,7 +127,7 @@ func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		for _, group := range toRemove {
-			key := serializeKey(group.GetProps())
+			key := serializePkg.PropsKey(group.GetProps())
 			if err := removeInTransaction(tx, key); err != nil {
 				return errors.Wrap(err, "error removing during mutation")
 			}
