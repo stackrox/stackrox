@@ -677,6 +677,27 @@ commands:
 
           when: on_fail
 
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Destroy EKS cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/eks/data:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: on_fail
+
+      - run:
+          name: Destroy Kops cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/kops:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: on_fail
+
   provision-gke-cluster:
     parameters:
       cluster-id:
@@ -1327,6 +1348,9 @@ jobs:
   pre-build-ui:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - *restoreUI
@@ -1389,6 +1413,9 @@ jobs:
   pre-build-cli:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - *restoreGoModCache
@@ -1422,6 +1449,9 @@ jobs:
   pre-build-go-binaries:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - *restoreGoModCache
@@ -1455,6 +1485,9 @@ jobs:
   build:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - setup_remote_docker
@@ -1518,6 +1551,9 @@ jobs:
   build-rhel:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - setup_remote_docker
@@ -1565,6 +1601,9 @@ jobs:
 
   build-deployer:
     <<: *defaults
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - setup_remote_docker
@@ -1589,6 +1628,9 @@ jobs:
   build-scale-monitoring-and-mock-server:
     <<: *defaults
     resource_class: large
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
       - setup_remote_docker
@@ -3163,11 +3205,15 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
             - provision-openshift
       - openshift-crio-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
             - provision-openshift-crio
       - provision-eks:
           <<: *runOnAllTagsWithDockerIOPullCtx
@@ -3175,6 +3221,8 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
             - provision-eks
       - provision-kops:
           <<: *runOnAllTagsWithDockerIOPullCtx
@@ -3182,6 +3230,8 @@ workflows:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
             - provision-kops
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
