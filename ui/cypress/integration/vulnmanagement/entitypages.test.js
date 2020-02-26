@@ -251,4 +251,32 @@ describe('Entities single views', () => {
                     });
             });
     });
+
+    it('should filter component count in images list and image overview by cve when coming from cve list', () => {
+        cy.visit(url.list.cve);
+        cy.wait(1000);
+
+        cy.get(selectors.imageCountLink)
+            .eq(0)
+            .click({ force: true });
+        cy.get(selectors.parentEntityInfoHeader).click();
+        cy.get(selectors.imageTileLink).click({ force: true });
+
+        cy.get(`${selectors.sidePanel} ${selectors.componentCountLink}`)
+            .eq(0)
+            .invoke('text')
+            .then(componentCountText => {
+                cy.get(selectors.sidePanelTableBodyRows)
+                    .eq(0)
+                    .click();
+                cy.wait(1000);
+                cy.get(selectors.componentTileLink)
+                    .invoke('text')
+                    .then(relatedComponentCountText => {
+                        expect(relatedComponentCountText.toLowerCase().trim()).to.equal(
+                            componentCountText.replace(' ', '')
+                        );
+                    });
+            });
+    });
 });

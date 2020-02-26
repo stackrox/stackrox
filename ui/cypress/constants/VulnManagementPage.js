@@ -14,7 +14,7 @@ export const url = {
         components: `${baseURL}/components`,
         cves: `${baseURL}/cves`,
         image: `${baseURL}/image`,
-        cve: `${baseURL}/cve`,
+        cve: `${baseURL}/cves`,
         policy: `${baseURL}/policy`,
         deployment: `${baseURL}/deployment`
     }
@@ -37,7 +37,9 @@ export const listSelectors = {
     numCVEColLink: '.rt-tr > .rt-td',
     statusChips: '[data-testid="label-chip"]',
     deploymentCountLink: '[data-test-id="deploymentCountLink"]',
-    policyCountLink: '[data-test-id="policyCountLink"]'
+    policyCountLink: '[data-test-id="policyCountLink"]',
+    imageCountLink: '[data-test-id="imageCountLink"]',
+    componentCountLink: '[data-test-id="componentCountLink"]'
 };
 
 export const sidePanelListEntityPageSelectors = {
@@ -51,13 +53,16 @@ export const sidePanelListEntityPageSelectors = {
     imageTileLink: '[data-test-id="IMAGE-tile-link"]',
     namespaceTileLink: '[data-test-id="NAMESPACE-tile-link"]',
     componentTileLink: '[data-test-id="COMPONENT-tile-link"]',
+    deploymentTileLink: "[data-test-id='DEPLOYMENT-tile-link']",
+    policyTileLink: "[data-test-id='POLICY-tile-link']",
     cveTileLink: '[data-test-id="CVE-tile-link"]',
     tabButton: '[data-test-id="tab"]',
     getSidePanelTabHeader: title => {
         return `[data-test-id="widget-header"] > .w-full:contains('${title}')`;
     },
     emptyFindingsSection: '[data-testid="results-message"]',
-    deploymentCountText: '.rt-td [data-testid="deploymentCountText"]'
+    deploymentCountText: '.rt-td [data-testid="deploymentCountText"]',
+    imageCountText: '.rt-td [data-testid="imageCountText"]'
 };
 
 export const dashboardSelectors = {
@@ -102,9 +107,7 @@ const linkSelectors = {
     fixableCvesLink: '[data-testid="fixableCvesLink"]',
     tileLinks: "[data-test-id='tile-link']",
     tileLinkValue: "[data-test-id='tile-link-value']",
-    tileLinkSuperText: '[data-test-id="tileLinkSuperText"]',
-    deploymentTileLink: "[data-test-id='DEPLOYMENT-tile-link']",
-    policyTileLink: "[data-test-id='POLICY-tile-link']"
+    tileLinkSuperText: '[data-test-id="tileLinkSuperText"]'
 };
 
 const sidepanelSelectors = {
