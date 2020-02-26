@@ -10,7 +10,7 @@ package storage;
 
 message ImageComponent {
     string                         id           = 1 [(gogoproto.moretags) = "search:\"Component ID,store\""];
-    string                         name         = 2 [(gogoproto.moretags) = "search:\"Component Name,store\""];
+    string                         name         = 2 [(gogoproto.moretags) = "search:\"Component,store\""];
     string                         version      = 3 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License                        license      = 4;
     int64                          priority     = 5;

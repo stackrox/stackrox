@@ -35,7 +35,7 @@ import (
 
 var (
 	defaultSortOption = &v1.QuerySortOption{
-		Field: search.ComponentName.String(),
+		Field: search.Component.String(),
 	}
 )
 

@@ -38,7 +38,7 @@ var (
 		search.Component: func(option *v1.QuerySortOption) []*v1.QuerySortOption {
 			return []*v1.QuerySortOption{
 				{
-					Field:    search.ComponentName.String(),
+					Field:    search.Component.String(),
 					Reversed: option.GetReversed(),
 				},
 				{

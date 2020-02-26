@@ -38,7 +38,6 @@ var (
 	CVSS                         = newFieldLabel("CVSS")
 	Component                    = newFieldLabel("Component")
 	ComponentID                  = newFieldLabel("Component ID")
-	ComponentName                = newFieldLabel("Component Name")
 	ComponentCount               = newFieldLabel("Component Count")
 	ComponentVersion             = newFieldLabel("Component Version")
 	ComponentSource              = newFieldLabel("Component Source")
