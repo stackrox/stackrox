@@ -133,7 +133,7 @@ staticcheck: $(STATICCHECK_BIN)
 	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
 .PHONY: fmt
-fmt:
+fmt: blanks
 	@echo "+ $@"
 ifdef CI
 		@echo "The environment indicates we are in CI; checking gofmt."
