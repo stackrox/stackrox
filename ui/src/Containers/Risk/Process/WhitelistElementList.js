@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { Tooltip } from 'react-tippy';
+import Tippy from '@tippy.js/react';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import { addDeleteProcesses } from 'services/ProcessesService';
 
 const ProcessWhitelistElementsList = ({
@@ -34,16 +35,7 @@ const ProcessWhitelistElementsList = ({
                     className="py-3 pb-2 leading-normal tracking-normal border-b border-base-300 flex justify-between items-center"
                 >
                     <span>{element.processName}</span>
-                    <Tooltip
-                        useContext
-                        position="top"
-                        trigger="mouseenter"
-                        animation="none"
-                        duration={0}
-                        arrow
-                        html={<span className="text-sm">Remove process from whitelist</span>}
-                        unmountHTMLWhenHide
-                    >
+                    <Tippy content={<TooltipOverlay>Remove process from whitelist</TooltipOverlay>}>
                         <button
                             className="flex p-1 rounded border content-center hover:bg-base-300"
                             type="button"
@@ -51,7 +43,7 @@ const ProcessWhitelistElementsList = ({
                         >
                             <Icon.Minus className="h-4 w-4" />
                         </button>
-                    </Tooltip>
+                    </Tippy>
                 </li>
             ))}
         </ul>

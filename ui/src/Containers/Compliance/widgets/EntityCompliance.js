@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
-import VerticalBarChart from 'Components/visuals/VerticalBar';
+import VerticalBarChart from 'Components/visuals/VerticalBarChart';
 import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';

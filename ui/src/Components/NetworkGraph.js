@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import { actions as graphActions } from 'reducers/network/graph';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import popper from 'cytoscape-popper';
-import Tippy from 'tippy.js';
+import tippy from 'tippy.js';
 import { uniq, throttle, flatMap } from 'lodash';
 
+import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
@@ -80,8 +80,8 @@ const NetworkGraph = ({
     const zoomFontMapRef = useRef({});
     const nodeSideMap = nodeSideMapRef.current;
     const zoomFontMap = zoomFontMapRef.current;
-    const cy = useRef();
-    const tippy = useRef();
+    const cyRef = useRef();
+    const tippyRef = useRef();
     const namespacesWithDeployments = {};
 
     const nodes = getNodesForFilterState(activeNodes, allowedNodes, filterState);
@@ -94,7 +94,9 @@ const NetworkGraph = ({
 
     function makePopperDiv(text) {
         const div = document.createElement('div');
-        div.classList.add('popper');
+        // theoretically we can use `TooltipOverlay` component with ReactDOM.createPortal,
+        // yet not clear how to hook React lifecycle into Cytoscape one
+        div.classList.add('rox-tooltip-overlay');
         div.innerHTML = text;
         document.body.appendChild(div);
         return div;
@@ -109,16 +111,21 @@ const NetworkGraph = ({
     function createTippy(elm, text) {
         if (!elm) return;
         const popperRef = elm.popperRef();
-        if (tippy.current) tippy.current.destroy();
+        if (tippyRef.current) tippyRef.current.destroy();
 
-        tippy.current = new Tippy(popperRef, {
+        tippyRef.current = tippy(document.createElement('div'), {
             content: makePopperDiv(text),
             arrow: true,
             delay: 0,
-            duration: 0
+            duration: 0,
+            lazy: false,
+            onCreate(instance) {
+                // eslint-disable-next-line no-param-reassign
+                instance.popperInstance.reference = popperRef;
+            }
         });
 
-        tippy.current.show();
+        tippyRef.current.show();
     }
 
     function getNSEdges(nodeId) {
@@ -399,11 +406,11 @@ const NetworkGraph = ({
         const node = ev.target.data();
         const { id, name, parent, side } = node;
         const isChild = !!parent;
-        if (!cy || !isChild || side) return;
+        if (!cyRef || !isChild || side) return;
 
         setHoveredNode(node);
-        const nodeElm = cy.current.getElementById(id);
-        const parentElm = cy.current.getElementById(parent);
+        const nodeElm = cyRef.current.getElementById(id);
+        const parentElm = cyRef.current.getElementById(parent);
         createTippy(nodeElm, name);
         const children = parentElm.descendants();
         children.removeClass('background');
@@ -457,44 +464,44 @@ const NetworkGraph = ({
     }
 
     function zoomHandler() {
-        if (!cy || !cy.current) return;
+        if (!cyRef || !cyRef.current) return;
 
         // to dynamically set the font size of namespace labels
         const zoomConstant = 20;
-        const curZoomLevel = Math.round(cy.current.zoom() * zoomConstant);
+        const curZoomLevel = Math.round(cyRef.current.zoom() * zoomConstant);
         if (!zoomFontMap[curZoomLevel]) {
             zoomFontMap[curZoomLevel] = Math.max(
                 (NS_FONT_SIZE / curZoomLevel) * zoomConstant,
                 NS_FONT_SIZE
             );
         }
-        cy.current.nodes(':parent').style('font-size', zoomFontMap[curZoomLevel]);
-        cy.current.edges('.namespace').style('font-size', zoomFontMap[curZoomLevel]);
+        cyRef.current.nodes(':parent').style('font-size', zoomFontMap[curZoomLevel]);
+        cyRef.current.edges('.namespace').style('font-size', zoomFontMap[curZoomLevel]);
     }
 
     function zoomToFit() {
-        if (!cy) return;
-        cy.current.fit(null, GRAPH_PADDING);
-        const newMinZoom = Math.min(cy.current.zoom(), cy.current.minZoom());
-        cy.current.minZoom(newMinZoom);
+        if (!cyRef) return;
+        cyRef.current.fit(null, GRAPH_PADDING);
+        const newMinZoom = Math.min(cyRef.current.zoom(), cyRef.current.minZoom());
+        cyRef.current.minZoom(newMinZoom);
         zoomHandler();
     }
 
     function zoomIn() {
-        if (!cy.current) return;
+        if (!cyRef.current) return;
 
-        cy.current.zoom({
-            level: Math.max(cy.current.zoom() + ZOOM_STEP, cy.current.minZoom()),
-            renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 }
+        cyRef.current.zoom({
+            level: Math.max(cyRef.current.zoom() + ZOOM_STEP, cyRef.current.minZoom()),
+            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 }
         });
     }
 
     function zoomOut() {
-        if (!cy.current) return;
+        if (!cyRef.current) return;
 
-        cy.current.zoom({
-            level: Math.min(cy.current.zoom() - ZOOM_STEP, MAX_ZOOM),
-            renderedPosition: { x: cy.current.width() / 2, y: cy.current.height() / 2 }
+        cyRef.current.zoom({
+            level: Math.min(cyRef.current.zoom() - ZOOM_STEP, MAX_ZOOM),
+            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 }
         });
     }
 
@@ -504,14 +511,14 @@ const NetworkGraph = ({
 
     // Calculate which namespace box side combinations are shortest and store them
     function calculateNodeSideMap(changedNodeId) {
-        if (!cy.current) return;
+        if (!cyRef.current) return;
 
         // Get a map of all the side nodes per namespace
-        const namespaces = cy.current.nodes(':parent');
+        const namespaces = cyRef.current.nodes(':parent');
         const sideNodesPerParent = namespaces.reduce((acc, namespace) => {
             const { id } = namespace.data(); // to
 
-            const sideNodes = cy.current.nodes(`[parent="${id}"][side]`);
+            const sideNodes = cyRef.current.nodes(`[parent="${id}"][side]`);
 
             const nodesInfo = sideNodes.map(node => {
                 const { x, y } = node.position();
@@ -589,19 +596,19 @@ const NetworkGraph = ({
         calculateNodeSideMap(changedNodeId);
         const newEdges = getEdges();
 
-        cy.current.remove('edge');
-        cy.current.add(newEdges);
+        cyRef.current.remove('edge');
+        cyRef.current.add(newEdges);
     }
 
     function configureCY(cyInstance) {
-        cy.current = cyInstance;
-        cy.current
+        cyRef.current = cyInstance;
+        cyRef.current
             .off('click mouseover mouseout mousedown drag')
             .on('click', clickHandler)
             .on('mouseover', 'node', throttle(nodeHoverHandler, 100))
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
-                if (tippy.current) tippy.current.destroy();
+                if (tippyRef.current) tippyRef.current.destroy();
             })
             .on('drag', throttle(handleDrag, 100))
             .on('zoom', zoomHandler)
@@ -637,8 +644,8 @@ const NetworkGraph = ({
     }
 
     function runLayout() {
-        if (!cy.current) return;
-        const CY = cy.current;
+        if (!cyRef.current) return;
+        const CY = cyRef.current;
         const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 100 }); // all nodes, padding
 
         NSPositions.forEach(position => {
@@ -670,8 +677,8 @@ const NetworkGraph = ({
     }
 
     function grabifyNamespaces() {
-        if (!cy.current) return;
-        const CY = cy.current;
+        if (!cyRef.current) return;
+        const CY = cyRef.current;
         CY.nodes(`[parent]`).ungrabify();
     }
 

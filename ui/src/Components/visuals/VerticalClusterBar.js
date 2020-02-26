@@ -15,9 +15,10 @@ import merge from 'deepmerge';
 
 import { standardBaseTypes } from 'constants/entityTypes';
 import colors from 'constants/visuals/colors';
+import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import HoverHint from './HoverHint';
 
-class BarChart extends Component {
+class VerticalClusterBar extends Component {
     static propTypes = {
         id: PropTypes.string,
         history: ReactRouterPropTypes.history.isRequired,
@@ -28,9 +29,7 @@ class BarChart extends Component {
         seriesProps: PropTypes.shape({}),
         tickValues: PropTypes.arrayOf(PropTypes.number),
         tickFormat: PropTypes.func,
-        labelLinks: PropTypes.shape({}),
-        onValueMouseOver: PropTypes.func,
-        onValueMouseOut: PropTypes.func
+        labelLinks: PropTypes.shape({})
     };
 
     static defaultProps = {
@@ -41,36 +40,10 @@ class BarChart extends Component {
         seriesProps: {},
         tickValues: [25, 50, 75, 100],
         tickFormat: x => `${x}%`,
-        labelLinks: {},
-        onValueMouseOver: null,
-        onValueMouseOut: null
+        labelLinks: {}
     };
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            hintData: null
-        };
-    }
-
-    setHintData = val => {
-        this.setState({
-            hintData: val.hint
-        });
-    };
-
-    setHintPosition = ev => {
-        const container = ev.target.closest('.relative').getBoundingClientRect();
-        const offset = 10;
-        this.setState({
-            hintX: ev.clientX - container.left + offset,
-            hintY: ev.clientY - container.top + offset
-        });
-    };
-
-    clearHintData = () => {
-        this.setState({ hintData: null });
-    };
+    state = { hintInfo: null };
 
     getLegendData = () => {
         const { data, colors: colorRange } = this.props;
@@ -83,16 +56,7 @@ class BarChart extends Component {
     };
 
     render() {
-        const {
-            id,
-            data,
-            colors: colorRange,
-            tickValues,
-            tickFormat,
-            labelLinks,
-            onValueMouseOver,
-            onValueMouseOut
-        } = this.props;
+        const { id, data, colors: colorRange, tickValues, tickFormat, labelLinks } = this.props;
 
         // Default props
         const defaultPlotProps = {
@@ -102,8 +66,7 @@ class BarChart extends Component {
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive',
-            onMouseMove: this.setHintPosition
+            className: 'relative chart-container w-full horizontal-bar-responsive'
         };
 
         const defaultSeriesProps = {
@@ -115,13 +78,13 @@ class BarChart extends Component {
                 ry: '2px',
                 cursor: 'pointer'
             },
-            onValueMouseOver: datum => {
-                this.setHintData(datum);
-                if (onValueMouseOver) onValueMouseOver(datum);
+            onValueMouseOver: (datum, e) => {
+                this.setState({
+                    hintInfo: { data: datum.hint, target: e.event.target }
+                });
             },
-            onValueMouseOut: datum => {
-                this.clearHintData();
-                if (onValueMouseOut) onValueMouseOut(datum);
+            onValueMouseOut: () => {
+                this.setState({ hintInfo: null });
             },
             onValueClick: datum => {
                 if (datum.link) this.props.history.push(datum.link);
@@ -175,6 +138,8 @@ class BarChart extends Component {
                 );
             });
 
+        const { hintInfo } = this.state;
+
         return (
             <div {...containerProps} data-test-id={id}>
                 <div className="flex flex-col h-full">
@@ -197,18 +162,18 @@ class BarChart extends Component {
                             className="horizontal-bar-legend"
                         />
                     </div>
-                    {this.state.hintData ? (
-                        <HoverHint
-                            top={this.state.hintY}
-                            left={this.state.hintX}
-                            title={this.state.hintData.title}
-                            body={this.state.hintData.body}
-                        />
-                    ) : null}
+                    {hintInfo?.target && (
+                        <HoverHint target={hintInfo.target}>
+                            <DetailedTooltipOverlay
+                                title={hintInfo.data.title}
+                                body={hintInfo.data.body}
+                            />
+                        </HoverHint>
+                    )}
                 </div>
             </div>
         );
     }
 }
 
-export default withRouter(BarChart);
+export default withRouter(VerticalClusterBar);

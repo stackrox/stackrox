@@ -11,6 +11,7 @@ import colors from 'constants/visuals/colors';
 
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
+import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import HoverHint from './HoverHint';
 
 const sortByXValue = (a, b) => {
@@ -29,8 +30,6 @@ class VerticalBarChart extends Component {
         tickValues: PropTypes.arrayOf(PropTypes.number),
         tickFormat: PropTypes.func,
         labelLinks: PropTypes.shape({}),
-        onValueMouseOver: PropTypes.func,
-        onValueMouseOut: PropTypes.func,
         onValueClick: PropTypes.func,
         legend: PropTypes.bool
     };
@@ -43,48 +42,14 @@ class VerticalBarChart extends Component {
         tickValues: [25, 50, 75, 100],
         tickFormat: x => `${x}%`,
         labelLinks: {},
-        onValueMouseOver: null,
-        onValueMouseOut: null,
         onValueClick: null,
         legend: true
     };
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            hintData: null
-        };
-    }
-
-    setHintData = val => {
-        this.setState({
-            hintData: val.hint
-        });
-    };
-
-    setHintPosition = ev => {
-        const container = ev.target.closest('.relative').getBoundingClientRect();
-        const offset = 10;
-        this.setState({
-            hintX: ev.clientX - container.left + offset,
-            hintY: ev.clientY - container.top + offset
-        });
-    };
-
-    clearHintData = () => {
-        this.setState({ hintData: null });
-    };
+    state = { hintInfo: null };
 
     render() {
-        const {
-            colors: colorRange,
-            tickValues,
-            tickFormat,
-            labelLinks,
-            onValueMouseOver,
-            onValueMouseOut,
-            onValueClick
-        } = this.props;
+        const { colors: colorRange, tickValues, tickFormat, labelLinks, onValueClick } = this.props;
 
         const data = this.props.data.sort(sortByXValue);
 
@@ -97,12 +62,10 @@ class VerticalBarChart extends Component {
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive',
-            onMouseMove: this.setHintPosition
+            className: 'relative chart-container w-full horizontal-bar-responsive'
         };
 
         const defaultSeriesProps = {
-            // animation: true, //causes onValueMouseOut to fail https://github.com/uber/react-vis/issues/381
             barWidth: 0.25,
             style: {
                 opacity: '.8',
@@ -112,13 +75,15 @@ class VerticalBarChart extends Component {
 
             colorDomain: data.map(datum => datum.y),
             colorRange,
-            onValueMouseOver: datum => {
-                this.setHintData(datum);
-                if (onValueMouseOver) onValueMouseOver(datum);
+            onValueMouseOver: (datum, e) => {
+                if (datum.hint) {
+                    this.setState({
+                        hintInfo: { data: datum.hint, target: e.event.target }
+                    });
+                }
             },
-            onValueMouseOut: datum => {
-                this.clearHintData();
-                if (onValueMouseOut) onValueMouseOut(datum);
+            onValueMouseOut: () => {
+                this.setState({ hintInfo: null });
             },
             onValueClick: datum => {
                 if (onValueClick) onValueClick(datum);
@@ -148,6 +113,8 @@ class VerticalBarChart extends Component {
             return <tspan>{inner}</tspan>;
         }
 
+        const { hintInfo } = this.state;
+
         return (
             <div style={styleProps} {...containerProps}>
                 <FlexibleWidthXYPlot {...plotProps}>
@@ -157,14 +124,14 @@ class VerticalBarChart extends Component {
                     <VerticalBarSeries data={letDataWithColors} {...seriesProps} />
                     <XAxis tickSize={0} tickFormat={formatTicks} />
                 </FlexibleWidthXYPlot>
-                {this.state.hintData ? (
-                    <HoverHint
-                        top={this.state.hintY}
-                        left={this.state.hintX}
-                        title={this.state.hintData.title}
-                        body={this.state.hintData.body}
-                    />
-                ) : null}
+                {hintInfo?.target && (
+                    <HoverHint target={hintInfo.target}>
+                        <DetailedTooltipOverlay
+                            title={hintInfo.data.title}
+                            body={hintInfo.data.body}
+                        />
+                    </HoverHint>
+                )}
             </div>
         );
     }

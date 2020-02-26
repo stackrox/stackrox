@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 
 import * as Icon from 'react-feather';
 import find from 'lodash/find';
-import { Tooltip } from 'react-tippy';
+import Tippy from '@tippy.js/react';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import { sortValue, sortDate } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
@@ -16,16 +17,12 @@ function DeploymentNameColumn({ original }) {
         <div className="flex items-center">
             <span className="pr-1">
                 {isSuspicious && (
-                    <Tooltip
-                        useContext
-                        position="top"
-                        trigger="mouseenter"
-                        arrow
-                        html={<span className="text-sm">Abnormal processes discovered</span>}
-                        unmountHTMLWhenHide
-                    >
-                        <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
-                    </Tooltip>
+                    <Tippy content={<TooltipOverlay>Abnormal processes discovered</TooltipOverlay>}>
+                        {/* https://github.com/feathericons/react-feather/issues/56 */}
+                        <div>
+                            <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
+                        </div>
+                    </Tippy>
                 )}
                 {!isSuspicious && <Icon.Circle className="h-2 w-2" />}
             </span>

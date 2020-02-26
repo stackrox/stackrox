@@ -14,6 +14,7 @@ import {
     ChartLabel
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
+import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import HoverHint from '../HoverHint';
 
 import { getHighValue, getLowValue } from '../visual.helpers';
@@ -34,7 +35,7 @@ const Scatterplot = ({
     legendData,
     history
 }) => {
-    const { hint, onValueMouseOver, onValueMouseOut, onMouseMove } = useGraphHoverHint();
+    const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const lowX = lowerX !== null ? lowerX : getLowValue(data, 'x', xMultiple);
     const highX = upperX !== null ? upperX : getHighValue(data, 'x', xMultiple, shouldPadX);
@@ -50,12 +51,7 @@ const Scatterplot = ({
 
     return (
         <>
-            <FlexibleXYPlot
-                xDomain={xDomain}
-                yDomain={yDomain}
-                {...plotProps}
-                onMouseMove={onMouseMove}
-            >
+            <FlexibleXYPlot xDomain={xDomain} yDomain={yDomain} {...plotProps}>
                 <VerticalGridLines />
                 <HorizontalGridLines />
                 <XAxis tickSize={0} />
@@ -93,14 +89,14 @@ const Scatterplot = ({
                     />
                 )}
             </FlexibleXYPlot>
-            {hint && hint.data && (
-                <HoverHint
-                    top={hint.y}
-                    left={hint.x}
-                    title={hint.data.title}
-                    body={hint.data.body}
-                    subtitle={hint.data.subtitle}
-                />
+            {hint?.target && (
+                <HoverHint target={hint.target}>
+                    <DetailedTooltipOverlay
+                        title={hint.data.title}
+                        body={hint.data.body}
+                        subtitle={hint.data.subtitle}
+                    />
+                </HoverHint>
             )}
         </>
     );

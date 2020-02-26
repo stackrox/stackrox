@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { Tooltip } from 'react-tippy';
+import Tippy from '@tippy.js/react';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import { lockUnlockProcesses } from 'services/ProcessesService';
 
 import ProcessWhitelistElementList from './WhitelistElementList';
@@ -46,19 +47,12 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
         >
             <div className="text-base-600 font-700 text-lg flex justify-between items-center border-b border-base-300 p-3">
                 <span>{key.containerName}</span>
-                <Tooltip
-                    useContext
-                    position="top"
-                    trigger="mouseenter"
-                    animation="none"
-                    duration={0}
-                    arrow
-                    html={
-                        <span className="text-sm">
+                <Tippy
+                    content={
+                        <TooltipOverlay>
                             {isLocked ? unlockTooltipText : lockTooltipText}
-                        </span>
+                        </TooltipOverlay>
                     }
-                    unmountHTMLWhenHide
                 >
                     <div>
                         <button
@@ -84,7 +78,7 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
                             <Icon.Unlock className="h-4 w-4" />
                         </button>
                     </div>
-                </Tooltip>
+                </Tippy>
             </div>
             <ProcessWhitelistElementList
                 whitelistKey={key}

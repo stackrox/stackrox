@@ -1,7 +1,8 @@
 import React from 'react';
 import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
-import { Tooltip } from 'react-tippy';
+import Tippy from '@tippy.js/react';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import URLService from 'modules/URLService';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
@@ -122,15 +123,9 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                         {item.clusterName}/{item.namespace}
                                                     </span>
                                                     <span className="pb-2">{item.name}</span>
-                                                    <Tooltip
-                                                        position="top"
-                                                        trigger="mouseenter"
-                                                        animation="none"
-                                                        duration={0}
-                                                        arrow
-                                                        distance={20}
-                                                        html={
-                                                            <div className="text-sm italic">
+                                                    <Tippy
+                                                        content={
+                                                            <TooltipOverlay>
                                                                 {`${
                                                                     item.deployments.length
                                                                 } ${pluralize(
@@ -138,9 +133,8 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                                     item.deployments.length
                                                                 )}, `}
                                                                 {getCertificateStatus(item.files)}
-                                                            </div>
+                                                            </TooltipOverlay>
                                                         }
-                                                        unmountHTMLWhenHide
                                                     >
                                                         {item.deployments.length > 0 && (
                                                             <div className="truncate italic">
@@ -153,7 +147,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                                 {getCertificateStatus(item.files)}
                                                             </div>
                                                         )}
-                                                    </Tooltip>
+                                                    </Tippy>
                                                 </div>
                                             </div>
                                         </li>

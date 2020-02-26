@@ -4,7 +4,6 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { Redirect, Switch } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import 'react-tippy/dist/tippy.css';
 
 import {
     mainPath,

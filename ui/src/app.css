@@ -1265,10 +1265,31 @@ h6 {
     left: 50%;
 }
 
-/** Tippy tooltip **/
-.tippy-popper .tippy-tooltip {
-    opacity: 0.8 !important;
+/** tippy.js **/
+@import '~tippy.js/dist/tippy.css';
+
+.tippy-content {
+    @apply shadow-md p-0
 }
+
+.rox-tooltip-overlay {
+    @apply p-2 text-sm text-center text-base-600 z-10 bg-tertiary-200 rounded border border-tertiary-400
+}
+
+.tippy-tooltip[data-placement^='top'] .tippy-arrow {
+    border-top-color: var(--tertiary-400);
+}
+.tippy-tooltip[data-placement^='bottom'] .tippy-arrow {
+    border-bottom-color: var(--tertiary-400);
+}
+.tippy-tooltip[data-placement^='left'] .tippy-arrow {
+    border-left-color: var(--tertiary-400);
+}
+.tippy-tooltip[data-placement^='right'] .tippy-arrow {
+    border-right-color: var(--tertiary-400);
+}
+
+/** End of tippy.js styles */
 
 .overlay:after {
     content: '';

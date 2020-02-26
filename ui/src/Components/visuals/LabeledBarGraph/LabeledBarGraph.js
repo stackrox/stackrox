@@ -14,6 +14,7 @@ import {
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
 import HoverHint from 'Components/visuals/HoverHint';
+import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 
 const NUM_TICKS = 3;
@@ -40,7 +41,7 @@ function getLabelData(data) {
 }
 
 const LabeledBarGraph = ({ data, title, history }) => {
-    const { hint, onValueMouseOver, onValueMouseOut, onMouseMove } = useGraphHoverHint();
+    const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
     const upperBoundX = max([...data.map(datum => datum.x)]);
     const formattedData = getFormattedData(data);
@@ -52,12 +53,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
 
     return (
         <>
-            <FlexibleXYPlot
-                margin={{ left: 5 }}
-                xDomain={[0, upperBoundX]}
-                yType="ordinal"
-                onMouseMove={onMouseMove}
-            >
+            <FlexibleXYPlot margin={{ left: 5 }} xDomain={[0, upperBoundX]} yType="ordinal">
                 <VerticalGridLines tickTotal={NUM_TICKS} />
                 <GradientDefs>
                     <BarGradient />
@@ -94,14 +90,14 @@ const LabeledBarGraph = ({ data, title, history }) => {
                     onValueClick={onValueClickHandler}
                 />
             </FlexibleXYPlot>
-            {hint && hint.data && (
-                <HoverHint
-                    top={hint.y}
-                    left={hint.x}
-                    title={hint.data.title}
-                    body={hint.data.body}
-                    footer={hint.data.footer}
-                />
+            {hint?.target && (
+                <HoverHint target={hint.target}>
+                    <DetailedTooltipOverlay
+                        title={hint.data.title}
+                        body={hint.data.body}
+                        footer={hint.data.footer}
+                    />
+                </HoverHint>
             )}
         </>
     );

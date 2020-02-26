@@ -1,84 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { Tooltip } from 'react-tippy';
-import { throttle } from 'lodash';
-import 'rc-tooltip/assets/bootstrap.css';
+import Tippy from '@tippy.js/react';
 
+import TooltipOverlay from 'Components/TooltipOverlay';
 import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-12 border-b border-base-400';
-
-export const TooltipDiv = ({ header, isUpperCase, id }) => {
-    const titleClassName = isUpperCase ? 'uppercase' : 'capitalize';
-    const tooltipContent = <span className="text-sm">{header}</span>;
-
-    const parentRef = useRef(null);
-    const tooltipRef = useRef(null);
-    const [allowTooltip, setAllowTooltip] = useState(false);
-    let content = (
-        <div ref={tooltipRef} className="flex-none">
-            {header}
-        </div>
-    );
-
-    const tooltipFn = () => {
-        setAllowTooltip(false);
-        if (
-            parentRef.current &&
-            tooltipRef.current &&
-            parentRef.current.offsetWidth <= tooltipRef.current.offsetWidth
-        ) {
-            setAllowTooltip(true);
-        }
-    };
-    const throttledTooltipFn = () => throttle(tooltipFn, 100);
-
-    function setWindowResize() {
-        window.addEventListener('resize', throttledTooltipFn);
-
-        return window.removeEventListener('resize', throttledTooltipFn);
-    }
-
-    if (allowTooltip) {
-        content = (
-            <Tooltip
-                useContext
-                position="top"
-                trigger="mouseenter"
-                arrow
-                html={tooltipContent}
-                className="truncate"
-            >
-                <div ref={tooltipRef} className="truncate flex-none">
-                    {header}
-                </div>
-            </Tooltip>
-        );
-    }
-    useEffect(tooltipFn, [header]);
-    useEffect(setWindowResize, []);
-    return (
-        <div
-            ref={parentRef}
-            className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${titleClassName}`}
-            data-test-id={`${id}-header`}
-        >
-            {content}
-        </div>
-    );
-};
-
-TooltipDiv.propTypes = {
-    header: PropTypes.string,
-    isUpperCase: PropTypes.bool,
-    id: PropTypes.string
-};
-
-TooltipDiv.defaultProps = {
-    header: ' ',
-    isUpperCase: true,
-    id: 'panel'
-};
 
 const Panel = props => (
     <div
@@ -97,11 +24,16 @@ const Panel = props => (
                 {props.headerTextComponent ? (
                     props.headerTextComponent
                 ) : (
-                    <TooltipDiv
-                        header={props.header}
-                        isUpperCase={props.isUpperCase}
-                        id={props.id}
-                    />
+                    <div
+                        className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${
+                            props.isUpperCase ? 'uppercase' : 'capitalize'
+                        }`}
+                        data-test-id={`${props.id}-header`}
+                    >
+                        <Tippy content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
+                            <div className="truncate flex-none">{props.header}</div>
+                        </Tippy>
+                    </div>
                 )}
 
                 <div

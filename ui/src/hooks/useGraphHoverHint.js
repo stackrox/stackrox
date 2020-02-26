@@ -1,32 +1,19 @@
 import { useState } from 'react';
 
 function useGraphHoverHint() {
-    const [hintData, setHintData] = useState();
-    const [hintXY, setHintXY] = useState({});
-    const offset = 10;
+    const [hint, setHint] = useState();
 
-    function onValueMouseOver(datum) {
-        setHintData(datum.hint);
+    function onValueMouseOver(datum, { event }) {
+        if (datum.hint) {
+            setHint({ data: datum.hint, target: event.target });
+        }
     }
 
     function onValueMouseOut() {
-        setHintData(null);
+        setHint(null);
     }
 
-    function onMouseMove(ev) {
-        const container = ev.target.closest('.relative').getBoundingClientRect();
-        setHintXY({
-            x: ev.clientX - container.left + offset,
-            y: ev.clientY - container.top + offset
-        });
-    }
-
-    const hint = {
-        x: hintXY.x,
-        y: hintXY.y,
-        data: hintData
-    };
-    return { hint, onValueMouseOver, onValueMouseOut, onMouseMove };
+    return { hint, onValueMouseOver, onValueMouseOut };
 }
 
 export default useGraphHoverHint;

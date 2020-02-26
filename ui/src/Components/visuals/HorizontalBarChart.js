@@ -12,9 +12,10 @@ import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import merge from 'deepmerge';
-import BarGradient from './BarGradient';
 
+import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import HoverHint from './HoverHint';
+import BarGradient from './BarGradient';
 
 const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };
 
@@ -34,8 +35,6 @@ class HorizontalBarChart extends Component {
         tickValues: PropTypes.arrayOf(PropTypes.number),
         valueGradientColorStart: PropTypes.string,
         valueGradientColorEnd: PropTypes.string,
-        onValueMouseOver: PropTypes.func,
-        onValueMouseOut: PropTypes.func,
         minimal: PropTypes.bool,
         history: ReactRouterPropTypes.history.isRequired
     };
@@ -48,40 +47,12 @@ class HorizontalBarChart extends Component {
         seriesProps: {},
         valueGradientColorStart: '#B3DCFF',
         valueGradientColorEnd: '#BDF3FF',
-        onValueMouseOver: null,
-        onValueMouseOut: null,
         minimal: false
     };
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            hintData: null
-        };
-    }
+    state = { hintInfo: null };
 
     showLabel = value => value >= 10;
-
-    setHintData = val => {
-        if (val.hint) {
-            this.setState({
-                hintData: val.hint
-            });
-        }
-    };
-
-    clearHintData = () => {
-        this.setState({ hintData: null });
-    };
-
-    setHintPosition = ev => {
-        const container = ev.target.closest('.relative').getBoundingClientRect();
-        const offset = 10;
-        this.setState({
-            hintX: ev.clientX - container.left + offset,
-            hintY: ev.clientY - container.top + offset
-        });
-    };
 
     getLabelData = () =>
         this.props.data.sort(sortByYValue).map(item => {
@@ -102,31 +73,28 @@ class HorizontalBarChart extends Component {
             return val;
         });
 
-    onValueMouseOverHandler = datum => {
-        const { onValueMouseOver } = this.props;
-        this.setHintData(datum);
-        if (onValueMouseOver) onValueMouseOver(datum);
+    onValueMouseOverHandler = (datum, e) => {
+        if (datum.hint) {
+            this.setState({ hintInfo: { data: datum.hint, target: e.event.target } });
+        }
     };
 
-    onValueMouseOutHandler = datum => {
-        const { onValueMouseOut } = this.props;
-        this.clearHintData();
-        if (onValueMouseOut) onValueMouseOut(datum);
+    onValueMouseOutHandler = () => {
+        this.setState({ hintInfo: null });
     };
 
     onValueClickHandler = datum => {
         if (datum.link) this.props.history.push(datum.link);
     };
 
-    getContainerProps = hintsEnabled => {
+    getContainerProps = () => {
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive',
-            onMouseMove: hintsEnabled ? this.setHintPosition : null
+            className: 'relative chart-container w-full horizontal-bar-responsive'
         };
         return merge(defaultContainerProps, this.props.containerProps);
     };
 
-    getPlotProps = hintsEnabled => {
+    getPlotProps = () => {
         const { minimal, data } = this.props;
         const sortedData = data.sort(sortByYValue);
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
@@ -142,8 +110,7 @@ class HorizontalBarChart extends Component {
             yType: 'category',
             yRange,
             margin: minimal ? minimalMargin : { top: 33.3, left: Math.ceil(maxLength * 7.5) },
-            stackBy: 'x',
-            animation: hintsEnabled ? false : ''
+            stackBy: 'x'
         };
         return merge(defaultPlotProps, this.props.plotProps);
     };
@@ -166,12 +133,8 @@ class HorizontalBarChart extends Component {
 
     render() {
         const { data, tickValues, valueFormat, minimal } = this.props;
-
         const sortedData = data.sort(sortByYValue);
-
-        const { hintX, hintY, hintData } = this.state;
-
-        const hintsEnabled = !!sortedData.find(item => item.hint);
+        const { hintInfo } = this.state;
 
         // Generate y axis links
         const axisLinks = sortedData.reduce((acc, curr) => {
@@ -179,8 +142,8 @@ class HorizontalBarChart extends Component {
             return acc;
         }, {});
 
-        const containerProps = this.getContainerProps(hintsEnabled);
-        const plotProps = this.getPlotProps(hintsEnabled);
+        const containerProps = this.getContainerProps();
+        const plotProps = this.getPlotProps();
         const seriesProps = this.getSeriesProps();
 
         function tickFormat(value) {
@@ -281,13 +244,13 @@ class HorizontalBarChart extends Component {
                     )}
                 </FlexibleWidthXYPlot>
 
-                {hintData && (
-                    <HoverHint
-                        top={hintY}
-                        left={hintX}
-                        title={hintData.title}
-                        body={hintData.body}
-                    />
+                {hintInfo?.target && (
+                    <HoverHint target={hintInfo.target}>
+                        <DetailedTooltipOverlay
+                            title={hintInfo.data.title}
+                            body={hintInfo.data.body}
+                        />
+                    </HoverHint>
                 )}
             </div>
         );

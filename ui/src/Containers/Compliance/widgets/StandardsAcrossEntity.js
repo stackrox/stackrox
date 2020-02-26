@@ -12,7 +12,7 @@ import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
-import HorizontalBarChart from 'Components/visuals/HorizontalBar';
+import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { withRouter } from 'react-router-dom';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY as QUERY } from 'queries/controls';

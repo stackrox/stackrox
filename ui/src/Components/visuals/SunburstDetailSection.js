@@ -4,7 +4,7 @@ import * as Icon from 'react-feather';
 import Truncate from 'react-truncate';
 import { Link } from 'react-router-dom';
 
-import HorizontalBarChart from 'Components/visuals/HorizontalBar';
+import HorizontalBarChart from 'Components/visuals/HorizontalBarChart';
 
 function formatAsPercent(x) {
     return `${x}%`;

@@ -7,6 +7,6 @@ export const selectors = {
     firstTableRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
     panelHeader: 'div[data-test-id="panel-header"]',
     viewDeploymentsButton: 'button:contains("View Deployments")',
-    matchedHeader: 'div[data-test-id="filtered-header"] > div > div',
+    matchedHeader: 'div[data-test-id="filtered-header"] > div',
     noResults: 'div[data-testid="results-message"]'
 };
