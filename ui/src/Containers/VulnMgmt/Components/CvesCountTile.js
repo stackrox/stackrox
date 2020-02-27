@@ -27,7 +27,7 @@ const CvesCountTile = () => {
     const { loading, data = {} } = useQuery(CVES_COUNT_QUERY, {
         variables: {
             query: queryService.objectToWhereClause({
-                'Fixed By': 'r/.*'
+                Fixable: true
             })
         }
     });

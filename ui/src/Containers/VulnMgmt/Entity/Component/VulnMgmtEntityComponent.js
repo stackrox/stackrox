@@ -28,7 +28,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                     cvss
                     scoreVersion
                 }
-                fixableCVEs: vulns(query: "Fixed By:r/.*") {
+                fixableCVEs: vulns(query: "Fixable:true") {
                     ...cveFields
                 }
             }

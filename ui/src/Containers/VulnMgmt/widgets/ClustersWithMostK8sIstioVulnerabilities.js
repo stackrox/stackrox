@@ -49,7 +49,7 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
     const url = targetState.toUrl();
     const fixableUrl = targetState
         .setSearch({
-            'Fixed By': 'r/.*',
+            Fixable: true,
             'Vulnerability Type': vulnType
         })
         .toUrl();

@@ -122,7 +122,7 @@ const processData = (data, entityType, workflowState) => {
             const url = newState.toUrl();
             const cveListState = newState.pushList(entityTypes.CVE);
             const cvesUrl = cveListState.toUrl();
-            const fixableUrl = cveListState.setSearch({ 'Fixed By': 'r/.*' }).toUrl();
+            const fixableUrl = cveListState.setSearch({ Fixable: true }).toUrl();
 
             const { critical, high, medium, low } = vulnCounter;
 

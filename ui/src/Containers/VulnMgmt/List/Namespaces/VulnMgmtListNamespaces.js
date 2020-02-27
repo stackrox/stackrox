@@ -55,9 +55,7 @@ export function getNamespaceTableColumns(workflowState) {
 
                 const newState = workflowState.pushListItem(metadata.id).pushList(entityTypes.CVE);
                 const cvesUrl = newState.toUrl();
-
-                // If `Fixed By` is set, it means vulnerability is fixable.
-                const fixableUrl = newState.setSearch({ 'Fixed By': 'r/.*' }).toUrl();
+                const fixableUrl = newState.setSearch({ Fixable: true }).toUrl();
 
                 return (
                     <CVEStackedPill
