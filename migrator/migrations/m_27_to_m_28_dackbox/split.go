@@ -33,6 +33,7 @@ func splitComponents(parts ImageParts) []ComponentParts {
 		cp.component = generateImageComponent(component)
 		cp.edge = generateImageComponentEdge(parts.image, cp.component, component)
 		cp.children = splitCVEs(cp, component)
+
 		ret = append(ret, cp)
 	}
 	return ret
@@ -44,6 +45,7 @@ func splitCVEs(component ComponentParts, embedded *storage.EmbeddedImageScanComp
 		var cp CVEParts
 		cp.cve = generateCVE(cve)
 		cp.edge = generateComponentCVEEdge(component.component, cp.cve, cve)
+
 		ret = append(ret, cp)
 	}
 	return ret
@@ -68,6 +70,10 @@ func generateImageComponent(from *storage.EmbeddedImageScanComponent) *storage.I
 		Name:    from.GetName(),
 		Version: from.GetVersion(),
 		License: proto.Clone(from.GetLicense()).(*storage.License),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponent_TopCvss{TopCvss: from.GetTopCvss()}
 	}
 	return ret
 }

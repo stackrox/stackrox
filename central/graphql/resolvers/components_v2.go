@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -109,26 +108,42 @@ func (eicr *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.T
 
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityResolver, error) {
+	if eicr.data.GetSetTopCvss() == nil {
+		return nil, nil
+	}
+
+	query := eicr.componentQuery()
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
 	vulnLoader, err := loaders.GetCVELoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	vulns, err := vulnLoader.FromQuery(ctx, eicr.componentQuery())
+	vulns, err := vulnLoader.FromQuery(ctx, query)
 	if err != nil {
 		return nil, err
-	}
-	var topVuln *storage.CVE
-	for _, vuln := range vulns {
-		if topVuln == nil || vuln.GetCvss() > topVuln.GetCvss() {
-			topVuln = vuln
-		}
-	}
-	if topVuln == nil {
+	} else if len(vulns) == 0 {
 		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top component vulnerability")
 	}
+
 	return &cVEResolver{
 		root: eicr.root,
-		data: topVuln,
+		data: vulns[0],
 	}, nil
 }
 

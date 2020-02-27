@@ -42,6 +42,7 @@ var (
 	ComponentVersion             = newFieldLabel("Component Version")
 	ComponentSource              = newFieldLabel("Component Source")
 	ComponentLocation            = newFieldLabel("Component Location")
+	ComponentTopCVSS             = newFieldLabel("Component Top CVSS")
 	DockerfileInstructionKeyword = newFieldLabel("Dockerfile Instruction Keyword")
 	DockerfileInstructionValue   = newFieldLabel("Dockerfile Instruction Value")
 	ImageCreatedTime             = newFieldLabel("Image Created Time")
@@ -61,6 +62,7 @@ var (
 	ClusterCVEFixable            = newFieldLabel("Cluster CVE Fixable")
 	FixableCVECount              = newFieldLabel("Fixable CVE Count")
 	LastUpdatedTime              = newFieldLabel("Last Updated")
+	ImageTopCVSS                 = newFieldLabel("Image Top CVSS")
 
 	AddCapabilities               = newFieldLabel("Add Capabilities")
 	Annotation                    = newFieldLabel("Annotation")

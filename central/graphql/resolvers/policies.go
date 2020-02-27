@@ -86,7 +86,6 @@ func (resolver *policyResolver) Alerts(ctx context.Context, args PaginatedQuery)
 	}
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getRawPolicyQuery())
-
 	return resolver.root.Violations(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 

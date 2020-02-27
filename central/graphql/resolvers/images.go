@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -107,8 +110,16 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 }
 
 // TopVuln returns the first vulnerability with the top CVSS score.
-func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (*EmbeddedVulnerabilityResolver, error) {
+func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
+	if features.Dackbox.Enabled() {
+		return resolver.topVulnV2(ctx, args)
+	}
+
+	return resolver.topVulnV1(ctx, args)
+}
+
+func (resolver *imageResolver) topVulnV1(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	if err := resolver.ensureImage(ctx); err != nil {
 		return nil, err
 	}
@@ -132,6 +143,48 @@ func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (*Emb
 		return nil, nil
 	}
 	return resolver.root.wrapEmbeddedVulnerability(maxCvss, nil)
+}
+
+func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	if resolver.data.GetSetTopCvss() == nil {
+		return nil, nil
+	}
+
+	query = search.NewConjunctionQuery(query, resolver.getImageQuery())
+	query.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field:    search.CVSS.String(),
+				Reversed: true,
+			},
+			{
+				Field:    search.CVE.String(),
+				Reversed: true,
+			},
+		},
+		Limit:  1,
+		Offset: 0,
+	}
+
+	vulnLoader, err := loaders.GetCVELoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	vulns, err := vulnLoader.FromQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	} else if len(vulns) == 0 {
+		return nil, err
+	} else if len(vulns) > 1 {
+		return nil, errors.New("multiple vulnerabilities matched for top image vulnerability")
+	}
+	return &cVEResolver{root: resolver.root, data: vulns[0]}, nil
+
 }
 
 // Vulns returns all of the vulnerabilities in the image.
@@ -207,6 +260,10 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 
 func (resolver *imageResolver) getImageRawQuery() string {
 	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).Query()
+}
+
+func (resolver *imageResolver) getImageQuery() *v1.Query {
+	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
 }
 
 func (resolver *imageResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

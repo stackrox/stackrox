@@ -68,11 +68,19 @@ func fillScanStats(i *storage.Image) {
 		}
 
 		var fixedByProvided bool
+		var imageTopCVSS float32
 		vulns := make(map[string]bool)
 		for _, c := range i.GetScan().GetComponents() {
+			var componentTopCVSS float32
+			var hasVulns bool
 			for _, v := range c.GetVulns() {
+				hasVulns = true
 				if _, ok := vulns[v.GetCve()]; !ok {
 					vulns[v.GetCve()] = false
+				}
+
+				if v.GetCvss() > componentTopCVSS {
+					componentTopCVSS = v.GetCvss()
 				}
 
 				if v.GetSetFixedBy() == nil {
@@ -84,11 +92,28 @@ func fillScanStats(i *storage.Image) {
 					vulns[v.GetCve()] = true
 				}
 			}
+
+			if hasVulns {
+				c.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{
+					TopCvss: componentTopCVSS,
+				}
+			}
+
+			if componentTopCVSS > imageTopCVSS {
+				imageTopCVSS = componentTopCVSS
+			}
 		}
 
 		i.SetCves = &storage.Image_Cves{
 			Cves: int32(len(vulns)),
 		}
+
+		if len(vulns) > 0 {
+			i.SetTopCvss = &storage.Image_TopCvss{
+				TopCvss: imageTopCVSS,
+			}
+		}
+
 		if int32(len(vulns)) == 0 || fixedByProvided {
 			var numFixableVulns int32
 			for _, fixable := range vulns {

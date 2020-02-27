@@ -3,6 +3,7 @@ import entityTypes from 'constants/entityTypes';
 export const imageSortFields = {
     CVE_COUNT: 'CVE Count',
     CVSS: 'CVSS',
+    TOP_CVSS: 'Image Top CVSS',
     CLUSTER: 'Cluster',
     COMPONENT: 'Component',
     COMPONENT_COUNT: 'Component Count',
@@ -41,9 +42,9 @@ export const imageSortFields = {
 export const componentSortFields = {
     COMPONENT: 'Component',
     CVE_COUNT: 'CVE Count',
-    TOP_CVSS: 'CVSS',
-    SOURCE: '"Component Source"',
-    LOCATION: '"Component Location"',
+    TOP_CVSS: 'Component Top CVSS',
+    SOURCE: 'Component Source',
+    LOCATION: 'Component Location',
     IMAGE_COUNT: 'Image Count',
     DEPLOYMENT_COUNT: 'Deployment Count',
     PRIORITY: 'Priority'

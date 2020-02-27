@@ -55,6 +55,10 @@ func generateEmbeddedComponent(cp ComponentParts) *storage.EmbeddedImageScanComp
 		}
 	}
 
+	if cp.component.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.EmbeddedImageScanComponent_TopCvss{TopCvss: cp.component.GetTopCvss()}
+	}
+
 	ret.Vulns = make([]*storage.EmbeddedVulnerability, 0, len(cp.children))
 	for _, cve := range cp.children {
 		ret.Vulns = append(ret.Vulns, generateEmbeddedCVE(cve))

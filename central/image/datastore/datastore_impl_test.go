@@ -151,6 +151,9 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 							Cve: "derp2",
 						},
 					},
+					SetTopCvss: &storage.EmbeddedImageScanComponent_TopCvss{
+						TopCvss: float32(0),
+					},
 				},
 			},
 		},
@@ -162,6 +165,9 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 		},
 		SetFixable: &storage.Image_FixableCves{
 			FixableCves: 1,
+		},
+		SetTopCvss: &storage.Image_TopCvss{
+			TopCvss: float32(0),
 		},
 	}
 
