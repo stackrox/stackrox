@@ -130,3 +130,20 @@ func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fie
 func readableOp(op storage.Comparator) string {
 	return opToHumanReadable[op]
 }
+
+// We need to try alternate field paths to get the violation message so that if search is running on the top level
+// component and CVE object we can still pull the matches.
+var dackboxSwappedFieldPaths = map[string]string{
+	"image.scan.components.name":                        "image_component.name",
+	"image.scan.components.version":                     "image_component.version",
+	"image.scan.components.vulns.cve":                   "c_v_e.id",
+	"image.scan.components.vulns.cvss":                  "c_v_e.cvss",
+	"image.scan.components.vulns.set_fixed_by.fixed_by": "component_c_v_e_edge.has_fixed_by.fixed_by",
+}
+
+func swapFieldPaths(fieldPath string) string {
+	if np, exists := dackboxSwappedFieldPaths[fieldPath]; exists {
+		return np
+	}
+	return fieldPath
+}

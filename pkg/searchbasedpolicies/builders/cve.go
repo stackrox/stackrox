@@ -41,7 +41,11 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 
 	q = search.NewQueryBuilder().AddGenericTypeLinkedFieldsHighligted(fieldLabels, queryStrings).ProtoQuery()
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
+		// Need to fall back to paths from top level sCVEs
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
+		if len(cveMatches) == 0 {
+			cveMatches = result.Matches[swapFieldPaths(cveSearchField.GetFieldPath())]
+		}
 		if len(cveMatches) == 0 {
 			return searchbasedpolicies.Violations{}
 		}

@@ -51,8 +51,17 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 	q = search.NewQueryBuilder().AddGenericTypeLinkedFieldsHighligted(linkedFields, linkedValues).ProtoQuery()
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		cvssMatches := result.Matches[cvssSearchField.GetFieldPath()]
+		if len(cvssMatches) == 0 {
+			cvssMatches = result.Matches[swapFieldPaths(cvssSearchField.GetFieldPath())]
+		}
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
+		if len(cveMatches) == 0 {
+			cveMatches = result.Matches[swapFieldPaths(cveSearchField.GetFieldPath())]
+		}
 		fixedByMatches := result.Matches[cveFixedByField.GetFieldPath()]
+		if len(fixedByMatches) == 0 {
+			fixedByMatches = result.Matches[swapFieldPaths(cveFixedByField.GetFieldPath())]
+		}
 		if len(cvssMatches) != len(cveMatches) {
 			log.Errorf("Got different number of matches for CVSS and CVEs: %+v %+v", cvssMatches, cveMatches)
 		}

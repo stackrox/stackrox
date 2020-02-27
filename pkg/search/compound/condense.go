@@ -83,7 +83,8 @@ func condenseBoolean(req *searchRequestSpec) (*searchRequestSpec, error) {
 
 func condenseList(children []*searchRequestSpec, combineQueries func(q ...*v1.Query) *v1.Query) ([]*searchRequestSpec, error) {
 	ret := make([]*searchRequestSpec, 0, len(children))
-	bySpec := make(map[*SearcherSpec][]*v1.Query)
+	specQueryIndex := make(map[*SearcherSpec]int)
+	queriesPerSpec := make([][]*v1.Query, 0, len(children))
 	for _, child := range children {
 		condensed, err := condense(child)
 		if err != nil {
@@ -91,33 +92,41 @@ func condenseList(children []*searchRequestSpec, combineQueries func(q ...*v1.Qu
 		}
 		if condensed.base == nil {
 			ret = append(ret, condensed)
-		} else {
-			bySpec[condensed.base.Spec] = append(bySpec[condensed.base.Spec], condensed.base.Query)
+			continue
 		}
+
+		index, hasIndex := specQueryIndex[condensed.base.Spec]
+		if !hasIndex {
+			index = len(queriesPerSpec)
+			specQueryIndex[condensed.base.Spec] = index
+			queriesPerSpec = append(queriesPerSpec, nil)
+		}
+		queriesPerSpec[index] = append(queriesPerSpec[index], condensed.base.Query)
 	}
-	if len(bySpec) > 0 {
-		ret = append(ret, condenseMap(bySpec, combineQueries)...)
+	if len(specQueryIndex) > 0 {
+		ret = append(ret, condenseMap(specQueryIndex, queriesPerSpec, combineQueries)...)
 	}
 	return ret, nil
 }
 
-func condenseMap(condensable map[*SearcherSpec][]*v1.Query, combineQueries func(q ...*v1.Query) *v1.Query) []*searchRequestSpec {
-	condensed := make([]*searchRequestSpec, 0, len(condensable))
-	for spec, queries := range condensable {
+func condenseMap(specQueryIndex map[*SearcherSpec]int, queriesPerSpec [][]*v1.Query, combineQueries func(q ...*v1.Query) *v1.Query) []*searchRequestSpec {
+	condensed := make([]*searchRequestSpec, len(queriesPerSpec))
+	for spec, index := range specQueryIndex {
+		queries := queriesPerSpec[index]
 		if len(queries) == 1 {
-			condensed = append(condensed, &searchRequestSpec{
+			condensed[index] = &searchRequestSpec{
 				base: &baseRequestSpec{
 					Spec:  spec,
 					Query: queries[0],
 				},
-			})
+			}
 		} else {
-			condensed = append(condensed, &searchRequestSpec{
+			condensed[index] = &searchRequestSpec{
 				base: &baseRequestSpec{
 					Spec:  spec,
 					Query: combineQueries(queries...),
 				},
-			})
+			}
 		}
 	}
 	return condensed

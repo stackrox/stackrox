@@ -90,7 +90,12 @@ func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[se
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		violations := searchbasedpolicies.Violations{}
 		for _, presentFieldValue := range presentFieldValues {
-			for _, match := range result.Matches[presentFieldValue.searchField.GetFieldPath()] {
+			// Need to fall back to paths from top level image components and CVEs
+			matches := result.Matches[presentFieldValue.searchField.GetFieldPath()]
+			if len(matches) == 0 {
+				matches = result.Matches[swapFieldPaths(presentFieldValue.searchField.GetFieldPath())]
+			}
+			for _, match := range matches {
 				violations.AlertViolations = append(violations.AlertViolations, &storage.Alert_Violation{
 					Message: fmt.Sprintf("%s '%s' matched %s", presentFieldValue.fieldHumanName, match, presentFieldValue.policyVal),
 				})
