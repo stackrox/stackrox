@@ -13,7 +13,9 @@ export function saveFile({ method, url, data, name }) {
         url,
         data,
         responseType: 'arraybuffer',
-        name
+        name,
+        // removing timeout for downloads
+        timeout: 0
     };
     return axios(options).then(response => {
         if (response.data) {
