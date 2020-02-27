@@ -8,7 +8,7 @@ import (
 // Unmarshal unmarshals a set of SortedKeys.
 func Unmarshal(marshalled []byte) (SortedKeys, error) {
 	var unmarshalled SortedKeys
-	buf := marshalled
+	buf := append([]byte{}, marshalled...)
 	for len(buf) >= 2 {
 		// First two bytes encode the length.
 		length := decodeLength(buf[:2])

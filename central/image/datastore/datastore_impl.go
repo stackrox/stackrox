@@ -303,12 +303,12 @@ func merge(mergeTo *storage.Image, mergeWith *storage.Image) (updated bool) {
 	if mergeWith.GetRiskScore() != mergeTo.GetRiskScore() {
 		updated = true
 	}
-	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) >= 0 {
+	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
 		mergeTo.Metadata = mergeWith.GetMetadata()
 	} else {
 		updated = true
 	}
-	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) >= 0 {
+	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) > 0 {
 		mergeTo.Scan = mergeWith.GetScan()
 	} else {
 		updated = true

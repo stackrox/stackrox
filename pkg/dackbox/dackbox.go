@@ -169,7 +169,7 @@ func loadGraphIntoMem(db *badger.DB, graphPrefix []byte) (*graph.Graph, error) {
 		if err != nil {
 			return err
 		}
-		return initial.SetRefs(k, sk)
+		return initial.SetRefs(append([]byte{}, k...), sk)
 	})
 	if err != nil {
 		return nil, err
