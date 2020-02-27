@@ -1868,10 +1868,15 @@ jobs:
             sleep 1
 
       - run:
+          name: Add an /etc/hosts entry
+          command: |
+            sudo bash -c 'echo "127.0.0.1 central-proxy.stackrox.local" >>/etc/hosts'
+
+      - run:
           name: Test HTTP access to plain HTTP proxy
           command: |
             # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-            version="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://localhost:10080/v1/metadata' | jq -r '.version')"
+            version="$(curl --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 -f 'http://central-proxy.stackrox.local:10080/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
             [[ "$version" == "$(make --quiet tag)" ]]
 
@@ -1882,7 +1887,6 @@ jobs:
             version="$(
               curl --cacert "${PROXY_CERTS_DIR}/ca.crt" \
                 --retry 5 --retry-connrefused -4 --retry-delay 1 --retry-max-time 10 \
-                --resolve "central-proxy.stackrox.local:10443:127.0.0.1" \
                 -f \
                 'https://central-proxy.stackrox.local:10443/v1/metadata' | jq -r '.version')"
             echo "Got version ${version} from server"
@@ -1921,9 +1925,9 @@ jobs:
               esac
 
               echo "Testing roxctl access through ${name}..."
-              roxctl "${extra_args[@]}" -e "localhost:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+              roxctl "${extra_args[@]}" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
                 failures=$((failures + 1))
-              roxctl "${extra_args[@]}" -e "localhost:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+              roxctl "${extra_args[@]}" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
                 failures=$((failures + 1))
               echo "Done."
               rm -rf "/tmp/proxy-test-${port}"

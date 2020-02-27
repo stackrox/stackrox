@@ -1,6 +1,8 @@
 package common
 
 import (
+	"net"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
@@ -25,12 +27,20 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		TLS: *tlsOpts,
 	}
 
+	var grpcDialOpts []grpc.DialOption
+
 	if flags.UsePlaintext() {
 		if !flags.UseInsecure() {
 			return nil, errors.New("plaintext connection mode must be used in conjunction with --insecure")
 		}
 		opts.InsecureNoTLS = true
 		opts.InsecureAllowCredsViaPlaintext = true
+
+		// Set the server name as the authority since we don't have SNI (don't set it for IP addresses).
+		_, serverName, _ := ConnectNames()
+		if serverName != "" && net.ParseIP(serverName) == nil {
+			grpcDialOpts = append(grpcDialOpts, grpc.WithAuthority(serverName))
+		}
 	}
 
 	if !flags.UseDirectGRPC() {
@@ -43,5 +53,5 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		opts.ConfigureBasicAuth(basic.DefaultUsername, flags.Password())
 	}
 
-	return clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts)
+	return clientconn.GRPCConnection(common.Context(), mtls.CentralSubject, endpoint, opts, grpcDialOpts...)
 }
