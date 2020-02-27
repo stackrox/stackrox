@@ -22,13 +22,8 @@ import { namespaceSortFields } from 'constants/sortFields';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultNamespaceSort = [
-    // @TODO, uncomment the primary sort field for Namespaces, after its available for backend pagination/sorting
-    // {
-    //     id: namespaceSortFields.PRIORITY,
-    //     desc: false
-    // },
     {
-        id: namespaceSortFields.NAMESPACE,
+        id: namespaceSortFields.PRIORITY,
         desc: false
     }
 ];
@@ -45,6 +40,7 @@ export function getNamespaceTableColumns(workflowState) {
             Header: `Namespace`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
+            id: namespaceSortFields.NAMESPACE,
             accessor: 'metadata.name',
             sortField: namespaceSortFields.NAMESPACE
         },
@@ -72,6 +68,7 @@ export function getNamespaceTableColumns(workflowState) {
                     />
                 );
             },
+            id: namespaceSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: namespaceSortFields.CVE_COUNT
         },
@@ -90,6 +87,7 @@ export function getNamespaceTableColumns(workflowState) {
 
                 return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
             },
+            id: namespaceSortFields.CLUSTER,
             accessor: 'metadata.clusterName',
             sortField: namespaceSortFields.CLUSTER
         },
@@ -106,6 +104,7 @@ export function getNamespaceTableColumns(workflowState) {
                     selectedRowId={original.metadata.id}
                 />
             ),
+            id: namespaceSortFields.DEPLOYMENT_COUNT,
             accessor: 'deploymentCount',
             sortField: namespaceSortFields.DEPLOYMENT_COUNT,
             sortable: false
@@ -123,6 +122,7 @@ export function getNamespaceTableColumns(workflowState) {
                     selectedRowId={original.metadata.id}
                 />
             ),
+            id: namespaceSortFields.IMAGES,
             accessor: 'imageCount',
             sortField: namespaceSortFields.IMAGES,
             sortable: false
@@ -143,6 +143,7 @@ export function getNamespaceTableColumns(workflowState) {
         //             selectedRowId={original.metadata.id}
         //         />
         //     ),
+        //     id: namespaceSortFields.POLICY_COUNT,
         //     accessor: 'policyCount',
         //     sortField: namespaceSortFields.POLICY_COUNT,
         //     sortable: false
@@ -160,7 +161,7 @@ export function getNamespaceTableColumns(workflowState) {
 
                 return policyLabel;
             },
-            id: 'policyStatus',
+            id: namespaceSortFields.POLICY_STATUS,
             accessor: 'policyStatus.status',
             sortField: namespaceSortFields.POLICY_STATUS,
             sortable: false
@@ -173,17 +174,18 @@ export function getNamespaceTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
+            id: namespaceSortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: namespaceSortFields.LATEST_VIOLATION,
             sortable: false
         },
         {
             Header: `Risk Priority`,
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            id: namespaceSortFields.PRIORITY,
             accessor: 'metadata.priority',
-            sortField: namespaceSortFields.PRIORITY,
-            sortable: false
+            sortField: namespaceSortFields.PRIORITY
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
@@ -225,6 +227,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
             selectedRowId={selectedRowId}
             idAttribute="metadata.id"
             search={search}
+            sort={tableSort}
             page={page}
         />
     );

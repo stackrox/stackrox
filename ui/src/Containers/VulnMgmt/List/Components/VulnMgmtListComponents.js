@@ -40,6 +40,7 @@ export function getComponentTableColumns(workflowState) {
                 const { version, name } = original;
                 return `${name} ${version}`;
             },
+            id: componentSortFields.COMPONENT,
             accessor: 'name',
             sortField: componentSortFields.COMPONENT
         },
@@ -67,6 +68,7 @@ export function getComponentTableColumns(workflowState) {
                     />
                 );
             },
+            id: componentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: componentSortFields.CVE_COUNT
         },
@@ -85,6 +87,7 @@ export function getComponentTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
+            id: componentSortFields.TOP_CVSS,
             accessor: 'topVuln.cvss',
             sortField: componentSortFields.TOP_CVSS
         },
@@ -92,6 +95,7 @@ export function getComponentTableColumns(workflowState) {
             Header: `Source`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: componentSortFields.SOURCE,
             accessor: 'source',
             sortField: componentSortFields.SOURCE
         },
@@ -99,6 +103,7 @@ export function getComponentTableColumns(workflowState) {
             Header: `Location`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: componentSortFields.LOCATION,
             accessor: 'location',
             sortField: componentSortFields.LOCATION
         },
@@ -107,6 +112,7 @@ export function getComponentTableColumns(workflowState) {
             entityType: entityTypes.IMAGE,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: componentSortFields.IMAGE_COUNT,
             accessor: 'imageCount',
             Cell: ({ original, pdf }) => (
                 <TableCountLink
@@ -123,6 +129,7 @@ export function getComponentTableColumns(workflowState) {
             entityType: entityTypes.DEPLOYMENT,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: componentSortFields.DEPLOYMENT_COUNT,
             accessor: 'deploymentCount',
             Cell: ({ original, pdf }) => (
                 <TableCountLink
@@ -138,6 +145,7 @@ export function getComponentTableColumns(workflowState) {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            id: componentSortFields.PRIORITY,
             accessor: 'priority',
             sortField: componentSortFields.PRIORITY
         }
@@ -178,8 +186,9 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResu
             entityListType={entityTypes.COMPONENT}
             getTableColumns={getComponentTableColumns}
             selectedRowId={selectedRowId}
-            page={page}
             search={search}
+            sort={tableSort}
+            page={page}
         />
     );
 };

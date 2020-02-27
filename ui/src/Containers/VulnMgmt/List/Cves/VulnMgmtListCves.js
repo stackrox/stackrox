@@ -36,10 +36,6 @@ export const defaultCveSort = [
     {
         id: cveSortFields.CVSS_SCORE,
         desc: true
-    },
-    {
-        id: cveSortFields.CVE,
-        desc: false
     }
 ];
 
@@ -61,6 +57,7 @@ export function getCveTableColumns(workflowState) {
             Header: `CVE`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            id: cveSortFields.CVE,
             accessor: 'cve',
             sortField: cveSortFields.CVE
         },
@@ -77,8 +74,8 @@ export function getCveTableColumns(workflowState) {
                 );
                 return <div className="mx-auto">{fixableFlag}</div>;
             },
+            id: cveSortFields.FIXABLE,
             accessor: 'isFixable',
-            id: 'isFixable',
             sortField: cveSortFields.FIXABLE,
             sortable: false
         },
@@ -91,8 +88,8 @@ export function getCveTableColumns(workflowState) {
                 const { cvss, scoreVersion } = original;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
+            id: cveSortFields.CVSS_SCORE,
             accessor: 'cvss',
-            id: 'cvss',
             sortField: cveSortFields.CVSS_SCORE
         },
         {
@@ -106,6 +103,7 @@ export function getCveTableColumns(workflowState) {
                     ? `${(envImpact * 100).toFixed(0)}% affected`
                     : '-';
             },
+            id: cveSortFields.ENV_IMPACT,
             accessor: 'envImpact',
             sortField: cveSortFields.ENV_IMPACT,
             sortable: false
@@ -119,6 +117,7 @@ export function getCveTableColumns(workflowState) {
                 // eslint-disable-next-line eqeqeq
                 return impactScore == Number(impactScore) ? impactScore.toFixed(1) : '-';
             },
+            id: cveSortFields.IMPACT_SCORE,
             accessor: 'impactScore',
             sortField: cveSortFields.IMPACT_SCORE
         },
@@ -136,8 +135,8 @@ export function getCveTableColumns(workflowState) {
                     selectedRowId={original.cve}
                 />
             ),
+            id: cveSortFields.DEPLOYMENTS,
             accessor: 'deploymentCount',
-            id: 'deploymentCount',
             sortField: cveSortFields.DEPLOYMENTS,
             sortable: false
         },
@@ -155,8 +154,8 @@ export function getCveTableColumns(workflowState) {
                     selectedRowId={original.cve}
                 />
             ),
+            id: cveSortFields.IMAGES,
             accessor: 'imageCount',
-            id: 'imageCount',
             sortField: cveSortFields.IMAGES,
             sortable: false
         },
@@ -174,8 +173,8 @@ export function getCveTableColumns(workflowState) {
                     selectedRowId={original.cve}
                 />
             ),
+            id: cveSortFields.COMPONENTS,
             accessor: 'componentCount',
-            id: 'componentCount',
             sortField: cveSortFields.COMPONENTS,
             sortable: false
         },
@@ -184,8 +183,8 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => <DateTimeField date={original.createdAt} asString={pdf} />,
+            id: cveSortFields.CVE_CREATED_TIME,
             accessor: 'createdAt',
-            id: 'createdAt',
             sortField: cveSortFields.CVE_CREATED_TIME
         },
         {
@@ -195,8 +194,8 @@ export function getCveTableColumns(workflowState) {
             Cell: ({ original, pdf }) => (
                 <DateTimeField date={original.publishedOn} asString={pdf} />
             ),
-            accessor: 'publishedOn',
-            id: 'published',
+            id: cveSortFields.PUBLISHED,
+            accessor: 'published',
             sortField: cveSortFields.PUBLISHED
         }
     ];
@@ -399,6 +398,7 @@ const VulnMgmtCves = ({
                 getTableColumns={getCveTableColumns}
                 selectedRowId={selectedRowId}
                 search={search}
+                sort={tableSort}
                 page={page}
                 showSubrows
                 SubComponent={renderCveDescription}

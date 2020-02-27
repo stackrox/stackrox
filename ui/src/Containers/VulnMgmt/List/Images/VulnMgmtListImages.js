@@ -24,10 +24,6 @@ export const defaultImageSort = [
     {
         id: imageSortFields.PRIORITY,
         desc: false
-    },
-    {
-        id: imageSortFields.NAME,
-        desc: false
     }
 ];
 
@@ -43,6 +39,7 @@ export function getImageTableColumns(workflowState) {
             Header: `Image`,
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 word-break-all ${defaultColumnClassName}`,
+            id: imageSortFields.NAME,
             accessor: 'name.fullName',
             sortField: imageSortFields.NAME
         },
@@ -70,6 +67,7 @@ export function getImageTableColumns(workflowState) {
                     />
                 );
             },
+            id: imageSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: imageSortFields.CVE_COUNT
         },
@@ -88,6 +86,7 @@ export function getImageTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
+            id: imageSortFields.CVSS,
             accessor: 'topVuln.cvss',
             sortField: imageSortFields.TOP_CVSS
         },
@@ -100,6 +99,7 @@ export function getImageTableColumns(workflowState) {
                 if (!metadata || !metadata.v1) return '–';
                 return <DateTimeField date={metadata.v1.created} asString={pdf} />;
             },
+            id: imageSortFields.CREATED_TIME,
             accessor: 'metadata.v1.created',
             sortField: imageSortFields.CREATED_TIME
         },
@@ -112,6 +112,7 @@ export function getImageTableColumns(workflowState) {
                 if (!scan) return '–';
                 return <DateTimeField date={scan.scanTime} asString={pdf} />;
             },
+            id: imageSortFields.SCAN_TIME,
             accessor: 'scan.scanTime',
             sortField: imageSortFields.SCAN_TIME
         },
@@ -124,6 +125,7 @@ export function getImageTableColumns(workflowState) {
                 const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
                 return <StatusChip status={imageStatus} asString={pdf} />;
             },
+            id: imageSortFields.IMAGE_STATUS,
             accessor: 'deploymentCount',
             sortField: imageSortFields.IMAGE_STATUS,
             sortable: false
@@ -141,6 +143,7 @@ export function getImageTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
+            id: imageSortFields.DEPLOYMENT_COUNT,
             accessor: 'deploymentCount',
             sortField: imageSortFields.DEPLOYMENT_COUNT
         },
@@ -162,6 +165,7 @@ export function getImageTableColumns(workflowState) {
                     />
                 );
             },
+            id: imageSortFields.COMPONENT_COUNT,
             accessor: 'scan.components',
             sortField: imageSortFields.COMPONENT_COUNT
         },
@@ -169,6 +173,7 @@ export function getImageTableColumns(workflowState) {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            id: imageSortFields.PRIORITY,
             accessor: 'priority',
             sortField: imageSortFields.PRIORITY
         }
@@ -205,6 +210,7 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data, totalResults 
             getTableColumns={getImageTableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            sort={tableSort}
             page={page}
         />
     );

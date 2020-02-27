@@ -40,10 +40,6 @@ export const defaultPolicySort = [
     // {
     //     id: policySortFields.LATEST_VIOLATION,
     //     desc: true
-    // },
-    // {
-    //     id: policySortFields.POLICY_STATUS,
-    //     desc: false
     // }
 ];
 
@@ -81,6 +77,7 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Policy`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: policySortFields.POLICY,
             accessor: 'name',
             sortField: policySortFields.POLICY
         },
@@ -88,8 +85,8 @@ export function getPolicyTableColumns(workflowState) {
             Header: `Description`,
             headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
             className: `w-1/6 ${defaultColumnClassName}`,
+            id: policySortFields.DESCRIPTION,
             accessor: 'description',
-            id: 'description',
             sortable: false
         },
         {
@@ -101,7 +98,7 @@ export function getPolicyTableColumns(workflowState) {
                     <StatusChip status={original.policyStatus} asString={pdf} />
                 </div>
             ),
-            id: 'policyStatus',
+            id: policySortFields.POLICY_STATUS,
             accessor: 'policyStatus',
             sortField: policySortFields.POLICY_STATUS,
             sortable: false
@@ -114,6 +111,7 @@ export function getPolicyTableColumns(workflowState) {
                 const { lastUpdated } = original;
                 return <DateTimeField date={lastUpdated} asString={pdf} />;
             },
+            id: policySortFields.LAST_UPDATED,
             accessor: 'lastUpdated',
             sortField: policySortFields.LAST_UPDATED
         },
@@ -125,6 +123,7 @@ export function getPolicyTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
+            id: policySortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: policySortFields.LATEST_VIOLATION,
             sortable: false
@@ -134,8 +133,8 @@ export function getPolicyTableColumns(workflowState) {
             headerClassName: `w-1/10 text-left ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
+            id: policySortFields.SEVERITY,
             accessor: 'severity',
-            id: 'severity',
             sortField: policySortFields.SEVERITY
         },
         {
@@ -151,8 +150,8 @@ export function getPolicyTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
+            id: policySortFields.DEPLOYMENTS,
             accessor: 'deploymentCount',
-            id: 'deploymentCount',
             sortField: policySortFields.DEPLOYMENTS,
             sortable: false // not performant as of 2020-01-28
         },
@@ -169,8 +168,8 @@ export function getPolicyTableColumns(workflowState) {
 
                 return <span>{lowercasedLifecycles}</span>;
             },
+            id: policySortFields.LIFECYCLE_STAGE,
             accessor: 'lifecycleStages',
-            id: 'lifecycleStages',
             sortField: policySortFields.LIFECYCLE_STAGE
         },
         {
@@ -181,8 +180,8 @@ export function getPolicyTableColumns(workflowState) {
                 const { enforcementActions } = original;
                 return enforcementActions && enforcementActions.length ? 'Yes' : 'No';
             },
+            id: policySortFields.ENFORCEMENT,
             accessor: 'enforcementActions',
-            id: 'enforcementActions',
             sortField: policySortFields.ENFORCEMENT
         }
     ];
@@ -305,6 +304,7 @@ const VulnMgmtPolicies = ({
                 getTableColumns={getPolicyTableColumns}
                 selectedRowId={selectedRowId}
                 search={search}
+                sort={tableSort}
                 page={page}
                 checkbox
                 tableHeaderComponents={tableHeaderComponents}

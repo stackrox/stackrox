@@ -12,14 +12,13 @@ describe('Entities single views', () => {
 
     withAuth();
 
-    // @TODO, uncomment when counts are available on entity page sub-list queries
     it('related entities tile links should unset search params upon navigation', () => {
         // arrange
         cy.visit(url.list.clusters);
 
         cy.get(selectors.tableRows)
+            .find(selectors.fixableCvesLink)
             .eq(0)
-            .get(selectors.fixableCvesLink)
             .click({ force: true });
 
         cy.get(selectors.backButton).click();
@@ -53,9 +52,8 @@ describe('Entities single views', () => {
         cy.get(selectors.deploymentCountLink)
             .eq(0)
             .click({ force: true });
-        cy.wait(1000);
 
-        cy.get(selectors.sidePanelTableBodyRows).then(value => {
+        cy.get(selectors.sidePanelTableBodyRows, { timeout: 9000 }).then(value => {
             const { length: numRows } = value;
             if (numRows) {
                 cy.get(selectors.entityRowHeader)
@@ -85,7 +83,8 @@ describe('Entities single views', () => {
                 cy.get(selectors.tableBodyRows)
                     .eq(0)
                     .click();
-                cy.get(`${selectors.sidePanel} ${selectors.statusChips}`)
+
+                cy.get(`${selectors.sidePanel} ${selectors.statusChips}`, { timeout: 9000 })
                     .eq(0)
                     .invoke('text')
                     .then(selectedPolicyStatus => {
@@ -138,9 +137,8 @@ describe('Entities single views', () => {
                 cy.get(selectors.deploymentCountLink)
                     .eq(0)
                     .click({ force: true });
-                cy.wait(1000);
 
-                cy.get(selectors.sidePanelExpandButton).click();
+                cy.get(selectors.sidePanelExpandButton, { timeout: 5000 }).click();
                 cy.wait(1500);
 
                 if (selectedPolicyStatus === 'pass') {
@@ -182,15 +180,14 @@ describe('Entities single views', () => {
 
     it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
         cy.visit(url.list.namespaces);
-        cy.wait(1000);
 
-        cy.get(selectors.deploymentCountLink)
+        cy.get(selectors.deploymentCountLink, { timeout: 5000 })
             .eq(0)
             .as('firstDeploymentCountLink');
 
-        cy.get('@firstDeploymentCountLink').click();
-        cy.get(selectors.parentEntityInfoHeader).click();
-        cy.get(selectors.policyTileLink).click({ force: true });
+        cy.get('@firstDeploymentCountLink').click({ force: true });
+        cy.get(selectors.parentEntityInfoHeader).click({ force: true });
+        cy.get(selectors.policyTileLink, { timeout: 16000 }).click({ force: true });
 
         cy.get('@firstDeploymentCountLink')
             .invoke('text')
@@ -198,17 +195,17 @@ describe('Entities single views', () => {
                 cy.get(selectors.sidePanelTableBodyRows)
                     .eq(0)
                     .click();
-                cy.wait(1000);
-                cy.get(selectors.deploymentTileLink)
+
+                cy.get(selectors.deploymentTileLink, { timeout: 10000 })
                     .invoke('text')
                     .then(relatedDeploymentCountText => {
                         expect(relatedDeploymentCountText.toLowerCase().trim()).to.equal(
                             deploymentCountText.replace(' ', '')
                         );
                     });
-                cy.get(selectors.deploymentTileLink).click({ force: true });
-                cy.wait(1000);
-                cy.get(selectors.entityRowHeader)
+                cy.get(selectors.deploymentTileLink, { timeout: 10000 }).click({ force: true });
+
+                cy.get(selectors.entityRowHeader, { timeout: 8000 })
                     .invoke('text')
                     .then(paginationText => {
                         expect(paginationText).to.equal(deploymentCountText);
@@ -224,23 +221,22 @@ describe('Entities single views', () => {
             .as('firstDeploymentCountLink');
 
         // in side panel
-        cy.get('@firstDeploymentCountLink')
+        cy.get('@firstDeploymentCountLink', { timeout: 10000 })
             .invoke('text')
             .then(listDeploymentCountText => {
-                cy.get('@firstDeploymentCountLink').click();
-                cy.wait(1000);
+                cy.get('@firstDeploymentCountLink', { timeout: 10000 }).click({ force: true });
 
-                cy.get(selectors.parentEntityInfoHeader).click();
-                cy.wait(1000);
-                cy.get(selectors.deploymentCountText)
+                cy.get(selectors.parentEntityInfoHeader, { timeout: 5000 }).click({ force: true });
+
+                cy.get(selectors.deploymentCountText, { timeout: 16000 })
                     .eq(0)
                     .invoke('text')
                     .then(sidePanelDeploymentCountText => {
                         expect(listDeploymentCountText).to.equal(sidePanelDeploymentCountText);
 
                         // in entity page
-                        cy.get(selectors.sidePanelExpandButton).click();
-                        cy.get(selectors.deploymentCountText)
+                        cy.get(selectors.sidePanelExpandButton).click({ force: true });
+                        cy.get(selectors.deploymentCountText, { timeout: 16000 })
                             .eq(0)
                             .invoke('text')
                             .then(entityDeploymentCountText => {

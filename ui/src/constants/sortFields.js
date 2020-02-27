@@ -209,6 +209,8 @@ export const deploymentSortFields = {
     VOLUME_TYPE: 'Volume Type'
 };
 
+// rollup object export
+//   all the sort fields combined in one big object
 export const entitySortFieldsMap = {
     [entityTypes.CLUSTER]: clusterSortFields,
     [entityTypes.NAMESPACE]: namespaceSortFields,

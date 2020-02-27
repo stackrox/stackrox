@@ -30,7 +30,7 @@ const WorkflowListPage = ({
     idAttribute,
     SubComponent,
     showSubrows,
-    search,
+    sort,
     page,
     checkbox,
     tableHeaderComponents,
@@ -101,7 +101,7 @@ const WorkflowListPage = ({
             rowData={displayData}
             tableColumns={tableColumns}
             selectedRowId={selectedRowId}
-            search={search}
+            sort={sort}
             page={page}
             SubComponent={SubComponent}
             defaultExpanded={defaultExpandedRows}
@@ -115,6 +115,7 @@ const WorkflowListPage = ({
             onSortedChange={onSortedChange}
             totalResults={count}
             pageSize={pageSize}
+            disableSortRemove
         />
     );
 };
@@ -133,7 +134,7 @@ WorkflowListPage.propTypes = {
     getTableColumns: PropTypes.func.isRequired,
     entityContext: PropTypes.shape({}),
     selectedRowId: PropTypes.string,
-    search: PropTypes.shape({}),
+    sort: PropTypes.arrayOf(PropTypes.shape({})),
     page: PropTypes.number,
     SubComponent: PropTypes.func,
     showSubrows: PropTypes.bool,
@@ -153,7 +154,7 @@ WorkflowListPage.defaultProps = {
     data: null,
     entityContext: {},
     selectedRowId: null,
-    search: null,
+    sort: null,
     page: 0,
     SubComponent: null,
     showSubrows: false,

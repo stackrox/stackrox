@@ -24,10 +24,6 @@ export const defaultDeploymentSort = [
     {
         id: deploymentSortFields.PRIORITY,
         desc: false
-    },
-    {
-        id: deploymentSortFields.DEPLOYMENT,
-        desc: false
     }
 ];
 
@@ -46,6 +42,7 @@ export function getDeploymentTableColumns(workflowState) {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            id: deploymentSortFields.DEPLOYMENT,
             accessor: 'name',
             sortField: deploymentSortFields.DEPLOYMENT
         },
@@ -74,6 +71,7 @@ export function getDeploymentTableColumns(workflowState) {
                     />
                 );
             },
+            id: deploymentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
             sortField: deploymentSortFields.CVE_COUNT
         },
@@ -85,6 +83,7 @@ export function getDeploymentTableColumns(workflowState) {
                 const { latestViolation } = original;
                 return <DateTimeField date={latestViolation} asString={pdf} />;
             },
+            id: deploymentSortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: deploymentSortFields.LATEST_VIOLATION,
             sortable: false
@@ -97,7 +96,6 @@ export function getDeploymentTableColumns(workflowState) {
         //     entityType: entityTypes.POLICY,
         //     headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
         //     className: `w-1/10 ${defaultColumnClassName}`,
-        //     accessor: 'policyCount',
         //     Cell: ({ original, pdf }) => (
         //         <TableCountLink
         //             entityType={entityTypes.POLICY}
@@ -107,6 +105,8 @@ export function getDeploymentTableColumns(workflowState) {
         //             entityTypeText="policy"
         //         />
         //     ),
+        //     id: deploymentSortFields.POLICY_COUNT,
+        //     accessor: 'policyCount',
         //     sortField: deploymentSortFields.POLICY_COUNT,
         //     sortable: false
         // },
@@ -120,7 +120,7 @@ export function getDeploymentTableColumns(workflowState) {
 
                 return policyLabel;
             },
-            id: 'policyStatus',
+            id: deploymentSortFields.POLICY_STATUS,
             accessor: 'policyStatus',
             sortField: deploymentSortFields.POLICY_STATUS,
             sortable: false
@@ -130,7 +130,6 @@ export function getDeploymentTableColumns(workflowState) {
             entityType: entityTypes.CLUSTER,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'clusterName',
             Cell: ({ original, pdf }) => {
                 const { clusterName, clusterId, id } = original;
                 const url = workflowState
@@ -141,6 +140,8 @@ export function getDeploymentTableColumns(workflowState) {
                     <TableCellLink pdf={inFindingsSection || pdf} url={url} text={clusterName} />
                 );
             },
+            id: deploymentSortFields.CLUSTER,
+            accessor: 'clusterName',
             sortField: deploymentSortFields.CLUSTER
         },
         {
@@ -148,7 +149,6 @@ export function getDeploymentTableColumns(workflowState) {
             entityType: entityTypes.NAMESPACE,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'namespace',
             Cell: ({ original, pdf }) => {
                 const { namespace, namespaceId, id } = original;
                 const url = workflowState
@@ -157,6 +157,8 @@ export function getDeploymentTableColumns(workflowState) {
                     .toUrl();
                 return <TableCellLink pdf={inFindingsSection || pdf} url={url} text={namespace} />;
             },
+            id: deploymentSortFields.NAMESPACE,
+            accessor: 'namespace',
             sortField: deploymentSortFields.NAMESPACE
         },
         {
@@ -171,6 +173,7 @@ export function getDeploymentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
+            id: deploymentSortFields.IMAGE_COUNT,
             accessor: 'imageCount',
             sortField: deploymentSortFields.IMAGE_COUNT
         },
@@ -178,6 +181,7 @@ export function getDeploymentTableColumns(workflowState) {
             Header: `Risk Priority`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            id: deploymentSortFields.PRIORITY,
             accessor: 'priority',
             sortField: deploymentSortFields.PRIORITY
         }
@@ -214,6 +218,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
             getTableColumns={getDeploymentTableColumns}
             selectedRowId={selectedRowId}
             search={search}
+            sort={tableSort}
             page={page}
         />
     );

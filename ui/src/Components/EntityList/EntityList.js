@@ -23,6 +23,7 @@ const EntityList = ({
     idAttribute,
     rowData,
     searchOptions,
+    sort,
     selectedRowId,
     tableColumns,
     SubComponent,
@@ -34,6 +35,7 @@ const EntityList = ({
     renderRowActionButtons,
     serverSidePagination,
     onSortedChange,
+    disableSortRemove,
     page,
     totalResults,
     pageSize
@@ -112,7 +114,9 @@ const EntityList = ({
             SubComponent={SubComponent}
             expanded={defaultExpanded}
             manual={serverSidePagination}
+            sorted={sort}
             onSortedChange={onSortedChange}
+            disableSortRemove={disableSortRemove}
         />
     );
 
@@ -134,7 +138,9 @@ const EntityList = ({
                 toggleSelectAll={toggleAllTableRows}
                 renderRowActionButtons={renderRowActionButtons}
                 manual={serverSidePagination}
+                sorted={sort}
                 onSortedChange={onSortedChange}
+                disableSortRemove={disableSortRemove}
             />
         );
     }
@@ -158,6 +164,7 @@ EntityList.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
     searchOptions: PropTypes.arrayOf(PropTypes.string),
+    sort: PropTypes.arrayOf(PropTypes.shape({})),
     selectedRowId: PropTypes.string,
     tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     SubComponent: PropTypes.func,
@@ -169,6 +176,7 @@ EntityList.propTypes = {
     renderRowActionButtons: PropTypes.func,
     serverSidePagination: PropTypes.bool,
     onSortedChange: PropTypes.func,
+    disableSortRemove: PropTypes.bool,
     page: PropTypes.number,
     totalResults: PropTypes.number,
     pageSize: PropTypes.number
@@ -179,6 +187,7 @@ EntityList.defaultProps = {
     headerText: '',
     rowData: null,
     searchOptions: [],
+    sort: null,
     selectedRowId: null,
     SubComponent: null,
     defaultExpanded: null,
@@ -189,6 +198,7 @@ EntityList.defaultProps = {
     renderRowActionButtons: null,
     serverSidePagination: false,
     onSortedChange: null,
+    disableSortRemove: false,
     page: 0,
     totalResults: 0,
     pageSize: null
