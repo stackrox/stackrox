@@ -7,8 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 )
 
-// OptionsMap is exposed for e2e test
-var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)).
+// ImageOnlyOptionsMap describes the options for Image fields only
+var ImageOnlyOptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil))
+
+// OptionsMap describes the options for Images
+var OptionsMap = ImageOnlyOptionsMap.
 	Add(search.Cluster, deployments.OptionsMap.MustGet(search.Cluster.String())).
 	Add(search.ClusterID, deployments.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, deployments.OptionsMap.MustGet(search.Namespace.String())).

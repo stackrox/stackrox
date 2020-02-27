@@ -122,6 +122,15 @@ var (
 		ForwardTraversal: false,
 	}
 
+	// ImageToComponentPath defines prefix path to go from images to components in dackbox
+	ImageToComponentPath = dackbox.Path{
+		Path: [][]byte{
+			imageDackBox.Bucket,
+			componentDackBox.Bucket,
+		},
+		ForwardTraversal: true,
+	}
+
 	// ImageToCVEPath defines prefix path to go from images to cves in dackbox
 	ImageToCVEPath = dackbox.Path{
 		Path: [][]byte{
