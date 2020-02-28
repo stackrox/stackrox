@@ -138,7 +138,6 @@ func (rs *rbacUpdaterImpl) removeRoleBindingGenericNoLock(ref namespacedRoleRef,
 func (rs *rbacUpdaterImpl) upsertRole(role *v1.Role) *central.SensorEvent {
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
-	defer rs.rebuildEvaluatorBucketsNoLock()
 
 	return rs.upsertRoleGenericNoLock(roleAsRef(role), toRoxRole(role))
 }

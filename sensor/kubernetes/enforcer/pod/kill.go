@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -16,13 +17,16 @@ var (
 )
 
 // EnforceKill kills the pod holding the container info specified container instance.
-func EnforceKill(client *kubernetes.Clientset, containerInfo *central.ContainerInstanceEnforcement) (err error) {
+func EnforceKill(client *kubernetes.Clientset, containerInfo *central.ContainerInstanceEnforcement) (bool, error) {
 	podID := containerInfo.GetPodId()
 	ns := containerInfo.GetDeploymentEnforcement().GetNamespace()
 
-	err = client.CoreV1().Pods(ns).Delete(podID, podDeleteOptions)
+	err := client.CoreV1().Pods(ns).Delete(podID, podDeleteOptions)
 	if err != nil {
-		return retry.MakeRetryable(err)
+		if errors.IsNotFound(err) {
+			return false, nil
+		}
+		return true, retry.MakeRetryable(err)
 	}
-	return nil
+	return true, nil
 }

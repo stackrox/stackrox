@@ -99,16 +99,16 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(fieldLabels, queryStrings, highlights).ProtoQuery()
 
 	v = func(ctx context.Context, result search.Result) searchbasedpolicies.Violations {
-		if features.SensorBasedDetection.Enabled() {
+		if features.SensorBasedDetection.Enabled() && fields.GetWhitelistEnabled() {
+			return searchbasedpolicies.Violations{}
+		}
+		if p.ProcessGetter == nil {
+			// This will be the case during predicate matching
 			return searchbasedpolicies.Violations{}
 		}
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
 		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
 			log.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
-			return searchbasedpolicies.Violations{}
-		}
-		if p.ProcessGetter == nil {
-			log.Errorf("Ran process policy %+v but had a nil process getter.", fields)
 			return searchbasedpolicies.Violations{}
 		}
 		processes := make([]*storage.ProcessIndicator, 0, len(matches))

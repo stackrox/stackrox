@@ -1798,6 +1798,7 @@ jobs:
       - ROX_TELEMETRY: true
       - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_EVENT_TIMELINE_UI: true
+      - ROX_SENSOR_DETECTION: true
 
     steps:
       - checkout
@@ -1988,6 +1989,7 @@ jobs:
       - ROX_BADGER_DB: true
       - ROX_TELEMETRY: true
       - ROX_DIAGNOSTIC_BUNDLE: true
+      - ROX_SENSOR_DETECTION: true
 
     steps:
       - run-qa-tests:
@@ -2436,6 +2438,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ROX_SENSOR_DETECTION: true
 
     steps:
       - run-openshift-tests:
@@ -2452,6 +2455,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
+      - ROX_SENSOR_DETECTION: true
 
     steps:
       - run-openshift-tests:

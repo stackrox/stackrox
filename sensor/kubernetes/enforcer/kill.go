@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
 )
 
-func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) {
+func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) error {
 	// Fetch the container info, fail if none present as we can only kill containers.
 	containerInfo := enforcement.GetContainerInstance()
 	if containerInfo == nil {
@@ -15,11 +15,17 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) 
 	}
 
 	// Try to kill the pod containing the container instance.
-	err = withReasonableRetry(func() error {
-		return pod.EnforceKill(e.client, containerInfo)
+	var enforcementExecuted bool
+	err := withReasonableRetry(func() error {
+		var err error
+		enforcementExecuted, err = pod.EnforceKill(e.client, containerInfo)
+		return err
 	})
 	if err != nil {
-		return
+		return err
+	}
+	if !enforcementExecuted {
+		return nil
 	}
 
 	// Try to mark the deployment as having the pod killed.

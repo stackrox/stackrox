@@ -199,10 +199,12 @@ class ProcessWhiteListsTest extends BaseSpecification {
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                  lockProcessWhitelists(clusterId, deployment, containerName, true)
         assert (!StringUtils.isEmpty(lockProcessWhitelists.get(0).getElements(0).getElement().processName))
+        // sleep 5 seconds to allow for propagation to sensor
+        sleep 5000
         orchestrator.execInContainer(deployment, "pwd")
 
         //check for whitelist  violation
-        assert waitForViolation(containerName, "Unauthorized Process Execution", 120)
+        assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
         List<AlertOuterClass.ListAlert> alertList = AlertService.getViolations(AlertServiceOuterClass.ListAlertsRequest
                  .newBuilder().build())
         String alertId
@@ -211,14 +213,16 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      alert.deployment.id.equalsIgnoreCase(deploymentId)) {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, resolveWhitelist)
+                // again, allow the new whitelist that contains pwd to propagate
+                sleep 5000
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
         if (resolveWhitelist) {
-            waitForViolation(containerName, "Unauthorized Process Execution", 90)
+            waitForViolation(containerName, "Unauthorized Process Execution", 15)
         }
         else {
-            assert waitForViolation(containerName, "Unauthorized Process Execution", 90)
+            assert waitForViolation(containerName, "Unauthorized Process Execution", 15)
         }
         then:
         "Verify for violation or no violation after resolve/resolve and whitelist"

@@ -23,8 +23,5 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error) {
 	exe := newSingleDeploymentExecutor(ctx, deployment, images)
 	err := d.policySet.ForEach(exe)
-	if err != nil {
-		return nil, err
-	}
-	return exe.GetAlerts(), nil
+	return exe.GetAlerts(), err
 }

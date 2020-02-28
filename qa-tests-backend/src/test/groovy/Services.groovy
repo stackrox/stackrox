@@ -392,7 +392,7 @@ class Services extends BaseService {
             println e.toString()
             return ["EXCEPTION"]
         }
-        sleep(3000) // Sleep for a little bit to make sure the update propagates in Central.
+        sleep 10000 // Sleep for a little bit to make sure the update propagates in Central and then to Sensor.
 
         if (enforcementActions != null && !enforcementActions.isEmpty()) {
             println "Updated enforcement of '${policyName}' to ${enforcementActions}"

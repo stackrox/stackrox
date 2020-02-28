@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type setImpl struct {
@@ -18,12 +19,13 @@ func (p *setImpl) Compiler() PolicyCompiler {
 func (p *setImpl) ForEach(pt PolicyExecutor) error {
 	m := p.policyIDToCompiled.GetMap()
 
+	errList := errorhelpers.NewErrorList("policy evaluation")
 	for _, compiled := range m {
 		if err := pt.Execute(compiled); err != nil {
-			return err
+			errList.AddError(err)
 		}
 	}
-	return nil
+	return errList.ToError()
 }
 
 func (p *setImpl) ForOne(pID string, pt PolicyExecutor) error {

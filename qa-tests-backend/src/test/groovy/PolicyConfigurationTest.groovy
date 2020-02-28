@@ -139,7 +139,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         then:
         "Verify Violation #policyName is triggered"
-        assert waitForViolation(depname, policy.getName(), 60)
+        assert waitForViolation(depname, policy.getName(), 90)
 
         cleanup:
         "Remove Policy #policyName"
@@ -503,10 +503,10 @@ class PolicyConfigurationTest extends BaseSpecification {
         then:
         "Verify Violation #policyName is/is not triggered based on scope"
         violatedDeployments.each {
-            assert waitForViolation(it.name, policy.getName(), 30)
+            assert waitForViolation(it.name, policy.getName(), 90)
         }
         nonViolatedDeployments.each {
-            assert !waitForViolation(it.name, policy.getName(), 5)
+            assert !waitForViolation(it.name, policy.getName(), 30)
         }
 
         cleanup:
