@@ -51,6 +51,12 @@ var (
 					"crud/proto",
 			),
 		},
+		"github.com/magiconair/properties/assert": {
+			replacement: "github.com/stretch/testify/assert",
+		},
+		"github.com/prometheus/common/log": {
+			replacement: "a logger instead",
+		},
 	}
 )
 
