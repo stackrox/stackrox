@@ -146,6 +146,7 @@ var (
 	readRoles                  = readAuth(resources.Role)
 	readSecrets                = readAuth(resources.Secret)
 	readServiceAccounts        = readAuth(resources.ServiceAccount)
+	writeAlerts                = writeAuth(resources.Alert)
 	writeCompliance            = writeAuth(resources.Compliance)
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
 	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)

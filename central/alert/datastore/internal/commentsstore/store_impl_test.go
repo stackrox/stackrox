@@ -2,9 +2,11 @@ package commentsstore
 
 import (
 	"testing"
+	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -14,8 +16,9 @@ func TestAlertCommentsStore(t *testing.T) {
 }
 
 const (
-	alertID = "e5cb9c3e-4ef2-11ea-b77f-2e728ce88125"
-	userID  = "07b44b70-4ef3-11ea-b77f-2e728ce88125"
+	alertID   = "e5cb9c3e-4ef2-11ea-b77f-2e728ce88125"
+	commentID = "1"
+	userID    = "07b44b70-4ef3-11ea-b77f-2e728ce88125"
 )
 
 type AlertCommentsStoreTestSuite struct {
@@ -98,6 +101,11 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	suite.NoError(err)
 	suite.ElementsMatch(outputComments, comments)
 
+	//Test GetComment
+	gottenComment, err := suite.store.GetComment(alertID, commentID)
+	suite.NoError(err)
+	suite.Equal(gottenComment, comment1)
+
 	// Test updateComment for comment1
 	updatedComment := &storage.Comment{
 		ResourceType:   "Alert",
@@ -131,6 +139,8 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	outputComments, err = suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
 	suite.Equal(comments[0].GetCommentId(), outputComments[0].GetCommentId())
+	suite.NotEqual(comments[0].GetLastModified(), outputComments[0].GetLastModified())
+	suite.Equal(comments[0].GetCreatedAt(), outputComments[0].GetCreatedAt())
 	suite.NotEqual(comments[0].GetCommentMessage(), outputComments[0].GetCommentMessage())
 	suite.Equal(outputComments[0].GetCommentMessage(), "updated comment")
 	suite.Equal(comments[1], outputComments[1])
@@ -144,6 +154,12 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	suite.NoError(err)
 	outputComments, err = suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
+	//check created time
+	protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetCreatedAt()).Equal(protoconv.ConvertTimestampToTimeOrNow(outputComments[0].GetCreatedAt()))
+	//Check last modified time
+	protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetLastModified()).After(protoconv.ConvertTimestampToTimeOrNow(outputComments[0].GetLastModified()))
+	suite.True(time.Now().After(protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetLastModified())))
+
 	suite.ElementsMatch(outputComments, []*storage.Comment{updatedComment})
 	// Test removeComment for a last comment of an alert
 	err = suite.store.RemoveAlertComment(comment1)

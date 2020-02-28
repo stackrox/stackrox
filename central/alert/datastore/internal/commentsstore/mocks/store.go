@@ -48,6 +48,21 @@ func (mr *MockStoreMockRecorder) GetCommentsForAlert(alertID interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForAlert", reflect.TypeOf((*MockStore)(nil).GetCommentsForAlert), alertID)
 }
 
+// GetComment mocks base method
+func (m *MockStore) GetComment(alertID, commentID string) (*storage.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComment", alertID, commentID)
+	ret0, _ := ret[0].(*storage.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetComment indicates an expected call of GetComment
+func (mr *MockStoreMockRecorder) GetComment(alertID, commentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComment", reflect.TypeOf((*MockStore)(nil).GetComment), alertID, commentID)
+}
+
 // AddAlertComment mocks base method
 func (m *MockStore) AddAlertComment(comment *storage.Comment) (string, error) {
 	m.ctrl.T.Helper()

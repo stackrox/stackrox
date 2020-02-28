@@ -14,6 +14,7 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	GetCommentsForAlert(alertID string) ([]*storage.Comment, error)
+	GetComment(alertID string, commentID string) (*storage.Comment, error)
 	AddAlertComment(comment *storage.Comment) (string, error)
 	UpdateAlertComment(comment *storage.Comment) error
 	RemoveAlertComment(comment *storage.Comment) error

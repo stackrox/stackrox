@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -229,6 +230,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 }
 
 func (ds *datastoreImpl) GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "GetAlertComments")
 	_, exists, err := ds.GetAlert(ctx, alertID)
 	if err != nil || !exists {
 		return nil, err
@@ -238,6 +240,7 @@ func (ds *datastoreImpl) GetAlertComments(ctx context.Context, alertID string) (
 }
 
 func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.Comment) (string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertComment")
 	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
 	if err != nil || !exists {
 		return "", err
@@ -246,10 +249,12 @@ func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.C
 		return "", errors.New("permission denied")
 	}
 
+	request.User = getCurrUser(ctx)
 	return ds.commentsStorage.AddAlertComment(request)
 }
 
 func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storage.Comment) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "UpdateAlertComment")
 	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
 	if err != nil || !exists {
 		return err
@@ -258,10 +263,19 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 		return errors.New("permission denied")
 	}
 
+	request.User = getCurrUser(ctx)
+	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
+	if err != nil {
+		return errors.Wrap(err, "failed to get the alert comment")
+	}
+	if comment.GetUser().GetId() != request.GetUser().GetId() {
+		return errors.Errorf("The current user has no privilege to update the comment with id: %q", request.GetCommentId())
+	}
 	return ds.commentsStorage.UpdateAlertComment(request)
 }
 
 func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storage.Comment) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "RemoveAlertComment")
 	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
 	if err != nil || !exists {
 		return err
@@ -269,7 +283,31 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storag
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
 		return errors.New("permission denied")
 	}
+
+	request.User = getCurrUser(ctx)
+	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
+	if err != nil {
+		return errors.Wrap(err, "failed to get the alert comment")
+	}
+	if comment.GetUser().GetId() != request.GetUser().GetId() {
+		return errors.Errorf("The current user has no privilege to remove the comment with id: %q", request.GetCommentId())
+	}
 	return ds.commentsStorage.RemoveAlertComment(request)
+}
+
+func getCurrUser(ctx context.Context) *storage.Comment_User {
+	var curUser *storage.Comment_User
+	identity := authn.IdentityFromContext(ctx)
+	if identity != nil {
+		curUser = &storage.Comment_User{
+			Id:   identity.UID(),
+			Name: identity.FriendlyName(),
+		}
+		if user := identity.User(); user != nil {
+			curUser.Email = user.Username
+		}
+	}
+	return curUser
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {

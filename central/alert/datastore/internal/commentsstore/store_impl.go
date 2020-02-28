@@ -2,12 +2,16 @@ package commentsstore
 
 import (
 	"strconv"
+	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
+
+const resourceType = "Alert"
 
 type storeImpl struct {
 	*bolt.DB
@@ -33,6 +37,29 @@ func (b *storeImpl) GetCommentsForAlert(alertID string) ([]*storage.Comment, err
 	return comments, err
 }
 
+func (b *storeImpl) GetComment(alertID string, commentID string) (*storage.Comment, error) {
+	var comment storage.Comment
+	err := b.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alertCommentsBucket)
+		alertIDBucket := bucket.Bucket([]byte(alertID))
+		if alertIDBucket == nil {
+			return errors.Errorf("alert id %q does not have any comments", alertID)
+		}
+		bytes := alertIDBucket.Get([]byte(commentID))
+		if bytes == nil {
+			return errors.Errorf("couldn't get nonexistent comment with id : %q", commentID)
+		}
+		if err := proto.Unmarshal(bytes, &comment); err != nil {
+			return errors.Wrapf(err, "unmarshalling comment with id: %q", commentID)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
+}
+
 func (b *storeImpl) AddAlertComment(comment *storage.Comment) (string, error) {
 	if comment == nil {
 		return "", errors.New("cannot add a nil comment")
@@ -54,6 +81,10 @@ func (b *storeImpl) AddAlertComment(comment *storage.Comment) (string, error) {
 		}
 		commentID := strconv.FormatUint(id, 10)
 		comment.CommentId = commentID
+		comment.ResourceType = resourceType
+		currTime := protoconv.ConvertTimeToTimestamp(time.Now())
+		comment.CreatedAt = currTime
+		comment.LastModified = currTime
 		bytes, err := proto.Marshal(comment)
 		if err != nil {
 			return errors.Wrapf(err, "marshalling comment with id: %q", comment.GetCommentId())
@@ -80,6 +111,14 @@ func (b *storeImpl) UpdateAlertComment(comment *storage.Comment) error {
 		if bytes == nil {
 			return errors.Errorf("couldn't edit nonexistent comment with id : %q", comment.GetCommentId())
 		}
+		var oldComment storage.Comment
+		if err := proto.Unmarshal(bytes, &oldComment); err != nil {
+			return errors.Wrapf(err, "unmarshalling comment with id: %q", comment.GetCommentId())
+		}
+		comment.ResourceType = resourceType
+		comment.CreatedAt = oldComment.GetCreatedAt()
+		comment.LastModified = protoconv.ConvertTimeToTimestamp(time.Now())
+
 		bytes, err := proto.Marshal(comment)
 		if err != nil {
 			return errors.Wrapf(err, "marshalling comment with id: %q", comment.GetCommentId())

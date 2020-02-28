@@ -193,6 +193,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"upgraderImage: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
+	utils.Must(builder.AddType("Comment", []string{
+		"commentId: String!",
+		"commentMessage: String!",
+		"createdAt: Time",
+		"lastModified: Time",
+		"resourceId: String!",
+		"resourceType: String!",
+		"user: Comment_User",
+	}))
+	utils.Must(builder.AddType("Comment_User", []string{
+		"email: String!",
+		"id: ID!",
+		"name: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
@@ -2418,6 +2432,102 @@ func toCollectionMethods(values *[]string) []storage.CollectionMethod {
 		output[i] = toCollectionMethod(&v)
 	}
 	return output
+}
+
+type commentResolver struct {
+	root *Resolver
+	data *storage.Comment
+}
+
+func (resolver *Resolver) wrapComment(value *storage.Comment, ok bool, err error) (*commentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &commentResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComments(values []*storage.Comment, err error) ([]*commentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*commentResolver, len(values))
+	for i, v := range values {
+		output[i] = &commentResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *commentResolver) CommentId(ctx context.Context) string {
+	value := resolver.data.GetCommentId()
+	return value
+}
+
+func (resolver *commentResolver) CommentMessage(ctx context.Context) string {
+	value := resolver.data.GetCommentMessage()
+	return value
+}
+
+func (resolver *commentResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *commentResolver) LastModified(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastModified()
+	return timestamp(value)
+}
+
+func (resolver *commentResolver) ResourceId(ctx context.Context) string {
+	value := resolver.data.GetResourceId()
+	return value
+}
+
+func (resolver *commentResolver) ResourceType(ctx context.Context) string {
+	value := resolver.data.GetResourceType()
+	return value
+}
+
+func (resolver *commentResolver) User(ctx context.Context) (*comment_UserResolver, error) {
+	value := resolver.data.GetUser()
+	return resolver.root.wrapComment_User(value, true, nil)
+}
+
+type comment_UserResolver struct {
+	root *Resolver
+	data *storage.Comment_User
+}
+
+func (resolver *Resolver) wrapComment_User(value *storage.Comment_User, ok bool, err error) (*comment_UserResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &comment_UserResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComment_Users(values []*storage.Comment_User, err error) ([]*comment_UserResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*comment_UserResolver, len(values))
+	for i, v := range values {
+		output[i] = &comment_UserResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *comment_UserResolver) Email(ctx context.Context) string {
+	value := resolver.data.GetEmail()
+	return value
+}
+
+func (resolver *comment_UserResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *comment_UserResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
 }
 
 func toComparator(value *string) storage.Comparator {

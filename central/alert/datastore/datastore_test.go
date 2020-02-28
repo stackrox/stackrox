@@ -294,6 +294,8 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
 func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 
 	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
@@ -311,6 +313,8 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 

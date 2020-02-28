@@ -36,7 +36,6 @@ type DataStore interface {
 	DeleteAlerts(ctx context.Context, ids ...string) error
 
 	GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error)
-
 	AddAlertComment(ctx context.Context, request *storage.Comment) (string, error)
 	UpdateAlertComment(ctx context.Context, request *storage.Comment) error
 	RemoveAlertComment(ctx context.Context, request *storage.Comment) error
