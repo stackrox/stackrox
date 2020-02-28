@@ -61,15 +61,38 @@ func TestTruncate(t *testing.T) {
 		{
 			name:     "truncate mid word",
 			src:      "hello there",
-			maxlen:   7,
+			maxlen:   8,
 			options:  []TruncateOptions{WordOriented{}},
 			expected: "hello...",
+		},
+		{
+			name:     "truncate at start of word",
+			src:      "hello there",
+			maxlen:   7,
+			options:  []TruncateOptions{WordOriented{}},
+			expected: "hell...",
+		},
+		{
+			name:     "truncate very long word without maxcutoff",
+			src:      "this isaverylongword",
+			maxlen:   9,
+			options:  []TruncateOptions{WordOriented{}},
+			expected: "this...",
+		},
+		{
+			name:     "truncate very long word with maxcutoff",
+			src:      "this isaverylongword",
+			maxlen:   15,
+			options:  []TruncateOptions{WordOriented{MaxCutOff: 5}},
+			expected: "this isavery...",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, Truncate(c.src, c.maxlen, c.options...))
+			truncated := Truncate(c.src, c.maxlen, c.options...)
+			assert.Equal(t, c.expected, truncated)
+			assert.LessOrEqualf(t, len(truncated), c.maxlen, "final truncate result %s did not respect max length", truncated)
 		})
 	}
 

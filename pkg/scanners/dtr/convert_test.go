@@ -31,14 +31,14 @@ func getTestVulns() ([]*vulnerabilityDetails, []*storage.EmbeddedVulnerability) 
 		{
 			Cve:               "CVE-2016-0682",
 			Cvss:              6.9,
-			Summary:           "Unspecified vulnerability in the DataStore component in Oracle...",
+			Summary:           "Unspecified vulnerability in the DataStore component in...",
 			Link:              scans.GetVulnLink("CVE-2016-0682"),
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		},
 		{
 			Cve:               "CVE-2016-0689",
 			Cvss:              6.9,
-			Summary:           "Unspecified vulnerability in the DataStore component in Oracle...",
+			Summary:           "Unspecified vulnerability in the DataStore component in...",
 			Link:              scans.GetVulnLink("CVE-2016-0689"),
 			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		},

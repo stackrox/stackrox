@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -10,19 +11,26 @@ const (
 )
 
 var (
-	annotationKeys = []string{
+	annotationKeys = set.NewFrozenStringSet(
 		"kubectl.kubernetes.io/last-applied-configuration",
 		"deployment.kubernetes.io/revision",
-	}
+	)
 )
 
-// TrimAnnotations removes the kubectl apply annotation
+// TrimAnnotations removes the kubectl apply annotation.
+// Note: this function is intentionally written in an idempotent fashion, in the sense that there are no writes
+// whatsoever to the map upon subsequent invocations (at least if the map is not modified between invocations).
+// This is required since Kubernetes reuses the actual object when resyncing, hence this function might be invoked
+// while the annotations are being read concurrently.
 func TrimAnnotations(object v1.Object) {
 	annotations := object.GetAnnotations()
-	for _, key := range annotationKeys {
-		delete(annotations, key)
-	}
 	for k, v := range annotations {
-		annotations[k] = stringutils.Truncate(v, maxValueLen, stringutils.WordOriented{})
+		if annotationKeys.Contains(k) {
+			delete(annotations, k)
+			continue
+		}
+		if len(v) > maxValueLen {
+			annotations[k] = stringutils.Truncate(v, maxValueLen, stringutils.WordOriented{})
+		}
 	}
 }
