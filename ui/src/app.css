@@ -1265,30 +1265,123 @@ h6 {
     left: 50%;
 }
 
-/** tippy.js **/
-@import '~tippy.js/dist/tippy.css';
+/**
+ * tippy.js
+ */
+ @import '~tippy.js/dist/tippy.css';
 
-.tippy-content {
-    @apply shadow-md p-0
-}
-
-.rox-tooltip-overlay {
-    @apply p-2 text-sm text-center text-base-600 z-10 bg-tertiary-200 rounded border border-tertiary-400
-}
-
-.tippy-tooltip[data-placement^='top'] .tippy-arrow {
-    border-top-color: var(--tertiary-400);
-}
-.tippy-tooltip[data-placement^='bottom'] .tippy-arrow {
-    border-bottom-color: var(--tertiary-400);
-}
-.tippy-tooltip[data-placement^='left'] .tippy-arrow {
-    border-left-color: var(--tertiary-400);
-}
-.tippy-tooltip[data-placement^='right'] .tippy-arrow {
-    border-right-color: var(--tertiary-400);
-}
-
+ .rox-tooltip-overlay {
+     @apply p-2 text-sm text-center text-base-600 z-10 bg-tertiary-200 rounded border border-tertiary-400;
+ }
+ 
+ .tippy-tooltip {
+     --arrow-size: 7px; /* it's defined in tippy.css, just making it the same */
+     --arrow-color: var(--tertiary-200);
+     --arrow-border-color: var(--tertiary-400);
+ }
+ 
+ .tippy-content {
+     @apply rounded shadow-md p-0;
+ }
+ 
+ .tippy-tooltip > .tippy-arrow:after,
+ .tippy-tooltip > .tippy-arrow:before {
+     content: '';
+     position: absolute;
+     z-index: -1;
+ }
+ 
+ /* tippy arrow on the top */
+ .tippy-tooltip[data-placement^='top'] > .tippy-arrow {
+     border-top-color: var(--arrow-color);
+     bottom: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ .tippy-tooltip[data-placement^='top'] > .tippy-arrow:after,
+ .tippy-tooltip[data-placement^='top'] > .tippy-arrow:before {
+     left: calc(-1 * var(--arrow-size));;
+     border-left: var(--arrow-size) solid transparent;
+     border-right: var(--arrow-size) solid transparent;
+ }
+ 
+ .tippy-tooltip[data-placement^='top'] > .tippy-arrow:after {
+     border-top: var(--arrow-size) solid var(--arrow-color);
+     top: calc(-1 * var(--arrow-size));
+ }
+ 
+ .tippy-tooltip[data-placement^='top'] > .tippy-arrow:before {
+     border-top: var(--arrow-size) solid var(--arrow-border-color);
+     bottom: -1px;
+ }
+ 
+ /* tippy-arrow at the bottom */
+ .tippy-tooltip[data-placement^='bottom'] > .tippy-arrow {
+     border-bottom-color: var(--arrow-color);
+     top: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ .tippy-tooltip[data-placement^='bottom'] > .tippy-arrow:after,
+ .tippy-tooltip[data-placement^='bottom'] > .tippy-arrow:before {
+     left: calc(-1 * var(--arrow-size));;
+     border-left: var(--arrow-size) solid transparent;
+     border-right: var(--arrow-size) solid transparent;
+ }
+ 
+ .tippy-tooltip[data-placement^='bottom'] > .tippy-arrow:after {
+     border-bottom: var(--arrow-size) solid var(--arrow-color);
+     bottom: calc(-1 * var(--arrow-size));
+ }
+ 
+ .tippy-tooltip[data-placement^='bottom'] > .tippy-arrow:before {
+     border-bottom: var(--arrow-size) solid var(--arrow-border-color);
+     bottom: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ /* tippy-arrow on the left */
+ .tippy-tooltip[data-placement^='left'] > .tippy-arrow {
+     border-left-color: var(--arrow-color);
+     right: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ .tippy-tooltip[data-placement^='left'] > .tippy-arrow:after,
+ .tippy-tooltip[data-placement^='left'] > .tippy-arrow:before {
+     top : calc(-1 * var(--arrow-size));;
+     border-top: var(--arrow-size) solid transparent;
+     border-bottom: var(--arrow-size) solid transparent;
+ }
+ 
+ .tippy-tooltip[data-placement^='left'] > .tippy-arrow:after {
+     border-left: var(--arrow-size) solid var(--arrow-color);
+     left: calc(-1 * var(--arrow-size));
+ }
+ 
+ .tippy-tooltip[data-placement^='left'] > .tippy-arrow:before {
+     border-left: var(--arrow-size) solid var(--arrow-border-color);
+     left: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ /* tippy-arrow on the right */
+ .tippy-tooltip[data-placement^='right'] > .tippy-arrow {
+     border-right-color: var(--arrow-color);
+     left: calc(-1 * (var(--arrow-size) - 1px));
+ }
+ 
+ .tippy-tooltip[data-placement^='right'] > .tippy-arrow:after,
+ .tippy-tooltip[data-placement^='right'] > .tippy-arrow:before {
+     top : calc(-1 * var(--arrow-size));;
+     border-top: var(--arrow-size) solid transparent;
+     border-bottom: var(--arrow-size) solid transparent;
+ }
+ 
+ .tippy-tooltip[data-placement^='right'] > .tippy-arrow:after {
+     border-right: var(--arrow-size) solid var(--arrow-color);
+     right: calc(-1 * var(--arrow-size));
+ }
+ 
+ .tippy-tooltip[data-placement^='right'] > .tippy-arrow:before {
+     border-right: var(--arrow-size) solid var(--arrow-border-color);
+     right: calc(-1 * (var(--arrow-size) - 1px));
+ }
 /** End of tippy.js styles */
 
 .overlay:after {
