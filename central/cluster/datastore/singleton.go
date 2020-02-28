@@ -6,8 +6,9 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
-	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -31,6 +32,7 @@ func initialize() {
 	ad, err = New(storage,
 		indexer,
 		alertDataStore.Singleton(),
+		namespaceDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		nodeDataStore.Singleton(),
 		secretDataStore.Singleton(),

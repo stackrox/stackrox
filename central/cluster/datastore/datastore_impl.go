@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -43,11 +44,12 @@ type datastoreImpl struct {
 	notifier notifierProcessor.Processor
 	searcher search.Searcher
 
-	ads alertDataStore.DataStore
-	dds deploymentDataStore.DataStore
-	ns  nodeDataStore.GlobalDataStore
-	ss  secretDataStore.DataStore
-	cm  connection.Manager
+	alertDataStore      alertDataStore.DataStore
+	namespaceDataStore  namespaceDataStore.DataStore
+	deploymentDataStore deploymentDataStore.DataStore
+	nodeDataStore       nodeDataStore.GlobalDataStore
+	secretsDataStore    secretDataStore.DataStore
+	cm                  connection.Manager
 
 	clusterRanker *ranking.Ranker
 
@@ -253,7 +255,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Deployment, resources.Alert, resources.Node, resources.Secret),
+			sac.ResourceScopeKeys(resources.Namespace, resources.Deployment, resources.Alert, resources.Node, resources.Secret),
 		))
 	go ds.postRemoveCluster(deleteRelatedCtx, cluster, done)
 	return ds.indexer.DeleteCluster(id)
@@ -273,78 +275,91 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
 
-	// Fetch the deployments.
-	deployments, err := ds.getDeployments(ctx, cluster)
+	ds.removeClusterNamespaces(ctx, cluster)
+
+	// Tombstone each deployment and mark alerts stale.
+	ds.removeClusterDeployments(ctx, cluster)
+
+	// Remove nodes associated with this cluster
+	if err := ds.nodeDataStore.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
+	}
+
+	ds.removeClusterSecrets(ctx, cluster)
+	if done != nil {
+		done.Signal()
+	}
+}
+
+func (ds *datastoreImpl) removeClusterNamespaces(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	namespaces, err := ds.namespaceDataStore.Search(ctx, q)
+	if err != nil {
+		log.Errorf("failed to get namespaces for removed cluster %s: %v", cluster.GetId(), err)
+	}
+
+	for _, namespace := range namespaces {
+		err = ds.namespaceDataStore.RemoveNamespace(ctx, namespace.ID)
+		if err != nil {
+			log.Errorf("failed to remove namespace %s in deleted cluster: %v", namespace.ID, err)
+		}
+	}
+
+}
+
+func (ds *datastoreImpl) removeClusterDeployments(ctx context.Context, cluster *storage.Cluster) {
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
+	deployments, err := ds.deploymentDataStore.Search(ctx, q)
 	if err != nil {
 		log.Errorf("failed to get deployments for removed cluster %s: %v", cluster.GetId(), err)
 	}
 	// Tombstone each deployment and mark alerts stale.
 	for _, deployment := range deployments {
-		alerts, err := ds.getAlerts(ctx, deployment)
+		alerts, err := ds.getAlerts(ctx, deployment.ID)
 		if err != nil {
-			log.Errorf("failed to retrieve alerts for deployment %s: %v", deployment.GetId(), err)
+			log.Errorf("failed to retrieve alerts for deployment %s: %v", deployment.ID, err)
 		} else {
 			err = ds.markAlertsStale(ctx, alerts)
 			if err != nil {
-				log.Errorf("failed to mark alerts for deployment %s as stale: %v", deployment.GetId(), err)
+				log.Errorf("failed to mark alerts for deployment %s as stale: %v", deployment.ID, err)
 			}
 		}
 
-		err = ds.dds.RemoveDeployment(ctx, cluster.GetId(), deployment.GetId())
+		err = ds.deploymentDataStore.RemoveDeployment(ctx, cluster.GetId(), deployment.ID)
 		if err != nil {
-			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.GetId(), err)
+			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.ID, err)
 		}
 	}
 
-	// Remove nodes associated with this cluster
-	if err := ds.ns.RemoveClusterNodeStores(ctx, cluster.GetId()); err != nil {
-		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
-	}
+}
 
+func (ds *datastoreImpl) removeClusterSecrets(ctx context.Context, cluster *storage.Cluster) {
 	secrets, err := ds.getSecrets(ctx, cluster)
 	if err != nil {
 		log.Errorf("failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		_ = ds.ss.RemoveSecret(ctx, s.GetId())
-	}
-	if done != nil {
-		done.Signal()
+		_ = ds.secretsDataStore.RemoveSecret(ctx, s.GetId())
 	}
 }
 
 func (ds *datastoreImpl) getSecrets(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListSecret, error) {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	return ds.ss.SearchListSecrets(ctx, q)
+	return ds.secretsDataStore.SearchListSecrets(ctx, q)
 }
 
-func (ds *datastoreImpl) getDeployments(ctx context.Context, cluster *storage.Cluster) ([]*storage.ListDeployment, error) {
-	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster.GetId()).ProtoQuery()
-	deployments, err := ds.dds.SearchListDeployments(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	return deployments, nil
-}
-
-// TODO(cgorman) Make this a search once the document mapping goes in
-func (ds *datastoreImpl) getAlerts(ctx context.Context, deployment *storage.ListDeployment) ([]*storage.Alert, error) {
-	qb := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).AddExactMatches(pkgSearch.DeploymentID, deployment.GetId())
-
-	existingAlerts, err := ds.ads.SearchRawAlerts(ctx, qb.ProtoQuery())
-	if err != nil {
-		log.Errorf("unable to get alert: %s", err)
-		return nil, err
-	}
-	return existingAlerts, nil
+func (ds *datastoreImpl) getAlerts(ctx context.Context, deploymentID string) ([]*storage.Alert, error) {
+	q := pkgSearch.NewQueryBuilder().
+		AddStrings(pkgSearch.ViolationState, storage.ViolationState_ACTIVE.String()).
+		AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
+	return ds.alertDataStore.SearchRawAlerts(ctx, q)
 }
 
 func (ds *datastoreImpl) markAlertsStale(ctx context.Context, alerts []*storage.Alert) error {
 	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
 	for _, alert := range alerts {
-		errorList.AddError(ds.ads.MarkAlertStale(ctx, alert.GetId()))
+		errorList.AddError(ds.alertDataStore.MarkAlertStale(ctx, alert.GetId()))
 		if errorList.ToError() == nil {
 			// run notifier for all the resolved alerts
 			ds.notifier.ProcessAlert(alert)
@@ -360,7 +375,7 @@ func (ds *datastoreImpl) cleanUpNodeStore(ctx context.Context) {
 }
 
 func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
-	clusterNodeStores, err := ds.ns.GetAllClusterNodeStores(ctx, false)
+	clusterNodeStores, err := ds.nodeDataStore.GetAllClusterNodeStores(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "retrieving per-cluster node stores")
 	}
@@ -382,7 +397,7 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 		clusterIDsInNodeStore.Remove(cluster.GetId())
 	}
 
-	return ds.ns.RemoveClusterNodeStores(ctx, clusterIDsInNodeStore.AsSlice()...)
+	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, clusterIDsInNodeStore.AsSlice()...)
 }
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/ranking"
@@ -61,6 +62,7 @@ func New(
 	storage store.Store,
 	indexer index.Indexer,
 	ads alertDataStore.DataStore,
+	namespaceDS namespaceDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
 	ns nodeDataStore.GlobalDataStore,
 	ss secretDataStore.DataStore,
@@ -69,16 +71,17 @@ func New(
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:       storage,
-		indexer:       indexer,
-		searcher:      search.New(storage, indexer, graphProvider, clusterRanker),
-		ads:           ads,
-		dds:           dds,
-		ns:            ns,
-		ss:            ss,
-		cm:            cm,
-		notifier:      notifier,
-		clusterRanker: clusterRanker,
+		storage:             storage,
+		indexer:             indexer,
+		searcher:            search.New(storage, indexer, graphProvider, clusterRanker),
+		alertDataStore:      ads,
+		namespaceDataStore:  namespaceDS,
+		deploymentDataStore: dds,
+		nodeDataStore:       ns,
+		secretsDataStore:    ss,
+		cm:                  cm,
+		notifier:            notifier,
+		clusterRanker:       clusterRanker,
 
 		cache: simplecache.New(),
 	}

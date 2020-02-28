@@ -11,6 +11,7 @@ import (
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -42,6 +43,7 @@ type ClusterDataStoreTestSuite struct {
 	clusters            *clusterMocks.MockStore
 	indexer             *clusterIndexMocks.MockIndexer
 	clusterDataStore    DataStore
+	namespaceDataStore  *namespaceMocks.MockDataStore
 	deploymentDataStore *deploymentMocks.MockDataStore
 	nodeDataStore       *nodeMocks.MockGlobalDataStore
 	secretDataStore     *secretMocks.MockDataStore
@@ -68,6 +70,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.clusters = clusterMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
 
+	suite.namespaceDataStore = namespaceMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.alertDataStore = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
@@ -87,6 +90,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 		suite.clusters,
 		suite.indexer,
 		suite.alertDataStore,
+		suite.namespaceDataStore,
 		suite.deploymentDataStore,
 		suite.nodeDataStore,
 		suite.secretDataStore,
@@ -125,14 +129,15 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 
 func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testCluster := &storage.Cluster{Id: fakeClusterID}
-	testDeployments := []*storage.ListDeployment{{ClusterId: fakeClusterID}}
+	testDeployments := []search.Result{{ID: "fakeDeployment"}}
 	testAlerts := []*storage.Alert{{}}
 	testSecrets := []*storage.ListSecret{{}}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(testCluster, true, nil)
 	suite.clusters.EXPECT().RemoveCluster(fakeClusterID).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(fakeClusterID).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
-	suite.deploymentDataStore.EXPECT().SearchListDeployments(gomock.Any(), gomock.Any()).Return(testDeployments, nil)
+	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
+	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(testDeployments, nil)
 	suite.alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts, nil)
 	suite.alertDataStore.EXPECT().MarkAlertStale(gomock.Any(), gomock.Any()).Return(nil)
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any()).Return()
@@ -262,7 +267,8 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 	suite.clusters.EXPECT().GetCluster("poiuytre").Return(nil, true, nil)
 	suite.clusters.EXPECT().RemoveCluster(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(gomock.Any()).Return(nil)
-	suite.deploymentDataStore.EXPECT().SearchListDeployments(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
+	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.nodeDataStore.EXPECT().RemoveClusterNodeStores(gomock.Any(), gomock.Any()).Return(nil)
 	suite.secretDataStore.EXPECT().SearchListSecrets(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
