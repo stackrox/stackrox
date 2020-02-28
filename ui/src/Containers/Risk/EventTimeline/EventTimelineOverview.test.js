@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import EventTimeline from './EventTimeline';
+import EventTimeline from './EventTimelineOverview';
 
 test('Shows the Event Timeline Overview Information', async () => {
     const deploymentId = '5039c79f-5294-11ea-84f7-025000000001';
