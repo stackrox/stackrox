@@ -147,6 +147,7 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 	var keys [][]byte
 	var err error
 	if needsReindex {
+		log.Infof("re-indexing all keys in bucket: %s", bucket)
 		err = blevesearch.ResetIndex(category, globalindex.GetGlobalIndex())
 		if err != nil {
 			return err

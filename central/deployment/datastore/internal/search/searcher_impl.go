@@ -44,9 +44,10 @@ var (
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage       store.Store
+	indexer       index.Indexer
+	graphProvider graph.Provider
+	searcher      search.Searcher
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
@@ -109,8 +110,11 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 	return deployments, nil
 }
 
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.searcher.Search(ctx, q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	graph.Context(ctx, ds.graphProvider, func(ctx context.Context) {
+		res, err = ds.searcher.Search(ctx, q)
+	})
+	return res, err
 }
 
 // ConvertDeployment returns proto search result from a deployment object and the internal search result
@@ -126,7 +130,7 @@ func convertDeployment(deployment *storage.ListDeployment, result search.Result)
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(graphProvider idspace.GraphProvider,
+func formatSearcher(graphProvider graph.Provider,
 	cveIndexer blevesearch.UnsafeSearcher,
 	componentCVEEdgeIndexer blevesearch.UnsafeSearcher,
 	componentIndexer blevesearch.UnsafeSearcher,
@@ -143,7 +147,7 @@ func formatSearcher(graphProvider idspace.GraphProvider,
 
 	var filteredSearcher search.Searcher
 	if features.Dackbox.Enabled() {
-		compoundSearcher := getDeploymentCompoundSearcher(graphProvider,
+		compoundSearcher := getDeploymentCompoundSearcher(
 			cveSearcher,
 			componentCVEEdgeSearcher,
 			componentSearcher,
@@ -162,30 +166,28 @@ func formatSearcher(graphProvider idspace.GraphProvider,
 	return defaultSortedSearcher
 }
 
-func getDeploymentCompoundSearcher(graphProvider idspace.GraphProvider,
+func getDeploymentCompoundSearcher(
 	cveSearcher search.Searcher,
 	componentCVEEdgeSearcher search.Searcher,
 	componentSearcher search.Searcher,
 	imageComponentEdgeSearcher search.Searcher,
 	imageSearcher search.Searcher,
 	deploymentSearcher search.Searcher) search.Searcher {
-	cveEdgeToComponentSearcher := idspace.TransformIDs(componentCVEEdgeSearcher, idspace.NewEdgeToParentTransformer())
-	imageComponentEdgeToImageSearcher := idspace.TransformIDs(imageComponentEdgeSearcher, idspace.NewEdgeToParentTransformer())
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
-			Searcher: idspace.TransformIDs(cveSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.CVEToDeploymentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(cveSearcher, dackbox.CVEToDeploymentTransformation),
 			Options:  cveMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(cveEdgeToComponentSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.ComponentToDeploymentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(componentCVEEdgeSearcher, dackbox.ComponentCVEEdgeToDeploymentTransformation),
 			Options:  componentCVEEdgeMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(componentSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.ComponentToDeploymentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(componentSearcher, dackbox.ComponentToDeploymentTransformation),
 			Options:  componentMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(imageComponentEdgeToImageSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.ImageToDeploymentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(imageComponentEdgeSearcher, dackbox.ImageComponentEdgeToDeploymentTransformation),
 			Options:  imageComponentEdgeMappings.OptionsMap,
 		},
 		{
@@ -194,7 +196,7 @@ func getDeploymentCompoundSearcher(graphProvider idspace.GraphProvider,
 			Options:   deployments.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(imageSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.ImageToDeploymentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(imageSearcher, dackbox.ImageToDeploymentTransformation),
 			Options:  imageMappings.OptionsMap,
 		},
 	}...)

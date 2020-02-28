@@ -12,8 +12,8 @@ import (
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/idspace"
 )
 
 // Searcher provides search functionality on existing image components.
@@ -25,7 +25,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, graphProvider idspace.GraphProvider,
+func New(storage store.Store, graphProvider graph.Provider,
 	cveIndexer cveIndexer.Indexer,
 	componentCVEEdgeIndexer componentCVEEdgeIndexer.Indexer,
 	componentIndexer componentIndexer.Indexer,
@@ -33,7 +33,8 @@ func New(storage store.Store, graphProvider idspace.GraphProvider,
 	imageIndexer imageIndexer.Indexer,
 	deploymentIndexer deploymentIndexer.Indexer) Searcher {
 	return &searcherImpl{
-		storage: storage,
+		storage:       storage,
+		graphProvider: graphProvider,
 		searcher: formatSearcher(graphProvider,
 			cveIndexer,
 			componentCVEEdgeIndexer,

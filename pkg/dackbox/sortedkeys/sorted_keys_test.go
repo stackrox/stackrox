@@ -34,6 +34,12 @@ func TestSortedKeys(t *testing.T) {
 	toSort := [][]byte{[]byte("key1"), []byte("key2"), []byte("key1"), []byte("key3")}
 	sorted := Sort(toSort)
 	require.Equal(t, SortedKeys{[]byte("key1"), []byte("key2"), []byte("key3")}, sorted)
+
+	v := SortedKeys{}.Marshal()
+	require.Equal(t, v, []byte{byte(0), byte(0)})
+	vsk, err := Unmarshal(v)
+	require.NoError(t, err)
+	require.Equal(t, vsk, SortedKeys(nil))
 }
 
 func BenchmarkSortedKeys(b *testing.B) {

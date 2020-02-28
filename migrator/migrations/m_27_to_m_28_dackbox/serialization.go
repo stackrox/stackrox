@@ -16,6 +16,9 @@ func Unmarshal(marshalled []byte) (SortedKeys, error) {
 		if length > len(buf) {
 			return nil, errors.New("malformed sorted keys, position out of range")
 		}
+		if length == 0 {
+			break
+		}
 		// Next length bytes encode the key.
 		unmarshalled = append(unmarshalled, buf[:length])
 		buf = buf[length:]
@@ -28,6 +31,9 @@ func Unmarshal(marshalled []byte) (SortedKeys, error) {
 
 // Marshal marshals the sorted keys.
 func (sk SortedKeys) Marshal() []byte {
+	if len(sk) == 0 {
+		return make([]byte, 2)
+	}
 	marshalled := make([]byte, 0, len(sk)*4)
 	encodedLength := make([]byte, 2)
 	for _, key := range sk {

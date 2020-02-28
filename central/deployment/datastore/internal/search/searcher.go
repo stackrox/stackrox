@@ -40,8 +40,9 @@ func New(storage store.Store,
 	imageIndexer imageIndexer.Indexer,
 	deploymentIndexer deploymentIndexer.Indexer) Searcher {
 	return &searcherImpl{
-		storage: storage,
-		indexer: deploymentIndexer,
+		storage:       storage,
+		indexer:       deploymentIndexer,
+		graphProvider: graphProvider,
 		searcher: formatSearcher(graphProvider,
 			cveIndexer,
 			componentCVEEdgeIndexer,

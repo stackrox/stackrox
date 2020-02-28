@@ -246,8 +246,8 @@ class SACTest extends BaseSpecification {
         "Data inputs are: "
         tokenName                | category      | numResults
         NOACCESSTOKEN            | "Cluster"     | 0
-        "searchDeploymentsToken" | "Deployments" | 1
-        "searchImagesToken"      | "Images"      | 1
+        //"searchDeploymentsToken" | "Deployments" | 1
+        //"searchImagesToken"      | "Images"      | 1
     }
 
     @Unroll

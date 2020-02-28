@@ -35,7 +35,6 @@ func (m *matcherImpl) errorPrefixForMatchOne() string {
 // The deployment parameter can be nil in the case of image detection
 func (m *matcherImpl) MatchOne(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator) (violations searchbasedpolicies.Violations, err error) {
 	var results []*search.Result
-
 	if indicator != nil {
 		result, matches := m.processPredicate(indicator)
 		if !matches {
@@ -93,7 +92,6 @@ func (m *matcherImpl) violationsMapFromQuery(ctx context.Context, searcher searc
 	if len(results) == 0 {
 		return nil, nil
 	}
-
 	violationsMap := make(map[string]searchbasedpolicies.Violations, len(results))
 	for _, result := range results {
 		if result.ID == "" {

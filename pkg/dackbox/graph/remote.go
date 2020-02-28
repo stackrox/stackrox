@@ -29,6 +29,11 @@ type RemoteGraph struct {
 	remoteToRead RemoteReadable
 }
 
+// Underlying returns the base graph used to store read and modified data.
+func (rm *RemoteGraph) Underlying() RWGraph {
+	return rm.RWGraph
+}
+
 // HasRefsFrom returns if there is an entry with 0 or more child keys in the graph.
 // Will cause a read to the remote Graph if this input key has not already been read.
 func (rm *RemoteGraph) HasRefsFrom(from []byte) bool {

@@ -47,12 +47,13 @@ func (rc *DackBox) NewTransaction() *Transaction {
 
 	ts := rc.history.Hold()
 	txn := rc.db.NewTransaction(true)
-	modified := graph.NewModifiedGraph(graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)))
+	modification := graph.NewModifiedGraph(graph.NewGraph())
+	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, modified),
-		modification: modified,
+		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, remote),
+		modification: modification,
 		dirtyPrefix:  rc.dirtyPrefix,
 		dirtyMap:     make(map[string]proto.Message),
 		discard:      rc.discard,
@@ -67,12 +68,13 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 
 	ts := rc.history.Hold()
 	txn := rc.db.NewTransaction(false)
-	modified := graph.NewModifiedGraph(graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts)))
+	modification := graph.NewModifiedGraph(graph.NewGraph())
+	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, modified),
-		modification: modified,
+		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, remote),
+		modification: modification,
 		discard:      rc.discard,
 		commit:       rc.commit,
 	}

@@ -40,8 +40,9 @@ var (
 )
 
 type searcherImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage       store.Store
+	graphProvider graph.Provider
+	searcher      search.Searcher
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
@@ -74,8 +75,11 @@ func (ds *searcherImpl) searchImageComponents(ctx context.Context, q *v1.Query) 
 	return components, nil
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return ds.searcher.Search(ctx, q)
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	graph.Context(ctx, ds.graphProvider, func(ctx context.Context) {
+		res, err = ds.searcher.Search(ctx, q)
+	})
+	return res, err
 }
 
 func (ds *searcherImpl) resultsToImageComponents(results []search.Result) ([]*storage.ImageComponent, []int, error) {
@@ -110,7 +114,7 @@ func convertOne(component *storage.ImageComponent, result *search.Result) *v1.Se
 }
 
 // Format the search functionality of the indexer to be filtered (for sac) and paginated.
-func formatSearcher(graphProvider idspace.GraphProvider,
+func formatSearcher(graphProvider graph.Provider,
 	cveIndexer blevesearch.UnsafeSearcher,
 	componentCVEEdgeIndexer blevesearch.UnsafeSearcher,
 	componentIndexer blevesearch.UnsafeSearcher,
@@ -124,7 +128,7 @@ func formatSearcher(graphProvider idspace.GraphProvider,
 	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
 	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
 
-	compoundSearcher := getCompoundComponentSearcher(graphProvider,
+	compoundSearcher := getCompoundComponentSearcher(
 		cveSearcher,
 		componentCVEEdgeSearcher,
 		componentSearcher,
@@ -139,7 +143,7 @@ func formatSearcher(graphProvider idspace.GraphProvider,
 	return defaultSortedSearcher
 }
 
-func getCompoundComponentSearcher(graphProvider idspace.GraphProvider,
+func getCompoundComponentSearcher(
 	cveSearcher search.Searcher,
 	componentCVEEdgeSearcher search.Searcher,
 	componentSearcher search.Searcher,
@@ -149,11 +153,11 @@ func getCompoundComponentSearcher(graphProvider idspace.GraphProvider,
 
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
-			Searcher: idspace.TransformIDs(cveSearcher, idspace.NewBackwardGraphTransformer(graphProvider, dackbox.CVEToComponentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(cveSearcher, dackbox.CVEToComponentTransformation),
 			Options:  cveMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(componentCVEEdgeSearcher, idspace.NewEdgeToParentTransformer()),
+			Searcher: idspace.WithKeyTransformations(componentCVEEdgeSearcher, dackbox.ComponentCVEEdgeToComponentTransformation),
 			Options:  componentCVEEdgeMappings.OptionsMap,
 		},
 		{
@@ -162,15 +166,15 @@ func getCompoundComponentSearcher(graphProvider idspace.GraphProvider,
 			Options:   componentMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(imageComponentEdgeSearcher, idspace.NewEdgeToChildTransformer()),
+			Searcher: idspace.WithKeyTransformations(imageComponentEdgeSearcher, dackbox.ImageComponentEdgeToComponentTransformation),
 			Options:  imageComponentEdgeMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(imageSearcher, idspace.NewForwardGraphTransformer(graphProvider, dackbox.ImageToComponentPath.Path)),
+			Searcher: idspace.WithKeyTransformations(imageSearcher, dackbox.ImageToImageComponentTransformation),
 			Options:  imageOnlyOptionsMap,
 		},
 		{
-			Searcher: idspace.TransformIDs(deploymentSearcher, idspace.NewForwardGraphTransformer(graphProvider, dackbox.DeploymentToImageComponent.Path)),
+			Searcher: idspace.WithKeyTransformations(deploymentSearcher, dackbox.DeploymentToImageComponentTransformation),
 			Options:  deploymentOnlyOptionsMap,
 		},
 	}...)
