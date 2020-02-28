@@ -145,7 +145,7 @@ func TestIsTrackedReference(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s-%s", c.ref.APIVersion, c.ref.Kind), func(t *testing.T) {
-			assert.Equal(t, isTrackedOwnerReference(c.ref), c.isTracked)
+			assert.Equal(t, IsTrackedOwnerReference(c.ref), c.isTracked)
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -41,17 +42,17 @@ func (ds *DeploymentStore) removeDeployment(wrap *deploymentWrap) {
 	delete(nsMap, wrap.GetId())
 }
 
-func (ds *DeploymentStore) getOwningDeployments(namespace string, podLabels map[string]string) (owning []*deploymentWrap) {
+func (ds *DeploymentStore) getDeploymentsByIDs(namespace string, idSet set.StringSet) []*deploymentWrap {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
-	podLabelSet := labels.Set(podLabels)
+	deployments := make([]*deploymentWrap, 0, len(idSet))
 	for _, wrap := range ds.deployments[namespace] {
-		if wrap.podSelector != nil && wrap.podSelector.Matches(podLabelSet) {
-			owning = append(owning, wrap)
+		if idSet.Contains(wrap.GetId()) {
+			deployments = append(deployments, wrap)
 		}
 	}
-	return
+	return deployments
 }
 
 func (ds *DeploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {

@@ -1,6 +1,7 @@
 package references
 
 import (
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -9,6 +10,7 @@ type ParentHierarchy interface {
 	Add(parents []string, child string)
 	Remove(id string)
 	IsValidChild(parent string, child string) bool
+	TopLevelParents(child string) set.StringSet
 }
 
 type parentHierarchy struct {
@@ -54,4 +56,24 @@ func (p *parentHierarchy) IsValidChild(parent, child string) bool {
 	defer p.lock.RUnlock()
 
 	return p.searchRecursiveNoLock(parent, child)
+}
+
+func (p *parentHierarchy) addTopLevelParentsRecursiveNoLock(child string, parents set.StringSet) {
+	currParents := p.parents[child]
+	if len(currParents) == 0 {
+		parents.Add(child)
+	} else {
+		for _, currParent := range currParents {
+			p.addTopLevelParentsRecursiveNoLock(currParent, parents)
+		}
+	}
+}
+
+func (p *parentHierarchy) TopLevelParents(child string) set.StringSet {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+
+	parents := set.NewStringSet()
+	p.addTopLevelParentsRecursiveNoLock(child, parents)
+	return parents
 }

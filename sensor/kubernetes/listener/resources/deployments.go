@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -45,7 +46,8 @@ func (d *deploymentDispatcherImpl) ProcessEvent(obj, oldObj interface{}, action 
 
 	parents := make([]string, 0, len(metaObj.GetOwnerReferences()))
 	for _, ref := range metaObj.GetOwnerReferences() {
-		if ref.UID != "" {
+		if ref.UID != "" && resources.IsTrackedOwnerReference(ref) {
+			// Only bother adding parents we track.
 			parents = append(parents, string(ref.UID))
 		}
 	}
@@ -132,7 +134,7 @@ func (d *deploymentHandler) maybeProcessPod(obj, oldObj interface{}, action cent
 		}
 	}
 
-	owners := d.deploymentStore.getOwningDeployments(pod.Namespace, pod.Labels)
+	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
 	var events []*central.SensorEvent
 	for _, owner := range owners {
 		events = append(events, d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)

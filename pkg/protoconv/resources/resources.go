@@ -50,12 +50,9 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func isTrackedOwnerReference(reference metav1.OwnerReference) bool {
-	// Validate that the object is one that we are tracking as a Deployment
-	if !kubernetes.IsDeploymentResource(reference.Kind) {
-		return false
-	}
-	return kubernetes.IsNativeAPI(reference.APIVersion)
+// IsTrackedOwnerReference validates the object is one that we are tracking as a Deployment
+func IsTrackedOwnerReference(reference metav1.OwnerReference) bool {
+	return kubernetes.IsDeploymentResource(reference.Kind) && kubernetes.IsNativeAPI(reference.APIVersion)
 }
 
 // NewDeploymentFromStaticResource returns a storage.Deployment from a k8s object
@@ -68,7 +65,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType, registryOv
 
 	// Ignore resources that are owned by another tracked resource.
 	for _, ref := range objMeta.GetOwnerReferences() {
-		if isTrackedOwnerReference(ref) {
+		if IsTrackedOwnerReference(ref) {
 			return nil, nil
 		}
 	}
