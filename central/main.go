@@ -108,6 +108,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -175,6 +176,8 @@ func main() {
 
 	if devbuild.IsEnabled() {
 		debughandler.MustStartServerAsync("")
+
+		devmode.StartBinaryWatchdog("central")
 	}
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())

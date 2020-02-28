@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -39,6 +40,8 @@ func main() {
 
 	if devbuild.IsEnabled() {
 		debughandler.MustStartServerAsync("")
+
+		devmode.StartBinaryWatchdog("kubernetes-sensor")
 	}
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())

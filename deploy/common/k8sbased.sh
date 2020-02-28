@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -20,6 +22,15 @@ function launch_service {
     else
         ${ORCH_CMD} create -R -f "$dir/$service"
     fi
+}
+
+function hotload_binary {
+  local binary="$1"
+  local deployment="$2"
+
+  binary_path=$(realpath "${DIR}/../../bin/linux/${binary}")
+
+  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${deployment}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
 }
 
 function launch_central {
@@ -158,6 +169,7 @@ function launch_central {
 
     if [[ "${is_local_dev}" == "true" ]]; then
         kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
+        hotload_binary central central
     fi
 
     if [[ "$SCANNER_SUPPORT" == "true" ]]; then
@@ -240,6 +252,7 @@ function launch_sensor {
     $k8s_dir/sensor-deploy/sensor.sh
 
     if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+       hotload_binary kubernetes-sensor sensor
        kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
     fi
 
