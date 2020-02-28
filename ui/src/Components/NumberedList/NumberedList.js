@@ -51,7 +51,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         }
         const contentWrapper = <div className="p-2 w-full flex justify-between">{content}</div>;
         return (
-            <li key={text} className={className}>
+            <li key={text + subText + url} className={className}>
                 {tooltip && (
                     <Tippy
                         content={
