@@ -6,12 +6,50 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	framework "github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
 	reflect "reflect"
 )
+
+// MockImageMatcher is a mock of ImageMatcher interface
+type MockImageMatcher struct {
+	ctrl     *gomock.Controller
+	recorder *MockImageMatcherMockRecorder
+}
+
+// MockImageMatcherMockRecorder is the mock recorder for MockImageMatcher
+type MockImageMatcherMockRecorder struct {
+	mock *MockImageMatcher
+}
+
+// NewMockImageMatcher creates a new mock instance
+func NewMockImageMatcher(ctrl *gomock.Controller) *MockImageMatcher {
+	mock := &MockImageMatcher{ctrl: ctrl}
+	mock.recorder = &MockImageMatcherMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockImageMatcher) EXPECT() *MockImageMatcherMockRecorder {
+	return m.recorder
+}
+
+// Match mocks base method
+func (m *MockImageMatcher) Match(image *storage.ImageName) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Match", image)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Match indicates an expected call of Match
+func (mr *MockImageMatcherMockRecorder) Match(image interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockImageMatcher)(nil).Match), image)
+}
 
 // MockComplianceDataRepository is a mock of ComplianceDataRepository interface
 type MockComplianceDataRepository struct {
@@ -160,6 +198,34 @@ func (m *MockComplianceDataRepository) ImageIntegrations() []*storage.ImageInteg
 func (mr *MockComplianceDataRepositoryMockRecorder) ImageIntegrations() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).ImageIntegrations))
+}
+
+// RegistryIntegrations mocks base method
+func (m *MockComplianceDataRepository) RegistryIntegrations() []framework.ImageMatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegistryIntegrations")
+	ret0, _ := ret[0].([]framework.ImageMatcher)
+	return ret0
+}
+
+// RegistryIntegrations indicates an expected call of RegistryIntegrations
+func (mr *MockComplianceDataRepositoryMockRecorder) RegistryIntegrations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegistryIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).RegistryIntegrations))
+}
+
+// ScannerIntegrations mocks base method
+func (m *MockComplianceDataRepository) ScannerIntegrations() []framework.ImageMatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ScannerIntegrations")
+	ret0, _ := ret[0].([]framework.ImageMatcher)
+	return ret0
+}
+
+// ScannerIntegrations indicates an expected call of ScannerIntegrations
+func (mr *MockComplianceDataRepositoryMockRecorder) ScannerIntegrations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScannerIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).ScannerIntegrations))
 }
 
 // ProcessIndicators mocks base method

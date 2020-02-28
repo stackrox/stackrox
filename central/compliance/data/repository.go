@@ -28,6 +28,8 @@ type repository struct {
 	policies              map[string]*storage.Policy
 	images                []*storage.ListImage
 	imageIntegrations     []*storage.ImageIntegration
+	registries            []framework.ImageMatcher
+	scanners              []framework.ImageMatcher
 	processIndicators     []*storage.ProcessIndicator
 	networkFlows          []*storage.NetworkFlow
 	notifiers             []*storage.Notifier
@@ -110,6 +112,14 @@ func (r *repository) CISDockerTriggered() bool {
 
 func (r *repository) CISKubernetesTriggered() bool {
 	return r.cisKubernetesRunCheck
+}
+
+func (r *repository) RegistryIntegrations() []framework.ImageMatcher {
+	return r.registries
+}
+
+func (r *repository) ScannerIntegrations() []framework.ImageMatcher {
+	return r.scanners
 }
 
 func newRepository(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
@@ -223,6 +233,13 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	)
 	if err != nil {
 		return err
+	}
+
+	for _, registryIntegration := range f.imageIntegrationsSet.RegistrySet().GetAll() {
+		r.registries = append(r.registries, registryIntegration)
+	}
+	for _, scannerIntegration := range f.imageIntegrationsSet.ScannerSet().GetAll() {
+		r.scanners = append(r.scanners, scannerIntegration)
 	}
 
 	r.processIndicators, err = f.processIndicatorStore.SearchRawProcessIndicators(ctx, clusterQuery)

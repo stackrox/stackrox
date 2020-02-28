@@ -9,6 +9,12 @@ import (
 
 //go:generate mockgen-wrapper
 
+// ImageMatcher is the sub-interface of our integration objects that is
+// relevant to the ComplianceDataRepository.
+type ImageMatcher interface {
+	Match(image *storage.ImageName) bool
+}
+
 // ComplianceDataRepository is the unified interface for accessing all the data that might be relevant for a compliance
 // run. This provides check implementors with a unified view of all data objects regardless of their source (stored by
 // central vs. obtained specifically for a compliance run), and also allows presenting a stable snapshot to all checks
@@ -25,6 +31,8 @@ type ComplianceDataRepository interface {
 	Policies() map[string]*storage.Policy
 	Images() []*storage.ListImage
 	ImageIntegrations() []*storage.ImageIntegration
+	RegistryIntegrations() []ImageMatcher
+	ScannerIntegrations() []ImageMatcher
 	ProcessIndicators() []*storage.ProcessIndicator
 	NetworkFlows() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet

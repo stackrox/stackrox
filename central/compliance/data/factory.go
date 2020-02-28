@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	imageStore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -18,6 +19,7 @@ import (
 	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8sBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/images/integration"
 )
 
 // RepositoryFactory allows creating `ComplianceDataRepository`s to be used in compliance runs.
@@ -32,6 +34,7 @@ type factory struct {
 	policyStore           policiesStore.DataStore
 	imageStore            imageStore.DataStore
 	imageIntegrationStore imageIntegrationStore.DataStore
+	imageIntegrationsSet  integration.Set
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowDataStore  nfDS.ClusterDataStore
 	notifierDataStore     notifierDataStore.DataStore
@@ -50,6 +53,7 @@ func NewDefaultFactory() RepositoryFactory {
 		policyStore:           policiesStore.Singleton(),
 		imageStore:            imageStore.Singleton(),
 		imageIntegrationStore: imageIntegrationStore.Singleton(),
+		imageIntegrationsSet:  imageintegration.Set(),
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowDataStore:  nfDS.Singleton(),
 		notifierDataStore:     notifierDataStore.Singleton(),

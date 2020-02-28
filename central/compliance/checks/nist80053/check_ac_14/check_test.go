@@ -4,41 +4,19 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/compliance/checks/testutils"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-type result struct {
-	status  framework.Status
-	message string
-}
+func setupMockCtx(ctrl *gomock.Controller, k8sRoles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) (framework.ComplianceContext, *testutils.EvidenceRecords) {
+	mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
 
-func setupMockCtx(receivedResults *[]result, ctrl *gomock.Controller, k8sRoles []*storage.K8SRole, roleBindings []*storage.K8SRoleBinding) framework.ComplianceContext {
-	mockCtx := mocks.NewMockComplianceContext(ctrl)
-
-	mockCtx.EXPECT().RecordEvidence(gomock.Any(), gomock.Any()).AnyTimes().Do(func(status framework.Status, message string) {
-		*receivedResults = append(*receivedResults, result{status, message})
-	})
-	mockData := mocks.NewMockComplianceDataRepository(ctrl)
-	mockCtx.EXPECT().Data().AnyTimes().Return(mockData)
 	mockData.EXPECT().K8sRoles().AnyTimes().Return(k8sRoles)
 	mockData.EXPECT().K8sRoleBindings().AnyTimes().Return(roleBindings)
 
-	return mockCtx
-}
-
-func passed(receivedResults []result, t *testing.T) bool {
-	require.NotEmpty(t, receivedResults)
-	for _, r := range receivedResults {
-		if r.status != framework.PassStatus {
-			return false
-		}
-	}
-	return true
+	return mockCtx, records
 }
 
 func createRoleAndBindToSubject(clusterRole bool, ns string, subjectName string, subjectKind storage.SubjectKind, rules []*storage.PolicyRule) (*storage.K8SRole, *storage.K8SRoleBinding) {
@@ -153,10 +131,9 @@ func TestCheckAC14(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			var receivedResults []result
-			mockCtx := setupMockCtx(&receivedResults, ctrl, c.k8sRoles, c.k8sRoleBindings)
+			mockCtx, records := setupMockCtx(ctrl, c.k8sRoles, c.k8sRoleBindings)
 			checkNoExtraPrivilegesForUnauthenticated(mockCtx)
-			assert.Equal(t, c.shouldPass, passed(receivedResults, t))
+			records.AssertExpectedResult(c.shouldPass, t)
 		})
 	}
 
