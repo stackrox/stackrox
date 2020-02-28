@@ -82,7 +82,7 @@ const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, e
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery({ [entityTypes.CLUSTER]: entityId })
         }
     };
 

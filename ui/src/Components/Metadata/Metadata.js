@@ -30,7 +30,9 @@ const Metadata = ({
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="border-b border-base-300 py-3" key={key}>
             <span className="text-base-600 font-700 mr-2">{key}:</span>
-            <span className="font-600">{value}</span>
+            <span className="font-600" data-testid={`${key}-value`}>
+                {value}
+            </span>
         </li>
     ));
 

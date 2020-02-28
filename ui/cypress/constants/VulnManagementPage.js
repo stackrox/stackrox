@@ -14,7 +14,7 @@ export const url = {
         components: `${baseURL}/components`,
         cves: `${baseURL}/cves`,
         image: `${baseURL}/image`,
-        cve: `${baseURL}/cves`,
+        cve: `${baseURL}/cve`,
         policy: `${baseURL}/policy`,
         deployment: `${baseURL}/deployment`
     }
@@ -48,6 +48,7 @@ export const sidePanelListEntityPageSelectors = {
     sidePanelTableBodyRows: '[data-test-id="side-panel"] .rt-tbody .rt-tr',
     parentEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > a',
     childEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > span',
+    metadataClusterValue: '[data-testid="Cluster-value"]',
     tileLinkText: '[data-test-id="tileLinkSuperText"]',
     tileLinkValue: '[data-test-id="tile-link-value"]',
     imageTileLink: '[data-test-id="IMAGE-tile-link"]',
