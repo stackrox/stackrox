@@ -169,7 +169,9 @@ function launch_central {
 
     if [[ "${is_local_dev}" == "true" ]]; then
         kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
-        hotload_binary central central
+        if [[ "${HOTRELOAD}" == "true" ]]; then
+          hotload_binary central central
+        fi
     fi
 
     if [[ "$SCANNER_SUPPORT" == "true" ]]; then
@@ -252,7 +254,9 @@ function launch_sensor {
     $k8s_dir/sensor-deploy/sensor.sh
 
     if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
-       hotload_binary kubernetes-sensor sensor
+       if [[ "${HOTRELOAD}" == "true" ]]; then
+         hotload_binary kubernetes-sensor sensor
+       fi
        kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
     fi
 
