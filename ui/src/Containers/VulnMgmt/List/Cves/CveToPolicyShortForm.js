@@ -91,6 +91,9 @@ function CveToPolicyShortForm({
                         data-testid={identifierForNameField}
                     />
                 </div>
+                <div className="p-2 text-sm font-500">
+                    <em>(Names for new policies must be at least 6 characters.)</em>
+                </div>
             </div>
             <div className="mb-4 flex justify-between">
                 <div className="flex flex-col w-full mr-1">

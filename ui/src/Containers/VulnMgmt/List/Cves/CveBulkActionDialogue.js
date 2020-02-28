@@ -187,7 +187,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             text=""
             onConfirm={allowedCves.length > 0 ? addToPolicy : null}
             confirmText="Save Policy"
-            confirmDisabled={messageObj}
+            confirmDisabled={
+                messageObj ||
+                policy.name.length < 6 ||
+                !policy.severity ||
+                !policy.lifecycleStages.length
+            }
             onCancel={closeWithoutSaving}
         >
             <div className="overflow-auto p-4">
