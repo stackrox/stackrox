@@ -9,6 +9,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -43,6 +44,9 @@ func Policies() (policies []*storage.Policy, err error) {
 		}
 		if p.GetId() == "" {
 			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
+			continue
+		}
+		if !features.ImageLabelPolicy.Enabled() && p.GetId() == "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6" {
 			continue
 		}
 

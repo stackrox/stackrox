@@ -136,6 +136,7 @@ message V1Metadata {
     repeated string           command    = 6 [(gogoproto.moretags) = "search:\"Image Command\""];
     repeated string           entrypoint = 7 [(gogoproto.moretags) = "search:\"Image Entrypoint\""];
     repeated string           volumes    = 8 [(gogoproto.moretags) = "search:\"Image Volumes\""];
+    map<string, string>       labels     = 9 [(gogoproto.moretags) = "search:\"Image Label,store\""];
 }
 
 message ImageLayer {

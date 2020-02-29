@@ -58,6 +58,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 	// Get the latest layer and author
 	var latest storage.ImageLayer
 	var layers []*storage.ImageLayer
+	labels := make(map[string]string)
 	for i := len(manifest.History) - 1; i > -1; i-- {
 		historyLayer := manifest.History[i]
 		var v1Image image.V1Image
@@ -69,11 +70,22 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			latest = *layer
 		}
 		layers = append(layers, layer)
+		if v1Image.Config != nil {
+			// Last label takes precedence and there seems to be a separate image object per layer
+			for labelKey, labelValue := range v1Image.Config.Labels {
+				labels[labelKey] = labelValue
+			}
+		}
 	}
 	// Orient the layers to be oldest to newest
 	fsLayers := make([]string, 0, len(manifest.FSLayers))
 	for i := len(manifest.FSLayers) - 1; i > -1; i-- {
 		fsLayers = append(fsLayers, manifest.FSLayers[i].BlobSum.String())
+	}
+
+	// Nil out empty label maps to be consistent with handleV1ManifestLayer()
+	if len(labels) == 0 {
+		labels = nil
 	}
 
 	return &storage.ImageMetadata{
@@ -82,6 +94,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			Created: latest.Created,
 			Author:  latest.Author,
 			Layers:  layers,
+			Labels:  labels,
 		},
 		LayerShas: fsLayers,
 	}, nil
@@ -132,9 +145,15 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 		})
 	}
 
+	var labels map[string]string
+	if img.Config != nil {
+		labels = img.Config.Labels
+	}
+
 	var metadata = &storage.V1Metadata{
 		Digest:  ref.String(),
 		Created: protoconv.ConvertTimeToTimestamp(img.Created),
+		Labels:  labels,
 	}
 
 	if img.Config != nil {

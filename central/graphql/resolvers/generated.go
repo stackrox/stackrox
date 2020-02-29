@@ -719,6 +719,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"portPolicy: PortPolicy",
 		"processPolicy: ProcessPolicy",
 		"requiredAnnotation: KeyValuePolicy",
+		"requiredImageLabel: KeyValuePolicy",
 		"requiredLabel: KeyValuePolicy",
 		"user: String!",
 		"volumePolicy: VolumePolicy",
@@ -977,6 +978,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"created: Time",
 		"digest: String!",
 		"entrypoint: [String!]!",
+		"labels: [Label!]!",
 		"layers: [ImageLayer]!",
 		"user: String!",
 		"volumes: [String!]!",
@@ -6365,6 +6367,11 @@ func (resolver *policyFieldsResolver) RequiredAnnotation(ctx context.Context) (*
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 
+func (resolver *policyFieldsResolver) RequiredImageLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
+	value := resolver.data.GetRequiredImageLabel()
+	return resolver.root.wrapKeyValuePolicy(value, true, nil)
+}
+
 func (resolver *policyFieldsResolver) RequiredLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetRequiredLabel()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
@@ -8327,6 +8334,11 @@ func (resolver *v1MetadataResolver) Digest(ctx context.Context) string {
 func (resolver *v1MetadataResolver) Entrypoint(ctx context.Context) []string {
 	value := resolver.data.GetEntrypoint()
 	return value
+}
+
+func (resolver *v1MetadataResolver) Labels(ctx context.Context) labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
 }
 
 func (resolver *v1MetadataResolver) Layers(ctx context.Context) ([]*imageLayerResolver, error) {

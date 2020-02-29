@@ -55,6 +55,7 @@ var (
 	ImageUser                    = newFieldLabel("Image User")
 	ImageCommand                 = newFieldLabel("Image Command")
 	ImageEntrypoint              = newFieldLabel("Image Entrypoint")
+	ImageLabel                   = newFieldLabel("Image Label")
 	ImageVolumes                 = newFieldLabel("Image Volumes")
 	Fixable                      = newFieldLabel("Fixable")
 	FixedBy                      = newFieldLabel("Fixed By")

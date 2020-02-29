@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
@@ -91,6 +92,10 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
+	envIsolator := testutils.NewEnvIsolator(suite.T())
+	defer envIsolator.RestoreAll()
+	envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
@@ -229,6 +234,10 @@ type testCase struct {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
+	envIsolator := testutils.NewEnvIsolator(suite.T())
+	defer envIsolator.RestoreAll()
+	envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+
 	fixtureDep := fixtures.GetDeployment()
 	fixturesImages := fixtures.DeploymentImages()
 
@@ -349,6 +358,25 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
 					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"}},
 				}},
+			},
+		},
+	})
+
+	requiredImageLabel := &storage.Deployment{
+		Id: "requiredImageLabel",
+		Containers: []*storage.Container{
+			{
+				Image: &storage.ContainerImage{Id: "requiredImageLabelImage"},
+			},
+		},
+	}
+	suite.mustIndexDepAndImages(requiredImageLabel, &storage.Image{
+		Id: "requiredImageLabelImage",
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Labels: map[string]string{
+					"required-label": "required-value",
+				},
 			},
 		},
 	})
@@ -1294,6 +1322,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 			},
 		},
+		{
+			policyName: "Required Image Labels",
+			shouldNotMatch: map[string]struct{}{
+				"requiredImageLabelImage": {},
+			},
+		},
 	}
 
 	for _, c := range imageTestCases {
@@ -1329,6 +1363,33 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			}
 		})
 	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
+	noAnnotation := &storage.Deployment{
+		Id: "noAnnotation",
+	}
+	suite.mustIndexDepAndImages(noAnnotation)
+
+	validAnnotation := &storage.Deployment{
+		Id: "validAnnotation",
+		Annotations: map[string]string{
+			"email": "joseph@rules.gov",
+		},
+	}
+	suite.mustIndexDepAndImages(validAnnotation)
+
+	policy := suite.defaultPolicies["Required Annotation: Email"]
+	m, err := suite.matcherBuilder.ForPolicy(policy)
+	suite.NoError(err)
+
+	matched, err := m.MatchOne(suite.testCtx, noAnnotation, nil, nil)
+	suite.NoError(err)
+	suite.Len(matched.AlertViolations, 1)
+
+	matched, err = m.MatchOne(suite.testCtx, validAnnotation, nil, nil)
+	suite.NoError(err)
+	suite.Empty(matched.AlertViolations)
 }
 
 func validateImageMatches(matches map[string]searchbasedpolicies.Violations, allImages []search.Result, c testCase, t *testing.T) {

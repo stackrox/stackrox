@@ -24,4 +24,13 @@ var (
 			return fields.GetRequiredAnnotation()
 		},
 	}
+
+	// RequiredImageLabelQueryBuilder is a query builder for required labels on an image
+	RequiredImageLabelQueryBuilder = builders.RequiredMapValueQueryBuilder{
+		FieldName:  "image label",
+		FieldLabel: search.ImageLabel,
+		GetKeyValuePolicy: func(fields *storage.PolicyFields) *storage.KeyValuePolicy {
+			return fields.GetRequiredImageLabel()
+		},
+	}
 )

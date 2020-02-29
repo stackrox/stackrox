@@ -53,8 +53,15 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 	fixtureImage := fixtures.LightweightDeploymentImage()
 	fixtureImage.Id = "FAKENEWSHA"
 
+	labeledImage := fixtures.LightweightDeploymentImage()
+	labeledImage.Id = "LABELEDIMAGE"
+	fixtureImage.Metadata.V1.Labels = map[string]string{
+		"required-label": "required-value",
+	}
+
 	suite.NoError(suite.deploymentIndexer.AddDeployment(secondDeployment))
 	suite.NoError(suite.indexer.AddImage(fixtureImage))
+	suite.NoError(suite.indexer.AddImage(labeledImage))
 
 	for _, img := range fixtures.DeploymentImages() {
 		suite.NoError(suite.indexer.AddImage(img))
@@ -69,7 +76,7 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 	// No filter on either => should return everything.
 	results, err := suite.indexer.Search(search.EmptyQuery())
 	suite.NoError(err)
-	suite.Len(results, 3)
+	suite.Len(results, 4)
 
 	// Filter on a deployment property.
 	q := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster").ProtoQuery()
@@ -87,7 +94,22 @@ func (suite *ImageIndexTestSuite) TestSearchImages() {
 	q = search.NewQueryBuilder().AddStrings(search.ImageRegistry, "docker.io").ProtoQuery()
 	results, err = suite.indexer.Search(q)
 	suite.NoError(err)
-	suite.Len(results, 2)
+	suite.Len(results, 3)
+
+	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "r/required-label.*=").ProtoQuery()
+	results, err = suite.indexer.Search(q)
+	suite.NoError(err)
+	suite.Len(results, 1)
+
+	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "r/required-label.*=!r/required-value.*").ProtoQuery()
+	results, err = suite.indexer.Search(q)
+	suite.NoError(err)
+	suite.Len(results, 0)
+
+	q = search.NewQueryBuilder().AddStrings(search.ImageLabel, "!required-label=").ProtoQuery()
+	results, err = suite.indexer.Search(q)
+	suite.NoError(err)
+	suite.Len(results, 3)
 }
 
 func (suite *ImageIndexTestSuite) TestMapping() {

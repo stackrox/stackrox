@@ -42,6 +42,7 @@ func NewRegistry(processIndicators searchbasedpolicies.ProcessIndicatorGetter) R
 		builders.ProcessWhitelistingBuilder{},
 		builders.HostMountQueryBuilder{},
 		builders.K8sRBACQueryBuilder{},
+		fields.RequiredImageLabelQueryBuilder,
 	}
 	return reg
 }

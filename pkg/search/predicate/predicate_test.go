@@ -64,8 +64,19 @@ func TestSearchPredicate(t *testing.T) {
 	assert.NoError(t, err)
 	passingImage := &storage.Image{
 		Id: "sha",
+		Name: &storage.ImageName{
+			FullName: "averygoodname",
+		},
 		SetCves: &storage.Image_Cves{
 			Cves: 3,
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Labels: map[string]string{
+					"labelOne": "test.label.one",
+					"labelTwo": "test.label.two",
+				},
+			},
 		},
 		Scan: &storage.ImageScan{
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -212,6 +223,154 @@ func TestSearchPredicate(t *testing.T) {
 					[]search.FieldLabel{search.DeploymentName, search.Namespace},
 					[]string{search.ExactMatchString("foo"), search.ExactMatchString("foo")},
 				).
+				ProtoQuery(),
+			factory:     deploymentFactory,
+			object:      deployment,
+			expectation: false,
+		},
+		{
+			name: "negated exact match matches different strings",
+			query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{
+								Field:     "Image",
+								Value:     "!\"abcd\"",
+								Highlight: false,
+							},
+						},
+					},
+				},
+			},
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: true,
+		},
+		{
+			name: "negated exact match does not match the same string",
+			query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{
+								Field:     "Image",
+								Value:     "!\"averygoodname\"",
+								Highlight: false,
+							},
+						},
+					},
+				},
+			},
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: false,
+		},
+		{
+			name: "negated prefix query does not match a string with a matching prefix",
+			query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{
+								Field:     "Image",
+								Value:     "!averygood",
+								Highlight: false,
+							},
+						},
+					},
+				},
+			},
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: false,
+		},
+		{
+			name: "negated prefix query does match a string with a different prefix",
+			query: &v1.Query{
+				Query: &v1.Query_BaseQuery{
+					BaseQuery: &v1.BaseQuery{
+						Query: &v1.BaseQuery_MatchFieldQuery{
+							MatchFieldQuery: &v1.MatchFieldQuery{
+								Field:     "Image",
+								Value:     "!abcd",
+								Highlight: false,
+							},
+						},
+					},
+				},
+			},
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: true,
+		},
+		{
+			name: "negated regex query does not match a matching string",
+			query: search.NewQueryBuilder().
+				AddStrings(search.ImageName, search.NegateQueryString(search.RegexQueryString("av.*"))).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: false,
+		},
+		{
+			name: "negated regex query matches a different string",
+			query: search.NewQueryBuilder().
+				AddStrings(search.ImageName, search.NegateQueryString(search.RegexQueryString("abcd.*"))).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: true,
+		},
+		{
+			name: "negated map query returns false if any map entry does not match",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.ImageLabel, search.ExactMatchString("labelOne"), search.NegateQueryString(search.ExactMatchString("zzz"))).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: false,
+		},
+		{
+			name: "negated map query returns true if all map entries match",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.ImageLabel, search.RegexQueryString("label.*"), search.NegateQueryString(search.RegexQueryString("zzz.*"))).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: true,
+		},
+		{
+			name: "negated map query returns true for an empty map",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.Label, search.ExactMatchString("key"), search.NegateQueryString(search.ExactMatchString("value"))).
+				ProtoQuery(),
+			factory:     deploymentFactory,
+			object:      deployment,
+			expectation: true,
+		},
+		{
+			name: "map query returns true if any map entry matches",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.ImageLabel, search.ExactMatchString("labelOne"), search.ExactMatchString("test.label.one")).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: true,
+		},
+		{
+			name: "map query returns false if no map entries match",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.ImageLabel, search.ExactMatchString("zzz"), search.ExactMatchString("zzz")).
+				ProtoQuery(),
+			factory:     imageFactory,
+			object:      passingImage,
+			expectation: false,
+		},
+		{
+			name: "map query returns false for an empty map",
+			query: search.NewQueryBuilder().
+				AddMapQuery(search.Label, search.ExactMatchString("key"), search.ExactMatchString("value")).
 				ProtoQuery(),
 			factory:     deploymentFactory,
 			object:      deployment,

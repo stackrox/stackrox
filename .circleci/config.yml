@@ -1799,6 +1799,7 @@ jobs:
       - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_SENSOR_DETECTION: true
+      - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
 
     steps:
       - checkout

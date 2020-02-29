@@ -127,6 +127,8 @@ message PolicyFields {
     oneof set_whitelist {
         bool whitelist_enabled = 30;
     }
+
+    KeyValuePolicy required_image_label = 31;
 }
 
 message Component {

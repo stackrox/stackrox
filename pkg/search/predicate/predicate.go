@@ -412,7 +412,8 @@ func createMapNestedPredicate(parentType reflect.Type, field reflect.StructField
 
 func nilCheck(f reflect.Value) bool {
 	switch f.Kind() {
-	case reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+	// Don't return nil for nil Reflect.Maps.  Map base predicates should operate on nil maps
+	case reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
 		return f.IsNil()
 	}
 	return false

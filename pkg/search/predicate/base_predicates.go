@@ -108,9 +108,47 @@ func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (
 		return nil, err
 	}
 
+	// This is a hack! It relies on all "required label" policies using negated queries and all "disallowed label"
+	// policies using non-negated queries.  It should definitely change after we get rid of search based policies.
+	matchAll := strings.HasPrefix(key, search.NegationPrefix) || strings.HasPrefix(value, search.NegationPrefix)
+
+	if matchAll {
+		return createMatchAllMapPredicate(keyPred, valPred), nil
+	}
+	return createMatchAnyMapPredicate(keyPred, valPred), nil
+}
+
+func createMatchAllMapPredicate(keyPred, valPred internalPredicate) internalPredicate {
 	return func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
-			return resultIfNullValue(value)
+			// This is a hack!  This path is used by RequiredMapValue policies so it needs to return true if the
+			// required value isn't in the map even though there were no matches in the empty map.  This should
+			// definitely change after we get rid of search based policies.
+			return &search.Result{}, true
+		}
+
+		// The expectation is that we only support searching on map[string]string for now
+		iter := instance.MapRange()
+		for iter.Next() {
+			key := iter.Key()
+			val := iter.Value()
+			_, keyMatch := keyPred(key)
+			if !keyMatch {
+				return nil, false
+			}
+			_, valueMatch := valPred(val)
+			if !valueMatch {
+				return nil, false
+			}
+		}
+		return &search.Result{}, true
+	}
+}
+
+func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPredicate {
+	return func(instance reflect.Value) (*search.Result, bool) {
+		if instance.IsZero() || instance.IsNil() {
+			return nil, false
 		}
 
 		// The expectation is that we only support searching on map[string]string for now
@@ -130,7 +168,7 @@ func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (
 			return MergeResults(keyResult, valueResult), true
 		}
 		return nil, false
-	}, nil
+	}
 }
 
 func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
@@ -262,22 +300,27 @@ func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
 }
 
 func createStringPredicate(fullPath, value string) (internalPredicate, error) {
+	negated := strings.HasPrefix(value, search.NegationPrefix)
+	if negated {
+		value = strings.TrimPrefix(value, search.NegationPrefix)
+	}
 	if strings.HasPrefix(value, search.RegexPrefix) {
 		value = strings.TrimPrefix(value, search.RegexPrefix)
-		return stringRegexPredicate(fullPath, value)
+		return stringRegexPredicate(fullPath, value, negated)
 	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
-		return stringExactPredicate(fullPath, value[1:len(value)-1])
+		return stringExactPredicate(fullPath, value[1:len(value)-1], negated)
 	}
-	return stringPrefixPredicate(fullPath, value)
+	return stringPrefixPredicate(fullPath, value, negated)
 }
 
-func stringRegexPredicate(fullPath, value string) (internalPredicate, error) {
+func stringRegexPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
 	matcher, err := regexp.Compile(value)
 	if err != nil {
 		return nil, err
 	}
 	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		if !regexutils.MatchWholeString(matcher, instance) {
+		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
+		if regexutils.MatchWholeString(matcher, instance) == negated {
 			return nil, false
 		}
 
@@ -287,9 +330,10 @@ func stringRegexPredicate(fullPath, value string) (internalPredicate, error) {
 	}), nil
 }
 
-func stringExactPredicate(fullPath, value string) (internalPredicate, error) {
+func stringExactPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
 	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		if instance != value {
+		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
+		if (instance == value) == negated {
 			return nil, false
 		}
 		return &search.Result{
@@ -298,9 +342,10 @@ func stringExactPredicate(fullPath, value string) (internalPredicate, error) {
 	}), nil
 }
 
-func stringPrefixPredicate(fullPath, value string) (internalPredicate, error) {
+func stringPrefixPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
 	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		if value != search.WildcardString && !strings.HasPrefix(instance, value) {
+		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
+		if (value == search.WildcardString || strings.HasPrefix(instance, value)) == negated {
 			return nil, false
 		}
 		return &search.Result{
