@@ -34,7 +34,7 @@ export const navLinks = [
     {
         text: 'Vulnerability Management',
         to: '/main/vulnerability-management',
-        renderIcon: () => <Icon.ShieldOff className={iconClassName} />,
+        renderIcon: () => <Icon.Layers className={iconClassName} />,
         featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI
     },
     {
