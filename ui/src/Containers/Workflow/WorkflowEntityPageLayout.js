@@ -25,6 +25,9 @@ const WorkflowEntityPageLayout = ({ location }) => {
     const { stateStack, useCase, search } = workflowState;
     const pageState = new WorkflowState(useCase, workflowState.getPageStack(), search);
 
+    // set up cache-busting system that either the list or sidepanel can use to trigger list refresh
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
     // Entity Component
     const EntityComponent = EntityComponentMap[useCase];
 
@@ -111,6 +114,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                             sort={pageSort}
                             page={pagePaging}
                             entityContext={entityContext}
+                            refreshTrigger={refreshTrigger}
+                            setRefreshTrigger={setRefreshTrigger}
                         />
                     </div>
 
@@ -124,6 +129,8 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 sort={sidePanelSort}
                                 page={sidePanelPaging}
                                 entityContext={entityContext}
+                                refreshTrigger={refreshTrigger}
+                                setRefreshTrigger={setRefreshTrigger}
                             />
                         ) : (
                             <span />

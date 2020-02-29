@@ -15,7 +15,15 @@ import {
     getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtNamespace = ({ entityId, entityListType, search, sort, page, entityContext }) => {
+const VulnMgmtNamespace = ({
+    entityId,
+    entityListType,
+    search,
+    sort,
+    page,
+    entityContext,
+    setRefreshTrigger
+}) => {
     const overviewQuery = gql`
         query getNamespace($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: namespace(id: $id) {
@@ -45,8 +53,8 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, sort, page, entit
                 }
                 policyCount(query: $policyQuery)
                 vulnCount
-                deploymentCount 
-                imageCount 
+                deploymentCount
+                imageCount
                 componentCount
                 vulnerabilities: vulns {
                     ...cveFields
@@ -98,6 +106,7 @@ const VulnMgmtNamespace = ({ entityId, entityListType, search, sort, page, entit
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };

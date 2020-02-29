@@ -94,6 +94,7 @@ const WorkflowEntityPage = ({
             sort={sort}
             page={page}
             entityContext={{ ...entityContext, [entityType]: entityId }}
+            setRefreshTrigger={setRefreshTrigger}
         />
     ) : (
         <div

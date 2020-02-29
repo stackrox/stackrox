@@ -104,6 +104,7 @@ const WorkflowListPageLayout = ({ location }) => {
                                 sort={sidePanelSort}
                                 page={sidePanelPaging}
                                 entityContext={entityContext}
+                                refreshTrigger={refreshTrigger}
                                 setRefreshTrigger={setRefreshTrigger}
                             />
                         ) : (
