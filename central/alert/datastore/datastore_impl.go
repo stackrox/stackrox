@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -301,7 +302,7 @@ func getCurrUser(ctx context.Context) *storage.Comment_User {
 	if identity != nil {
 		curUser = &storage.Comment_User{
 			Id:   identity.UID(),
-			Name: identity.FriendlyName(),
+			Name: stringutils.FirstNonEmpty(identity.FullName(), identity.FriendlyName()),
 		}
 		if user := identity.User(); user != nil {
 			curUser.Email = user.Username

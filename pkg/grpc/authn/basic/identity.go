@@ -31,6 +31,10 @@ func (i identity) FriendlyName() string {
 	return i.username
 }
 
+func (i identity) FullName() string {
+	return i.username
+}
+
 func (i identity) Role() *storage.Role {
 	return i.role
 }

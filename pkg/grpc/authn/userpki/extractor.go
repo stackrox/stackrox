@@ -129,6 +129,10 @@ func (i *identity) FriendlyName() string {
 	return i.info.Subject.CommonName
 }
 
+func (i *identity) FullName() string {
+	return i.info.Subject.CommonName
+}
+
 func (i *identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		FriendlyName: i.info.Subject.CommonName,

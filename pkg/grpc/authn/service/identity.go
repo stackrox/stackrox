@@ -26,6 +26,10 @@ func (i identity) FriendlyName() string {
 	return i.id.Subject.CN()
 }
 
+func (i identity) FullName() string {
+	return i.id.Subject.CN()
+}
+
 func (i identity) Role() *storage.Role {
 	return nil // services do not have roles
 }
