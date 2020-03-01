@@ -271,7 +271,8 @@ describe('Entities single views', () => {
             });
     });
 
-    it('should not filter cluster entity page regardless of entity context', () => {
+    // @TODO, 2020-03-01, re-try when Dackbox in master
+    it.skip('should not filter cluster entity page regardless of entity context', () => {
         cy.visit(url.list.namespaces);
 
         cy.get(`${selectors.tableRows}:contains(No deployments)`, { timeout: 10000 })
