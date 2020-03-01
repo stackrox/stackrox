@@ -3,7 +3,8 @@ import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { sortValue } from 'sorters/sorters';
-import Tooltip from 'rc-tooltip';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 import VulnsTable from './VulnsTable';
 
@@ -50,7 +51,7 @@ const CVETable = props => {
                 headerClassName:
                     'w-1/4 font-600 border-b border-base-300 border-r-0 bg-primary-200',
                 Cell: ({ value }) => (
-                    <Tooltip placement="top" overlay={<div>{value}</div>} mouseLeaveDelay={0}>
+                    <Tooltip content={<TooltipOverlay>{value}</TooltipOverlay>}>
                         <div>{value}</div>
                     </Tooltip>
                 )

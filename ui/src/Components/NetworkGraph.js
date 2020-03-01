@@ -5,9 +5,13 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
-import popper from 'cytoscape-popper';
-import tippy from 'tippy.js';
 import { uniq, throttle, flatMap } from 'lodash';
+import popper from 'cytoscape-popper';
+/* Cannot use neither Tooltip nor HoverHint components as Cytoscape renders on
+canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
+configuration of 'tippy.js' instance to position the tooltip. */
+// eslint-disable-next-line no-restricted-imports
+import tippy from 'tippy.js';
 
 import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
@@ -17,6 +21,7 @@ import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, nonIsolated, isNamespace } from 'utils/networkGraphUtils';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import entityTypes from 'constants/entityTypes';
+import { defaultTippyTooltipProps } from 'Components/Tooltip';
 
 function getClasses(map) {
     return Object.entries(map)
@@ -115,9 +120,7 @@ const NetworkGraph = ({
 
         tippyRef.current = tippy(document.createElement('div'), {
             content: makePopperDiv(text),
-            arrow: true,
-            delay: 0,
-            duration: 0,
+            ...defaultTippyTooltipProps,
             lazy: false,
             onCreate(instance) {
                 // eslint-disable-next-line no-param-reassign

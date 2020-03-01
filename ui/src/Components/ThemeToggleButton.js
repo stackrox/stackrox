@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTheme } from 'Containers/ThemeProvider';
-import Tippy from '@tippy.js/react';
+import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
 import { Moon, Sun } from 'react-feather';
@@ -9,7 +9,7 @@ const ThemeToggleButton = () => {
     const themeState = useTheme();
     const tooltipText = themeState.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode';
     return (
-        <Tippy content={<TooltipOverlay>{tooltipText}</TooltipOverlay>}>
+        <Tooltip content={<TooltipOverlay>{tooltipText}</TooltipOverlay>}>
             <button
                 title="Invert theme"
                 onClick={themeState.toggle}
@@ -20,7 +20,7 @@ const ThemeToggleButton = () => {
                     {themeState.isDarkMode ? <Sun size="16" /> : <Moon size="16" />}
                 </span>
             </button>
-        </Tippy>
+        </Tooltip>
     );
 };
 

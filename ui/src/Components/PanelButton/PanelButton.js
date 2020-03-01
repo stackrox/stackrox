@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'rc-tooltip';
-import 'rc-tooltip/assets/bootstrap.css';
+
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const PanelButton = ({
     children,
@@ -18,10 +19,8 @@ const PanelButton = ({
     const tooltipClassName = !tooltip ? 'visible xl:invisible' : '';
     return (
         <Tooltip
-            placement="top"
-            mouseLeaveDelay={0}
-            overlay={<div>{tooltipContent}</div>}
-            overlayClassName={tooltipClassName}
+            content={<TooltipOverlay>{tooltipContent}</TooltipOverlay>}
+            className={tooltipClassName}
         >
             <button
                 type="button"

@@ -4,7 +4,6 @@ import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import { HelpCircle, AlertCircle } from 'react-feather';
 import sortBy from 'lodash/sortBy';
-import Tooltip from 'rc-tooltip';
 
 import queryService from 'modules/queryService';
 import entityTypes from 'constants/entityTypes';
@@ -16,6 +15,8 @@ import NumberedGrid from 'Components/NumberedGrid';
 import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 // need to add query for fixable cves for dashboard once it's supported
 const CLUSTER_WITH_MOST_K8S_ISTIO_VULNERABILTIES = gql`
@@ -85,9 +86,9 @@ const processData = (data, workflowState, limit) => {
                 : 'These CVEs were not patched in the current Kubernetes version of this cluster.';
 
             const indicatorIcon = isGKECluster ? (
-                <HelpCircle className="w-4 h-4 text-warning-700 ml-2" />
+                <HelpCircle className="w-4 h-4 text-warning-700" />
             ) : (
-                <AlertCircle className="w-4 h-4 text-alert-700 ml-2" />
+                <AlertCircle className="w-4 h-4 text-alert-700" />
             );
 
             const k8sIstioContent = (
@@ -102,8 +103,9 @@ const processData = (data, workflowState, limit) => {
                             orientation="vertical"
                             showZero
                         />
-                        <Tooltip placement="top" overlay={<div>{indicationTooltipText}</div>}>
-                            {indicatorIcon}
+                        <Tooltip content={<TooltipOverlay>{indicationTooltipText}</TooltipOverlay>}>
+                            {/* https://github.com/feathericons/react-feather/issues/56 */}
+                            <div className="ml-2">{indicatorIcon}</div>
                         </Tooltip>
                     </div>
                     <div className="flex items-center justify-left pr-2">

@@ -5,8 +5,8 @@ import { connect } from 'react-redux';
 import { actions as CLIDownloadActions } from 'reducers/cli';
 
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
-import 'rc-tooltip/assets/bootstrap.css';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const CLIDownloadButton = ({
     toggleCLIDownloadView,
@@ -14,12 +14,7 @@ const CLIDownloadButton = ({
     topNavBtnSvgClass,
     topNavBtnClass
 }) => (
-    <Tooltip
-        placement="bottom"
-        overlay={<div>CLI</div>}
-        mouseLeaveDelay={0}
-        overlayClassName="sm:visible md:invisible"
-    >
+    <Tooltip content={<TooltipOverlay>CLI</TooltipOverlay>} className="sm:visible md:invisible">
         <button
             type="button"
             onClick={toggleCLIDownloadView}

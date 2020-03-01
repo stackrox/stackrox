@@ -5,8 +5,8 @@ import { connect } from 'react-redux';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
-import 'rc-tooltip/assets/bootstrap.css';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const GlobalSearchButton = ({
     toggleGlobalSearchView,
@@ -14,12 +14,7 @@ const GlobalSearchButton = ({
     topNavBtnSvgClass,
     topNavBtnClass
 }) => (
-    <Tooltip
-        placement="bottom"
-        overlay={<div>Search</div>}
-        mouseLeaveDelay={0}
-        overlayClassName="sm:visible md:invisible"
-    >
+    <Tooltip content={<TooltipOverlay>Search</TooltipOverlay>} className="sm:visible md:invisible">
         <button
             type="button"
             onClick={toggleGlobalSearchView}

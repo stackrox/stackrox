@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
-import 'rc-tooltip/assets/bootstrap.css';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 
@@ -17,15 +15,7 @@ function BinaryCollapsible({ commandLineArgs, children }) {
                 <div className="flex items-center">
                     <div className="flex pl-2">{icon}</div>
                     <div className="p-2 text-primary-800 flex flex-1 italic">
-                        <Tooltip
-                            overlayClassName="w-1/4 pointer-events-none"
-                            placement="top"
-                            overlay={<div>{displayArgs}</div>}
-                        >
-                            <h1 className="text-base font-600 binary-args word-break">
-                                {displayArgs}
-                            </h1>
-                        </Tooltip>
+                        <span className="text-base font-600 word-break">{displayArgs}</span>
                     </div>
                 </div>
             </div>

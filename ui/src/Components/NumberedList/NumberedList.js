@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
-import Tippy from '@tippy.js/react';
 
+import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 
 const leftSideClasses = 'text-sm text-primary-800 font-600 truncate';
@@ -53,7 +53,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         return (
             <li key={text + subText + url} className={className}>
                 {tooltip && (
-                    <Tippy
+                    <Tooltip
                         content={
                             <DetailedTooltipOverlay
                                 title={tooltip.title}
@@ -64,7 +64,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
                         }
                     >
                         {contentWrapper}
-                    </Tippy>
+                    </Tooltip>
                 )}
                 {!tooltip && contentWrapper}
             </li>

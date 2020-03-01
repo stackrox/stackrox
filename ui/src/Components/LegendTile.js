@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'rc-tooltip';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 import deploymentActiveConnection from 'images/legend-icons/deployment-active-connection.svg';
 import deploymentAllowedConnection from 'images/legend-icons/deployment-allowed-connection.svg';
 import nonIsolatedDeploymentAllowed from 'images/legend-icons/non-isolated-deployment-allowed.svg';
@@ -48,13 +49,8 @@ const fontIconMapping = {
 };
 
 const LegendTile = ({ name, tooltip, type }) => (
-    <Tooltip
-        placement="top"
-        overlay={<div>{tooltip}</div>}
-        mouseLeaveDelay={0}
-        className="flex items-center justify-center bg-base-100"
-    >
-        <div className="h-8 w-8 border-r border-dotted border-base-400">
+    <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>}>
+        <div className="flex items-center justify-center bg-base-100 h-8 w-8 border-r border-dotted border-base-400">
             {type === 'font' && fontIconMapping[name]}
             {type === 'svg' && <img src={svgMapping[name]} alt={name} />}
         </div>

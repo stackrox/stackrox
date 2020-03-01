@@ -557,20 +557,6 @@ h6 {
     cursor: text !important;
 }
 
-.rc-tooltip-inner {
-    background-color: rgb(234, 245, 255) !important;
-    color: hsla(225, 14%, 43%, 1) !important;
-    text-align: inherit !important;
-}
-
-.p-0 .rc-tooltip-inner {
-    padding: 0 !important;
-}
-
-.rc-tooltip-arrow {
-    border-top-color: rgb(234, 245, 255) !important;
-}
-
 .recharts-responsive-container .recharts-tooltip-cursor {
     fill-opacity: 0;
 }

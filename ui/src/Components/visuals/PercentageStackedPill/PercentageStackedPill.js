@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'rc-tooltip';
 
+import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 
@@ -31,12 +31,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
         </div>
     );
     return tooltip ? (
-        <Tooltip
-            placement="top"
-            overlay={<DetailedTooltipOverlay title={tooltipTitle} body={tooltipBody} />}
-            mouseLeaveDelay={0}
-            overlayClassName="opacity-100 p-0"
-        >
+        <Tooltip content={<DetailedTooltipOverlay title={tooltipTitle} body={tooltipBody} />}>
             {content}
         </Tooltip>
     ) : (

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tippy from '@tippy.js/react';
 
+import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import CloseButton from './CloseButton';
 
@@ -30,9 +30,9 @@ const Panel = props => (
                         }`}
                         data-test-id={`${props.id}-header`}
                     >
-                        <Tippy content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
+                        <Tooltip content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
                             <div className="truncate flex-none">{props.header}</div>
-                        </Tippy>
+                        </Tooltip>
                     </div>
                 )}
 

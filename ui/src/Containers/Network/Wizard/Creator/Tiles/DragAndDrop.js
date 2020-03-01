@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import ReactDropzone from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
 
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/network/wizard';
@@ -12,36 +12,44 @@ const BACKGROUND_COLOR = '#faecd2';
 const ICON_COLOR = '#b39357';
 
 const DragAndDrop = props => {
-    function showToast() {
-        const errorMessage = 'Invalid file type. Try again.';
-        props.addToast(errorMessage);
-        setTimeout(props.removeToast, 500);
-    }
+    const showToast = useCallback(
+        () => {
+            const errorMessage = 'Invalid file type. Try again.';
+            props.addToast(errorMessage);
+            setTimeout(props.removeToast, 500);
+        },
+        [props]
+    );
 
-    function onDrop(acceptedFiles) {
-        props.setNetworkPolicyModificationState('REQUEST');
-        acceptedFiles.forEach(file => {
-            // check file type.
-            if (file && !file.name.includes('.yaml')) {
-                showToast();
-                return;
-            }
+    const onDrop = useCallback(
+        acceptedFiles => {
+            props.setNetworkPolicyModificationState('REQUEST');
+            acceptedFiles.forEach(file => {
+                // check file type.
+                if (file && !file.name.includes('.yaml')) {
+                    showToast();
+                    return;
+                }
 
-            props.setNetworkPolicyModificationName(file.name);
-            const reader = new FileReader();
-            reader.onload = () => {
-                const fileAsBinaryString = reader.result;
-                props.setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
-                props.setNetworkPolicyModificationState('SUCCESS');
-            };
-            reader.onerror = () => {
-                props.setNetworkPolicyModificationState('ERROR');
-            };
-            reader.readAsBinaryString(file);
-            props.setNetworkPolicyModificationSource('UPLOAD');
-            props.setWizardStage(wizardStages.simulator);
-        });
-    }
+                props.setNetworkPolicyModificationName(file.name);
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const fileAsBinaryString = reader.result;
+                    props.setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
+                    props.setNetworkPolicyModificationState('SUCCESS');
+                };
+                reader.onerror = () => {
+                    props.setNetworkPolicyModificationState('ERROR');
+                };
+                reader.readAsBinaryString(file);
+                props.setNetworkPolicyModificationSource('UPLOAD');
+                props.setWizardStage(wizardStages.simulator);
+            });
+        },
+        [props, showToast]
+    );
+
+    const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
     return (
         <div className="flex flex-col bg-base-100 rounded-sm shadow flex-grow flex-shrink-0 mb-4">
@@ -55,10 +63,11 @@ const DragAndDrop = props => {
                 policy configurations and time windows. When ready, apply the network policies
                 directly or share them with your team.
             </div>
-            <ReactDropzone
-                onDrop={onDrop}
-                className="flex w-full min-h-32 h-full mt-3 py-3 flex-col self-center uppercase hover:bg-warning-100 border border-dashed border-warning-500 bg-warning-100 hover:bg-warning-200 cursor-pointer justify-center"
+            <div
+                {...getRootProps()}
+                className="flex w-full min-h-32 h-full mt-3 py-3 flex-col self-center uppercase hover:bg-warning-100 border border-dashed border-warning-500 bg-warning-100 hover:bg-warning-200 cursor-pointer justify-center outline-none"
             >
+                <input {...getInputProps()} />
                 <div className="flex flex-shrink-0 flex-col">
                     <div
                         className="mt-3 h-18 w-18 self-center rounded-full flex items-center justify-center flex-shrink-0"
@@ -70,7 +79,7 @@ const DragAndDrop = props => {
                         Upload and simulate network policy YAML
                     </span>
                 </div>
-            </ReactDropzone>
+            </div>
         </div>
     );
 };

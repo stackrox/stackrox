@@ -17,7 +17,8 @@ import logoPlatform from 'images/logo-platform.svg';
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
 import * as Icon from 'react-feather';
-import Tooltip from 'rc-tooltip';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 import { ThemeContext } from 'Containers/ThemeProvider';
 
@@ -116,7 +117,7 @@ class LoginPage extends Component {
         const { authProviderResponse } = this.state;
         const closeButton = (
             <div>
-                <Tooltip placement="top" overlay={<div>Dismiss</div>}>
+                <Tooltip content={<TooltipOverlay>Dismiss</TooltipOverlay>}>
                     <button
                         type="button"
                         className={`flex p-1 text-center text-sm items-center p-2 ${color} hover:bg-${fg} hover:text-${bg} border-l border-${fg}`}

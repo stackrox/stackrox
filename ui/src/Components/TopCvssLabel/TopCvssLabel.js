@@ -2,7 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import LabelChip from 'Components/LabelChip';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
-import Tooltip from 'rc-tooltip';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const CVSSLabelChip = ({ cvss, expanded }) => {
     const chipType = getSeverityChipType(cvss);
@@ -25,8 +26,10 @@ const TopCvssLabel = ({ cvss, version, expanded }) => {
     const labelElm = expanded ? (
         <CVSSLabelChip cvss={cvss} expanded={expanded} />
     ) : (
-        <Tooltip placement="bottom" overlay={<div>{extendedVersionText}</div>} mouseLeaveDelay={0}>
-            <CVSSLabelChip cvss={cvss} expanded={expanded} />
+        <Tooltip content={<TooltipOverlay>{extendedVersionText}</TooltipOverlay>}>
+            <div>
+                <CVSSLabelChip cvss={cvss} expanded={expanded} />
+            </div>
         </Tooltip>
     );
     return (

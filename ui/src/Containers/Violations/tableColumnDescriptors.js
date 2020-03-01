@@ -4,8 +4,9 @@ import pluralize from 'pluralize';
 import { sortDate, sortSeverity } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 import { severityLabels, lifecycleStageLabels } from 'messages/common';
 
@@ -63,12 +64,7 @@ DeploymentColumn.propTypes = {
 // ////////////////////////////////////////
 function PolicyColumn({ original }) {
     return (
-        <Tooltip
-            placement="top"
-            mouseLeaveDelay={0}
-            overlay={<div>{original.policy.description}</div>}
-            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 text-sm text-center"
-        >
+        <Tooltip content={<TooltipOverlay>{original.policy.description}</TooltipOverlay>}>
             <div className="inline-block hover:text-primary-700 underline">
                 {original.policy.name}
             </div>
@@ -132,12 +128,7 @@ SeverityColumn.propTypes = {
 // ///////////////////////
 function CategoryColumn({ value }) {
     return value.length > 1 ? (
-        <Tooltip
-            placement="top"
-            mouseLeaveDelay={0}
-            overlay={<div>{value.join(' | ')}</div>}
-            overlayClassName="pointer-events-none text-white rounded max-w-xs p-2 w-full text-sm text-center"
-        >
+        <Tooltip content={<TooltipOverlay>{value.join(' | ')}</TooltipOverlay>}>
             <div>Multiple</div>
         </Tooltip>
     ) : (

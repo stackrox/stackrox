@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Tooltip from 'rc-tooltip';
+
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 const truncate = key => {
     const index = key.indexOf('/');
@@ -19,20 +21,15 @@ const Labels = ({ labels }) => (
                 }}
             >
                 <Tooltip
-                    overlayClassName="w-1/4 pointer-events-none"
-                    placement="top"
-                    overlay={
-                        <div>
-                            {' '}
+                    content={
+                        <TooltipOverlay>
                             {label.key} : {label.value || '""'}
-                        </div>
+                        </TooltipOverlay>
                     }
-                    mouseLeaveDelay={0}
                 >
-                    <h1 className="text-base font-600 word-break truncate">
-                        {' '}
+                    <span className="text-base font-600 word-break truncate">
                         {truncate(label.key)} : {label.value || '""'}
-                    </h1>
+                    </span>
                 </Tooltip>
             </li>
         ))}

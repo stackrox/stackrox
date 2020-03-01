@@ -4,7 +4,8 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import dateFns from 'date-fns';
-import Tooltip from 'rc-tooltip';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
@@ -37,19 +38,20 @@ const imageDetailsMap = {
 };
 
 const DockerfileButton = ({ image, openModal }) => {
+    const disabled = !image.metadata?.v1;
     const button = (
         <button
             type="button"
             className="flex mx-auto my-2 py-2 px-2 w-5/6 rounded-sm text-primary-700 no-underline hover:bg-primary-200 hover:border-primary-500 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
             onClick={openModal}
-            disabled={!(image.metadata && image.metadata.v1)}
+            disabled={disabled}
         >
             View Dockerfile
         </button>
     );
-    if (image && image.metadata) return button;
+    if (!disabled) return button;
     return (
-        <Tooltip placement="top" overlay={<div>Dockerfile not available</div>}>
+        <Tooltip content={<TooltipOverlay>Dockerfile not available</TooltipOverlay>}>
             <div>{button}</div>
         </Tooltip>
     );

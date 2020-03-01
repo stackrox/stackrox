@@ -4,8 +4,9 @@ import PropTypes from 'prop-types';
 import { resolveAlert } from 'services/AlertsService';
 import { whitelistDeployments } from 'services/PoliciesService';
 
-import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 function ViolationActionButtons({ violation, setSelectedAlertId }) {
     function resolveAlertAction(whitelist) {
@@ -30,12 +31,11 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
             {isRuntimeAlert && (
                 <div className="flex">
                     <Tooltip
-                        placement="top"
-                        mouseLeaveDelay={0}
-                        overlay={
-                            <div>Resolve violation and add affected processes to whitelist</div>
+                        content={
+                            <TooltipOverlay>
+                                Resolve violation and add affected processes to whitelist
+                            </TooltipOverlay>
                         }
-                        overlayClassName="pointer-events-none"
                     >
                         <button
                             type="button"
@@ -46,12 +46,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                             <Icon.ShieldOff className="mt-1 h-4 w-4" />
                         </button>
                     </Tooltip>
-                    <Tooltip
-                        placement="top"
-                        mouseLeaveDelay={0}
-                        overlay={<div>Mark as resolved</div>}
-                        overlayClassName="pointer-events-none"
-                    >
+                    <Tooltip content={<TooltipOverlay>Mark as resolved</TooltipOverlay>}>
                         <button
                             type="button"
                             data-test-id="resolve-button"
@@ -64,13 +59,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                 </div>
             )}
             <Tooltip
-                placement="top"
-                mouseLeaveDelay={0}
-                overlay={
-                    <div>
-                        Whitelist <br /> deployment
-                    </div>
-                }
+                content={<TooltipOverlay>Whitelist deployment</TooltipOverlay>}
                 overlayClassName="pointer-events-none text-center"
             >
                 <button

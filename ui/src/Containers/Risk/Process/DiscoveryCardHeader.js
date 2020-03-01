@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Tippy from '@tippy.js/react';
+import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import { addDeleteProcesses } from 'services/ProcessesService';
 import { getDeploymentAndProcessIdFromProcessGroup } from 'utils/processUtils';
@@ -51,7 +51,7 @@ function ProcessesDiscoveryCardHeader({
             <div className="flex content-center">
                 {suspicious && (
                     <div className="border-l border-r flex items-center justify-center w-16 border-alert-300">
-                        <Tippy content={<TooltipOverlay>Add to whitelist</TooltipOverlay>}>
+                        <Tooltip content={<TooltipOverlay>Add to whitelist</TooltipOverlay>}>
                             <button
                                 type="button"
                                 onClick={addWhitelist}
@@ -59,7 +59,7 @@ function ProcessesDiscoveryCardHeader({
                             >
                                 <Icon.Plus className="h-4 w-4 text-alert-800" />
                             </button>
-                        </Tippy>
+                        </Tooltip>
                     </div>
                 )}
                 <button type="button" className={`pl-3 pr-3 ${suspicious && 'text-alert-800'}`}>

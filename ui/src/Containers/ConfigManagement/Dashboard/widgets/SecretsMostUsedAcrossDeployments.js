@@ -1,7 +1,7 @@
 import React from 'react';
 import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
-import Tippy from '@tippy.js/react';
+import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import URLService from 'modules/URLService';
 import gql from 'graphql-tag';
@@ -123,7 +123,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                         {item.clusterName}/{item.namespace}
                                                     </span>
                                                     <span className="pb-2">{item.name}</span>
-                                                    <Tippy
+                                                    <Tooltip
                                                         content={
                                                             <TooltipOverlay>
                                                                 {`${
@@ -147,7 +147,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                                 {getCertificateStatus(item.files)}
                                                             </div>
                                                         )}
-                                                    </Tippy>
+                                                    </Tooltip>
                                                 </div>
                                             </div>
                                         </li>

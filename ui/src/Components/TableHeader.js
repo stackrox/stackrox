@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Tippy from '@tippy.js/react';
+import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
 const maxSize = 1000;
@@ -25,9 +25,9 @@ const TableHeader = props => {
             className="overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 uppercase"
             data-test-id="filtered-header"
         >
-            <Tippy content={<TooltipOverlay>{headerText}</TooltipOverlay>}>
+            <Tooltip content={<TooltipOverlay>{headerText}</TooltipOverlay>}>
                 <div className="truncate flex-none">{headerText}</div>
-            </Tippy>
+            </Tooltip>
         </div>
     );
 

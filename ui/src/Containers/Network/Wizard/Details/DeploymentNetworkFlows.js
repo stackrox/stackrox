@@ -50,9 +50,7 @@ const DeploymentNetworkFlows = ({
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 <RowActionButton
                     text="Navigate to Deployment"
-                    tooltipPlacement="left"
                     onClick={navigate(node)}
-                    overlayClassName="pointer-events-none"
                     icon={<Icon.ArrowUpRight className="mt-1 h-4 w-4" />}
                 />
             </div>

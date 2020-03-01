@@ -1,7 +1,11 @@
 import { useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
+// this component targets DOM elements, and therefore compliments Tooltip component
+// eslint-disable-next-line no-restricted-imports
 import tippy from 'tippy.js';
+
+import { defaultTippyTooltipProps } from 'Components/Tooltip';
 
 /**
  * This component is supposed to be used only in case a hover hint / tooltip
@@ -10,11 +14,10 @@ import tippy from 'tippy.js';
  * events that return DOM element as a target (e.g. charting library returns
  * SVG element).
  *
- * In case element is being rendered directly, consider using `Tippy` component
- * from `@tippy.js/react` instead of this one.
- *
- * This component proxies props (besides `target` and `children`) to the created
+ * This component proxies props (besides `target` and `children`) to the
  * instance of `tippy.js`.
+ *
+ * @see {@link Components/Tooltip} for defining tooltips directly in JSX
  */
 const HoverHint = ({ target, children, ...props }) => {
     const elRef = useRef(null);
@@ -28,6 +31,7 @@ const HoverHint = ({ target, children, ...props }) => {
             document.body.appendChild(elRef.current);
             const tippyInstance = tippy(target, {
                 content: elRef.current,
+                ...defaultTippyTooltipProps,
                 ...props
             });
             tippyInstance.show();
