@@ -78,7 +78,8 @@ export const listSelectors = {
     tableCells: '.rt-td',
     tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
     tablePanelHeader: '[data-test-id="panel"] [data-test-id="panel-header"]',
-    tableNextPage: '[data-test-id="next-page-button"]'
+    tableNextPage: '[data-test-id="next-page-button"]',
+    sidePanel: '[data-test-id="side-panel"]'
 };
 
 export const entitySelectors = {
@@ -91,7 +92,8 @@ export const entitySelectors = {
     relatedEntityWidgetTitle: '[data-test-id="related-entity-title"]',
     relatedEntityWidgetValue: '[data-test-id="related-entity-value"]',
     groupedTabs: '[data-test-id="grouped-tab"] [data-test-id="tab"]',
-    failingNodes: '[data-test-id="widget"] .rt-tr-group > .rt-tr'
+    failingNodes: '[data-test-id="widget"] .rt-tr-group > .rt-tr',
+    deploymentsWithFailedPolicies: '[data-test-id="deployments-with-failed-policies"]'
 };
 
 export const selectors = {

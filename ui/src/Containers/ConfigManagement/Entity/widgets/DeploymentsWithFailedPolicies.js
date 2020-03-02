@@ -83,8 +83,8 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
             const columns = [
                 {
                     Header: `Policy`,
-                    headerClassName: `${defaultHeaderClassName} hidden`,
-                    className: `${defaultColumnClassName} hidden`,
+                    headerClassName: defaultHeaderClassName,
+                    className: defaultColumnClassName,
                     accessor: 'name',
                     Cell: ({ original }) => {
                         const { severity, categories, name } = original;
@@ -123,10 +123,11 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                 <TableWidget
                     header={header}
                     rows={groups}
-                    noDataText="No Nodes"
+                    noDataText="No deployments failing across policies"
                     className="bg-base-100 w-full"
                     columns={columns}
                     idAttribute="id"
+                    id="deployments-with-failed-policies"
                     hasNestedTable
                 />
             );

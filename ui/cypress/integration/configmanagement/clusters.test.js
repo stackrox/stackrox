@@ -8,7 +8,7 @@ import {
     sidePanelEntityCountMatchesTableRows,
     entityListCountMatchesTableLinkCount
 } from '../../helpers/configWorkflowUtils';
-import { url } from '../../constants/ConfigManagementPage';
+import { url, selectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
 describe('Config Management Entities (Clusters)', () => {
@@ -65,6 +65,17 @@ describe('Config Management Entities (Clusters)', () => {
             'roles',
             'controls'
         ]);
+    });
+
+    it('should have items in the Findings section', () => {
+        cy.visit(url.list.clusters);
+        cy.get(`${selectors.tableRows}:contains(Fail)`)
+            .eq(0)
+            .click();
+
+        cy.get(
+            `${selectors.sidePanel} ${selectors.deploymentsWithFailedPolicies}:contains(Severity)`
+        ).should('exist');
     });
 
     it('should have the same number of Nodes in the count widget as in the Nodes table', () => {
