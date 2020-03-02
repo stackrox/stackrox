@@ -68,9 +68,10 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
-        query getPolicies($policyQuery: String) {
+        query getPolicies($policyQuery: String, $scopeQuery: String) {
             results: policies(query: $policyQuery) {
                 ...policyFields
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${POLICY_ENTITY_ALL_FIELDS_FRAGMENT}
@@ -79,7 +80,8 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         variables: {
             policyQuery: queryService.objectToWhereClause({
                 Category: 'Vulnerability Management'
-            })
+            }),
+            scopeQuery: ''
         }
     };
     const { loading: policyLoading, data: policyData } = useQuery(

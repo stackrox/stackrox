@@ -21,7 +21,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
             result: deployment(id: $id) {
                 id
                 priority
-                policyStatus(query: $policyQuery)
+                policyStatus(query: $scopeQuery)
                 failingPolicies(query: $policyQuery) {
                     id
                     name

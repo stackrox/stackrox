@@ -286,7 +286,7 @@ export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`
         rationale
         remediation
         severity
-        policyStatus
+        policyStatus(query: $scopeQuery)
         categories
         lastUpdated
         enforcementActions

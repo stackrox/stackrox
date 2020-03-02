@@ -34,9 +34,9 @@ const VulmMgmtEntityPolicy = ({
                 rationale
                 remediation
                 severity
-                policyStatus
+                policyStatus${queryVarParam}
                 categories
-                latestViolation
+                latestViolation${queryVarParam}
                 lastUpdated
                 enforcementActions
                 lifecycleStages
