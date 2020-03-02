@@ -18,6 +18,9 @@ func atLeastOneRegistryAndScannerMatch(image *storage.ImageName, registryIntegra
 	return atLeastOneMatches(image, registryIntegrations) && atLeastOneMatches(image, scannerIntegrations)
 }
 
+// AllDeployedImagesHaveMatchingIntegrationsInterpretation is the interpretation text for CheckAllDeployedImagesHaveMatchingIntegrations.
+const AllDeployedImagesHaveMatchingIntegrationsInterpretation = `StackRox checks that every deployed image has a matching registry and scanner integration configured, so that an accurate component inventory can be maintained.`
+
 // CheckAllDeployedImagesHaveMatchingIntegrations verifies that all deployed images have matching
 // registry and scanner integrations.
 func CheckAllDeployedImagesHaveMatchingIntegrations(ctx framework.ComplianceContext) {

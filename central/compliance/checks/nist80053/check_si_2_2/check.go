@@ -12,7 +12,11 @@ import (
 const (
 	controlID = `NIST_SP_800_53:SI_2_(2)`
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires that system flaws be identified and remediated in a timely manner.
+
+For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation + `
+
+StackRox also checks that at least one policy is enabled for image vulnerabilities (using a CVE ID pattern or CVSS score comparison).`
 )
 
 // To match more than one CVE, the regex must contain
@@ -45,7 +49,7 @@ func checkAtLeastOnePolicyEnabledReferringToVulns(ctx framework.ComplianceContex
 		}
 	}
 	if !passed {
-		framework.Fail(ctx, "No policies referring to vulns were found")
+		framework.Fail(ctx, "No policies referring to vulnerabilities (using a CVE ID pattern or CVSS score comparison) were enabled")
 	}
 }
 

@@ -11,7 +11,9 @@ import (
 const (
 	controlID = "NIST_SP_800_53:CM_7"
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires that unnecessary features be prohibited or restricted.
+
+For this control, StackRox validates that at least one policy is enabled and enforced based on: 1) port exposure or service exposure level, and 2) runtime behavior.`
 )
 
 func isPortExposeOrExposureLevelPolicy(p *storage.Policy) bool {
@@ -30,7 +32,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings"},
+			DataDependencies:   []string{"Policies"},
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
@@ -48,9 +50,9 @@ func init() {
 				}
 			}
 			if stringutils.AllNotEmpty(portExposePolicy, runtimePolicy) {
-				framework.Passf(ctx, "At least one policy regarding port exposure/exposure level (%q) and at least one runtime policy (%q) are implemented and enforced", portExposePolicy, runtimePolicy)
+				framework.Passf(ctx, "At least one policy regarding port exposure/exposure level (%q) and at least one runtime policy (%q) are enabled and enforced", portExposePolicy, runtimePolicy)
 				return
 			}
-			framework.Fail(ctx, "Required, but could not find, implementation and enforcement of at least one policy regarding port exposure and at least one runtime policy")
+			framework.Fail(ctx, "Required, but could not find, at least one policy regarding port exposure and at least one runtime policy that is enabled and enforced")
 		}, features.NistSP800_53)
 }

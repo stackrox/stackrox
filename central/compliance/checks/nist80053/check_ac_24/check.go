@@ -9,8 +9,7 @@ import (
 const (
 	controlID = "NIST_SP_800_53:AC_24"
 
-	interpretationText = `StackRox has visibility into the authentication configuration used in your Kubernetes
-cluster. This data can indicate whether the cluster has been properly set up to enforce access control.`
+	interpretationText = common.IsRBACConfiguredCorrectlyInterpretation
 )
 
 func init() {

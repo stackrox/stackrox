@@ -8,9 +8,15 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:CM_6"
+	controlID = "NIST_SP_800_53:CM_3"
 
-	interpretationText = `TODO`
+	phase = storage.LifecycleStage_DEPLOY
+)
+
+var (
+	interpretationText = `This control requires change control procedures.
+
+For this control, ` + common.AnyPolicyInLifecycleStageEnforcedInterpretation(phase)
 )
 
 func init() {
@@ -18,10 +24,10 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Policies", "UnresolvedAlerts"},
+			DataDependencies:   []string{"Policies"},
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			common.CheckAnyPolicyInLifecycleStageEnforced(ctx, storage.LifecycleStage_DEPLOY)
+			common.CheckAnyPolicyInLifecycleStageEnforced(ctx, phase)
 		}, features.NistSP800_53)
 }

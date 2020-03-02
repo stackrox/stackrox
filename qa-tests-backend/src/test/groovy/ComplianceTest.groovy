@@ -700,19 +700,20 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "NIST_800_190:4_1_1",
-                        ["Build time policies that disallows images with a critical CVSS score is enabled and enforced",
-                         "At least one policy in lifecycle \"BUILD\" is enabled and enforced",
+                        ["At least one build-stage policy is enabled and enforced that "+
+                            "disallows images with a critical CVSS score",
+                         "At least one policy in lifecycle stage \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "NIST_800_190:4_1_2",
                         ["Policies are in place to detect and enforce \"Privileges\" category issues.",
-                         "At least one policy in lifecycle \"BUILD\" is enabled and enforced",
+                         "At least one policy in lifecycle stage \"BUILD\" is enabled and enforced",
                          "Cluster has an image scanner in use"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "NIST_800_190:4_1_4",
-                        ["Policy that detects secrets in env is enabled and enforced"],
+                        ["At least one policy is enabled and enforced that detects secrets in environment variables"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
                 new Control(
                         "NIST_800_190:4_2_2",

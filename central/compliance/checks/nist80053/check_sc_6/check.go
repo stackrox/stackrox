@@ -10,7 +10,9 @@ import (
 const (
 	controlID = "NIST_SP_800_53:SC_6"
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires resource management practices to protect availability.
+
+For this control, StackRox checks that at least one policy requiring CPU limits and memory limits is enabled and enforced.`
 )
 
 func init() {
@@ -39,6 +41,6 @@ func init() {
 				framework.Passf(ctx, "There is at least one policy implemented and enforced for CPU resource limit (%q) and memory resource limit (%q)", cpuLimitPolicy, memLimitPolicy)
 				return
 			}
-			framework.Fail(ctx, "Required, but could not find, implementation and enforcement of at least one policy required each of CPU resource limit and memory resource limit")
+			framework.Fail(ctx, "At least one policy must be implemented and enforced for CPU resource limits and memory resource limits")
 		}, features.NistSP800_53)
 }

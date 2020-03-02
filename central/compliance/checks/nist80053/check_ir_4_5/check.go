@@ -10,7 +10,13 @@ import (
 const (
 	controlID = "NIST_SP_800_53:IR_4_(5)"
 
-	interpretationText = `TODO`
+	phase = storage.LifecycleStage_RUNTIME
+)
+
+var (
+	interpretationText = `This control requires a protocol for automatically disabling systems when certain violations are detected.
+
+For this control, ` + common.AnyPolicyInLifecycleStageEnforcedInterpretation(phase)
 )
 
 func init() {
@@ -22,6 +28,6 @@ func init() {
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			common.CheckAnyPolicyInLifecycleStageEnforced(ctx, storage.LifecycleStage_RUNTIME)
+			common.CheckAnyPolicyInLifecycleStageEnforced(ctx, phase)
 		}, features.NistSP800_53)
 }

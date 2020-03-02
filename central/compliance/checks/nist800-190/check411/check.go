@@ -51,11 +51,11 @@ func checkCVSS7PolicyEnforcedOnBuild(ctx framework.ComplianceContext) {
 		}
 	}
 	if passed >= 1 {
-		framework.Pass(ctx, "Build time policies that disallows images with a critical CVSS score is enabled and enforced")
+		framework.Pass(ctx, "At least one build-stage policy is enabled and enforced that disallows images with a critical CVSS score")
 	} else if len(policiesEnabledNotEnforced) > 0 {
-		framework.Failf(ctx, "Enforcement is not set on the build time policies that disallows images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
+		framework.Failf(ctx, "Enforcement is not set on any build-stage policies that disallow images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
 	} else {
-		framework.Fail(ctx, "No build time policy that disallows images with a critical CVSS score was found")
+		framework.Fail(ctx, "No build-stage policy that disallows images with a critical CVSS score was found")
 	}
 }
 

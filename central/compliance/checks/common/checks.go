@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 
@@ -71,18 +72,23 @@ func CheckFixedCVES(ctx framework.ComplianceContext) {
 	}
 }
 
+// AnyPolicyInLifecycleStageEnforcedInterpretation provides an interpretation sentence for CheckAnyPolicyInLifecycleStageEnforced.
+func AnyPolicyInLifecycleStageEnforcedInterpretation(stage storage.LifecycleStage) string {
+	return fmt.Sprintf("StackRox checks that at least one policy is enabled and enforced in the lifecycle stage %q.", stage)
+}
+
 // CheckAnyPolicyInLifecycleStageEnforced checks if there is at least one
 // policy of the given lifecycle stage that is enabled and enforced.
 func CheckAnyPolicyInLifecycleStageEnforced(ctx framework.ComplianceContext, lifecycleStage storage.LifecycleStage) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
 		if IsPolicyEnabled(p) && IsPolicyEnforced(p) && PolicyIsInLifecycleStage(p, lifecycleStage) {
-			framework.Passf(ctx, "At least one policy in lifecycle %q is enabled and enforced", lifecycleStage)
+			framework.Passf(ctx, "At least one policy in lifecycle stage %q is enabled and enforced", lifecycleStage)
 			return
 		}
 	}
 
-	framework.Failf(ctx, "No policies in lifecycle %q are enabled and enforced", lifecycleStage)
+	framework.Failf(ctx, "No policies in lifecycle stage %q are enabled and enforced", lifecycleStage)
 }
 
 // PolicyIsInLifecycleStage returns whether the given policy is in the given lifecycle stage.
@@ -114,16 +120,21 @@ func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) 
 	return count
 }
 
+// AnyPolicyInLifeCycleInterpretation provides an interpretation sentence for CheckAnyPolicyInLifeCycle.
+func AnyPolicyInLifeCycleInterpretation(stage storage.LifecycleStage) string {
+	return fmt.Sprintf("StackRox checks that at least one policy is enabled in the lifecycle stage %q.", stage)
+}
+
 // CheckAnyPolicyInLifeCycle checks if there are any enabled policies in the given lifecycle.
 func CheckAnyPolicyInLifeCycle(ctx framework.ComplianceContext, policyLifeCycle storage.LifecycleStage) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
 		if IsPolicyEnabled(p) && PolicyIsInLifecycleStage(p, policyLifeCycle) {
-			framework.Passf(ctx, "At least one policy in lifecycle %q is enabled", policyLifeCycle)
+			framework.Passf(ctx, "At least one policy in lifecycle stage %q is enabled", policyLifeCycle)
 			return
 		}
 	}
-	framework.Failf(ctx, "There are no enabled policies in lifecycle %q", policyLifeCycle)
+	framework.Failf(ctx, "There are no enabled policies in lifecycle stage %q", policyLifeCycle)
 }
 
 // CheckAnyPolicyInCategoryEnforced checks if there are any policies in the given category
@@ -176,6 +187,11 @@ func IsPolicyEnforced(p *storage.Policy) bool {
 	}
 	return false
 }
+
+// CheckNetworkPoliciesByDeploymentInterpretation is the interpretation text for CheckNetworkPoliciesByDeployment.
+const CheckNetworkPoliciesByDeploymentInterpretation = `StackRox analyzes the Kubernetes network policies configured in your clusters.
+Network policies allow you to block unexpected connections to, from, or between deployments.
+This control checks that all deployments have ingress and egress network policies.`
 
 // CheckNetworkPoliciesByDeployment ensures that every deployment in the cluster
 // has ingress and egress network policies and does not use host network namespace.
@@ -335,6 +351,9 @@ func isKubeSystem(deployment *storage.Deployment) bool {
 	return deployment.GetNamespace() == "kube-system"
 }
 
+// CheckNoViolationsForDeployPhasePoliciesInterpretation is the interpretation text for CheckNoViolationsForDeployPhasePolicies.
+const CheckNoViolationsForDeployPhasePoliciesInterpretation = `StackRox checks that there are no unresolved violations for policies in the lifecycle stage "DEPLOY".`
+
 // CheckNoViolationsForDeployPhasePolicies checks that there are no active violations for deploy-phase policies.
 func CheckNoViolationsForDeployPhasePolicies(ctx framework.ComplianceContext) {
 	var violated bool
@@ -454,11 +473,11 @@ func CheckSecretsInEnv(ctx framework.ComplianceContext) {
 		}
 	}
 	if passed >= 1 {
-		framework.Pass(ctx, "Policy that detects secrets in env is enabled and enforced")
+		framework.Pass(ctx, "At least one policy is enabled and enforced that detects secrets in environment variables")
 	} else if len(policiesEnabledNotEnforced) > 0 {
-		framework.Failf(ctx, "Enforcement is not set on the policies that detects secrets in env (%v)", policiesEnabledNotEnforced)
+		framework.Failf(ctx, "Enforcement is not set on at least one policy that detects secrets in environment variables (%v)", policiesEnabledNotEnforced)
 	} else {
-		framework.Fail(ctx, "No policy to detect secrets in env")
+		framework.Fail(ctx, "No policy to detect secrets in environment variables")
 	}
 }
 

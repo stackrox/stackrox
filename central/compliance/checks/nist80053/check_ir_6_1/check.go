@@ -10,7 +10,9 @@ import (
 const (
 	controlID = "NIST_SP_800_53:IR_6_(1)"
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires the use of automated mechanisms to report information security incidents.
+
+For this control, StackRox checks that at least one runtime policy is set to notify at least one workflow tool.`
 )
 
 func init() {
@@ -36,6 +38,6 @@ func init() {
 				framework.Passf(ctx, "Policy %q is a runtime policy, set to send notifications", name)
 				return
 			}
-			framework.Fail(ctx, "Required at least one runtime policy that is set to notify at least one workflow tool")
+			framework.Fail(ctx, "No runtime policies were set to notify a workflow tool")
 		}, features.NistSP800_53)
 }

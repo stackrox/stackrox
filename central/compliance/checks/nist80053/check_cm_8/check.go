@@ -9,7 +9,9 @@ import (
 const (
 	controlID = `NIST_SP_800_53:CM_8`
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires an up-to-date inventory of information system components.
+
+For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation
 )
 
 func init() {
@@ -17,7 +19,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Policies"},
+			DataDependencies:   []string{"Deployments"},
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {

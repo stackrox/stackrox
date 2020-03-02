@@ -11,10 +11,11 @@ import (
 const (
 	controlID = "NIST_SP_800_53:AC_14"
 
-	interpretationText = `StackRox has visibility into the authentication configuration used in your Kubernetes
-cluster. This data can indicate whether the cluster has been properly set up to enforce access control.`
+	interpretationText = common.IsRBACConfiguredCorrectlyInterpretation + `
 
-	systemUnauthenciatedSubject = `system:unauthenticated`
+StackRox also checks that unauthenticated users are only given RBAC access to API methods or URLs that are generally considered safe.`
+
+	systemUnauthenticatedSubject = `system:unauthenticated`
 )
 
 var (
@@ -31,17 +32,17 @@ func checkClusterRoleIsSafe(ctx framework.ComplianceContext, clusterRole *storag
 		}
 		for _, verb := range rule.GetVerbs() {
 			if verb != "get" {
-				framework.Failf(ctx, "clusterrole %q allows unauthenticated users to %q", clusterRole.GetName(), verb)
+				framework.Failf(ctx, "ClusterRole %q allows unauthenticated users to %q", clusterRole.GetName(), verb)
 				return false
 			}
 		}
 		if len(rule.GetApiGroups()) > 0 || len(rule.GetResourceNames()) > 0 || len(rule.GetResources()) > 0 {
-			framework.Failf(ctx, "clusterrole %q allows access to API resources to unauthenticated users", clusterRole.GetName())
+			framework.Failf(ctx, "ClusterRole %q allows access to API resources to unauthenticated users", clusterRole.GetName())
 			return false
 		}
 		for _, nonResourceURL := range rule.GetNonResourceUrls() {
 			if !allowedNonResourceURLs.Contains(nonResourceURL) {
-				framework.Failf(ctx, "clusterrole %q allows access to non resource URL %q to unauthenticated users, which is unnecessary", clusterRole.GetName(), nonResourceURL)
+				framework.Failf(ctx, "ClusterRole %q allows access to non resource URL %q to unauthenticated users, which is unnecessary", clusterRole.GetName(), nonResourceURL)
 				return false
 			}
 		}
@@ -55,7 +56,7 @@ func checkRoleIsSafe(ctx framework.ComplianceContext, role *storage.K8SRole) boo
 	}
 	// Namespaced roles. _Any_ namespaced role that has only one rule is too much to allow an anonymous user.
 	if len(role.GetRules()) > 0 {
-		framework.Failf(ctx, "role %q in namespace %q is assigned to unauthenticated users, which is unnecessary", role.GetName(), role.GetNamespace())
+		framework.Failf(ctx, "Role %q in namespace %q is assigned to unauthenticated users, which is unnecessary", role.GetName(), role.GetNamespace())
 		return false
 	}
 	return true
@@ -74,7 +75,7 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 	namespaceRoleIDs := make(map[string]set.StringSet)
 	for _, binding := range k8sRoleBindings {
 		for _, subject := range binding.GetSubjects() {
-			if subject.GetName() == systemUnauthenciatedSubject && subject.GetKind() == storage.SubjectKind_GROUP {
+			if subject.GetName() == systemUnauthenticatedSubject && subject.GetKind() == storage.SubjectKind_GROUP {
 				if binding.GetClusterRole() {
 					clusterRoleIDs.Add(binding.GetRoleId())
 				} else {
@@ -100,7 +101,7 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 		}
 	}
 	if configValid {
-		framework.Pass(ctx, "unauthenticated users are given only the minimal required permissions")
+		framework.Pass(ctx, "Unauthenticated users are given only the minimal required permissions.")
 	}
 }
 

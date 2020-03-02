@@ -57,7 +57,7 @@ type testCase struct {
 func TestCheckAC14(t *testing.T) {
 	t.Parallel()
 
-	acceptableRole, acceptableBinding := createRoleAndBindToSubject(true, "", systemUnauthenciatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
+	acceptableRole, acceptableBinding := createRoleAndBindToSubject(true, "", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
 		{
 			Verbs:           []string{"get"},
 			NonResourceUrls: []string{"/healthz"},
@@ -72,7 +72,7 @@ func TestCheckAC14(t *testing.T) {
 		},
 	})
 
-	netpolRole, netpolBinding := createRoleAndBindToSubject(true, "", systemUnauthenciatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
+	netpolRole, netpolBinding := createRoleAndBindToSubject(true, "", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
 		{
 			Verbs:     []string{"get"},
 			ApiGroups: []string{"extensions/v1beta1"},
@@ -80,7 +80,7 @@ func TestCheckAC14(t *testing.T) {
 		},
 	})
 
-	namespacedRole, namespacedBinding := createRoleAndBindToSubject(false, "fake-ns", systemUnauthenciatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
+	namespacedRole, namespacedBinding := createRoleAndBindToSubject(false, "fake-ns", systemUnauthenticatedSubject, storage.SubjectKind_GROUP, []*storage.PolicyRule{
 		{
 			Verbs:     []string{"get"},
 			ApiGroups: []string{"extensions/v1beta1"},

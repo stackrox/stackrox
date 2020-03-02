@@ -10,7 +10,13 @@ import (
 const (
 	controlID = "NIST_SP_800_53:IR_5"
 
-	interpretationText = `TODO`
+	phase = storage.LifecycleStage_RUNTIME
+)
+
+var (
+	interpretationText = `This control requires tracking and documenting information security incidents.
+
+For this control, ` + common.AnyPolicyInLifeCycleInterpretation(phase)
 )
 
 func init() {
@@ -22,7 +28,7 @@ func init() {
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			framework.Pass(ctx, "StackRox is installed") // TODO(viswa): Get text
-			common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
+			framework.Pass(ctx, "The StackRox Kubernetes Security Platform is installed and tracking information security incidents.")
+			common.CheckAnyPolicyInLifeCycle(ctx, phase)
 		}, features.NistSP800_53)
 }

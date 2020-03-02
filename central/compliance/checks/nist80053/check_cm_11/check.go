@@ -12,7 +12,11 @@ import (
 const (
 	controlID = `NIST_SP_800_53:CM_11`
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires monitoring of user-installed software.
+
+For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation + `
+
+StackRox also checks that at least one policy is enabled for image registries (for example, alerting on images from a public registry), and that built-in package manager execution policies are all enabled.`
 )
 
 var (
@@ -64,7 +68,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Policies"},
+			DataDependencies:   []string{"Policies", "Deployments"},
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {

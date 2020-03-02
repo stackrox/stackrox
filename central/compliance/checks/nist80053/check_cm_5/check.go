@@ -9,7 +9,9 @@ import (
 const (
 	controlID = "NIST_SP_800_53:CM_5"
 
-	interpretationText = `TODO`
+	interpretationText = common.IsRBACConfiguredCorrectlyInterpretation + `
+
+` + common.LimitedUsersAndGroupsWithClusterAdminInterpretation
 )
 
 func init() {

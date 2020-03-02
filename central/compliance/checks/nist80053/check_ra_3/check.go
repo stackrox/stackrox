@@ -8,7 +8,9 @@ import (
 const (
 	controlID = "NIST_SP_800_53:RA_3"
 
-	interpretationText = `TODO`
+	interpretationText = `This control requires ongoing risk assessment.
+
+For this control, StackRox checks that StackRox components are installed in each cluster, providing continuous multi-factor risk assessment.`
 )
 
 func init() {

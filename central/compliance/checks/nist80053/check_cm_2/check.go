@@ -10,7 +10,13 @@ import (
 const (
 	controlID = "NIST_SP_800_53:CM_2"
 
-	interpretationText = `TODO`
+	phase = storage.LifecycleStage_DEPLOY
+)
+
+var (
+	interpretationText = `This control requires baseline configurations to be defined and validated.
+
+For this control, ` + common.AnyPolicyInLifeCycleInterpretation(phase)
 )
 
 func init() {
@@ -22,6 +28,6 @@ func init() {
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_DEPLOY)
+			common.CheckAnyPolicyInLifeCycle(ctx, phase)
 		}, features.NistSP800_53)
 }

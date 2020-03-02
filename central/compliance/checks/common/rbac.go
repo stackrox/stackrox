@@ -17,6 +17,11 @@ var EffectiveAdmin = &storage.PolicyRule{
 	Resources: []string{"*"},
 }
 
+// IsRBACConfiguredCorrectlyInterpretation is the text that explains how IsRBACConfiguredCorrectly works.
+const IsRBACConfiguredCorrectlyInterpretation = `StackRox assesses how the Kubernetes API server is configured in your clusters.
+For this control, StackRox checks that the legacy Application-Based Access Control (ABAC) authorizer
+is disabled and the more secure Role-Based Access Control (RBAC) authorizer is enabled.`
+
 // IsRBACConfiguredCorrectly returns if RBAC is correctly set up.
 func IsRBACConfiguredCorrectly(ctx framework.ComplianceContext) {
 	authorizationMode := getAPIServerAuthorizationMode(ctx.Data().Deployments())
@@ -111,16 +116,19 @@ func CheckDeploymentsDoNotHaveClusterAccess(ctx framework.ComplianceContext, pr 
 
 }
 
+// LimitedUsersAndGroupsWithClusterAdminInterpretation interprets LimitedUsersAndGroupsWithClusterAdmin.
+const LimitedUsersAndGroupsWithClusterAdminInterpretation = `Widespread use of the cluster-admin role or equivalent access is dangerous. StackRox checks that at most one User or Group is granted the cluster-admin role or equivalent access.`
+
 // LimitedUsersAndGroupsWithClusterAdmin checks that only a single user or group exists with cluster admin access.
 func LimitedUsersAndGroupsWithClusterAdmin(ctx framework.ComplianceContext) {
 	serviceAccountsWithClusterAdmin := listSubjectsWithAccess(func(subject *storage.Subject) bool {
 		return subject.Kind == storage.SubjectKind_USER || subject.Kind == storage.SubjectKind_GROUP
 	}, ctx.Data().K8sRoles(), ctx.Data().K8sRoleBindings(), EffectiveAdmin)
 	if serviceAccountsWithClusterAdmin.Cardinality() > 1 {
-		framework.Fail(ctx, "Multiple USER and GROUP subjects were found with cluster admin level access, this should be limited to a single GROUP subject.")
+		framework.Fail(ctx, "Multiple User or Group subjects were found with cluster-admin-level access. Typically, a single Group subject is most appropriate.")
 		return
 	}
-	framework.Pass(ctx, "One or fewer USER or GROUP accounts were found with cluster admin level access.")
+	framework.Pass(ctx, "One or fewer User or Group subjects were found with cluster-admin-level access.")
 }
 
 // Static helper functions.
