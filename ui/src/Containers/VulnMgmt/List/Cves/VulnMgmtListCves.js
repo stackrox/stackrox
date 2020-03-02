@@ -26,7 +26,7 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import { actions as notificationActions } from 'reducers/notifications';
 import { updateCveSuppressedState } from 'services/VulnerabilitiesService';
 import removeEntityContextColumns from 'utils/tableUtils';
-import { doesSearchContain } from 'utils/searchUtils';
+import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
@@ -240,7 +240,7 @@ const VulnMgmtCves = ({
         ${VULN_CVE_LIST_FRAGMENT}
     `;
 
-    const viewingSuppressed = doesSearchContain(search, cveSortFields.SUPPRESSED);
+    const viewingSuppressed = getViewStateFromSearch(search, cveSortFields.SUPPRESSED);
 
     const tableSort = sort || defaultCveSort;
     const queryOptions = {
