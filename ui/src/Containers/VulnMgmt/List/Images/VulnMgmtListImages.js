@@ -84,7 +84,7 @@ export function getImageTableColumns(workflowState) {
                 const { cvss, scoreVersion } = topVuln;
                 return <TopCvssLabel cvss={cvss} version={scoreVersion} />;
             },
-            id: imageSortFields.CVSS,
+            id: imageSortFields.TOP_CVSS,
             accessor: 'topVuln.cvss',
             sortField: imageSortFields.TOP_CVSS
         },

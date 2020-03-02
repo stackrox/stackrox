@@ -2,7 +2,6 @@ import entityTypes from 'constants/entityTypes';
 
 export const imageSortFields = {
     CVE_COUNT: 'CVE Count',
-    CVSS: 'CVSS',
     TOP_CVSS: 'Image Top CVSS',
     CLUSTER: 'Cluster',
     COMPONENT: 'Component',
