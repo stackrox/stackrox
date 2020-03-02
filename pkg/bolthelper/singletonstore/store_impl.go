@@ -1,6 +1,8 @@
 package singletonstore
 
 import (
+	"fmt"
+
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -24,6 +26,19 @@ func (s *singletonStore) Upsert(val proto.Message) error {
 		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
 	}
 	return s.bucketRef.Update(func(b *bbolt.Bucket) error {
+		return b.Put(singletonKey, marshalled)
+	})
+}
+
+func (s *singletonStore) Create(val proto.Message) error {
+	marshalled, err := proto.Marshal(val)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal %s", s.objectName)
+	}
+	return s.bucketRef.Update(func(b *bbolt.Bucket) error {
+		if b.Get(singletonKey) != nil {
+			return fmt.Errorf("entry with key %v already exists", singletonKey)
+		}
 		return b.Put(singletonKey, marshalled)
 	})
 }

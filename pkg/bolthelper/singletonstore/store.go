@@ -10,6 +10,8 @@ import (
 type SingletonStore interface {
 	// Upsert upserts the value in the store.
 	Upsert(val proto.Message) error
+	// Create creates the value in the store.  Returns an error if the value already exists.
+	Create(val proto.Message) error
 	// Get returns the value in the store. If it doesn't exist, it returns nil, nil.
 	Get() (proto.Message, error)
 }

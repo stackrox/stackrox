@@ -30,7 +30,7 @@ func Singleton() Store {
 			Id:      uuid.NewV4().String(),
 			Created: types.TimestampNow(),
 		}
-		err = store.UpsertInstallationInfo(info)
+		err = store.AddInstallationInfo(info)
 		if err != nil {
 			panic(err)
 		}

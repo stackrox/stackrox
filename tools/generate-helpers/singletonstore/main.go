@@ -21,10 +21,9 @@ func newFile() *File {
 	return f
 }
 
-func generateInterface(f *File, getInterface, upsertInterface Code) {
+func generateInterface(f *File, interfaces ...Code) {
 	f.Type().Id("Store").Interface(
-		getInterface,
-		upsertInterface,
+		interfaces...,
 	)
 }
 
@@ -50,10 +49,11 @@ func generateStruct(f *File) {
 	)
 }
 
-func generateMethods(f *File, getMethod, upsertMethod Code) {
-	f.Add(getMethod)
-	f.Line()
-	f.Add(upsertMethod)
+func generateMethods(f *File, implementations ...Code) {
+	for _, method := range implementations {
+		f.Add(method)
+		f.Line()
+	}
 }
 
 func generate(props *operations.GeneratorProperties) error {
@@ -61,13 +61,25 @@ func generate(props *operations.GeneratorProperties) error {
 	f.ImportAlias(packagenames.Ops, "ops")
 	f.Var().Defs(Id(bucketNameVariable).Op("=").Index().Byte().Parens(Lit(props.BucketName)))
 
+	var implementations []Code
+	var interfaces []Code
 	getInterface, getMethod := operations.GenerateGet(props)
-	upsertInterface, upsertMethod := operations.GenerateUpsert(props)
+	interfaces = append(interfaces, getInterface)
+	implementations = append(implementations, getMethod)
+	if props.AddInsteadOfUpsert {
+		addInterface, addMethod := operations.GenerateAdd(props)
+		interfaces = append(interfaces, addInterface)
+		implementations = append(implementations, addMethod)
+	} else {
+		upsertInterface, upsertMethod := operations.GenerateUpsert(props)
+		interfaces = append(interfaces, upsertInterface)
+		implementations = append(implementations, upsertMethod)
+	}
 
-	generateInterface(f, getInterface, upsertInterface)
+	generateInterface(f, interfaces...)
 	generateNew(f, props)
 	generateStruct(f)
-	generateMethods(f, getMethod, upsertMethod)
+	generateMethods(f, implementations...)
 
 	return f.Save("store.go")
 }
@@ -87,6 +99,8 @@ func main() {
 
 	c.Flags().StringVar(&props.BucketName, "bucket", "", "the name of the bucket")
 	utils.Must(c.MarkFlagRequired("bucket"))
+
+	c.Flags().BoolVar(&props.AddInsteadOfUpsert, "add-instead-of-upsert", false, "if the flag is set an Add method will be generated and no Upsert method will be generated")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		if props.HumanName == "" {

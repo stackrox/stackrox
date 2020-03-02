@@ -18,7 +18,7 @@ var (
 
 type Store interface {
 	GetInstallationInfo() (*storage.InstallationInfo, error)
-	UpsertInstallationInfo(installationinfo *storage.InstallationInfo) error
+	AddInstallationInfo(installationinfo *storage.InstallationInfo) error
 }
 
 func New(db *bbolt.DB) Store {
@@ -43,7 +43,7 @@ func (s *store) GetInstallationInfo() (*storage.InstallationInfo, error) {
 	return msg.(*storage.InstallationInfo), nil
 }
 
-func (s *store) UpsertInstallationInfo(installationinfo *storage.InstallationInfo) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "InstallationInfo")
-	return s.underlying.Upsert(installationinfo)
+func (s *store) AddInstallationInfo(installationinfo *storage.InstallationInfo) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "InstallationInfo")
+	return s.underlying.Create(installationinfo)
 }

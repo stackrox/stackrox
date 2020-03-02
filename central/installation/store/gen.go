@@ -1,3 +1,3 @@
 package store
 
-//go:generate singletonstore-wrapper --bucket installationInfo --object InstallationInfo
+//go:generate singletonstore-wrapper --bucket installationInfo --object InstallationInfo --add-instead-of-upsert
