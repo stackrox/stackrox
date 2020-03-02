@@ -88,11 +88,6 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
                 fixable
             }
         }
-        vulnerabilities: vulns {
-            cve
-            cvss
-            isFixable(query: $scopeQuery)
-        }
         deployAlerts {
             policy {
                 id
