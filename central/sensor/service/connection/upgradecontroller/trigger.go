@@ -16,11 +16,6 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 		Command:          []string{"sensor-upgrader"},
 		EnvVars: []*central.SensorUpgradeTrigger_EnvVarDef{
 			{
-				Name:         env.ClusterID.EnvVar(),
-				SourceEnvVar: env.ClusterID.EnvVar(),
-				DefaultValue: cluster.GetId(),
-			},
-			{
 				Name:         env.CentralEndpoint.EnvVar(),
 				SourceEnvVar: env.CentralEndpoint.EnvVar(),
 				DefaultValue: cluster.GetCentralApiEndpoint(),

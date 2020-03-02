@@ -9,13 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
@@ -133,7 +133,7 @@ func (m *networkFlowManager) enrichAndSend() {
 		return
 	}
 
-	metrics.IncrementTotalNetworkFlowsSentCounter(env.ClusterID.Setting(), len(protoToSend.Updated))
+	metrics.IncrementTotalNetworkFlowsSentCounter(clusterid.Get(), len(protoToSend.Updated))
 	log.Debugf("Flow update : %v", protoToSend)
 	select {
 	case <-m.done.Done():

@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
-	"github.com/stackrox/rox/pkg/env"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
 	"k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -42,7 +42,7 @@ var (
 )
 
 func getK8sComponentID(component string) string {
-	u, err := uuid.FromString(env.ClusterID.Setting())
+	u, err := uuid.FromString(clusterid.Get())
 	if err != nil {
 		log.Error(err)
 		return ""
@@ -77,7 +77,6 @@ func newDeploymentEventFromResource(obj interface{}, action *central.ResourceAct
 	} else if !ok {
 		return nil
 	}
-	wrap.ClusterId = env.ClusterID.Setting()
 	return wrap
 }
 

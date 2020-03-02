@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/sensor/clusterid"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
@@ -54,8 +55,11 @@ func Create() (*UpgraderConfig, error) {
 		return nil, errors.Wrap(err, "obtaining Kubernetes API config")
 	}
 
+	// clusterID is optional and only required when fetching the bundle, not when used in standalone mode
+	clusterID, _ := clusterid.ParseClusterIDFromServiceCert()
+
 	cfg := &UpgraderConfig{
-		ClusterID:       env.ClusterID.Setting(),
+		ClusterID:       clusterID,
 		ProcessID:       os.Getenv(upgradeProcessIDEnvVar),
 		CentralEndpoint: os.Getenv(env.CentralEndpoint.EnvVar()),
 		K8sRESTConfig:   restConfig,

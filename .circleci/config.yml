@@ -760,10 +760,7 @@ commands:
             proxy_pid=$!
             sleep 5
 
-            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
-              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
             ROX_UPGRADE_PROCESS_ID=<< parameters.upgrade-process-id >> \
-                ROX_CLUSTER_ID="$CLUSTER_ID" \
                 ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
                 ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
                 ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \
@@ -2228,10 +2225,7 @@ jobs:
             proxy_pid=$!
             sleep 5
 
-            CLUSTER_ID="$(openssl x509 -in sensor-remote-new/sensor-cert.pem -noout -subject \
-              | sed -E 's@^.*/CN=SENSOR_SERVICE: ([^/]+)/.*$@\1@g')"
             ROX_UPGRADE_PROCESS_ID=3b2cbf78-d35a-4c2c-b67b-e37f805c14da \
-                ROX_CLUSTER_ID="$CLUSTER_ID" \
                 ROX_CENTRAL_ENDPOINT="${API_ENDPOINT}" \
                 ROX_MTLS_CA_FILE="$(pwd)/sensor-remote-new/ca.pem" \
                 ROX_MTLS_CERT_FILE="$(pwd)/sensor-remote-new/sensor-cert.pem" \

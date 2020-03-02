@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"golang.org/x/net/http2"
@@ -70,7 +71,7 @@ type Sensor struct {
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(configHandler config.Handler, detector detector.Detector, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
-		clusterID:          env.ClusterID.Setting(),
+		clusterID:          clusterid.Get(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 

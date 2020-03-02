@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/references"
@@ -93,6 +94,8 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 	if wrap == nil {
 		return d.maybeProcessPod(obj, oldObj, action)
 	}
+
+	wrap.ClusterId = clusterid.Get()
 	wrap.updatePortExposureFromStore(d.serviceStore)
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(wrap)

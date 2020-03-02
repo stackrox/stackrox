@@ -107,9 +107,7 @@ func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"PublicEndpointEnv": env.CentralEndpoint.EnvVar(),
 		"PublicEndpoint":    c.CentralApiEndpoint,
 
-		"ClusterIDEnv": env.ClusterID.EnvVar(),
-		"ClusterID":    c.Id,
-		"ClusterName":  c.Name,
+		"ClusterName": c.Name,
 
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
