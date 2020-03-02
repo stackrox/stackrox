@@ -1917,9 +1917,15 @@ jobs:
               mkdir -p "/tmp/proxy-test-${port}-${opt}" && cd "/tmp/proxy-test-${port}-${opt}"
 
               extra_args=()
+              scheme="https"
+              plaintext="false"
+              plaintext_neg="true"
               case "$opt" in
                 plaintext)
-                  extra_args=(--plaintext --insecure)
+                  extra_args=(--insecure)
+                  plaintext="true"
+                  plaintext_neg="false"
+                  scheme="http"
                   ;;
                 direct)
                   extra_args=(--direct-grpc)
@@ -1927,9 +1933,23 @@ jobs:
               esac
 
               echo "Testing roxctl access through ${name}..."
-              roxctl "${extra_args[@]}" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-                failures=$((failures + 1))
-              roxctl "${extra_args[@]}" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+              endpoint="central-proxy.stackrox.local:${port}"
+              for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
+                roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+                  failures=$((failures + 1))
+
+                if [[ "$endpoint_tgt" = *://* ]]; then
+                  # Auto-sense plaintext or TLS when specifying a scheme
+                  roxctl "${extra_args[@]}" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+                    failures=$((failures + 1))
+
+                  # Incompatible plaintext configuration should fail
+                  roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+                    failures=$((failures + 1))
+                fi
+
+              done
+              roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "central-proxy.stackrox.local:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
                 failures=$((failures + 1))
               echo "Done."
               rm -rf "/tmp/proxy-test-${port}"

@@ -54,7 +54,10 @@ var (
 // --endpoint and --server-name flags respectively. If no server name is given,
 // an appropriate name is derived from the given endpoint.
 func ConnectNames() (string, string, error) {
-	endpoint := flags.Endpoint()
+	endpoint, _, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		return "", "", err
+	}
 	serverName := flags.ServerName()
 	if serverName == "" {
 		var err error

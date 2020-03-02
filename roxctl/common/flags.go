@@ -16,7 +16,10 @@ import (
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
 func GetGRPCConnection() (*grpc.ClientConn, error) {
-	endpoint := flags.Endpoint()
+	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		return nil, err
+	}
 
 	tlsOpts, err := tlsConfigOptsForCentral()
 	if err != nil {
@@ -29,7 +32,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 
 	var grpcDialOpts []grpc.DialOption
 
-	if flags.UsePlaintext() {
+	if usePlaintext {
 		if !flags.UseInsecure() {
 			return nil, errors.New("plaintext connection mode must be used in conjunction with --insecure")
 		}

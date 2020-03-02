@@ -79,18 +79,26 @@ func AddAuthToRequest(req *http.Request) {
 	}
 }
 
-func getURL(path string) string {
+func getURL(path string) (string, error) {
+	endpoint, usePlaintext, err := flags.EndpointAndPlaintextSetting()
+	if err != nil {
+		return "", err
+	}
 	scheme := "https"
-	if flags.UsePlaintext() {
+	if usePlaintext {
 		scheme = "http"
 	}
-	return fmt.Sprintf("%s://%s/%s", scheme, flags.Endpoint(), strings.TrimLeft(path, "/"))
+	return fmt.Sprintf("%s://%s/%s", scheme, endpoint, strings.TrimLeft(path, "/")), nil
 }
 
 // NewHTTPRequestWithAuth returns a new HTTP request, resolving the given path against the endpoint via `GetPath`, and
 // injecting authorization headers into the request.
 func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, getURL(path), body)
+	reqURL, err := getURL(path)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest(method, reqURL, body)
 	if err != nil {
 		return nil, err
 	}

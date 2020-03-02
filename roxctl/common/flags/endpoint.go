@@ -1,6 +1,10 @@
 package flags
 
 import (
+	"net/url"
+	"strings"
+
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -9,8 +13,9 @@ var (
 	serverName string
 	directGRPC bool
 
-	plaintext bool
-	insecure  bool
+	plaintext    bool
+	plaintextSet *bool
+	insecure     bool
 
 	insecureSkipTLSVerify    bool
 	insecureSkipTLSVerifySet *bool
@@ -25,15 +30,46 @@ func AddConnectionFlags(c *cobra.Command) {
 	c.PersistentFlags().BoolVar(&directGRPC, "direct-grpc", false, "Use direct gRPC (advanced; only use if you encounter connection issues)")
 
 	c.PersistentFlags().BoolVar(&plaintext, "plaintext", false, "Use a plaintext (unencrypted) connection; only works in conjunction with --insecure")
+	plaintextSet = &c.PersistentFlags().Lookup("plaintext").Changed
 	c.PersistentFlags().BoolVar(&insecure, "insecure", false, "Enable insecure connection options (DANGEROUS; USE WITH CAUTION)")
 	c.PersistentFlags().BoolVar(&insecureSkipTLSVerify, "insecure-skip-tls-verify", false, "Skip TLS certificate validation")
 	insecureSkipTLSVerifySet = &c.PersistentFlags().Lookup("insecure-skip-tls-verify").Changed
 	c.PersistentFlags().StringVar(&caCertFile, "ca", "", "Custom CA certificate to use (PEM format)")
 }
 
-// Endpoint returns the set endpoint.
-func Endpoint() string {
-	return endpoint
+// EndpointAndPlaintextSetting returns the Central endpoint to connect to, as well as a bool indicating whether to
+// connect in plaintext mode.
+func EndpointAndPlaintextSetting() (string, bool, error) {
+	if !strings.Contains(endpoint, "://") {
+		return endpoint, plaintext, nil
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return "", false, errors.Wrap(err, "malformed endpoint URL")
+	}
+
+	if u.Path != "" && u.Path != "/" {
+		return "", false, errors.New("endpoint URL must not include a path component")
+	}
+
+	var usePlaintext bool
+	switch u.Scheme {
+	case "http":
+		usePlaintext = true
+	case "https":
+		usePlaintext = false
+	default:
+		return "", false, errors.Errorf("invalid scheme %q in endpoint URL", u.Scheme)
+	}
+
+	if *plaintextSet {
+		if plaintext != usePlaintext {
+			return "", false, errors.Errorf("endpoint URL scheme %q is incompatible with --plaintext=%v setting", u.Scheme, plaintext)
+		}
+	}
+
+	return u.Host, usePlaintext, nil
 }
 
 // ServerName returns the specified ServerName.
@@ -44,11 +80,6 @@ func ServerName() string {
 // UseDirectGRPC returns whether to use gRPC directly, i.e., without a proxy.
 func UseDirectGRPC() bool {
 	return directGRPC
-}
-
-// UsePlaintext returns whether to use a plaintext connection.
-func UsePlaintext() bool {
-	return plaintext
 }
 
 // UseInsecure returns whether to use insecure connection behavior.

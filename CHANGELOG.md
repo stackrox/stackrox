@@ -3,6 +3,12 @@ All notable changes to this project that require documentation updates will be d
 
 ## [NEXT RELEASE]
 - Collector images shipped with versions of the StackRox platform prior to this were affected by CVE-2019-5482, CVE-2019-5481 and CVE-2019-5436. The cause was an older version of curl that was vulnerable to buffer overflow and double free vulnerabilities in the FTP handler. We have upgraded curl to a version that does not suffer from these vulnerabilties. The curl program is only used to download new collector modules from a fixed set of URLs that do not make use of FTP, therefore according to our assessment there never existed a risk of an attacker exploiting this vulnerability.
+- The `-e`/`--endpoint` argument of `roxctl` now supports URLs as arguments. The path in this URLs must either be empty
+  or `/` (i.e., `https://central.stackrox` and `https://central.stackrox/` are both allowed, while
+  `https://central.stackrox/api` is not). If this format is used, the URL scheme determines whether or not an unecrypted
+  (plaintext) connection is established; if the `--plaintext` flag is used explicitly, its value has to be compatible
+  with the chosen scheme (e.g., specifying an `https://` URL along with `--plaintext` will result in an error, as will
+  a `http://` URL in conjunction with `--plaintext=false`).
 
 ## [39.0]
 ### Added
