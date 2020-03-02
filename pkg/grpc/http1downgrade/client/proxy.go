@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -18,6 +19,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 )
@@ -63,6 +65,17 @@ func createReverseProxy(endpoint string, transport http.RoundTripper, insecure b
 		},
 		Transport:      transport,
 		ModifyResponse: modifyResponse,
+		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, err error) {
+			// Fake a gRPC status with the given transport error
+
+			w.Header().Set("Content-Type", "application/grpc")
+			w.Header().Add("Trailer", "Grpc-Status")
+			w.Header().Add("Trailer", "Grpc-Message")
+			w.WriteHeader(http.StatusOK)
+
+			w.Header().Set("Grpc-Status", fmt.Sprintf("%d", codes.Unavailable))
+			w.Header().Set("Grpc-Message", errors.Wrap(err, "transport").Error())
+		},
 		// No need to set FlushInterval, as we force the writer to operate in unbuffered mode/flushing after every
 		// write.
 	}
