@@ -30,15 +30,15 @@ export const RECENTLY_DETECTED_VULNERABILITIES = gql`
             imageCount
             isFixable(query: $scopeQuery)
             envImpact
-            lastScanned
+            createdAt
             summary
         }
     }
 `;
 
 const processData = (data, workflowState, limit) => {
-    let results = data && data.results && data.results.filter(datum => datum.lastScanned);
-    results = sortBy(results, ['lastScanned', 'cvss', 'envImpact'])
+    let results = data && data.results && data.results.filter(datum => datum.createdAt);
+    results = sortBy(results, ['createdAt', 'cvss', 'envImpact'])
         .slice(-limit)
         .reverse(); // @TODO: filter on the client side until we have pagination on Vulnerabilities
 
@@ -92,12 +92,7 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
     const viewAllURL = workflowState
         .pushList(entityTypes.CVE)
-        // @TODO uncomment once these sort fields are supported on backend
-        // .setSort([
-        //     { id: cveSortFields.LAST_SCANNED, desc: true },
-        //     { id: cveSortFields.CVSS_SCORE, desc: true },
-        //     { id: cveSortFields.ENV_IMPACT, desc: true }
-        // ])
+        .setSort([{ id: cveSortFields.CVE_CREATED_TIME, desc: true }])
         .toUrl();
 
     return (
