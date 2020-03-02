@@ -199,7 +199,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"createdAt: Time",
 		"lastModified: Time",
 		"resourceId: String!",
-		"resourceType: String!",
+		"resourceType: ResourceType!",
 		"user: Comment_User",
 	}))
 	utils.Must(builder.AddType("Comment_User", []string{
@@ -812,6 +812,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"memoryResourceLimit: NumericalPolicy",
 		"memoryResourceRequest: NumericalPolicy",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ResourceType(0)))
 	utils.Must(builder.AddType("Resources", []string{
 		"cpuCoresLimit: Float!",
 		"cpuCoresRequest: Float!",
@@ -2486,7 +2487,7 @@ func (resolver *commentResolver) ResourceId(ctx context.Context) string {
 
 func (resolver *commentResolver) ResourceType(ctx context.Context) string {
 	value := resolver.data.GetResourceType()
-	return value
+	return value.String()
 }
 
 func (resolver *commentResolver) User(ctx context.Context) (*comment_UserResolver, error) {
@@ -7002,6 +7003,24 @@ func (resolver *resourcePolicyResolver) MemoryResourceLimit(ctx context.Context)
 func (resolver *resourcePolicyResolver) MemoryResourceRequest(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetMemoryResourceRequest()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
+}
+
+func toResourceType(value *string) storage.ResourceType {
+	if value != nil {
+		return storage.ResourceType(storage.ResourceType_value[*value])
+	}
+	return storage.ResourceType(0)
+}
+
+func toResourceTypes(values *[]string) []storage.ResourceType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ResourceType, len(*values))
+	for i, v := range *values {
+		output[i] = toResourceType(&v)
+	}
+	return output
 }
 
 type resourcesResolver struct {

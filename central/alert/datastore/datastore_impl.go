@@ -293,7 +293,7 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storag
 	if comment.GetUser().GetId() != request.GetUser().GetId() {
 		return errors.Errorf("The current user has no privilege to remove the comment with id: %q", request.GetCommentId())
 	}
-	return ds.commentsStorage.RemoveAlertComment(request)
+	return ds.commentsStorage.RemoveAlertComment(request.GetResourceId(), request.GetCommentId())
 }
 
 func getCurrUser(ctx context.Context) *storage.Comment_User {

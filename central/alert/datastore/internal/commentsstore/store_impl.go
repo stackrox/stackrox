@@ -2,16 +2,13 @@ package commentsstore
 
 import (
 	"strconv"
-	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
 )
-
-const resourceType = "Alert"
 
 type storeImpl struct {
 	*bolt.DB
@@ -60,6 +57,12 @@ func (b *storeImpl) GetComment(alertID string, commentID string) (*storage.Comme
 	return &comment, nil
 }
 
+// addStandardFields populates the fields in the comment that the store is responsible for populating.
+func addStandardFields(comment *storage.Comment, lastModified *types.Timestamp) {
+	comment.ResourceType = storage.ResourceType_ALERT
+	comment.LastModified = lastModified
+}
+
 func (b *storeImpl) AddAlertComment(comment *storage.Comment) (string, error) {
 	if comment == nil {
 		return "", errors.New("cannot add a nil comment")
@@ -81,10 +84,9 @@ func (b *storeImpl) AddAlertComment(comment *storage.Comment) (string, error) {
 		}
 		commentID := strconv.FormatUint(id, 10)
 		comment.CommentId = commentID
-		comment.ResourceType = resourceType
-		currTime := protoconv.ConvertTimeToTimestamp(time.Now())
+		currTime := types.TimestampNow()
 		comment.CreatedAt = currTime
-		comment.LastModified = currTime
+		addStandardFields(comment, currTime)
 		bytes, err := proto.Marshal(comment)
 		if err != nil {
 			return errors.Wrapf(err, "marshalling comment with id: %q", comment.GetCommentId())
@@ -115,9 +117,8 @@ func (b *storeImpl) UpdateAlertComment(comment *storage.Comment) error {
 		if err := proto.Unmarshal(bytes, &oldComment); err != nil {
 			return errors.Wrapf(err, "unmarshalling comment with id: %q", comment.GetCommentId())
 		}
-		comment.ResourceType = resourceType
 		comment.CreatedAt = oldComment.GetCreatedAt()
-		comment.LastModified = protoconv.ConvertTimeToTimestamp(time.Now())
+		addStandardFields(comment, types.TimestampNow())
 
 		bytes, err := proto.Marshal(comment)
 		if err != nil {
@@ -127,28 +128,28 @@ func (b *storeImpl) UpdateAlertComment(comment *storage.Comment) error {
 	})
 }
 
-func (b *storeImpl) RemoveAlertComment(comment *storage.Comment) error {
-	if comment == nil {
-		return errors.New("cannot delete a nil comment")
+func (b *storeImpl) RemoveAlertComment(alertID, commentID string) error {
+	if commentID == "" {
+		return errors.New("no comment id provided")
 
 	}
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(alertCommentsBucket)
-		alertIDBytes := []byte(comment.GetResourceId())
+		alertIDBytes := []byte(alertID)
 		alertIDBucket := bucket.Bucket(alertIDBytes)
 		if alertIDBucket == nil {
 			return nil
 		}
-		err := alertIDBucket.Delete([]byte(comment.GetCommentId()))
+		err := alertIDBucket.Delete([]byte(commentID))
 		if err != nil {
-			return errors.Wrapf(err, "deleting alert comment with id %q", comment.GetCommentId())
+			return errors.Wrapf(err, "deleting alert comment with id %q", commentID)
 		}
 		c := alertIDBucket.Cursor()
 		firstKey, _ := c.First()
 		if firstKey == nil {
 			err = bucket.DeleteBucket(alertIDBytes)
 			if err != nil {
-				return errors.Wrapf(err, "deleting alert bucket with id %q", comment.GetResourceId())
+				return errors.Wrapf(err, "deleting alert bucket with id %q", alertID)
 			}
 		}
 		return nil

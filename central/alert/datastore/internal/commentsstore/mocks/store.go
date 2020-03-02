@@ -93,15 +93,15 @@ func (mr *MockStoreMockRecorder) UpdateAlertComment(comment interface{}) *gomock
 }
 
 // RemoveAlertComment mocks base method
-func (m *MockStore) RemoveAlertComment(comment *storage.Comment) error {
+func (m *MockStore) RemoveAlertComment(alertID, commentID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveAlertComment", comment)
+	ret := m.ctrl.Call(m, "RemoveAlertComment", alertID, commentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveAlertComment indicates an expected call of RemoveAlertComment
-func (mr *MockStoreMockRecorder) RemoveAlertComment(comment interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) RemoveAlertComment(alertID, commentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComment", reflect.TypeOf((*MockStore)(nil).RemoveAlertComment), comment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComment", reflect.TypeOf((*MockStore)(nil).RemoveAlertComment), alertID, commentID)
 }

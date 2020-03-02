@@ -1,10 +1,13 @@
 package commentsstore
 
 import (
+	"sort"
 	"testing"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -16,9 +19,8 @@ func TestAlertCommentsStore(t *testing.T) {
 }
 
 const (
-	alertID   = "e5cb9c3e-4ef2-11ea-b77f-2e728ce88125"
-	commentID = "1"
-	userID    = "07b44b70-4ef3-11ea-b77f-2e728ce88125"
+	alertID = "e5cb9c3e-4ef2-11ea-b77f-2e728ce88125"
+	userID  = "07b44b70-4ef3-11ea-b77f-2e728ce88125"
 )
 
 type AlertCommentsStoreTestSuite struct {
@@ -38,37 +40,67 @@ func (suite *AlertCommentsStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
+func cloneComment(comment *storage.Comment) *storage.Comment {
+	return proto.Clone(comment).(*storage.Comment)
+}
+
+func (suite *AlertCommentsStoreTestSuite) mustAddComment(comment *storage.Comment) string {
+	id, err := suite.store.AddAlertComment(cloneComment(comment))
+	suite.Require().NoError(err)
+	return id
+}
+
+func (suite *AlertCommentsStoreTestSuite) mustGetCommentsAndSort(alertID string) []*storage.Comment {
+	comments, err := suite.store.GetCommentsForAlert(alertID)
+	suite.Require().NoError(err)
+	sort.Slice(comments, func(i, j int) bool {
+		return comments[i].GetCommentMessage() < comments[j].GetCommentMessage()
+	})
+	return comments
+}
+
+func (suite *AlertCommentsStoreTestSuite) validateBetweenNowAnd(ts *types.Timestamp, earliest time.Time, latest time.Time) {
+	asGoTime := protoconv.ConvertTimestampToTimeOrNow(ts)
+	suite.True(asGoTime.After(earliest), "earliest: %s, got time: %s", earliest, asGoTime)
+	suite.True(asGoTime.Before(latest), "latest: %s, got time: %s", latest, asGoTime)
+}
+
+// validateCommentsEqual validates that the got comment is equal to the expected comment
+// while satisfying our expected properties for the createdat and modified at time.
+func (suite *AlertCommentsStoreTestSuite) validateCommentsEqual(expected, got *storage.Comment, earliestCreatedAt, latestCreatedAt, earliestModifiedAt, latestModifiedAt time.Time) {
+	suite.validateBetweenNowAnd(got.GetCreatedAt(), earliestCreatedAt, latestCreatedAt)
+	suite.validateBetweenNowAnd(got.GetLastModified(), earliestModifiedAt, latestModifiedAt)
+	suite.Equal(storage.ResourceType_ALERT, got.GetResourceType())
+	gotCloned := cloneComment(got)
+	gotCloned.CommentId = expected.CommentId // We don't need to compare
+	gotCloned.CreatedAt = nil
+	gotCloned.LastModified = nil
+	gotCloned.ResourceType = storage.ResourceType_UNSET_RESOURCE_TYPE
+	suite.Equal(expected, gotCloned)
+}
+
 func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	comment1 := &storage.Comment{
-		ResourceType:   "Alert",
 		ResourceId:     alertID,
-		CommentId:      "",
-		CommentMessage: "high risk",
+		CommentMessage: "comment1",
 		User: &storage.Comment_User{
 			Id:    userID,
 			Name:  "Admin",
 			Email: "admin@gmail.com",
 		},
-		CreatedAt:    nil,
-		LastModified: nil,
 	}
 
 	comment2 := &storage.Comment{
-		ResourceType:   "Alert",
 		ResourceId:     alertID,
-		CommentId:      "",
-		CommentMessage: "could not be ignored",
+		CommentMessage: "comment2",
 		User: &storage.Comment_User{
 			Id:    userID,
 			Name:  "Admin",
 			Email: "admin@gmail.com",
 		},
-		CreatedAt:    nil,
-		LastModified: nil,
 	}
 
 	cannotBeAddedComment := &storage.Comment{
-		ResourceType:   "Alert",
 		ResourceId:     "a81878d0-4f6a-11ea-b77f-2e728ce88125",
 		CommentId:      "1",
 		CommentMessage: "bla bla",
@@ -77,52 +109,40 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 			Name:  "Admin",
 			Email: "admin@gmail.com",
 		},
-		CreatedAt:    nil,
-		LastModified: nil,
 	}
 
-	comments := []*storage.Comment{comment1, comment2}
-	// Test addComment
-	var firstCommentID = ""
-	for index, comment := range comments {
-		id, err := suite.store.AddAlertComment(comment)
-		suite.NoError(err)
-		if index == 0 {
-			firstCommentID = id
-		}
-	}
+	justBeforeAdd := time.Now()
+	firstCommentID := suite.mustAddComment(comment1)
+	secondCommentID := suite.mustAddComment(comment2)
+	justAfterAdd := time.Now()
+
 	_, err := suite.store.AddAlertComment(cannotBeAddedComment)
 	suite.Error(err)
 	suite.EqualError(err, "cannot add a comment that has already been assigned an id: \"1\"")
 
 	// Test getComments
-	var outputComments []*storage.Comment
-	outputComments, err = suite.store.GetCommentsForAlert(alertID)
-	suite.NoError(err)
-	suite.ElementsMatch(outputComments, comments)
+	outputComments := suite.mustGetCommentsAndSort(alertID)
+	suite.validateCommentsEqual(comment1, outputComments[0], justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
+	suite.validateCommentsEqual(comment2, outputComments[1], justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 
 	//Test GetComment
-	gottenComment, err := suite.store.GetComment(alertID, commentID)
+	gotComment, err := suite.store.GetComment(alertID, firstCommentID)
 	suite.NoError(err)
-	suite.Equal(gottenComment, comment1)
+	suite.validateCommentsEqual(comment1, gotComment, justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 
 	// Test updateComment for comment1
 	updatedComment := &storage.Comment{
-		ResourceType:   "Alert",
 		ResourceId:     alertID,
 		CommentId:      firstCommentID,
-		CommentMessage: "updated comment",
+		CommentMessage: "comment1 updated",
 		User: &storage.Comment_User{
 			Id:    userID,
 			Name:  "Admin",
 			Email: "admin@gmail.com",
 		},
-		CreatedAt:    nil,
-		LastModified: nil,
 	}
 
 	cannotUpdatedComment := &storage.Comment{
-		ResourceType:   "Alert",
 		ResourceId:     alertID,
 		CommentId:      "5",
 		CommentMessage: "this code was wriiten on valentine's day",
@@ -131,38 +151,39 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 			Name:  "Admin",
 			Email: "admin@gmail.com",
 		},
-		CreatedAt:    nil,
-		LastModified: nil,
 	}
 
-	suite.NoError(suite.store.UpdateAlertComment(updatedComment))
-	outputComments, err = suite.store.GetCommentsForAlert(alertID)
+	justBeforeUpdate := time.Now()
+	suite.NoError(suite.store.UpdateAlertComment(proto.Clone(updatedComment).(*storage.Comment)))
+	justAfterUpdate := time.Now()
+
+	outputCommentsAfterUpdate := suite.mustGetCommentsAndSort(alertID)
 	suite.NoError(err)
-	suite.Equal(comments[0].GetCommentId(), outputComments[0].GetCommentId())
-	suite.NotEqual(comments[0].GetLastModified(), outputComments[0].GetLastModified())
-	suite.Equal(comments[0].GetCreatedAt(), outputComments[0].GetCreatedAt())
-	suite.NotEqual(comments[0].GetCommentMessage(), outputComments[0].GetCommentMessage())
-	suite.Equal(outputComments[0].GetCommentMessage(), "updated comment")
-	suite.Equal(comments[1], outputComments[1])
+	suite.Len(outputCommentsAfterUpdate, 2)
+
+	// Ensure ids are preserved
+	suite.Equal(outputComments[0].GetCommentId(), outputCommentsAfterUpdate[0].GetCommentId())
+	suite.Equal(outputComments[1].GetCommentId(), outputCommentsAfterUpdate[1].GetCommentId())
+
+	suite.validateCommentsEqual(updatedComment, outputCommentsAfterUpdate[0], justBeforeAdd, justAfterAdd, justBeforeUpdate, justAfterUpdate)
+	suite.validateCommentsEqual(comment2, outputCommentsAfterUpdate[1], justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 
 	err = suite.store.UpdateAlertComment(cannotUpdatedComment)
 	suite.Error(err)
 	suite.EqualError(err, "couldn't edit nonexistent comment with id : \"5\"")
 
 	// Test removeComment
-	err = suite.store.RemoveAlertComment(comment2)
+	err = suite.store.RemoveAlertComment(alertID, secondCommentID)
 	suite.NoError(err)
-	outputComments, err = suite.store.GetCommentsForAlert(alertID)
-	suite.NoError(err)
-	//check created time
-	protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetCreatedAt()).Equal(protoconv.ConvertTimestampToTimeOrNow(outputComments[0].GetCreatedAt()))
-	//Check last modified time
-	protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetLastModified()).After(protoconv.ConvertTimestampToTimeOrNow(outputComments[0].GetLastModified()))
-	suite.True(time.Now().After(protoconv.ConvertTimestampToTimeOrNow(updatedComment.GetLastModified())))
 
-	suite.ElementsMatch(outputComments, []*storage.Comment{updatedComment})
+	outputCommentsAfterRemove, err := suite.store.GetCommentsForAlert(alertID)
+	suite.NoError(err)
+	suite.Len(outputCommentsAfterRemove, 1)
+	//check created time
+	suite.validateCommentsEqual(updatedComment, outputCommentsAfterRemove[0], justBeforeAdd, justAfterAdd, justBeforeUpdate, justAfterUpdate)
+
 	// Test removeComment for a last comment of an alert
-	err = suite.store.RemoveAlertComment(comment1)
+	err = suite.store.RemoveAlertComment(alertID, firstCommentID)
 	suite.NoError(err)
 	outputComments, err = suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)

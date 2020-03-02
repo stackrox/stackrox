@@ -14,10 +14,16 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	GetCommentsForAlert(alertID string) ([]*storage.Comment, error)
-	GetComment(alertID string, commentID string) (*storage.Comment, error)
+	GetComment(alertID, commentID string) (*storage.Comment, error)
+	// AddAlertComment adds a comment to the store, and returns the assigned id.
+	// Note that the passed in object is modified by the store to add a
+	// createdAt and lastModified timestamp.
 	AddAlertComment(comment *storage.Comment) (string, error)
+	// UpdateAlertComment updates an existing alert comment.
+	// Note that the passed in object is modified by the store to add a
+	// createdAt and lastModified timestamp.
 	UpdateAlertComment(comment *storage.Comment) error
-	RemoveAlertComment(comment *storage.Comment) error
+	RemoveAlertComment(alertID, commentID string) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

@@ -8,8 +8,14 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
+enum ResourceType {
+   UNSET_RESOURCE_TYPE = 0;
+   ALERT               = 1;
+   PROCESS             = 2;
+}
+
 message Comment {
-    string resource_type                    = 1;
+    ResourceType resource_type              = 1;
     string resource_id                      = 2;
     string comment_id                       = 3;
     string comment_message                  = 4;
