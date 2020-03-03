@@ -80,13 +80,14 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
+        gcrId = Services.addGcrRegistryAndScanner()
+        assert gcrId != null
+
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
-        gcrId = Services.addGcrRegistryAndScanner()
-        assert gcrId != null
     }
 
     def cleanupSpec() {
