@@ -15,6 +15,7 @@ export const podsData = {
             name: 'hello-world',
             startTime: '2019-12-09T05:51:52Z',
             inactive: false,
+            numContainers: 3,
             events: [
                 {
                     processId: 'process-1',
@@ -47,6 +48,7 @@ export const podsData = {
             name: 'dr-seuss',
             startTime: '2019-10-09T05:51:52Z',
             inactive: false,
+            numContainers: 0,
             events: [
                 {
                     processId: 'process-1',
@@ -79,6 +81,7 @@ export const podsData = {
             name: 'two-peas-in-a-pod',
             startTime: '2019-11-09T05:51:52Z',
             inactive: false,
+            numContainers: 1,
             events: [
                 {
                     processId: 'process-1',
@@ -105,6 +108,14 @@ export const podsData = {
                     type: 'Failure'
                 }
             ]
+        },
+        {
+            id: 'p-4',
+            name: 'inactive-pod',
+            startTime: '2019-11-09T05:51:52Z',
+            inactive: true,
+            numContainers: 0,
+            events: []
         }
     ]
 };

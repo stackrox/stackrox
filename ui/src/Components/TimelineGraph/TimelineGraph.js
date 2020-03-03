@@ -1,44 +1,41 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import NameList from 'Components/TimelineGraph/NameList';
+
 const TimelineGraph = ({ data }) => {
+    const names = data.map(({ type, id, name, subText, hasChildren }) => ({
+        type,
+        id,
+        name,
+        subText,
+        hasChildren
+    }));
     return (
         <div className="flex flex-1 flex-col">
             <div className="flex w-full">
                 <div className="w-1/3 border-r border-base-300">
-                    <div className="p-3">
-                        <div className="font-700">Show Names here:</div>
-                        <ul className="mt-3">
-                            {data.map(({ name }) => {
-                                return (
-                                    <li className="h-20" key={name}>
-                                        {name}
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
+                    <NameList names={names} />
                 </div>
                 <div className="w-2/3">
-                    <div className="p-3">
-                        <div className="font-700">Show Events here:</div>
-                        <ul className="mt-3">
-                            {data.map(({ name, events }) => {
-                                return (
-                                    <li className="h-20" key={name}>
-                                        {events.map(({ id, timestamp, type }) => {
-                                            const text = `"${type}" Event with ID "${id}" showed up at "${timestamp}"`;
-                                            return (
-                                                <div className="flex flex-no-wrap" key={id}>
-                                                    {text}
-                                                </div>
-                                            );
-                                        })}
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
+                    <ul className="">
+                        {data.map(({ name, events }, index) => {
+                            return (
+                                <li
+                                    className={`flex h-12 items-center justify-center px-4 ${
+                                        index !== 0 ? 'border-t border-base-300' : ''
+                                    }`}
+                                    key={name}
+                                >
+                                    <div className="flex flex-no-wrap">
+                                        {events
+                                            .map(({ id, type }) => `"${type}" Event "${id}""`)
+                                            .join(', ')}
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 </div>
             </div>
             <div className="flex border-t border-base-300">
