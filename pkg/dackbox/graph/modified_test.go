@@ -28,4 +28,10 @@ func TestModifiedGraph(t *testing.T) {
 
 	assert.Equal(t, sortedkeys.SortedKeys{[]byte("fromKey1"), []byte("fromKey2"), []byte("fromKey3")}, refState.modifiedFrom)
 	assert.Equal(t, sortedkeys.SortedKeys{[]byte("toKey1"), []byte("toKey2"), []byte("toKey3"), []byte("toKey4")}, refState.modifiedTo)
+
+	_ = refState.DeleteRefs([]byte("fromKey3"))
+	assert.Equal(t, [][]byte{[]byte("toKey3"), []byte("toKey4")}, refState.GetRefsFrom([]byte("fromKey2")))
+	assert.Equal(t, [][]byte{[]byte("fromKey1")}, refState.GetRefsTo([]byte("toKey2")))
+	assert.Equal(t, [][]byte{[]byte("fromKey1")}, refState.GetRefsTo([]byte("toKey1")))
+	assert.Equal(t, [][]byte(nil), refState.GetRefsFrom([]byte("fromKey3")))
 }

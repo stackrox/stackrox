@@ -1,5 +1,7 @@
 package features
 
+import "github.com/stackrox/rox/pkg/devbuild"
+
 var (
 	// ConfigMgmtUI enables the config management UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
@@ -10,7 +12,7 @@ var (
 	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", false)
 
 	// Dackbox enables the id graph layer on top of badger.
-	Dackbox = registerFeature("Use DackBox layer for the embedded Badger DB", "ROX_DACKBOX", false)
+	Dackbox = registerFeature("Use DackBox layer for the embedded Badger DB", "ROX_DACKBOX", devbuild.IsEnabled())
 
 	// Telemetry enables the telemetry features
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js

@@ -151,7 +151,7 @@ func (s *Graph) setTo(to []byte, from [][]byte) {
 }
 
 func (s *Graph) deleteTo(to []byte) {
-	delete(s.forward, string(to))
+	delete(s.backward, string(to))
 }
 
 // Helper functions.
