@@ -116,6 +116,9 @@ spec:
         - name: proxy-config-volume
           mountPath: /run/secrets/stackrox.io/proxy-config/
           readOnly: true
+        - name: endpoints-config-volume
+          mountPath: /etc/stackrox.d/endpoints/
+          readOnly: true
       {{if .Values.monitoring}}
         - name: monitoring-client-volume
           mountPath: /run/secrets/stackrox.io/monitoring/certs
@@ -209,5 +212,8 @@ spec:
         configMap:
           name: telegraf
       {{- end}}
+      - name: endpoints-config-volume
+        configMap:
+          name: central-endpoints
       - name: {{.Values.persistence.name}}
 {{ toYaml .Values.persistence.value | indent 8 }}

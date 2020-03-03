@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: central-endpoints
+  namespace: {{.Values.namespace}}
+  labels:
+    app.kubernetes.io/name: stackrox
+  {{if not .Values.gcpMarketplace}}
+  annotations:
+    "helm.sh/hook": "pre-install"
+  {{end}}
+data:
+  endpoints.yaml: |
+{{ .Files.Get "config/endpoints.yaml" | indent 4 }}

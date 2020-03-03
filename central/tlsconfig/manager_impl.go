@@ -8,6 +8,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
@@ -23,11 +24,77 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	errNoTLSConfig = errors.New("no TLS config is available")
 )
 
 type providerData struct {
 	provider authproviders.Provider
 	certs    []*x509.Certificate
+}
+
+type configurer struct {
+	rootTLSConfig *tls.Config
+
+	serverCertSources []*[]tls.Certificate
+	clientCASources   []*[]*x509.Certificate
+
+	liveTLSConfig unsafe.Pointer
+}
+
+func (c *configurer) updateTLSConfig() {
+	newTLSConfig := c.rootTLSConfig.Clone()
+
+	newTLSConfig.Certificates = nil
+	for _, certSrc := range c.serverCertSources {
+		newTLSConfig.Certificates = append(newTLSConfig.Certificates, *certSrc...)
+	}
+
+	clientCAs := x509.NewCertPool()
+	hasClientCAs := false
+	for _, clientCASrc := range c.clientCASources {
+		for _, clientCA := range *clientCASrc {
+			clientCAs.AddCert(clientCA)
+			hasClientCAs = true
+		}
+	}
+	if hasClientCAs {
+		newTLSConfig.ClientCAs = clientCAs
+	} else {
+		newTLSConfig.ClientAuth = tls.NoClientCert
+	}
+
+	newTLSConfig.BuildNameToCertificate()
+	atomic.StorePointer(&c.liveTLSConfig, (unsafe.Pointer)(newTLSConfig))
+}
+
+func (c *configurer) liveConfig(_ *tls.ClientHelloInfo) (*tls.Config, error) {
+	liveCfg := (*tls.Config)(atomic.LoadPointer(&c.liveTLSConfig))
+	if liveCfg == nil {
+		return nil, errNoTLSConfig
+	}
+	return liveCfg, nil
+}
+
+func (c *configurer) TLSConfig() (*tls.Config, error) {
+	rootCfg := c.rootTLSConfig.Clone()
+	rootCfg.GetConfigForClient = c.liveConfig
+	return rootCfg, nil
+}
+
+type managerImpl struct {
+	mutex sync.RWMutex
+
+	internalTrustRoots []*x509.Certificate
+	userTrustRoots     []*x509.Certificate
+
+	defaultCerts  []tls.Certificate
+	internalCerts []tls.Certificate
+
+	providerIDToProviderData  map[string]providerData
+	certFingerprintToProvider map[string]providerData
+
+	configurers []*configurer
 }
 
 func newManager() (*managerImpl, error) {
@@ -44,11 +111,9 @@ func newManager() (*managerImpl, error) {
 
 	mgr := &managerImpl{
 		providerIDToProviderData: make(map[string]providerData),
-		trustRoots:               trustRoots,
+		internalTrustRoots:       trustRoots,
 		internalCerts:            []tls.Certificate{*internalCert},
 	}
-
-	mgr.updateTLSConfigNoLock()
 
 	wh := &defaultCertWatchHandler{
 		mgr: mgr,
@@ -63,19 +128,6 @@ func newManager() (*managerImpl, error) {
 	return mgr, nil
 }
 
-type managerImpl struct {
-	mutex sync.RWMutex
-
-	cachedCfg  unsafe.Pointer
-	trustRoots []*x509.Certificate
-
-	defaultCerts  []tls.Certificate
-	internalCerts []tls.Certificate
-
-	providerIDToProviderData  map[string]providerData
-	certFingerprintToProvider map[string]providerData
-}
-
 func (m *managerImpl) UpdateDefaultCert(defaultCert *tls.Certificate) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -86,7 +138,7 @@ func (m *managerImpl) UpdateDefaultCert(defaultCert *tls.Certificate) {
 		m.defaultCerts = []tls.Certificate{*defaultCert}
 	}
 
-	m.updateTLSConfigNoLock()
+	m.updateConfigurersNoLock()
 }
 
 func (m *managerImpl) GetProviderForFingerprint(fingerprint string) authproviders.Provider {
@@ -102,14 +154,16 @@ func (m *managerImpl) GetProviderForFingerprint(fingerprint string) authprovider
 
 func (m *managerImpl) reindexNoLock() {
 	index := make(map[string]providerData)
+	m.userTrustRoots = nil
 	for _, pd := range m.providerIDToProviderData {
 		for _, cert := range pd.certs {
 			fingerprint := cryptoutils.CertFingerprint(cert)
 			index[fingerprint] = pd
 		}
+		m.userTrustRoots = append(m.userTrustRoots, pd.certs...)
 	}
 	m.certFingerprintToProvider = index
-	m.updateTLSConfigNoLock()
+	m.updateConfigurersNoLock()
 	log.Debugf("%d fingerprints registered", len(index))
 }
 
@@ -144,50 +198,55 @@ func (m *managerImpl) UnregisterAuthProvider(provider authproviders.Provider) {
 	m.reindexNoLock()
 }
 
-func (m *managerImpl) getTLSConfig() (*tls.Config, error) {
-	cfg := (*tls.Config)(atomic.LoadPointer(&m.cachedCfg))
-	return cfg, nil
-}
-
 // updateTLSConfigNoLock needs to be called while holding at least RLock from m.mutex
-func (m *managerImpl) updateTLSConfigNoLock() {
-	cfg := m.computeConfigNoLock()
-	atomic.StorePointer(&m.cachedCfg, unsafe.Pointer(cfg))
-}
-
-// computeConfigNoLock must be called while holding at least RLock from m.mutex
-func (m *managerImpl) computeConfigNoLock() *tls.Config {
-	clientCAs := x509.NewCertPool()
-	for _, c := range m.trustRoots {
-		clientCAs.AddCert(c)
+func (m *managerImpl) updateConfigurersNoLock() {
+	for _, configurer := range m.configurers {
+		configurer.updateTLSConfig()
 	}
-
-	for _, pd := range m.providerIDToProviderData {
-		for _, cert := range pd.certs {
-			log.Debugf("Adding client CA cert to the TLS trust pool: %q", cryptoutils.CertFingerprint(cert))
-			clientCAs.AddCert(cert)
-		}
-	}
-
-	serverCerts := make([]tls.Certificate, 0, len(m.defaultCerts)+len(m.internalCerts))
-	serverCerts = append(serverCerts, m.defaultCerts...)
-	serverCerts = append(serverCerts, m.internalCerts...)
-	cfg := verifier.DefaultTLSServerConfig(clientCAs, serverCerts)
-	return cfg
 }
 
 // TLSConfigurer is called once on server startup. It has to have enough data for tls.Listen() to be happy, so
 // we compute a complete one. We can't change the contents of the config afterwards, so instead we tell the tls
 // package to ask us every new connection what our config really should be, and pass them the latest cached config.
-func (m *managerImpl) TLSConfigurer() verifier.TLSConfigurer {
-	return verifier.TLSConfigurerFunc(func() (*tls.Config, error) {
-		m.mutex.RLock()
-		defer m.mutex.RUnlock()
+func (m *managerImpl) TLSConfigurer(opts Options) (verifier.TLSConfigurer, error) {
+	// certPool and certs will be filled in dynamically
+	rootCfg := verifier.DefaultTLSServerConfig(nil, nil)
 
-		cfg := m.computeConfigNoLock()
-		cfg.GetConfigForClient = func(info *tls.ClientHelloInfo) (*tls.Config, error) {
-			return m.getTLSConfig()
+	rootCfg.NameToCertificate = nil
+	if opts.RequireClientCert {
+		rootCfg.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
+	configurer := &configurer{
+		rootTLSConfig: rootCfg,
+	}
+
+	for _, serverCert := range opts.ServerCerts {
+		switch serverCert {
+		case DefaultTLSCertSource:
+			configurer.serverCertSources = append(configurer.serverCertSources, &m.defaultCerts)
+		case ServiceCertSource:
+			configurer.serverCertSources = append(configurer.serverCertSources, &m.internalCerts)
+		default:
+			return nil, errors.Errorf("invalid server cert source %v", serverCert)
 		}
-		return cfg, nil
-	})
+	}
+
+	for _, clientCA := range opts.ClientCAs {
+		switch clientCA {
+		case UserCAsSource:
+			configurer.clientCASources = append(configurer.clientCASources, &m.userTrustRoots)
+		case ServiceCASource:
+			configurer.clientCASources = append(configurer.clientCASources, &m.internalTrustRoots)
+		default:
+			return nil, errors.Errorf("invalid client CA source %v", clientCA)
+		}
+	}
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.configurers = append(m.configurers, configurer)
+	configurer.updateTLSConfig()
+	return configurer, nil
 }

@@ -34,6 +34,7 @@ import (
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/ed"
+	"github.com/stackrox/rox/central/endpoints"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
@@ -155,8 +156,6 @@ const (
 	tokenRedirectURLPath = "/auth/response/generic"
 
 	grpcServerWatchdogTimeout = 20 * time.Second
-
-	publicAPIEndpoint = ":8443"
 
 	maxServiceCertTokenLeeway = 1 * time.Minute
 
@@ -411,15 +410,19 @@ func startGRPCServer(factory serviceFactory) {
 		authnUserpki.NewExtractor(tlsconfig.ManagerInstance()),
 	}
 
+	endpointCfgs, err := endpoints.InstantiateAll(tlsconfig.ManagerInstance())
+	if err != nil {
+		log.Panicf("Could not instantiate endpoint configs: %v", err)
+	}
+
 	config := pkgGRPC.Config{
 		CustomRoutes:       factory.CustomRoutes(),
-		TLS:                tlsconfig.ManagerInstance().TLSConfigurer(),
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
-		PublicEndpoint:     publicAPIEndpoint,
 		Auditor:            audit.New(processor.Singleton()),
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
+		Endpoints:          endpointCfgs,
 	}
 
 	// This helps validate that SAC is being used correctly.
@@ -436,21 +439,6 @@ func startGRPCServer(factory serviceFactory) {
 	config.PostAuthContextEnrichers = append(config.PostAuthContextEnrichers,
 		centralSAC.GetEnricher().PostAuthContextEnricher,
 	)
-
-	if err := config.PlaintextEndpoints.AddFromParsedSpec(env.PlaintextEndpoints.Setting()); err != nil {
-		log.Panicf("Could not parse plaintext endpoints specification: %v", err)
-	}
-	if err := config.PlaintextEndpoints.Validate(); err != nil {
-		log.Panicf("Could not validate plaintext endpoints specification: %v", err)
-	}
-
-	if err := config.SecureEndpoints.AddFromParsedSpec(env.SecureEndpoints.Setting()); err != nil {
-		log.Panicf("Could not parse secure endpoints specification: %v", err)
-	}
-
-	if err := config.SecureEndpoints.Validate(); err != nil {
-		log.Panicf("Could not validate secure endpoints specification: %v", err)
-	}
 
 	server := pkgGRPC.NewAPI(config)
 	server.Register(factory.ServicesToRegister(registry)...)

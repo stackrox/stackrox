@@ -1,6 +1,8 @@
 package image
 
 import (
+	"io"
+	"io/ioutil"
 	"path"
 	"strings"
 	"text/template"
@@ -58,39 +60,50 @@ func ReadFileAndTemplate(pathToFile string, funcs template.FuncMap) (*template.T
 	return tpl.Parse(contents)
 }
 
-func mustGetChart(box packr.Box, prefixes ...string) *chart.Chart {
-	ch, err := getChart(box, prefixes)
+func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, prefixes ...string) *chart.Chart {
+	ch, err := getChart(box, prefixes, overrides)
 	utils.Must(err)
 	return ch
 }
 
 // GetCentralChart returns the Helm chart for Central
-func GetCentralChart() *chart.Chart {
+func GetCentralChart(overrides map[string]func() io.ReadCloser) *chart.Chart {
 	prefixes := []string{"helm/centralchart/"}
 	if features.DiagnosticBundle.Enabled() {
 		prefixes = append(prefixes, "helm/centralchart-diagnostics/")
 	}
-	return mustGetChart(K8sBox, prefixes...)
+	return mustGetChart(K8sBox, overrides, prefixes...)
 }
 
 // GetScannerChart returns the Helm chart for the scanner
 func GetScannerChart() *chart.Chart {
-	return mustGetChart(K8sBox, "helm/scannerchart/")
+	return mustGetChart(K8sBox, nil, "helm/scannerchart/")
 }
 
 // GetMonitoringChart returns the Helm chart for Monitoring
 func GetMonitoringChart() *chart.Chart {
-	return mustGetChart(K8sBox, "helm/monitoringchart/")
+	return mustGetChart(K8sBox, nil, "helm/monitoringchart/")
 }
 
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
 // or it will fail
-func getChart(box packr.Box, prefixes []string) (*chart.Chart, error) {
+func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.ReadCloser) (*chart.Chart, error) {
 	var chartFiles []*chartutil.BufferedFile
 	for _, prefix := range prefixes {
 		err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
 			trimmedPath := strings.TrimPrefix(name, prefix)
-			data := []byte(file.String())
+			dataReader := ioutil.NopCloser(file)
+
+			if overrideFunc := overrides[trimmedPath]; overrideFunc != nil {
+				dataReader = overrideFunc()
+			}
+			defer utils.IgnoreError(dataReader.Close)
+
+			data, err := ioutil.ReadAll(dataReader)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read file %s", trimmedPath)
+			}
+
 			// if chart file, then render the version into it
 			if trimmedPath == "Chart.yaml" {
 				t, err := template.New("chart").Parse(file.String())

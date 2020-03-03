@@ -187,6 +187,8 @@ type Config struct {
 
 	GCPMarketplace bool
 	Version        string
+
+	ConfigFileOverrides map[string]string
 }
 
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {

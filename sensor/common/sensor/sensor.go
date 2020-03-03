@@ -181,10 +181,16 @@ func (s *Sensor) Start() {
 	}
 
 	config := pkgGRPC.Config{
-		TLS:                verifier.NonCA{},
 		CustomRoutes:       customRoutes,
 		IdentityExtractors: []authn.IdentityExtractor{mtlsServiceIDExtractor},
-		PublicEndpoint:     publicAPIEndpoint,
+		Endpoints: []*pkgGRPC.EndpointConfig{
+			{
+				ListenEndpoint: publicAPIEndpoint,
+				TLS:            verifier.NonCA{},
+				ServeGRPC:      true,
+				ServeHTTP:      true,
+			},
+		},
 	}
 	s.server = pkgGRPC.NewAPI(config)
 
@@ -194,9 +200,14 @@ func (s *Sensor) Start() {
 	s.server.Start()
 
 	webhookConfig := pkgGRPC.Config{
-		TLS:            verifier.NonCA{},
-		CustomRoutes:   []routes.CustomRoute{admissionControllerRoute},
-		PublicEndpoint: publicWebhookEndpoint,
+		CustomRoutes: []routes.CustomRoute{admissionControllerRoute},
+		Endpoints: []*pkgGRPC.EndpointConfig{
+			{
+				ListenEndpoint: publicWebhookEndpoint,
+				TLS:            verifier.NonCA{},
+				ServeHTTP:      true,
+			},
+		},
 	}
 
 	webhookServer := pkgGRPC.NewAPI(webhookConfig)

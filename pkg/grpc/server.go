@@ -2,12 +2,9 @@ package grpc
 
 import (
 	"context"
-	"crypto/tls"
-	golog "log"
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/NYTimes/gziphandler"
@@ -22,19 +19,15 @@ import (
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/grpc/alpn"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
-	downgradingServer "github.com/stackrox/rox/pkg/grpc/http1downgrade/server"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
-	"github.com/stackrox/rox/pkg/tlsutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
@@ -69,103 +62,10 @@ type server interface {
 	Serve(l net.Listener) error
 }
 
-type endpointServersConfig struct {
-	httpHandler http.Handler
-	grpcServer  *grpc.Server
-
-	endpoint string
-	tlsConf  *tls.Config
-}
-
-func (c *endpointServersConfig) Kind() string {
-	var sb strings.Builder
-	if c.tlsConf == nil {
-		sb.WriteString("Plaintext")
-	} else {
-		sb.WriteString("TLS-enabled")
-	}
-	sb.WriteRune(' ')
-	if c.httpHandler != nil && c.grpcServer != nil {
-		sb.WriteString("multiplexed HTTP/gRPC")
-	} else if c.httpHandler != nil {
-		sb.WriteString("HTTP")
-	} else if c.grpcServer != nil {
-		sb.WriteString("gRPC")
-	} else {
-		sb.WriteString("dummy")
-	}
-	return sb.String()
-}
-
-// Instantiate returns `serverAndListener`s for the given servers at the respective endpoint.
-func (c *endpointServersConfig) Instantiate() (net.Addr, []serverAndListener, error) {
-	lis, err := net.Listen("tcp", c.endpoint)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var httpLis, grpcLis net.Listener
-
-	var result []serverAndListener
-
-	tlsConf := c.tlsConf
-	if tlsConf != nil {
-		if c.grpcServer != nil {
-			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
-		}
-		lis = tls.NewListener(lis, tlsConf)
-
-		if c.grpcServer != nil && c.httpHandler != nil {
-			protoMap := map[string]*net.Listener{
-				alpn.PureGRPCALPNString: &grpcLis,
-				"":                      &httpLis,
-			}
-			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{})
-		}
-	}
-
-	// Default to listen on the main listener, HTTP first
-	if c.httpHandler != nil && httpLis == nil {
-		httpLis = lis
-	} else if c.grpcServer != nil && grpcLis == nil {
-		grpcLis = lis
-	}
-
-	kind := c.Kind()
-
-	if httpLis != nil {
-		httpHandler := c.httpHandler
-		if c.grpcServer != nil {
-			httpHandler = downgradingServer.CreateDowngradingHandler(c.grpcServer, c.httpHandler)
-		}
-
-		httpSrv := &http.Server{
-			Handler:   httpHandler,
-			TLSConfig: tlsConf,
-			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
-		}
-		result = append(result, serverAndListener{
-			srv:      httpSrv,
-			listener: httpLis,
-			kind:     kind,
-		})
-	}
-	if grpcLis != nil {
-		result = append(result, serverAndListener{
-			srv:      c.grpcServer,
-			listener: grpcLis,
-			kind:     kind,
-		})
-
-	}
-
-	return lis.Addr(), result, nil
-}
-
 type serverAndListener struct {
 	srv      server
 	listener net.Listener
-	kind     string
+	endpoint *EndpointConfig
 }
 
 // APIService is the service interface
@@ -197,7 +97,6 @@ type apiImpl struct {
 
 // A Config configures the server.
 type Config struct {
-	TLS                verifier.TLSConfigurer
 	CustomRoutes       []routes.CustomRoute
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
@@ -209,10 +108,7 @@ type Config struct {
 	UnaryInterceptors  []grpc.UnaryServerInterceptor
 	StreamInterceptors []grpc.StreamServerInterceptor
 
-	PublicEndpoint string
-
-	PlaintextEndpoints EndpointsConfig
-	SecureEndpoints    EndpointsConfig
+	Endpoints []*EndpointConfig
 
 	GRPCMetrics metrics.GRPCMetrics
 	HTTPMetrics metrics.HTTPMetrics
@@ -366,39 +262,9 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	return mux
 }
 
-func endpointsFromConfig(cfg EndpointsConfig, httpHandler http.Handler, grpcServer *grpc.Server, tlsConf *tls.Config) []endpointServersConfig {
-	var endpointSrvCfgs []endpointServersConfig
-	for _, endpoint := range cfg.MultiplexedEndpoints {
-		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-			httpHandler: httpHandler,
-			grpcServer:  grpcServer,
-			endpoint:    endpoint,
-			tlsConf:     tlsConf,
-		})
-	}
-
-	for _, endpoint := range cfg.HTTPEndpoints {
-		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-			httpHandler: httpHandler,
-			endpoint:    endpoint,
-			tlsConf:     tlsConf,
-		})
-	}
-
-	for _, endpoint := range cfg.GRPCEndpoints {
-		endpointSrvCfgs = append(endpointSrvCfgs, endpointServersConfig{
-			grpcServer: grpcServer,
-			endpoint:   endpoint,
-			tlsConf:    tlsConf,
-		})
-	}
-	return endpointSrvCfgs
-}
-
 func (a *apiImpl) run(startedSig *concurrency.Signal) {
-	tlsConf, err := a.config.TLS.TLSConfig()
-	if err != nil {
-		panic(err)
+	if len(a.config.Endpoints) == 0 {
+		panic(errors.New("server has no endpoints"))
 	}
 
 	grpcServer := grpc.NewServer(
@@ -431,29 +297,19 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 	httpHandler := a.muxer(localConn)
 
-	endpointSrvCfgs := []endpointServersConfig{
-		{
-			httpHandler: httpHandler,
-			grpcServer:  grpcServer,
-			endpoint:    a.config.PublicEndpoint,
-			tlsConf:     tlsConf,
-		},
-	}
-
-	secureEndpointSrvCfgs := endpointsFromConfig(a.config.SecureEndpoints, httpHandler, grpcServer, tlsConf)
-	endpointSrvCfgs = append(endpointSrvCfgs, secureEndpointSrvCfgs...)
-
-	plaintextEndpointSrvCfgs := endpointsFromConfig(a.config.PlaintextEndpoints, httpHandler, grpcServer, nil)
-	endpointSrvCfgs = append(endpointSrvCfgs, plaintextEndpointSrvCfgs...)
-
 	var allSrvAndLiss []serverAndListener
-	for _, endpointCfg := range endpointSrvCfgs {
-		addr, srvAndLiss, err := endpointCfg.Instantiate()
+	for _, endpointCfg := range a.config.Endpoints {
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, grpcServer)
 		if err != nil {
-			log.Panicf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
+			if endpointCfg.Optional {
+				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
+			} else {
+				log.Panicf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)
+			}
+		} else {
+			log.Infof("%s server listening on %s", endpointCfg.Kind(), addr.String())
+			allSrvAndLiss = append(allSrvAndLiss, srvAndLiss...)
 		}
-		log.Infof("%s server listening on %s", endpointCfg.Kind(), addr.String())
-		allSrvAndLiss = append(allSrvAndLiss, srvAndLiss...)
 	}
 
 	errC := make(chan error, len(allSrvAndLiss))
@@ -473,6 +329,10 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 
 func serveBlocking(srvAndLis serverAndListener, errC chan<- error) {
 	if err := srvAndLis.srv.Serve(srvAndLis.listener); err != nil {
-		errC <- errors.Wrapf(err, "error serving %s", srvAndLis.kind)
+		if srvAndLis.endpoint.Optional {
+			log.Errorf("Error serving optional endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+		} else {
+			errC <- errors.Wrapf(err, "error serving required endpoint %s on %s: %v", srvAndLis.endpoint.Kind(), srvAndLis.listener.Addr(), err)
+		}
 	}
 }

@@ -5,7 +5,10 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 
 	"github.com/cloudflare/cfssl/csr"
@@ -15,7 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/roxctl"
@@ -109,6 +112,28 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 	return nil
 }
 
+func openFileFunc(path string) func() io.ReadCloser {
+	return func() io.ReadCloser {
+		f, err := os.Open(path)
+		if err != nil {
+			return ioutil.NopCloser(ioutils.ErrorReader(err))
+		}
+		return f
+	}
+}
+
+func buildConfigFileOverridesMap(filePathMap map[string]string) map[string]func() io.ReadCloser {
+	if len(filePathMap) == 0 {
+		return nil
+	}
+
+	fileOverridesMap := make(map[string]func() io.ReadCloser, len(filePathMap))
+	for configFilePath, replacementFilePath := range filePathMap {
+		fileOverridesMap[path.Join("config", configFilePath)] = openFileFunc(replacementFilePath)
+	}
+	return fileOverridesMap
+}
+
 // OutputZip renders a deployment bundle. The deployment bundle can either be
 // written directly into a directory, or as a zipfile to STDOUT.
 func OutputZip(config renderer.Config) error {
@@ -184,7 +209,7 @@ func OutputZip(config renderer.Config) error {
 		wrapper.AddFiles(zip.NewFile("monitoring/password", []byte(config.K8sConfig.Monitoring.Password+"\n"), zip.Sensitive))
 	}
 
-	files, err := renderer.Render(config)
+	files, err := renderer.RenderWithOverrides(config, buildConfigFileOverridesMap(config.ConfigFileOverrides))
 	if err != nil {
 		return errors.Wrap(err, "could not render files")
 	}
@@ -273,18 +298,16 @@ func Command() *cobra.Command {
 	)
 
 	c.PersistentFlags().VarPF(
-		flags.ForSettingWithOptions(env.PlaintextEndpoints, flags.SettingVarOpts{
-			Validator: func(spec string) error {
-				cfg := grpc.EndpointsConfig{}
-				if err := cfg.AddFromParsedSpec(spec); err != nil {
-					return err
-				}
-				return cfg.Validate()
-			},
-		}), "plaintext-endpoints", "",
+		flags.ForSetting(env.PlaintextEndpoints), "plaintext-endpoints", "",
 		"The ports or endpoints to use for plaintext (unencrypted) exposure; comma-separated list.")
 	utils.Must(
 		c.PersistentFlags().SetAnnotation("plaintext-endpoints", flags.NoInteractiveKey, []string{"true"}))
+
+	c.PersistentFlags().Var(&flags.FileMapVar{
+		FileMap: &cfg.ConfigFileOverrides,
+	}, "with-config-file", "Use the given local file(s) to override default config files")
+	utils.Must(
+		c.PersistentFlags().MarkHidden("with-config-file"))
 
 	c.AddCommand(interactive())
 

@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"io"
 	"path/filepath"
 	"strings"
 
@@ -74,8 +75,18 @@ func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, err
 			renderedFiles = append(renderedFiles, file)
 		}
 	}
-	// execute the extra files (scripts, README, etc)
-	files, err := executeChartFiles(prefix, c, ch.Files...)
+
+	// execute the extra files (scripts, README, etc), but filter out config files (these get rendered into configmaps
+	// directly).
+	var filteredFiles []*google_protobuf.Any
+	for _, f := range ch.Files {
+		if strings.HasPrefix(f.GetTypeUrl(), "config/") {
+			continue
+		}
+		filteredFiles = append(filteredFiles, f)
+	}
+
+	files, err := executeChartFiles(prefix, c, filteredFiles...)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing chart files")
 	}
@@ -119,9 +130,9 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 	return renderedFiles, nil
 }
 
-func renderHelm(c Config) ([]*zip.File, error) {
+func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
 	var renderedFiles []*zip.File
-	for _, chartPrefixPair := range getChartsToProcess(c, renderAll) {
+	for _, chartPrefixPair := range getChartsToProcess(c, renderAll, centralOverrides) {
 		currentRenderedFiles, err := chartToFiles(chartPrefixPair.prefix, chartPrefixPair.chart, c)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render %s chart", chartPrefixPair.prefix)

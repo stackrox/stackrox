@@ -1,0 +1,34 @@
+endpoints:
+  - listen: ":8082"
+    protocols:
+      - http
+    tls:
+      disable: true
+  - listen: ":8444"
+    tls:
+      serverCerts:
+        - service
+      clientAuth:
+        required: true
+        certAuthorities:
+          - service
+  - listen: ":8445"
+    tls:
+      serverCerts:
+        - default
+      clientAuth:
+        certAuthorities:
+          - user
+  - listen: ":8446"
+    protocols:
+      - http
+  - listen: ":8447"
+    protocols:
+      - grpc
+    tls:
+      clientAuth:
+        required: true
+  - listen: ":8448"
+    tls:
+      clientAuth:
+        certAuthorities: []

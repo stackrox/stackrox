@@ -9,6 +9,7 @@ All notable changes to this project that require documentation updates will be d
   (plaintext) connection is established; if the `--plaintext` flag is used explicitly, its value has to be compatible
   with the chosen scheme (e.g., specifying an `https://` URL along with `--plaintext` will result in an error, as will
   a `http://` URL in conjunction with `--plaintext=false`).
+- Added the ability to customize the endpoints exposed by Central via a YAML-based configuration file.
 
 ## [39.0]
 ### Added

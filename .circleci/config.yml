@@ -149,6 +149,7 @@ setupDefaultTLSCerts: &setupDefaultTLSCerts
       ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local "Server CA"
       cci-export ROX_DEFAULT_TLS_CERT_FILE "${cert_dir}/tls.crt"
       cci-export ROX_DEFAULT_TLS_KEY_FILE "${cert_dir}/tls.key"
+      cci-export DEFAULT_CA_FILE "${cert_dir}/ca.crt"
       cci-export ROX_TEST_CA_PEM "$(cat "${cert_dir}/ca.crt")"
       cci-export ROX_TEST_CENTRAL_CN "custom-tls-cert.central.stackrox.local"
 
@@ -166,6 +167,8 @@ setupClientTLSCerts: &setupClientTLSCerts
 
       cci-export KEYSTORE_PATH "${cert_dir}/keystore.p12"
       cci-export CLIENT_CA_PATH "${cert_dir}/ca.crt"
+      cci-export CLIENT_CERT_PATH "${cert_dir}/tls.crt"
+      cci-export CLIENT_KEY_PATH "${cert_dir}/tls.key"
 
 
 waitForAPI: &waitForAPI
@@ -1789,6 +1792,7 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
+      - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
       - ROX_VULN_MGMT_UI: true
       - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
@@ -1840,6 +1844,19 @@ jobs:
           command: |
             roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
               central userpki create test-userpki -r None -c "$CLIENT_CA_PATH"
+
+      - run:
+          name: Set up environment for endpoints test
+          command: |
+            cci-export "SERVICE_CA_FILE" "${PWD}/deploy/k8s/sensor-deploy/ca.pem"
+            cci-export "SERVICE_CERT_FILE" "${PWD}/deploy/k8s/sensor-deploy/sensor-cert.pem"
+            cci-export "SERVICE_KEY_FILE" "${PWD}/deploy/k8s/sensor-deploy/sensor-key.pem"
+
+            central_pod="$(kubectl -n stackrox get po -lapp=central -oname | head -n 1)"
+            for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
+              nohup kubectl -n stackrox port-forward "${central_pod}" "$((target_port + 10000)):${target_port}" </dev/null &>/dev/null &
+            done
+            sleep 1
 
       - run:
           name: API tests

@@ -3,6 +3,7 @@ package renderer
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -48,13 +49,13 @@ func getScannerChart(c *Config) chartPrefixPair {
 	return chartPrefixPair{image.GetScannerChart(), "scanner"}
 }
 
-func getChartsToProcess(c Config, mode mode) (chartsToProcess []chartPrefixPair) {
+func getChartsToProcess(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) (chartsToProcess []chartPrefixPair) {
 	if mode == scannerOnly {
 		chartsToProcess = []chartPrefixPair{getScannerChart(&c)}
 		return
 	}
 
-	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(), "central"}, getScannerChart(&c)}
+	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(centralOverrides), "central"}, getScannerChart(&c)}
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		chartsToProcess = append(chartsToProcess,
 			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},
@@ -63,9 +64,9 @@ func getChartsToProcess(c Config, mode mode) (chartsToProcess []chartPrefixPair)
 	return
 }
 
-func renderKubectl(c Config, mode mode) ([]*zip.File, error) {
+func renderKubectl(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
 	var renderedFiles []*zip.File
-	for _, chartPrefixPair := range getChartsToProcess(c, mode) {
+	for _, chartPrefixPair := range getChartsToProcess(c, mode, centralOverrides) {
 		chartRenderedFiles, err := renderHelmFiles(c, chartPrefixPair.chart, chartPrefixPair.prefix)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error rendering %s files", chartPrefixPair.prefix)
@@ -123,15 +124,21 @@ func postProcessConfig(c *Config, mode mode) error {
 
 // Render renders a bunch of zip files based on the given config.
 func Render(c Config) ([]*zip.File, error) {
-	return render(c, renderAll)
+	return render(c, renderAll, nil)
+}
+
+// RenderWithOverrides renders a bunch of zip files based on the given config, allowing to selectively override some of
+// the bundled files.
+func RenderWithOverrides(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
+	return render(c, renderAll, centralOverrides)
 }
 
 // RenderScannerOnly renders the zip files for the scanner based on the given config.
 func RenderScannerOnly(c Config) ([]*zip.File, error) {
-	return render(c, scannerOnly)
+	return render(c, scannerOnly, nil)
 }
 
-func render(c Config, mode mode) ([]*zip.File, error) {
+func render(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
 	err := postProcessConfig(&c, mode)
 	if err != nil {
 		return nil, err
@@ -142,9 +149,9 @@ func render(c Config, mode mode) ([]*zip.File, error) {
 		if mode != renderAll {
 			return nil, fmt.Errorf("mode %s not supported in helm", mode)
 		}
-		renderedFiles, err = renderHelm(c)
+		renderedFiles, err = renderHelm(c, centralOverrides)
 	} else {
-		renderedFiles, err = renderKubectl(c, mode)
+		renderedFiles, err = renderKubectl(c, mode, centralOverrides)
 	}
 	if err != nil {
 		return nil, err
