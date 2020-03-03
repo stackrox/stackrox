@@ -128,7 +128,7 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
-	if features.SensorBasedDetection.Enabled() {
+	if features.SensorBasedDetection.Enabled() && !l.stopped.IsDone() {
 		l.connManager.BroadcastMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_ReassessPolicies{
 				ReassessPolicies: &central.ReassessPolicies{},

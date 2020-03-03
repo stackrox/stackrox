@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
-	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -38,8 +38,12 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	if allowMore {
 		timesSpec = (*gomock.Call).MinTimes
 	}
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).ProtoQuery()
-	timesSpec(suite.mockDeployment.EXPECT().SearchDeployments(getDeploymentsContext, query), times).Return(nil, nil)
+
+	timesSpec(suite.mockManager.EXPECT().BroadcastMessage(&central.MsgToSensor{
+		Msg: &central.MsgToSensor_ReassessPolicies{
+			ReassessPolicies: &central.ReassessPolicies{},
+		},
+	}), times)
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {

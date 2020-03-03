@@ -37,7 +37,7 @@ var (
 	RefreshTokens = registerFeature("Refresh tokens", "ROX_REFRESH_TOKENS", true)
 
 	// SensorBasedDetection enables detection in Sensor and will not enrich or detect in Central for deployments
-	SensorBasedDetection = registerFeature("Sensor Based Detection", "ROX_SENSOR_DETECTION", false)
+	SensorBasedDetection = registerFeature("Sensor Based Detection", "ROX_SENSOR_DETECTION", true)
 
 	// ImageLabelPolicy enables the Required Image Label policy type
 	ImageLabelPolicy = registerFeature("Enable the Required Image Label Policy", "ROX_REQUIRED_IMAGE_LABEL_POLICY", true)

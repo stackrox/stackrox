@@ -10,6 +10,9 @@ All notable changes to this project that require documentation updates will be d
   with the chosen scheme (e.g., specifying an `https://` URL along with `--plaintext` will result in an error, as will
   a `http://` URL in conjunction with `--plaintext=false`).
 - Added the ability to customize the endpoints exposed by Central via a YAML-based configuration file.
+- Detection and image enrichment have been moved to the individual Sensor clusters. Sensor will proxy image scan requests
+  through Central and then run detection to generate both runtime and deploytime alerts. These alerts are sent to Central and any
+  enforcement if necessary will be executed by Sensor without a roundtrip to Central.
 
 ## [39.0]
 ### Added
