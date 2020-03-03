@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -126,5 +127,61 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationPartialReindex() {
 
 	_, err = newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
 		suite.riskStore, nil, suite.filter)
+	suite.NoError(err)
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
+	risks := []*storage.Risk{
+		{
+			Id: "1",
+			Subject: &storage.RiskSubject{
+				Id:        "1",
+				Type:      storage.RiskSubjectType_DEPLOYMENT,
+				Namespace: "1",
+				ClusterId: "1",
+			},
+		},
+		{
+			Id: "2",
+			Subject: &storage.RiskSubject{
+				Id:        "2",
+				Type:      storage.RiskSubjectType_DEPLOYMENT,
+				Namespace: "2",
+				ClusterId: "2",
+			},
+		},
+		{
+			Id: "3",
+			Subject: &storage.RiskSubject{
+				Id:        "3",
+				Type:      storage.RiskSubjectType_DEPLOYMENT,
+				Namespace: "3",
+				ClusterId: "3",
+			},
+		},
+	}
+
+	deployments := []*storage.Deployment{
+		{
+			Id: "1",
+		},
+		{
+			Id: "2",
+		},
+		{
+			Id: "3",
+		},
+	}
+
+	ds, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
+		suite.riskStore, nil, suite.filter)
+	suite.NoError(err)
+
+	suite.riskStore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).Return(risks, nil)
+	suite.storage.EXPECT().GetDeployment(deployments[0].Id).Return(deployments[0], true, nil)
+	suite.storage.EXPECT().GetDeployment(deployments[1].Id).Return(nil, false, nil)
+	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deployments[1].Id, storage.RiskSubjectType_DEPLOYMENT)
+	suite.storage.EXPECT().GetDeployment(deployments[2].Id).Return(nil, false, errors.New("fake error"))
+	err = ds.initializeRanker()
 	suite.NoError(err)
 }

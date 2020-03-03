@@ -87,13 +87,13 @@ func (ds *datastoreImpl) initializeRanker() error {
 	ds.nsRanker = ranking.NamespaceRanker()
 	ds.deploymentRanker = ranking.DeploymentRanker()
 
-	riskElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Risk),
 		))
 
-	risks, err := ds.risks.SearchRawRisks(riskElevatedCtx, pkgSearch.NewQueryBuilder().AddStrings(
+	risks, err := ds.risks.SearchRawRisks(elevatedCtx, pkgSearch.NewQueryBuilder().AddStrings(
 		pkgSearch.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).ProtoQuery())
 	if err != nil {
 		return err
@@ -119,10 +119,16 @@ func (ds *datastoreImpl) initializeRanker() error {
 
 		deployment, found, err := ds.deploymentStore.GetDeployment(risk.GetSubject().GetId())
 		if err != nil {
-			return err
+			log.Error(err)
+			continue
 		} else if !found {
-			return errors.New("unexpected number of namespaces found")
+			err := ds.risks.RemoveRisk(elevatedCtx, risk.GetSubject().GetId(), storage.RiskSubjectType_DEPLOYMENT)
+			if err != nil {
+				log.Errorf("could not delete risk for deployment %s", risk.GetSubject().GetId())
+			}
+			continue
 		}
+
 		nsIDs[nsKey] = deployment.GetNamespaceId()
 		nsScores[nsIDs[nsKey]] += score
 	}
