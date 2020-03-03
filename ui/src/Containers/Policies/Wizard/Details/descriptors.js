@@ -214,25 +214,28 @@ const fieldsMap = {
     disallowedAnnotation: {
         label: 'Disallowed Annotation',
         formatValue: d => {
-            const key = d.key ? `Key: ${d.key} ` : '';
-            const value = d.value ? `Value: ${d.value}` : '';
-            return `${key}${value}`;
+            const key = d.key ? `key=${d.key}` : '';
+            const value = d.value ? `value=${d.value}` : '';
+            const comma = d.key && d.value ? ', ' : '';
+            return `Alerts on deployments with the disallowed annotation ${key}${comma}${value}`;
         }
     },
     requiredLabel: {
         label: 'Required Label',
         formatValue: d => {
-            const key = d.key ? `${d.key}` : '';
-            const value = d.value ? d.value : '';
-            return `${key}=${value}`;
+            const key = d.key ? `key=${d.key}` : '';
+            const value = d.value ? `value=${d.value}` : '';
+            const comma = d.key && d.value ? ', ' : '';
+            return `Alerts on deployments missing the required label ${key}${comma}${value}`;
         }
     },
     requiredAnnotation: {
         label: 'Required Annotation',
         formatValue: d => {
-            const key = d.key ? `${d.key}` : '';
-            const value = d.value ? d.value : '';
-            return `${key}=${value}`;
+            const key = d.key ? `key=${d.key}` : '';
+            const value = d.value ? `value=${d.value}` : '';
+            const comma = d.key && d.value ? ', ' : '';
+            return `Alerts on deployments missing the required annotation ${key}${comma}${value}`;
         }
     },
     volumePolicy: {
@@ -311,6 +314,15 @@ const fieldsMap = {
     permissionPolicy: {
         label: 'Minimum RBAC Permissions',
         formatValue: d => rbacPermissionLabels[d.permissionLevel]
+    },
+    requiredImageLabel: {
+        label: 'Required Image Label',
+        formatValue: d => {
+            const key = d.key ? `key=${d.key}` : '';
+            const value = d.value ? `value=${d.value}` : '';
+            const comma = d.key && d.value ? ', ' : '';
+            return `Alerts on deployments with images missing the required label ${key}${comma}${value}`;
+        }
     }
 };
 

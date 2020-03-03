@@ -610,6 +610,25 @@ const policyConfigurationDescriptor = [
         })),
         required: false,
         default: false
+    },
+    {
+        label: 'Required Image Label',
+        jsonpath: 'fields.requiredImageLabel',
+        type: 'group',
+        jsonpaths: [
+            {
+                jsonpath: 'fields.requiredImageLabel.key',
+                type: 'text',
+                placeholder: 'requiredLabelKey.*'
+            },
+            {
+                jsonpath: 'fields.requiredImageLabel.value',
+                type: 'text',
+                placeholder: 'requiredValue.*'
+            }
+        ],
+        required: false,
+        default: false
     }
 ];
 

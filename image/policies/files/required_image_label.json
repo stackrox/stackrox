@@ -1,6 +1,6 @@
 {
   "id": "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6",
-  "name": "Required Image Labels",
+  "name": "Required Image Label",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
     "BUILD",

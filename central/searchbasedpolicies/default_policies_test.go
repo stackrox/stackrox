@@ -1323,7 +1323,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Required Image Labels",
+			policyName: "Required Image Label",
 			shouldNotMatch: map[string]struct{}{
 				"requiredImageLabelImage": {},
 			},
