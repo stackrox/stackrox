@@ -26,7 +26,9 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     const queryObject = { ...query[searchParam] };
 
     if (entityListType === entityTypes.POLICY) queryObject['Lifecycle Stage'] = 'DEPLOY';
-    if (!queryObject.Standard) queryObject.Standard = 'CIS';
+    if (!queryObject.Standard && entityListType === entityTypes.CONTROL) {
+        queryObject.Standard = 'CIS';
+    }
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
