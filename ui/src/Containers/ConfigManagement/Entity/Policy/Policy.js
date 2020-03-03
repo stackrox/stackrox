@@ -96,7 +96,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
             query getPolicy_${entityListType}($id: ID!, $query: String) {
                 policy(id: $id) {
                     id
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}{ ...${fragmentName} }
                 }
             }
             ${fragment}
