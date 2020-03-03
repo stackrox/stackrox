@@ -40,5 +40,5 @@ var (
 	SensorBasedDetection = registerFeature("Sensor Based Detection", "ROX_SENSOR_DETECTION", false)
 
 	// ImageLabelPolicy enables the Required Image Label policy type
-	ImageLabelPolicy = registerFeature("Enable the Required Image Label Policy", "ROX_REQUIRED_IMAGE_LABEL_POLICY", false)
+	ImageLabelPolicy = registerFeature("Enable the Required Image Label Policy", "ROX_REQUIRED_IMAGE_LABEL_POLICY", true)
 )

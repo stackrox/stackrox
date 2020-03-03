@@ -9,20 +9,20 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
-// RequiredMapValueQueryBuilder builds queries to check for the (absence of) a required map value.
-type RequiredMapValueQueryBuilder struct {
+// RequiredMapValueWithRegexKeyQueryBuilder builds queries to check for the (absence of) a required map value.
+type RequiredMapValueWithRegexKeyQueryBuilder struct {
 	GetKeyValuePolicy func(*storage.PolicyFields) *storage.KeyValuePolicy
 	FieldName         string
 	FieldLabel        search.FieldLabel
 }
 
 // Query implements the PolicyQueryBuilder interface.
-func (r RequiredMapValueQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.Query, searchbasedpolicies.ViolationPrinter, error) {
+func (r RequiredMapValueWithRegexKeyQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.Query, searchbasedpolicies.ViolationPrinter, error) {
 	keyValuePolicy := r.GetKeyValuePolicy(fields)
-	return mapKeyValueQuery(optionsMap, keyValuePolicy, r.FieldLabel, r.FieldName, r.Name(), search.ExactMatchString)
+	return mapKeyValueQuery(optionsMap, keyValuePolicy, r.FieldLabel, r.FieldName, r.Name(), search.RegexQueryString)
 }
 
 // Name implements the PolicyQueryBuilder interface.
-func (r RequiredMapValueQueryBuilder) Name() string {
+func (r RequiredMapValueWithRegexKeyQueryBuilder) Name() string {
 	return fmt.Sprintf("query builder for required %s", r.FieldName)
 }

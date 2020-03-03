@@ -15,7 +15,7 @@
   ],
   "fields": {
     "requiredImageLabel": {
-      "key": "required-label",
+      "key": "required-label.*",
       "value": "required-value.*"
     }
   },
