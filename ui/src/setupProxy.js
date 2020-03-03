@@ -9,5 +9,6 @@ module.exports = function main(app) {
 
     app.use(proxy('/v1', defaultOptions));
     app.use(proxy('/api', defaultOptions));
+    app.use(proxy('/docs', defaultOptions));
     app.use(proxy('/sso', { ...defaultOptions, xfwd: true }));
 };

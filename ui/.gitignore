@@ -8,6 +8,7 @@ lint
 # testing
 /coverage
 /**/__snapshots__
+/.nyc_output
 
 # production
 /build

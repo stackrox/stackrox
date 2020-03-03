@@ -1,9 +1,11 @@
 // You can read more here:
 // https://on.cypress.io/plugins-guide
 
-/* eslint-disable no-unused-vars */
+// `on` is used to hook into various events Cypress emits
+// `config` is the resolved Cypress config
 module.exports = (on, config) => {
-    // `on` is used to hook into various events Cypress emits
-    // `config` is the resolved Cypress config
+    if (config.env.COLLECT_COVERAGE) {
+        // eslint-disable-next-line global-require
+        on('task', require('@cypress/code-coverage/task'));
+    }
 };
-/* eslint-enable no-unused-vars */

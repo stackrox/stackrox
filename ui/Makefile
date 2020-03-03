@@ -32,6 +32,11 @@ start: deps
 	@echo "+ $@"
 	yarn start
 
+.PHONY: start-coverage
+start-coverage: deps
+	@echo "+ $@"
+	yarn start:coverage
+
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
@@ -51,6 +56,11 @@ test-e2e-local: deps $(SOURCES)
 test-e2e-ci: deps $(SOURCES)
 	@echo "+ $@"
 	yarn test-e2e-ci --config baseUrl=$(UI_BASE_URL)
+
+.PHONY: test-e2e-ci-coverage
+test-e2e-ci-coverage: deps $(SOURCES)
+	@echo "+ $@"
+	yarn test-e2e-ci:coverage --config baseUrl=$(UI_BASE_URL)
 
 .PHONY: test-e2e-demo-local
 test-e2e-demo-local: deps $(SOURCES)

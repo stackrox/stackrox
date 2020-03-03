@@ -213,7 +213,12 @@ determineWhetherToRunUIDevServer: &determineWhetherToRunUIDevServer
   run:
     name: Determine whether to run the UI dev server
     command: |
-      if .circleci/pr_has_label.sh ci-ui-dev-server; then
+      if .circleci/pr_has_label.sh ci-ui-e2e-coverage; then
+        echo "Running UI E2Es against the dev server with code instrumentation due to the presence of the ci-ui-e2e-coverage label."
+        # it's a dev server, so all logic to run dev server still applies
+        cci-export RUN_UI_DEV_SERVER true
+        cci-export UI_E2E_COLLECT_COVERAGE true
+      elif .circleci/pr_has_label.sh ci-ui-dev-server; then
         echo "Running UI E2Es against the dev server due to the presence of the ci-ui-dev-server label."
         cci-export RUN_UI_DEV_SERVER true
       else
@@ -226,7 +231,12 @@ runUIDevServer: &runUIDevServer
     name: Run the UI dev server
     command: |
       if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
-        make -C ui start
+        export YARN_START_TARGET="https://${API_ENDPOINT}"
+        if [ "${UI_E2E_COLLECT_COVERAGE}" = "true" ]; then
+          make -C ui start-coverage
+        else
+          make -C ui start
+        fi
       fi
     background: true
 
@@ -236,7 +246,7 @@ waitForUIDevServer: &waitForUIDevServer
     command: |
       if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
         # --retry-connrefused only works when forcing IPv4, see https://github.com/appropriate/docker-curl/issues/5
-        curl -k --max-time 60 --retry 50 --retry-connrefused -4 --retry-delay 5 --retry-max-time 300 https://127.0.0.1:3000/v1/ping
+        curl -k --max-time 60 --retry 50 --retry-connrefused -4 --retry-delay 5 --retry-max-time 300 https://localhost:3000/
       else
         echo "Not running the dev server, skipping..."
       fi
@@ -256,7 +266,11 @@ runUIE2E: &runUIE2E
         fi
       fi
 
-      make -C ui test-e2e-ci
+      if [ "${UI_E2E_COLLECT_COVERAGE}" = "true" ]; then
+        make -C ui test-e2e-ci-coverage
+      else
+        make -C ui test-e2e-ci
+      fi
 
 collectImbuedUILogs: &collectImbuedUILogs
   run:
@@ -390,6 +404,11 @@ storeCypressScreenshots: &storeCypressScreenshots
   store_artifacts:
     path: ui/cypress/screenshots
     destination: ui-e2e-screenshots
+
+storeUITestCoverage: &storeUITestCoverage
+  store_artifacts:
+    path: ui/coverage
+    destination: ui-test-coverage
 
 storeQATestResults: &storeQATestResults
   store_test_results:
@@ -1993,6 +2012,7 @@ jobs:
       - *storeCypressResults
       - *storeCypressScreenshots
       - *storeCypressVideos
+      - *storeUITestCoverage
 
   provision-cluster-qa-tests:
     <<: *defaults
@@ -2641,6 +2661,7 @@ jobs:
       - *storeCypressResults
       - *storeCypressScreenshots
       - *storeCypressVideos
+      - *storeUITestCoverage
 
       - run:
           name: Destroy EKS cluster
@@ -2810,6 +2831,7 @@ jobs:
       - *storeCypressResults
       - *storeCypressScreenshots
       - *storeCypressVideos
+      - *storeUITestCoverage
 
       - run:
           name: Pack kops volume
