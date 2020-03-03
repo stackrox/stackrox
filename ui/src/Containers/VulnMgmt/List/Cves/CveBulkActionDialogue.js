@@ -66,6 +66,11 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const cveItems =
         !cveLoading && cveData && cveData.results && cveData.results.length ? cveData.results : [];
 
+    const { IMAGE_CVE: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
+
+    // only the allowed CVEs are combined for use in the policy
+    const allowedCvesStr = allowedCves.map(cve => cve.cve).join(',');
+
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
         query getPolicies($policyQuery: String, $scopeQuery: String) {
@@ -93,11 +98,6 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             ? policyData.results.map(pol => ({ ...pol, value: pol.id, label: pol.name }))
             : [];
 
-    const { IMAGE_VULNERABILITY: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
-
-    // only the allowed CVEs are combined for use in the policy
-    const allowedCvesStr = allowedCves.join(',');
-
     function handleChange(event) {
         if (get(policy, event.target.name) !== undefined) {
             const newPolicyFields = { ...policy };
@@ -124,8 +124,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
             setPolicy(newPolicy);
         } else {
-            // not in existing list, so must be a typed name instead of an ID
-            const newPolicy = { ...policy, name: value, id: '' };
+            // 1. not in existing list, so must be a typed name instead of an ID
+            // 2. also use this opportunity to only add allowed CVEs to new policy
+            const newPolicy = { ...policy, name: value, id: '', fields: { cve: allowedCvesStr } };
 
             setPolicy(newPolicy);
         }
