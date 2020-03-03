@@ -12,6 +12,11 @@ export function truncate(str, maxLength = 200) {
     return `${truncatedStr}…`;
 }
 
+export function pluralizeHas(len) {
+    return len === 1 ? 'has' : 'have';
+}
+
 export default {
-    truncate
+    truncate,
+    pluralizeHas
 };

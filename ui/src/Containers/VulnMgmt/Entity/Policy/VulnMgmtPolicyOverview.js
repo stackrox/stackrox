@@ -18,6 +18,7 @@ import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/Violatio
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import { pluralizeHas } from 'utils/textUtils';
 
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
@@ -207,7 +208,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                     header={`${failingDeployments.length} ${pluralize(
                         entityTypes.DEPLOYMENT,
                         failingDeployments.length
-                    )} ${failingDeployments.length ? 'have' : 'has'} failed across this policy`}
+                    )} ${pluralizeHas(failingDeployments.length)} failed across this policy`}
                     rows={failingDeployments}
                     entityType={entityTypes.DEPLOYMENT}
                     noDataText="No deployments have failed across this policy"

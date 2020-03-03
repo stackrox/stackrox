@@ -1,4 +1,4 @@
-import { truncate } from './textUtils';
+import { truncate, pluralizeHas } from './textUtils';
 
 describe('truncate pipe', () => {
     it('should return the same string if shorter than length', () => {
@@ -26,5 +26,16 @@ describe('truncate pipe', () => {
         const truncatedStr = truncate(str, maxLength);
 
         expect(truncatedStr).toEqual('The quick…');
+    });
+});
+
+describe('pluralizeHas', () => {
+    it('should pluralize to "has" when length is 1', () => {
+        expect(pluralizeHas(1)).toEqual('has');
+    });
+
+    it('should pluralize to "have" when length is 0 or > 1', () => {
+        expect(pluralizeHas(0)).toEqual('have');
+        expect(pluralizeHas(10)).toEqual('have');
     });
 });
