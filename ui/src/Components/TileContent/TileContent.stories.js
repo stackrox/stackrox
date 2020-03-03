@@ -14,6 +14,12 @@ export const withSuperText = () => {
     return <TileContent superText={superText} text={text} />;
 };
 
+export const withNumberSuperText = () => {
+    const superText = 0;
+    const text = 'Policy Violations';
+    return <TileContent superText={superText} text={text} />;
+};
+
 export const withSubText = () => {
     const text = '6 Policies';
     const subText = '(2 Failing)';

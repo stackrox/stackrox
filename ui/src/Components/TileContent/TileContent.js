@@ -4,19 +4,19 @@ import PropTypes from 'prop-types';
 const TileContent = ({ className, superText, subText, icon, text, short, textColorClass }) => {
     return (
         <div className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}>
-            {superText && (
+            {superText !== null && (
                 <div className="text-3xl tracking-widest pb-1" data-test-id="tileLinkSuperText">
                     {superText}
                 </div>
             )}
-            {icon && <div className="p-1 flex justify-center">{icon}</div>}
+            {icon !== null && <div className="p-1 flex justify-center">{icon}</div>}
             <div
                 className="flex items-center font-600 font-condensed uppercase justify-center"
                 data-test-id="tile-link-value"
             >
                 {text}
             </div>
-            {subText && (
+            {subText !== null && (
                 <div
                     className={`${
                         short ? 'text-xs' : 'text-sm pt-1'
