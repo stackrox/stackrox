@@ -104,7 +104,7 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
         .setSort([
             // @TODO to uncomment once Policy Status field is sortable on backend
             // { id: policySortFields.POLICY_STATUS, desc: false },
-            { id: policySortFields.SEVERITY, desc: false }
+            { id: policySortFields.SEVERITY, desc: true }
         ])
         .toUrl();
 
