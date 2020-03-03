@@ -127,6 +127,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
@@ -637,7 +638,7 @@ func debugRoutes() []routes.CustomRoute {
 
 func waitForTerminationSignal() {
 	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	reprocessor.Singleton().Stop()
@@ -645,5 +646,10 @@ func waitForTerminationSignal() {
 	pruning.Singleton().Stop()
 	log.Info("Stopped garbage collector")
 	globaldb.Close()
+
+	if sig == syscall.SIGHUP {
+		log.Info("Restarting central")
+		osutils.Restart()
+	}
 	log.Info("Central terminated")
 }
