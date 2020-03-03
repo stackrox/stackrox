@@ -7,22 +7,24 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import Button from 'Components/Button';
 import { PlusCircle } from 'react-feather';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import Loader from 'Components/Loader';
 import Comment from './Comment';
 
 const CommentThread = ({
     className,
     type,
-    currentUser,
     comments,
-    onSave,
-    onDelete,
+    onCreate,
+    onUpdate,
+    onRemove,
     defaultLimit,
-    defaultOpen
+    defaultOpen,
+    isLoading
 }) => {
     const [newComment, createComment] = useState(null);
     const [limit, setLimit] = useState(defaultLimit);
 
-    const sortedComments = sortBy(comments, ['createdTime', 'user']);
+    const sortedComments = sortBy(comments, ['createdTime']);
     const { length } = sortedComments;
     const hasMoreComments = limit < length;
 
@@ -33,10 +35,8 @@ const CommentThread = ({
     function addNewComment(e) {
         e.stopPropagation(); // prevents click-through trigger of collapsible
         createComment({
-            user: currentUser,
             createdTime: new Date().toISOString(),
-            message: '',
-            canModify: true
+            message: ''
         });
     }
 
@@ -44,40 +44,52 @@ const CommentThread = ({
         createComment(null);
     }
 
-    const content =
-        comments.length > 0 || !!newComment ? (
-            <div className="p-3">
-                {sortedComments.slice(0, limit).map((comment, i) => (
-                    <div key={comment.id} className={i === 0 ? 'mt-0' : 'mt-3'}>
-                        <Comment comment={comment} onSave={onSave} onDelete={onDelete} />
-                    </div>
-                ))}
-                {!!newComment && (
-                    <div className={sortedComments.length === 0 ? 'mt-0' : 'mt-3'}>
-                        <Comment
-                            comment={newComment}
-                            onSave={onSave}
-                            onClose={onClose}
-                            onDelete={onDelete}
-                            defaultEdit
-                        />
-                    </div>
-                )}
-                {hasMoreComments && (
-                    <div className="flex flex-1 justify-center mt-3">
-                        <Button
-                            className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-full rounded-sm text-sm text-success-900 uppercase"
-                            text="Load More Comments"
-                            onClick={showMoreComments}
-                        />
-                    </div>
-                )}
-            </div>
-        ) : (
-            <div className="p-4">
-                <NoResultsMessage message="No Comments Available" />
-            </div>
-        );
+    function onSave(id, message) {
+        if (!id) onCreate(message);
+        else onUpdate(id, message);
+    }
+
+    let content = (
+        <div className="p-3">
+            <Loader />
+        </div>
+    );
+    if (!isLoading) {
+        content =
+            comments.length > 0 || !!newComment ? (
+                <div className="p-3">
+                    {sortedComments.slice(0, limit).map((comment, i) => (
+                        <div key={comment.id} className={i === 0 ? 'mt-0' : 'mt-3'}>
+                            <Comment comment={comment} onSave={onSave} onRemove={onRemove} />
+                        </div>
+                    ))}
+                    {!!newComment && (
+                        <div className={sortedComments.length === 0 ? 'mt-0' : 'mt-3'}>
+                            <Comment
+                                comment={newComment}
+                                onSave={onSave}
+                                onClose={onClose}
+                                onRemove={onRemove}
+                                defaultEdit
+                            />
+                        </div>
+                    )}
+                    {hasMoreComments && (
+                        <div className="flex flex-1 justify-center mt-3">
+                            <Button
+                                className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-full rounded-sm text-sm text-success-900 uppercase"
+                                text="Load More Comments"
+                                onClick={showMoreComments}
+                            />
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="p-4">
+                    <NoResultsMessage message="No Comments" />
+                </div>
+            );
+    }
 
     return (
         <CollapsibleCard
@@ -101,29 +113,35 @@ const CommentThread = ({
 
 CommentThread.propTypes = {
     type: PropTypes.string.isRequired,
-    currentUser: PropTypes.string.isRequired,
     comments: PropTypes.arrayOf(
         PropTypes.shape({
-            id: PropTypes.string,
+            id: PropTypes.string.isRequired,
             message: PropTypes.string,
-            user: PropTypes.string,
-            createdTime: PropTypes.string,
-            updatedTime: PropTypes.string,
-            canModify: PropTypes.bool
+            user: PropTypes.shape({
+                id: PropTypes.string.isRequired,
+                name: PropTypes.string.isRequired,
+                email: PropTypes.string.isRequired
+            }),
+            createdTime: PropTypes.string.isRequired,
+            updatedTime: PropTypes.string.isRequired,
+            isModifiable: PropTypes.bool.isRequired
         })
     ),
-    onSave: PropTypes.func.isRequired,
-    onDelete: PropTypes.func.isRequired,
+    onCreate: PropTypes.func.isRequired,
+    onUpdate: PropTypes.func.isRequired,
+    onRemove: PropTypes.func.isRequired,
     defaultLimit: PropTypes.number,
     defaultOpen: PropTypes.bool,
-    className: PropTypes.string
+    className: PropTypes.string,
+    isLoading: PropTypes.bool
 };
 
 CommentThread.defaultProps = {
     comments: [],
-    defaultLimit: 3,
+    defaultLimit: 5,
     defaultOpen: false,
-    className: 'border border-base-400'
+    className: 'border border-base-400',
+    isLoading: false
 };
 
 export default CommentThread;

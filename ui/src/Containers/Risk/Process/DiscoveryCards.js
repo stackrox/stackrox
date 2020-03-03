@@ -2,11 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import orderBy from 'lodash/orderBy';
 
-import { knownBackendFlags } from 'utils/featureFlags';
-
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
-import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 import ProcessDiscoveryCard from './DiscoveryCard';
 import Binaries from './Binaries';
 
@@ -24,14 +19,6 @@ function DiscoveryCards({ deploymentId, processGroup, processEpoch, setProcessEp
                 processEpoch={processEpoch}
                 setProcessEpoch={setProcessEpoch}
             >
-                <div className="p-2">
-                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                        <div className="mb-3">
-                            <AnalystTags type="Process" />
-                        </div>
-                        <AnalystComments type="Process" />
-                    </FeatureEnabled>
-                </div>
                 <Binaries processes={pg.groups} />
             </ProcessDiscoveryCard>
         </div>

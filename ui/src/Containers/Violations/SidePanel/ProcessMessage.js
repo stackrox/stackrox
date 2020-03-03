@@ -3,11 +3,6 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { knownBackendFlags } from 'utils/featureFlags';
-
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
-import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 
 function KeyValue({ label, value }) {
     return (
@@ -50,14 +45,6 @@ function ProcessMessage({ process }) {
                 <KeyValue label="Arguments:" value={args} />
             </div>
             {ancestors}
-            <div className="mb-4 p-2">
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="mb-3">
-                        <AnalystTags type="Process" />
-                    </div>
-                    <AnalystComments type="Process" />
-                </FeatureEnabled>
-            </div>
         </div>
     );
 }

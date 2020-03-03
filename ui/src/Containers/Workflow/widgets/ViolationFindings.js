@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { knownBackendFlags } from 'utils/featureFlags';
+import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import FeatureEnabled from 'Containers/FeatureEnabled';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -57,21 +58,18 @@ const ViolationFindings = ({ data, message }) => {
                         })}
                     </ul>
                 </Widget>
-
-                {knownBackendFlags.ROX_ANALYST_NOTES_UI === true && (
-                    <div>
-                        <div className="s-1 sy-2 bg-base-100 m-4 rounded shadow">
-                            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                                <AnalystComments type="Violation" className="" />
-                            </FeatureEnabled>
-                        </div>
-                        <div className="sx-2 sy-1 bg-base-100 m-4 rounded shadow">
-                            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                                <AnalystTags type="Violation" className="h-full" />
-                            </FeatureEnabled>
-                        </div>
+                <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
+                    <div className="sx-1 sy-2 bg-base-100 m-4 rounded shadow">
+                        <AnalystComments
+                            type={ANALYST_NOTES_TYPES.ALERT}
+                            id={policyViolation.id}
+                            className="h-full"
+                        />
                     </div>
-                )}
+                    <div className="sx-2 sy-1 bg-base-100 m-4 rounded shadow">
+                        <AnalystTags type="Violation" id={policyViolation.id} className="h-full" />
+                    </div>
+                </FeatureEnabled>
             </div>
         );
     } else {

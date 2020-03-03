@@ -5,7 +5,7 @@ const TextArea = ({ name, required, register, errors, ...rest }) => {
     return (
         <>
             <textarea
-                className="border border-base-400 leading-normal p-1 w-full"
+                className="form-textarea text-base border border-base-400 leading-normal p-1 w-full"
                 name={name}
                 ref={register({ required })}
                 {...rest}

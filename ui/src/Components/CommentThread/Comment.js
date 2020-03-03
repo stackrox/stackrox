@@ -11,7 +11,7 @@ import CustomDialogue from 'Components/CustomDialogue';
 
 const regexURL = /(https?: \/\/[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/[a-zA-Z0-9]+\.[^\s]{2,}|[a-zA-Z0-9]+\.[^\s]{2,})/g;
 
-const ActionButtons = ({ isEditing, canModify, onEdit, onDelete, onClose }) => {
+const ActionButtons = ({ isEditing, isModifiable, onEdit, onRemove, onClose }) => {
     if (isEditing) {
         return (
             <div>
@@ -23,14 +23,14 @@ const ActionButtons = ({ isEditing, canModify, onEdit, onDelete, onClose }) => {
         );
     }
     return (
-        <div className={`flex ${!canModify && 'invisible'}`}>
+        <div className={`flex ${!isModifiable && 'invisible'}`}>
             <Edit
                 className="h-4 w-4 mx-2 text-primary-800 cursor-pointer hover:text-primary-500"
                 onClick={onEdit}
             />
             <Trash2
                 className="h-4 w-4 text-primary-800 cursor-pointer hover:text-primary-500"
-                onClick={onDelete}
+                onClick={onRemove}
             />
         </div>
     );
@@ -83,13 +83,15 @@ const InputForm = ({ value, onSubmit }) => {
     );
 };
 
-const Comment = ({ comment, onDelete, onSave, onClose, defaultEdit }) => {
+const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit }) => {
     const [isEditing, setEdit] = useState(defaultEdit);
     const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
-    const { user, createdTime, updatedTime, message, canModify } = comment;
+    const { id, user, createdTime, updatedTime, message, isModifiable } = comment;
 
     const isCommentUpdated = updatedTime && createdTime !== updatedTime;
+
+    const textHeader = user ? user.name : 'Add New Comment';
 
     function onEdit() {
         setEdit(true);
@@ -102,10 +104,10 @@ const Comment = ({ comment, onDelete, onSave, onClose, defaultEdit }) => {
 
     function onSubmit(data) {
         onCloseHandler();
-        onSave(comment, data.message);
+        onSave(id, data.message);
     }
 
-    function onDeleteHandler() {
+    function onRemoveHandler() {
         setIsDialogueOpen(true);
     }
 
@@ -114,7 +116,7 @@ const Comment = ({ comment, onDelete, onSave, onClose, defaultEdit }) => {
     }
 
     function confirmDeletion() {
-        onDelete(comment);
+        onRemove(id);
         setIsDialogueOpen(false);
     }
 
@@ -127,12 +129,12 @@ const Comment = ({ comment, onDelete, onSave, onClose, defaultEdit }) => {
             } border rounded-lg p-2`}
         >
             <div className="flex flex-1">
-                <div className="text-primary-800 flex flex-1">{user}</div>
+                <div className="text-primary-800 flex flex-1">{textHeader}</div>
                 <ActionButtons
                     isEditing={isEditing}
-                    canModify={canModify}
+                    isModifiable={isModifiable}
                     onEdit={onEdit}
-                    onDelete={onDeleteHandler}
+                    onRemove={onRemoveHandler}
                     onClose={onCloseHandler}
                 />
             </div>
@@ -163,12 +165,16 @@ Comment.propTypes = {
     comment: PropTypes.shape({
         id: PropTypes.string,
         message: PropTypes.string,
-        user: PropTypes.string,
+        user: PropTypes.shape({
+            id: PropTypes.string.isRequired,
+            name: PropTypes.string.isRequired,
+            email: PropTypes.string.isRequired
+        }),
         createdTime: PropTypes.string,
         updatedTime: PropTypes.string,
-        canModify: PropTypes.bool
+        isModifiable: PropTypes.bool.isRequired
     }).isRequired,
-    onDelete: PropTypes.func.isRequired,
+    onRemove: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
     onClose: PropTypes.func,
     defaultEdit: PropTypes.bool
