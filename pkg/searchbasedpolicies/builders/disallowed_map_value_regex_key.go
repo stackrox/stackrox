@@ -9,15 +9,15 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
-// DisallowedMapValueQueryBuilder builds queries to check for the existence of a map value.
-type DisallowedMapValueQueryBuilder struct {
+// DisallowedMapValueRegexKeyQueryBuilder builds queries to check for the existence of a map value.
+type DisallowedMapValueRegexKeyQueryBuilder struct {
 	GetKeyValuePolicy func(*storage.PolicyFields) *storage.KeyValuePolicy
 	FieldName         string
 	FieldLabel        search.FieldLabel
 }
 
 // Query implements the PolicyQueryBuilder interface.
-func (r DisallowedMapValueQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (r DisallowedMapValueRegexKeyQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	keyValuePolicy := r.GetKeyValuePolicy(fields)
 	if keyValuePolicy.GetKey() == "" {
 		if keyValuePolicy.GetValue() != "" {
@@ -26,10 +26,11 @@ func (r DisallowedMapValueQueryBuilder) Query(fields *storage.PolicyFields, opti
 		}
 		return
 	}
-	return disallowedMapValueQuery(optionsMap, keyValuePolicy, r.FieldLabel, r.FieldName, r.Name(), func(str string) string { return str })
+
+	return disallowedMapValueQuery(optionsMap, keyValuePolicy, r.FieldLabel, r.FieldName, r.Name(), search.RegexQueryString)
 }
 
 // Name implements the PolicyQueryBuilder interface.
-func (r DisallowedMapValueQueryBuilder) Name() string {
+func (r DisallowedMapValueRegexKeyQueryBuilder) Name() string {
 	return fmt.Sprintf("query builder for disallowed map value %s", r.FieldName)
 }

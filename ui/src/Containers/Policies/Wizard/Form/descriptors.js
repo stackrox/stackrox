@@ -629,6 +629,25 @@ const policyConfigurationDescriptor = [
         ],
         required: false,
         default: false
+    },
+    {
+        label: 'Disallowed Image Label',
+        jsonpath: 'fields.disallowedImageLabel',
+        type: 'group',
+        jsonpaths: [
+            {
+                jsonpath: 'fields.disallowedImageLabel.key',
+                type: 'text',
+                placeholder: 'disallowedLabelKey.*'
+            },
+            {
+                jsonpath: 'fields.disallowedImageLabel.value',
+                type: 'text',
+                placeholder: 'disallowedValue.*'
+            }
+        ],
+        required: false,
+        default: false
     }
 ];
 

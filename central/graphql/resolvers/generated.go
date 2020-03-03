@@ -708,6 +708,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvss: NumericalPolicy",
 		"directory: String!",
 		"disallowedAnnotation: KeyValuePolicy",
+		"disallowedImageLabel: KeyValuePolicy",
 		"dropCapabilities: [String!]!",
 		"env: KeyValuePolicy",
 		"fixedBy: String!",
@@ -6310,6 +6311,11 @@ func (resolver *policyFieldsResolver) Directory(ctx context.Context) string {
 
 func (resolver *policyFieldsResolver) DisallowedAnnotation(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetDisallowedAnnotation()
+	return resolver.root.wrapKeyValuePolicy(value, true, nil)
+}
+
+func (resolver *policyFieldsResolver) DisallowedImageLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
+	value := resolver.data.GetDisallowedImageLabel()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 

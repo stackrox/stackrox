@@ -323,6 +323,15 @@ const fieldsMap = {
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments with images missing the required label ${key}${comma}${value}`;
         }
+    },
+    disallowedImageLabel: {
+        label: 'Disallowed Image Label',
+        formatValue: d => {
+            const key = d.key ? `key=${d.key}` : '';
+            const value = d.value ? `value=${d.value}` : '';
+            const comma = d.key && d.value ? ', ' : '';
+            return `Alerts on deployments with disallowed image label ${key}${comma}${value}`;
+        }
     }
 };
 

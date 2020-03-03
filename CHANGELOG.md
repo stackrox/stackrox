@@ -13,6 +13,8 @@ All notable changes to this project that require documentation updates will be d
 - Detection and image enrichment have been moved to the individual Sensor clusters. Sensor will proxy image scan requests
   through Central and then run detection to generate both runtime and deploytime alerts. These alerts are sent to Central and any
   enforcement if necessary will be executed by Sensor without a roundtrip to Central.
+- Added a Required Image Label policy type.  Policies of this type will create a violation for any deployment containing images that lack the required label.  This policy type uses a regex match on either the key or the key and the value of a label.
+- Added a Disallowed Image Label policy type.  Policies of this type will create a violation for any deployment containing images with the disallowed label.  This policy type uses a regex match on either the key or the key and the value of a label.
 
 ## [39.0]
 ### Added

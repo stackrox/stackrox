@@ -15,4 +15,13 @@ var (
 			return fields.GetDisallowedAnnotation()
 		},
 	}
+
+	// DisallowedImageLabelQueryBuilder is a KeyValue query builder for disallowed image labels.
+	DisallowedImageLabelQueryBuilder = builders.DisallowedMapValueRegexKeyQueryBuilder{
+		FieldName:  "image label",
+		FieldLabel: search.ImageLabel,
+		GetKeyValuePolicy: func(fields *storage.PolicyFields) *storage.KeyValuePolicy {
+			return fields.GetDisallowedImageLabel()
+		},
+	}
 )
