@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	imageBucketName = []byte("image\x00")
-	migration       = types.Migration{
+	imageBucketName     = []byte("imageBucket")
+	listImageBucketName = []byte("images_list")
+	migration           = types.Migration{
 		StartingSeqNum: 28,
 		VersionAfter:   storage.Version{SeqNum: 29},
 		Run:            rewriteImagesWithCorrectScanStats,
@@ -23,14 +24,14 @@ func rewriteImagesWithCorrectScanStats(_ *bolt.DB, badgerDB *badger.DB) error {
 	return badgerDB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
-
 		batch := badgerDB.NewWriteBatch()
+		defer batch.Cancel()
 		for it.Seek(imageBucketName); it.ValidForPrefix(imageBucketName); it.Next() {
 			if batch.Error() != nil {
 				return batch.Error()
 			}
 
-			key := it.Item().Key()
+			key := it.Item().KeyCopy([]byte{})
 			err := it.Item().Value(func(v []byte) error {
 				var image storage.Image
 				if err := proto.Unmarshal(v, &image); err != nil {
@@ -38,18 +39,13 @@ func rewriteImagesWithCorrectScanStats(_ *bolt.DB, badgerDB *badger.DB) error {
 				}
 
 				fillScanStats(&image)
+				listImage := convertImageToListImage(&image)
 
-				data, err := proto.Marshal(&image)
-				if err != nil {
-					return errors.Wrapf(err, "marshal error for image: %s", key)
+				if err := writeImage(batch, key, image); err != nil {
+					return err
 				}
-
-				if err := batch.Set(key, data); err != nil {
-					return errors.Wrapf(err, "error setting key/value in Badger for bucket %q", string(imageBucketName))
-				}
-				return nil
+				return writeListImage(batch, key, *listImage)
 			})
-			defer batch.Cancel()
 			if err != nil {
 				return err
 			}
@@ -59,6 +55,29 @@ func rewriteImagesWithCorrectScanStats(_ *bolt.DB, badgerDB *badger.DB) error {
 		}
 		return nil
 	})
+}
+
+func writeImage(batch *badger.WriteBatch, key []byte, image storage.Image) error {
+	data, err := proto.Marshal(&image)
+	if err != nil {
+		return errors.Wrapf(err, "marshal error for image: %s", key)
+	}
+	if err := batch.Set(key, data); err != nil {
+		return errors.Wrapf(err, "error setting key/value in Badger for bucket %q", string(imageBucketName))
+	}
+	return nil
+}
+
+func writeListImage(batch *badger.WriteBatch, key []byte, listImage storage.ListImage) error {
+	data, err := proto.Marshal(&listImage)
+	if err != nil {
+		return errors.Wrapf(err, "marshal error for list image: %s", key)
+	}
+	key = getKey(listImageBucketName, listImage.GetId())
+	if err := batch.Set(key, data); err != nil {
+		return errors.Wrapf(err, "error setting key/value in Badger for bucket %q", string(listImageBucketName))
+	}
+	return nil
 }
 
 func fillScanStats(i *storage.Image) {
@@ -126,6 +145,41 @@ func fillScanStats(i *storage.Image) {
 			}
 		}
 	}
+}
+
+func convertImageToListImage(i *storage.Image) *storage.ListImage {
+	listImage := &storage.ListImage{
+		Id:          i.GetId(),
+		Name:        i.GetName().GetFullName(),
+		Created:     i.GetMetadata().GetV1().GetCreated(),
+		LastUpdated: i.GetLastUpdated(),
+	}
+
+	if i.GetSetComponents() != nil {
+		listImage.SetComponents = &storage.ListImage_Components{
+			Components: i.GetComponents(),
+		}
+	}
+	if i.GetSetCves() != nil {
+		listImage.SetCves = &storage.ListImage_Cves{
+			Cves: i.GetCves(),
+		}
+	}
+	if i.GetSetFixable() != nil {
+		listImage.SetFixable = &storage.ListImage_FixableCves{
+			FixableCves: i.GetFixableCves(),
+		}
+	}
+	return listImage
+}
+
+func getKey(bucketName []byte, id string) []byte {
+	key := make([]byte, 0, len(bucketName)+len(id)+1)
+	key = append(key, bucketName...)
+	key = append(key, []byte("\x00")...)
+	key = append(key, id...)
+
+	return key
 }
 
 func init() {

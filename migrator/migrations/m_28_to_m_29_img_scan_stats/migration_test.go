@@ -16,6 +16,7 @@ import (
 func TestMigration(t *testing.T) {
 	cases := []struct {
 		image               *storage.Image
+		listImage           *storage.ListImage
 		expectedCVEs        int32
 		expectedFixableCVEs int32
 	}{
@@ -50,12 +51,15 @@ func TestMigration(t *testing.T) {
 					},
 				},
 			},
+			listImage: &storage.ListImage{
+				Id: "image-1",
+			},
 			expectedCVEs:        4,
 			expectedFixableCVEs: 1,
 		},
 		{
 			image: &storage.Image{
-				Id: "alert-1",
+				Id: "image-2",
 				Scan: &storage.ImageScan{
 					Components: []*storage.EmbeddedImageScanComponent{
 						{
@@ -84,6 +88,9 @@ func TestMigration(t *testing.T) {
 					},
 				},
 			},
+			listImage: &storage.ListImage{
+				Id: "image-2",
+			},
 			expectedCVEs:        2,
 			expectedFixableCVEs: 1,
 		},
@@ -108,7 +115,7 @@ func TestMigration(t *testing.T) {
 func fillImages(db *badger.DB, images []*storage.Image) error {
 	for _, image := range images {
 		err := db.Update(func(tx *badger.Txn) error {
-			key := getImageKey(image.GetId())
+			key := getKey(imageBucketName, image.GetId())
 
 			data, err := proto.Marshal(image)
 			if err != nil {
@@ -125,7 +132,7 @@ func fillImages(db *badger.DB, images []*storage.Image) error {
 
 func validateMigration(t *testing.T, db *badger.DB, image *storage.Image, expectedCVEs, expectedFixableCVEs int32) {
 	err := db.View(func(tx *badger.Txn) error {
-		item, err := tx.Get(getImageKey(image.GetId()))
+		item, err := tx.Get(getKey(imageBucketName, image.GetId()))
 		require.NoError(t, err)
 
 		image = &storage.Image{}
@@ -136,15 +143,19 @@ func validateMigration(t *testing.T, db *badger.DB, image *storage.Image, expect
 
 		assert.Equal(t, expectedCVEs, image.GetCves())
 		assert.Equal(t, expectedFixableCVEs, image.GetFixableCves())
+
+		item, err = tx.Get(getKey(listImageBucketName, image.GetId()))
+		require.NoError(t, err)
+
+		listImage := &storage.ListImage{}
+		err = item.Value(func(v []byte) error {
+			return proto.Unmarshal(v, listImage)
+		})
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedCVEs, listImage.GetCves())
+		assert.Equal(t, expectedFixableCVEs, listImage.GetFixableCves())
 		return nil
 	})
 	require.NoError(t, err)
-}
-
-func getImageKey(imageID string) []byte {
-	key := make([]byte, 0, len(imageBucketName)+len(imageID))
-	key = append(key, imageBucketName...)
-	key = append(key, imageID...)
-
-	return key
 }

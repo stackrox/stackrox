@@ -105,32 +105,19 @@ func convertImageToListImage(i *storage.Image) *storage.ListImage {
 		Created:     i.GetMetadata().GetV1().GetCreated(),
 		LastUpdated: i.GetLastUpdated(),
 	}
-
-	if i.GetScan() != nil {
+	if i.GetSetComponents() != nil {
 		listImage.SetComponents = &storage.ListImage_Components{
-			Components: int32(len(i.GetScan().GetComponents())),
+			Components: i.GetComponents(),
 		}
-		var numVulns int32
-		var numFixableVulns int32
-		var fixedByProvided bool
-		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int32(len(c.GetVulns()))
-			for _, v := range c.GetVulns() {
-				if v.GetSetFixedBy() != nil {
-					fixedByProvided = true
-					if v.GetFixedBy() != "" {
-						numFixableVulns++
-					}
-				}
-			}
-		}
+	}
+	if i.GetSetCves() != nil {
 		listImage.SetCves = &storage.ListImage_Cves{
-			Cves: numVulns,
+			Cves: i.GetCves(),
 		}
-		if numVulns == 0 || fixedByProvided {
-			listImage.SetFixable = &storage.ListImage_FixableCves{
-				FixableCves: numFixableVulns,
-			}
+	}
+	if i.GetSetFixable() != nil {
+		listImage.SetFixable = &storage.ListImage_FixableCves{
+			FixableCves: i.GetFixableCves(),
 		}
 	}
 	return listImage

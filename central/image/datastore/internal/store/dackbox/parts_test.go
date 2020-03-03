@@ -22,6 +22,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 				Created: ts,
 			},
 		},
+		SetComponents: &storage.Image_Components{
+			Components: 3,
+		},
+		SetCves: &storage.Image_Cves{
+			Cves: 4,
+		},
+		SetFixable: &storage.Image_FixableCves{
+			FixableCves: 2,
+		},
 		Scan: &storage.ImageScan{
 			ScanTime: ts,
 			Components: []*storage.EmbeddedImageScanComponent{
@@ -90,6 +99,15 @@ func TestSplitAndMergeImage(t *testing.T) {
 			},
 			Scan: &storage.ImageScan{
 				ScanTime: ts,
+			},
+			SetComponents: &storage.Image_Components{
+				Components: 3,
+			},
+			SetCves: &storage.Image_Cves{
+				Cves: 4,
+			},
+			SetFixable: &storage.Image_FixableCves{
+				FixableCves: 2,
 			},
 		},
 		listImage: &storage.ListImage{
