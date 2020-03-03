@@ -6,6 +6,7 @@ import (
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
+	"github.com/stackrox/rox/central/cve/cveedge"
 	"github.com/stackrox/rox/central/cve/index"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/compound"
@@ -33,6 +35,8 @@ import (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.CVE.String(),
 	}
@@ -131,7 +135,7 @@ func formatSearcher(graphProvider graph.Provider,
 		imageSearcher,
 		deploymentSearcher,
 		clusterSearcher)
-	filteredSearcher := filtered.Searcher(compoundSearcher, cveSAC.GetSACFilters(graphProvider)...)
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), cveSAC.GetSACFilters(graphProvider)...)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, filteredSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
 	defaultSortedSearcher := paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

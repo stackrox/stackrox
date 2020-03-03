@@ -166,34 +166,44 @@ func (b *storeImpl) UpsertClusterCVEs(parts ...converter.ClusterCVEParts) error 
 
 	keysToUpdate := gatherKeysForCVEParts(parts...)
 	lockedKeySet := concurrency.DiscreteKeySet(keysToUpdate...)
-	b.keyFence.Lock(lockedKeySet)
-	defer b.keyFence.Unlock(lockedKeySet)
 
-	for batch := 0; batch < len(parts); batch += batchSize {
-		dackTxn := b.dacky.NewTransaction()
-		defer dackTxn.Discard()
+	return b.keyFence.DoStatusWithLock(lockedKeySet, func() error {
+		batch := batcher.New(len(parts), batchSize)
+		for {
+			start, end, ok := batch.Next()
+			if !ok {
+				break
+			}
 
-		for idx := batch; idx < len(parts) && idx < batch+batchSize; idx++ {
-			if err := vulnDackBox.Upserter.UpsertIn(nil, parts[idx].CVE, dackTxn); err != nil {
+			if err := b.upsertClusterCVEsNoBatch(parts[start:end]...); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts) error {
+	dackTxn := b.dacky.NewTransaction()
+	defer dackTxn.Discard()
+
+	for _, clusterCVE := range parts {
+		for _, child := range clusterCVE.Children {
+			if err := clusterCVEEdgeDackBox.Upserter.UpsertIn(nil, child.Edge, dackTxn); err != nil {
 				return err
 			}
 
-			for _, child := range parts[idx].Children {
-				if err := clusterCVEEdgeDackBox.Upserter.UpsertIn(nil, child.Edge, dackTxn); err != nil {
-					return err
-				}
-
-				if err := dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(parts[idx].CVE)); err != nil {
-					return err
-				}
+			if err := dackTxn.Graph().AddRefs(clusterDackBox.BucketHandler.GetKey(child.ClusterID), vulnDackBox.KeyFunc(clusterCVE.CVE)); err != nil {
+				return err
 			}
 		}
 
-		if err := dackTxn.Commit(); err != nil {
+		if err := vulnDackBox.Upserter.UpsertIn(nil, clusterCVE.CVE, dackTxn); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	return dackTxn.Commit()
 }
 
 func (b *storeImpl) Delete(ids ...string) error {

@@ -24,7 +24,7 @@ func UnsafeSearcher(searcher blevesearch.UnsafeSearcher, filters ...Filter) sear
 
 		allFiltered, err := ApplySACFilters(ctx, search.ResultsToIDs(results), filters...)
 		if err != nil {
-			return results, err
+			return nil, err
 		}
 
 		filteredResults := results[:0]
@@ -68,7 +68,7 @@ func ApplySACFilters(ctx context.Context, ids []string, filters ...Filter) ([]st
 	for _, filter := range filters {
 		filtered, err := filter.Apply(ctx, ids...)
 		if err != nil {
-			return ids, err
+			return nil, err
 		} else if len(filtered) == 0 {
 			continue
 		}

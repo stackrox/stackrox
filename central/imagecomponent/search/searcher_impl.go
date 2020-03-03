@@ -4,6 +4,7 @@ import (
 	"context"
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
+	"github.com/stackrox/rox/central/cve/cveedge"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	cveSAC "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/dackbox"
@@ -135,7 +136,7 @@ func formatSearcher(graphProvider graph.Provider,
 		imageComponentEdgeSearcher,
 		imageSearcher,
 		deploymentSearcher)
-	filteredSearcher := filtered.Searcher(compoundSearcher, componentSAC.GetSACFilter(graphProvider))
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), componentSAC.GetSACFilter(graphProvider))
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)

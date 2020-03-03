@@ -10,6 +10,7 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	alertMapping "github.com/stackrox/rox/central/alert/mappings"
 	clusterMapping "github.com/stackrox/rox/central/cluster/index/mappings"
+	clusterVulnEdgeMapping "github.com/stackrox/rox/central/clustercveedge/mappings"
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	componentVulnEdgeMapping "github.com/stackrox/rox/central/componentcveedge/mappings"
 	cveMapping "github.com/stackrox/rox/central/cve/mappings"
@@ -134,6 +135,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_SUBJECTS:             subjectMapping.OptionsMap,
 		v1.SearchCategory_VULNERABILITIES:      cveSearchOptions,
 		v1.SearchCategory_COMPONENT_VULN_EDGE:  componentVulnEdgeMapping.OptionsMap,
+		v1.SearchCategory_CLUSTER_VULN_EDGE:    clusterVulnEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENT_EDGE: imageComponentEdgeMapping.OptionsMap,
 		v1.SearchCategory_IMAGE_COMPONENTS:     componentSearchOptions,
 	}

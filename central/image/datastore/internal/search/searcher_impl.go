@@ -4,6 +4,7 @@ import (
 	"context"
 
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
+	"github.com/stackrox/rox/central/cve/cveedge"
 	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/dackbox"
 	pkgDeploymentSAC "github.com/stackrox/rox/central/deployment/sac"
@@ -146,7 +147,7 @@ func formatSearcher(graphProvider graph.Provider,
 			componentSearcher,
 			imageComponentEdgeSearcher,
 			imageSearcher)
-		filteredSearcher = filtered.Searcher(compoundSearcher, pkgImageSAC.GetSACFilter(graphProvider))
+		filteredSearcher = filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgImageSAC.GetSACFilter(graphProvider))
 	} else {
 		filteredSearcher = imagesSACSearchHelper.FilteredSearcher(imageIndexer) // Make the UnsafeSearcher safe.
 	}
