@@ -11,6 +11,7 @@ export const LIST_PAGE_SIZE = 25;
 export const defaultCountKeyMap = {
     [entityTypes.COMPONENT]: 'componentCount',
     [entityTypes.CVE]: 'vulnCount',
+    [entityTypes.K8S_CVE]: 'vulnCount: k8sVulnCount',
     [entityTypes.DEPLOYMENT]: 'deploymentCount',
     [entityTypes.NAMESPACE]: 'namespaceCount',
     [entityTypes.IMAGE]: 'imageCount',

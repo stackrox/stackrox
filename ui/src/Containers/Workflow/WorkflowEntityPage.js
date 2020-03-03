@@ -63,14 +63,14 @@ const WorkflowEntityPage = ({
         query = getListQuery(listFieldName, fragmentName, fragment);
     }
 
-    // TODO: remove this hack after we are able to search for k8s vulns
+    // TODO: if we are ever able to search for k8s and istio vulns, remove this hack
     if (
         enhancedQueryOptions.variables.query &&
-        enhancedQueryOptions.variables.query.includes('K8S_VULNERABILITY')
+        enhancedQueryOptions.variables.query.includes('K8S_CVE')
     ) {
         // eslint-disable-next-line no-param-reassign
         enhancedQueryOptions.variables.query = enhancedQueryOptions.variables.query.replace(
-            /\+?Vulnerability Type:K8S_VULNERABILITY\+?/,
+            /\+?CVE Type:K8S_CVE\+?/,
             ''
         );
     }

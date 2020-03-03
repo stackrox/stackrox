@@ -45,13 +45,13 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
     const targetState = workflowState
         .resetPage(entityTypes.CLUSTER, clusterId)
         .pushList(entityTypes.CVE)
-        .setSearch({ 'Vulnerability Type': vulnType });
+        .setSearch({ 'CVE Type': vulnType });
 
     const url = targetState.toUrl();
     const fixableUrl = targetState
         .setSearch({
             Fixable: true,
-            'Vulnerability Type': vulnType
+            'CVE Type': vulnType
         })
         .toUrl();
 
@@ -73,13 +73,13 @@ const processData = (data, workflowState, limit) => {
                 fixableCount: k8sFixableCount,
                 url: k8sUrl,
                 fixableUrl: k8sFixableUrl
-            } = getVulnDataByType(workflowState, id, 'K8S_VULNERABILITY', k8sVulns);
+            } = getVulnDataByType(workflowState, id, 'K8S_CVE', k8sVulns);
             const {
                 cveCount: istioCveCount,
                 fixableCount: istioFixableCount,
                 url: istioUrl,
                 fixableUrl: istioFixableUrl
-            } = getVulnDataByType(workflowState, id, 'ISTIO_VULNERABILITY', istioVulns);
+            } = getVulnDataByType(workflowState, id, 'ISTIO_CVE', istioVulns);
             const clusterUrl = workflowState.resetPage(entityTypes.CLUSTER, id).toUrl();
             const indicationTooltipText = isGKECluster
                 ? 'These CVEs might have been patched by GKE. Please check the GKE release notes or security bulletin to find out more.'

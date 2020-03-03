@@ -93,9 +93,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             ? policyData.results.map(pol => ({ ...pol, value: pol.id, label: pol.name }))
             : [];
 
-    const { IMAGE_VULNERABILITY: allowedCves, K8S_VULNERABILITY: disallowedCves } = splitCvesByType(
-        cveItems
-    );
+    const { IMAGE_VULNERABILITY: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
 
     // only the allowed CVEs are combined for use in the policy
     const allowedCvesStr = allowedCves.join(',');
