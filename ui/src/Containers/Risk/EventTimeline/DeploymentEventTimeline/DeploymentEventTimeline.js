@@ -5,10 +5,11 @@ import pluralize from 'pluralize';
 import { podsData } from 'mockData/timelineData';
 import Panel from 'Components/Panel';
 import TimelineGraph from 'Components/TimelineGraph';
+import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
 
 // eslint-disable-next-line
-const DeploymentEventTimeline = ({ deploymentId }) => {
+const DeploymentEventTimeline = ({ deploymentId, selectedEventType, selectEventType }) => {
     // data fetching with "deploymentId", filtered by "selectedEventType" will happen here...
     const {
         numPolicyViolations,
@@ -24,9 +25,11 @@ const DeploymentEventTimeline = ({ deploymentId }) => {
         numEvents
     )} across ${numTotalPods} ${pluralize('pod', numTotalPods)}`;
 
-    const headerComponents = null;
+    const headerComponents = (
+        <EventTypeSelect selectedEventType={selectedEventType} selectEventType={selectEventType} />
+    );
 
-    const timelineData = getPodEvents(podsData.pods);
+    const timelineData = getPodEvents(podsData.pods, selectedEventType);
 
     return (
         <Panel header={header} headerComponents={headerComponents}>

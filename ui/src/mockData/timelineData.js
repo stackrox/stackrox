@@ -21,25 +21,25 @@ export const podsData = {
                     processId: 'process-1',
                     timestamp: '2019-12-09T06:51:52Z',
                     edges: [],
-                    type: 'PolicyViolation'
+                    type: 'POLICY_VIOLATION'
                 },
                 {
                     processId: 'process-2',
                     timestamp: '2019-12-09T07:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-3',
                     timestamp: '2019-12-09T08:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-4',
                     timestamp: '2019-12-09T09:51:52Z',
                     edges: [],
-                    type: 'Restart'
+                    type: 'RESTART'
                 }
             ]
         },
@@ -54,25 +54,25 @@ export const podsData = {
                     processId: 'process-1',
                     timestamp: '2019-10-09T06:51:52Z',
                     edges: [],
-                    type: 'PolicyViolation'
+                    type: 'POLICY_VIOLATION'
                 },
                 {
                     processId: 'process-2',
                     timestamp: '2019-10-09T09:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-3',
                     timestamp: '2019-10-09T09:51:52Z',
                     edges: [],
-                    type: 'PolicyViolation'
+                    type: 'POLICY_VIOLATION'
                 },
                 {
                     processId: 'process-4',
                     timestamp: '2019-10-09T10:51:52Z',
                     edges: [],
-                    type: 'Restart'
+                    type: 'RESTART'
                 }
             ]
         },
@@ -87,25 +87,25 @@ export const podsData = {
                     processId: 'process-1',
                     timestamp: '2019-11-09T07:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-2',
                     timestamp: '2019-11-09T09:51:52Z',
                     edges: [],
-                    type: 'Failure'
+                    type: 'FAILURE'
                 },
                 {
                     processId: 'process-3',
                     timestamp: '2019-11-09T07:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-4',
                     timestamp: '2019-11-09T11:51:52Z',
                     edges: [],
-                    type: 'Failure'
+                    type: 'FAILURE'
                 }
             ]
         },
@@ -131,13 +131,13 @@ export const containersData = {
                     processId: 'process-1',
                     timestamp: '2019-12-09T06:51:52Z',
                     edges: [],
-                    type: 'PolicyViolation'
+                    type: 'POLICY_VIOLATION'
                 },
                 {
                     processId: 'process-2',
                     timestamp: '2019-12-09T07:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 }
             ]
         },
@@ -150,13 +150,13 @@ export const containersData = {
                     processId: 'process-3',
                     timestamp: '2019-12-09T08:51:52Z',
                     edges: [],
-                    type: 'ProcessActivity'
+                    type: 'PROCESS_ACTIVITY'
                 },
                 {
                     processId: 'process-4',
                     timestamp: '2019-12-09T09:51:52Z',
                     edges: [],
-                    type: 'Restart'
+                    type: 'RESTART'
                 }
             ]
         }

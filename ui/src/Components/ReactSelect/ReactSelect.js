@@ -75,7 +75,8 @@ function withAdjustedBehavior(SelectComponent) {
             /* See react-select docs */
             options: PropTypes.arrayOf(PropTypes.object),
             styles: PropTypes.shape({}),
-            'data-testid': PropTypes.string
+            'data-testid': PropTypes.string,
+            isMulti: PropTypes.bool
         };
 
         static defaultProps = {
@@ -88,7 +89,8 @@ function withAdjustedBehavior(SelectComponent) {
             value: null,
             options: [],
             styles: defaultSelectStyles,
-            'data-testid': ''
+            'data-testid': '',
+            isMulti: false
         };
 
         state = {
@@ -161,13 +163,23 @@ function withAdjustedBehavior(SelectComponent) {
                 options,
                 styles,
                 'data-testid': inputId,
+                isMulti,
                 ...rest
             } = this.props;
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
-            const mergedComponents = {
+            let mergedComponents = {
                 ...defaultComponents,
                 ...components
             };
+            if (!isMulti) {
+                mergedComponents = {
+                    ...mergedComponents,
+                    IndicatorSeparator: () => null,
+                    ValueContainer: props => (
+                        <selectComponents.ValueContainer {...props} className="cursor-pointer" />
+                    )
+                };
+            }
 
             return (
                 <SelectComponent
@@ -178,6 +190,7 @@ function withAdjustedBehavior(SelectComponent) {
                     options={options}
                     styles={styles}
                     inputId={inputId}
+                    isMulti={isMulti}
                     {...rest}
                 />
             );
