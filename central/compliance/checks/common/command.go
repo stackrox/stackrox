@@ -79,7 +79,7 @@ func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal s
 
 // Set checks whether or not a value is set in the command line
 func Set(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, set)
+	resultWrapper(ctx, values, key, target, defaultVal, valuesAreSet)
 }
 
 // Unset checks whether or not a value is not set in the command line
@@ -121,7 +121,7 @@ func resultWrapper(ctx framework.ComplianceContext, values []string, key, target
 	}
 }
 
-func set(values []string, key, _, _ string) (string, bool) {
+func valuesAreSet(values []string, key, _, _ string) (string, bool) {
 	if len(values) > 0 {
 		return fmt.Sprintf("%q is set to %s", key, msgfmt.FormatStrings(values...)), true
 	}

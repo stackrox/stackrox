@@ -1,17 +1,19 @@
-package checksi22
+package common
 
 import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckAtLeastOnePolicyEnabledReferringToVulns(t *testing.T) {
 	for _, testCase := range []struct {
-		desc       string
-		policies   []testutils.LightPolicy
-		shouldPass bool
+		desc        string
+		policies    []testutils.LightPolicy
+		expectedIDs []string
+		shouldPass  bool
 	}{
 		{
 			desc: "no policies referring to vulns",
@@ -24,9 +26,10 @@ func TestCheckAtLeastOnePolicyEnabledReferringToVulns(t *testing.T) {
 		{
 			desc: "one CVSS policy",
 			policies: []testutils.LightPolicy{
-				{Name: "Bad CVSS is bad", CVSSGreaterThan: 6},
+				{ID: "blah", Name: "Bad CVSS is bad", CVSSGreaterThan: 6},
 			},
-			shouldPass: true,
+			expectedIDs: []string{"blah"},
+			shouldPass:  true,
 		},
 		{
 			desc: "one CVSS policy, disabled",
@@ -38,16 +41,18 @@ func TestCheckAtLeastOnePolicyEnabledReferringToVulns(t *testing.T) {
 		{
 			desc: "one CVE policy",
 			policies: []testutils.LightPolicy{
-				{Name: "Any CVE", CVE: ".*"},
+				{ID: "anycve", Name: "Any CVE", CVE: ".*"},
 			},
-			shouldPass: true,
+			expectedIDs: []string{"anycve"},
+			shouldPass:  true,
 		},
 		{
 			desc: "another CVE policy",
 			policies: []testutils.LightPolicy{
-				{Name: "Any CVE", CVE: "CVE-2017-.+"},
+				{ID: "anycve", Name: "Any CVE", CVE: "CVE-2017-.+"},
 			},
-			shouldPass: true,
+			expectedIDs: []string{"anycve"},
+			shouldPass:  true,
 		},
 		{
 			desc: "exact CVE policy",
@@ -70,8 +75,9 @@ func TestCheckAtLeastOnePolicyEnabledReferringToVulns(t *testing.T) {
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)
 			testutils.MockOutLightPolicies(mockData, c.policies)
-			checkAtLeastOnePolicyEnabledReferringToVulns(mockCtx)
+			policyIDSet := CheckAtLeastOnePolicyEnabledReferringToVulns(mockCtx)
 			records.AssertExpectedResult(c.shouldPass, t)
+			assert.ElementsMatch(t, c.expectedIDs, policyIDSet.AsSlice())
 		})
 	}
 }

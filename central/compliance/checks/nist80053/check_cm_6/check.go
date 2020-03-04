@@ -9,9 +9,11 @@ import (
 const (
 	controlID = "NIST_SP_800_53:CM_6"
 
-	interpretationText = `This control requires that configuration controls be implemented and deviations are documented. ` +
-		`For this control, ` + common.CheckNoViolationsForDeployPhasePoliciesInterpretation + `. ` +
-		`To approve a deviation, resolve the policy violation or adjust the scope or whitelist for the policy.`
+	interpretationText = `This control requires that configuration controls be implemented and deviations are documented.
+
+For this control, ` + common.CheckNoViolationsForDeployPhasePoliciesInterpretation + `
+
+To approve a deviation, resolve the policy violation or adjust the scope or whitelist for the policy.`
 )
 
 func init() {

@@ -42,7 +42,7 @@ func checkClusterRoleIsSafe(ctx framework.ComplianceContext, clusterRole *storag
 		}
 		for _, nonResourceURL := range rule.GetNonResourceUrls() {
 			if !allowedNonResourceURLs.Contains(nonResourceURL) {
-				framework.Failf(ctx, "ClusterRole %q allows access to non resource URL %q to unauthenticated users, which is unnecessary", clusterRole.GetName(), nonResourceURL)
+				framework.Failf(ctx, "ClusterRole %q allows access to non-resource URL %q to unauthenticated users, which is unnecessary", clusterRole.GetName(), nonResourceURL)
 				return false
 			}
 		}

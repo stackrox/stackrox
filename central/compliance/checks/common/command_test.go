@@ -9,10 +9,10 @@ import (
 
 func TestSet(t *testing.T) {
 	t.Parallel()
-	_, pass := set([]string{"hi"}, "", "", "")
+	_, pass := valuesAreSet([]string{"hi"}, "", "", "")
 	require.True(t, pass)
 
-	_, pass = set([]string{}, "", "", "")
+	_, pass = valuesAreSet([]string{}, "", "", "")
 	require.False(t, pass)
 }
 

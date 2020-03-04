@@ -19,7 +19,7 @@ type LightPolicy struct {
 
 func (l *LightPolicy) convert() *storage.Policy {
 	p := &storage.Policy{
-		Id:       l.ID,
+		Id:       stringutils.OrDefault(l.ID, uuid.NewV4().String()),
 		Name:     l.Name,
 		Disabled: l.Disabled,
 		Fields: &storage.PolicyFields{

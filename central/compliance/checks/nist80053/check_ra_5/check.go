@@ -1,0 +1,49 @@
+package checkra5
+
+import (
+	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/set"
+)
+
+const (
+	controlID = "NIST_SP_800_53:RA_5"
+
+	interpretationText = `This control requires vulnerability scanning and associated workflows.
+
+For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation + `
+
+Also, ` + common.CheckAtLeastOnePolicyEnabledReferringToVulnsInterpretation + `
+
+Further, StackRox verifies that there are no active violations for any of these policies.`
+)
+
+func checkNoUnresolvedAlertsForPolicies(ctx framework.ComplianceContext, policyIDs set.StringSet) {
+	var foundUnresolvedAlerts bool
+	for _, alert := range ctx.Data().UnresolvedAlerts() {
+		if policyIDs.Contains(alert.GetPolicy().GetId()) {
+			framework.Failf(ctx, "Policy %s refers to vulnerabilities, but has an active violation in deployment %s/%s.",
+				alert.GetPolicy().GetName(), alert.GetDeployment().GetNamespace(), alert.GetDeployment().GetName())
+			foundUnresolvedAlerts = true
+		}
+	}
+	if !foundUnresolvedAlerts {
+		framework.Pass(ctx, "There are no unresolved violations for vulnerability-related policies.")
+	}
+}
+
+func init() {
+	framework.MustRegisterNewCheckIfFlagEnabled(
+		framework.CheckMetadata{
+			ID:                 controlID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"UnresolvedAlerts", "Deployments", "Policies"},
+			InterpretationText: interpretationText,
+		},
+		func(ctx framework.ComplianceContext) {
+			common.CheckAllDeployedImagesHaveMatchingIntegrations(ctx)
+			vulnPolicyIDs := common.CheckAtLeastOnePolicyEnabledReferringToVulns(ctx)
+			checkNoUnresolvedAlertsForPolicies(ctx, vulnPolicyIDs)
+		}, features.NistSP800_53)
+}

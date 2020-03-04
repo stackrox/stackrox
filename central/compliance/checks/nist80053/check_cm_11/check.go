@@ -16,7 +16,7 @@ const (
 
 For this control, ` + common.AllDeployedImagesHaveMatchingIntegrationsInterpretation + `
 
-StackRox also checks that at least one policy is enabled for image registries (for example, alerting on images from a public registry), and that built-in package manager execution policies are all enabled.`
+StackRox also checks that at least one policy is enabled to check the image registries used in deployments (for example, alerting on images deployed from a public registry), and that built-in package manager execution policies are all enabled.`
 )
 
 var (

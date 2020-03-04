@@ -13,7 +13,9 @@ const (
 
 	interpretationText = `This control requires that unnecessary features be prohibited or restricted.
 
-For this control, StackRox validates that at least one policy is enabled and enforced based on: 1) port exposure or service exposure level, and 2) runtime behavior.`
+For this control, StackRox validates that at least one policy is enabled and enforced based on each of:
+  1) port exposure or service exposure level, and
+  2) runtime behavior.`
 )
 
 func isPortExposeOrExposureLevelPolicy(p *storage.Policy) bool {
