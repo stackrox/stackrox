@@ -1,17 +1,16 @@
 import React, { useContext } from 'react';
+import pluralize from 'pluralize';
+
 import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
-import pluralize from 'pluralize';
 import searchContext from 'Containers/searchContext';
-
 import { sortValueByLength } from 'sorters/sorters';
 import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import queryService from 'modules/queryService';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -39,7 +38,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'metadata.clusterName',
                   // eslint-disable-next-line
-                Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { metadata } = original;
                       if (!metadata) return '-';
                       const { clusterName, clusterId, id } = metadata;
@@ -55,13 +54,9 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
-                return policyStatus && policyStatus.status === 'pass' ? (
-                    'Pass'
-                ) : (
-                    <LabelChip text="Fail" type="alert" />
-                );
+                return <StatusChip status={policyStatus.status} asString={pdf} />;
             },
             id: 'status',
             accessor: d => d.policyStatus.status

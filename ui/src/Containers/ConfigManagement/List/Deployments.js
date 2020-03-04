@@ -1,18 +1,17 @@
 import React, { useContext } from 'react';
+import pluralize from 'pluralize';
+
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
 import URLService from 'modules/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import searchContext from 'Containers/searchContext';
-
 import queryService from 'modules/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import LabelChip from 'Components/LabelChip';
-import pluralize from 'pluralize';
+import StatusChip from 'Components/StatusChip';
 import List from './List';
 import TableCellLink from './Link';
-
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
 const buildTableColumns = (match, location, entityContext) => {
@@ -37,7 +36,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -54,7 +53,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'namespace',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { namespace, namespaceId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -68,9 +67,9 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original }) => {
+            Cell: ({ original, pdf }) => {
                 const { policyStatus } = original;
-                return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
+                return <StatusChip status={policyStatus} asString={pdf} />;
             },
             id: 'policyStatus',
             accessor: 'policyStatus'
@@ -127,7 +126,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'serviceAccount',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { serviceAccount, serviceAccountID, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)

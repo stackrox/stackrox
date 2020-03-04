@@ -9,7 +9,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import SeverityLabel from 'Components/SeverityLabel';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import List from './List';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
@@ -55,15 +55,9 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         // eslint-disable-next-line
-        Cell: ({ original }) => {
+        Cell: ({ original, pdf }) => {
             const { policyStatus } = original;
-            if (policyStatus === '') {
-                return '-';
-            }
-            if (policyStatus === 'pass') {
-                return 'Pass';
-            }
-            return <LabelChip text="Fail" type="alert" />;
+            return <StatusChip status={policyStatus} asString={pdf} />;
         },
         accessor: 'policyStatus'
     },

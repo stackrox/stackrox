@@ -11,7 +11,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 import COMPLIANCE_STATES from 'constants/complianceStates';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import LabelChip from 'Components/LabelChip';
+import StatusChip from 'Components/StatusChip';
 import List from './List';
 
 const tableColumns = [
@@ -39,11 +39,10 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName} capitalize`,
         // eslint-disable-next-line
-        Cell: ({ original }) => {
-            if (original.status === COMPLIANCE_STATES.FAIL)
-                return <LabelChip text="Fail" type="alert" />;
-            if (original.status === COMPLIANCE_STATES.PASS) return 'Pass';
-            return original.status;
+        Cell: ({ original, pdf }) => {
+            if (original.status === COMPLIANCE_STATES['N/A']) return original.status;
+            const status = original.status.toLowerCase();
+            return <StatusChip status={status} asString={pdf} />;
         },
         accessor: 'status',
         sortMethod: sortStatus

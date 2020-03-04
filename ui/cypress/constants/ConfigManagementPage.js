@@ -31,8 +31,8 @@ export const url = {
 };
 
 export const controlStatus = {
-    pass: 'Pass',
-    fail: 'Fail'
+    pass: 'pass',
+    fail: 'fail'
 };
 
 export const dashboardSelectors = {

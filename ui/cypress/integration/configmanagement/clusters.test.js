@@ -69,7 +69,7 @@ describe('Config Management Entities (Clusters)', () => {
 
     it('should have items in the Findings section', () => {
         cy.visit(url.list.clusters);
-        cy.get(`${selectors.tableRows}:contains(Fail)`)
+        cy.get(`${selectors.tableRows}:contains(fail)`)
             .eq(0)
             .click();
 
