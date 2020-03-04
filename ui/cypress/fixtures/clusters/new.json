@@ -7,7 +7,6 @@
         "collectorImage": "stackrox/collector",
         "centralApiEndpoint": "central.stackrox:443",
         "runtimeSupport": false,
-        "monitoringEndpoint": "",
         "collectionMethod": "KERNEL_MODULE",
         "DEPRECATEDProviderMetadata": null,
         "admissionController": false,

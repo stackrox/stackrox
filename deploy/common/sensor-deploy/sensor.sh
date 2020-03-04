@@ -21,11 +21,11 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 KUBE_COMMAND=${KUBE_COMMAND:-kubectl}
 
-{{if and (ne .ImageRemote "stackrox-launcher-project-1/stackrox") (ne .ImageRemote "cloud-marketplace/stackrox-launcher-project-1/stackrox-kubernetes-security")}}
+
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 
 if ! ${KUBE_COMMAND} get secret/stackrox -n stackrox &>/dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "https://docker.io")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
@@ -38,24 +38,8 @@ metadata:
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
-{{- end}}
 
-{{if ne .CollectionMethod "NO_COLLECTION"}}
-if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
-  [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
-apiVersion: v1
-data:
-  .dockerconfigjson: ${registry_auth}
-kind: Secret
-metadata:
-  name: collector-stackrox
-  namespace: stackrox
-type: kubernetes.io/dockerconfigjson
-EOF
-fi
-{{- end}}
+
 
 function print_rbac_instructions {
 	echo
@@ -83,17 +67,14 @@ ${KUBE_COMMAND} apply -f "$DIR/sensor-netpol.yaml" || exit 1
 echo "Creating Pod Security Policies..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-pod-security.yaml"
 
-{{ if .CreateUpgraderSA}}
-echo "Creating upgrader service account"
-${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml" || print_rbac_instructions
-{{- end}}
 
-{{if .AdmissionController}}
-${KUBE_COMMAND} apply -f "$DIR/admission-controller.yaml"
-{{- else}}
+
+
 echo "Deleting admission controller webhook, if it exists"
 ${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-found
-{{- end}}
+
+
+
 
 echo "Creating secrets for sensor..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
@@ -112,8 +93,7 @@ fi
 echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 
-{{ if not .CreateUpgraderSA}}
+
 if [[ -f "${DIR}/upgrader-serviceaccount.yaml" ]]; then
     printf "%s\n\n%s\n" "Did not create the upgrader service account. To create it later, please run" "${KUBE_COMMAND} apply -f \"${DIR}/upgrader-serviceaccount.yaml\""
 fi
-{{- end}}

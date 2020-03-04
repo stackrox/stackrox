@@ -162,7 +162,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"dynamicConfig: DynamicClusterConfig",
 		"id: ID!",
 		"mainImage: String!",
-		"monitoringEndpoint: String!",
 		"name: String!",
 		"priority: Int!",
 		"runtimeSupport: Boolean!",
@@ -2207,11 +2206,6 @@ func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *clusterResolver) MainImage(ctx context.Context) string {
 	value := resolver.data.GetMainImage()
-	return value
-}
-
-func (resolver *clusterResolver) MonitoringEndpoint(ctx context.Context) string {
-	value := resolver.data.GetMonitoringEndpoint()
 	return value
 }
 

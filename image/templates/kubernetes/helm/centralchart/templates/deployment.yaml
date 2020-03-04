@@ -119,47 +119,6 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
-      {{if .Values.monitoring}}
-        - name: monitoring-client-volume
-          mountPath: /run/secrets/stackrox.io/monitoring/certs
-          readOnly: true
-      {{- end}}
-      {{if .Values.monitoring}}
-      - name: telegraf
-        image: {{.Values.image}}
-        command:
-          - /telegraf
-        env:
-          - name: SERVICE
-            value: central
-          - name: CLUSTER_NAME
-            value: main
-          - name: PROMETHEUS_ENDPOINT
-            value: http://127.0.0.1:9090
-          - name: MONITORING_ENDPOINT
-            value: {{.Values.monitoring.endpoint}}
-        resources:
-          requests:
-            memory: "50Mi"
-            cpu: "50m"
-          limits:
-            memory: "100Mi"
-            cpu: "100m"
-        securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - name: varlog
-          mountPath: /var/log/stackrox/
-          readOnly: true
-        - name: monitoring-client-volume
-          mountPath: /run/secrets/stackrox.io/monitoring/certs
-          readOnly: true
-        - name: telegraf-config-volume
-          mountPath: /etc/telegraf/
-          readOnly: true
-      {{- end}}
       volumes:
       - name: varlog
         emptyDir: {}
@@ -204,14 +163,6 @@ spec:
         secret:
           secretName: proxy-config
           optional: true
-      {{if .Values.monitoring}}
-      - name: monitoring-client-volume
-        secret:
-          secretName: monitoring-client
-      - name: telegraf-config-volume
-        configMap:
-          name: telegraf
-      {{- end}}
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints

@@ -41,10 +41,6 @@ func (*openshift) Render(cluster *storage.Cluster, _ []byte, opts RenderOptions)
 		"openshift/kubectl/sensor-scc.yaml",
 	)
 
-	if cluster.MonitoringEndpoint != "" {
-		filenames.Add(monitoringFilenames...)
-	}
-
 	allFiles, err := renderer.RenderFiles(filenames, fields)
 	if err != nil {
 		return nil, err

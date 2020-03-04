@@ -5,4 +5,5 @@ kubectl -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,d
 
 if ! kubectl get -n stackrox deploy/central; then
     kubectl delete -n stackrox secret stackrox
+
 fi

@@ -142,24 +142,6 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                     </div>
                     <div className="mb-4">
                         <label
-                            htmlFor="monitoringEndpoint"
-                            className="block py-2 text-base-600 font-700"
-                        >
-                            Monitoring Endpoint (include port; empty means no monitoring)
-                        </label>
-                        <div className="flex">
-                            <input
-                                id="monitoringEndpoint"
-                                name="monitoringEndpoint"
-                                onChange={handleChange}
-                                value={selectedCluster.monitoringEndpoint}
-                                placeholder="<monitoring-subdomain>.<domain>:<port>"
-                                className="bg-base-100 border-2 rounded p-2 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10"
-                            />
-                        </div>
-                    </div>
-                    <div className="mb-4">
-                        <label
                             htmlFor="collectionMethod"
                             className="block py-2 text-base-600 font-700"
                         >
@@ -351,7 +333,6 @@ ClusterEditForm.propTypes = {
         type: PropTypes.string,
         mainImage: PropTypes.string,
         centralApiEndpoint: PropTypes.string,
-        monitoringEndpoint: PropTypes.string,
         collectionMethod: PropTypes.string,
         collectorImage: PropTypes.string,
         admissionController: PropTypes.string,

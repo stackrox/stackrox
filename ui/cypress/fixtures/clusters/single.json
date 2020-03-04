@@ -12,7 +12,6 @@
             "lastContact": "2018-02-11T06:58:38.682340010Z",
             "disableSwarmTls": false,
             "runtimeSupport": false,
-            "monitoringEndpoint": "",
             "collectionMethod": "KERNEL_MODULE",
             "DEPRECATEDProviderMetadata": null,
             "admissionController": false,

@@ -3,12 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -73,15 +71,7 @@ func normalizeCluster(cluster *storage.Cluster) error {
 }
 
 func validateInput(cluster *storage.Cluster) error {
-	errorList := clusterValidation.Validate(cluster)
-	if cluster.GetMonitoringEndpoint() != "" {
-		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
-		if _, err := ioutil.ReadFile(monitoring.CAPath); err != nil {
-			errorList.AddString("Could not read monitoring CA. Continue by removing the monitoring endpoint")
-		}
-	}
-
-	return errorList.ToError()
+	return clusterValidation.Validate(cluster).ToError()
 }
 
 func addDefaults(cluster *storage.Cluster) error {

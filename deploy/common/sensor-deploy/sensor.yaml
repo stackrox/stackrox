@@ -24,42 +24,16 @@ spec:
       labels:
         app: sensor
     spec:
-      {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
-      affinity:
-        nodeAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 25
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/compute
-                    operator: In
-                    values:
-                    - "true"
-            - weight: 75
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/infra
-                    operator: NotIn
-                    values:
-                    - "true"
-            - weight: 100
-              preference:
-                matchExpressions:
-                  - key: node-role.kubernetes.io/master
-                    operator: NotIn
-                    values:
-                    - "true"
-      {{- end}}
+      
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
-      {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
+      
       imagePullSecrets:
         - name: stackrox
-      {{- end}}
       serviceAccount: sensor
       containers:
-      - image: {{.Image}}
+      - image: docker.io/stackrox/main:3.0.39.x-168-gd1b367df0d
         name: sensor
         readinessProbe:
           httpGet:
@@ -84,18 +58,34 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
-        {{ range $var, $value := .EnvVars -}}
-        - name: {{ $var }}
-          value: {{ jsonquote $value }}
-        {{ end }}
-        - name: {{.PublicEndpointEnv}}
-          value: {{.PublicEndpoint}}
-        - name: {{.AdvertisedEndpointEnv}}
-          value: sensor.stackrox:443
-          {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
-        - name: {{.OpenshiftAPIEnv}}
+        - name: ROX_ANALYST_NOTES_UI
+          value: "false"
+        - name: ROX_CONFIG_MGMT_UI
           value: "true"
-          {{- end}}
+        - name: ROX_DACKBOX
+          value: "false"
+        - name: ROX_DIAGNOSTIC_BUNDLE
+          value: "true"
+        - name: ROX_EVENT_TIMELINE_UI
+          value: "false"
+        - name: ROX_NIST_800_53
+          value: "false"
+        - name: ROX_REFRESH_TOKENS
+          value: "true"
+        - name: ROX_REQUIRED_IMAGE_LABEL_POLICY
+          value: "true"
+        - name: ROX_SENSOR_DETECTION
+          value: "true"
+        - name: ROX_TELEMETRY
+          value: "true"
+        - name: ROX_VULN_MGMT_UI
+          value: "false"
+        
+        - name: ROX_CENTRAL_ENDPOINT
+          value: central.stackrox:443
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: sensor.stackrox:443
+          
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -109,6 +99,7 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
+      
       volumes:
       - name: certs
         secret:
@@ -130,6 +121,7 @@ spec:
           optional: true
       - name: varlog
         emptyDir: {}
+      
 ---
 apiVersion: v1
 kind: Service
@@ -190,64 +182,12 @@ spec:
         app: collector
       namespace: stackrox
     spec:
-      {{if .TolerationsEnabled}}
+      
       tolerations:
       - operator: "Exists"
-      {{- end}}
       serviceAccount: collector
       containers:
-{{if ne .CollectionMethod "NO_COLLECTION"}}
-      - name: collector
-        image: {{.CollectorImage}}
-        imagePullPolicy: Always
-        env:
-        - name: COLLECTOR_CONFIG
-          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
-        - name: COLLECTION_METHOD
-          value: {{ .CollectionMethod }}
-        - name: GRPC_SERVER
-          value: "sensor.stackrox:443"
-        {{if ne .OfflineMode "true"}}
-        - name: MODULE_DOWNLOAD_BASE_URL
-          value: {{.CollectorModuleDownloadBaseURL}}
-        {{- end}}
-        resources:
-          limits:
-            cpu: 750m
-            memory: 1Gi
-          requests:
-            cpu: 50m
-            memory: 320Mi
-        securityContext:
-          capabilities:
-            drop:
-            - NET_RAW
-          privileged: true
-          readOnlyRootFilesystem: true
-        volumeMounts:
-        - mountPath: /host/var/run/docker.sock
-          name: var-run-docker-sock
-        - mountPath: /host/proc
-          name: proc-ro
-          readOnly: true
-        - mountPath: /module
-          name: tmpfs-module
-        - mountPath: /host/etc
-          name: etc-ro
-          readOnly: true
-        - mountPath: /host/usr/lib
-          name: usr-lib-ro
-          readOnly: true
-        - mountPath: /host/sys
-          name: sys-ro
-          readOnly: true
-        - mountPath: /host/dev
-          name: dev-ro
-          readOnly: true
-        - mountPath: /run/secrets/stackrox.io/certs/
-          name: certs
-          readOnly: true
-{{- end}}
+
       - command:
         - stackrox/compliance
         env:
@@ -258,7 +198,7 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
           value: sensor.stackrox:443
-        image: {{.Image}}
+        image: docker.io/stackrox/main:3.0.39.x-168-gd1b367df0d
         imagePullPolicy: IfNotPresent
         name: compliance
         resources:
@@ -309,6 +249,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+      
       volumes:
       - hostPath:
           path: /var/run/docker.sock
@@ -366,3 +307,4 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
+      

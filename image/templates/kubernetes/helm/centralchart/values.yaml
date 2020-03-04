@@ -15,11 +15,6 @@ appname: stackrox
 
 gcpMarketplace: {{.GCPMarketplace}}
 
-{{if not .K8sConfig.Monitoring.Type.None}}
-monitoring:
-  endpoint: {{.K8sConfig.Monitoring.Endpoint}}
-{{- end}}
-
 persistence:
 {{if .HostPath}}
   name: stackrox-db
@@ -83,15 +78,7 @@ secrets:
     data:
       tls.crt: {{ index .SecretsBase64Map "default-tls.crt" }}
       tls.key: {{ index .SecretsBase64Map "default-tls.key" }}
-  {{end -}}
-
-  {{if not .K8sConfig.Monitoring.Type.None}}
-  monitoring:
-    data:
-      monitoring-client-cert.pem: {{index .SecretsBase64Map "monitoring-client-cert.pem"}}
-      monitoring-client-key.pem: {{index .SecretsBase64Map "monitoring-client-key.pem"}}
-      ca.pem: {{index .SecretsBase64Map "ca.pem"}}
-  {{- end}}
+  {{end}}
 
 exposure:
   port: 443

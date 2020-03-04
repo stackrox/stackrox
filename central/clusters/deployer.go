@@ -10,16 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	defaultMonitoringPort = 8186
 )
 
 var (
@@ -117,8 +112,7 @@ func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"CollectorModuleDownloadBaseURL": CollectorModuleDownloadBaseURL.Setting(),
 		"CollectionMethod":               c.CollectionMethod.String(),
 
-		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
-		"ClusterType":        c.Type.String(),
+		"ClusterType": c.Type.String(),
 
 		"TolerationsEnabled":  !c.GetTolerationsConfig().GetDisabled(),
 		"AdmissionController": c.AdmissionController,

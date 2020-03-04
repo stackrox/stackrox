@@ -154,27 +154,15 @@ data:
     #                            INPUT PLUGINS                                    #
     ###############################################################################
 
-    [[inputs.influxdb_listener]]
-      ## Address and port to host HTTP listener on
-      service_address = ":443"
+    # # Read metrics from one or many prometheus clients
+    [[inputs.prometheus]]
+       ## An array of urls to scrape metrics from.
+       #urls = ["$PROMETHEUS_ENDPOINT/metrics"]
 
-      ## maximum duration before timing out read of the request
-      read_timeout = "10s"
-      ## maximum duration before timing out write of the response
-      write_timeout = "10s"
+       ## An array of Kubernetes services to scrape metrics from.
+       kubernetes_services = ["http://central.stackrox:9090/metrics", "http://sensor.stackrox:9090/metrics"]
 
-      ## Maximum allowed http request body size in bytes.
-      ## 0 means to use the default of 536,870,912 bytes (500 mebibytes)
-      max_body_size = 0
+       ## Specify timeout duration for slower prometheus clients (default is 3s)
+       response_timeout = "3s"
 
-      ## Maximum line size allowed to be sent in bytes.
-      ## 0 means to use the default of 65536 bytes (64 kibibytes)
-      max_line_size = 0
-
-      ## Set one or more allowed client CA certificate file names to
-      ## enable mutually authenticated TLS connections
-      tls_allowed_cacerts = ["/run/secrets/stackrox.io/monitoring/certs/ca.pem"]
-
-      ## Add service certificate and key
-      tls_cert = "/run/secrets/stackrox.io/monitoring/certs/cert.pem"
-      tls_key = "/run/secrets/stackrox.io/monitoring/certs/key.pem"
+       insecure_skip_verify = true

@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
-	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
@@ -217,20 +216,6 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := z.createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
-	}
-
-	if cluster.GetMonitoringEndpoint() != "" {
-		if err := z.createIdentity(wrapper, cluster.GetId(), "monitoring-client", storage.ServiceType_MONITORING_CLIENT_SERVICE); err != nil {
-			httputil.WriteGRPCStyleError(w, codes.Internal, err)
-			return
-		}
-
-		monitoringCA, err := ioutil.ReadFile(monitoring.CAPath)
-		if err != nil {
-			httputil.WriteGRPCStyleError(w, codes.Internal, err)
-			return
-		}
-		wrapper.AddFiles(zip.NewFile("monitoring-ca.pem", monitoringCA, 0))
 	}
 
 	additionalCAFiles, err := z.getAdditionalCAs()

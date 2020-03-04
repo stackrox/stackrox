@@ -345,7 +345,6 @@ func sendAdmissionControllerRequests(ctx context.Context, clusterClient v1.Clust
 			MainImage:           defaults.MainImageRepo(),
 			CollectorImage:      "",
 			CentralApiEndpoint:  "central.stackrox:443",
-			MonitoringEndpoint:  "",
 			CollectionMethod:    0,
 			AdmissionController: true,
 			Status:              nil,

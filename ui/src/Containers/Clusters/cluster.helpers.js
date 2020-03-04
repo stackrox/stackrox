@@ -49,7 +49,6 @@ export const newClusterDefault = {
     collectorImage: 'stackrox/collector',
     centralApiEndpoint: 'central.stackrox:443',
     runtimeSupport: false,
-    monitoringEndpoint: '',
     collectionMethod: defaultCollectionMethod,
     DEPRECATEDProviderMetadata: null,
     admissionController: false,

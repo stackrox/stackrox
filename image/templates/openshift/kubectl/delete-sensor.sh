@@ -5,8 +5,4 @@ oc -n stackrox delete cm,secret,sa,svc,validatingwebhookconfigurations,ds,deploy
 
 if ! oc get -n stackrox deploy/central > /dev/null; then
     oc delete -n stackrox secret stackrox
-{{if .MonitoringEndpoint}}
-    oc -n stackrox delete secret monitoring-client
-    oc -n stackrox delete cm telegraf
-{{- end}}
 fi

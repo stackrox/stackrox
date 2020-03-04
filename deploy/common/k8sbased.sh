@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 function realpath {
 	[[ -n "$1" ]] || return 0
@@ -28,7 +28,7 @@ function hotload_binary {
   local binary="$1"
   local deployment="$2"
 
-  binary_path=$(realpath "${DIR}/../../bin/linux/${binary}")
+  binary_path=$(realpath "${COMMON_DIR}/../../bin/linux/${binary}")
 
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${deployment}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
 }
@@ -213,6 +213,10 @@ function launch_central {
     echo "Access the UI at: https://${API_ENDPOINT}"
     setup_auth0 "${API_ENDPOINT}"
 
+    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+      "${COMMON_DIR}/monitoring.sh"
+    fi
+
     if [[ -n "$CI" ]]; then
         echo "Sleep for 1 minute to allow for GKE stabilization"
         sleep 60
@@ -224,10 +228,6 @@ function launch_sensor {
 
     local extra_config=()
     local extra_json_config=()
-    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
-        extra_config+=("--monitoring-endpoint=monitoring.stackrox:443")
-        extra_json_config+=', "monitoringEndpoint": "monitoring.stackrox:443"'
-    fi
 
     if [[ "$ADMISSION_CONTROLLER" == "true" ]]; then
     	extra_config+=("--admission-controller=true")
@@ -262,6 +262,10 @@ function launch_sensor {
          hotload_binary kubernetes-sensor sensor
        fi
        kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+    fi
+
+    if [[ "$MONITORING_SUPPORT" == "true" ]]; then
+      "${COMMON_DIR}/monitoring.sh"
     fi
 
     echo

@@ -18,10 +18,6 @@ func newKubernetes() Deployer {
 	return &kubernetes{}
 }
 
-var monitoringFilenames = []string{
-	"kubernetes/kubectl/telegraf.conf",
-}
-
 var admissionController = "kubernetes/kubectl/admission-controller.yaml"
 
 func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOptions) ([]*zip.File, error) {
@@ -45,10 +41,6 @@ func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOption
 		"kubernetes/kubectl/sensor-pod-security.yaml",
 		"kubernetes/kubectl/upgrader-serviceaccount.yaml",
 	)
-
-	if cluster.MonitoringEndpoint != "" {
-		filenames.Add(monitoringFilenames...)
-	}
 
 	if cluster.AdmissionController {
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)

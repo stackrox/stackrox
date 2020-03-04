@@ -80,7 +80,7 @@ message Cluster {
     string                    central_api_endpoint             = 5;
     reserved                                                     6;
     bool                      runtime_support                  = 7 [deprecated=true];
-    string                    monitoring_endpoint              = 8;
+    reserved                                                     8;
     CollectionMethod          collection_method                = 17;
 
     reserved                                                     9,10,11;

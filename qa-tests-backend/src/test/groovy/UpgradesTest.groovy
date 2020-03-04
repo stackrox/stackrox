@@ -22,7 +22,6 @@ class UpgradesTest extends BaseSpecification {
                 .setType(ClusterOuterClass.ClusterType.KUBERNETES_CLUSTER)
                 .setPriority(1)
                 .setMainImage("stackrox/main:2.4.16.4")
-                .setMonitoringEndpoint("monitoring.stackrox:443")
                 .setCentralApiEndpoint("central.stackrox:443")
                 .setCollectionMethod(ClusterOuterClass.CollectionMethod.KERNEL_MODULE)
                 .setRuntimeSupport(true)

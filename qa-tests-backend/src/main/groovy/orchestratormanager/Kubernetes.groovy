@@ -727,7 +727,7 @@ class Kubernetes implements OrchestratorMain {
             client.network().networkPolicies().inAnyNamespace().list().items.each {
                 boolean skip = false
                 if (ignoreUndoneStackroxGenerated) {
-                    if (it.spec.podSelector.matchLabels.get("network-policies.stackrox.io/disable") == "nomatch") {
+                    if (it.spec.podSelector.matchLabels?.get("network-policies.stackrox.io/disable") == "nomatch") {
                         skip = true
                     }
                 }

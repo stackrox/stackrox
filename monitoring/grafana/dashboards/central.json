@@ -67,7 +67,7 @@
             },
             {
               "params": [
-                "service"
+                "url"
               ],
               "type": "tag"
             },
@@ -82,7 +82,7 @@
           "measurement": "process_cpu_seconds_total",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT difference(mean(\"counter\")) FROM \"process_cpu_seconds_total\" WHERE $timeFilter GROUP BY time(1s), \"service\" fill(linear)",
+          "query": "SELECT difference(mean(\"counter\")) FROM \"process_cpu_seconds_total\" WHERE $timeFilter GROUP BY time(1s), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -197,7 +197,7 @@
             },
             {
               "params": [
-                "service"
+                "url"
               ],
               "type": "tag"
             },
@@ -211,7 +211,7 @@
           "measurement": "go_memstats_heap_alloc_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_alloc_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_alloc_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
@@ -241,7 +241,7 @@
             },
             {
               "params": [
-                "service"
+                "url"
               ],
               "type": "tag"
             },
@@ -255,7 +255,7 @@
           "measurement": "go_memstats_heap_inuse_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_inuse_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_inuse_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "B",
           "resultFormat": "time_series",
@@ -285,7 +285,7 @@
             },
             {
               "params": [
-                "service"
+                "url"
               ],
               "type": "tag"
             },
@@ -299,7 +299,7 @@
           "measurement": "go_memstats_heap_idle_bytes",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_idle_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"service\" fill(linear)",
+          "query": "SELECT mean(\"gauge\") FROM \"go_memstats_heap_idle_bytes\" WHERE $timeFilter GROUP BY time($__interval), \"url\" fill(linear)",
           "rawQuery": false,
           "refId": "C",
           "resultFormat": "time_series",

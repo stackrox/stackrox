@@ -60,16 +60,6 @@ echo "Creating secrets for collector..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 ${KUBE_COMMAND} -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
 
-{{if .MonitoringEndpoint}}
-echo "Creating secrets for monitoring..."
-if ${KUBE_COMMAND} create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"; then
-	${KUBE_COMMAND} -n "stackrox" label secret/monitoring-client 'auto-upgrade.stackrox.io/component=sensor'
-fi
-if ${KUBE_COMMAND} create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"; then
-	${KUBE_COMMAND} -n "stackrox" label cm/telegraf 'auto-upgrade.stackrox.io/component=sensor'
-fi
-{{- end}}
-
 if [[ -d "$DIR/additional-cas" ]]; then
 	echo "Creating secret for additional CAs for sensor..."
 	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"

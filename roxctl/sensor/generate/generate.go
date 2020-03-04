@@ -3,6 +3,7 @@ package generate
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/roxctl/defaults"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
@@ -75,12 +77,19 @@ func fullClusterCreation(timeout time.Duration) error {
 
 // Command defines the deploy command tree
 func Command() *cobra.Command {
+	var monitoringEndpointNoop string
+
 	c := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate creates the required YAML files to deploy StackRox Sensor.",
 		Long:  "Generate creates the required YAML files to deploy StackRox Sensor.",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
+		},
+		PersistentPreRun: func(c *cobra.Command, _ []string) {
+			if monitoringEndpointNoop != "" {
+				fmt.Fprintln(os.Stderr, "--monitoring-endpoint has been deprecated and will have no impact")
+			}
 		},
 	}
 
@@ -90,7 +99,10 @@ func Command() *cobra.Command {
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
 	c.PersistentFlags().StringVar(&cluster.MainImage, "image", defaults.MainImageRepo(), "image repo sensor should be deployed with")
 	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image", "", "image repo collector should be deployed with (leave blank to use default)")
-	c.PersistentFlags().StringVar(&cluster.MonitoringEndpoint, "monitoring-endpoint", "", "endpoint for monitoring")
+
+	c.PersistentFlags().StringVar(&monitoringEndpointNoop, "monitoring-endpoint", "", "endpoint for monitoring (DEPRECATED)")
+	utils.Must(c.PersistentFlags().MarkHidden("monitoring-endpoint"))
+
 	c.PersistentFlags().BoolVar(&cluster.RuntimeSupport, "runtime", true, "whether or not to have runtime support (DEPRECATED, use Collection Method instead)")
 
 	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, kernel-module, ebpf)")
