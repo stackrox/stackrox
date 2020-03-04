@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Formik } from 'formik';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 import { Edit, Trash2, XCircle } from 'react-feather';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-import TextArea from 'Components/forms/TextArea';
 import CustomDialogue from 'Components/CustomDialogue';
 
 const regexURL = /(https?: \/\/[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/[a-zA-Z0-9]+\.[^\s]{2,}|[a-zA-Z0-9]+\.[^\s]{2,})/g;
@@ -58,28 +57,43 @@ const Message = ({ message }) => {
     });
 };
 
-const InputForm = ({ value, onSubmit }) => {
-    const { register, handleSubmit, errors } = useForm();
+const CommentForm = ({ initialFormValues, onSubmit }) => {
+    // @TODO: Consider using "yup" for validatiion
+    function validate(values) {
+        const errors = {};
+        if (!values.message) {
+            errors.message = 'This field is required';
+        }
+        return errors;
+    }
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <TextArea
-                name="message"
-                required
-                register={register}
-                errors={errors}
-                rows="5"
-                cols="33"
-                defaultValue={value}
-                placeholder="Write a comment here..."
-            />
-            <div className="flex justify-end">
-                <input
-                    className="bg-success-300 border border-success-800 p-1 rounded-sm text-sm text-success-900 uppercase hover:bg-success-400 cursor-pointer"
-                    type="submit"
-                    value="Save"
-                />
-            </div>
-        </form>
+        <Formik initialValues={initialFormValues} validate={validate} onSubmit={onSubmit}>
+            {({ values, errors, handleChange, handleBlur, handleSubmit }) => (
+                <form onSubmit={handleSubmit}>
+                    <textarea
+                        className="form-textarea text-base border border-base-400 leading-normal p-1 w-full"
+                        name="message"
+                        rows="5"
+                        cols="33"
+                        placeholder="Write a comment here..."
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        value={values.message}
+                    />
+                    {errors && errors.message && (
+                        <span className="text-alert-700">{errors.message}</span>
+                    )}
+                    <div className="flex justify-end">
+                        <button
+                            className="bg-success-300 border border-success-800 p-1 rounded-sm text-sm text-success-900 uppercase hover:bg-success-400 cursor-pointer"
+                            type="submit"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </form>
+            )}
+        </Formik>
     );
 };
 
@@ -92,6 +106,8 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit }) => {
     const isCommentUpdated = updatedTime && createdTime !== updatedTime;
 
     const textHeader = user ? user.name : 'Add New Comment';
+
+    const initialFormValues = { message };
 
     function onEdit() {
         setEdit(true);
@@ -144,7 +160,7 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit }) => {
             </div>
             <div className="mt-2 text-primary-800 leading-normal">
                 {isEditing ? (
-                    <InputForm value={message} onSubmit={onSubmit} />
+                    <CommentForm initialFormValues={initialFormValues} onSubmit={onSubmit} />
                 ) : (
                     <Message message={message} />
                 )}
