@@ -181,7 +181,12 @@ class LoginPage extends Component {
                     className="overflow-hidden"
                     pose={this.isBasicAuthProviderSelected() ? 'open' : 'closed'}
                 >
-                    {this.renderUsernameAndPassword()}
+                    <Labeled label="Username">
+                        <ReduxTextField name="username" />
+                    </Labeled>
+                    <Labeled label="Password">
+                        <ReduxPasswordField name="password" />
+                    </Labeled>
                 </CollapsibleContent>
             </div>
         );
@@ -224,7 +229,7 @@ class LoginPage extends Component {
         return (
             <div className="border-t border-base-300 p-6 w-full text-center">
                 <button
-                    type="button"
+                    type="submit"
                     disabled={disabled}
                     className="p-3 px-6 rounded-sm bg-primary-600 hover:bg-primary-700 text-base-100 uppercase text-center tracking-wide"
                     onClick={this.props.handleSubmit(this.login)}
@@ -232,19 +237,6 @@ class LoginPage extends Component {
                     Login
                 </button>
             </div>
-        );
-    };
-
-    renderUsernameAndPassword = () => {
-        return (
-            <>
-                <Labeled label="Username">
-                    <ReduxTextField name="username" />
-                </Labeled>
-                <Labeled label="Password">
-                    <ReduxPasswordField name="password" />
-                </Labeled>
-            </>
         );
     };
 
