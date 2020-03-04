@@ -419,44 +419,6 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
-buildLivenessCheck: &buildLivenessCheck
-  run:
-    name: Ensure workflow is still live
-    command: |
-      .circleci/check-workflow-live.sh
-
-checkEksLabel: &checkEksLabel
-  run:
-    name: Determine whether to run eks tests
-    command: |
-      set +e
-      if [ -z "${CIRCLE_TAG}" ]; then
-        .circleci/pr_has_label.sh ci-eks-tests
-        # SPECIAL CASE: eks-tests are currently NOT run on master.
-        # If you want to run it on master, change this block to be like
-        # checkOpenShiftLabel.
-        if [ $? -ne 0 ]; then
-          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-eks-tests label. Apply the ci-eks-tests label to your PR if you want to run them."
-          circleci step halt
-        fi
-      fi
-
-checkKopsLabel: &checkKopsLabel
-  run:
-    name: Determine whether to run kops tests
-    command: |
-      set +e
-      if [ -z "${CIRCLE_TAG}" ]; then
-        .circleci/pr_has_label.sh ci-kops-tests
-        # SPECIAL CASE: kops-tests are currently NOT run on master.
-        # If you want to run it on master, change this block to be like
-        # checkOpenShiftLabel.
-        if [ $? -ne 0 ]; then
-          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-kops-tests label. Apply the ci-kops-tests label to your PR if you want to run them."
-          circleci step halt
-        fi
-      fi
-
 check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
   run:
     name: Determine whether to run qa tests with kernel module
@@ -502,6 +464,14 @@ updateTestRail: &updateTestRail
 version: 2.1
 
 commands:
+  build-liveness-check:
+    description: "Ensure workflow is still live"
+    steps:
+      - setup-gcp:
+          docker-login: false
+      - run:
+          name: Ensure workflow is still live
+          command: .circleci/check-workflow-live.sh
 
   check-label-to-skip-tests:
     description: "Checks GitHub for the given label, and skips the tests if we're on a PR, and the label is present."
@@ -701,10 +671,17 @@ commands:
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+          when: on_fail
 
       - run:
           name: Destroy EKS cluster
           command: |
+            if [ -z "${CIRCLE_TAG}" ]; then
+              if ! .circleci/pr_has_label.sh ci-eks-tests; then
+                echo "EKS Cluster not created, skipping destroy."
+                exit 0
+              fi
+            fi
             docker run --rm -t \
               -v $PWD/eks/data:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
@@ -714,6 +691,12 @@ commands:
       - run:
           name: Destroy Kops cluster
           command: |
+            if [ -z "${CIRCLE_TAG}" ]; then
+              if ! .circleci/pr_has_label.sh ci-kops-tests; then
+                echo "Kops Cluster not created, skipping destroy."
+                exit 0
+              fi
+            fi
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
@@ -754,7 +737,7 @@ commands:
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
 
-      - *buildLivenessCheck
+      - build-liveness-check
 
       - run:
           name: Tear down cluster upon failure
@@ -1036,7 +1019,7 @@ commands:
                 command: |
                   cp -r openshift/ openshift<< parameters.suffix >>/
 
-      - *buildLivenessCheck
+      - build-liveness-check
 
       - persist_to_workspace:
           root: .
@@ -2523,7 +2506,9 @@ jobs:
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
-      - *checkEksLabel
+      - check-label-exists-or-skip:
+          label: ci-eks-tests
+          run-on-master: false
 
       - setup_remote_docker
 
@@ -2556,7 +2541,7 @@ jobs:
           path: eks
           destination: eks
 
-      - *buildLivenessCheck
+      - build-liveness-check
 
       - persist_to_workspace:
           root: .
@@ -2586,7 +2571,9 @@ jobs:
 
     steps:
       - checkout
-      - *checkEksLabel
+      - check-label-exists-or-skip:
+          label: ci-eks-tests
+          run-on-master: false
 
       - setup_remote_docker
 
@@ -2678,7 +2665,9 @@ jobs:
       - KOPS_AUTOMATION_VERSION: 0.2.6
     steps:
       - checkout
-      - *checkKopsLabel
+      - check-label-exists-or-skip:
+          label: ci-kops-tests
+          run-on-master: false
 
       - run:
           name: Login to Docker Hub
@@ -2720,7 +2709,7 @@ jobs:
           path: kops
           destination: kops
 
-      - *buildLivenessCheck
+      - build-liveness-check
 
       - persist_to_workspace:
           root: .
@@ -2751,7 +2740,9 @@ jobs:
 
     steps:
       - checkout
-      - *checkKopsLabel
+      - check-label-exists-or-skip:
+          label: ci-kops-tests
+          run-on-master: false
 
       - setup_remote_docker
 
