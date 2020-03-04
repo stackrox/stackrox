@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
 const (
@@ -27,6 +29,7 @@ const (
 )
 
 type hostConnections struct {
+	hostname           string
 	connections        map[connection]*connStatus
 	lastKnownTimestamp timestamp.MicroTS
 
@@ -155,6 +158,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
+		flowMetrics.ContainerIDMisses.Inc()
 		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
 		return
 	}
@@ -164,6 +168,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if isFresh {
 			return
 		}
+		flowMetrics.ExternalFlowCounter.Inc()
 
 		var port uint16
 		if conn.incoming {
@@ -218,6 +223,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
+	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
 		if status.used && status.lastSeen != timestamp.InfiniteFuture {
@@ -225,6 +231,7 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 			delete(hostConns.connections, conn)
 		}
 	}
+	flowMetrics.HostConnectionsRemoved.Add(float64(prevSize - len(hostConns.connections)))
 }
 
 func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]timestamp.MicroTS {
@@ -286,6 +293,7 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 
 	if conns == nil {
 		conns = &hostConnections{
+			hostname:    hostname,
 			connections: make(map[connection]*connStatus),
 		}
 		m.connectionsByHost[hostname] = conns
@@ -322,7 +330,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 	if conns.pendingDeletion == nil {
 		return
 	}
-
+	flowMetrics.HostConnectionsRemoved.Add(float64(len(conns.connections)))
 	delete(m.connectionsByHost, hostname)
 }
 
@@ -353,7 +361,7 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
-	updatedConnections := getUpdatedConnections(networkInfo)
+	updatedConnections := getUpdatedConnections(h.hostname, networkInfo)
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -373,6 +381,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		h.connectionsSequenceID = sequenceID
 	}
 
+	prevSize := len(h.connections)
 	for c, t := range updatedConnections {
 		// timestamp = zero implies the connection is newly added. Add new connections, update existing ones to mark them closed
 		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
@@ -392,7 +401,7 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	}
 
 	h.lastKnownTimestamp = nowTimestamp
-
+	flowMetrics.HostConnectionsAdded.Add(float64(len(h.connections) - prevSize))
 	return nil
 }
 
@@ -403,15 +412,19 @@ func getIPAndPort(address *sensor.NetworkAddress) net.IPPortPair {
 	}
 }
 
-func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
+func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
+
+	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		var incoming bool
 		switch conn.Role {
 		case sensor.ClientServerRole_ROLE_SERVER:
+			flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": "incoming", "Protocol": conn.Protocol.String()}).Inc()
 			incoming = true
 		case sensor.ClientServerRole_ROLE_CLIENT:
+			flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": "outgoing", "Protocol": conn.Protocol.String()}).Inc()
 			incoming = false
 		default:
 			continue
