@@ -89,7 +89,6 @@ const nodeColumns = [
     columnsForStandard[standardTypes.CIS_Docker_v1_2_0],
     columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
     columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53],
     {
         accessor: 'overall.average',
         Header: 'Overall'
