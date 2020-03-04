@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-COMMON_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -28,7 +26,7 @@ function hotload_binary {
   local binary="$1"
   local deployment="$2"
 
-  binary_path=$(realpath "${COMMON_DIR}/../../bin/linux/${binary}")
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${binary}")
 
   kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${deployment}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
 }
