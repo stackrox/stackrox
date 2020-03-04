@@ -20,7 +20,14 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = NewBadger(dackbox.GetGlobalDackBox(), dackbox.GetKeyFence(), globaldb.GetGlobalBadgerDB(), globalindex.GetGlobalIndex(), false, imageComponentDS.Singleton(), riskDS.Singleton(), ranking.ImageRanker())
+	ad, err = NewBadger(dackbox.GetGlobalDackBox(),
+		dackbox.GetKeyFence(),
+		globaldb.GetGlobalBadgerDB(),
+		globalindex.GetGlobalIndex(),
+		false,
+		imageComponentDS.Singleton(),
+		riskDS.Singleton(),
+		ranking.ImageRanker())
 	utils.Must(errors.Wrap(err, "unable to load datastore for images"))
 }
 

@@ -52,6 +52,8 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
                         name
                         layerIndex
                         version
+                        source
+                        location(query: $scopeQuery)
                         vulns {
                             ...cveFields
                         }

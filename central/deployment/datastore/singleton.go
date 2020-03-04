@@ -27,7 +27,17 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = NewBadger(dackbox.GetGlobalDackBox(), dackbox.GetKeyFence(), globaldb.GetGlobalBadgerDB(), globalindex.GetGlobalIndex(), imageDatastore.Singleton(), piDS.Singleton(), pwDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentCacheSingleton(), filter.Singleton())
+	ad, err = NewBadger(dackbox.GetGlobalDackBox(),
+		dackbox.GetKeyFence(),
+		globaldb.GetGlobalBadgerDB(),
+		globalindex.GetGlobalIndex(),
+		imageDatastore.Singleton(),
+		piDS.Singleton(),
+		pwDS.Singleton(),
+		nfDS.Singleton(),
+		riskDS.Singleton(),
+		cache.DeletedDeploymentCacheSingleton(),
+		filter.Singleton())
 	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 

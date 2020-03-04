@@ -5,9 +5,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageComponentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/search"
+	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 )
 
 // Top Level Resolvers.
@@ -287,8 +291,35 @@ func (eicr *imageComponentResolver) componentQuery() *v1.Query {
 // version instead.
 
 // Location returns the location of the component.
-func (eicr *imageComponentResolver) Location(ctx context.Context, _ RawQuery) (string, error) {
-	return "", nil
+func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+
+	imageOnlyOptionsMap := search.Difference(
+		search.Difference(imageMappings.ImageOnlyOptionsMap,
+			cveMappings.OptionsMap), imageComponentMappings.OptionsMap)
+	q, _ = search.FilterQueryWithMap(q, imageOnlyOptionsMap)
+	if q == nil {
+		return "", nil
+	}
+
+	results, err := eicr.root.ImageDataStore.Search(ctx, search.NewConjunctionQuery(q, eicr.componentQuery()))
+	if err != nil {
+		return "", err
+	} else if len(results) == 0 {
+		return "", nil
+	} else if len(results) > 1 {
+		return "", errors.New("multiple images matched for component location query")
+	}
+
+	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: eicr.data.GetId()}.ToString()
+	edge, found, err := eicr.root.ImageComponentEdgeDataStore.Get(ctx, edgeID)
+	if err != nil || !found {
+		return "", err
+	}
+	return edge.GetLocation(), nil
 }
 
 // LayerIndex is the index in the parent image.
