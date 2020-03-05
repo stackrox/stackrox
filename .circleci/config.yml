@@ -1011,7 +1011,7 @@ commands:
           command: |
             ls -lh $PWD/openshift
             export KUBECONFIG="$PWD/openshift/artifacts/config"
-            kubectl get nodes
+            kubectl get nodes -o wide
 
       - store_artifacts:
           path: openshift
@@ -2463,7 +2463,7 @@ jobs:
           crio: false
           flavor: lite
           gate-label: ci-openshift-tests
-          version: 0.6.1
+          version: 0.6.2
 
   provision-openshift-crio:
     machine: true
@@ -2473,7 +2473,7 @@ jobs:
           flavor: multi
           gate-label: ci-openshift-crio
           suffix: -crio
-          version: 0.6.1
+          version: 0.6.2
 
   openshift-tests:
     <<: *defaults
@@ -2490,7 +2490,7 @@ jobs:
       - run-openshift-tests:
           gate-label: ci-openshift-tests
           flavor: lite
-          version: 0.6.1
+          version: 0.6.2
 
   openshift-crio-tests:
     <<: *defaults
@@ -2508,7 +2508,7 @@ jobs:
           suffix: "-crio"
           gate-label: ci-openshift-crio
           flavor: multi
-          version: 0.6.1
+          version: 0.6.2
 
   provision-eks:
     <<: *defaults
