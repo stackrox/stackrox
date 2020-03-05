@@ -36,7 +36,7 @@ var defaultRoles = []*storage.Role{
 	permissions.NewRoleWithAccess(SensorCreator,
 		permissions.View(resources.Cluster),
 		permissions.Modify(resources.Cluster),
-		permissions.View(resources.ServiceIdentity),
+		permissions.Modify(resources.ServiceIdentity),
 	),
 }
 

@@ -1,40 +1,21 @@
 package zip
 
 import (
-	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
-	"github.com/stackrox/rox/central/role/resources"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
-	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
-)
-
-const (
-	additionalCAsDir       = "/usr/local/share/ca-certificates"
-	additionalCAsZipSubdir = "additional-cas"
-	centralCA              = "default-central-ca.crt"
 )
 
 var (
@@ -56,84 +37,6 @@ func Handler(c datastore.DataStore, s siDataStore.DataStore) http.Handler {
 type zipHandler struct {
 	clusterStore  datastore.DataStore
 	identityStore siDataStore.DataStore
-}
-
-func (z zipHandler) createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, serviceType storage.ServiceType) error {
-	srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.ServiceIdentity)))
-
-	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(id, serviceType))
-	if err != nil {
-		return err
-	}
-	if err := z.identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
-		return err
-	}
-	wrapper.AddFiles(
-		zip.NewFile(fmt.Sprintf("%s-cert.pem", servicePrefix), issuedCert.CertPEM, 0),
-		zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
-	)
-	return nil
-}
-
-func (z zipHandler) getAdditionalCAs() ([]*zip.File, error) {
-	certFileInfos, err := ioutil.ReadDir(additionalCAsDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	var files []*zip.File
-	for _, fileInfo := range certFileInfos {
-		if fileInfo.IsDir() || filepath.Ext(fileInfo.Name()) != ".crt" {
-			continue
-		}
-		fullPath := path.Join(additionalCAsDir, fileInfo.Name())
-		contents, err := ioutil.ReadFile(fullPath)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, zip.NewFile(path.Join(additionalCAsZipSubdir, fileInfo.Name()), contents, 0))
-	}
-
-	if caFile, err := getDefaultCertCA(); err != nil {
-		log.Errorf("Error obtaining default CA cert: %v", err)
-	} else if caFile != nil {
-		files = append(files, caFile)
-	}
-
-	return files, nil
-}
-
-func getDefaultCertCA() (*zip.File, error) {
-	certFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSCertFileName)
-	keyFile := filepath.Join(tlsconfig.DefaultCertPath, tlsconfig.TLSKeyFileName)
-
-	if filesExist, err := fileutils.AllExist(certFile, keyFile); err != nil || !filesExist {
-		return nil, err
-	}
-
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
-	}
-
-	lastInChain, err := x509.ParseCertificate(cert.Certificate[len(cert.Certificate)-1])
-	if err != nil {
-		return nil, err
-	}
-
-	// Only add cert to bundle if it is not trusted by system roots.
-	if _, err := lastInChain.Verify(x509.VerifyOptions{}); err != nil {
-		pemEncodedCert := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: lastInChain.Raw})
-		return zip.NewFile(path.Join(additionalCAsZipSubdir, centralCA), pemEncodedCert, 0), nil
-	}
-
-	return nil, nil
 }
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
@@ -182,12 +85,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ca, err := mtls.CACertPEM()
+	ca, err := AddCertificatesToZip(wrapper, cluster, z.identityStore)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "unable to retrieve CA Cert"))
-		return
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not add all required certificates"))
 	}
-	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
 
 	// Ignore the param unless the feature flag is enabled.
 	var createUpgraderSA bool
@@ -204,26 +105,6 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	wrapper.AddFiles(baseFiles...)
-
-	// Add MTLS files for sensor
-
-	if err := z.createIdentity(wrapper, cluster.GetId(), "sensor", storage.ServiceType_SENSOR_SERVICE); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-
-	// Add MTLS files for collector
-	if err := z.createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-
-	additionalCAFiles, err := z.getAdditionalCAs()
-	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-	wrapper.AddFiles(additionalCAFiles...)
 
 	bytes, err := wrapper.Zip()
 	if err != nil {

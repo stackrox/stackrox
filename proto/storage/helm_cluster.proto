@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "storage/cluster.proto";
+
+package storage;
+
+message HelmCluster {
+    Cluster cluster = 1;
+}

@@ -45,6 +45,7 @@ import (
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
 	"github.com/stackrox/rox/central/grpc/metrics"
+	helmHandler "github.com/stackrox/rox/central/helm/handler"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -603,6 +604,18 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 				},
 			}),
 			ServerHandler: scannerDefinitionsHandler.Singleton(),
+			Compression:   false,
+		},
+	)
+
+	helmClusterAddRoute := "/api/helm/cluster/add"
+	customRoutes = append(customRoutes,
+		routes.CustomRoute{
+			Route: helmClusterAddRoute,
+			Authorizer: user.With(permissions.Modify(resources.Cluster),
+				permissions.Modify(resources.ServiceIdentity)),
+			ServerHandler: helmHandler.Handler(siStore.Singleton(), clusterService.Singleton()),
+			Compression:   false,
 		},
 	)
 
