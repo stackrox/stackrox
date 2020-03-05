@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:RA_5"
+	controlID = "NIST_SP_800_53_Rev_4:RA_5"
 
 	interpretationText = `This control requires vulnerability scanning and associated workflows.
 

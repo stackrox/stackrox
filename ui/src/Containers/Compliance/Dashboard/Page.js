@@ -90,7 +90,7 @@ const ComplianceDashboardPage = () => {
                     />
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
                         <ComplianceByStandard
-                            standardType={standardTypes.NIST_SP_800_53}
+                            standardType={standardTypes.NIST_SP_800_53_Rev_4}
                             className="pdf-page"
                         />
                     </FeatureEnabled>

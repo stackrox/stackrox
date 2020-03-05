@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	controlID = `NIST_SP_800_53:SI_4`
+	controlID = `NIST_SP_800_53_Rev_4:SI_4`
 
 	interpretationText = `This control requires the deployment of security monitoring tools in information systems to detect potential attacks or unauthorized connections.
 

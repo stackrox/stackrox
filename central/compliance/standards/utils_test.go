@@ -10,6 +10,7 @@ func TestGetSupportedStandards(t *testing.T) {
 	expectedStandards := []string{
 		"HIPAA_164",
 		"NIST_800_190",
+		"NIST_SP_800_53_Rev_4",
 		"PCI_DSS_3_2",
 		"CIS_Docker_v1_2_0",
 		"CIS_Kubernetes_v1_5",

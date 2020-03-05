@@ -44,7 +44,9 @@ class ComplianceTest extends BaseSpecification {
     @Shared
     private static final PCI_ID = "PCI_DSS_3_2"
     @Shared
-    private static final NIST_ID = "NIST_800_190"
+    private static final NIST_800_190_ID = "NIST_800_190"
+    @Shared
+    private static final NIST_800_53_ID = "NIST_SP_800_53_Rev_4"
     @Shared
     private static final HIPAA_ID = "HIPAA_164"
     @Shared
@@ -59,6 +61,7 @@ class ComplianceTest extends BaseSpecification {
     def setupSpec() {
         // Get cluster ID
         clusterId = ClusterService.getClusterId()
+        assert clusterId
 
         // Clear image cache and add gcr/remove dtr scanners
         Services.deleteImageIntegration(dtrId)
@@ -136,6 +139,10 @@ class ComplianceTest extends BaseSpecification {
                         "CIS_Docker_v1_2_0:2_6",
                         ["Docker daemon is not exposed over TCP"],
                          ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.NODE),
+                new Control(
+                    "NIST_SP_800_53_Rev_4:RA_3",
+                    ["StackRox is installed in cluster \"remote\", and provides continuous risk assessment."],
+                    ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
 
         expect:
@@ -345,13 +352,6 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    private convertStandardToId(String standard) {
-        return standard
-                .replace('.', '_')
-                .replace(' ', '_')
-                .replace('-', '_')
-    }
-
     @Category([BAT])
     def "Verify compliance csv export"() {
         when:
@@ -389,28 +389,38 @@ class ComplianceTest extends BaseSpecification {
 
             while (csvUserIterator.hasNext()) {
                 CsvRow row = csvUserIterator.next()
-                def controlId = row.standard ?
-                        convertStandardToId(row.control.replaceAll("\"*=*\\(*\\)*", "")) :
-                        null
-                def standardId = standardsByName.get(row.standard)
                 rowNumber++
+
+                def standardId = standardsByName.get(row.standard)
                 ComplianceRunResults result = BASE_RESULTS.get(standardId)
                 assert result
+
+                // The control name is formatted with `fmt.Sprintf(`=("%s")`, controlName)` in Go.
+                // Just undo this to get the name.
+                assert row.control.length() > 5
+                def normalizedControlName = row.control[3..(row.control.length() - 3)]
+
                 ComplianceControl control = sDetails.get(standardId).controlsList.find {
-                    it.id == "${standardId}:${controlId}"
+                    it.name == normalizedControlName
                 }
+                if (!control) {
+                    println "Couldn't find ${normalizedControlName} (row " +
+                        "was ${row.cluster} ${row.standard} ${row.control}"
+                }
+                assert control
+
                 ComplianceResultValue value
                 switch (row.objectType.toLowerCase()) {
                     case "cluster":
                         value = result.clusterResults.controlResultsMap.find {
-                            it.key == "${standardId}:${controlId}"
+                            it.key == control.id
                         }?.value
                         break
                     case "node":
                         value = result.nodeResultsMap.get(
                                 result.domain.nodesMap.find { it.value.name == row.objectName }?.key
                         )?.controlResultsMap?.find {
-                            it.key == "${standardId}:${controlId}"
+                            it.key == control.id
                         }?.value
                         break
                     default:
@@ -419,9 +429,14 @@ class ComplianceTest extends BaseSpecification {
                             it.value.name == row.objectName && it.value.namespace == row.namespace
                                 }?.key
                         )?.controlResultsMap?.find {
-                            it.key == "${standardId}:${controlId}"
+                            it.key == control.id
                         }?.value
                         break
+                }
+                if (!value) {
+                    println "Control: ${control} StandardId: ${standardId}" +
+                        "Row: ${row.cluster}, ${row.standard}, ${row.objectType}, ${row.control}, ${row.evidence}"
+                    println result.clusterResults.controlResultsMap.keySet()
                 }
                 assert value
                 assert control
@@ -531,6 +546,14 @@ class ComplianceTest extends BaseSpecification {
                         "HIPAA_164:314_a_2_i_c",
                         ["At least one notifier is enabled."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "HIPAA_164:314_a_2_i_c",
+                         ["At least one notifier is enabled."],
+                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                    "NIST_SP_800_53_Rev_4:IR_6_(1)",
+                    ["Policy \"Ubuntu Package Manager Execution\" is a runtime policy, set to send notifications"],
+                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
         ]
 
         given:
@@ -540,19 +563,26 @@ class ComplianceTest extends BaseSpecification {
         and:
         "add notifier integration"
         def slackNotiferId = Services.addSlackNotifier("Slack Notifier").id
+        def originalUbuntuPackageManagementPolicy = Services.getPolicyByName("Ubuntu Package Manager Execution")
+        assert originalUbuntuPackageManagementPolicy
+        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(originalUbuntuPackageManagementPolicy).
+            addNotifiers(slackNotiferId).build()
+        Services.updatePolicy(updatedPolicy)
 
         when:
         "trigger compliance runs"
         def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
-        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def nist800190Results = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_190_ID, clusterId)
         def hipaaResults = ComplianceService.triggerComplianceRunAndWaitForResult(HIPAA_ID, clusterId)
+        def nist80053Results = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_53_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
         Map<String, ComplianceResultValue> clusterResults = [:]
         clusterResults << pciResults.getClusterResults().controlResultsMap
-        clusterResults << nistResults.getClusterResults().controlResultsMap
+        clusterResults << nist800190Results.getClusterResults().controlResultsMap
         clusterResults << hipaaResults.getClusterResults().controlResultsMap
+        clusterResults << nist80053Results.getClusterResults().controlResultsMap
         assert clusterResults
         def missingControls = []
         for (Control control : controls) {
@@ -575,6 +605,7 @@ class ComplianceTest extends BaseSpecification {
         if (slackNotiferId) {
             Services.deleteNotifier(slackNotiferId)
         }
+        Services.updatePolicy(originalUbuntuPackageManagementPolicy)
     }
 
     @Category([BAT])
@@ -661,7 +692,7 @@ class ComplianceTest extends BaseSpecification {
         when:
         "trigger compliance runs"
         def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
-        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_190_ID, clusterId)
         def hipaaResults = ComplianceService.triggerComplianceRunAndWaitForResult(HIPAA_ID, clusterId)
 
         then:
@@ -720,12 +751,26 @@ class ComplianceTest extends BaseSpecification {
                         ["Policy that disallows old images to be deployed is enabled and enforced",
                          "Policy that disallows images with tag 'latest' to be deployed is enabled and enforced"],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_SP_800_53_Rev_4:CM_2",
+                        ["At least one policy in lifecycle stage \"DEPLOY\" is enabled"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                    "NIST_SP_800_53_Rev_4:CM_3",
+                    ["At least one policy in lifecycle stage \"DEPLOY\" is enabled and enforced"],
+                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                    "NIST_SP_800_53_Rev_4:IR_4_(5)",
+                    ["At least one policy in lifecycle stage \"RUNTIME\" is enabled and enforced"],
+                    ComplianceState.COMPLIANCE_STATE_SUCCESS),
+
         ]
         def enforcementPolicies = [
                 "Fixable CVSS >= 7",
                 "Privileged Container",
                 "90-Day Image Age",
                 "Latest tag",
+                "Ubuntu Package Manager Execution",
         ]
 
         given:
@@ -765,12 +810,14 @@ class ComplianceTest extends BaseSpecification {
 
         when:
         "trigger compliance runs"
-        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def nist800190Results = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_190_ID, clusterId)
+        def nist80053Results = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_53_ID, clusterId)
 
         then:
         "confirm state and evidence of expected controls"
         Map<String, ComplianceResultValue> clusterResults = [:]
-        clusterResults << nistResults.clusterResults.controlResultsMap
+        clusterResults << nist800190Results.clusterResults.controlResultsMap
+        clusterResults << nist80053Results.clusterResults.controlResultsMap
         assert clusterResults
         def missingControls = []
         for (Control control : controls) {
@@ -822,7 +869,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "re-run PCI and HIPAA to make sure they see the run CIS standards"
         def pciResults = ComplianceService.triggerComplianceRunAndWaitForResult(PCI_ID, clusterId)
-        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_ID, clusterId)
+        def nistResults = ComplianceService.triggerComplianceRunAndWaitForResult(NIST_800_190_ID, clusterId)
 
         expect:
         "check the CIS based controls for state"
@@ -931,7 +978,7 @@ class ComplianceTest extends BaseSpecification {
             // Get the sensor pod name
             def sensorPod = orchestrator.getSensorContainerName()
             // Trigger the compliance run
-            def complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_ID, clusterId)
+            def complianceRuns = ComplianceManagementService.triggerComplianceRuns(NIST_800_190_ID, clusterId)
             def complianceRun = complianceRuns.get(0)
 
             // Kill the sensor and wait for the compliance run to complete
@@ -939,18 +986,18 @@ class ComplianceTest extends BaseSpecification {
             Timer t = new Timer(30, 1)
             while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
                     t.IsValid()) {
-                def recentRuns = ComplianceManagementService.getRecentRuns(NIST_ID)
+                def recentRuns = ComplianceManagementService.getRecentRuns(NIST_800_190_ID)
                 complianceRun = recentRuns.find { it.id == complianceRun.id }
             }
 
             // Check whether there were errors
             ComplianceRunResults results =
-                    ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
+                    ComplianceService.getComplianceRunResult(NIST_800_190_ID, clusterId).results
             assert results != null
             Compliance.ComplianceRunMetadata metadata = results.runMetadata
             assert metadata.clusterId == clusterId
             assert metadata.runId == complianceRun.id
-            assert metadata.standardId == NIST_ID
+            assert metadata.standardId == NIST_800_190_ID
 
             for (def ctrlResults : results.clusterResults.controlResultsMap.values()) {
                 if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {

@@ -5,7 +5,7 @@ import (
 )
 
 var nist800_53 = Standard{
-	ID:   "NIST_SP_800_53",
+	ID:   "NIST_SP_800_53_Rev_4",
 	Name: "NIST SP 800-53",
 	Categories: []Category{
 		{
@@ -120,6 +120,18 @@ var nist800_53 = Standard{
 					ID:          "RA_5",
 					Name:        "RA-5",
 					Description: "Vulnerability Scanning",
+				},
+			},
+		},
+		{
+			ID:          "SA",
+			Name:        "SA",
+			Description: "System and Services Acquisition",
+			Controls: []Control{
+				{
+					ID:          "SA_10",
+					Name:        "SA-10",
+					Description: "Developer Configuration Management",
 				},
 			},
 		},

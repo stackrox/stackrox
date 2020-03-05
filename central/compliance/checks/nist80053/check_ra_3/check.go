@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:RA_3"
+	controlID = "NIST_SP_800_53_Rev_4:RA_3"
 
 	interpretationText = `This control requires ongoing risk assessment.
 

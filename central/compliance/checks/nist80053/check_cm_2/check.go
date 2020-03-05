@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:CM_2"
+	controlID = "NIST_SP_800_53_Rev_4:CM_2"
 
 	phase = storage.LifecycleStage_DEPLOY
 )

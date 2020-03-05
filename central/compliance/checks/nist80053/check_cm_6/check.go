@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:CM_6"
+	controlID = "NIST_SP_800_53_Rev_4:CM_6"
 
 	interpretationText = `This control requires that configuration controls be implemented and deviations are documented.
 

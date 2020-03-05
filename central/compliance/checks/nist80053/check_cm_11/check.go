@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	controlID = `NIST_SP_800_53:CM_11`
+	controlID = `NIST_SP_800_53_Rev_4:CM_11`
 
 	interpretationText = `This control requires monitoring of user-installed software.
 

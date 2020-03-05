@@ -17,7 +17,7 @@ const svgMapping = {
     [entityTypes.PCI_DSS_3_2]: PCI,
     [entityTypes.HIPAA_164]: HIPAA,
     [entityTypes.NIST_800_190]: NIST,
-    [entityTypes.NIST_SP_800_53]: NIST
+    [entityTypes.NIST_SP_800_53_Rev_4]: NIST
 };
 
 const ControlDetails = ({ standardId, control, description, className }) => (

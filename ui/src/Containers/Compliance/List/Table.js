@@ -249,7 +249,7 @@ const ListTable = ({
             entityType,
             isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_NIST_800_53, false)
                 ? []
-                : [standardTypes.NIST_SP_800_53]
+                : [standardTypes.NIST_SP_800_53_Rev_4]
         );
     }
 

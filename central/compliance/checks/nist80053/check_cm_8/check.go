@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlID = `NIST_SP_800_53:CM_8`
+	controlID = `NIST_SP_800_53_Rev_4:CM_8`
 
 	interpretationText = `This control requires an up-to-date inventory of information system components.
 

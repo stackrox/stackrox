@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:AC_3_(7)"
+	controlID = "NIST_SP_800_53_Rev_4:AC_3_(7)"
 
 	interpretationText = common.IsRBACConfiguredCorrectlyInterpretation
 )

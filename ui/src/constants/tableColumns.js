@@ -39,7 +39,7 @@ const clusterColumns = [
     columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
     columnsForStandard[standardTypes.HIPAA_164],
     columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
     columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',
@@ -113,7 +113,7 @@ const namespaceColumns = [
     },
     columnsForStandard[standardTypes.HIPAA_164],
     columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
     columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',
@@ -145,7 +145,7 @@ const deploymentColumns = [
     },
     columnsForStandard[standardTypes.HIPAA_164],
     columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53],
+    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
     columnsForStandard[standardTypes.PCI_DSS_3_2],
     {
         accessor: 'overall.average',

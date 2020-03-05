@@ -31,7 +31,7 @@ var (
 	EventTimelineUI = registerFeature("Enable Event Timeline UI", "ROX_EVENT_TIMELINE_UI", false)
 
 	// NistSP800_53 enables the NIST SP 800-53 compliance standard.
-	NistSP800_53 = registerFeature("NIST SP 800-53", "ROX_NIST_800_53", false)
+	NistSP800_53 = registerFeature("NIST SP 800-53", "ROX_NIST_800_53", true)
 
 	// RefreshTokens enables supports for refresh tokens & OIDC code flow.
 	RefreshTokens = registerFeature("Refresh tokens", "ROX_REFRESH_TOKENS", true)

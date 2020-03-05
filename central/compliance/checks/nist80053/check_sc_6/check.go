@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:SC_6"
+	controlID = "NIST_SP_800_53_Rev_4:SC_6"
 
 	interpretationText = `This control requires resource management practices to protect availability.
 

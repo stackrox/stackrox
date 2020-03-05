@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:SC_7"
+	controlID = "NIST_SP_800_53_Rev_4:SC_7"
 
 	interpretationText = common.CheckNetworkPoliciesByDeploymentInterpretation
 )

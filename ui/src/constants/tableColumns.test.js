@@ -14,23 +14,22 @@ describe('Get columns', () => {
         expectColumnsToContainAndNotContain(getColumnsByEntity(resourceTypes.CLUSTER), [
             'id',
             standardTypes.NIST_800_190,
-            standardTypes.NIST_SP_800_53
+            standardTypes.NIST_SP_800_53_Rev_4
         ]);
     });
 
     it('can get columns by entity with exclusion', async () => {
         expectColumnsToContainAndNotContain(
-            getColumnsByEntity(resourceTypes.CLUSTER, [standardTypes.NIST_SP_800_53]),
+            getColumnsByEntity(resourceTypes.CLUSTER, [standardTypes.NIST_SP_800_53_Rev_4]),
             ['id', standardTypes.NIST_800_190],
-            [standardTypes.NIST_SP_800_53]
+            [standardTypes.NIST_SP_800_53_Rev_4]
         );
     });
 
     it('can get columns by standard', async () => {
-        expectColumnsToContainAndNotContain(getColumnsByStandard(standardTypes.NIST_SP_800_53), [
-            'id',
-            'compliance',
-            'control'
-        ]);
+        expectColumnsToContainAndNotContain(
+            getColumnsByStandard(standardTypes.NIST_SP_800_53_Rev_4),
+            ['id', 'compliance', 'control']
+        );
     });
 });

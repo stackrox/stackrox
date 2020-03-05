@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:CM_7"
+	controlID = "NIST_SP_800_53_Rev_4:CM_7"
 
 	interpretationText = `This control requires that unnecessary features be prohibited or restricted.
 

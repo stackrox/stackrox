@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:SI_3_(8)"
+	controlID = "NIST_SP_800_53_Rev_4:SI_3_(8)"
 
 	phase = storage.LifecycleStage_RUNTIME
 )

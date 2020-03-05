@@ -114,7 +114,7 @@ const ClusterPage = ({
                                 />
                                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
                                     <ComplianceByStandard
-                                        standardType={entityTypes.NIST_SP_800_53}
+                                        standardType={entityTypes.NIST_SP_800_53_Rev_4}
                                         entityName={name}
                                         entityId={id}
                                         entityType={entityTypes.CLUSTER}

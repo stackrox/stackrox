@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	controlID = "NIST_SP_800_53:IR_6_(1)"
+	controlID = "NIST_SP_800_53_Rev_4:IR_6_(1)"
 
 	interpretationText = `This control requires the use of automated mechanisms to report information security incidents.
 

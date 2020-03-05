@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	controlID = `NIST_SP_800_53:SI_2_(2)`
+	controlID = `NIST_SP_800_53_Rev_4:SI_2_(2)`
 
 	interpretationText = `This control requires that system flaws be identified and remediated in a timely manner.
 
