@@ -467,8 +467,7 @@ commands:
   build-liveness-check:
     description: "Ensure workflow is still live"
     steps:
-      - setup-gcp:
-          docker-login: false
+      - setup-gcp
       - run:
           name: Ensure workflow is still live
           command: .circleci/check-workflow-live.sh
@@ -557,7 +556,7 @@ commands:
             echo "Isolating pods"
             kubectl -n stackrox apply -R -f tests/proxy/netpol/
 
-  setup-gcp:
+  setup-dep-env:
     parameters:
       docker-login:
         type: boolean
@@ -581,6 +580,11 @@ commands:
               cci-export SCANNER_DB_IMAGE "stackrox/scanner-db-rhel:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
             fi
 
+  setup-gcp:
+    steps:
+      - run:
+          name: Setup GCP env
+          command: |
             gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
             gcloud auth list
             gcloud config set project stackrox-ci
@@ -712,7 +716,8 @@ commands:
         default: 3
 
     steps:
-      - setup-gcp:
+      - setup-gcp
+      - setup-dep-env:
           docker-login: false
 
       - run:
@@ -861,6 +866,7 @@ commands:
 
       - *setupRoxctl
       - setup-gcp
+      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: << parameters.cluster-id >>
       - remove-existing-stackrox-resources
@@ -1820,6 +1826,7 @@ jobs:
       - *setupRoxctl
       - setup_remote_docker
       - setup-gcp
+      - setup-dep-env
 
       - attach-gke-cluster:
           cluster-id: k8s-tests
@@ -2088,6 +2095,7 @@ jobs:
 
       - *setupRoxctl
       - setup-gcp
+      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: upgrade-test
       - remove-existing-stackrox-resources
@@ -2336,6 +2344,7 @@ jobs:
 
       - *setupRoxctl
       - setup-gcp
+      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: scale-test
       - remove-existing-stackrox-resources
@@ -2401,6 +2410,7 @@ jobs:
 
       - *setupRoxctl
       - setup-gcp
+      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: scale-test
       - remove-existing-stackrox-resources
