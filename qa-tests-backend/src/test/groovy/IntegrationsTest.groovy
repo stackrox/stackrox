@@ -5,6 +5,7 @@ import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
 import org.junit.experimental.categories.Category
+import services.AlertService
 import services.CreatePolicyService
 import services.NotifierService
 import spock.lang.Unroll
@@ -301,6 +302,9 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifierId).build()
         Services.updatePolicy(updatedPolicy)
 
+        // Allow the policy to propagate to Sensor which will mark the emitted alert with the notifier
+        sleep 10000
+
         Deployment  deployment =
                 new Deployment()
                         .setName(BUSYBOX)
@@ -311,7 +315,11 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
         then:
         "We should check to make sure we got a value"
-        assert Services.waitForViolation(BUSYBOX, "Latest tag", 30)
+        // Verify that the violation has shown up and that it has the correct notifier
+        def violations = Services.getViolationsWithTimeout(BUSYBOX, "Latest tag", 30)
+        assert violations.size() == 1
+        def violation = AlertService.getViolation(violations[0].getId())
+        assert violation.getPolicy().getNotifiersList().contains(notifierId)
 
         def get = new URL("http://localhost:8080").openConnection()
         def jsonSlurper = new JsonSlurper()
