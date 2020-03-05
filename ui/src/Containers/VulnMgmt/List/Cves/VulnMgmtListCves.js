@@ -297,7 +297,7 @@ const VulnMgmtCves = ({
 
         const targetSearchState = { ...currentSearchState };
         if (viewingSuppressed) {
-            delete targetSearchState[cveSortFields.SUPPRESSED];
+            targetSearchState[cveSortFields.SUPPRESSED] = false;
         } else {
             targetSearchState[cveSortFields.SUPPRESSED] = true;
         }
