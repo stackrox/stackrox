@@ -30,6 +30,10 @@ import (
 
 const (
 	logWindow = 20 * time.Minute
+
+	maxLogLines        = 5000
+	maxFirstLineCutOff = 1024    // only cut off first (partial line) if less than that many characters
+	maxLogFileSize     = 1 << 20 // 1MB
 )
 
 var (
@@ -171,11 +175,15 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 			podLogOpts := &v1.PodLogOptions{
 				Container:    container.Name,
 				SinceSeconds: &[]int64{int64(logWindow / time.Second)}[0],
+				TailLines:    &[]int64{maxLogLines}[0],
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw()
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving container logs: %v", err))
+			} else {
+				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
 			}
+
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s.txt", container.Name), logsData); err != nil {
 				return err
 			}
@@ -187,11 +195,15 @@ func (c *collector) collectPodData(pod *v1.Pod) error {
 				Container: container.Name,
 				Previous:  true,
 				SinceTime: &since,
+				TailLines: &[]int64{maxLogLines}[0],
 			}
 			logsData, err := c.client.CoreV1().Pods(pod.GetNamespace()).GetLogs(pod.GetName(), podLogOpts).DoRaw()
 			if err != nil {
 				logsData = []byte(fmt.Sprintf("Error retrieving previous container logs: %v", err))
+			} else {
+				logsData = truncateLogData(logsData, maxLogFileSize, maxFirstLineCutOff)
 			}
+
 			if err := c.emitFile(pod, fmt.Sprintf("-logs-%s-previous.txt", container.Name), logsData); err != nil {
 				return err
 			}

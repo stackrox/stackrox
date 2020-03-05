@@ -23,6 +23,8 @@ import (
 const (
 	clusterInfoChunkSize = 2 * (1 << 20) // Bytes per streaming chunk, 2MB chosen arbitrarily
 	gatherTimeout        = 30 * time.Second
+
+	maxK8sFileSize = 2 * (1 << 20) // maximum file size for Kubernetes files (YAMLs, logs)
 )
 
 var (
@@ -150,13 +152,17 @@ func (h *commandHandler) handleKubernetesInfoRequest(sendMsgCb func(*central.Tel
 	}
 
 	fileCb := func(_ concurrency.ErrorWaitable, file k8sintrospect.File) error {
+		contents := file.Contents
+		if len(contents) > maxK8sFileSize {
+			contents = contents[:maxK8sFileSize]
+		}
 		payload := &central.TelemetryResponsePayload{
 			Payload: &central.TelemetryResponsePayload_KubernetesInfo_{
 				KubernetesInfo: &central.TelemetryResponsePayload_KubernetesInfo{
 					Files: []*central.TelemetryResponsePayload_KubernetesInfo_File{
 						{
 							Path:     file.Path,
-							Contents: file.Contents,
+							Contents: contents,
 						},
 					},
 				},
