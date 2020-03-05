@@ -100,8 +100,8 @@ func dfs(ctx context.Context, currentID []byte, cache map[string]int32, seenIDs 
 			return 0, err
 		}
 		totalCount += count
-		cache[string(nextID)] = count
 	}
+	cache[string(currentID)] = totalCount
 	return totalCount, nil
 }
 

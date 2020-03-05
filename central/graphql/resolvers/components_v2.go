@@ -300,8 +300,8 @@ func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery)
 	imageOnlyOptionsMap := search.Difference(
 		search.Difference(imageMappings.ImageOnlyOptionsMap,
 			cveMappings.OptionsMap), imageComponentMappings.OptionsMap)
-	q, _ = search.FilterQueryWithMap(q, imageOnlyOptionsMap)
-	if q == nil {
+	q, filtered := search.FilterQueryWithMap(q, imageOnlyOptionsMap)
+	if q == nil || !filtered {
 		return "", nil
 	}
 

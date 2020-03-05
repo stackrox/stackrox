@@ -38,6 +38,10 @@ type imageScorerImpl struct {
 
 // Score takes an image and evaluates its risk
 func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *storage.Risk {
+	if image.GetId() == "" {
+		return nil
+	}
+
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {

@@ -29,6 +29,6 @@ message ComponentCVEEdge {
 
     // Whether there is a version the CVE is fixed in the component.
     oneof has_fixed_by {
-        string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store\""];
+        string fixed_by   = 3 [(gogoproto.moretags) = "search:\"Fixed By,store,hidden\""];
     }
 }
