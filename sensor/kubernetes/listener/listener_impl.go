@@ -32,7 +32,7 @@ func (k *listenerImpl) Start() error {
 	// Create informer factories for needed orchestrators.
 	var osFactory externalversions.SharedInformerFactory
 
-	k8sFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncPeriod)
+	k8sFactory := informers.NewSharedInformerFactoryWithOptions(k.clients.k8s, resyncPeriod)
 	k8sResyncingFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncingPeriod)
 	if k.clients.openshift != nil {
 		osFactory = externalversions.NewSharedInformerFactory(k.clients.openshift, resyncingPeriod)
@@ -46,7 +46,7 @@ func (k *listenerImpl) Start() error {
 	return nil
 }
 
-func (k *listenerImpl) Stop(_ error) {
+func (k *listenerImpl) Stop(err error) {
 	k.stopSig.Signal()
 }
 
@@ -54,7 +54,7 @@ func (k *listenerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (k *listenerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (k *listenerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 

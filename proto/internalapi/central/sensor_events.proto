@@ -49,7 +49,6 @@ message SensorEvent {
     oneof resource {
         storage.NetworkPolicy     network_policy    = 4;
         storage.Deployment        deployment        = 5;
-        storage.Pod               pod               = 19;
         storage.NamespaceMetadata namespace         = 6;
         storage.Secret            secret            = 7;
         storage.Node              node              = 9;

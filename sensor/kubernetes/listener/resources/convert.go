@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -216,6 +215,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
 		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
+			w.populatePorts()
 			w.populateDataFromPods(pod)
 		} else {
 			pods, err := w.getPods(hierarchy, labelSelector, lister)
@@ -225,12 +225,12 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action *centra
 			if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
 				resources.NewDeploymentWrap(w.Deployment, w.registryOverride).PopulateDeploymentFromPodSpec(podSpec)
 			}
+			w.populatePorts()
 			w.populateDataFromPods(pods...)
 		}
+	} else {
+		w.populatePorts()
 	}
-
-	w.populatePorts()
-
 	return true, nil
 }
 
@@ -268,12 +268,9 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.pods = pods
 	w.populateImageIDs(pods...)
-	if !features.PodDeploymentSeparation.Enabled() {
-		w.populateContainerInstances(pods...)
-	}
+	w.populateContainerInstances(pods...)
 }
 
-// Deprecated: Once Pods and Deployments are separated, there will no longer be a need for this.
 func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 	for _, p := range pods {
 		for i, instance := range containerInstances(p) {
