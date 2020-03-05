@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/process/id"
 )
 
 var (
@@ -53,6 +54,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_CREATE_RESOURCE:
 		indicator := event.GetProcessIndicator()
 		indicator.ClusterId = clusterID
+
+		// Build indicator from exec filepath, process, and args
+		// This allows for a consistent ID to be inserted into the DB
+		id.SetIndicatorID(indicator)
+
 		return s.process(indicator, injector)
 	default:
 		return fmt.Errorf("action %q for process indicator is not supported", event.GetAction())

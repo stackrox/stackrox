@@ -233,7 +233,33 @@ func (c *crudImpl) Upsert(msg proto.Message) error {
 	return c.runUpdate(msg, false)
 }
 
+func (c *crudImpl) updateBatchWithoutPartial(msgs []proto.Message) error {
+	ids, data, err := c.resolveManyProtoKV(msgs, c.resolveMsgBytes)
+	if err != nil {
+		return err
+	}
+	batch := c.db.NewWriteBatch()
+	defer batch.Cancel()
+
+	for i := 0; i < len(ids); i++ {
+		key := c.keyFunc(msgs[i])
+		if err := c.TxnHelper.AddKeysToIndex(batch, key); err != nil {
+			return err
+		}
+		if err := batch.Set(ids[i], data[i]); err != nil {
+			return err
+		}
+	}
+	if err := batch.Flush(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *crudImpl) updateBatch(msgs []proto.Message, mustExist bool) error {
+	if !mustExist && !c.hasPartial {
+		return c.updateBatchWithoutPartial(msgs)
+	}
 	ids, data, err := c.resolveManyProtoKV(msgs, c.resolveMsgBytes)
 	if err != nil {
 		return err

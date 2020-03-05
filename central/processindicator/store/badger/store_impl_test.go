@@ -83,12 +83,12 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	}
 
 	repeatIndicator := &storage.ProcessIndicator{
-		Id:           "id3",
+		Id:           "id1",
 		DeploymentId: "d1",
 		Signal:       repeatedSignal,
 	}
 
-	_, err := suite.store.AddProcessIndicators(indicators...)
+	err := suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
 	suite.verifyIndicatorsAre(indicators...)
 
@@ -112,15 +112,14 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	// Adding an indicator with the same secondary key should replace the original one.
-	removed, err := suite.store.AddProcessIndicators(repeatIndicator)
+	err = suite.store.AddProcessIndicators(repeatIndicator)
 	suite.NoError(err)
-	suite.Equal("id1", removed[0])
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
 	// The removed key and the added key should both be waiting to be indexed
 	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
-	suite.ElementsMatch(append(removed, repeatIndicator.GetId()), keys)
+	suite.ElementsMatch([]string{repeatIndicator.GetId()}, keys)
 
 	// Clear indexing
 	keys, err = suite.store.GetKeysToIndex()
@@ -139,9 +138,8 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(err)
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
-	oldIDs, err := suite.store.AddProcessIndicators(indicators...)
+	err = suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
-	suite.Empty(oldIDs)
 
 	indicatorIDs := make([]string, 0, len(indicators))
 	for _, i := range indicators {
@@ -149,7 +147,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	}
 	keys, err = suite.store.GetKeysToIndex()
 	suite.NoError(err)
-	suite.ElementsMatch(keys, append(indicatorIDs, oldIDs...))
+	suite.ElementsMatch(keys, indicatorIDs)
 
 	// Modify indicator ids so we can batch add and we should get the old values out
 	for idx, i := range indicators {
@@ -161,9 +159,8 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(err)
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
-	oldIDs, err = suite.store.AddProcessIndicators(indicators...)
+	err = suite.store.AddProcessIndicators(indicators...)
 	suite.NoError(err)
-	suite.ElementsMatch([]string{"id1", "id2"}, oldIDs)
 
 	indicators, err = suite.store.GetProcessIndicators()
 	suite.NoError(err)

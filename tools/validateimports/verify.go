@@ -162,7 +162,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	}
 
 	allowedPackages := []string{validImportRoot, "generated"}
-	// The migrator is NOT allowed to import all code from pkg.
+	// The migrator is NOT allowed to import all code from pkg except process/id as that pkg is isolated.
 	if validImportRoot != "pkg" && validImportRoot != "migrator" {
 		allowedPackages = append(allowedPackages, "pkg")
 	}
@@ -170,7 +170,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
-		allowedPackages = append(allowedPackages, "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes")
+		allowedPackages = append(allowedPackages, "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes")
 	}
 
 	// Allow central and roxctl to import "image" (for fixtures)

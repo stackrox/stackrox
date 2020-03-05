@@ -58,6 +58,7 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 		defer it.Close()
 
 		batch := badgerDB.NewWriteBatch()
+		defer batch.Cancel()
 		for it.Seek(alertBucketName); it.ValidForPrefix(alertBucketName); it.Next() {
 			if batch.Error() != nil {
 				return batch.Error()
@@ -90,7 +91,6 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 				}
 				return nil
 			})
-			defer batch.Cancel()
 			if err != nil {
 				return err
 			}

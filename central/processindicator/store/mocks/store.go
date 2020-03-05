@@ -97,16 +97,15 @@ func (mr *MockStoreMockRecorder) GetProcessInfoToArgs() *gomock.Call {
 }
 
 // AddProcessIndicators mocks base method
-func (m *MockStore) AddProcessIndicators(arg0 ...*storage.ProcessIndicator) ([]string, error) {
+func (m *MockStore) AddProcessIndicators(arg0 ...*storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "AddProcessIndicators", varargs...)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AddProcessIndicators indicates an expected call of AddProcessIndicators

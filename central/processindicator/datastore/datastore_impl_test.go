@@ -153,7 +153,7 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 	}
 
 	repeatIndicator = &storage.ProcessIndicator{
-		Id:           "id3",
+		Id:           "id1",
 		DeploymentId: "d1",
 		Signal:       repeatedSignal,
 	}
@@ -478,7 +478,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesAddMany() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 	storeMock, indexMock, _ := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil, nil)
+	storeMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 	indexMock.EXPECT().AddProcessIndicators(gomock.Any()).Return(nil)
 
 	storeMock.EXPECT().AckKeysIndexed("id").Return(nil)

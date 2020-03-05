@@ -72,44 +72,19 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return errors.New("permission denied")
 	}
 
-	removedIndicators, err := ds.storage.AddProcessIndicators(indicators...)
+	idSet := set.NewStringSet()
+	var filteredIndicators []*storage.ProcessIndicator
+	// Iterate over the processes in reverse chronological ordering
+	// so we will maintain the most recent ones
+	for i := len(indicators) - 1; i >= 0; i-- {
+		if idSet.Add(indicators[i].GetId()) {
+			filteredIndicators = append(filteredIndicators, indicators[i])
+		}
+	}
+
+	err := ds.storage.AddProcessIndicators(filteredIndicators...)
 	if err != nil {
 		return err
-	}
-
-	// If there are no indicators to remove, short-circuit the rest of the code path.
-	if len(removedIndicators) == 0 {
-		if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
-			return err
-		}
-		indicatorIDs := make([]string, 0, len(indicators))
-		for _, i := range indicators {
-			indicatorIDs = append(indicatorIDs, i.GetId())
-		}
-		return ds.storage.AckKeysIndexed(indicatorIDs...)
-	}
-
-	removedIndicatorsSet := set.NewStringSet(removedIndicators...)
-
-	// We want to filter out indicators in the current batch which were dropped.
-	filteredIndicators := indicators[:0]
-	for _, indicator := range indicators {
-		if removedIndicatorsSet.Contains(indicator.GetId()) {
-			removedIndicatorsSet.Remove(indicator.GetId())
-			continue
-		}
-		filteredIndicators = append(filteredIndicators, indicator)
-	}
-
-	// This removes indicators that previously existed in the index.
-	if removedIndicatorsSet.Cardinality() > 0 {
-		removedSlice := removedIndicatorsSet.AsSlice()
-		if err := ds.indexer.DeleteProcessIndicators(removedSlice); err != nil {
-			return err
-		}
-		if err := ds.storage.AckKeysIndexed(removedSlice...); err != nil {
-			return errors.Wrap(err, "error acknowledging removed process indexing")
-		}
 	}
 
 	if err := ds.indexer.AddProcessIndicators(filteredIndicators); err != nil {
@@ -120,11 +95,9 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	for _, fi := range filteredIndicators {
 		filteredKeys = append(filteredKeys, fi.GetId())
 	}
-
 	if err := ds.storage.AckKeysIndexed(filteredKeys...); err != nil {
 		return errors.Wrap(err, "error acknowledging added process indexing")
 	}
-
 	return nil
 }
 

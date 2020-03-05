@@ -22,8 +22,12 @@ func DBFileName(suite Suite) string {
 	return DBFileNameForT(suite.T())
 }
 
+type testingT interface {
+	Name() string
+}
+
 // DBFileNameForT returns an appropriate, unique, DB file name for the given test.
-func DBFileNameForT(t *testing.T) string {
+func DBFileNameForT(t testingT) string {
 	return strings.Replace(t.Name(), "/", "_", -1) + ".db"
 }
 
