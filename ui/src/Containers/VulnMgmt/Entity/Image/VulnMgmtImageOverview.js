@@ -15,12 +15,10 @@ import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityToColumns } from 'constants/listColumns';
-import { resourceLabels } from 'messages/common';
 
-import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
 const emptyImage = {
@@ -107,13 +105,6 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
     }
     const currentEntity = { [entityTypes.IMAGE]: data.id };
     const newEntityContext = { ...entityContext, ...currentEntity };
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCves || !fixableCves.length}
-            workflowState={workflowState}
-            entityName={safeData.name.fullName}
-        />
-    );
 
     return (
         <div className="flex h-full">
@@ -147,18 +138,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                             headers={[{ text: 'Fixable CVEs' }, { text: 'Dockerfile' }]}
                         >
                             <TabContent>
-                                <TableWidget
-                                    header={`${fixableCves.length} fixable ${pluralize(
-                                        resourceLabels.CVE,
-                                        fixableCves.length
-                                    )} found across this image`}
-                                    headerActions={cveActions}
-                                    rows={fixableCves}
-                                    entityType={entityTypes.CVE}
-                                    noDataText="No fixable CVEs available in this image"
-                                    className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState)}
-                                    idAttribute="cve"
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.IMAGE}
+                                    name={safeData?.name}
+                                    id={safeData?.id}
                                 />
                             </TabContent>
                             <TabContent>

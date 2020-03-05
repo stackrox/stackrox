@@ -6,7 +6,6 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtNamespaceOverview from './VulnMgmtNamespaceOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -25,7 +24,11 @@ const VulnMgmtNamespace = ({
     setRefreshTrigger
 }) => {
     const overviewQuery = gql`
-        query getNamespace($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
+        query getNamespace(
+            $id: ID!
+            $policyQuery: String,
+            $scopeQuery: String
+        ) {
             result: namespace(id: $id) {
                 metadata {
                     priority
@@ -56,12 +59,8 @@ const VulnMgmtNamespace = ({
                 deploymentCount
                 imageCount
                 componentCount
-                vulnerabilities: vulns {
-                    ...cveFields
-                }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

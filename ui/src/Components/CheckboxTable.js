@@ -14,6 +14,7 @@ class CheckboxTable extends Component {
         selection: PropTypes.arrayOf(PropTypes.string),
         page: PropTypes.number,
         renderRowActionButtons: PropTypes.func,
+        manual: PropTypes.bool,
         idAttribute: PropTypes.string
     };
 
@@ -23,6 +24,7 @@ class CheckboxTable extends Component {
         selection: [],
         page: 0,
         renderRowActionButtons: null,
+        manual: false,
         idAttribute: 'id'
     };
 
@@ -98,9 +100,9 @@ class CheckboxTable extends Component {
     };
 
     render() {
-        const { ...rest } = this.props;
+        const { manual, ...rest } = this.props;
         const columns = this.addCheckboxColumns();
-        return <Table {...rest} columns={columns} setTableRef={this.setTableRef} />;
+        return <Table {...rest} columns={columns} manual={manual} setTableRef={this.setTableRef} />;
     }
 }
 

@@ -10,17 +10,16 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import entityTypes from 'constants/entityTypes';
 import { OVERVIEW_LIMIT } from 'constants/workflowPages.constants';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
-import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import TopRiskyEntitiesByVulnerabilities from '../../widgets/TopRiskyEntitiesByVulnerabilities';
 import RecentlyDetectedVulnerabilities from '../../widgets/RecentlyDetectedVulnerabilities';
 import TopRiskiestImagesAndComponents from '../../widgets/TopRiskiestImagesAndComponents';
 import DeploymentsWithMostSeverePolicyViolations from '../../widgets/DeploymentsWithMostSeverePolicyViolations';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
 const emptyCluster = {
@@ -41,8 +40,7 @@ const emptyCluster = {
             version: 'N/A'
         }
     },
-    vulnCount: 0,
-    vulnerabilities: []
+    vulnCount: 0
 };
 
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
@@ -51,14 +49,13 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyCluster, ...data };
 
-    const { priority, policyStatus, status, istioEnabled, vulnerabilities, id } = safeData;
+    const { priority, policyStatus, status, istioEnabled, id } = safeData;
 
     if (!status || !policyStatus) return null;
 
     const { orchestratorMetadata = null } = status;
     const { buildDate = '', version = 'N/A' } = orchestratorMetadata;
     const { failingPolicies } = policyStatus;
-    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     function yesNoMaybe(value) {
         if (!value && value !== false) {
@@ -92,13 +89,6 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
     const currentEntity = { [entityTypes.CLUSTER]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCves || !fixableCves.length}
-            workflowState={workflowState}
-            entityName={safeData.name}
-        />
-    );
 
     return (
         <div className="flex h-full">
@@ -168,18 +158,12 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                 />
                             </TabContent>
                             <TabContent>
-                                <TableWidget
-                                    header={`${fixableCves.length} fixable ${pluralize(
-                                        entityTypes.CVE,
-                                        fixableCves.length
-                                    )} found across this cluster`}
-                                    headerActions={cveActions}
-                                    rows={fixableCves}
-                                    entityType={entityTypes.CVE}
-                                    noDataText="No fixable CVEs available in this cluster"
-                                    className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState)}
-                                    idAttribute="cve"
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.CLUSTER}
+                                    name={safeData?.name}
+                                    id={safeData?.id}
                                 />
                             </TabContent>
                         </Tabs>

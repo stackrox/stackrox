@@ -72,7 +72,7 @@ export function exportCvesAsCsv(fileName, workflowState) {
         key => key.includes('Fix') || key.includes('fix')
     );
     if (fixableFlag) {
-        searchParamsList.push({ key: 'Fixed+By', value: 'r/.*' });
+        searchParamsList.push({ key: 'Fixable', value: true });
     }
 
     return getCvesInCsvFormat(fileName, searchParamsList);

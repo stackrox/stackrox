@@ -15,11 +15,10 @@ import RecentlyDetectedVulnerabilities from 'Containers/VulnMgmt/widgets/Recentl
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import DeploymentsWithMostSeverePolicyViolations from 'Containers/VulnMgmt/widgets/DeploymentsWithMostSeverePolicyViolations';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
-import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
 const emptyNamespace = {
@@ -45,15 +44,17 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     const workflowState = useContext(workflowStateContext);
 
     // guard against incomplete GraphQL-cached data
-    const safeData = { ...emptyNamespace, ...data };
+    const safeData = {
+        ...emptyNamespace,
+        ...data
+    };
 
-    const { metadata, policyStatus, vulnerabilities } = safeData;
+    const { metadata, policyStatus } = safeData;
 
     if (!metadata || !policyStatus) return null;
 
     const { clusterName, clusterId, priority, labels, id } = metadata;
     const { failingPolicies, status } = policyStatus;
-    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
     const metadataKeyValuePairs = [];
 
     if (!entityContext[entityTypes.CLUSTER]) {
@@ -74,13 +75,6 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
 
     const currentEntity = { [entityTypes.NAMESPACE]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCves || !fixableCves.length}
-            workflowState={workflowState}
-            entityName={safeData.metadata.name}
-        />
-    );
 
     return (
         <div className="flex h-full">
@@ -139,18 +133,12 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
                                 />
                             </TabContent>
                             <TabContent>
-                                <TableWidget
-                                    header={`${fixableCves.length} fixable ${pluralize(
-                                        entityTypes.CVE,
-                                        fixableCves.length
-                                    )} found across this namespace`}
-                                    headerActions={cveActions}
-                                    rows={fixableCves}
-                                    entityType={entityTypes.CVE}
-                                    noDataText="No fixable CVEs available in this namespace"
-                                    className="bg-base-100"
-                                    columns={getCveTableColumns(workflowState)}
-                                    idAttribute="cve"
+                                <TableWidgetFixableCves
+                                    workflowState={workflowState}
+                                    entityContext={entityContext}
+                                    entityType={entityTypes.NAMESPACE}
+                                    name={safeData?.metadata?.name}
+                                    id={safeData?.metadata?.id}
                                 />
                             </TabContent>
                         </Tabs>

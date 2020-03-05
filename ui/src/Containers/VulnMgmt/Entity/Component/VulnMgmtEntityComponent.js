@@ -4,7 +4,6 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
 import {
@@ -15,7 +14,7 @@ import {
 
 const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getComponent($id: ID!, $query: String, $scopeQuery: String) {
+        query getComponent($id: ID!, $query: String) {
             result: component(id: $id) {
                 id
                 name
@@ -28,12 +27,8 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
                     cvss
                     scoreVersion
                 }
-                fixableCVEs: vulns(query: "Fixable:true") {
-                    ...cveFields
-                }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

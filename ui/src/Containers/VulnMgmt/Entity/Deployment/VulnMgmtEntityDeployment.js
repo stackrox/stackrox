@@ -6,7 +6,6 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -17,7 +16,7 @@ import {
 
 const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, sort, page }) => {
     const overviewQuery = gql`
-        query getDeployment($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
+        query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
                 id
                 priority
@@ -94,12 +93,8 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
                 imageCount
                 componentCount
                 vulnCount
-                vulnerabilities: vulns(query: $query) {
-                    ...cveFields
-                }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

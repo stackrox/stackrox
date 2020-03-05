@@ -5,7 +5,6 @@ import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
     vulMgmtPolicyQuery,
@@ -17,7 +16,7 @@ import EntityList from '../../List/VulnMgmtList';
 
 const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, entityContext }) => {
     const overviewQuery = gql`
-        query getCluster($id: ID!, $query: String, $policyQuery: String, $scopeQuery: String) {
+        query getCluster($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: cluster(id: $id) {
                 id
                 name
@@ -50,12 +49,8 @@ const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, e
                 imageCount
                 componentCount
                 vulnCount
-                vulnerabilities: vulns(query: $query) {
-                    ...cveFields
-                }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {

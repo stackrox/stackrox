@@ -16,12 +16,11 @@ import MostCommonVulnerabiltiesInDeployment from 'Containers/VulnMgmt/widgets/Mo
 import TopRiskiestImagesAndComponents from 'Containers/VulnMgmt/widgets/TopRiskiestImagesAndComponents';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getPolicyTableColumns } from 'Containers/VulnMgmt/List/Policies/VulnMgmtListPolicies';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/ViolationsAcrossThisDeployment';
 
-import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 import TableWidget from '../TableWidget';
 
 const emptyDeployment = {
@@ -58,13 +57,10 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         policyStatus,
         failingPolicies,
         labels,
-        annotations,
-        vulnerabilities
+        annotations
     } = safeData;
 
     const metadataKeyValuePairs = [];
-
-    const fixableCves = vulnerabilities.filter(cve => cve.isFixable);
 
     if (!entityContext[entityTypes.CLUSTER]) {
         const clusterLink = workflowState
@@ -94,13 +90,6 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     ];
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCves || !fixableCves.length}
-            workflowState={workflowState}
-            entityName={safeData.name}
-        />
-    );
 
     let deploymentFindingsContent = null;
     if (entityContext[entityTypes.POLICY]) {
@@ -129,18 +118,12 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
                         />
                     </TabContent>
                     <TabContent>
-                        <TableWidget
-                            header={`${fixableCves.length} fixable ${pluralize(
-                                entityTypes.CVE,
-                                fixableCves.length
-                            )} found across this deployment`}
-                            headerActions={cveActions}
-                            rows={fixableCves}
-                            entityType={entityTypes.CVE}
-                            noDataText="No fixable CVEs available in this deployment"
-                            className="bg-base-100"
-                            columns={getCveTableColumns(workflowState)}
-                            idAttribute="cve"
+                        <TableWidgetFixableCves
+                            workflowState={workflowState}
+                            entityContext={entityContext}
+                            entityType={entityTypes.DEPLOYMENT}
+                            name={safeData?.name}
+                            id={safeData?.id}
                         />
                     </TabContent>
                 </Tabs>

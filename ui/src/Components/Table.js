@@ -20,6 +20,7 @@ class Table extends Component {
         rows: PropTypes.arrayOf(PropTypes.object).isRequired,
         onRowClick: PropTypes.func,
         selectedRowId: PropTypes.string,
+        manual: PropTypes.bool,
         idAttribute: PropTypes.string,
         noDataText: ReactTablePropTypes.noDataText,
         setTableRef: PropTypes.func,
@@ -32,6 +33,7 @@ class Table extends Component {
     static defaultProps = {
         noDataText: 'No records.',
         selectedRowId: null,
+        manual: false,
         idAttribute: 'id',
         onRowClick: null,
         setTableRef: null,
@@ -83,7 +85,7 @@ class Table extends Component {
     getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
     render() {
-        const { rows, columns, defaultSorted, ...rest } = this.props;
+        const { rows, columns, defaultSorted, manual, ...rest } = this.props;
         if (!columns || !columns.length) return null;
         columns.forEach(column =>
             Object.assign(column, {
@@ -111,6 +113,7 @@ class Table extends Component {
                 minRows={Math.min(this.props.rows.length, pageSize)}
                 page={this.props.page}
                 showPagination={false}
+                manual={manual}
                 {...rest}
             />
         );

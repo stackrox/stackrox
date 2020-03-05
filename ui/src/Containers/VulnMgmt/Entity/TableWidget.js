@@ -10,9 +10,9 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import TablePagination from 'Components/TablePagination';
 import Table from 'Components/Table';
 
-const TableWidget = ({ history, header, entityType, ...rest }) => {
+const TableWidget = ({ history, header, entityType, parentPageState, ...rest }) => {
     const workflowState = useContext(workflowStateContext);
-    const [page, setPage] = useState(0);
+    const [localPage, setLocalPage] = useState(0);
     const {
         columns,
         rows,
@@ -28,16 +28,21 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
         headerActions,
         ...widgetProps
     } = { ...rest };
-    const paginationComponent = (
-        <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
-    );
-    const headerComponents = headerActions ? (
+
+    // extend this component to handler server-side pagination
+    const currentPage = parentPageState?.page || localPage;
+    const currentPageHandler = parentPageState?.setPage || setLocalPage;
+    const totalCount = parentPageState?.totalCount || rows.length;
+
+    const headerComponents = (
         <div className="flex">
             {headerActions}
-            {paginationComponent}
+            <TablePagination
+                page={currentPage}
+                dataLength={totalCount}
+                setPage={currentPageHandler}
+            />
         </div>
-    ) : (
-        <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
     function onRowClick(row) {
         const id = resolvePath(row, idAttribute);
@@ -47,7 +52,7 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
 
     return (
         <>
-            {rows.length ? (
+            {totalCount ? (
                 <Widget
                     header={header}
                     headerComponents={headerComponents}
@@ -65,8 +70,9 @@ const TableWidget = ({ history, header, entityType, ...rest }) => {
                         trClassName={trClassName}
                         showThead={showThead}
                         SubComponent={SubComponent}
-                        page={page}
+                        page={currentPage}
                         defaultSorted={defaultSorted}
+                        manual={!!parentPageState}
                     />
                 </Widget>
             ) : (
@@ -80,10 +86,16 @@ TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     idAttribute: PropTypes.string,
+    parentPageState: PropTypes.shape({
+        page: PropTypes.number,
+        setPage: PropTypes.func,
+        totalCount: PropTypes.number
+    }),
     entityType: PropTypes.string.isRequired
 };
 
 TableWidget.defaultProps = {
-    idAttribute: 'id'
+    idAttribute: 'id',
+    parentPageState: null
 };
 export default withRouter(TableWidget);

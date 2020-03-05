@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import pluralize from 'pluralize';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import entityTypes from 'constants/entityTypes';
@@ -8,12 +7,10 @@ import TopCvssLabel from 'Components/TopCvssLabel';
 import RiskScore from 'Components/RiskScore';
 import Metadata from 'Components/Metadata';
 import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { entityGridContainerClassName } from 'Containers/Workflow/WorkflowEntityPage';
 
-import FixableCveExportButton from '../../VulnMgmtComponents/FixableCveExportButton';
-import TableWidget from '../TableWidget';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
+import TableWidgetFixableCves from '../TableWidgetFixableCves';
 
 const emptyComponent = {
     deploymentCount: 0,
@@ -33,7 +30,7 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyComponent, ...data };
 
-    const { version, priority, topVuln, fixableCVEs, id } = safeData;
+    const { version, priority, topVuln, id } = safeData;
 
     const metadataKeyValuePairs = [
         {
@@ -52,13 +49,6 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
 
     const currentEntity = { [entityTypes.COMPONENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCVEs || !fixableCVEs.length}
-            workflowState={workflowState}
-            entityName={safeData.name}
-        />
-    );
 
     return (
         <div className="flex h-full">
@@ -81,18 +71,12 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
                 </CollapsibleSection>
                 <CollapsibleSection title="Component Findings">
                     <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
-                        <TableWidget
-                            header={`${fixableCVEs.length} fixable ${pluralize(
-                                entityTypes.CVE,
-                                fixableCVEs.length
-                            )} found across this component`}
-                            headerActions={cveActions}
-                            rows={fixableCVEs}
-                            entityType={entityTypes.CVE}
-                            noDataText="No fixable CVEs available in this component"
-                            className="bg-base-100"
-                            columns={getCveTableColumns(workflowState)}
-                            idAttribute="cve"
+                        <TableWidgetFixableCves
+                            workflowState={workflowState}
+                            entityContext={entityContext}
+                            entityType={entityTypes.COMPONENT}
+                            name={safeData?.name}
+                            id={safeData?.id}
                         />
                     </div>
                 </CollapsibleSection>
