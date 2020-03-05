@@ -46,6 +46,13 @@ var (
 			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Indicator, resources.Policy, resources.ProcessWhitelist)))
 )
 
+type processWhitelistKey struct {
+	deploymentID  string
+	containerName string
+	clusterID     string
+	namespace     string
+}
+
 type indicatorWithInjector struct {
 	indicator           *storage.ProcessIndicator
 	msgToSensorInjector common.MessageInjector
@@ -131,7 +138,7 @@ func (m *managerImpl) flushQueuePeriodically() {
 	}
 }
 
-func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]indicatorWithInjector) {
+func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]indicatorWithInjector, whitelistMap map[processWhitelistKey][]*storage.ProcessIndicator) {
 	deploymentIDs := uniqueDeploymentIDs(indicators)
 
 	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
@@ -141,14 +148,14 @@ func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]
 	}
 
 	deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
-	for _, ind := range indicators {
-		userWhitelist, _, err := m.checkAndUpdateWhitelist(ind.indicator)
+	for key, indicators := range whitelistMap {
+		userWhitelist, err := m.checkAndUpdateWhitelist(key, indicators)
 		if err != nil {
-			log.Debugf("error checking whitelist for indicator: %v - %+v", err, ind)
+			log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
 			continue
 		}
 		if userWhitelist {
-			deploymentToMatchingIndicators[ind.indicator.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.indicator.GetDeploymentId()], ind.indicator)
+			deploymentToMatchingIndicators[key.deploymentID] = indicators
 		}
 	}
 	if len(deploymentToMatchingIndicators) > 0 {
@@ -170,6 +177,15 @@ func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]
 
 	// Create enforcement actions for the new alerts and send them with the stored injectors.
 	m.generateAndSendEnforcements(newAlerts, indicators)
+}
+
+func indicatorToWhitelistKey(indicator *storage.ProcessIndicator) processWhitelistKey {
+	return processWhitelistKey{
+		deploymentID:  indicator.GetDeploymentId(),
+		containerName: indicator.GetContainerName(),
+		clusterID:     indicator.GetClusterId(),
+		namespace:     indicator.GetNamespace(),
+	}
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
@@ -206,13 +222,19 @@ func (m *managerImpl) flushIndicatorQueue() {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
+	// Group the processes into particular whitelist segments
+	whitelistMap := make(map[processWhitelistKey][]*storage.ProcessIndicator)
+	for _, indicator := range indicatorSlice {
+		key := indicatorToWhitelistKey(indicator)
+		whitelistMap[key] = append(whitelistMap[key], indicator)
+	}
+
 	if !features.SensorBasedDetection.Enabled() {
-		m.generateProcessAlertsAndEnforcement(copiedQueue)
+		m.generateProcessAlertsAndEnforcement(copiedQueue, whitelistMap)
 	} else {
-		for _, i := range indicatorSlice {
-			_, _, err := m.checkAndUpdateWhitelist(i)
-			if err != nil {
-				log.Errorf("error checking whitelist: %v", err)
+		for key, indicators := range whitelistMap {
+			if _, err := m.checkAndUpdateWhitelist(key, indicators); err != nil {
+				log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
 			}
 		}
 	}
@@ -236,45 +258,55 @@ func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*s
 	return whitelistExecutor.alerts, nil
 }
 
-const (
-	whitelistLockingGracePeriod = 5 * time.Second
-)
-
-func (m *managerImpl) checkAndUpdateWhitelist(indicator *storage.ProcessIndicator) (userWhitelist bool, roxWhitelist bool, err error) {
+func (m *managerImpl) checkAndUpdateWhitelist(whitelistKey processWhitelistKey, indicators []*storage.ProcessIndicator) (bool, error) {
 	key := &storage.ProcessWhitelistKey{
-		DeploymentId:  indicator.DeploymentId,
-		ContainerName: indicator.ContainerName,
-		ClusterId:     indicator.GetClusterId(),
-		Namespace:     indicator.GetNamespace(),
+		DeploymentId:  whitelistKey.deploymentID,
+		ContainerName: whitelistKey.containerName,
+		ClusterId:     whitelistKey.clusterID,
+		Namespace:     whitelistKey.namespace,
 	}
 
 	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
 	whitelist, exists, err := m.whitelists.GetProcessWhitelist(lifecycleMgrCtx, key)
 	if err != nil {
-		return
+		return false, err
 	}
 
-	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: processWhitelistPkg.WhitelistItemFromProcess(indicator)}}
-	if !exists {
-		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleMgrCtx, key, []*storage.WhitelistItem{insertableElement}, true)
-		return
-	}
-
+	existingProcess := set.NewStringSet()
 	for _, element := range whitelist.GetElements() {
-		if element.GetElement().GetProcessName() == insertableElement.GetProcessName() {
-			return
-		}
+		existingProcess.Add(element.GetElement().GetProcessName())
 	}
 
-	userWhitelist = processwhitelist.IsUserLocked(whitelist)
-	roxWhitelist = processwhitelist.IsRoxLocked(whitelist) && !processwhitelist.IsStartupProcess(indicator)
+	var elements []*storage.WhitelistItem
+	var hasNonStartupProcess bool
+	for _, indicator := range indicators {
+		if !processwhitelist.IsStartupProcess(indicator) {
+			hasNonStartupProcess = true
+		}
+		whitelistItem := processWhitelistPkg.WhitelistItemFromProcess(indicator)
+		if !existingProcess.Add(whitelistItem) {
+			continue
+		}
+		insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: whitelistItem}}
+		elements = append(elements, insertableElement)
+	}
+	if len(elements) == 0 {
+		return false, nil
+	}
+	if !exists {
+		_, err = m.whitelists.UpsertProcessWhitelist(lifecycleMgrCtx, key, elements, true)
+		return false, err
+	}
+
+	userWhitelist := processwhitelist.IsUserLocked(whitelist)
+	roxWhitelist := processwhitelist.IsRoxLocked(whitelist) && hasNonStartupProcess
 	if userWhitelist || roxWhitelist {
 		// We already checked if it's in the whitelist and it is not, so reprocess risk to mark the results are suspicious if necessary
-		m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
-		return
+		m.reprocessor.ReprocessRiskForDeployments(whitelistKey.deploymentID)
+		return userWhitelist, nil
 	}
-	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleMgrCtx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
-	return
+	_, err = m.whitelists.UpdateProcessWhitelistElements(lifecycleMgrCtx, key, elements, nil, true)
+	return userWhitelist, err
 }
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
@@ -308,7 +340,7 @@ func (m *managerImpl) generateRuntimeAlertsOnCreate(deployment *storage.Deployme
 		}
 	}
 
-	m.generateProcessAlertsAndEnforcement(indicatorMap)
+	m.generateProcessAlertsAndEnforcement(indicatorMap, nil)
 	return nil
 }
 
