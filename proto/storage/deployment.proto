@@ -49,7 +49,7 @@ message Deployment {
 message ContainerImage {
     option (gogoproto.goproto_unrecognized) = false;
 
-    // These tags maintain backwards compatibiltiy with the previously embedded storage.Image
+    // These tags maintain backwards compatibility with the previously embedded storage.Image
     string id = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name = 1;
     bool not_pullable  = 10;
@@ -59,7 +59,7 @@ message Container {
     string id                           = 1;
     ContainerConfig config              = 2;
 
-    ContainerImage image                         = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
+    ContainerImage image                = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
     repeated PortConfig ports           = 6;
@@ -78,11 +78,21 @@ message Resources {
 }
 
 message Volume {
-    string name         = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
-    string source       = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
-    string destination  = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
-    bool read_only      = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
-    string type         = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
+    string name        = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
+    string source      = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
+    string destination = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
+    bool read_only     = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
+    string type        = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
+}
+
+// Pod represents information for a currently running pod or deleted pod in an active deployment.
+message Pod {
+    string id                            = 1;
+    string deployment_id                 = 2;
+    string namespace                     = 3;
+    string cluster_id                    = 4;
+    bool active                          = 5;
+    repeated ContainerInstance instances = 6;
 }
 
 // ContainerInstanceID allows to uniquely identify a container within a cluster.
@@ -93,6 +103,9 @@ message ContainerInstance {
     // The pod containing this container instance (kubernetes only).
     string containing_pod_id           = 2;
 
+    // Container name.
+    string container_name              = 6;
+
     // The IP addresses of this container.
     repeated string container_ips      = 3;
 
@@ -101,6 +114,15 @@ message ContainerInstance {
 
     // Image ID
     string image_digest                = 5 [(gogoproto.moretags) = "search:\"Container Image Digest,hidden\""];
+
+    // The finish time of the container, if it finished.
+    google.protobuf.Timestamp finished = 7;
+
+    // The exit code of the container. Only valid when finished is populated.
+    int32 exit_code                    = 8;
+
+    // The reason for the container's termination, if it finished.
+    string termination_reason          = 9;
 }
 
 message ContainerInstanceID {

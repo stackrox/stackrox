@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	storage "github.com/stackrox/rox/generated/storage"
+	set "github.com/stackrox/rox/pkg/set"
 	reflect "reflect"
 )
 
@@ -57,6 +58,18 @@ func (m *MockFilter) Update(deployment *storage.Deployment) {
 func (mr *MockFilterMockRecorder) Update(deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockFilter)(nil).Update), deployment)
+}
+
+// UpdateByGivenContainers mocks base method
+func (m *MockFilter) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateByGivenContainers", deploymentID, liveContainerSet)
+}
+
+// UpdateByGivenContainers indicates an expected call of UpdateByGivenContainers
+func (mr *MockFilterMockRecorder) UpdateByGivenContainers(deploymentID, liveContainerSet interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateByGivenContainers", reflect.TypeOf((*MockFilter)(nil).UpdateByGivenContainers), deploymentID, liveContainerSet)
 }
 
 // Delete mocks base method

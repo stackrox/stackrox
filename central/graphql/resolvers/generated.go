@@ -364,10 +364,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
+		"containerName: String!",
 		"containingPodId: String!",
+		"exitCode: Int!",
+		"finished: Time",
 		"imageDigest: String!",
 		"instanceId: ContainerInstanceID",
 		"started: Time",
+		"terminationReason: String!",
 	}))
 	utils.Must(builder.AddType("ContainerInstanceID", []string{
 		"containerRuntime: ContainerRuntime!",
@@ -3726,9 +3730,24 @@ func (resolver *containerInstanceResolver) ContainerIps(ctx context.Context) []s
 	return value
 }
 
+func (resolver *containerInstanceResolver) ContainerName(ctx context.Context) string {
+	value := resolver.data.GetContainerName()
+	return value
+}
+
 func (resolver *containerInstanceResolver) ContainingPodId(ctx context.Context) string {
 	value := resolver.data.GetContainingPodId()
 	return value
+}
+
+func (resolver *containerInstanceResolver) ExitCode(ctx context.Context) int32 {
+	value := resolver.data.GetExitCode()
+	return value
+}
+
+func (resolver *containerInstanceResolver) Finished(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetFinished()
+	return timestamp(value)
 }
 
 func (resolver *containerInstanceResolver) ImageDigest(ctx context.Context) string {
@@ -3744,6 +3763,11 @@ func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*con
 func (resolver *containerInstanceResolver) Started(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStarted()
 	return timestamp(value)
+}
+
+func (resolver *containerInstanceResolver) TerminationReason(ctx context.Context) string {
+	value := resolver.data.GetTerminationReason()
+	return value
 }
 
 type containerInstanceIDResolver struct {

@@ -34,6 +34,7 @@ const (
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool
 	Update(deployment *storage.Deployment)
+	UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet)
 	Delete(deploymentID string)
 }
 
@@ -49,7 +50,7 @@ func newLevel() *level {
 }
 
 type filterImpl struct {
-	maxExactPathMatches int   // maximum number of exact path (same pod + container and same procecess and args) matches to tolerate
+	maxExactPathMatches int   // maximum number of exact path (same pod + container and same process and args) matches to tolerate
 	maxFanOut           []int // maximum fan out starting at the process level
 
 	containersInDeployment map[string]map[string]*level
@@ -123,6 +124,8 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
 }
 
+// Deprecated: When Pod/Deployment separation becomes enabled by default,
+// the process filter will be updated on a per-pod basis.
 func (f *filterImpl) Update(deployment *storage.Deployment) {
 	f.rootLock.Lock()
 	defer f.rootLock.Unlock()
@@ -135,6 +138,19 @@ func (f *filterImpl) Update(deployment *storage.Deployment) {
 	}
 
 	containersMap := f.containersInDeployment[deployment.GetId()]
+	for k := range containersMap {
+		if !liveContainerSet.Contains(k) {
+			delete(containersMap, k)
+		}
+	}
+}
+
+// TODO: Once Update(*storage.Deployment) is removed, consider renaming to just Update.
+func (f *filterImpl) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
+	f.rootLock.Lock()
+	defer f.rootLock.Unlock()
+
+	containersMap := f.containersInDeployment[deploymentID]
 	for k := range containersMap {
 		if !liveContainerSet.Contains(k) {
 			delete(containersMap, k)

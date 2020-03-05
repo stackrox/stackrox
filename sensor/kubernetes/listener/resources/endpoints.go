@@ -3,7 +3,9 @@ package resources
 import (
 	"strings"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	v1 "k8s.io/api/core/v1"
@@ -12,15 +14,17 @@ import (
 type endpointManager struct {
 	serviceStore    *serviceStore
 	deploymentStore *DeploymentStore
+	podStore        *podStore
 	nodeStore       *nodeStore
 
 	entityStore *clusterentities.Store
 }
 
-func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, nodeStore *nodeStore, entityStore *clusterentities.Store) *endpointManager {
+func newEndpointManager(serviceStore *serviceStore, deploymentStore *DeploymentStore, podStore *podStore, nodeStore *nodeStore, entityStore *clusterentities.Store) *endpointManager {
 	return &endpointManager{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
+		podStore:        podStore,
 		nodeStore:       nodeStore,
 		entityStore:     entityStore,
 	}
@@ -88,26 +92,51 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 		m.addEndpointDataForService(w, svc, result)
 	}
 
-	for _, c := range w.GetContainers() {
-		for _, inst := range c.GetInstances() {
-			id := containerid.ShortContainerIDFromInstance(inst)
-			if id == "" {
-				continue
-			}
-			podID := inst.ContainingPodId
-			if idx := strings.Index(podID, "."); idx != -1 {
-				podID = podID[:idx]
-			}
+	if features.PodDeploymentSeparation.Enabled() {
+		m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
+			for _, inst := range p.GetInstances() {
+				id := containerid.ShortContainerIDFromInstance(inst)
+				if id == "" {
+					continue
+				}
+				podID := inst.GetContainingPodId()
+				if idx := strings.Index(podID, "."); idx != -1 {
+					podID = podID[:idx]
+				}
 
-			result.AddContainerID(id, clusterentities.ContainerMetadata{
-				DeploymentID:  w.GetId(),
-				DeploymentTS:  w.GetStateTimestamp(),
-				PodID:         podID,
-				ContainerName: c.GetName(),
-				ContainerID:   id,
-				Namespace:     w.GetNamespace(),
-				StartTime:     inst.Started,
-			})
+				result.AddContainerID(id, clusterentities.ContainerMetadata{
+					DeploymentID:  w.GetId(),
+					DeploymentTS:  w.GetStateTimestamp(),
+					PodID:         podID,
+					ContainerName: inst.GetContainerName(),
+					ContainerID:   id,
+					Namespace:     w.GetNamespace(),
+					StartTime:     inst.GetStarted(),
+				})
+			}
+		})
+	} else {
+		for _, c := range w.GetContainers() {
+			for _, inst := range c.GetInstances() {
+				id := containerid.ShortContainerIDFromInstance(inst)
+				if id == "" {
+					continue
+				}
+				podID := inst.GetContainingPodId()
+				if idx := strings.Index(podID, "."); idx != -1 {
+					podID = podID[:idx]
+				}
+
+				result.AddContainerID(id, clusterentities.ContainerMetadata{
+					DeploymentID:  w.GetId(),
+					DeploymentTS:  w.GetStateTimestamp(),
+					PodID:         podID,
+					ContainerName: c.GetName(),
+					ContainerID:   id,
+					Namespace:     w.GetNamespace(),
+					StartTime:     inst.GetStarted(),
+				})
+			}
 		}
 	}
 
@@ -216,7 +245,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 	m.entityStore.Apply(updates, true)
 }
 
-func (m *endpointManager) OnNodeUpdateOrRemove(nodeName string) {
+func (m *endpointManager) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
 	for _, svc := range m.serviceStore.nodePortServices {

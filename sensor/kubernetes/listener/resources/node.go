@@ -41,7 +41,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
-		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
+		h.endpointManager.OnNodeUpdateOrRemove()
 	} else {
 		wrap := wrapNode(node)
 
@@ -50,7 +50,7 @@ func (h *nodeDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			if action == central.ResourceAction_CREATE_RESOURCE {
 				h.endpointManager.OnNodeCreate(wrap)
 			} else {
-				h.endpointManager.OnNodeUpdateOrRemove(node.Name)
+				h.endpointManager.OnNodeUpdateOrRemove()
 			}
 		}
 	}
