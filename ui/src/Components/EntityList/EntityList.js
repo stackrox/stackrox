@@ -64,6 +64,7 @@ const EntityList = ({
 
     function setPage(newPage) {
         history.push(workflowState.setPage(newPage).toUrl());
+        setSelection([]);
     }
 
     // render section
