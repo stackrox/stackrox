@@ -2,6 +2,14 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [40.0]
+### Added
+- Added the ability to customize the endpoints exposed by Central via a YAML-based configuration file.
+- Added a Required Image Label policy type.  Policies of this type will create a violation for any deployment containing images that lack the required label.  This policy type uses a regex match on either the key or the key and the value of a label.
+- Added a Disallowed Image Label policy type.  Policies of this type will create a violation for any deployment containing images with the disallowed label.  This policy type uses a regex match on either the key or the key and the value of a label.
+
+### Changed
 - Collector images shipped with versions of the StackRox platform prior to this were affected by CVE-2019-5482, CVE-2019-5481 and CVE-2019-5436. The cause was an older version of curl that was vulnerable to buffer overflow and double free vulnerabilities in the FTP handler. We have upgraded curl to a version that does not suffer from these vulnerabilties. The curl program is only used to download new collector modules from a fixed set of URLs that do not make use of FTP, therefore according to our assessment there never existed a risk of an attacker exploiting this vulnerability.
 - The `-e`/`--endpoint` argument of `roxctl` now supports URLs as arguments. The path in this URLs must either be empty
   or `/` (i.e., `https://central.stackrox` and `https://central.stackrox/` are both allowed, while
@@ -9,12 +17,9 @@ All notable changes to this project that require documentation updates will be d
   (plaintext) connection is established; if the `--plaintext` flag is used explicitly, its value has to be compatible
   with the chosen scheme (e.g., specifying an `https://` URL along with `--plaintext` will result in an error, as will
   a `http://` URL in conjunction with `--plaintext=false`).
-- Added the ability to customize the endpoints exposed by Central via a YAML-based configuration file.
 - Detection and image enrichment have been moved to the individual Sensor clusters. Sensor will proxy image scan requests
   through Central and then run detection to generate both runtime and deploytime alerts. These alerts are sent to Central and any
   enforcement if necessary will be executed by Sensor without a roundtrip to Central.
-- Added a Required Image Label policy type.  Policies of this type will create a violation for any deployment containing images that lack the required label.  This policy type uses a regex match on either the key or the key and the value of a label.
-- Added a Disallowed Image Label policy type.  Policies of this type will create a violation for any deployment containing images with the disallowed label.  This policy type uses a regex match on either the key or the key and the value of a label.
 
 ## [39.0]
 ### Added
