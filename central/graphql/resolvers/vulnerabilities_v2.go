@@ -7,11 +7,14 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/edges"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -208,10 +211,8 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 	}
 
 	images, err := imageLoader.FromQuery(ctx, cveQuery)
-	if err != nil {
+	if err != nil || len(images) == 0 {
 		return nil, err
-	} else if len(images) == 0 {
-		return nil, nil
 	} else if len(images) > 1 {
 		return nil, errors.New("multiple images matched for last scanned vulnerability query")
 	}
@@ -375,14 +376,64 @@ func (resolver *cVEResolver) cveQuery() *v1.Query {
 
 // FixedByVersion returns the version of the parent component that removes this CVE.
 func (resolver *cVEResolver) FixedByVersion(ctx context.Context, args RawQuery) (string, error) {
-	_, err := args.AsV1QueryOrEmpty()
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return "", err
 	}
-	return "", nil
+
+	return resolver.getCVEFixedByVersion(ctx, q)
 }
 
 // UnusedVarSink represents a query sink
 func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
 	return nil
+}
+
+func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
+	if resolver.data.GetType() == storage.CVE_IMAGE_CVE {
+		return resolver.getComponentFixedByVersion(ctx, q)
+	}
+	return resolver.getClusterFixedByVersion(ctx, q)
+}
+
+func (resolver *cVEResolver) getComponentFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
+	q, containsUnmatchableFields := search.FilterQueryWithMap(q, componentMappings.OptionsMap)
+	if q == nil || containsUnmatchableFields {
+		return "", nil
+	}
+
+	results, err := resolver.root.ImageComponentDataStore.Search(ctx, q)
+	if err != nil || len(results) == 0 {
+		return "", err
+	} else if len(results) > 1 {
+		return "", errors.New("multiple components matched for vulnerability fixedByVersion query")
+	}
+
+	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: resolver.data.GetId()}.ToString()
+	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, edgeID)
+	if err != nil || !found {
+		return "", err
+	}
+	return edge.GetFixedBy(), nil
+}
+
+func (resolver *cVEResolver) getClusterFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
+	q, containsUnmatchableFields := search.FilterQueryWithMap(q, clusterMappings.OptionsMap)
+	if q == nil || containsUnmatchableFields {
+		return "", nil
+	}
+
+	results, err := resolver.root.ClusterDataStore.Search(ctx, q)
+	if err != nil || len(results) == 0 {
+		return "", err
+	} else if len(results) > 1 {
+		return "", errors.New("multiple clusters matched for vulnerability fixedByVersion query")
+	}
+
+	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: resolver.data.GetId()}.ToString()
+	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(ctx, edgeID)
+	if err != nil || !found {
+		return "", err
+	}
+	return edge.GetFixedBy(), nil
 }

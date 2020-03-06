@@ -101,7 +101,8 @@ func TestFilterQuery(t *testing.T) {
 		}},
 	}
 
-	newQuery, _ := FilterQueryWithMap(query, optionsMap)
+	newQuery, filtered := FilterQueryWithMap(query, optionsMap)
+	assert.True(t, filtered)
 	assert.Equal(t, &v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{
@@ -111,6 +112,27 @@ func TestFilterQuery(t *testing.T) {
 			},
 		},
 	}, newQuery)
+
+	var expected *v1.Query
+	newQuery, filtered = FilterQueryWithMap(EmptyQuery(), optionsMap)
+	assert.False(t, filtered)
+	assert.Equal(t, expected, newQuery)
+
+	q := &v1.Query{
+		Query: &v1.Query_BaseQuery{
+			BaseQuery: &v1.BaseQuery{
+				Query: &v1.BaseQuery_MatchFieldQuery{
+					MatchFieldQuery: &v1.MatchFieldQuery{
+						Field: ImageSHA.String(),
+						Value: "blah",
+					},
+				},
+			},
+		},
+	}
+	newQuery, filtered = FilterQueryWithMap(q, optionsMap)
+	assert.False(t, filtered)
+	assert.Equal(t, q, newQuery)
 }
 
 func TestAddAsConjunction(t *testing.T) {

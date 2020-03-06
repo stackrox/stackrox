@@ -99,10 +99,8 @@ func (eicr *imageComponentResolver) LastScanned(ctx context.Context) (*graphql.T
 	}
 
 	images, err := imageLoader.FromQuery(ctx, componentQuery)
-	if err != nil {
+	if err != nil || len(images) == 0 {
 		return nil, err
-	} else if len(images) == 0 {
-		return nil, nil
 	} else if len(images) > 1 {
 		return nil, errors.New("multiple images matched for last scanned component query")
 	}
@@ -137,9 +135,7 @@ func (eicr *imageComponentResolver) TopVuln(ctx context.Context) (VulnerabilityR
 		return nil, err
 	}
 	vulns, err := vulnLoader.FromQuery(ctx, query)
-	if err != nil {
-		return nil, err
-	} else if len(vulns) == 0 {
+	if err != nil || len(vulns) == 0 {
 		return nil, err
 	} else if len(vulns) > 1 {
 		return nil, errors.New("multiple vulnerabilities matched for top component vulnerability")
@@ -300,16 +296,14 @@ func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery)
 	imageOnlyOptionsMap := search.Difference(
 		search.Difference(imageMappings.ImageOnlyOptionsMap,
 			cveMappings.OptionsMap), imageComponentMappings.OptionsMap)
-	q, filtered := search.FilterQueryWithMap(q, imageOnlyOptionsMap)
-	if q == nil || !filtered {
+	q, containsUnmatchableFields := search.FilterQueryWithMap(q, imageOnlyOptionsMap)
+	if q == nil || containsUnmatchableFields {
 		return "", nil
 	}
 
-	results, err := eicr.root.ImageDataStore.Search(ctx, search.NewConjunctionQuery(q, eicr.componentQuery()))
-	if err != nil {
+	results, err := eicr.root.ImageDataStore.Search(ctx, q)
+	if err != nil || len(results) == 0 {
 		return "", err
-	} else if len(results) == 0 {
-		return "", nil
 	} else if len(results) > 1 {
 		return "", errors.New("multiple images matched for component location query")
 	}

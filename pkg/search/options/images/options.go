@@ -11,7 +11,7 @@ import (
 var ImageOnlyOptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil))
 
 // OptionsMap describes the options for Images
-var OptionsMap = ImageOnlyOptionsMap.
+var OptionsMap = search.Walk(v1.SearchCategory_IMAGES, "image", (*storage.Image)(nil)).
 	Add(search.Cluster, deployments.OptionsMap.MustGet(search.Cluster.String())).
 	Add(search.ClusterID, deployments.OptionsMap.MustGet(search.ClusterID.String())).
 	Add(search.Namespace, deployments.OptionsMap.MustGet(search.Namespace.String())).
