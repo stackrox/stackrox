@@ -21,6 +21,7 @@ const VulnMgmtNamespace = ({
     sort,
     page,
     entityContext,
+    refreshTrigger,
     setRefreshTrigger
 }) => {
     const overviewQuery = gql`
@@ -86,6 +87,7 @@ const VulnMgmtNamespace = ({
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, newEntityContext),
             ...vulMgmtPolicyQuery,
+            cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(entityContext)
         }
     };

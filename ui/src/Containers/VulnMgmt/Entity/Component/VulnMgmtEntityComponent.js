@@ -12,7 +12,16 @@ import {
     getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulnMgmtComponent = ({
+    entityId,
+    entityListType,
+    search,
+    entityContext,
+    sort,
+    page,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const overviewQuery = gql`
         query getComponent($id: ID!, $query: String) {
             result: component(id: $id) {
@@ -51,6 +60,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
+            cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(entityContext)
         }
     };
@@ -70,6 +80,7 @@ const VulnMgmtComponent = ({ entityId, entityListType, search, entityContext, so
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };

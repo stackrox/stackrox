@@ -14,7 +14,16 @@ import {
     getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulmMgmtDeployment = ({
+    entityId,
+    entityListType,
+    search,
+    entityContext,
+    sort,
+    page,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const overviewQuery = gql`
         query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
@@ -117,6 +126,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
+            cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(entityContext)
         }
     };
@@ -136,6 +146,7 @@ const VulmMgmtDeployment = ({ entityId, entityListType, search, entityContext, s
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };

@@ -14,7 +14,16 @@ import {
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
 
-const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, entityContext }) => {
+const VulmMgmtEntityCluster = ({
+    entityId,
+    entityListType,
+    search,
+    sort,
+    page,
+    entityContext,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const overviewQuery = gql`
         query getCluster($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: cluster(id: $id) {
@@ -80,6 +89,7 @@ const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, e
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
+            cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery({ [entityTypes.CLUSTER]: entityId })
         }
     };
@@ -99,6 +109,7 @@ const VulmMgmtEntityCluster = ({ entityId, entityListType, search, sort, page, e
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };

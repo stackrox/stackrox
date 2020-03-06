@@ -14,7 +14,16 @@ import {
     getScopeQuery
 } from '../VulnMgmtPolicyQueryUtil';
 
-const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+const VulnMgmtImage = ({
+    entityId,
+    entityListType,
+    search,
+    entityContext,
+    sort,
+    page,
+    refreshTrigger,
+    setRefreshTrigger
+}) => {
     const overviewQuery = gql`
         query getImage($id: ID!, $query: String, $scopeQuery: String) {
             result: image(sha: $id) {
@@ -84,6 +93,7 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
             ...vulMgmtPolicyQuery,
+            cachebuster: refreshTrigger,
             scopeQuery: getScopeQuery(entityContext)
         }
     };
@@ -103,6 +113,7 @@ const VulnMgmtImage = ({ entityId, entityListType, search, entityContext, sort, 
             page={page}
             queryOptions={queryOptions}
             entityContext={entityContext}
+            setRefreshTrigger={setRefreshTrigger}
         />
     );
 };
