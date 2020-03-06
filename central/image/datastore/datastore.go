@@ -5,7 +5,6 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
@@ -67,11 +66,8 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 	}
 
 	if features.Dackbox.Enabled() {
-		if err := ds.initializeRankers(); err != nil {
-			return nil, errors.Wrap(err, "failed to initialize ranker")
-		}
+		ds.initializeRankers()
 	}
-
 	return ds, nil
 }
 

@@ -404,22 +404,28 @@ func (ds *datastoreImpl) buildIndex() error {
 	return nil
 }
 
-func (ds *datastoreImpl) initializeRankers() error {
-	riskElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+func (ds *datastoreImpl) initializeRankers() {
+	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	imageRisks, err := ds.risks.SearchRawRisks(riskElevatedCtx, pkgSearch.NewQueryBuilder().AddStrings(
-		pkgSearch.RiskSubjectType, storage.RiskSubjectType_IMAGE.String()).ProtoQuery())
+	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {
-		return err
+		log.Error(err)
+		return
 	}
-	for _, risk := range imageRisks {
-		ds.imageRanker.Add(risk.GetSubject().GetId(), risk.GetScore())
+
+	for _, id := range pkgSearch.ResultsToIDs(results) {
+		image, found, err := ds.storage.GetImage(id)
+		if err != nil {
+			log.Error(err)
+			continue
+		} else if !found {
+			continue
+		}
+
+		ds.imageRanker.Add(id, image.GetRiskScore())
 	}
-	return nil
 }
 
 func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {

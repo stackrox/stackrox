@@ -2,18 +2,21 @@ package datastore
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
+	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,6 +29,7 @@ type DeploymentDataStoreTestSuite struct {
 
 	storage      *storeMocks.MockStore
 	indexer      *indexerMocks.MockIndexer
+	searcher     *searcherMocks.MockSearcher
 	riskStore    *riskMocks.MockDataStore
 	processStore *indicatorMocks.MockDataStore
 	filter       filter.Filter
@@ -42,7 +46,7 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
 	suite.indexer = indexerMocks.NewMockIndexer(mockCtrl)
-
+	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
 	suite.processStore = indicatorMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
@@ -53,7 +57,7 @@ func (suite *DeploymentDataStoreTestSuite) TestIndexerAcknowledgement() {
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	datastore, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter)
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
 
 	deployment := fixtures.GetDeployment()
@@ -90,7 +94,7 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationFullReindex() {
 	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
 
 	_, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter)
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
 }
 
@@ -112,7 +116,7 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationPartialReindex() {
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter)
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
 
 	// Make deploymentlist just A,B so C should be deleted
@@ -126,62 +130,61 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationPartialReindex() {
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err = newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter)
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
-	risks := []*storage.Risk{
-		{
-			Id: "1",
-			Subject: &storage.RiskSubject{
-				Id:        "1",
-				Type:      storage.RiskSubjectType_DEPLOYMENT,
-				Namespace: "1",
-				ClusterId: "1",
-			},
-		},
-		{
-			Id: "2",
-			Subject: &storage.RiskSubject{
-				Id:        "2",
-				Type:      storage.RiskSubjectType_DEPLOYMENT,
-				Namespace: "2",
-				ClusterId: "2",
-			},
-		},
-		{
-			Id: "3",
-			Subject: &storage.RiskSubject{
-				Id:        "3",
-				Type:      storage.RiskSubjectType_DEPLOYMENT,
-				Namespace: "3",
-				ClusterId: "3",
-			},
-		},
-	}
+	clusterRanker := ranking.NewRanker()
+	nsRanker := ranking.NewRanker()
+	deploymentRanker := ranking.NewRanker()
+
+	ds, err := newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
+		suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
+	suite.NoError(err)
 
 	deployments := []*storage.Deployment{
 		{
-			Id: "1",
+			Id:          "1",
+			RiskScore:   float32(1.0),
+			NamespaceId: "ns1",
+			ClusterId:   "c1",
 		},
 		{
-			Id: "2",
+			Id:          "2",
+			RiskScore:   float32(2.0),
+			NamespaceId: "ns1",
+			ClusterId:   "c1",
 		},
 		{
-			Id: "3",
+			Id:          "3",
+			NamespaceId: "ns2",
+			ClusterId:   "c2",
+		},
+		{
+			Id: "4",
+		},
+		{
+			Id: "5",
 		},
 	}
 
-	ds, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter)
-	suite.NoError(err)
-
-	suite.riskStore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).Return(risks, nil)
+	suite.searcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
 	suite.storage.EXPECT().GetDeployment(deployments[0].Id).Return(deployments[0], true, nil)
-	suite.storage.EXPECT().GetDeployment(deployments[1].Id).Return(nil, false, nil)
-	suite.riskStore.EXPECT().RemoveRisk(gomock.Any(), deployments[1].Id, storage.RiskSubjectType_DEPLOYMENT)
-	suite.storage.EXPECT().GetDeployment(deployments[2].Id).Return(nil, false, errors.New("fake error"))
-	err = ds.initializeRanker()
-	suite.NoError(err)
+	suite.storage.EXPECT().GetDeployment(deployments[1].Id).Return(deployments[1], true, nil)
+	suite.storage.EXPECT().GetDeployment(deployments[2].Id).Return(deployments[2], true, nil)
+	suite.storage.EXPECT().GetDeployment(deployments[3].Id).Return(nil, false, nil)
+	suite.storage.EXPECT().GetDeployment(deployments[4].Id).Return(nil, false, errors.New("fake error"))
+
+	ds.initializeRanker()
+
+	suite.Equal(int64(1), clusterRanker.GetRankForID("c1"))
+	suite.Equal(int64(2), clusterRanker.GetRankForID("c2"))
+
+	suite.Equal(int64(1), nsRanker.GetRankForID("ns1"))
+	suite.Equal(int64(2), nsRanker.GetRankForID("ns2"))
+
+	suite.Equal(int64(1), deploymentRanker.GetRankForID("2"))
+	suite.Equal(int64(2), deploymentRanker.GetRankForID("1"))
+	suite.Equal(int64(3), deploymentRanker.GetRankForID("3"))
 }

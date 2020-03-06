@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store/dackbox"
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
+	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
@@ -39,7 +40,7 @@ func initialize() {
 		imageIndexer.New(globalindex.GetGlobalIndex()),
 		deploymentIndexer.New(globalindex.GetGlobalIndex()))
 
-	ad, err = New(storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton())
+	ad, err = New(storage, componentIndexer.New(globalindex.GetGlobalIndex()), searcher, riskDataStore.Singleton(), ranking.ImageComponentRanker())
 	utils.Must(err)
 }
 

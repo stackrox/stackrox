@@ -12,11 +12,13 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	searchPkg "github.com/stackrox/rox/pkg/search"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var (
+	log = logging.LoggerForModule()
 	// TODO: Need to setup sac for Image Components correctly instead of relying on global access.
 	imagesSAC = sac.ForResource(resources.Image)
 )
@@ -30,7 +32,7 @@ type datastoreImpl struct {
 	imageComponentRanker *ranking.Ranker
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	if ok, err := imagesSAC.ReadAllowed(ctx); !ok || err != nil {
 		return nil, err
 	}
@@ -144,24 +146,27 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	return nil
 }
 
-func (ds *datastoreImpl) initializeRankers() error {
-	ds.imageComponentRanker = ranking.ImageComponentRanker()
-
-	riskElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+func (ds *datastoreImpl) initializeRankers() {
+	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	imageComponentRisks, err := ds.risks.SearchRawRisks(riskElevatedCtx, searchPkg.NewQueryBuilder().AddStrings(
-		searchPkg.RiskSubjectType, storage.RiskSubjectType_IMAGE_COMPONENT.String()).ProtoQuery())
+	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {
-		return err
+		log.Error(err)
+		return
 	}
-	for _, risk := range imageComponentRisks {
-		ds.imageComponentRanker.Add(risk.GetSubject().GetId(), risk.GetScore())
+
+	for _, id := range pkgSearch.ResultsToIDs(results) {
+		component, found, err := ds.storage.Get(id)
+		if err != nil {
+			log.Error(err)
+			continue
+		} else if !found {
+			continue
+		}
+		ds.imageComponentRanker.Add(id, component.GetRiskScore())
 	}
-	return nil
 }
 
 func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageComponent) {

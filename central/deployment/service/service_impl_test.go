@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/ranking"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -127,7 +128,7 @@ func TestLabelsMap(t *testing.T) {
 			dacky, registry, indexingQ := testDackBoxInstance(t, badgerDB, bleveIndex)
 			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-			deploymentsDS, err := datastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter)
+			deploymentsDS, err := datastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

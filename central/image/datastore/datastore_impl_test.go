@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -286,4 +288,43 @@ func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
 
 	_, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
 	suite.Require().NoError(err)
+}
+
+func (suite *ImageReindexSuite) TestInitializeRanker() {
+	ds, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	suite.Require().NoError(err)
+
+	images := []*storage.Image{
+		{
+			Id:        "1",
+			RiskScore: float32(1.0),
+		},
+		{
+			Id:        "2",
+			RiskScore: float32(2.0),
+		},
+		{
+			Id: "3",
+		},
+		{
+			Id: "4",
+		},
+		{
+			Id: "5",
+		},
+	}
+
+	suite.mockSearcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
+	suite.mockStore.EXPECT().GetImage(images[0].Id).Return(images[0], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[1].Id).Return(images[1], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[2].Id).Return(images[2], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[3].Id).Return(nil, false, nil)
+	suite.mockStore.EXPECT().GetImage(images[4].Id).Return(nil, false, errors.New("fake error"))
+	ds.initializeRankers()
+
+	suite.Equal(int64(1), suite.imageRanker.GetRankForID("2"))
+	suite.Equal(int64(2), suite.imageRanker.GetRankForID("1"))
+	suite.Equal(int64(3), suite.imageRanker.GetRankForID("3"))
+	suite.Equal(int64(3), suite.imageRanker.GetRankForID("4"))
+	suite.Equal(int64(3), suite.imageRanker.GetRankForID("5"))
 }

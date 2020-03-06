@@ -24,6 +24,7 @@ import (
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -115,12 +116,10 @@ func TestAutocomplete(t *testing.T) {
 	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
-	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
-	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockFilter := filterMocks.NewMockFilter(mockCtrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter)
+	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), testDB, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())

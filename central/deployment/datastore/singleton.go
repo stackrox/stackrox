@@ -11,6 +11,7 @@ import (
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
+	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -37,7 +38,10 @@ func initialize() {
 		nfDS.Singleton(),
 		riskDS.Singleton(),
 		cache.DeletedDeploymentCacheSingleton(),
-		filter.Singleton())
+		filter.Singleton(),
+		ranking.ClusterRanker(),
+		ranking.NamespaceRanker(),
+		ranking.DeploymentRanker())
 	utils.Must(errors.Wrap(err, "unable to load datastore for deployments"))
 }
 

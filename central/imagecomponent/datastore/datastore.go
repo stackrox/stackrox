@@ -3,10 +3,10 @@ package datastore
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponent/index"
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store"
+	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -30,16 +30,15 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore) (DataStore, error) {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		indexer:  indexer,
-		searcher: searcher,
-		risks:    risks,
+		storage:              storage,
+		indexer:              indexer,
+		searcher:             searcher,
+		risks:                risks,
+		imageComponentRanker: ranker,
 	}
 
-	if err := ds.initializeRankers(); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize ranker")
-	}
+	ds.initializeRankers()
 	return ds, nil
 }

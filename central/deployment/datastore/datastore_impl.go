@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -58,7 +57,10 @@ type datastoreImpl struct {
 	deploymentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher, images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter) (*datastoreImpl, error) {
+func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
+	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
 		deploymentIndexer:      indexer,
@@ -72,9 +74,9 @@ func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Ind
 		deletedDeploymentCache: deletedDeploymentCache,
 		processFilter:          processFilter,
 
-		clusterRanker:    ranking.ClusterRanker(),
-		nsRanker:         ranking.NamespaceRanker(),
-		deploymentRanker: ranking.DeploymentRanker(),
+		clusterRanker:    clusterRanker,
+		nsRanker:         nsRanker,
+		deploymentRanker: deploymentRanker,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -82,55 +84,36 @@ func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Ind
 	return ds, nil
 }
 
-func (ds *datastoreImpl) initializeRanker() error {
-	ds.clusterRanker = ranking.ClusterRanker()
-	ds.nsRanker = ranking.NamespaceRanker()
-	ds.deploymentRanker = ranking.DeploymentRanker()
-
-	elevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+func (ds *datastoreImpl) initializeRanker() {
+	readCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Deployment)))
 
-	risks, err := ds.risks.SearchRawRisks(elevatedCtx, pkgSearch.NewQueryBuilder().AddStrings(
-		pkgSearch.RiskSubjectType, storage.RiskSubjectType_DEPLOYMENT.String()).ProtoQuery())
+	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
 	if err != nil {
-		return err
+		log.Error(err)
+		return
 	}
 
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-	nsIDs := make(map[string]string)
-	for _, risk := range risks {
-		score := risk.GetScore()
-		ds.deploymentRanker.Add(risk.GetSubject().GetId(), score)
-
-		// aggregate deployment risk scores to get cluster risk score
-		clusterScores[risk.GetSubject().GetClusterId()] += score
-
-		// aggregate deployment risk scores to obtain namespace risk score
-		nsKey := fmt.Sprintf("%s:%s", risk.GetSubject().GetClusterId(), risk.GetSubject().GetNamespace())
-		nsID, ok := nsIDs[nsKey]
-		if ok {
-			nsScores[nsID] += score
-			continue
-		}
-
-		deployment, found, err := ds.deploymentStore.GetDeployment(risk.GetSubject().GetId())
+	for _, id := range pkgSearch.ResultsToIDs(results) {
+		deployment, found, err := ds.deploymentStore.GetDeployment(id)
 		if err != nil {
 			log.Error(err)
 			continue
 		} else if !found {
-			err := ds.risks.RemoveRisk(elevatedCtx, risk.GetSubject().GetId(), storage.RiskSubjectType_DEPLOYMENT)
-			if err != nil {
-				log.Errorf("could not delete risk for deployment %s", risk.GetSubject().GetId())
-			}
 			continue
 		}
 
-		nsIDs[nsKey] = deployment.GetNamespaceId()
-		nsScores[nsIDs[nsKey]] += score
+		riskScore := deployment.GetRiskScore()
+		ds.deploymentRanker.Add(id, deployment.GetRiskScore())
+
+		// aggregate deployment risk scores to get cluster risk score
+		clusterScores[deployment.GetClusterId()] += riskScore
+
+		// aggregate deployment risk scores to obtain namespace risk score
+		nsScores[deployment.GetNamespaceId()] += riskScore
 	}
 
 	// update namespace risk scores
@@ -142,7 +125,6 @@ func (ds *datastoreImpl) initializeRanker() error {
 	for id, score := range clusterScores {
 		ds.clusterRanker.Add(id, score)
 	}
-	return nil
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

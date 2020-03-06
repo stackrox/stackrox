@@ -27,6 +27,7 @@ import (
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
+	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
@@ -128,7 +129,6 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockComponentDatastore := componentsMocks.NewMockDataStore(ctrl)
 	mockComponentDatastore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
-	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	dacky, registry, indexingQ := testDackBoxInstance(t, db, bleveIndex)
@@ -152,7 +152,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter)
+	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, indexingQ
@@ -182,12 +182,11 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockConfigDatastore.EXPECT().GetConfig(ctx).Return(testConfig, nil)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
-	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter)
+	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
@@ -283,7 +282,7 @@ func TestImagePruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments, indexQ := generateImageDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
 			// Add images and deployments into the datastores
 			if c.deployment != nil {
@@ -399,7 +398,7 @@ func TestAlertPruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -782,6 +781,76 @@ func TestRemoveOrphanedNetworkFlows(t *testing.T) {
 				networkflows: clusterFlows,
 			}
 			gci.removeOrphanedNetworkFlows(c.deployments)
+		})
+	}
+}
+
+func TestRemoveOrphanedRisks(t *testing.T) {
+	id1, _ := riskDatastore.GetID("img1", storage.RiskSubjectType_IMAGE)
+	id2, _ := riskDatastore.GetID("img2", storage.RiskSubjectType_IMAGE)
+	id3, _ := riskDatastore.GetID("img3", storage.RiskSubjectType_IMAGE)
+	id4, _ := riskDatastore.GetID("img4", storage.RiskSubjectType_IMAGE)
+
+	cases := []struct {
+		name              string
+		risks             []search.Result
+		images            []search.Result
+		expectedDeletions []string
+	}{
+		{
+			name: "no images - remove all risk",
+			risks: []search.Result{
+				{ID: id1},
+				{ID: id2},
+			},
+			images:            []search.Result{},
+			expectedDeletions: []string{"img1", "img2"},
+		},
+		{
+			name: "all images - remove no orphaned risk",
+			risks: []search.Result{
+				{ID: id1},
+				{ID: id2},
+				{ID: id2},
+			},
+			images: []search.Result{
+				{ID: "img1"},
+				{ID: "img2"},
+				{ID: "img3"},
+			},
+			expectedDeletions: []string{},
+		},
+		{
+			name: "some images - remove some risk",
+			risks: []search.Result{
+				{ID: id1},
+				{ID: id2},
+				{ID: id3},
+				{ID: id4},
+			},
+			images: []search.Result{
+				{ID: "img1"},
+			},
+			expectedDeletions: []string{"img2", "img3", "img4"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			images := imageDatastoreMocks.NewMockDataStore(ctrl)
+			risks := riskDatastoreMocks.NewMockDataStore(ctrl)
+			gci := &garbageCollectorImpl{
+				images: images,
+				risks:  risks,
+			}
+
+			risks.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.risks, nil)
+			images.EXPECT().Search(gomock.Any(), gomock.Any()).Return(c.images, nil)
+			for _, id := range c.expectedDeletions {
+				risks.EXPECT().RemoveRisk(gomock.Any(), id, storage.RiskSubjectType_IMAGE).Return(nil)
+			}
+			gci.removeOrphanedImageRisks()
 		})
 	}
 }
