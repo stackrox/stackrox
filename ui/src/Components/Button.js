@@ -39,7 +39,7 @@ const Button = ({
             className={className}
             onClick={onClick}
             disabled={disabled}
-            data-test-id={dataTestId}
+            data-testid={dataTestId}
         >
             {isLoading ? <Loader size={loaderSize} /> : content}
         </button>

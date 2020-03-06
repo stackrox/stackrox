@@ -9,11 +9,12 @@ const NameListItem = ({ id, type, name, subText, hasChildren, onClick }) => {
         onClick(type, id);
     }
     return (
-        <li className="flex flex-col justify-center p-3 leading-normal relative h-12 first:border-t first:border-base-300">
+        <li className="flex flex-col justify-center p-3 leading-normal relative h-12 border-t border-base-300">
             <div className="font-700 text-base-600">{name}</div>
             <div className="text-base-500 text-xs font-700">{subText}</div>
             {hasChildren && (
                 <Button
+                    dataTestId="timeline-name-list-item-expander"
                     className="absolute bg-base-100 border border-primary-300 center-y py-1 right-0 rounded transform translate-x-1/2 hover:bg-primary-200"
                     onClick={onClickHandler}
                     icon={<ChevronRight className="h-4 w-4 text-base-700" />}

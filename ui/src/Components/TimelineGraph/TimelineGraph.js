@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import NameList from 'Components/TimelineGraph/NameList';
 
-const TimelineGraph = ({ data }) => {
+const TimelineGraph = ({ data, goToNextView }) => {
     const names = data.map(({ type, id, name, subText, hasChildren }) => ({
         type,
         id,
@@ -15,7 +15,7 @@ const TimelineGraph = ({ data }) => {
         <div className="flex flex-1 flex-col">
             <div className="flex w-full">
                 <div className="w-1/3 border-r border-base-300">
-                    <NameList names={names} />
+                    <NameList names={names} onClick={goToNextView} />
                 </div>
                 <div className="w-2/3">
                     <ul className="">
@@ -64,7 +64,8 @@ TimelineGraph.propTypes = {
                 })
             )
         })
-    )
+    ),
+    goToNextView: PropTypes.func.isRequired
 };
 
 TimelineGraph.defaultProps = {

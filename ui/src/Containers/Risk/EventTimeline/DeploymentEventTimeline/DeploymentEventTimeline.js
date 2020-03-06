@@ -9,8 +9,8 @@ import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
 
 // eslint-disable-next-line
-const DeploymentEventTimeline = ({ deploymentId, selectedEventType, selectEventType }) => {
-    // data fetching with "deploymentId", filtered by "selectedEventType" will happen here...
+const DeploymentEventTimeline = ({ id, goToNextView, selectedEventType, selectEventType }) => {
+    // data fetching with "id", filtered by "selectedEventType" will happen here...
     const {
         numPolicyViolations,
         numProcessActivities,
@@ -33,13 +33,16 @@ const DeploymentEventTimeline = ({ deploymentId, selectedEventType, selectEventT
 
     return (
         <Panel header={header} headerComponents={headerComponents}>
-            <TimelineGraph data={timelineData} />
+            <TimelineGraph data={timelineData} goToNextView={goToNextView} />
         </Panel>
     );
 };
 
 DeploymentEventTimeline.propTypes = {
-    deploymentId: PropTypes.string.isRequired
+    id: PropTypes.string.isRequired,
+    goToNextView: PropTypes.func.isRequired,
+    selectedEventType: PropTypes.string.isRequired,
+    selectEventType: PropTypes.func.isRequired
 };
 
 export default DeploymentEventTimeline;

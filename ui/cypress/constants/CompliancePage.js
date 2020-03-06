@@ -20,10 +20,10 @@ export const url = {
 };
 
 export const selectors = {
-    scanButton: "[data-test-id='scan-button']",
+    scanButton: "[data-testid='scan-button']",
     export: {
         exportButton: "button:contains('Export')",
-        pdfButton: "[data-test-id='download-pdf-button']",
+        pdfButton: "[data-testid='download-pdf-button']",
         csvButton: "[data-test-id='download-csv-button']"
     },
     dashboard: {

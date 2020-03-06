@@ -1,16 +1,61 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { eventTypes } from 'constants/timelineTypes';
+import { eventTypes, rootTypes } from 'constants/timelineTypes';
+import NotFoundMessage from 'Components/NotFoundMessage';
 import DeploymentEventTimeline from './DeploymentEventTimeline';
+import PodEventTimeline from './PodEventTimeline';
+
+const EventTimelineComponentMap = {
+    [rootTypes.DEPLOYMENT]: DeploymentEventTimeline,
+    [rootTypes.POD]: PodEventTimeline
+};
 
 const EventTimeline = ({ deploymentId }) => {
+    const rootView = [
+        {
+            type: rootTypes.DEPLOYMENT,
+            id: deploymentId
+        }
+    ];
+
     const [selectedEventType, selectEventType] = useState(eventTypes.ALL);
-    // logic for determining what kind of event timeline goes here...
-    // for now we'll default to the deployment event timeline
+    const [view, setView] = useState(rootView);
+
+    function getCurrentView() {
+        return view[view.length - 1];
+    }
+
+    function goToRootView() {
+        setView(rootView);
+    }
+
+    function goToNextView(type, id) {
+        const newView = [...view, { type, id }];
+        setView(newView);
+    }
+
+    function goToPreviousView() {
+        if (view.length <= 1) return;
+        setView(view.slice(0, -1));
+    }
+
+    const currentView = getCurrentView();
+
+    const Component = EventTimelineComponentMap[currentView.type];
+    if (!Component)
+        return (
+            <NotFoundMessage
+                message="The Event Timeline for this view was not found."
+                actionText="Go back"
+                onClick={goToRootView}
+            />
+        );
     return (
-        <DeploymentEventTimeline
-            deploymentId={deploymentId}
+        <Component
+            id={currentView.id}
+            goToNextView={goToNextView}
+            goToPreviousView={goToPreviousView}
             selectedEventType={selectedEventType}
             selectEventType={selectEventType}
         />
