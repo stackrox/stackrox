@@ -216,7 +216,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 className: `w-1/10 ${defaultColumnClassName}`,
                 id: clusterSortFields.PRIORITY,
                 accessor: 'priority',
-                sortField: clusterSortFields.PRIORITY
+                sortField: clusterSortFields.PRIORITY,
+                sortable: true
             }
         ];
         return removeEntityContextColumns(tableColumns, workflowState);

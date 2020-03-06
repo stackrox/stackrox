@@ -43,11 +43,12 @@ func generateEmbeddedComponent(cp ComponentParts) *storage.EmbeddedImageScanComp
 		return nil
 	}
 	ret := &storage.EmbeddedImageScanComponent{
-		Name:     cp.component.GetName(),
-		Version:  cp.component.GetVersion(),
-		License:  proto.Clone(cp.component.GetLicense()).(*storage.License),
-		Source:   cp.component.GetSource(),
-		Location: cp.edge.GetLocation(),
+		Name:      cp.component.GetName(),
+		Version:   cp.component.GetVersion(),
+		License:   proto.Clone(cp.component.GetLicense()).(*storage.License),
+		Source:    cp.component.GetSource(),
+		Location:  cp.edge.GetLocation(),
+		RiskScore: cp.component.GetRiskScore(),
 	}
 	if cp.edge.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.EmbeddedImageScanComponent_LayerIndex{

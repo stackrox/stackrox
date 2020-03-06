@@ -183,7 +183,8 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             id: namespaceSortFields.PRIORITY,
             accessor: 'metadata.priority',
-            sortField: namespaceSortFields.PRIORITY
+            sortField: namespaceSortFields.PRIORITY,
+            sortable: true
         }
     ];
     return removeEntityContextColumns(tableColumns, workflowState);

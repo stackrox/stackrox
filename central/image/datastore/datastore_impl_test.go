@@ -43,7 +43,8 @@ type ImageDataStoreTestSuite struct {
 	mockComponents *componentDatastoreMocks.MockDataStore
 	mockRisks      *riskDatastoreMocks.MockDataStore
 
-	imageRanker *ranking.Ranker
+	imageRanker          *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
 
 	mockCtrl *gomock.Controller
 }
@@ -68,9 +69,10 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 	suite.mockComponents = componentDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockRisks = riskDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageRanker = ranking.NewRanker()
+	suite.imageComponentRanker = ranking.NewRanker()
 
 	var err error
-	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
@@ -212,9 +214,9 @@ type ImageReindexSuite struct {
 	mockComponents *componentDatastoreMocks.MockDataStore
 	mockRisks      *riskDatastoreMocks.MockDataStore
 
-	imageRanker *ranking.Ranker
-
-	ctx context.Context
+	imageRanker          *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
+	ctx                  context.Context
 
 	mockCtrl *gomock.Controller
 }
@@ -234,6 +236,7 @@ func (suite *ImageReindexSuite) SetupTest() {
 	suite.mockComponents = componentDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockRisks = riskDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.imageRanker = ranking.NewRanker()
+	suite.imageComponentRanker = ranking.NewRanker()
 }
 
 func (suite *ImageReindexSuite) TestReconciliationFullReindex() {
@@ -252,7 +255,7 @@ func (suite *ImageReindexSuite) TestReconciliationFullReindex() {
 
 	suite.mockIndexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
 
-	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
@@ -273,7 +276,7 @@ func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
 	suite.mockIndexer.EXPECT().AddImages(imageList).Return(nil)
 	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
-	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 
 	// Make deploymentlist just A,B so C should be deleted
@@ -286,12 +289,12 @@ func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
 	suite.mockIndexer.EXPECT().DeleteImages([]string{"C"}).Return(nil)
 	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
-	_, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	_, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
 func (suite *ImageReindexSuite) TestInitializeRanker() {
-	ds, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker)
+	ds, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 
 	images := []*storage.Image{

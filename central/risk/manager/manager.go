@@ -6,7 +6,7 @@ import (
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/central/imagecomponent/converter"
+	pkgImgComponent "github.com/stackrox/rox/central/imagecomponent"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
@@ -181,8 +181,11 @@ func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.Embedd
 		return
 	}
 
-	imageComponentV2 := converter.EmbeddedImageScanComponentToProtoImageComponent(imageComponent)
-	oldScore := e.imageComponentRanker.GetScoreForID(imageComponentV2.GetId())
+	oldScore := e.imageComponentRanker.GetScoreForID(
+		pkgImgComponent.ComponentID{
+			Name:    imageComponent.GetName(),
+			Version: imageComponent.GetVersion(),
+		}.ToString())
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
 	}
@@ -195,10 +198,8 @@ func (e *managerImpl) ReprocessImageComponentRisk(imageComponent *storage.Embedd
 		return
 	}
 
-	imageComponentV2.RiskScore = risk.Score
-	if err := e.imageComponentStorage.Upsert(riskReprocessorCtx, imageComponentV2); err != nil {
-		log.Error(err)
-	}
+	imageComponent.RiskScore = risk.Score
+	// skip direct upsert here since it is handled during image upsert
 }
 
 func (e *managerImpl) updateNamespaceRisk(nsID string, oldDeploymentScore float32, newDeploymentScore float32) {

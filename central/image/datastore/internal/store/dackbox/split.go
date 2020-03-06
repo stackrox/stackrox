@@ -72,11 +72,12 @@ func generateComponentCVEEdge(convertedComponent *storage.ImageComponent, conver
 
 func generateImageComponent(from *storage.EmbeddedImageScanComponent) *storage.ImageComponent {
 	ret := &storage.ImageComponent{
-		Id:      imagecomponent.ComponentID{Name: from.GetName(), Version: from.GetVersion()}.ToString(),
-		Name:    from.GetName(),
-		Version: from.GetVersion(),
-		License: proto.Clone(from.GetLicense()).(*storage.License),
-		Source:  from.GetSource(),
+		Id:        imagecomponent.ComponentID{Name: from.GetName(), Version: from.GetVersion()}.ToString(),
+		Name:      from.GetName(),
+		Version:   from.GetVersion(),
+		License:   proto.Clone(from.GetLicense()).(*storage.License),
+		Source:    from.GetSource(),
+		RiskScore: from.GetRiskScore(),
 	}
 
 	if from.GetSetTopCvss() != nil {

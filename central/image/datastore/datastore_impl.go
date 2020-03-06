@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
+	pkgImgComponent "github.com/stackrox/rox/central/imagecomponent"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
@@ -46,10 +47,13 @@ type datastoreImpl struct {
 	components imageComponentDS.DataStore
 	risks      riskDS.DataStore
 
-	imageRanker *ranking.Ranker
+	imageRanker          *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher, imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker) (*datastoreImpl, error) {
+func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher,
+	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore,
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -58,7 +62,8 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 		components: imageComponents,
 		risks:      risks,
 
-		imageRanker: imageRanker,
+		imageRanker:          imageRanker,
+		imageComponentRanker: imageComponentRanker,
 
 		keyedMutex: concurrency.NewKeyedMutex(16),
 	}
@@ -222,6 +227,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 		return nil
 	}
 
+	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)
 
 	if err = ds.storage.Upsert(image, nil); err != nil {
@@ -247,10 +253,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 
 	errorList := errorhelpers.NewErrorList("deleting images")
 	deleteRiskCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Risk),
-		))
+		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Risk)))
 
 	for _, id := range ids {
 		if err := ds.storage.Delete(id); err != nil {
@@ -266,25 +269,7 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 			}
 		}
 	}
-
-	if features.Dackbox.Enabled() {
-		components, err := ds.components.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, ids...).ProtoQuery())
-		if err != nil {
-			return err
-		}
-
-		remainingComponents, err := ds.components.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, ids...).ProtoQuery())
-		if err != nil {
-			return err
-		}
-
-		deletedComponents := pkgSearch.ResultsToIDSet(components).Difference(pkgSearch.ResultsToIDSet(remainingComponents))
-		for _, deletedComponent := range deletedComponents.AsSlice() {
-			if err := ds.risks.RemoveRisk(deleteRiskCtx, deletedComponent, storage.RiskSubjectType_IMAGE_COMPONENT); err != nil {
-				return err
-			}
-		}
-	}
+	// removing component risk handled by pruning
 	return errorList.ToError()
 }
 
@@ -437,5 +422,17 @@ func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.Image) {
 	for _, image := range images {
 		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+	}
+}
+
+func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
+	if !features.Dackbox.Enabled() {
+		return
+	}
+	for _, component := range image.GetScan().GetComponents() {
+		component.RiskScore = ds.imageComponentRanker.GetScoreForID(pkgImgComponent.ComponentID{
+			Name:    component.GetName(),
+			Version: component.GetVersion(),
+		}.ToString())
 	}
 }

@@ -27,7 +27,8 @@ func initialize() {
 		false,
 		imageComponentDS.Singleton(),
 		riskDS.Singleton(),
-		ranking.ImageRanker())
+		ranking.ImageRanker(),
+		ranking.ImageComponentRanker())
 	utils.Must(errors.Wrap(err, "unable to load datastore for images"))
 }
 
