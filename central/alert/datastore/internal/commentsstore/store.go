@@ -24,6 +24,7 @@ type Store interface {
 	// createdAt and lastModified timestamp.
 	UpdateAlertComment(comment *storage.Comment) error
 	RemoveAlertComment(alertID, commentID string) error
+	RemoveAlertComments(alertID string) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

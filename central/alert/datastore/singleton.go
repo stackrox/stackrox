@@ -22,7 +22,6 @@ func initialize() {
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetGlobalIndex())
 	searcher := search.New(storage, indexer)
-
 	var err error
 	soleInstance, err = New(storage, commentsStorage, indexer, searcher)
 	utils.Must(errors.Wrap(err, "unable to load datastore for alerts"))

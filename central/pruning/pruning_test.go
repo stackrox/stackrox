@@ -160,6 +160,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
 	db := testutils.BadgerDBForT(t)
+	commentsDB := testutils.DBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
@@ -168,7 +169,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	require.NoError(t, err)
 
 	// Initialize real datastore
-	alerts := alertDatastore.NewWithDb(db, bleveIndex)
+	alerts := alertDatastore.NewWithDb(db, commentsDB, bleveIndex)
 
 	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)

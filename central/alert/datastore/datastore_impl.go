@@ -219,6 +219,14 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	errorList := errorhelpers.NewErrorList("deleting alert")
 	if err := ds.storage.DeleteAlerts(ids...); err != nil {
 		errorList.AddError(err)
+	} else {
+		for _, id := range ids {
+			err := ds.commentsStorage.RemoveAlertComments(id)
+			if err != nil {
+				err = errors.Wrapf(err, "deleting comments of alert %q", id)
+				errorList.AddError(err)
+			}
+		}
 	}
 	if err := ds.indexer.DeleteListAlerts(ids); err != nil {
 		errorList.AddError(err)

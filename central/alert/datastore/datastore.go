@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
@@ -57,15 +58,17 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 }
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *badger.DB, bIndex bleve.Index) DataStore {
+func NewWithDb(db *badger.DB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
 	store := alertStore.New(db)
+	commentsStore := commentsStore.New(commentsDB)
 	indexer := index.New(bIndex)
 	searcher := search.New(store, indexer)
 
 	return &datastoreImpl{
-		storage:    store,
-		indexer:    indexer,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:         store,
+		commentsStorage: commentsStore,
+		indexer:         indexer,
+		searcher:        searcher,
+		keyedMutex:      concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 }

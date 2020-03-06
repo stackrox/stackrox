@@ -188,4 +188,20 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	outputComments, err = suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
 	suite.Nil(outputComments)
+
+	//Test removeAlertComments
+	comments := []*storage.Comment{comment1, comment2}
+	for _, comment := range comments {
+		_, err := suite.store.AddAlertComment(comment)
+		suite.NoError(err)
+	}
+
+	gotCommentsAfterAdd, err := suite.store.GetCommentsForAlert(alertID)
+	suite.NoError(err)
+	suite.Len(gotCommentsAfterAdd, 2)
+	err = suite.store.RemoveAlertComments(alertID)
+	suite.NoError(err)
+	gotCommentsAfterDeleteAll, err := suite.store.GetCommentsForAlert(alertID)
+	suite.NoError(err)
+	suite.Nil(gotCommentsAfterDeleteAll)
 }

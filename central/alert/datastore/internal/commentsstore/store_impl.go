@@ -155,3 +155,14 @@ func (b *storeImpl) RemoveAlertComment(alertID, commentID string) error {
 		return nil
 	})
 }
+
+func (b *storeImpl) RemoveAlertComments(alertID string) error {
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(alertCommentsBucket)
+		err := bucket.DeleteBucket([]byte(alertID))
+		if err != nil {
+			return errors.Wrapf(err, "deleting comments of alert %q", alertID)
+		}
+		return nil
+	})
+}
