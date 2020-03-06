@@ -274,3 +274,32 @@ func (mr *MockDataStoreMockRecorder) RemoveAlertComment(ctx, request interface{}
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveAlertComment", reflect.TypeOf((*MockDataStore)(nil).RemoveAlertComment), ctx, request)
 }
+
+// AddAlertTags mocks base method
+func (m *MockDataStore) AddAlertTags(ctx context.Context, alertID string, tags []string) (*storage.Tags, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddAlertTags", ctx, alertID, tags)
+	ret0, _ := ret[0].(*storage.Tags)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddAlertTags indicates an expected call of AddAlertTags
+func (mr *MockDataStoreMockRecorder) AddAlertTags(ctx, alertID, tags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAlertTags", reflect.TypeOf((*MockDataStore)(nil).AddAlertTags), ctx, alertID, tags)
+}
+
+// DeleteAlertTags mocks base method
+func (m *MockDataStore) DeleteAlertTags(ctx context.Context, alertID string, tags []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAlertTags", ctx, alertID, tags)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAlertTags indicates an expected call of DeleteAlertTags
+func (mr *MockDataStoreMockRecorder) DeleteAlertTags(ctx, alertID, tags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAlertTags", reflect.TypeOf((*MockDataStore)(nil).DeleteAlertTags), ctx, alertID, tags)
+}

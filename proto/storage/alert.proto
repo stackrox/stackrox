@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
 import "storage/policy.proto";
+import "storage/tags.proto";
 import "storage/process_indicator.proto";
 import "protobuf/gogoproto/gogo.proto";
 
@@ -62,7 +63,9 @@ message Alert {
     google.protobuf.Timestamp first_occurred = 10 [(gogoproto.moretags) = "sensorhash:\"ignore\""];
     ViolationState state                     = 11 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     google.protobuf.Timestamp snooze_till    = 12;
+    Tags tags                                = 14;
 }
+
 
 message ListAlert {
     string id                               = 1;

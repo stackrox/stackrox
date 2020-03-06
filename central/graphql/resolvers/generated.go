@@ -35,6 +35,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processViolation: Alert_ProcessViolation",
 		"snoozeTill: Time",
 		"state: ViolationState!",
+		"tags: Tags",
 		"time: Time",
 		"violations: [Alert_Violation]!",
 	}))
@@ -947,6 +948,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"httpSourceAddress: String!",
 		"skipTLSVerify: Boolean!",
 	}))
+	utils.Must(builder.AddType("Tags", []string{
+		"tags: [String!]!",
+	}))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
 		"taintEffect: TaintEffect!",
@@ -1208,6 +1212,12 @@ func (resolver *alertResolver) State(ctx context.Context) string {
 		value = resolver.list.GetState()
 	}
 	return value.String()
+}
+
+func (resolver *alertResolver) Tags(ctx context.Context) (*tagsResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetTags()
+	return resolver.root.wrapTags(value, true, nil)
 }
 
 func (resolver *alertResolver) Time(ctx context.Context) (*graphql.Time, error) {
@@ -8074,6 +8084,34 @@ func (resolver *sumoLogicResolver) HttpSourceAddress(ctx context.Context) string
 
 func (resolver *sumoLogicResolver) SkipTLSVerify(ctx context.Context) bool {
 	value := resolver.data.GetSkipTLSVerify()
+	return value
+}
+
+type tagsResolver struct {
+	root *Resolver
+	data *storage.Tags
+}
+
+func (resolver *Resolver) wrapTags(value *storage.Tags, ok bool, err error) (*tagsResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &tagsResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapTagses(values []*storage.Tags, err error) ([]*tagsResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*tagsResolver, len(values))
+	for i, v := range values {
+		output[i] = &tagsResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *tagsResolver) Tags(ctx context.Context) []string {
+	value := resolver.data.GetTags()
 	return value
 }
 

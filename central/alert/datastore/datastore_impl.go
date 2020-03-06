@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -25,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -302,6 +304,59 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storag
 		return errors.Errorf("The current user has no privilege to remove the comment with id: %q", request.GetCommentId())
 	}
 	return ds.commentsStorage.RemoveAlertComment(request.GetResourceId(), request.GetCommentId())
+}
+
+func (ds *datastoreImpl) AddAlertTags(ctx context.Context, alertID string, tags []string) (*storage.Tags, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertTags")
+
+	alert, exists, err := ds.storage.GetAlert(alertID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", alertID)
+	}
+	if !exists {
+		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", alertID)
+	}
+	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+		return nil, errors.New("permission denied")
+	}
+
+	allTags := sliceutils.StringUnion(alert.GetTags().GetTags(), tags)
+	sort.Strings(allTags)
+	alert.Tags = &storage.Tags{Tags: allTags}
+	if err := ds.updateAlertNoLock(alert); err != nil {
+		return nil, errors.Wrapf(err, "error upserting alert %q", alert.GetId())
+	}
+
+	return alert.GetTags(), nil
+}
+
+func (ds *datastoreImpl) DeleteAlertTags(ctx context.Context, alertID string, tags []string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "DeleteAlertTags")
+
+	alert, exists, err := ds.storage.GetAlert(alertID)
+	if err != nil {
+		return errors.Wrapf(err, "error fetching alert %q from the DB", alertID)
+	}
+	if !exists {
+		return fmt.Errorf("cannot add tags to alert %q that no longer exists", alertID)
+	}
+	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
+		return errors.New("permission denied")
+	}
+
+	remainingTags := sliceutils.StringDifference(alert.GetTags().GetTags(), tags)
+	sort.Strings(remainingTags)
+
+	if len(remainingTags) == 0 {
+		alert.Tags = nil
+	} else {
+		alert.GetTags().Tags = remainingTags
+	}
+	if err := ds.updateAlertNoLock(alert); err != nil {
+		return fmt.Errorf("error upserting alert %q", alert.GetId())
+	}
+
+	return nil
 }
 
 func getCurrUser(ctx context.Context) *storage.Comment_User {

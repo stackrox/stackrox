@@ -1,6 +1,8 @@
 package sliceutils
 
-import "github.com/mauricelam/genny/generic"
+import (
+	"github.com/mauricelam/genny/generic"
+)
 
 // ElemType is the generic element type of the slice.
 type ElemType generic.Type
@@ -82,6 +84,50 @@ func ElemTypeUnique(slice []ElemType) []ElemType {
 		}
 	}
 	return result
+}
+
+// ElemTypeDifference returns the array of elements in the first slice that aren't in the second slice
+func ElemTypeDifference(slice1, slice2 []ElemType) []ElemType {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[ElemType]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []ElemType
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// ElemTypeUnion returns the union array of slice1 and slice2 without duplicates
+func ElemTypeUnion(slice1, slice2 []ElemType) []ElemType {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]ElemType, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[ElemType]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"

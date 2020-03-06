@@ -11,6 +11,7 @@ import (
 	indexMocks "github.com/stackrox/rox/central/alert/datastore/internal/index/mocks"
 	searchMocks "github.com/stackrox/rox/central/alert/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
+	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -328,6 +329,78 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
 	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
+	s.EqualError(err, "permission denied")
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
+	fakeAlertWithNoTags := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithNoTags, true, nil)
+	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
+	s.storage.EXPECT().UpsertAlert(fakeAlertWithTwoTags).Return(nil)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithTwoTags)).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithTwoTags.GetId()).Return(nil)
+	expectedResponse := &storage.Tags{
+		Tags: alerttest.NewFakeTwoTags(),
+	}
+
+	response, err := s.dataStore.AddAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	s.NoError(err)
+	s.Equal(expectedResponse, response)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed2() {
+	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
+	s.storage.EXPECT().UpsertAlert(fakeAlertWithThreeTags).Return(nil)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithThreeTags)).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithThreeTags.GetId()).Return(nil)
+	expectedResponse := &storage.Tags{
+		Tags: alerttest.NewFakeThreeTags(),
+	}
+
+	response, err := s.dataStore.AddAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTagsHasOverlap())
+	s.NoError(err)
+	s.Equal(expectedResponse, response)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsEnforced() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+
+	_, err := s.dataStore.AddAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	s.EqualError(err, "permission denied")
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed() {
+	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+	fakeAlertWithNoTags := alerttest.NewFakeAlert()
+	s.storage.EXPECT().UpsertAlert(fakeAlertWithNoTags).Return(nil)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithNoTags)).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithNoTags.GetId()).Return(nil)
+
+	err := s.dataStore.DeleteAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed2() {
+	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithThreeTags, true, nil)
+	fakeAlertWithOneTag := alerttest.NewFakeAlertWithOneTag()
+	s.storage.EXPECT().UpsertAlert(fakeAlertWithOneTag).Return(nil)
+	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithOneTag)).Return(nil)
+	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithOneTag.GetId()).Return(nil)
+
+	err := s.dataStore.DeleteAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	s.NoError(err)
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsEnforced() {
+	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+
+	err := s.dataStore.DeleteAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.EqualError(err, "permission denied")
 }
 

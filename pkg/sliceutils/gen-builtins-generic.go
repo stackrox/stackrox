@@ -84,6 +84,50 @@ func BoolUnique(slice []bool) []bool {
 	return result
 }
 
+// BoolDifference returns the array of elements in the first slice that aren't in the second slice
+func BoolDifference(slice1, slice2 []bool) []bool {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[bool]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []bool
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// BoolUnion returns the union array of slice1 and slice2 without duplicates
+func BoolUnion(slice1, slice2 []bool) []bool {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]bool, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[bool]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -161,6 +205,50 @@ func ByteUnique(slice []byte) []byte {
 		}
 	}
 	return result
+}
+
+// ByteDifference returns the array of elements in the first slice that aren't in the second slice
+func ByteDifference(slice1, slice2 []byte) []byte {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[byte]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []byte
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// ByteUnion returns the union array of slice1 and slice2 without duplicates
+func ByteUnion(slice1, slice2 []byte) []byte {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]byte, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[byte]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
@@ -242,6 +330,50 @@ func Complex128Unique(slice []complex128) []complex128 {
 	return result
 }
 
+// Complex128Difference returns the array of elements in the first slice that aren't in the second slice
+func Complex128Difference(slice1, slice2 []complex128) []complex128 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[complex128]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []complex128
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Complex128Union returns the union array of slice1 and slice2 without duplicates
+func Complex128Union(slice1, slice2 []complex128) []complex128 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]complex128, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[complex128]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -319,6 +451,50 @@ func Complex64Unique(slice []complex64) []complex64 {
 		}
 	}
 	return result
+}
+
+// Complex64Difference returns the array of elements in the first slice that aren't in the second slice
+func Complex64Difference(slice1, slice2 []complex64) []complex64 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[complex64]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []complex64
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Complex64Union returns the union array of slice1 and slice2 without duplicates
+func Complex64Union(slice1, slice2 []complex64) []complex64 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]complex64, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[complex64]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
@@ -400,6 +576,50 @@ func ErrorUnique(slice []error) []error {
 	return result
 }
 
+// ErrorDifference returns the array of elements in the first slice that aren't in the second slice
+func ErrorDifference(slice1, slice2 []error) []error {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[error]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []error
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// ErrorUnion returns the union array of slice1 and slice2 without duplicates
+func ErrorUnion(slice1, slice2 []error) []error {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]error, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[error]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -477,6 +697,50 @@ func Float32Unique(slice []float32) []float32 {
 		}
 	}
 	return result
+}
+
+// Float32Difference returns the array of elements in the first slice that aren't in the second slice
+func Float32Difference(slice1, slice2 []float32) []float32 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[float32]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []float32
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Float32Union returns the union array of slice1 and slice2 without duplicates
+func Float32Union(slice1, slice2 []float32) []float32 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]float32, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[float32]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
@@ -558,6 +822,50 @@ func Float64Unique(slice []float64) []float64 {
 	return result
 }
 
+// Float64Difference returns the array of elements in the first slice that aren't in the second slice
+func Float64Difference(slice1, slice2 []float64) []float64 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[float64]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []float64
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Float64Union returns the union array of slice1 and slice2 without duplicates
+func Float64Union(slice1, slice2 []float64) []float64 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]float64, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[float64]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -635,6 +943,50 @@ func IntUnique(slice []int) []int {
 		}
 	}
 	return result
+}
+
+// IntDifference returns the array of elements in the first slice that aren't in the second slice
+func IntDifference(slice1, slice2 []int) []int {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[int]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []int
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// IntUnion returns the union array of slice1 and slice2 without duplicates
+func IntUnion(slice1, slice2 []int) []int {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]int, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[int]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
@@ -716,6 +1068,50 @@ func Int16Unique(slice []int16) []int16 {
 	return result
 }
 
+// Int16Difference returns the array of elements in the first slice that aren't in the second slice
+func Int16Difference(slice1, slice2 []int16) []int16 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[int16]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []int16
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Int16Union returns the union array of slice1 and slice2 without duplicates
+func Int16Union(slice1, slice2 []int16) []int16 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]int16, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[int16]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -793,6 +1189,50 @@ func Int32Unique(slice []int32) []int32 {
 		}
 	}
 	return result
+}
+
+// Int32Difference returns the array of elements in the first slice that aren't in the second slice
+func Int32Difference(slice1, slice2 []int32) []int32 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[int32]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []int32
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Int32Union returns the union array of slice1 and slice2 without duplicates
+func Int32Union(slice1, slice2 []int32) []int32 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]int32, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[int32]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
@@ -874,6 +1314,50 @@ func Int64Unique(slice []int64) []int64 {
 	return result
 }
 
+// Int64Difference returns the array of elements in the first slice that aren't in the second slice
+func Int64Difference(slice1, slice2 []int64) []int64 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[int64]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []int64
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Int64Union returns the union array of slice1 and slice2 without duplicates
+func Int64Union(slice1, slice2 []int64) []int64 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]int64, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[int64]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -951,6 +1435,50 @@ func Int8Unique(slice []int8) []int8 {
 		}
 	}
 	return result
+}
+
+// Int8Difference returns the array of elements in the first slice that aren't in the second slice
+func Int8Difference(slice1, slice2 []int8) []int8 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[int8]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []int8
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Int8Union returns the union array of slice1 and slice2 without duplicates
+func Int8Union(slice1, slice2 []int8) []int8 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]int8, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[int8]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
@@ -1032,6 +1560,50 @@ func RuneUnique(slice []rune) []rune {
 	return result
 }
 
+// RuneDifference returns the array of elements in the first slice that aren't in the second slice
+func RuneDifference(slice1, slice2 []rune) []rune {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[rune]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []rune
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// RuneUnion returns the union array of slice1 and slice2 without duplicates
+func RuneUnion(slice1, slice2 []rune) []rune {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]rune, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[rune]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -1109,6 +1681,50 @@ func StringUnique(slice []string) []string {
 		}
 	}
 	return result
+}
+
+// StringDifference returns the array of elements in the first slice that aren't in the second slice
+func StringDifference(slice1, slice2 []string) []string {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[string]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []string
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// StringUnion returns the union array of slice1 and slice2 without duplicates
+func StringUnion(slice1, slice2 []string) []string {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]string, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[string]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
@@ -1190,6 +1806,50 @@ func UintUnique(slice []uint) []uint {
 	return result
 }
 
+// UintDifference returns the array of elements in the first slice that aren't in the second slice
+func UintDifference(slice1, slice2 []uint) []uint {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uint]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uint
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// UintUnion returns the union array of slice1 and slice2 without duplicates
+func UintUnion(slice1, slice2 []uint) []uint {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uint, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uint]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -1267,6 +1927,50 @@ func Uint16Unique(slice []uint16) []uint16 {
 		}
 	}
 	return result
+}
+
+// Uint16Difference returns the array of elements in the first slice that aren't in the second slice
+func Uint16Difference(slice1, slice2 []uint16) []uint16 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uint16]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uint16
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Uint16Union returns the union array of slice1 and slice2 without duplicates
+func Uint16Union(slice1, slice2 []uint16) []uint16 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uint16, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uint16]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
@@ -1348,6 +2052,50 @@ func Uint32Unique(slice []uint32) []uint32 {
 	return result
 }
 
+// Uint32Difference returns the array of elements in the first slice that aren't in the second slice
+func Uint32Difference(slice1, slice2 []uint32) []uint32 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uint32]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uint32
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Uint32Union returns the union array of slice1 and slice2 without duplicates
+func Uint32Union(slice1, slice2 []uint32) []uint32 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uint32, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uint32]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -1425,6 +2173,50 @@ func Uint64Unique(slice []uint64) []uint64 {
 		}
 	}
 	return result
+}
+
+// Uint64Difference returns the array of elements in the first slice that aren't in the second slice
+func Uint64Difference(slice1, slice2 []uint64) []uint64 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uint64]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uint64
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Uint64Union returns the union array of slice1 and slice2 without duplicates
+func Uint64Union(slice1, slice2 []uint64) []uint64 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uint64, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uint64]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
 
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
@@ -1506,6 +2298,50 @@ func Uint8Unique(slice []uint8) []uint8 {
 	return result
 }
 
+// Uint8Difference returns the array of elements in the first slice that aren't in the second slice
+func Uint8Difference(slice1, slice2 []uint8) []uint8 {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uint8]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uint8
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// Uint8Union returns the union array of slice1 and slice2 without duplicates
+func Uint8Union(slice1, slice2 []uint8) []uint8 {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uint8, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uint8]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -1583,4 +2419,48 @@ func UintptrUnique(slice []uintptr) []uintptr {
 		}
 	}
 	return result
+}
+
+// UintptrDifference returns the array of elements in the first slice that aren't in the second slice
+func UintptrDifference(slice1, slice2 []uintptr) []uintptr {
+	if len(slice1) == 0 || len(slice2) == 0 {
+		return slice1
+	}
+
+	slice2Map := make(map[uintptr]struct{}, len(slice2))
+	for _, s := range slice2 {
+		slice2Map[s] = struct{}{}
+	}
+	var newSlice []uintptr
+	for _, s := range slice1 {
+		if _, ok := slice2Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
+}
+
+// UintptrUnion returns the union array of slice1 and slice2 without duplicates
+func UintptrUnion(slice1, slice2 []uintptr) []uintptr {
+	// Fast path
+	if len(slice1) == 0 {
+		return slice2
+	}
+	if len(slice2) == 0 {
+		return slice1
+	}
+
+	newSlice := make([]uintptr, len(slice1))
+	copy(newSlice, slice1)
+
+	slice1Map := make(map[uintptr]struct{}, len(slice1))
+	for _, s := range slice1 {
+		slice1Map[s] = struct{}{}
+	}
+	for _, s := range slice2 {
+		if _, ok := slice1Map[s]; !ok {
+			newSlice = append(newSlice, s)
+		}
+	}
+	return newSlice
 }
