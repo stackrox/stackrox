@@ -64,7 +64,7 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 				return batch.Error()
 			}
 
-			key := it.Item().Key()
+			key := it.Item().KeyCopy(nil)
 			err := it.Item().Value(func(v []byte) error {
 				var alert storage.Alert
 				if err := proto.Unmarshal(v, &alert); err != nil {
