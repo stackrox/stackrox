@@ -50,7 +50,7 @@ const processData = (data, workflowState, limit) => {
             const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
             const tooltipTitle = lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A';
             const tooltipBody = (
-                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                <ul className="flex-1 border-base-300 overflow-hidden">
                     <li className="py-1 flex flex-col" key="description">
                         <span className="text-base-600 font-700 mr-2">Description:</span>
                         <span className="font-600">{summary}</span>
@@ -106,7 +106,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
         const processedData = processData(data, workflowState, limit);
         if (!processedData || processedData.length === 0) {
             content = (
-                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+                <NoResultsMessage message="No vulnerabilities found" className="p-3" icon="info" />
             );
         } else {
             content = <LabeledBarGraph data={processedData} title="Deployments" />;
@@ -124,7 +124,6 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            bodyClassName="px-2"
             header="Most Common Vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >
@@ -142,7 +141,7 @@ MostCommonVulnerabilities.propTypes = {
 MostCommonVulnerabilities.defaultProps = {
     entityContext: {},
     search: {},
-    limit: 20
+    limit: 15
 };
 
 export default MostCommonVulnerabilities;

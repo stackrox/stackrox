@@ -46,13 +46,19 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     return (
         <workflowStateContext.Provider value={workflowState}>
             <SidePanelAnimation condition={isOpen}>
-                <div className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel">
+                <div
+                    className={`w-full h-full bg-base-100 rounded-tl-lg shadow-sidepanel ${
+                        !isDarkMode ? '' : 'border-l border-base-400'
+                    }`}
+                >
                     <Panel
                         id="side-panel"
-                        headerClassName={`flex w-full h-14 overflow-y-hidden border-b ${
-                            !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
+                        headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
+                            !isDarkMode
+                                ? 'bg-side-panel-wave border-base-100'
+                                : 'bg-primary-200 border-primary-400'
                         }`}
-                        bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
+                        bodyClassName={isList || isDarkMode ? 'bg-base-0' : ''}
                         headerTextComponent={
                             <EntityBreadCrumbs workflowEntities={breadCrumbEntities} />
                         }

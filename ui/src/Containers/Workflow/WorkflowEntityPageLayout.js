@@ -82,7 +82,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
 
     return (
         <workflowStateContext.Provider value={pageState}>
-            <div className="flex flex-1 flex-col bg-base-200" style={style}>
+            <div className="flex flex-1 flex-col" style={style}>
                 <PageHeader header={entityName} subHeader={subheaderText} classes="pr-0">
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pr-2">
@@ -99,7 +99,7 @@ const WorkflowEntityPageLayout = ({ location }) => {
                     </div>
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
-                <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
+                <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
                     <div
                         className={`${
                             sidePanelEntityId ? 'overlay' : ''

@@ -31,6 +31,7 @@ const TileLink = ({
     subText,
     icon,
     url,
+    colorClasses,
     loading,
     isError,
     position,
@@ -42,7 +43,7 @@ const TileLink = ({
     const positionClassName = getClassNameByPosition(position);
 
     const content = loading ? (
-        <Loader className="text-base-100" message="" transparent />
+        <Loader className="text-base-100" message="" />
     ) : (
         <TileContent
             superText={superText}
@@ -53,20 +54,21 @@ const TileLink = ({
         />
     );
     let classes = '';
-    const positionClasses = `flex flex-col items-center justify-center py-2 border-2 rounded min-w-20 px-2 lg:px-4  ${
-        short ? '' : 'lg:min-w-24'
-    }`;
+    const positionClasses = `flex flex-col items-center justify-center py-2 border-2 rounded min-w-20 px-2 lg:px-4`;
     const colors = 'text-base-600 hover:bg-base-200 border-primary-400 bg-base-100';
-    const darkModeColors = 'text-base-600 hover:bg-primary-200 border-primary-400';
+    const darkModeColors = 'text-base-600 border-base-400 hover:bg-base-200';
     const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-400';
-    const errorDarkModeColors = 'text-base-100 bg-alert-400 hover:bg-alert-500 border-alert-400';
+    const errorDarkModeColors =
+        'text-base-100 bg-alert-100 hover:bg-alert-200 border-alert-200 hover:bg-alert-300';
 
     if (isError) {
-        classes = `${positionClasses} ${isDarkMode ? errorDarkModeColors : errorColors}`;
+        classes = `${positionClasses} ${colorClasses} ${
+            isDarkMode ? errorDarkModeColors : errorColors
+        }`;
     } else {
-        classes = `${positionClasses} ${isDarkMode ? darkModeColors : colors}`;
+        classes = `${positionClasses} ${colorClasses} ${isDarkMode ? darkModeColors : colors}`;
     }
-    classes += ` ${positionClassName} ${short ? 'h-full' : 'min-h-14'}`;
+    classes += ` ${positionClassName} ${colorClasses} ${short ? 'h-full' : 'min-h-14'}`;
     return (
         <Link to={url} className="no-underline" data-test-id={dataTestId}>
             <div className={classes}>{content}</div>
@@ -78,6 +80,7 @@ TileLink.propTypes = {
     text: PropTypes.string.isRequired,
     superText: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     subText: PropTypes.string,
+    colorClasses: PropTypes.string,
     icon: PropTypes.element,
     url: PropTypes.string.isRequired,
     loading: PropTypes.bool,
@@ -90,6 +93,7 @@ TileLink.propTypes = {
 TileLink.defaultProps = {
     isError: false,
     position: null,
+    colorClasses: ' ',
     loading: false,
     superText: null,
     subText: null,

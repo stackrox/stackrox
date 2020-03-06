@@ -32,15 +32,16 @@ module.exports = {
     theme: {
         screens: {
             sm: remCalc('576'),
-            md: remCalc('768'),
-            lg: remCalc('992'),
+            md: remCalc('992'),
+            lg: remCalc('1250'),
             xl: remCalc('1440'),
-            xxl: remCalc('1830'),
-            xxxl: remCalc('2130')
+            xxl: remCalc('1812'),
+            xxxl: remCalc('2125')
         },
         colors: {
             transparent: 'transparent',
 
+            'base-0': 'var(--base-0)',
             'base-100': 'var(--base-100)',
             'base-200': 'var(--base-200)',
             'base-300': 'var(--base-300)',
@@ -259,6 +260,7 @@ module.exports = {
             '1/8': '12.5%',
             '1/10': '10%',
             '5/6': '83.33333%',
+            '9/10': '93%',
             full: '100%',
             screen: '100vw'
         },

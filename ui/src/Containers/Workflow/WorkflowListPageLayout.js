@@ -4,6 +4,7 @@ import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import PageHeader from 'Components/PageHeader';
+import { useTheme } from 'Containers/ThemeProvider';
 import ExportButton from 'Components/ExportButton';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
@@ -19,6 +20,7 @@ import WorkflowSidePanel from './WorkflowSidePanel';
 import { EntityComponentMap, ListComponentMap } from './UseCaseComponentMaps';
 
 const WorkflowListPageLayout = ({ location }) => {
+    const { isDarkMode } = useTheme();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -84,7 +86,12 @@ const WorkflowListPageLayout = ({ location }) => {
                         </div>
                     </div>
                 </PageHeader>
-                <div className="h-full bg-base-100 relative z-0 min-h-0" id="capture-list">
+                <div
+                    className={`h-full relative z-0 min-h-0 ${
+                        !isDarkMode ? 'bg-base-100' : 'bg-base-0'
+                    }`}
+                    id="capture-list"
+                >
                     <ListComponent
                         entityListType={pageListType}
                         selectedRowId={selectedRow && selectedRow.entityId}

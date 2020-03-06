@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
+import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getEntityTypesByRelationship } from 'modules/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
@@ -9,6 +10,7 @@ import TileList from 'Components/TileList';
 import pluralize from 'pluralize';
 
 const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityContext }) => {
+    const { isDarkMode } = useTheme();
     const workflowState = useContext(workflowStateContext);
     const { useCase } = workflowState;
     if (!useCase) return null;
@@ -45,20 +47,30 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
         .filter(containObj => containObj.count && !entityContext[containObj.entity]);
     if (!matches.length && !contains.length) return null;
     return (
-        <div className="bg-primary-300 h-full relative border-base-100 border-l w-32">
+        <div
+            className={` h-full relative border-base-100 border-l w-32 ${
+                !isDarkMode ? 'bg-primary-300' : 'bg-base-100'
+            }`}
+        >
             {/* TODO: decide if this should be added as custom tailwind class, or a "component" CSS class in app.css */}
-            <h2
-                style={{
-                    position: 'relative',
-                    left: '-0.5rem',
-                    width: 'calc(100% + 0.5rem)'
-                }}
-                className="my-4 p-2 bg-primary-700 text-base text-base-100 rounded-l text-lg"
-            >
-                Related entities
-            </h2>
-            {!!matches.length && <TileList items={matches} title="Matches" />}
-            {!!contains.length && <TileList items={contains} title="Contains" />}
+            <div className="sticky top-0 py-4">
+                <h2
+                    style={{
+                        position: 'relative',
+                        left: '-0.5rem',
+                        width: 'calc(100% + 0.5rem)'
+                    }}
+                    className={`mb-3 p-2  text-base rounded-l text-lg ${
+                        !isDarkMode
+                            ? 'bg-primary-700 text-base-100'
+                            : 'bg-tertiary-300 text-base-900'
+                    }`}
+                >
+                    Related entities
+                </h2>
+                {!!matches.length && <TileList items={matches} title="Matches" />}
+                {!!contains.length && <TileList items={contains} title="Contains" />}
+            </div>
         </div>
     );
 };

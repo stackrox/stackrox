@@ -12,7 +12,7 @@ const DeploymentViolations = ({ className, alerts, entityContext }) => {
         return (
             <NoResultsMessage
                 message="No deployments violating this policy"
-                className="p-6 shadow"
+                className="p-3 shadow"
                 icon="info"
             />
         );

@@ -93,28 +93,28 @@ const VulnDashboardPage = ({ history }) => {
     );
     return (
         <DashboardLayout headerText="Vulnerability Management" headerComponents={headerComponents}>
-            <div className="sx-4 sy-2">
+            <div className="s-2 md:sx-4 xxxl:sx-4 ">
                 <TopRiskyEntitiesByVulnerabilities
                     defaultSelection={entityTypes.DEPLOYMENT}
                     cveFilter={cveFilter}
                 />
             </div>
-            <div className="s-2">
+            <div className="s-2 xxxl:sx-2">
                 <TopRiskiestImagesAndComponents limit={DASHBOARD_LIMIT} />
             </div>
-            <div className="s-2">
+            <div className="s-2 xxxl:sx-2">
                 <FrequentlyViolatedPolicies />
             </div>
-            <div className="s-2">
+            <div className="s-2 xxxl:sx-2">
                 <RecentlyDetectedVulnerabilities search={searchState} limit={DASHBOARD_LIMIT} />
             </div>
-            <div className="sx-2 sy-4">
+            <div className="s-2 md:sy-2 md:sx-2 lg:sy-4 xxxl:sx-2">
                 <MostCommonVulnerabilities search={searchState} />
             </div>
-            <div className="s-2">
+            <div className="s-2 xxxl:sx-2">
                 <DeploymentsWithMostSeverePolicyViolations limit={DASHBOARD_LIMIT} />
             </div>
-            <div className="s-2">
+            <div className="s-2 xxxl:sx-2">
                 <ClustersWithMostK8sIstioVulnerabilities />
             </div>
         </DashboardLayout>

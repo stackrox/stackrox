@@ -56,7 +56,7 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
                 if (loading) return null;
                 const tabData = processData(data);
                 return (
-                    <ul className="border-b border-base-400 bg-base-200 list-reset pl-3">
+                    <ul className="border-b border-base-400 bg-base-200 pl-3">
                         {tabData.map((datum, i) => {
                             const borderLeft = !i ? 'border-l' : '';
                             let bgColor = 'bg-base-200';

@@ -48,7 +48,7 @@ const ViolationFindings = ({ data, message }) => {
                     className="sx-2 m-4 flex-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
-                    <ul className="list-reset leading-loose">
+                    <ul className="leading-loose">
                         {policyViolation.violations.map(violation => {
                             return (
                                 <li className="border-b border-base-300" key={violation.message}>
@@ -74,7 +74,7 @@ const ViolationFindings = ({ data, message }) => {
         );
     } else {
         content = (
-            <NoResultsMessage message={message} className="p-6 shadow mb-4 mx-4" icon="info" />
+            <NoResultsMessage message={message} className="p-3 shadow mb-4 mx-4" icon="info" />
         );
     }
     return <div className="flex w-full bg-transparent">{content}</div>;

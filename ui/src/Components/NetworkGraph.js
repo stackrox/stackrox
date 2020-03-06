@@ -701,7 +701,10 @@ const NetworkGraph = ({
 
     return (
         <div className="h-full w-full relative">
-            <div id="cytoscapeContainer" className="w-full h-full cursor-pointer">
+            <div
+                id="cytoscapeContainer"
+                className="w-full h-full cursor-pointer cytoscape-container"
+            >
                 <CytoscapeComponent
                     elements={normalizedElements}
                     layout={{ name: 'grid' }}

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { useTheme } from 'Containers/ThemeProvider';
 
 const Tab = ({ text, index, active, to }) => (
     <li
@@ -28,6 +29,7 @@ Tab.propTypes = {
 };
 
 const GroupedTabs = ({ groups, tabs, activeTab }) => {
+    const { isDarkMode } = useTheme();
     const groupMapping = tabs.reduce((acc, curr) => {
         acc[curr.group] = [...(acc[curr.group] || []), curr];
         return acc;
@@ -41,9 +43,10 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
             return (
                 <li
                     data-test-id="grouped-tab"
-                    className={`${
+                    className={`
+                        ${!isDarkMode ? 'bg-primary-100' : 'bg-base-0'} ${
                         idx !== 0 ? 'ml-4' : ''
-                    } list-reset flex flex-col relative justify-end`}
+                    } flex flex-col relative justify-end`}
                     key={group}
                 >
                     {showGroupTab && (
@@ -57,7 +60,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                     <ul
                         className={`${
                             showGroupTab ? `flex-1` : ''
-                        } flex list-reset border-l border-base-400 border-r h-full`}
+                        } flex  border-l border-base-400 border-r h-full`}
                     >
                         {grouppedTabs.map((datum, i) => (
                             <Tab
@@ -76,7 +79,9 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-test-id="grouped-tabs"
-                className="list-reset flex border-b border-base-400 px-4 bg-primary-100 uppercase text-sm"
+                className={` flex border-b border-base-400 px-4 uppercase text-sm ${
+                    !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
+                }`}
             >
                 {result}
             </ul>

@@ -94,7 +94,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { serviceAccount: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.SERVICE_ACCOUNT} />;
 
@@ -151,7 +151,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                         <CollapsibleSection title="Service Account Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
@@ -159,7 +159,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                 />
                                 {!(entityContext && entityContext[entityTypes.CLUSTER]) && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
                                         name="Cluster"
                                         value={clusterName}
@@ -168,7 +168,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                 )}
                                 {!(entityContext && entityContext[entityTypes.NAMESPACE]) && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.NAMESPACE}
                                         name="Namespace"
                                         value={namespaceName}
@@ -176,13 +176,13 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={roleCount}
                                     entityType={entityTypes.ROLE}

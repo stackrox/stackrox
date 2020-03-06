@@ -32,7 +32,7 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
                 data-test-id="policy-category-violation"
             >
                 <div className="bg-base-100 rounded-sm shadow h-full rounded">
-                    <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-primary-200 border-b">
+                    <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-200 border-b">
                         <Icon.BarChart className="h-4 w-4 m-3" />
                         <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
                             {policyType.group}

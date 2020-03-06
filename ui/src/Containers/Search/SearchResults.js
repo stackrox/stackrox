@@ -172,7 +172,7 @@ class SearchResults extends Component {
                 Cell: ({ original }) => {
                     const { id, category, name } = original;
                     return (
-                        <ul className="p-0 list-reset flex">
+                        <ul className="p-0 flex">
                             {!mapping[category] || !mapping[category].viewOn ? (
                                 <li className="text-base-400">N/A</li>
                             ) : (
@@ -201,7 +201,7 @@ class SearchResults extends Component {
             {
                 Header: 'Filter On:',
                 Cell: ({ original }) => (
-                    <ul className="p-0 list-reset flex">
+                    <ul className="p-0  flex">
                         {!mapping[original.category] || !mapping[original.category].filterOn ? (
                             <li className="text-base-400">N/A</li>
                         ) : (

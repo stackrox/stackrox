@@ -106,7 +106,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { policy: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.POLICY} />;
 
@@ -175,32 +175,32 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                         >
                             <div className="grid grid-gap-6 grid-columns-4 mx-4 grid-dense mb-4 pdf-page">
                                 <Metadata
-                                    className="sx-2 bg-base-100 h-48"
+                                    className="sx-2 bg-base-100 min-h-48 h-full"
                                     keyValuePairs={metadataKeyValuePairs}
                                     whitelists={whitelists}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 h-full mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <Widget
-                                    className="sx-1 h-48"
+                                    className="sx-1 min-h-48 h-full"
                                     bodyClassName="leading-normal p-4"
                                     header="Categories"
                                 >
                                     {categories.join(', ')}
                                 </Widget>
                                 <Widget
-                                    className="sx-1 h-48"
+                                    className="sx-1 min-h-48 h-full"
                                     bodyClassName="leading-normal p-4"
                                     header="Description"
                                 >
                                     {description}
                                 </Widget>
                                 <Widget
-                                    className="sx-2 h-48"
+                                    className="sx-2 min-h-48 h-full"
                                     bodyClassName="leading-normal"
                                     header="Remediation"
                                 >

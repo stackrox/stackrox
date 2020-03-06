@@ -113,7 +113,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
 
                 if (!data.clusters || !data.clusters.length)
                     return <PageNotFound resourceType={entityTypes.SUBJECT} />;
@@ -159,11 +159,11 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Subject Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={roleCount}
                                     entityType={entityTypes.ROLE}

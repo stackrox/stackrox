@@ -36,7 +36,7 @@ class ConfigurationFields extends Component {
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(this.props.policy.fields[key]);
                             return (
-                                <div className="mb-4" key={key} data-test-id={key}>
+                                <div className="pb-4" key={key} data-test-id={key}>
                                     <div className="text-base-600 font-700">{label}:</div>
                                     <div className="flex pt-1 leading-normal">{value}</div>
                                 </div>

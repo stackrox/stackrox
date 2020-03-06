@@ -82,7 +82,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { namespace } = data;
                 if (!namespace) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
 
@@ -120,13 +120,13 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Namespace Details">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                 />
                                 {cluster && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
                                         name="Cluster"
                                         value={cluster.name}
@@ -134,25 +134,25 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
                                     entityType={entityTypes.SECRET}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
                                     entityType={entityTypes.IMAGE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}

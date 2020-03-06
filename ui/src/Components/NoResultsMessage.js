@@ -10,7 +10,7 @@ const icons = {
 const NoResultsMessage = props => (
     <div
         data-testid="results-message"
-        className={`flex flex-1 rounded items-center bg-base-100 justify-center w-full leading-loose text-center h-full ${
+        className={`flex flex-1 rounded items-center justify-center w-full leading-loose text-center h-full ${
             props.className
         }`}
     >

@@ -107,7 +107,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 if (!data || !data.deployment)
                     return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
                 const { deployment: entity } = data;
@@ -163,14 +163,14 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                         <CollapsibleSection title="Deployment Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
                                 />
                                 {cluster && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
                                         entityId={cluster.id}
                                         name="Cluster"
@@ -179,7 +179,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                 )}
                                 {namespace && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.NAMESPACE}
                                         entityId={namespaceId}
                                         name="Namespace"
@@ -188,7 +188,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                 )}
                                 {serviceAccount && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.SERVICE_ACCOUNT}
                                         name="Service Account"
                                         value={serviceAccount}
@@ -196,13 +196,13 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
                                     entityType={entityTypes.IMAGE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
                                     entityType={entityTypes.SECRET}

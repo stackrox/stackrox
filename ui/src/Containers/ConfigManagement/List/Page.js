@@ -49,9 +49,9 @@ const ListPage = ({ match, location, history }) => {
                     </div>
                 </div>
             </PageHeader>
-            <div className="flex flex-1 h-full bg-base-100 relative z-0">
+            <div className="flex flex-1 h-full relative z-0">
                 <List
-                    className={`bg-base-100 ${entityId1 ? 'overlay' : ''}`}
+                    className={entityId1 ? 'overlay' : ''}
                     entityListType={pageEntityListType}
                     entityId={entityId1}
                     onRowClick={onRowClick}

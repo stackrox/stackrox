@@ -95,7 +95,7 @@ const NodesWithFailedControls = props => {
                 message={`No nodes failing ${
                     entityType === entityTypes.CONTROL ? 'this control' : 'any controls'
                 }`}
-                className="p-6 shadow"
+                className="p-3 shadow"
                 icon="info"
             />
         );
@@ -105,7 +105,7 @@ const NodesWithFailedControls = props => {
                 message={`Findings ${
                     entityContext[entityTypes.CONTROL] ? 'for this control' : 'across controls'
                 } could not be assessed`}
-                className="p-6 shadow"
+                className="p-3 shadow"
                 icon="warn"
             />
         );

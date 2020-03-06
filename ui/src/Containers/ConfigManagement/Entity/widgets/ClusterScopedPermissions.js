@@ -13,7 +13,7 @@ const getContent = scopedPermissions => {
     }, []);
     content = <ScopedPermissions permissions={permissions} />;
     if (permissions.length === 0)
-        content = <NoResultsMessage message="No permissions available" className="p-6 shadow" />;
+        content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
     return content;
 };
 
@@ -34,7 +34,7 @@ const ClusterScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => {
     let content = null;
 
     if (!scopedPermissionsByCluster || !scopedPermissionsByCluster.length) {
-        content = <NoResultsMessage message="No permissions available" className="p-6 shadow" />;
+        content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
     } else if (scopedPermissionsByCluster.length > 1) {
         content = getGroupedContent(scopedPermissionsByCluster);
     } else {

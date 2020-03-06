@@ -79,7 +79,7 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
         if (!processedData || processedData.length === 0) {
             content = (
-                <NoResultsMessage message="No vulnerabilities found" className="p-6" icon="info" />
+                <NoResultsMessage message="No vulnerabilities found" className="p-3" icon="info" />
             );
         } else {
             content = (

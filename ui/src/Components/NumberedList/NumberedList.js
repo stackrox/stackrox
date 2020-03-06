@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 
-const leftSideClasses = 'text-sm text-primary-800 font-600 truncate';
+const leftSideClasses = 'p-2 text-sm text-primary-800 font-600 w-full';
 
 const NumberedList = ({ data, linkLeftOnly }) => {
     // eslint-disable-next-line no-unused-vars
@@ -23,15 +23,18 @@ const NumberedList = ({ data, linkLeftOnly }) => {
             leftSide = (
                 <Link
                     data-testid="numbered-list-item-name"
-                    className={`${leftSideClasses} no-underline w-full`}
+                    className={`${leftSideClasses} no-underline w-full truncate`}
                     to={url}
                 >
-                    {leftSide}
+                    <span className="w-full block truncate">{leftSide}</span>
                 </Link>
             );
         } else {
             leftSide = (
-                <span data-testid="numbered-list-item-name" className={leftSideClasses}>
+                <span
+                    data-testid="numbered-list-item-name"
+                    className={`${leftSideClasses} truncate`}
+                >
                     {leftSide}
                 </span>
             );
@@ -39,7 +42,9 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         let content = (
             <>
                 {leftSide}
-                <div className="flex flex-1 justify-end ml-4 whitespace-no-wrap">{component}</div>
+                <div className="flex justify-end pr-2 whitespace-no-wrap items-center">
+                    {component}
+                </div>
             </>
         );
         if (url && !linkLeftOnly) {
@@ -49,7 +54,9 @@ const NumberedList = ({ data, linkLeftOnly }) => {
                 </Link>
             );
         }
-        const contentWrapper = <div className="p-2 w-full flex justify-between">{content}</div>;
+        const contentWrapper = (
+            <div className="w-full flex justify-between relative">{content}</div>
+        );
         return (
             <li key={text + subText + url} className={className}>
                 {tooltip && (
@@ -70,7 +77,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
             </li>
         );
     });
-    return <ul className="list-reset leading-loose">{list}</ul>;
+    return <ul className="leading-loose">{list}</ul>;
 };
 
 NumberedList.propTypes = {

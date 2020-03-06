@@ -85,7 +85,6 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     return (
         <Widget
             className="h-full pdf-page"
-            bodyClassName="px-2"
             header="Most Common Vulnerabilities"
             headerComponents={<ViewAllButton url={viewAllURL} />}
         >

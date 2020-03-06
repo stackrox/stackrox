@@ -69,7 +69,7 @@ const LinkListWidget = ({
                         <ul
                             className={`${
                                 items.length > 5 ? `columns-2` : `columns-1`
-                            } list-reset p-3 py-1 w-full leading-normal overflow-hidden`}
+                            } p-3 py-1 w-full leading-normal overflow-hidden`}
                         >
                             {items.slice(0, limit).map(item => getLI(item))}
                         </ul>

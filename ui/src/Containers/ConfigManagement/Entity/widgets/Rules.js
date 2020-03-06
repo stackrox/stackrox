@@ -37,13 +37,13 @@ const Rules = ({ rules, ...rest }) => {
                     <h1 className="font-600 border-b border-base-300 text-sm justify-left flex p-2 px-3">
                         Verbs
                     </h1>
-                    <ul className="list-reset p-3">{verbs}</ul>
+                    <ul className="p-3">{verbs}</ul>
                 </div>
                 <div>
                     <h1 className="font-600 border-b border-base-300 text-sm justify-left flex p-2 px-3">
                         Resources and Non-resource URLs
                     </h1>
-                    <ul className="list-reset p-3">{resourcesAndNonResourcesURL}</ul>
+                    <ul className="p-3">{resourcesAndNonResourcesURL}</ul>
                 </div>
             </div>
         );

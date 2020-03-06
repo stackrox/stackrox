@@ -27,9 +27,7 @@ const PolicyConfigurationFields = ({ fields, ...rest }) => {
         <Widget header="Policy Criteria" {...rest}>
             <div className="flex flex-col w-full">
                 <div className="flex w-full h-full text-sm">
-                    <ul className="flex-1 list-reset border-base-300 overflow-hidden px-2">
-                        {fieldList}
-                    </ul>
+                    <ul className="flex-1 border-base-300 overflow-hidden px-2">{fieldList}</ul>
                 </div>
             </div>
         </Widget>

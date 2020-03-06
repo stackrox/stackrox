@@ -206,8 +206,10 @@ export function getCveTableColumns(workflowState) {
 export function renderCveDescription(row) {
     const { original } = row;
     return (
-        <div className="hover:bg-transparent px-2 pb-4 pt-1 text-base-500">
-            <div className="line-clamp">{original.summary || 'No description available.'}</div>
+        <div className="pointer-events-none bottom-0 absolute px-2 pb-3 pt-1 text-base-500 flex h-12 items-center">
+            <div className="line-clamp leading-normal">
+                {original.summary || 'No description available.'}
+            </div>
         </div>
     );
 }

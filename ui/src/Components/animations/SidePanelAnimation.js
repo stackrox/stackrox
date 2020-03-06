@@ -19,7 +19,7 @@ const SidePanelAnimation = ({ className, condition, children }) => {
             {condition && [
                 <Container
                     key="animation-container"
-                    className={`absolute z-10 h-full top-0 right-0 w-full lg:w-5/6 ${className}`}
+                    className={`absolute z-10 h-full top-0 right-0 w-full lg:w-9/10 ${className}`}
                 >
                     {children}
                 </Container>

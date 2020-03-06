@@ -53,7 +53,7 @@ const processData = (data, workflowState, limit) => {
             const categoriesStr = categories.join(', ');
 
             const tooltipBody = (
-                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                <ul className="flex-1 border-base-300 overflow-hidden">
                     <HoverHintListItem key="categories" label="Category" value={categoriesStr} />
                     <HoverHintListItem key="description" label="Description" value={description} />
                     <HoverHintListItem
@@ -90,7 +90,7 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
             content = (
                 <NoResultsMessage
                     message="No deployments with policy violations found"
-                    className="p-6"
+                    className="p-3"
                     icon="info"
                 />
             );
@@ -127,7 +127,7 @@ FrequentlyViolatedPolicies.propTypes = {
 
 FrequentlyViolatedPolicies.defaultProps = {
     entityContext: {},
-    limit: 9
+    limit: 7
 };
 
 export default FrequentlyViolatedPolicies;

@@ -18,7 +18,7 @@ module.exports = function getGridClasses({
                 })),
                 {
                     [`.grid-auto-fit`]: {
-                        gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 192px), 1fr))`,
+                        gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 183px), 1fr))`,
                         gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`
                     }
                 },
@@ -26,7 +26,7 @@ module.exports = function getGridClasses({
                     [`.grid-auto-fit-wide`]: {
                         gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 230px), 1fr))`,
                         gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`,
-                        maxWidth: `2570px`,
+                        maxWidth: `2060px`,
                         marginLeft: `auto`,
                         marginRight: `auto`
                     }

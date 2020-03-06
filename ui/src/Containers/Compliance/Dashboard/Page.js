@@ -37,7 +37,9 @@ const ComplianceDashboardPage = () => {
                 alt="Waves"
             />
             <div
-                className="flex-1 relative bg-gradient-diagonal p-6 xxxl:p-8"
+                className={`flex-1 relative p-6 xxxl:p-8 ${
+                    !isDarkMode ? 'bg-gradient-diagonal ' : ''
+                }`}
                 style={{ '--start': 'var(--base-200)', '--end': 'var(--primary-100)' }}
                 id="capture-dashboard"
             >

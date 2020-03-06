@@ -223,7 +223,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 if (!data || !data.secret)
                     return <PageNotFound resourceType={entityTypes.SECRET} />;
                 const { secret } = data;
@@ -262,14 +262,14 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Secret Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
                                 />
                                 {clusterName && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
                                         name="Cluster"
                                         value={clusterName}
@@ -277,7 +277,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}

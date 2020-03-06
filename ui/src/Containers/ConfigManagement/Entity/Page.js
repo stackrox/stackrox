@@ -43,7 +43,7 @@ const EntityPage = ({ match, location }) => {
               opacity: 0
           };
     return (
-        <div className="flex flex-1 flex-col bg-base-200" style={style}>
+        <div className="flex flex-1 flex-col" style={style}>
             <PageHeader entityType={pageEntityType} entityId={pageEntityId} urlParams={urlParams} />
             <Tabs
                 pageEntityId={pageEntityId}
@@ -51,7 +51,7 @@ const EntityPage = ({ match, location }) => {
                 entityListType={entityListType1}
                 disabled={!!overlay}
             />
-            <div className="flex flex-1 w-full h-full bg-base-100 relative z-0 overflow-hidden">
+            <div className="flex flex-1 w-full h-full relative z-0 overflow-hidden">
                 <div
                     className={`${overlay ? 'overlay' : ''} h-full w-full overflow-auto`}
                     id="capture-list"
@@ -67,7 +67,7 @@ const EntityPage = ({ match, location }) => {
                 <searchContext.Provider value={searchParams.sidePanel}>
                     <SidePanelAnimation condition={!!entityId1}>
                         <SidePanel
-                            className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
+                            className="w-full h-full border-l border-base-400 shadow-sidepanel"
                             contextEntityId={pageEntityId}
                             contextEntityType={pageEntityType}
                             entityListType1={entityListType1}

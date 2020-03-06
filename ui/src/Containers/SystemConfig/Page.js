@@ -83,9 +83,7 @@ const Page = ({ systemConfig, saveSystemConfig, telemetryConfig, saveTelemetryCo
                         />
                     </div>
                 </PageHeader>
-                <div className="w-full h-full flex pb-0 bg-base-200 overflow-auto">
-                    {getContent()}
-                </div>
+                <div className="w-full h-full flex pb-0 overflow-auto">{getContent()}</div>
             </div>
         </section>
     );

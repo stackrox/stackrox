@@ -59,7 +59,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
     return (
         <Query query={QUERY} variables={variables} fetchPolicy="no-cache">
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
 
                 if (!data || !data.results)
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
@@ -106,11 +106,11 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                     standardId={standardId}
                                     control={name}
                                     description={description}
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                 />
                                 {!!interpretationText.length && (
                                     <Widget
-                                        className="mx-4 min-w-48 h-48 mb-4 w-1/3 overflow-auto"
+                                        className="mx-4 min-w-48 min-h-48 mb-4 w-1/3 overflow-auto"
                                         header="Control guidance"
                                     >
                                         <div className="p-4 leading-loose whitespace-pre-wrap overflow-auto">
@@ -119,7 +119,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                     </Widget>
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Nodes"
                                     value={nodes.length}
                                     entityType={entityTypes.NODE}

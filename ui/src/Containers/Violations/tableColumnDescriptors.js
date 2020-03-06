@@ -159,8 +159,8 @@ export default function getColumns(setSelectedAlertId) {
             Header: 'Deployment',
             accessor: 'deployment.name',
             searchField: 'Deployment',
-            headerClassName: `w-1/6 sticky-column left-checkbox-offset ${defaultHeaderClassName}`,
-            className: `w-1/6 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/6 left-checkbox-offset ${defaultHeaderClassName}`,
+            className: `w-1/6 left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
             Cell: DeploymentColumn
         },
         {

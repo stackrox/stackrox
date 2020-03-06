@@ -75,16 +75,16 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Policy`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             id: policySortFields.POLICY,
             accessor: 'name',
             sortField: policySortFields.POLICY
         },
         {
             Header: `Description`,
-            headerClassName: `w-1/6 ${nonSortableHeaderClassName}`,
-            className: `w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
+            className: `w-1/8 ${defaultColumnClassName}`,
             id: policySortFields.DESCRIPTION,
             accessor: 'description',
             sortable: false

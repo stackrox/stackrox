@@ -130,7 +130,7 @@ const DashboardCompliance = ({ match, location }) => {
                     }}
                 >
                     {({ loading, data }) => {
-                        if (isGQLLoading(loading, data)) return <Loader transparent />;
+                        if (isGQLLoading(loading, data)) return <Loader />;
 
                         const results = processData(data);
                         if (!results.length) return renderScanButton();

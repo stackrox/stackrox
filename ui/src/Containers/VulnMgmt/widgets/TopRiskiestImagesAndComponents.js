@@ -128,7 +128,7 @@ const processData = (data, entityType, workflowState) => {
 
             const tooltipTitle = scan ? format(scan.scanTime, dateTimeFormat) : 'N/A';
             const tooltipBody = (
-                <div className="flex-1 list-reset border-base-300 overflow-hidden">
+                <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
                         <span className="text-base-600 font-700 mr-2">
                             {entityType === entityTypes.IMAGE ? 'Image:' : 'Component:'}
@@ -241,7 +241,7 @@ const TopRiskiestImagesAndComponents = ({ entityContext, limit }) => {
             content = (
                 <NoResultsMessage
                     message={`An error occurred in retrieving ${entityText}. Please refresh the page. If this problem continues, please contact support.`}
-                    className="p-6"
+                    className="p-3"
                     icon="warn"
                 />
             );

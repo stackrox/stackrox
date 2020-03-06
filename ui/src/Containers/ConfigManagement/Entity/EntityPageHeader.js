@@ -41,7 +41,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
                     pdfId = 'capture-list';
                 }
                 return (
-                    <PageHeader classes="bg-primary-100 z-1" header={header} subHeader={subHeader}>
+                    <PageHeader classes="z-1" header={header} subHeader={subHeader}>
                         <div className="flex flex-1 justify-end">
                             <div className="flex">
                                 <div className="flex items-center">

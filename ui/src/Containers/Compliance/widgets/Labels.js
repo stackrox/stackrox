@@ -10,7 +10,7 @@ const truncate = key => {
 };
 
 const Labels = ({ labels }) => (
-    <ul className={` ${labels.length > 4 ? `columns-2` : ``} list-reset p-3 w-full leading-normal`}>
+    <ul className={` ${labels.length > 4 ? `columns-2` : ``} p-3 w-full leading-normal`}>
         {labels.map(label => (
             <li
                 key={label.key}

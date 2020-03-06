@@ -94,7 +94,7 @@ const Lollipop = ({ data, history }) => {
                 />
                 <LabelSeries
                     data={labelData}
-                    className="text-xs theme-light"
+                    className="text-xs"
                     labelAnchorX="start-alignment"
                     labelAnchorY="baseline"
                     onValueClick={onValueClickHandler}

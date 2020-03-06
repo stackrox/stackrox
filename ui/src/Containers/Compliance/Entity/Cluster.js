@@ -39,7 +39,7 @@ const ClusterPage = ({
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const cluster = processData(data);
                 const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

@@ -8,7 +8,7 @@ export function filterLinksByFeatureFlag(flagsToUse, navLinks, defaultVal = fals
 }
 
 export const getDarkModeLinkClassName = isDarkMode =>
-    isDarkMode ? 'hover:bg-primary-100' : 'border-primary-900 hover:bg-base-700';
+    isDarkMode ? 'hover:bg-base-200 border-base-400' : 'border-primary-900 hover:bg-base-700';
 
 export default {
     filterLinksByFeatureFlag,

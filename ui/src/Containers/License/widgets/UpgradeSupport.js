@@ -14,7 +14,7 @@ const UpgradeSupport = () => (
             <div className="flex flex-1 border-t border-base-400">
                 <div className="flex flex-1 items-center justify-center text-center border-r border-base-400">
                     <div>
-                        <div className="text-primary-800 font-400 text-4xl">
+                        <div className="text-primary-800 font-400 text-4xl flex justify-center mb-3">
                             <Icon.Phone className="h-6 w-6 text-primary-800" />
                         </div>
                         <div>
@@ -29,7 +29,7 @@ const UpgradeSupport = () => (
                 </div>
                 <div className="flex flex-1 items-center justify-center text-center">
                     <div>
-                        <div className="text-primary-800 font-400 text-4xl">
+                        <div className="text-primary-800 font-400 text-4xl flex justify-center mb-3">
                             <Icon.Mail className="h-6 w-6 text-primary-800" />
                         </div>
                         <div>

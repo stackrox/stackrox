@@ -439,7 +439,7 @@ const ClustersPage = ({
             <div className="flex flex-1 flex-col">
                 {pageHeader}
                 <div className="flex flex-1 relative">
-                    <div className="shadow border-primary-300 bg-base-100 w-full overflow-hidden">
+                    <div className="shadow border-primary-300 w-full overflow-hidden">
                         <Panel
                             headerTextComponent={headerComponent}
                             headerComponents={headerActions}

@@ -331,7 +331,7 @@ const ListTable = ({
                     <Panel
                         header={headerText}
                         headerComponents={headerComponent}
-                        className="bg-base-100 w-full"
+                        className="w-full"
                     >
                         {contents}
                     </Panel>

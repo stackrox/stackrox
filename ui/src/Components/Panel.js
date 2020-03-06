@@ -5,7 +5,7 @@ import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import CloseButton from './CloseButton';
 
-export const headerClassName = 'flex w-full h-12 border-b border-base-400';
+export const headerClassName = 'flex w-full h-14 border-b border-base-400';
 
 const Panel = props => (
     <div

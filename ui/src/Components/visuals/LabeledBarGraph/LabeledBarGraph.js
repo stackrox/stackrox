@@ -33,7 +33,7 @@ function getLabelData(data) {
         y,
         label: y,
         url,
-        yOffset: -7,
+        yOffset: -13,
         xOffset: 10,
         style: { fill: 'var(--primary-800)', cursor: 'pointer' },
         hint
@@ -62,7 +62,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
                     colorType="literal"
                     barWidth={0.2}
                     style={{
-                        height: 3,
+                        height: 6,
                         rx: '2px',
                         cursor: 'pointer'
                     }}

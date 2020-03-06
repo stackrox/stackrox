@@ -62,7 +62,7 @@ export const navLinks = [
 ];
 
 const LeftSideNavLinks = ({ renderLink, featureFlags }) => (
-    <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
+    <ul className="flex flex-col uppercase text-sm tracking-wide">
         {filterLinksByFeatureFlag(featureFlags, navLinks).map(navLink => (
             <li key={navLink.text}>{renderLink(navLink)}</li>
         ))}

@@ -10,7 +10,7 @@ import ConfigurationFields from 'Containers/Policies/Wizard/Details/Configuratio
 export function Panel({ wizardPolicy }) {
     if (!wizardPolicy) return null;
     return (
-        <div className="flex flex-col w-full bg-primary-100 overflow-auto pb-5">
+        <div className="flex flex-col w-full overflow-auto pb-5">
             <Fields policy={wizardPolicy} />
             <ConfigurationFields policy={wizardPolicy} />
         </div>

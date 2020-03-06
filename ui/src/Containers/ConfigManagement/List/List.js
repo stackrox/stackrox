@@ -108,7 +108,7 @@ const List = ({
     }
 
     return (
-        <section className="h-full w-full bg-base-100" id="capture-list">
+        <section className="h-full w-full" id="capture-list">
             <Query query={query} variables={variables}>
                 {({ loading, data: queryData }) => {
                     if (isGQLLoading(loading, data)) return <Loader />;

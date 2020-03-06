@@ -19,8 +19,8 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
     return (
         <section className="flex flex-col relative min-h-full">
             <PageHeader
-                classes={`bg-gradient-horizontal z-10 sticky top-0 ${
-                    isDarkMode ? 'text-base-600' : 'text-base-100'
+                classes={`z-10 sticky top-0 ${
+                    isDarkMode ? 'text-base-600' : 'text-base-100 bg-gradient-horizontal'
                 }`}
                 bgStyle={bgStyle}
                 header={headerText}
@@ -36,7 +36,9 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
                 alt="Waves"
             />
             <div
-                className="h-full overflow-auto relative bg-gradient-diagonal p-6 xxxl:p-8"
+                className={`h-full overflow-auto relative p-4 xl:p-6 xxxl:p-8 ${
+                    !isDarkMode ? 'bg-gradient-diagonal ' : ''
+                }`}
                 style={{ '--start': 'var(--base-200)', '--end': 'var(--primary-100)' }}
                 id="capture-dashboard"
             >
@@ -48,7 +50,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
                     alt="Wave"
                 />
                 <div
-                    className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense"
+                    className="grid grid-gap-4 xl:grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense"
                     style={{ '--min-tile-height': '160px' }}
                 >
                     {children}

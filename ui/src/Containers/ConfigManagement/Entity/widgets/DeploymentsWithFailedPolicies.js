@@ -78,7 +78,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
             const numDeployments = uniq(data.violations.map(violation => violation.deployment))
                 .length;
             if (numDeployments === 0)
-                return <NoResultsMessage message={message} className="p-6 shadow" icon="info" />;
+                return <NoResultsMessage message={message} className="p-3 shadow" icon="info" />;
             const header = `${numDeployments} deployments failed across ${groups.length} policies`;
             const columns = [
                 {
@@ -124,7 +124,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                     header={header}
                     rows={groups}
                     noDataText="No deployments failing across policies"
-                    className="bg-base-100 w-full"
+                    className="w-full"
                     columns={columns}
                     idAttribute="id"
                     id="deployments-with-failed-policies"

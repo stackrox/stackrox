@@ -85,7 +85,9 @@ class PDFExportButton extends Component {
         for (let i = 0; i < cc.length; i += 1) {
             const clonedNode = cc[i].cloneNode(true);
             clonedNode.setAttribute('data-class-name', clonedNode.className);
-            clonedNode.className = `${clonedNode.className} theme-light border border-base-400`;
+            clonedNode.className = `${
+                clonedNode.className
+            } theme-light pdf-export border border-base-400`;
             cc[i].parentNode.appendChild(clonedNode);
             computedStyleToInlineStyle(clonedNode, {
                 recursive: true,

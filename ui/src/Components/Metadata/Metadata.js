@@ -36,7 +36,7 @@ const Metadata = ({
         </li>
     ));
 
-    const keyValueClasses = `flex-1 list-reset border-base-300 overflow-hidden px-3 ${
+    const keyValueClasses = `flex-1 last:border-0 border-base-300 overflow-hidden px-3 ${
         labels || annotations || whitelists || secrets ? ' border-r' : ''
     }`;
 
@@ -48,7 +48,7 @@ const Metadata = ({
                 {statTiles && statTiles.length > 0 && <MetadataStatsList statTiles={statTiles} />}
                 <div className="flex w-full h-full">
                     <ul className={keyValueClasses}>{keyValueList}</ul>
-                    <ul className="list-reset">
+                    <ul>
                         {labels && (
                             <li className="m-4">
                                 <ResourceCountPopper

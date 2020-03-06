@@ -30,7 +30,7 @@ class Fields extends Component {
                     <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal">
                         Policy Details
                     </div>
-                    <div className="h-full p-3 pb-0">
+                    <div className="h-full p-3 pb-1">
                         {fields.map(field => {
                             if (!fieldsMap[field]) return '';
                             if (policy[field] === undefined) return '';

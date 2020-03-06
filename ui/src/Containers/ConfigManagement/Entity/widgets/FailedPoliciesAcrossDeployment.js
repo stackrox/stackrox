@@ -63,7 +63,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                     return (
                         <NoResultsMessage
                             message="No policies failed across this deployment"
-                            className="p-6 shadow"
+                            className="p-3 shadow"
                             icon="info"
                         />
                     );

@@ -70,7 +70,7 @@ const Scatterplot = ({
                     includeMargin={false}
                     xPercent={-0.01}
                     yPercent={0.5}
-                    style={{ transform: 'translate(-12, 0), rotate(-90)', textAnchor: 'middle' }}
+                    style={{ transform: 'translate(-15, 12), rotate(-90)', textAnchor: 'middle' }}
                 />
                 <MarkSeries
                     className="cursor-pointer"

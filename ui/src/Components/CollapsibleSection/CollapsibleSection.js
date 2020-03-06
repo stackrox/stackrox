@@ -8,8 +8,20 @@ import { ChevronDown, ChevronRight } from 'react-feather';
 const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-5 w-5';
 
 const Content = posed.div({
-    closed: { height: 0 },
-    open: { height: 'inherit' }
+    closed: {
+        height: '1px',
+        transition: {
+            duration: 0
+        },
+        flip: true
+    },
+    open: {
+        height: 'auto',
+        transition: {
+            duration: 0
+        },
+        flip: true
+    }
 });
 
 const CollapsibleSection = ({ title, children, headerComponents }) => {

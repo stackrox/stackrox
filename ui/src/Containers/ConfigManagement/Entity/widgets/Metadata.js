@@ -63,8 +63,8 @@ const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...
     return (
         <Widget header="Metadata" {...rest}>
             <div className="flex w-full text-sm">
-                <ul className="flex-1 list-reset border-r border-base-300">{keyValueList}</ul>
-                <ul className="list-reset">
+                <ul className="flex-1 border-r border-base-300">{keyValueList}</ul>
+                <ul>
                     {labels && (
                         <li className="m-4">
                             <ResourceCountPopper

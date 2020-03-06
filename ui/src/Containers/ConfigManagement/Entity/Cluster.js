@@ -89,7 +89,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { cluster: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
 
@@ -143,59 +143,59 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Cluster Details">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 min-w-48 bg-base-100 h-48 mb-4"
+                                    className="mx-4 min-w-48 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Nodes"
                                     value={nodeCount}
                                     entityType={entityTypes.NODE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Namespaces"
                                     value={namespaceCount}
                                     entityType={entityTypes.NAMESPACE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Deployments"
                                     value={deploymentCount}
                                     entityType={entityTypes.DEPLOYMENT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Secrets"
                                     value={secretCount}
                                     entityType={entityTypes.SECRET}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Images"
                                     value={imageCount}
                                     entityType={entityTypes.IMAGE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Users & Groups"
                                     value={subjectCount}
                                     entityType={entityTypes.SUBJECT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
                                     value={k8sroleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="CIS Controls"
                                     value={totalControlCount}
                                     entityType={entityTypes.CONTROL}

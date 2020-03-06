@@ -29,7 +29,7 @@ const DownloadTelemetryDetailWidget = () => {
 
                 <div className="flex flex-col pt-2 pb-4 px-4 w-full">
                     <div className="w-full pr-4 whitespace-pre-wrap leading-normal">
-                        <div className="py-2 text-base-600 font-700">
+                        <div className="py-2 text-base-600 leading-normal">
                             Diagnostic data is available for download in the ZIP format. If you wish
                             to inspect the data before sending it to our Customer Success team,
                             please use an appropriate program to view its contents.
@@ -42,8 +42,8 @@ const DownloadTelemetryDetailWidget = () => {
                                 disabled={isDownloading}
                                 alwaysVisibleText
                                 tooltip={
-                                    <div className="w-auto">
-                                        <h3 className="mb-2 font-700 text-lg uppercase">
+                                    <div className="w-auto text-left pl-3 pr-6">
+                                        <h3 className="mb-2 font-700 text-lg uppercase ">
                                             What we collect:
                                         </h3>
                                         <p className="mb-2">

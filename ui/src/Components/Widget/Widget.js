@@ -69,10 +69,10 @@ function Widget({
         ) : (
             children
         );
-    const headerContent = titleComponents || header;
+    const headerContent = titleComponents || <div className="line-clamp">{header}</div>;
     return (
         <div
-            className={`flex flex-col shadow rounded relative rounded bg-base-100 ${className}`}
+            className={`widget flex flex-col shadow rounded relative rounded bg-base-100 ${className}`}
             data-test-id={id}
         >
             <div className="border-b border-base-300">

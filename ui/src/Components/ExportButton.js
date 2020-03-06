@@ -113,7 +113,7 @@ class ExportButton extends Component {
         return (
             <div className="absolute right-0 z-20 uppercase flex flex-col text-base-600 min-w-64">
                 <div className="arrow-up self-end mr-5" />
-                <ul className="list-reset bg-base-100 border-2 border-primary-600 rounded">
+                <ul className=" bg-base-100 border-2 border-primary-600 rounded">
                     <li className="p-4 border-b border-base-400">
                         <div className="flex uppercase">
                             <PDFExportButton

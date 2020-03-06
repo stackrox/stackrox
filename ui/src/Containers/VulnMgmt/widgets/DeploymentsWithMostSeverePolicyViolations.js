@@ -50,7 +50,7 @@ const processData = (data, workflowState, limit) => {
             const tooltipTitle = name;
             const tooltipSubtitle = `${clusterName} / ${namespaceName}`;
             const tooltipBody = (
-                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                <ul className="flex-1 border-base-300 overflow-hidden">
                     <li className="py-1 flex flex-col" key="description">
                         <span className="text-base-600 font-700 mr-2">Failing Policies:</span>
                         <span className="font-600">{`Critical: ${critical}`}</span>

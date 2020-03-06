@@ -150,8 +150,8 @@ class TableContents extends Component {
                     </div>
                 ),
                 sortMethod: sortAscii,
-                className: `w-1/5 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
-                headerClassName: `w-1/5 sticky-column left-checkbox-offset ${defaultHeaderClassName}`
+                className: `w-1/5 left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
+                headerClassName: `w-1/5 left-checkbox-offset ${defaultHeaderClassName}`
             },
             {
                 Header: 'Description',

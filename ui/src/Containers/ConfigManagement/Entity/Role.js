@@ -88,7 +88,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { clusters } = data;
                 if (!clusters || !clusters.length)
                     return <PageNotFound resourceType={entityTypes.ROLE} />;
@@ -140,14 +140,14 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Role Details">
                             <div className="flex mb-4 flex-wrap">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
                                 />
                                 {clusterName && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.CLUSTER}
                                         name="Cluster"
                                         value={clusterName}
@@ -156,7 +156,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 )}
                                 {roleNamespace && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         entityType={entityTypes.NAMESPACE}
                                         name="Namespace Scope"
                                         value={namespaceName}
@@ -164,13 +164,13 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Users & Groups"
                                     value={subjectCount}
                                     entityType={entityTypes.SUBJECT}
                                 />
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Service Accounts"
                                     value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}

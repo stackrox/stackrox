@@ -13,14 +13,12 @@ const ConfigTelemetryDetailWidget = ({ config, editable }) => {
 
                 <div className="flex flex-col pt-2 pb-4 px-4 w-full">
                     <div className="w-full pr-4 whitespace-pre-wrap leading-normal">
-                        <p className="py-2 text-base-600 font-700">
-                            <strong>
-                                Online telemetry data collection allows StackRox to better utilize
-                                anonymized information to enhance your user experience
-                            </strong>
+                        <p className="py-2 text-base-600">
+                            Online telemetry data collection allows StackRox to better utilize
+                            anonymized information to enhance your user experience.
                         </p>
                         <CollapsibleText
-                            expandText="Learn more ..."
+                            expandText="Learn more..."
                             collapseText="Show less"
                             initiallyExpanded={false}
                         >

@@ -12,9 +12,9 @@ const NumberedGrid = ({ data, history }) => {
 
     const stacked = data.length < 4;
     const list = data.map(({ text, subText, url, component }, index) => {
-        const className = `inline-block w-full px-2 border-b  border-r border-base-300 ${
+        const className = `inline-block w-full px-2 border-b border-base-300 ${
             url ? 'hover:bg-base-200 cursor-pointer' : ''
-        } ${stacked ? 'py-4' : 'py-2'}`;
+        } ${stacked ? 'py-4' : 'py-2 border-r'}`;
         const content = (
             <div className="flex flex-1 items-center">
                 <span className="text-base-600 self-center text-2xl tracking-widest pl-2 pr-4 font-600">
@@ -43,7 +43,7 @@ const NumberedGrid = ({ data, history }) => {
     });
     return (
         <ul
-            className={`list-reset w-full ${stacked ? 'columns-1' : 'columns-2'} columns-gap-0`}
+            className={`w-full ${stacked ? 'columns-1' : 'columns-2'} columns-gap-0`}
             style={{ columnRule: '1px solid var(--base-300)' }}
         >
             {list}

@@ -28,7 +28,7 @@ const ProcessWhitelistElementsList = ({
     }
 
     return (
-        <ul className="list-reset pl-3 pr-3">
+        <ul className="pl-3 pr-3">
             {elements.map(({ element }) => (
                 <li
                     key={element.processName}

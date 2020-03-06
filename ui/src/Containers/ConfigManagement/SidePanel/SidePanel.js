@@ -99,7 +99,7 @@ const SidePanel = ({
                 headerClassName={`flex w-full h-14 overflow-y-hidden border-b ${
                     !isDarkMode ? 'bg-side-panel-wave border-base-100' : 'border-base-400'
                 }`}
-                bodyClassName={`${isList || isDarkMode ? 'bg-base-100' : ''}`}
+                bodyClassName={isList || isDarkMode ? 'bg-base-0' : ''}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 tracking-wide truncate"

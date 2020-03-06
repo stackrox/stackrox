@@ -31,7 +31,7 @@ const Control = ({ className, ...props }) => (
 
 const Menu = ({ className, ...props }) => (
     <selectComponents.Menu
-        className={`${className} bg-base-100 z-60 font-600 text-left`}
+        className={`${className} bg-base-200 shadow-lg z-60 font-600 text-left`}
         {...props}
     />
 );

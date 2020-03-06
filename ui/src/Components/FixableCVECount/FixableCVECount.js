@@ -14,8 +14,8 @@ function stopPropagation(e) {
 
 const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const classes = fixable
-        ? 'text-success-800 hover:text-success-700'
-        : `text-base-700 ${url && !hideLink ? 'hover:text-primary-700' : ''}`;
+        ? 'text-success-700 hover:text-success-800 underline'
+        : `text-base-700 ${url && !hideLink ? 'underline hover:text-primary-700' : ''}`;
 
     // can't just pluralize() because of special requirements
     //   1 CVE or 2 CVEs
@@ -36,7 +36,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const testId = fixable ? 'fixableCvesLink' : 'allCvesLink';
 
     return url && !hideLink ? (
-        <Link to={url} onClick={stopPropagation} className="w-full underline" data-testid={testId}>
+        <Link to={url} onClick={stopPropagation} className="w-full" data-testid={testId}>
             {cveText}
         </Link>
     ) : (

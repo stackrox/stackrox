@@ -171,19 +171,19 @@ class DeploymentDetails extends Component {
                         {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
                         <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700 ">Resources:</div>
-                            <ul className="ml-2 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full">
                                 {this.renderResources(container.resources)}
                             </ul>
                         </div>
                         <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700">Volumes:</div>
-                            <ul className="ml-2 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full">
                                 {this.renderContainerVolumes(container.volumes)}
                             </ul>
                         </div>
                         <div className="py-3 border-b border-base-300">
                             <div className="pr-1 font-700">Secrets:</div>
-                            <ul className="ml-2 mt-2 w-full list-reset">
+                            <ul className="ml-2 mt-2 w-full">
                                 {this.renderContainerSecrets(container.secrets)}
                             </ul>
                         </div>

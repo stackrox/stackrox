@@ -12,10 +12,10 @@ class Tabs extends Component {
         tabClass:
             'tracking-wide font-700 hover:text-base-600 px-2 text-base-500 text-sm uppercase border-r border-l border-t border-base-400 rounded-t-sm',
         tabActiveClass:
-            'tracking-wide bg-base-100 font-700 text-sm uppercase px-2 py-3 border-r border-l border-t border-base-400 rounded-t-sm',
+            'tracking-wide bg-base-100 font-700 text-sm shadow uppercase px-2 py-3 border-r border-l border-t border-base-400 rounded-t-sm',
         tabDisabledClass:
             'disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
-        tabContentBgColor: 'bg-base-200 border-r border-l border-b border-base-400',
+        tabContentBgColor: 'bg-base-200 border-t shadow z-10 border-base-400',
         hasTabSpacing: false
     };
 
@@ -111,9 +111,7 @@ class Tabs extends Component {
 
         return (
             <div className="w-full h-full flex flex-col">
-                <div
-                    className={`flex justify-between z-1 shadow-underline font-700 bg-base-100 ${className}`}
-                >
+                <div className={`flex justify-between z-1 shadow-underline font-700 ${className}`}>
                     <div className="flex">{this.getHeaders()}</div>
                 </div>
                 <div className={`overflow-hidden h-full flex-1 ${tabContentBgColor}`}>

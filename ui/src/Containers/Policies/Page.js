@@ -12,8 +12,8 @@ export default function Page() {
             <div>
                 <Header />
             </div>
-            <div className="flex flex-1 bg-base-200">
-                <div className="flex w-full h-full bg-base-100 rounded-sm shadow">
+            <div className="flex flex-1">
+                <div className="flex w-full h-full rounded-sm shadow">
                     <Table />
                     <Wizard />
                 </div>

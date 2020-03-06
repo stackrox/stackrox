@@ -58,7 +58,7 @@ class NavigationPanel extends Component {
     }
 
     renderConfigurePanel = () => (
-        <ul className="flex flex-col overflow-auto list-reset uppercase tracking-wide bg-primary-800 border-r border-l border-primary-900">
+        <ul className="flex flex-col overflow-auto uppercase tracking-wide bg-primary-800 border-r border-l border-primary-900">
             <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                 Configure StackRox Settings
             </li>

@@ -36,7 +36,7 @@ const LeftNavigation = ({ location, metadata }) => {
         const { pathname } = location;
         const navText = navLink.text.toLowerCase();
         const baseActiveClass = isDarkMode
-            ? 'text-primary-500 bg-primary-200 hover:bg-primary-300'
+            ? 'text-primary-500 bg-primary-200 hover:bg-primary-200'
             : 'bg-primary-700 hover:bg-primary-700 text-base-100';
 
         if (
@@ -61,7 +61,7 @@ const LeftNavigation = ({ location, metadata }) => {
             if (!panelType && clickOnPanelItem && selectedPanel === navText) {
                 return baseFocusClass;
             }
-            return isDarkMode ? 'bg-base-200' : 'bg-primary-800';
+            return isDarkMode ? 'bg-base-100' : 'bg-primary-800';
         }
         return '';
     }
@@ -126,7 +126,7 @@ const LeftNavigation = ({ location, metadata }) => {
     useEffect(componentDidMount, []);
 
     const darkModeClasses = isDarkMode
-        ? 'bg-base-200 border-t border-r border-base-400'
+        ? 'bg-base-100 border-t border-r border-base-300'
         : 'bg-primary-800';
     return (
         <>
@@ -142,8 +142,8 @@ const LeftNavigation = ({ location, metadata }) => {
                 >
                     <ApiDocsNavigation onClick={closePanel()} />
                     <span
-                        className={`left-navigation p-3 ${
-                            isDarkMode ? 'text-base-600' : 'text-primary-400'
+                        className={`left-navigation p-3 leading-normal ${
+                            isDarkMode ? 'text-base-500' : 'text-primary-400'
                         } word-break-all`}
                     >
                         {versionString(metadata)}

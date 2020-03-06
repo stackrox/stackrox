@@ -14,10 +14,10 @@ import useCases from 'constants/useCaseTypes';
 import vulnMgmtDefaultSorts from '../VulnMgmt/VulnMgmt.defaultSorts';
 
 export const entityGridContainerBaseClassName =
-    'mx-4 grid-dense grid-auto-fit grid grid-gap-6 mb-4 xxxl:grid-gap-8';
+    'mx-4 grid-dense grid-auto-fit grid grid-gap-4 xl:grid-gap-6 mb-4 xxxl:grid-gap-8';
 
 // to separate out column number related classes from the rest of the grid classes for easy column customization (see policyOverview component)
-export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 lg:grid-columns-2 xxl:grid-columns-3`;
+export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 md:grid-columns-2 lg:grid-columns-3`;
 
 const useCaseDefaultSorts = {
     [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts
@@ -76,9 +76,18 @@ const WorkflowEntityPage = ({
     }
 
     const { loading, data, error } = useQuery(query, enhancedQueryOptions);
-    if (loading) return <Loader transparent />;
+    if (loading) return <Loader />;
     if (error)
-        return <Message type="error" message={error.message || 'An unknown error has occurred.'} />;
+        return (
+            <div className="flex items-center justify-center h-full w-full">
+                <div className="m-6 w-full md:w-1/2 xl:w-3/5">
+                    <Message
+                        type="error"
+                        message={error.message || 'An unknown error has occurred.'}
+                    />
+                </div>
+            </div>
+        );
     if (!data || !data.result) return <PageNotFound resourceType={entityType} />;
     const { result } = data;
 
@@ -98,8 +107,8 @@ const WorkflowEntityPage = ({
         />
     ) : (
         <div
-            className={`w-full flex ${
-                !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
+            className={`w-full flex min-h-full ${
+                !isDarkMode && !entityListType ? 'bg-side-panel-wave' : 'bg-base-0'
             }`}
         >
             <div className="w-full min-h-full" id="capture-widgets">

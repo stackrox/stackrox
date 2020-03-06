@@ -34,7 +34,7 @@ class IntegrationTile extends Component {
         return (
             <div className="p-3 w-full md:w-1/2 lg:w-1/3 xl:w-1/4 min-h-55">
                 <div
-                    className={`flex flex-col justify-between cursor-pointer border-3 border-base-100 hover:shadow-lg items-center h-full w-full bg-base-100 rounded-sm shadow text-center relative 
+                    className={`flex flex-col justify-between cursor-pointer border-3 border-base-100 hover:shadow-lg items-center h-full w-full bg-base-100 rounded shadow text-center relative 
                     ${numIntegrations !== 0 && 'border-2 border-success-500'}`}
                     onClick={this.onClick}
                     onKeyUp={this.handleKeyUp}

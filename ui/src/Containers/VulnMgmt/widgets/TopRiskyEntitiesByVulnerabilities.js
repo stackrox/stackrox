@@ -260,7 +260,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 datum.name ||
                 (datum.metadata && datum.metadata.name),
             body: (
-                <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+                <ul className="flex-1 border-base-300 overflow-hidden">
                     <HoverHintListItem
                         key="severity"
                         label="Severity"
@@ -344,7 +344,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     message={`An error occurred in retrieving ${pluralize(
                         selectedEntityType.toLowerCase()
                     )}. Please refresh the page. If this problem continues, please contact support.`}
-                    className="p-6"
+                    className="p-3"
                     icon="warn"
                 />
             );
@@ -354,7 +354,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     message={`No ${pluralize(
                         selectedEntityType.toLowerCase()
                     )} with vulnerabilities found`}
-                    className="p-6"
+                    className="p-3"
                     icon="info"
                 />
             );

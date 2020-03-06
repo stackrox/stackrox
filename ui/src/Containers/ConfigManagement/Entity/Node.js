@@ -68,7 +68,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 if (!data || !data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 const { node } = data;
 
@@ -156,14 +156,14 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Node Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                     labels={labels}
                                     annotations={annotations}
                                 />
                                 {!entityContext.CLUSTER && (
                                     <RelatedEntity
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         name="Cluster"
                                         entityType={entityTypes.CLUSTER}
                                         value={clusterName}
@@ -171,7 +171,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     />
                                 )}
                                 <RelatedEntityListCount
-                                    className="mx-4 min-w-48 h-48 mb-4"
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="CIS Controls"
                                     value={complianceResults.length}
                                     entityType={entityTypes.CONTROL}
@@ -184,7 +184,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     {failedComplianceResults.length === 0 && (
                                         <NoResultsMessage
                                             message="No nodes failing controls on this node"
-                                            className="p-6 shadow"
+                                            className="p-3 shadow"
                                             icon="info"
                                         />
                                     )}

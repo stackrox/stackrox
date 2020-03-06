@@ -5,12 +5,14 @@ import { ChevronRight, ArrowLeft } from 'react-feather';
 import EntityBreadCrumb from 'Containers/BreadCrumbs/EntityBreadCrumb';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { useTheme } from 'Containers/ThemeProvider';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
 );
 
 const BackLink = ({ workflowState, enabled }) => {
+    const { isDarkMode } = useTheme();
     const url = !enabled ? null : workflowState.pop().toUrl();
     return url ? (
         <Link
@@ -22,7 +24,9 @@ const BackLink = ({ workflowState, enabled }) => {
         </Link>
     ) : (
         <EntityIcon
-            className="flex items-center justify-center border-r border-base-300 px-4 mr-4 h-full w-16"
+            className={`flex items-center justify-center border-r  px-4 mr-4 h-full w-16 ${
+                !isDarkMode ? 'border-base-300' : 'border-base-400'
+            }`}
             entityType={workflowState.getCurrentEntity().entityType}
         />
     );

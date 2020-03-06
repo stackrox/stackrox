@@ -18,7 +18,7 @@ const PermissionsCounts = ({ permissions }) => {
             </li>
         );
     });
-    return <ul className="flex text-sm list-reset capitalize">{result}</ul>;
+    return <ul className="flex text-sm capitalize">{result}</ul>;
 };
 
 PermissionsCounts.propTypes = {
@@ -78,7 +78,7 @@ const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => 
     let content = null;
 
     if (!scopedPermissionsByCluster || !scopedPermissionsByCluster.length) {
-        content = <NoResultsMessage message="No permissions available" className="p-6 shadow" />;
+        content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
     } else if (scopedPermissionsByCluster.length > 1) {
         content = getGroupedContent(scopedPermissionsByCluster);
     } else {
@@ -87,7 +87,7 @@ const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => 
     }
 
     if (!content || !content.length)
-        content = <NoResultsMessage message="No permissions available" className="p-6 shadow" />;
+        content = <NoResultsMessage message="No permissions available" className="p-3 shadow" />;
 
     const header =
         scopedPermissionsByCluster.length > 1

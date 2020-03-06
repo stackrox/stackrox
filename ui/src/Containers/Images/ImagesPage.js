@@ -51,7 +51,7 @@ function ImagesPage({
                     setIsViewFiltered={setIsViewFiltered}
                 />
                 <div className="flex flex-1 relative">
-                    <div className="shadow border-primary-300 bg-base-100 w-full h-full overflow-hidden">
+                    <div className="shadow border-primary-300 w-full h-full overflow-hidden">
                         <ImagesTablePanel
                             currentPage={currentPage}
                             setCurrentPage={setCurrentPage}

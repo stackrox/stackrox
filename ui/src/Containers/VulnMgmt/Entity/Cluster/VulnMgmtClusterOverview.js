@@ -97,13 +97,13 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full min-w-48 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={clusterStats}
                                 title="Details & Metadata"
                             />
                         </div>
-                        <div className="sx-1 lg:sx-2 sy-1 h-55">
+                        <div className="sx-1 md:sx-2 sy-1 min-h-55 h-full">
                             <TopRiskyEntitiesByVulnerabilities
                                 defaultSelection={entityTypes.NAMESPACE}
                                 limit={OVERVIEW_LIMIT}
@@ -138,7 +138,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                 </CollapsibleSection>
 
                 <CollapsibleSection title="Cluster Findings">
-                    <div className="pdf-page pdf-stretch pdf-new flex shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                    <div className="pdf-page pdf-stretch pdf-new flex relative rounded mb-4 ml-4 mr-4">
                         <Tabs
                             hasTabSpacing
                             headers={[{ text: 'Policies' }, { text: 'Fixable CVEs' }]}

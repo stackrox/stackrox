@@ -97,7 +97,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
 
                     contents = (
                         <ul
-                            className="list-reset w-full columns-2 columns-gap-0"
+                            className="w-full columns-2 columns-gap-0"
                             style={{ columnRule: '1px solid var(--base-300)' }}
                         >
                             {results.map((item, index) => {

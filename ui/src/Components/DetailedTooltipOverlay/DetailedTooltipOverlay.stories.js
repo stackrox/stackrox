@@ -19,7 +19,7 @@ export const withTitleAndBody = () => {
 
 export const withOptionalFooter = () => {
     const tooltipBody = (
-        <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+        <ul className="flex-1 border-base-300 overflow-hidden">
             <HoverHintListItem key="categories" label="Category" value="Vulnerability Management" />
             <HoverHintListItem
                 key="description"
@@ -51,7 +51,7 @@ export const withOptionalFooter = () => {
 
 export const withOptionalFooterAndSubtitle = () => {
     const tooltipBody = (
-        <ul className="flex-1 list-reset border-base-300 overflow-hidden">
+        <ul className="flex-1  border-base-300 overflow-hidden">
             <HoverHintListItem key="severity" label="Severity" value="Critical" />
             <HoverHintListItem key="riskScore" label="Risk Priority" value="8.9" />
             <HoverHintListItem key="weightedCvss" label="Weigthed CVSS" value="8.7" />

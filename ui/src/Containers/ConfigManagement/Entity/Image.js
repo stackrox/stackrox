@@ -104,7 +104,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
     return (
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
-                if (isGQLLoading(loading, data)) return <Loader transparent />;
+                if (isGQLLoading(loading, data)) return <Loader />;
                 const { image: entity } = data;
                 if (!entity) return <PageNotFound resourceType={entityTypes.IMAGE} />;
 
@@ -168,12 +168,12 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                         <CollapsibleSection title="Image Details">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
-                                    className="mx-4 bg-base-100 h-48 mb-4"
+                                    className="mx-4 bg-base-100 min-h-48 mb-4"
                                     keyValuePairs={metadataKeyValuePairs}
                                 />
                                 {deploymentCount && (
                                     <RelatedEntityListCount
-                                        className="mx-4 min-w-48 h-48 mb-4"
+                                        className="mx-4 min-w-48 min-h-48 mb-4"
                                         name="Deployments"
                                         value={deploymentCount}
                                         entityType={entityTypes.DEPLOYMENT}
