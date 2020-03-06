@@ -7,6 +7,7 @@ export const overviewData = {
         numTotalPods: 3
     }
 };
+
 export const podsData = {
     ...overviewData,
     pods: [
@@ -120,45 +121,56 @@ export const podsData = {
     ]
 };
 
-export const containersData = {
-    containers: [
-        {
-            id: 'c-1',
-            name: 'hello-1',
-            startTime: '2019-12-09T05:51:52Z',
-            events: [
-                {
-                    processId: 'process-1',
-                    timestamp: '2019-12-09T06:51:52Z',
-                    edges: [],
-                    type: 'POLICY_VIOLATION'
-                },
-                {
-                    processId: 'process-2',
-                    timestamp: '2019-12-09T07:51:52Z',
-                    edges: [],
-                    type: 'PROCESS_ACTIVITY'
-                }
-            ]
+const containers = [
+    {
+        id: 'c-1',
+        name: 'hello-1',
+        startTime: '2019-12-09T05:51:52Z',
+        events: [
+            {
+                processId: 'process-1',
+                timestamp: '2019-12-09T06:51:52Z',
+                edges: [],
+                type: 'POLICY_VIOLATION'
+            },
+            {
+                processId: 'process-2',
+                timestamp: '2019-12-09T07:51:52Z',
+                edges: [],
+                type: 'PROCESS_ACTIVITY'
+            }
+        ]
+    },
+    {
+        id: 'c-2',
+        name: 'hello-2',
+        startTime: '2019-12-09T05:51:52Z',
+        events: [
+            {
+                processId: 'process-3',
+                timestamp: '2019-12-09T08:51:52Z',
+                edges: [],
+                type: 'PROCESS_ACTIVITY'
+            },
+            {
+                processId: 'process-4',
+                timestamp: '2019-12-09T09:51:52Z',
+                edges: [],
+                type: 'RESTART'
+            }
+        ]
+    }
+];
+
+export const getPodAndContainersByPodId = podId => {
+    const { id, name, startTime, inactive } = podsData.pods.find(datum => datum.id === podId);
+    return {
+        pod: {
+            id,
+            name,
+            startTime,
+            inactive
         },
-        {
-            id: 'c-2',
-            name: 'hello-2',
-            startTime: '2019-12-09T05:51:52Z',
-            events: [
-                {
-                    processId: 'process-3',
-                    timestamp: '2019-12-09T08:51:52Z',
-                    edges: [],
-                    type: 'PROCESS_ACTIVITY'
-                },
-                {
-                    processId: 'process-4',
-                    timestamp: '2019-12-09T09:51:52Z',
-                    edges: [],
-                    type: 'RESTART'
-                }
-            ]
-        }
-    ]
+        containers
+    };
 };

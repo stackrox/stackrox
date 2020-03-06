@@ -2,12 +2,23 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'react-feather';
 
+import { getPodAndContainersByPodId } from 'mockData/timelineData';
 import Button from 'Components/Button';
 import Panel from 'Components/Panel';
+import HeaderWithSubText from 'Components/HeaderWithSubText';
+import TimelineGraph from 'Components/TimelineGraph';
+import EventTypeSelect from '../EventTypeSelect';
+import { getPod, getContainerEvents } from './getContainerEvents';
 
-// eslint-disable-next-line
-const PodEventTimeline = ({ id, goToPreviousView, selectedEventType, selectEventType }) => {
-    // @TODO: Add stuff here in a future PR
+const PodEventTimeline = ({
+    id,
+    goToNextView,
+    goToPreviousView,
+    selectedEventType,
+    selectEventType
+}) => {
+    const data = getPodAndContainersByPodId(id);
+    const { name, subText } = getPod(data.pod);
 
     const headerTextComponent = (
         <>
@@ -17,21 +28,26 @@ const PodEventTimeline = ({ id, goToPreviousView, selectedEventType, selectEvent
                 icon={<ArrowLeft className="h-4 w-4 text-base-600" />}
                 onClick={goToPreviousView}
             />
-            <div className="flex items-center font-700 text-base-600 px-3">
-                Pod with Container Events
-            </div>
+            <HeaderWithSubText header={name} subText={subText} />
         </>
     );
 
+    const headerComponents = (
+        <EventTypeSelect selectedEventType={selectedEventType} selectEventType={selectEventType} />
+    );
+
+    const timelineData = getContainerEvents(data.containers, selectedEventType);
+
     return (
-        <Panel headerTextComponent={headerTextComponent}>
-            <div className="p-3">Events for Containers in this Pod show up here</div>
+        <Panel headerTextComponent={headerTextComponent} headerComponents={headerComponents}>
+            <TimelineGraph data={timelineData} goToNextView={goToNextView} />
         </Panel>
     );
 };
 
 PodEventTimeline.propTypes = {
     id: PropTypes.string.isRequired,
+    goToNextView: PropTypes.func.isRequired,
     goToPreviousView: PropTypes.func.isRequired,
     selectedEventType: PropTypes.string.isRequired,
     selectEventType: PropTypes.func.isRequired

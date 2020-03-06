@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 
 import { ChevronRight } from 'react-feather';
 import Button from 'Components/Button';
+import HeaderWithSubText from 'Components/HeaderWithSubText';
 
 const NameListItem = ({ id, type, name, subText, hasChildren, onClick }) => {
     function onClickHandler() {
         onClick(type, id);
     }
     return (
-        <li className="flex flex-col justify-center p-3 leading-normal relative h-12 border-t border-base-300">
-            <div className="font-700 text-base-600">{name}</div>
-            <div className="text-base-500 text-xs font-700">{subText}</div>
+        <li className="flex flex-col justify-center leading-normal relative h-12 border-t border-base-300">
+            <HeaderWithSubText header={name} subText={subText} />
             {hasChildren && (
                 <Button
                     dataTestId="timeline-name-list-item-expander"

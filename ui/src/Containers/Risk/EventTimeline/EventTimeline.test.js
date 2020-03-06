@@ -12,7 +12,7 @@ test('Should be able to switch between the Deployment and Pod Event Timeline', a
 
     fireEvent.click(buttonExpander[0]);
 
-    await waitForElement(() => findByText('Pod with Container Events'));
+    await waitForElement(() => findByText('hello-world'));
 
     const backButton = getByTestId('timeline-back-button');
 

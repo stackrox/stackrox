@@ -26,18 +26,25 @@ const EventTimeline = ({ deploymentId }) => {
         return view[view.length - 1];
     }
 
+    function resetSelectedEventType() {
+        selectEventType(eventTypes.ALL);
+    }
+
     function goToRootView() {
         setView(rootView);
+        resetSelectedEventType();
     }
 
     function goToNextView(type, id) {
         const newView = [...view, { type, id }];
         setView(newView);
+        resetSelectedEventType();
     }
 
     function goToPreviousView() {
         if (view.length <= 1) return;
         setView(view.slice(0, -1));
+        resetSelectedEventType();
     }
 
     const currentView = getCurrentView();
