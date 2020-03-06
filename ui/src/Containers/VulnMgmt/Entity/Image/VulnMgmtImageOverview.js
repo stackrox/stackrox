@@ -142,7 +142,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     workflowState={workflowState}
                                     entityContext={entityContext}
                                     entityType={entityTypes.IMAGE}
-                                    name={safeData?.name}
+                                    name={safeData?.name?.fullName}
                                     id={safeData?.id}
                                 />
                             </TabContent>
