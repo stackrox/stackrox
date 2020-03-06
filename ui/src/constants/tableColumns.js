@@ -1,10 +1,10 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import {
-    standardTypes,
     resourceTypes,
     standardEntityTypes,
-    standardBaseTypes
+    standardBaseTypes,
+    resourceTypeToApplicableStandards
 } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 
@@ -23,6 +23,10 @@ const columnsForStandard = (function getColumnsForStandards() {
     return ret;
 })();
 
+function columnsForResourceType(resourceType) {
+    return resourceTypeToApplicableStandards[resourceType].map(id => columnsForStandard[id]);
+}
+
 const clusterColumns = [
     {
         accessor: 'id',
@@ -35,12 +39,7 @@ const clusterColumns = [
         Header: 'Cluster',
         Cell: ({ original }) => getNameCell(original.name)
     },
-    columnsForStandard[standardTypes.CIS_Docker_v1_2_0],
-    columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
-    columnsForStandard[standardTypes.HIPAA_164],
-    columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
-    columnsForStandard[standardTypes.PCI_DSS_3_2],
+    ...columnsForResourceType(resourceTypes.CLUSTER),
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -86,9 +85,7 @@ const nodeColumns = [
         accessor: 'cluster',
         Header: 'Cluster'
     },
-    columnsForStandard[standardTypes.CIS_Docker_v1_2_0],
-    columnsForStandard[standardTypes.CIS_Kubernetes_v1_5],
-    columnsForStandard[standardTypes.NIST_800_190],
+    ...columnsForResourceType(resourceTypes.NODE),
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -111,10 +108,7 @@ const namespaceColumns = [
         accessor: 'cluster',
         Header: 'Cluster'
     },
-    columnsForStandard[standardTypes.HIPAA_164],
-    columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
-    columnsForStandard[standardTypes.PCI_DSS_3_2],
+    ...columnsForResourceType(resourceTypes.NAMESPACE),
     {
         accessor: 'overall.average',
         Header: 'Overall'
@@ -143,10 +137,7 @@ const deploymentColumns = [
         Header: 'Namespace',
         Cell: ({ original }) => getNameCell(original.namespace)
     },
-    columnsForStandard[standardTypes.HIPAA_164],
-    columnsForStandard[standardTypes.NIST_800_190],
-    columnsForStandard[standardTypes.NIST_SP_800_53_Rev_4],
-    columnsForStandard[standardTypes.PCI_DSS_3_2],
+    ...columnsForResourceType(resourceTypes.DEPLOYMENT),
     {
         accessor: 'overall.average',
         Header: 'Overall'

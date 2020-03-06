@@ -18,6 +18,10 @@ describe('Get columns', () => {
             standardTypes.NIST_800_190,
             standardTypes.NIST_SP_800_53_Rev_4
         ]);
+
+        expectColumnsNotToContain(getColumnsByEntity(resourceTypes.NODE), [
+            standardTypes.NIST_SP_800_53_Rev_4
+        ]);
     });
 
     it('can get columns by entity with exclusion', () => {

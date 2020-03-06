@@ -1,5 +1,8 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, {
+    resourceTypes,
+    resourceTypeToApplicableStandards
+} from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/CacheFirstQuery';
@@ -21,8 +24,6 @@ import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStan
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
 
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import Header from './Header';
 
 function processData(data) {
@@ -146,37 +147,18 @@ const DeploymentPage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-
-                                <ComplianceByStandard
-                                    standardType={entityTypes.PCI_DSS_3_2}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
-                                />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.NIST_800_190}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
-                                />
-                                <FeatureEnabled featureFlags={knownBackendFlags.ROX_NIST_800_53}>
-                                    <ComplianceByStandard
-                                        standardType={entityTypes.NIST_SP_800_53_Rev_4}
-                                        entityName={name}
-                                        entityId={id}
-                                        entityType={entityTypes.DEPLOYMENT}
-                                        className={pdfClassName}
-                                    />
-                                </FeatureEnabled>
-                                <ComplianceByStandard
-                                    standardType={entityTypes.HIPAA_164}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    className={pdfClassName}
-                                />
+                                {resourceTypeToApplicableStandards[resourceTypes.DEPLOYMENT].map(
+                                    standardType => (
+                                        <ComplianceByStandard
+                                            key={standardType}
+                                            standardType={standardType}
+                                            entityName={name}
+                                            entityId={id}
+                                            entityType={entityTypes.DEPLOYMENT}
+                                            className={pdfClassName}
+                                        />
+                                    )
+                                )}
                             </div>
                         </div>
                     );

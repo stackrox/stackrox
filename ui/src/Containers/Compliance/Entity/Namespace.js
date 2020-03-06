@@ -17,11 +17,12 @@ import isGQLLoading from 'utils/gqlLoading';
 import Loader from 'Components/Loader';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, {
+    resourceTypes,
+    resourceTypeToApplicableStandards
+} from 'constants/entityTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import Header from './Header';
 
 function processData(data, entityId) {
@@ -134,37 +135,18 @@ const NamespacePage = ({
                                 >
                                     <Labels labels={labels} />
                                 </Widget>
-
-                                <ComplianceByStandard
-                                    standardType={entityTypes.PCI_DSS_3_2}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NAMESPACE}
-                                    className={pdfClassName}
-                                />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.NIST_800_190}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NAMESPACE}
-                                    className={pdfClassName}
-                                />
-                                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
-                                    <ComplianceByStandard
-                                        standardType={entityTypes.NIST_SP_800_53_Rev_4}
-                                        entityName={name}
-                                        entityId={id}
-                                        entityType={entityTypes.NAMESPACE}
-                                        className={pdfClassName}
-                                    />
-                                </FeatureEnabled>
-                                <ComplianceByStandard
-                                    standardType={entityTypes.HIPAA_164}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NAMESPACE}
-                                    className={pdfClassName}
-                                />
+                                {resourceTypeToApplicableStandards[resourceTypes.NAMESPACE].map(
+                                    standardType => (
+                                        <ComplianceByStandard
+                                            key={standardType}
+                                            standardType={standardType}
+                                            entityName={name}
+                                            entityId={id}
+                                            entityType={entityTypes.NAMESPACE}
+                                            className={pdfClassName}
+                                        />
+                                    )
+                                )}
                                 {sidePanelMode && (
                                     <>
                                         <div

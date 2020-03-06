@@ -1,5 +1,8 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, {
+    resourceTypes,
+    resourceTypeToApplicableStandards
+} from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
@@ -24,8 +27,6 @@ import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import isGQLLoading from 'utils/gqlLoading';
 import searchContext from 'Containers/searchContext';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import Header from './Header';
 
 function processData(data) {
@@ -191,37 +192,18 @@ const NodePage = ({
                                     <Labels labels={labels} />
                                 </Widget>
 
-                                <ComplianceByStandard
-                                    standardType={entityTypes.NIST_800_190}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
-                                />
-                                <FeatureEnabled featureFlag={knownBackendFlags.ROX_NIST_800_53}>
-                                    <ComplianceByStandard
-                                        standardType={entityTypes.NIST_SP_800_53_Rev_4}
-                                        entityName={name}
-                                        entityId={id}
-                                        entityType={entityTypes.NAMESPACE}
-                                        className={pdfClassName}
-                                    />
-                                </FeatureEnabled>
-
-                                <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Kubernetes_v1_5}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
-                                />
-                                <ComplianceByStandard
-                                    standardType={entityTypes.CIS_Docker_v1_2_0}
-                                    entityName={name}
-                                    entityId={id}
-                                    entityType={entityTypes.NODE}
-                                    className={pdfClassName}
-                                />
+                                {resourceTypeToApplicableStandards[resourceTypes.NODE].map(
+                                    standardType => (
+                                        <ComplianceByStandard
+                                            key={standardType}
+                                            standardType={standardType}
+                                            entityName={name}
+                                            entityId={id}
+                                            entityType={entityTypes.NODE}
+                                            className={pdfClassName}
+                                        />
+                                    )
+                                )}
                             </div>
                         </div>
                     );
