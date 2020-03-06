@@ -8,7 +8,6 @@ import queryService from 'modules/queryService';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Loader from 'Components/Loader';
-import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import ViewAllButton from 'Components/ViewAllButton';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { severityValues, severities } from 'constants/severities';
@@ -90,7 +89,13 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 <div className="flex mx-auto items-center">No scanner setup for this registry.</div>
             );
         } else if (!data.deployments[0].failingPolicies.length) {
-            content = <NoComponentVulnMessage />;
+            content = (
+                <NoResultsMessage
+                    message="This deployment does not violate any active system policies"
+                    className="p-6"
+                    icon="info"
+                />
+            );
         } else {
             const filteredData = processData(data.deployments[0].failingPolicies);
             const sunburstData = getSunburstData(filteredData);
