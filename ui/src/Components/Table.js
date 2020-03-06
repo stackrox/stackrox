@@ -12,7 +12,7 @@ export const defaultColumnClassName =
 export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
     'rt-tr-actions hidden right-0 p-0 mr-2 w-auto text-left self-center';
-export const pageSize = 50;
+export const DEFAULT_PAGE_SIZE = 50;
 
 class Table extends Component {
     static propTypes = {
@@ -101,7 +101,7 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 getTheadProps={this.getTheadProps}
-                defaultPageSize={pageSize}
+                defaultPageSize={DEFAULT_PAGE_SIZE}
                 defaultSorted={defaultSorted}
                 className={`flex flex-1 overflow-auto border-0 w-full h-full ${
                     rest.expanded ? 'expanded' : ''
@@ -110,7 +110,7 @@ class Table extends Component {
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}
-                minRows={Math.min(this.props.rows.length, pageSize)}
+                minRows={Math.min(this.props.rows.length, DEFAULT_PAGE_SIZE)}
                 page={this.props.page}
                 showPagination={false}
                 manual={manual}

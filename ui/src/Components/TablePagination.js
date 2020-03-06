@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import debounce from 'lodash/debounce';
 import clamp from 'lodash/clamp';
 
-import { pageSize as defaultPageSize } from './Table';
+import { DEFAULT_PAGE_SIZE as defaultPageSize } from './Table';
 
 // time to wait while user is typing, before firing off a new backend pagination call
 //   (see https://stackoverflow.com/a/44755058 for background)

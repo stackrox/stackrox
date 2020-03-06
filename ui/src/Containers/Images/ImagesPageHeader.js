@@ -9,7 +9,7 @@ import { fetchImages, fetchImageCount } from 'services/ImagesService';
 
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import { pageSize } from 'Components/Table';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 function ImagesPageHeader({
     currentPage,
@@ -42,8 +42,8 @@ function ImagesPageHeader({
     useEffect(
         () => {
             if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
-                fetchImages(searchOptions, sortOption, currentPage, pageSize).then(images =>
-                    setCurrentImages(images)
+                fetchImages(searchOptions, sortOption, currentPage, DEFAULT_PAGE_SIZE).then(
+                    images => setCurrentImages(images)
                 );
                 fetchImageCount(searchOptions).then(count => setImagesCount(count));
             }

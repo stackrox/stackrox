@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 import TableHeader from 'Components/TableHeader';
 import TablePagination from 'Components/TablePaginationV2';
-import { pageSize } from 'Components/Table';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import ImagesTable from './ImagesTable';
 
 function ImagesTablePanel({
@@ -17,7 +17,7 @@ function ImagesTablePanel({
     isViewFiltered,
     setSortOption
 }) {
-    const pageCount = Math.ceil(imagesCount / pageSize);
+    const pageCount = Math.ceil(imagesCount / DEFAULT_PAGE_SIZE);
     const paginationComponent = (
         <TablePagination pageCount={pageCount} page={currentPage} setPage={setCurrentPage} />
     );

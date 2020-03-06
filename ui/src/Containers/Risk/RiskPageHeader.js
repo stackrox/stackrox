@@ -9,7 +9,7 @@ import { fetchDeployments, fetchDeploymentsCount } from 'services/DeploymentsSer
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 
-import { pageSize } from 'Components/Table';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 function RiskPageHeader({
     currentPage,
@@ -48,7 +48,7 @@ function RiskPageHeader({
     useEffect(
         () => {
             if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
-                fetchDeployments(searchOptions, sortOption, currentPage, pageSize).then(
+                fetchDeployments(searchOptions, sortOption, currentPage, DEFAULT_PAGE_SIZE).then(
                     setCurrentDeployments
                 );
                 fetchDeploymentsCount(searchOptions).then(setDeploymentsCount);

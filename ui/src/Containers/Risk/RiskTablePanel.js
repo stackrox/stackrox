@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import TableHeader from 'Components/TableHeader';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePaginationV2';
-import { pageSize } from 'Components/Table';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 import RiskTable from './RiskTable';
 
@@ -18,7 +18,7 @@ function RiskTablePanel({
     setSortOption,
     isViewFiltered
 }) {
-    const pageCount = Math.ceil(deploymentCount / pageSize);
+    const pageCount = Math.ceil(deploymentCount / DEFAULT_PAGE_SIZE);
     const paginationComponent = (
         <TablePagination page={currentPage} pageCount={pageCount} setPage={setCurrentPage} />
     );

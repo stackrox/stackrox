@@ -20,7 +20,7 @@ import {
     NAMESPACE_LIST_FRAGMENT as VULN_NAMESPACE_LIST_FRAGMENT,
     POLICY_LIST_FRAGMENT as VULN_POLICY_LIST_FRAGMENT
 } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import { pageSize as defaultPageSize } from 'Components/Table';
+import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
 function objectToWhereClause(query) {
     if (!query) return '';
@@ -204,7 +204,7 @@ function getFragmentInfo(entityType, listType, useCase) {
     };
 }
 
-function getPagination(sort, page, pageSize = defaultPageSize) {
+function getPagination(sort, page, pageSize = DEFAULT_PAGE_SIZE) {
     const sortObj = Array.isArray(sort) ? sort[0] : sort; // Back end can't support multiple sort right now, so just taking first sort
 
     if (!sortObj) return null;

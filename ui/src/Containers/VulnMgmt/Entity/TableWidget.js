@@ -8,9 +8,9 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import TablePagination from 'Components/TablePagination';
-import Table from 'Components/Table';
+import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
-const TableWidget = ({ history, header, entityType, parentPageState, ...rest }) => {
+const TableWidget = ({ history, header, entityType, pageSize, parentPageState, ...rest }) => {
     const workflowState = useContext(workflowStateContext);
     const [localPage, setLocalPage] = useState(0);
     const {
@@ -38,6 +38,7 @@ const TableWidget = ({ history, header, entityType, parentPageState, ...rest }) 
         <div className="flex">
             {headerActions}
             <TablePagination
+                pageSize={pageSize}
                 page={currentPage}
                 dataLength={totalCount}
                 setPage={currentPageHandler}
@@ -86,6 +87,7 @@ TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
     history: ReactRouterPropTypes.history.isRequired,
     idAttribute: PropTypes.string,
+    pageSize: PropTypes.number,
     parentPageState: PropTypes.shape({
         page: PropTypes.number,
         setPage: PropTypes.func,
@@ -96,6 +98,7 @@ TableWidget.propTypes = {
 
 TableWidget.defaultProps = {
     idAttribute: 'id',
+    pageSize: DEFAULT_PAGE_SIZE,
     parentPageState: null
 };
 export default withRouter(TableWidget);

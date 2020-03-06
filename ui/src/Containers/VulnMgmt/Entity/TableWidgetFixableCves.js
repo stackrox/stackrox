@@ -108,6 +108,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
                     className="bg-base-100"
                     columns={getCveTableColumns(workflowState)}
                     idAttribute="cve"
+                    pageSize={LIST_PAGE_SIZE}
                     parentPageState={fixableCveState}
                 />
             )}
