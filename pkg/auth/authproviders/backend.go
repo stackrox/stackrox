@@ -20,10 +20,7 @@ type AuthResponse struct {
 
 // Backend is a backend for an authentication provider.
 type Backend interface {
-	Config(redact bool) map[string]string
-
-	// MergeConfigInfo merges the configuration of this backend into the new config.
-	MergeConfigInto(newCfg map[string]string) map[string]string
+	Config() map[string]string
 
 	// LoginURL returns a login URL with the given client state.
 	LoginURL(clientState string, ri *requestinfo.RequestInfo) string

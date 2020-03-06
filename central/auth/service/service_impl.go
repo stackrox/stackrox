@@ -53,9 +53,9 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	if provider := id.ExternalAuthProvider(); provider != nil {
 		// every Identity should now have an auth provider but API token Identities won't have a Backend
 		if backend := provider.Backend(); backend != nil {
-			result.RefreshUrl = provider.Backend().RefreshURL()
-			result.AuthProvider = provider.StorageView()
+			result.RefreshUrl = backend.RefreshURL()
 		}
+		result.AuthProvider = provider.StorageView()
 	}
 	if svc := id.Service(); svc != nil {
 		result.Id = &v1.AuthStatus_ServiceId{ServiceId: svc}

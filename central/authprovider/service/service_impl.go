@@ -156,10 +156,8 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 		return nil, status.Errorf(codes.InvalidArgument, "Provider with id %q does not exist", request.GetId())
 	}
 
-	// Opportunistically attempt to merge configs. If the backend isn't available, we cannot do anything about this.
-	if be := provider.Backend(); be != nil {
-		request.Config = be.MergeConfigInto(request.Config)
-	}
+	// Attempt to merge configs.
+	request.Config = provider.MergeConfigInto(request.GetConfig())
 
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {

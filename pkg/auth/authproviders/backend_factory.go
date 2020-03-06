@@ -21,6 +21,9 @@ type BackendFactory interface {
 
 	// ResolveProvider takes care of looking up the provider ID from an (opaque) state string.
 	ResolveProvider(state string) (providerID string, err error)
+
+	RedactConfig(config map[string]string) map[string]string
+	MergeConfig(newCfg, oldCfg map[string]string) map[string]string
 }
 
 // BackendFactoryCreator is a function for creating a BackendFactory, given a base URL (excluding trailing slashes) for

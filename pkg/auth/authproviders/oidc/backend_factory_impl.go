@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/maputil"
 )
 
 const (
@@ -36,7 +37,11 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 }
 
 func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
-	return newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config)
+	be, err := newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config)
+	if err != nil {
+		return nil, err
+	}
+	return be, nil
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -62,4 +67,24 @@ func (f *factory) ResolveProvider(state string) (string, error) {
 	}
 
 	return providerID, nil
+}
+
+func (f *factory) RedactConfig(config map[string]string) map[string]string {
+	if config[clientSecretConfigKey] != "" {
+		config = maputil.CloneStringStringMap(config)
+		config[clientSecretConfigKey] = "*****"
+	}
+	return config
+}
+
+func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+	mergedCfg := maputil.CloneStringStringMap(newCfg)
+	// This handles the case where the client sends an "unchanged" client secret. In that case,
+	// we will take the client secret from the stored config and put it into the merged config.
+	// We only put secret into the merged config if the new config says it wants to use a client secret, AND the client
+	// secret is not specified in the request.
+	if mergedCfg[dontUseClientSecretConfigKey] == "false" && mergedCfg[clientSecretConfigKey] == "" {
+		mergedCfg[clientSecretConfigKey] = oldCfg[clientSecretConfigKey]
+	}
+	return mergedCfg
 }

@@ -28,7 +28,11 @@ type ProviderCallbacks interface {
 
 func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, error) {
 	pathPrefix := f.callbackURLPath + id + "/"
-	return newBackend(ctx, pathPrefix, f.callbacks, config)
+	be, err := newBackend(ctx, pathPrefix, f.callbacks, config)
+	if err != nil {
+		return nil, err
+	}
+	return be, nil
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, err error) {
@@ -47,6 +51,14 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (pr
 
 func (f *factory) ResolveProvider(state string) (providerID string, err error) {
 	return state, nil
+}
+
+func (f *factory) RedactConfig(config map[string]string) map[string]string {
+	return config
+}
+
+func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+	return newCfg
 }
 
 // NewFactoryFactory is a method to return an authproviders.BackendFactory that contains a reference to the

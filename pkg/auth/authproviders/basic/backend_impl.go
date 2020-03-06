@@ -68,12 +68,8 @@ func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) s
 	return u.String()
 }
 
-func (p *backendImpl) Config(redact bool) map[string]string {
+func (p *backendImpl) Config() map[string]string {
 	return nil
-}
-
-func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
-	return newCfg
 }
 
 func (p *backendImpl) RefreshURL() string {

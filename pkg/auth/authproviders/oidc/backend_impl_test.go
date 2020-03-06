@@ -64,8 +64,8 @@ func TestMerge(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
-			b := &backendImpl{config: c.oldConfig}
-			merged := b.MergeConfigInto(c.newConfig)
+			f := &factory{}
+			merged := f.MergeConfig(c.newConfig, c.oldConfig)
 			assert.Equal(t, c.expectedConfig, merged)
 		})
 	}

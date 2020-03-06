@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -247,24 +246,8 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	return p, nil
 }
 
-func (p *backendImpl) Config(redact bool) map[string]string {
-	configCopy := maputil.CloneStringStringMap(p.config)
-	if redact && configCopy[clientSecretConfigKey] != "" {
-		configCopy[clientSecretConfigKey] = "*****"
-	}
-	return configCopy
-}
-
-func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
-	mergedCfg := maputil.CloneStringStringMap(newCfg)
-	// This handles the case where the client sends an "unchanged" client secret. In that case,
-	// we will take the client secret from the stored config and put it into the merged config.
-	// We only put secret into the merged config if the new config says it wants to use a client secret, AND the client
-	// secret is not specified in the request.
-	if mergedCfg[dontUseClientSecretConfigKey] == "false" && mergedCfg[clientSecretConfigKey] == "" {
-		mergedCfg[clientSecretConfigKey] = p.config[clientSecretConfigKey]
-	}
-	return mergedCfg
+func (p *backendImpl) Config() map[string]string {
+	return p.config
 }
 
 func (p *backendImpl) useCodeFlow() bool {

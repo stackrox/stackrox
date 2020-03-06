@@ -223,7 +223,12 @@ func (r *registryImpl) ExchangeToken(ctx context.Context, externalToken, typ, st
 		return "", "", status.Errorf(codes.NotFound, "could not locate auth provider %q", providerID)
 	}
 
-	authResp, clientState, err := provider.Backend().ExchangeToken(ctx, externalToken, state)
+	backend, err := provider.GetOrCreateBackend(ctx)
+	if err != nil {
+		return "", "", errors.Wrap(err, "auth provider backend unavailable")
+	}
+
+	authResp, clientState, err := backend.ExchangeToken(ctx, externalToken, state)
 	if err != nil {
 		return "", "", err
 	}
@@ -264,7 +269,7 @@ func (r *registryImpl) deletedNoLock(provider Provider) {
 	backend.OnDisable(provider)
 }
 
-func (r *registryImpl) resolveProviderAndBackend(providerType, providerID string) (Provider, Backend, error) {
+func (r *registryImpl) resolveProviderAndBackend(ctx context.Context, providerType, providerID string) (Provider, Backend, error) {
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
 		return nil, nil, errors.Errorf("provider with ID %q not found", providerID)
@@ -272,7 +277,12 @@ func (r *registryImpl) resolveProviderAndBackend(providerType, providerID string
 	if provider.Type() != providerType {
 		return nil, nil, errors.Errorf("provider with ID %q has unexpected type %q (expected: %q)", provider.ID(), provider.Type(), providerType)
 	}
-	backend := provider.Backend()
+
+	backend, err := provider.GetOrCreateBackend(ctx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "auth provider backend unavailable")
+	}
+
 	if !provider.Enabled() {
 		backend = nil
 	}

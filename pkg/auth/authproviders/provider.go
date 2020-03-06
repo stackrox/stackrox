@@ -1,8 +1,9 @@
 package authproviders
 
 import (
-	"github.com/pkg/errors"
+	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -14,11 +15,25 @@ type Provider interface {
 
 	Name() string
 	Type() string
+
+	// Enabled returns whether this auth provider is enabled. Note that an enabled auth provider can have a `nil`
+	// Backend (if there were errors instantiating it) and vice versa.
 	Enabled() bool
+
+	MergeConfigInto(newCfg map[string]string) map[string]string
 
 	// StorageView returns a description of the authentication provider in protobuf format.
 	StorageView() *storage.AuthProvider
+
+	BackendFactory() BackendFactory
+
+	// Backend returns the backend of this auth provider, if one exists. The result might be nil if there was an error
+	// instantiating this backend. Note that whether a `nil` or non-`nil` value is returned here is entirely independent
+	// of what Enabled() returns.
 	Backend() Backend
+
+	GetOrCreateBackend(ctx context.Context) (Backend, error)
+
 	RoleMapper() permissions.RoleMapper
 	Issuer() tokens.Issuer
 

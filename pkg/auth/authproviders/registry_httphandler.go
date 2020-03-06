@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -95,7 +96,14 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 	}
 
 	ri := requestinfo.FromContext(req.Context())
-	loginURL := provider.Backend().LoginURL(clientState, &ri)
+
+	backend, err := provider.GetOrCreateBackend(req.Context())
+	if err != nil {
+		w.Header().Set("Location", r.errorURL(errors.Wrap(err, "auth provider is unavailable"), provider.Type(), "").String())
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+	loginURL := backend.LoginURL(clientState, &ri)
 	if loginURL == "" {
 		http.Error(w, "could not get login URL", http.StatusInternalServerError)
 		return
@@ -121,7 +129,7 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 		return nil, httputil.Errorf(http.StatusBadRequest, "unparseable data in refresh token cookie: %v", err)
 	}
 
-	provider, providerBackend, err := r.resolveProviderAndBackend(cookieData.ProviderType, cookieData.ProviderID)
+	provider, providerBackend, err := r.resolveProviderAndBackend(req.Context(), cookieData.ProviderType, cookieData.ProviderID)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusBadRequest, "refresh token cookie references invalid auth provider %q: %v", cookieData.ProviderID, err)
 	}
@@ -200,7 +208,13 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	authResp, clientState, err := provider.Backend().ProcessHTTPRequest(w, req)
+	backend, err := provider.GetOrCreateBackend(req.Context())
+	if err != nil {
+		w.Header().Set("Location", r.errorURL(err, typ, "").String())
+		w.WriteHeader(http.StatusSeeOther)
+		return
+	}
+	authResp, clientState, err := backend.ProcessHTTPRequest(w, req)
 	var tokenInfo *tokens.TokenInfo
 	var refreshToken string
 
@@ -276,7 +290,7 @@ func (r *registryImpl) logoutEndpoint(req *http.Request) (interface{}, error) {
 		return nil, nil // not using refresh tokens
 	}
 
-	provider, backend, err := r.resolveProviderAndBackend(cookieData.ProviderType, cookieData.ProviderID)
+	provider, backend, err := r.resolveProviderAndBackend(req.Context(), cookieData.ProviderType, cookieData.ProviderID)
 	if err != nil {
 		return nil, httputil.Errorf(http.StatusBadRequest, "Failed to resolve provider backend for revoking refresh token: %v", err)
 	}

@@ -79,13 +79,15 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 			return fmt.Errorf("no backend factories for provider type: %s", pr.storedInfo.Type)
 		}
 
+		pr.backendFactory = backendFactory
+
 		// Create the backend for the provider.
 		backend, err := backendFactory.CreateBackend(ctx, pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
 		if err != nil {
 			return errors.Wrapf(err, "unable to create backend for provider id %s", pr.storedInfo.Id)
 		}
 		pr.backend = backend
-		pr.storedInfo.Config = backend.Config(false)
+		pr.storedInfo.Config = backend.Config()
 		return nil
 	}
 }

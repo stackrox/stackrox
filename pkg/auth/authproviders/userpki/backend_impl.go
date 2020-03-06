@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -66,12 +65,8 @@ type backendImpl struct {
 	config       map[string]string
 }
 
-func (p *backendImpl) Config(redact bool) map[string]string {
-	return maputil.CloneStringStringMap(p.config)
-}
-
-func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
-	return newCfg
+func (p *backendImpl) Config() map[string]string {
+	return p.config
 }
 
 func (p *backendImpl) OnEnable(provider authproviders.Provider) {

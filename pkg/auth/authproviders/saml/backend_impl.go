@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -103,12 +102,8 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 	return p, nil
 }
 
-func (p *backendImpl) Config(redact bool) map[string]string {
-	return maputil.CloneStringStringMap(p.config)
-}
-
-func (p *backendImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
-	return newCfg
+func (p *backendImpl) Config() map[string]string {
+	return p.config
 }
 
 func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.AuthResponse, error) {

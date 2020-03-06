@@ -39,7 +39,11 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	if mgr == nil {
 		return nil, errors.New("basic auth manager missing from context")
 	}
-	return newBackend(providerURLPathPrefix, mgr)
+	be, err := newBackend(providerURLPathPrefix, mgr)
+	if err != nil {
+		return nil, err
+	}
+	return be, nil
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -52,6 +56,14 @@ func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (st
 	}
 	pathComponents := strings.SplitN(restPath, "/", 2)
 	return pathComponents[0], nil
+}
+
+func (f *factory) RedactConfig(config map[string]string) map[string]string {
+	return config
+}
+
+func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+	return newCfg
 }
 
 func (f *factory) ResolveProvider(state string) (string, error) {

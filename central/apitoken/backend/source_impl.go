@@ -71,9 +71,22 @@ func (s *sourceImpl) StorageView() *storage.AuthProvider {
 	return nil
 }
 
+func (s *sourceImpl) BackendFactory() authproviders.BackendFactory {
+	// API token sources have no Backend factory
+	return nil
+}
+
+func (s *sourceImpl) MergeConfigInto(newCfg map[string]string) map[string]string {
+	return newCfg
+}
+
 func (s *sourceImpl) Backend() authproviders.Backend {
 	// API token sources have no Backend
 	return nil
+}
+
+func (s *sourceImpl) GetOrCreateBackend(ctx context.Context) (authproviders.Backend, error) {
+	return nil, nil
 }
 
 func (s *sourceImpl) RoleMapper() permissions.RoleMapper {

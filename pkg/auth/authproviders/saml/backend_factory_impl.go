@@ -161,6 +161,14 @@ func (f *factory) autoRouteACSRequest(req *http.Request) (string, error) {
 	}
 }
 
+func (f *factory) RedactConfig(config map[string]string) map[string]string {
+	return config
+}
+
+func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]string {
+	return newCfg
+}
+
 func filterBackendsByOrigin(req *http.Request, backends []*backendImpl) []*backendImpl {
 	var baseURLs []string
 
