@@ -142,6 +142,16 @@ class Kubernetes implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
+    def updateDeployment(Deployment deployment) {
+        if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
+            println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
+        } else {
+            println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+        }
+        // Our createDeployment actually uses createOrReplace so it should work for these purposes
+        return createDeployment(deployment)
+    }
+
     def batchCreateDeployments(List<Deployment> deployments) {
         for (Deployment deployment : deployments) {
             ensureNamespaceExists(deployment.namespace)

@@ -20,6 +20,7 @@ interface OrchestratorMain {
     def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep)
     def createDeploymentNoWait(Deployment deployment)
     def createDeployment(Deployment deployment)
+    def updateDeployment(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
     def deleteAndWaitForDeploymentDeletion(Deployment... deployments)
     def deleteDeployment(Deployment deployment)

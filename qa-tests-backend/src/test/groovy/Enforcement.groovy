@@ -1,4 +1,3 @@
-
 import static Services.waitForViolation
 import groups.BAT
 import groups.Integration
@@ -18,6 +17,7 @@ import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import util.Timer
 
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
@@ -725,4 +725,62 @@ class Enforcement extends BaseSpecification {
             orchestrator.deleteDeployment(wpDeployment)
         }
     }
+
+    @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Enforcement not done on updated - Integration"() {
+        // This test verifies enforcement by triggering a policy violation on a policy
+        // that is configured for scale-down enforcement, but not applying enforcements because
+        // the policy is only violated once the deployment has been updated
+
+        def startEnforcements = null
+
+        given:
+        "Create Deployment to test scale-down enforcement"
+        Deployment d = new Deployment()
+                .setName("scale-down-enforcement-int")
+                .setImage("busybox")
+                .addPort(22)
+                .addLabel("app", "scale-down-enforcement-int")
+                .setCommand(["sleep", "600"])
+                .setSkipReplicaWait(true)
+        orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d)
+
+        when:
+        "get violation details"
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                CONTAINER_PORT_22_POLICY,
+                30
+        ) as List<AlertOuterClass.ListAlert>
+        assert violations != null && violations?.size() > 0
+
+        and:
+        "Add scale-down enforcement to an existing policy"
+        startEnforcements = Services.updatePolicyEnforcement(
+                CONTAINER_PORT_22_POLICY,
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
+        )
+
+        and:
+        "Update deployment to have 2 replicas to potentially trigger enforcement"
+        d.replicas = 2
+        orchestrator.updateDeployment(d)
+
+        then:
+        "check deployment was NOT scaled-down to 0 replicas"
+        // Wait for 10s to ensure that the deployment was not scaled down
+
+        Timer t = new Timer(10, 1)
+        println "Verifying that enforcement action was not taken"
+        while (t.IsValid()) {
+            assert orchestrator.getDeploymentReplicaCount(d) == 2
+        }
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
+        orchestrator.deleteDeployment(d)
+    }
+
 }
