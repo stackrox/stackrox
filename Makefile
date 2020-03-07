@@ -327,6 +327,9 @@ upgrader: bin/$(HOST_OS)/upgrader
 bin/%/upgrader: build-prep
 	GOOS=$* $(GOBUILD) ./sensor/upgrader
 
+bin/%/admission-control: build-prep
+	GOOS=$* $(GOBUILD) ./sensor/admission-control
+
 .PHONY: main-build
 main-build: build-prep
 	@echo "+ $@"
@@ -334,9 +337,9 @@ main-build: build-prep
 	@# The only exception is that `roxctl` should not be built in CI here, since it's built separately when in CI.
 	@# This isn't pretty, but it saves 30 seconds on every build, which seems worth it.
 ifdef CI
-	$(GOBUILD) central migrator sensor/kubernetes sensor/upgrader compliance/collection
+	$(GOBUILD) central migrator sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection
 else
-	$(GOBUILD) central migrator sensor/kubernetes sensor/upgrader compliance/collection roxctl
+	$(GOBUILD) central migrator sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection roxctl
 endif
 
 .PHONY: scale-build
@@ -488,9 +491,10 @@ endif
 	cp bin/$(HOST_OS)/roxctl image/bin/roxctl-$(HOST_OS)
 endif
 	cp bin/linux/migrator image/bin/migrator
-	cp bin/linux/kubernetes image/bin/kubernetes-sensor
-	cp bin/linux/upgrader   image/bin/sensor-upgrader
-	cp bin/linux/collection image/bin/compliance
+	cp bin/linux/kubernetes        image/bin/kubernetes-sensor
+	cp bin/linux/upgrader          image/bin/sensor-upgrader
+	cp bin/linux/admission-control image/bin/admission-control
+	cp bin/linux/collection        image/bin/compliance
 
 ifdef CI
 	@[ -d image/THIRD_PARTY_NOTICES ] || { echo "image/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }

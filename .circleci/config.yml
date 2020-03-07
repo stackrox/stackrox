@@ -1479,6 +1479,7 @@ jobs:
             - bin/linux/central
             - bin/linux/migrator
             - bin/linux/kubernetes
+            - bin/linux/admission-control
             - bin/linux/upgrader
             - bin/linux/collection
             - image/docs # This will go into the image as generated docs.
