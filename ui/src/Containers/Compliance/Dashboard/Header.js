@@ -17,32 +17,33 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
 
     return (
         <PageHeader classes={classes} bgStyle={bgStyle} header="Compliance" subHeader="Dashboard">
-            <div className="flex flex-1 justify-end">
-                <Tile entityType={entityTypes.CLUSTER} position="first" />
-                <Tile entityType={entityTypes.NAMESPACE} position="middle" />
-                <Tile entityType={entityTypes.NODE} position="middle" />
-                <Tile entityType={entityTypes.DEPLOYMENT} position="last" />
-                <div className="ml-3 border-l border-base-100 mr-3 opacity-50" />
+            <div className="flex w-full justify-end">
                 <div className="flex">
+                    <Tile entityType={entityTypes.CLUSTER} position="first" />
+                    <Tile entityType={entityTypes.NAMESPACE} position="middle" />
+                    <Tile entityType={entityTypes.NODE} position="middle" />
+                    <Tile entityType={entityTypes.DEPLOYMENT} position="last" />
+                    <div className="ml-1 border-l-2 border-base-400 mr-3" />
                     <div className="flex items-center">
-                        <ScanButton
-                            className={`flex items-center justify-center border-2 border-primary-400 rounded px-2 uppercase lg:min-w-32 xl:min-w-43 h-10 ${darkModeClasses}`}
-                            text="Scan environment"
-                            textClass="hidden lg:block"
-                            textCondensed="Scan all"
-                            clusterId="*"
-                            standardId="*"
-                        />
-                    </div>
-                    <div className="flex items-center">
-                        <ExportButton
-                            className={`flex items-center border-2 border-primary-400 rounded p-2 uppercase h-10 ${darkModeClasses}`}
-                            fileName="Compliance Dashboard Report"
-                            textClass="hidden lg:block"
-                            type="ALL"
-                            page={useCaseTypes.COMPLIANCE}
-                            pdfId="capture-dashboard"
-                        />
+                        <div className="flex items-center">
+                            <ScanButton
+                                className={`flex items-center justify-center border-2 btn btn-base h-10 uppercase lg:min-w-32 xl:min-w-43 ${darkModeClasses}`}
+                                text="Scan environment"
+                                textClass="hidden lg:block"
+                                textCondensed="Scan all"
+                                clusterId="*"
+                                standardId="*"
+                            />
+                        </div>
+                        <div className="flex items-center">
+                            <ExportButton
+                                fileName="Compliance Dashboard Report"
+                                textClass="hidden lg:block"
+                                type="ALL"
+                                page={useCaseTypes.COMPLIANCE}
+                                pdfId="capture-dashboard"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

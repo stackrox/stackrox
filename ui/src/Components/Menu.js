@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
 const optionsClass =
-    'flex items-center relative text-left px-2 py-3 text-sm border-b border-primary-300 hover:bg-base-200 capitalize';
+    'flex items-center relative text-left px-2 py-3 text-sm border-b border-base-400 hover:bg-base-200 capitalize';
 
 const Menu = ({
     buttonClass,

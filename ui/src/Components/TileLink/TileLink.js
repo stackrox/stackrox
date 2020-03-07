@@ -13,14 +13,8 @@ export const POSITION = {
 };
 
 const getClassNameByPosition = position => {
-    if (position === POSITION.FIRST) {
-        return 'border-r-0 rounded-r-none';
-    }
-    if (position === POSITION.MIDDLE) {
-        return 'border-r-0 rounded-r-none rounded-l-none';
-    }
     if (position === POSITION.LAST) {
-        return 'rounded-l-none';
+        return 'mr-0';
     }
     return '';
 };
@@ -54,9 +48,9 @@ const TileLink = ({
         />
     );
     let classes = '';
-    const positionClasses = `flex flex-col items-center justify-center py-2 border-2 rounded min-w-20 px-2 lg:px-4`;
-    const colors = 'text-base-600 hover:bg-base-200 border-primary-400 bg-base-100';
-    const darkModeColors = 'text-base-600 border-base-400 hover:bg-base-200';
+    const positionClasses = `w-full flex flex-col items-center justify-center py-2 border-2 rounded-sm min-w-24 px-2 lg:px-4`;
+    const colors = 'text-base-600 hover:bg-base-200 border-base-400 bg-base-100';
+    const darkModeColors = 'text-base-600 bg-base-100 border-base-400 hover:bg-base-200';
     const errorColors = 'text-alert-700 bg-alert-200 hover:bg-alert-300 border-alert-400';
     const errorDarkModeColors =
         'text-base-100 bg-alert-100 hover:bg-alert-200 border-alert-200 hover:bg-alert-300';
@@ -70,7 +64,7 @@ const TileLink = ({
     }
     classes += ` ${positionClassName} ${colorClasses} ${short ? 'h-full' : 'min-h-14'}`;
     return (
-        <Link to={url} className="no-underline" data-test-id={dataTestId}>
+        <Link to={url} className="no-underline mr-2 flex w-full" data-test-id={dataTestId}>
             <div className={classes}>{content}</div>
         </Link>
     );

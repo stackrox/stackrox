@@ -239,11 +239,11 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 className="bg-base-100 min-h-48 w-full h-full pdf-page pdf-stretch"
                             >
                                 <div className="flex flex-col w-full">
-                                    <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col xl:flex-row items-start xl:items-center justify-between">
+                                    <div className="w-full bg-primary-200 text-2xl text-base-500 flex flex-col md:flex-row items-start md:items-center justify-between mb-2">
                                         <div className="w-full flex-grow p-4">
                                             <span>{name}</span>
                                         </div>
-                                        <div className="w-full flex border-t border-base-400 xl:border-t-0 justify-end items-center">
+                                        <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
                                             <span className="flex flex-col items-center text-center px-4 py-4 border-base-400 border-l">
                                                 <span className="mb-2 text-xl">Severity:</span>
                                                 <SeverityLabel severity={severity} />
@@ -276,27 +276,27 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                         </div>
                         <div className="sx-1">
                             <Metadata
-                                className="h-full w-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full w-full min-w-48 bg-base-100 pdf-page h-full"
                                 keyValuePairs={details}
                                 title="Details"
                             />
                         </div>
                         <div className="s-1">
                             <PolicyConfigurationFields
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page"
+                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
                                 fields={fields}
                             />
                         </div>
                         <div className="s-1">
                             <Metadata
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page"
+                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
                                 keyValuePairs={scopeDetails}
                                 title="Scope"
                             />
                         </div>
                         <div className="s-1">
                             <Metadata
-                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page"
+                                className="flex-1 min-w-48 bg-base-100 min-h-48 pdf-page h-full"
                                 keyValuePairs={whitelistDetails}
                                 title="Whitelist"
                             />

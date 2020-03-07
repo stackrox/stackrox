@@ -16,7 +16,7 @@ const NumberedList = ({ data, linkLeftOnly }) => {
         let leftSide = (
             <>
                 {i + 1}.&nbsp;{text}&nbsp;
-                {subText && <span className="text-base-500 text-xs">{subText}</span>}
+                {subText && <span className="text-base-500 italic">{subText}</span>}
             </>
         );
         if (url && linkLeftOnly) {

@@ -11,7 +11,7 @@ const TileContent = ({ className, superText, subText, icon, text, short, textCol
             )}
             {icon !== null && <div className="p-1 flex justify-center">{icon}</div>}
             <div
-                className="flex items-center font-600 font-condensed uppercase justify-center"
+                className="flex whitespace-no-wrap items-center font-600 font-condensed uppercase justify-center"
                 data-test-id="tile-link-value"
             >
                 {text}

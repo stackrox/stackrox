@@ -59,8 +59,8 @@
     --success-400: hsla(155, 68%, 78%, 1);
     --success-500: hsla(155, 66%, 68%, 1);
     --success-600: hsla(155, 52%, 46%, 1);
-    --success-700: hsla(155, 62%, 37%, 1);
-    --success-800: hsla(155, 37%, 36%, 1);
+    --success-700: hsla(155, 62%, 33%, 1);
+    --success-800: hsla(155, 37%, 31%, 1);
     --success-900: hsla(155, 28%, 21%, 1);
 
     --warning-100: hsla(39, 45%, 98%, 1);
@@ -647,7 +647,7 @@ h6 {
 }
 
 .btn-class {
-    @apply inline-flex px-1 rounded-sm font-600 uppercase text-center items-center min-w-24 justify-center border-2 !important;
+    @apply inline-flex px-2 rounded-sm font-600 uppercase text-center items-center min-w-16 justify-center border-2 !important;
     line-height: 14px; /* required because we were relying on the Chrome browser default of 14px earlier */
 }
 
@@ -696,11 +696,11 @@ h6 {
 }
 
 .btn-base {
-    @apply text-base-600 border-base-300 bg-base-100 text-base-600 !important;
+    @apply text-base-600 border-base-400 bg-base-100 text-base-600 !important;
 }
 
 .btn-base:hover {
-    @apply btn-base bg-base-200 border-base-400 text-base-700 !important;
+    @apply btn-base bg-base-200 text-base-700 !important;
 }
 
 /* Network Graph CSS Classes */
@@ -1128,7 +1128,7 @@ h6 {
 
 /* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {
-    padding: 3px 10px;
+    padding: 3px 4px;
 }
 
 .horizontal-bar-legend {

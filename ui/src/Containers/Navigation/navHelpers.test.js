@@ -44,7 +44,7 @@ describe('nav helpers', () => {
                     to: '/main/compliance'
                 },
                 {
-                    text: 'Config Management',
+                    text: 'Configuration Management',
                     to: '/main/configmanagement',
                     featureFlag: mockFeatureFlags[0].envVar
                 },
@@ -68,7 +68,7 @@ describe('nav helpers', () => {
                     featureFlag: mockFeatureFlags[1].envVar
                 },
                 {
-                    text: 'Config Management',
+                    text: 'Configuration Management',
                     to: '/main/configmanagement'
                 },
                 {

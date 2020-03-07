@@ -8,7 +8,7 @@ import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 const getBackgroundColor = colorType => {
     const color = colorTypes.find(datum => datum === colorType);
     if (!color) return defaultColorType;
-    return `bg-${color}-400`;
+    return `bg-${color}-500`;
 };
 
 const PercentageStackedPill = ({ data, tooltip }) => {
@@ -24,7 +24,7 @@ const PercentageStackedPill = ({ data, tooltip }) => {
     const { title: tooltipTitle, body: tooltipBody } = tooltip || {};
     const content = (
         <div
-            className="flex rounded-full w-full min-w-10 max-w-24 h-3 border border-base-300 bg-base-200"
+            className="flex rounded-full w-full min-w-10 max-w-24 h-3 bg-base-300"
             style={{ boxShadow: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .10) !important' }}
         >
             {pills}

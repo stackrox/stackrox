@@ -5,7 +5,7 @@ import Select from 'Components/ReactSelect';
 
 const DropdownIndicator = () => {
     return (
-        <ChevronDown className="h-5 w-5 text-primary-800 border-2 border-primary-200 rounded-full" />
+        <ChevronDown className="h-5 w-5 text-primary-800 border-2 border-base-400 rounded-full" />
     );
 };
 

@@ -247,14 +247,14 @@ class LoginPage extends Component {
             <AppWrapper>
                 <section
                     className={`flex flex-col items-center justify-center h-full py-5 ${
-                        isDarkMode ? 'bg-base-300' : 'bg-primary-800'
+                        isDarkMode ? 'bg-base-0' : 'bg-primary-800'
                     } `}
                 >
                     <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative">
                         {this.renderAuthError()}
                     </div>
                     <form
-                        className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg"
+                        className="flex flex-col shadow items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg"
                         onSubmit={this.props.handleSubmit(this.login)}
                     >
                         <UnreachableWarning />

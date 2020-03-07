@@ -60,7 +60,7 @@ const BreadCrumbLinks = props => {
         const link = getLink(match, location, i, length);
         const content = link ? (
             <Link
-                className="text-primary-700 truncate uppercase truncate"
+                className="text-primary-700 underline uppercase truncate"
                 title={state.name}
                 to={link}
             >

@@ -91,8 +91,8 @@ export function getPolicyTableColumns(workflowState) {
         },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-24 text-center ${nonSortableHeaderClassName}`,
+            className: `w-24 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <div className="flex justify-center w-full">
                     <StatusChip status={original.policyStatus} asString={pdf} />

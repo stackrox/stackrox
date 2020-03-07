@@ -29,8 +29,8 @@ const TileList = ({ items, title }) => {
                         <TileLink
                             colorClasses={` ${
                                 !isDarkMode
-                                    ? ''
-                                    : 'border-tertiary-300 hover:bg-tertiary-100 hover:border-tertiary-400'
+                                    ? 'border-primary-400 hover:bg-primary-200 rounded'
+                                    : 'rounded bg-tertiary-200 border-tertiary-300 hover:bg-tertiary-100 hover:border-tertiary-400'
                             }  `}
                             superText={count}
                             text={label}

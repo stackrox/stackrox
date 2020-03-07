@@ -67,6 +67,16 @@ const VulnDashboardPage = ({ history }) => {
     const headerComponents = (
         <>
             <div className="flex items-center">
+                <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
+                    <PoliciesCountTile />
+                    <CvesCountTile />
+                    <div className="flex w-32">
+                        <DashboardMenu
+                            text="Application & Infrastructure"
+                            options={createOptions(entityMenuTypes, workflowState)}
+                        />
+                    </div>
+                </div>
                 <RadioButtonGroup
                     buttons={cveFilterButtons}
                     headerText="Filter CVEs"
@@ -78,16 +88,6 @@ const VulnDashboardPage = ({ history }) => {
                     page={workflowState.useCase}
                     pdfId="capture-dashboard"
                 />
-            </div>
-            <div className="flex h-full ml-3 pl-3 border-l border-base-400">
-                <PoliciesCountTile />
-                <CvesCountTile />
-                <div className="flex w-32">
-                    <DashboardMenu
-                        text="Application & Infrastructure"
-                        options={createOptions(entityMenuTypes, workflowState)}
-                    />
-                </div>
             </div>
         </>
     );

@@ -1,1 +1,17 @@
-<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1263.04 218"><defs><style>.cls-1{fill-rule:evenodd;fill:url(#linear-gradient);}</style><linearGradient id="linear-gradient" x1="-48.89" y1="491.76" x2="-49.89" y2="492.76" gradientTransform="matrix(1271.08, 0, 0, -217.11, 63449.04, 106977.07)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="hsl(226, 64%, 56%)"/><stop offset="1" stop-color="hsl(226, 70%, 60%)"/></linearGradient></defs><title>wave-bg</title><path class="cls-1" d="M-4,.13H1267.12V186.64q-97.93,19-129.37,19c-31.44,0-116.3-28.4-151.6-21.8-33.46,6.26-82.74,21.68-139.65,21.8-72.41.15-148.52-7.43-182.79-7.43-51.48,0-51.48,19.06-108.72,19.06-45.14,0-92.14-33.43-153.55-33.43-54.79,0-62.79,14.28-88.82,14.28-29.92,0-46.65-11.45-193-11.45q-29.2,0-123.47,7.17Z"/></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1272px" height="218px" viewBox="0 0 1272 218" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 54.1 (76490) - https://sketchapp.com -->
+    <title>Path</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <linearGradient x1="-45.9609814%" y1="47.1951708%" x2="166.353581%" y2="53.4424968%" id="linearGradient-1">
+            <stop stop-color="#F8F1FF" offset="0%"></stop>
+            <stop stop-color="#D5EAFF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="wave-bg-2" fill="url(#linearGradient-1)" fill-rule="nonzero">
+            <path d="M0,5.68434189e-14 L1271.12,5.68434189e-14 L1271.12,186.51 C1205.83333,199.176667 1162.71,205.51 1141.75,205.51 C1110.31,205.51 1025.45,177.11 990.15,183.71 C956.69,189.97 907.41,205.39 850.5,205.51 C778.09,205.66 701.98,198.08 667.71,198.08 C616.23,198.08 616.23,217.14 558.99,217.14 C513.85,217.14 466.85,183.71 405.44,183.71 C350.65,183.71 342.65,197.99 316.62,197.99 C286.7,197.99 269.97,186.54 123.62,186.54 C104.153333,186.54 62.9966667,188.93 0.15,193.71 L0,5.68434189e-14 Z" id="Path"></path>
+        </g>
+    </g>
+</svg>

@@ -15,7 +15,7 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
         <span className="flex flex-col max-w-full" data-test-id="breadcrumb-link-text">
             {url ? (
                 <Link
-                    className="text-primary-700 truncate uppercase truncate"
+                    className="text-primary-700 underline uppercase truncate"
                     title={`${title}`}
                     to={url}
                 >

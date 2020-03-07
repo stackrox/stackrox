@@ -78,7 +78,7 @@ class ScanButton extends React.Component {
                                         icon={
                                             <Icon.RefreshCcw
                                                 size="14"
-                                                className="mx-1 lg:ml-1 lg:mr-3"
+                                                className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
                                             />
                                         }
                                         onClick={this.onClick(triggerScan)}
