@@ -36,6 +36,10 @@ message Policy {
     bool   SORT_enforcement                        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
 }
 
+message PolicyList {
+    repeated Policy policies = 1;
+}
+
 message ListPolicy {
     string   id                                 = 1;
     string   name                               = 2;

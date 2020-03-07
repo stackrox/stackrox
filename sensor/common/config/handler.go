@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 )
 
 var (
@@ -24,15 +25,18 @@ type Handler interface {
 }
 
 // NewCommandHandler returns a new instance of a Handler using the input image and Orchestrator.
-func NewCommandHandler() Handler {
+func NewCommandHandler(admCtrlConfigPersister admissioncontroller.ConfigPersister) Handler {
 	return &configHandlerImpl{
-		stopC: concurrency.NewErrorSignal(),
+		stopC:                  concurrency.NewErrorSignal(),
+		admCtrlConfigPersister: admCtrlConfigPersister,
 	}
 }
 
 type configHandlerImpl struct {
 	config *storage.DynamicClusterConfig
 	lock   sync.RWMutex
+
+	admCtrlConfigPersister admissioncontroller.ConfigPersister
 
 	stopC concurrency.ErrorSignal
 }
@@ -67,6 +71,9 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		c.lock.Lock()
 		defer c.lock.Unlock()
 		c.config = config.Config
+		if c.admCtrlConfigPersister != nil {
+			c.admCtrlConfigPersister.UpdateConfig(config.GetConfig().GetAdmissionControllerConfig())
+		}
 		return nil
 	}
 }

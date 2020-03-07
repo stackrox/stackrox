@@ -1807,6 +1807,7 @@ jobs:
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
+      - ROX_ADMISSION_CONTROL_SERVICE: true
 
     steps:
       - checkout

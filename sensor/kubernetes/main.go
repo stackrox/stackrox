@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -22,6 +23,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
@@ -56,10 +59,16 @@ func main() {
 	upgradeCmdHandler, err := k8sUpgrade.NewCommandHandler()
 	utils.Must(err)
 
-	configHandler := config.NewCommandHandler()
+	var admCtrlConfigPersister admissioncontroller.ConfigPersister
+	if features.AdmissionControlService.Enabled() {
+		admCtrlConfigPersister = k8sadmctrl.NewConfigPersister(client.MustCreateClientSet())
+	}
+
+	configHandler := config.NewCommandHandler(admCtrlConfigPersister)
 
 	enforcer := enforcer.MustCreate()
-	policyDetector := detector.New(enforcer)
+
+	policyDetector := detector.New(enforcer, admCtrlConfigPersister)
 	listener := listener.New(configHandler, policyDetector)
 
 	o := orchestrator.New()
@@ -77,6 +86,10 @@ func main() {
 		upgradeCmdHandler,
 		complianceCommandHandler,
 		processSignals,
+	}
+
+	if admCtrlConfigPersister != nil {
+		components = append(components, admCtrlConfigPersister)
 	}
 
 	if features.DiagnosticBundle.Enabled() || features.Telemetry.Enabled() {

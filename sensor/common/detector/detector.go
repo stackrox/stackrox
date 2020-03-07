@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/detector/whitelist"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"google.golang.org/grpc"
@@ -34,7 +35,7 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer) Detector {
+func New(enforcer enforcer.Enforcer, admCtrlConfigPersister admissioncontroller.ConfigPersister) Detector {
 	builder := matcher.NewBuilder(
 		matcher.NewRegistry(
 			nil,
@@ -55,6 +56,8 @@ func New(enforcer enforcer.Enforcer) Detector {
 		whitelistEval:   whitelist.NewWhitelistEvaluator(),
 		deduper:         newDeduper(),
 		enforcer:        enforcer,
+
+		admCtrlConfigPersister: admCtrlConfigPersister,
 
 		detectorStopper:   concurrency.NewStopper(),
 		serializerStopper: concurrency.NewStopper(),
@@ -78,6 +81,8 @@ type detectorImpl struct {
 	whitelistEval   whitelist.Evaluator
 	enforcer        enforcer.Enforcer
 	deduper         *deduper
+
+	admCtrlConfigPersister admissioncontroller.ConfigPersister
 
 	detectorStopper   concurrency.Stopper
 	serializerStopper concurrency.Stopper
@@ -203,6 +208,10 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 		return isLifecycleStage(p, storage.LifecycleStage_RUNTIME) && p.GetFields().GetWhitelistEnabled()
 	})
 	d.deduper.reset()
+
+	if d.admCtrlConfigPersister != nil {
+		d.admCtrlConfigPersister.UpdatePolicies(sync.GetPolicies())
+	}
 	return nil
 }
 

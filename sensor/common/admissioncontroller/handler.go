@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
-	"github.com/stackrox/rox/sensor/common/config"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
 	apps "k8s.io/api/apps/v1"
@@ -60,19 +59,24 @@ var (
 		}).Parse(kubectlTemplate))
 )
 
+// DynamicConfigProvider abstracts access to the dynamic cluster configuration.
+type DynamicConfigProvider interface {
+	GetConfig() *storage.DynamicClusterConfig
+}
+
 // NewHandler returns a handler that proxies admission controllers to Central
-func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configHandler config.Handler) http.Handler {
+func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag, configProvider DynamicConfigProvider) http.Handler {
 	return &handlerImpl{
 		client:           v1.NewDetectionServiceClient(conn),
 		centralReachable: centralReachable,
-		configHandler:    configHandler,
+		configProvider:   configProvider,
 	}
 }
 
 type handlerImpl struct {
 	client           v1.DetectionServiceClient
 	centralReachable *concurrency.Flag
-	configHandler    config.Handler
+	configProvider   DynamicConfigProvider
 }
 
 func admissionPass(w http.ResponseWriter, id types.UID) {
@@ -175,7 +179,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Can guarantee that there is an admission controller config because we receive it between central reachable is set to true
-	conf := s.configHandler.GetConfig().GetAdmissionControllerConfig()
+	conf := s.configProvider.GetConfig().GetAdmissionControllerConfig()
 
 	// If admission controller is not enabled in dynamic config, then always pass
 	if !conf.GetEnabled() {
@@ -183,7 +187,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deployment, err := parseIntoDeployment(&admissionReview, s.configHandler.GetConfig().GetRegistryOverride())
+	deployment, err := parseIntoDeployment(&admissionReview, s.configProvider.GetConfig().GetRegistryOverride())
 	if err != nil {
 		log.Errorf("error parsing into deployment: %v", err)
 		admissionPass(w, admissionReview.Request.UID)

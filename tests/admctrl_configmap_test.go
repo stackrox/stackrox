@@ -1,0 +1,108 @@
+package tests
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/gogo/protobuf/proto"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/admissioncontrol"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/gziputil"
+	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+func TestAdmissionControllerConfigMap(t *testing.T) {
+	assumeFeatureFlagHasValue(t, features.AdmissionControlService, true)
+
+	k8sClient := createK8sClient(t)
+
+	cm, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(admissioncontrol.ConfigMapName, metav1.GetOptions{})
+	require.NoError(t, err, "could not obtain admission controller configmap")
+
+	policiesGZData := cm.BinaryData[admissioncontrol.PoliciesGZDataKey]
+	configGZData := cm.BinaryData[admissioncontrol.ConfigGZDataKey]
+
+	timestamp := cm.Data[admissioncontrol.LastUpdateTimeDataKey]
+	ts, err := time.Parse(time.RFC3339Nano, timestamp)
+	assert.NoErrorf(t, err, "unparseable last update timestamp %q", timestamp)
+
+	policiesData, err := gziputil.Decompress(policiesGZData)
+	require.NoError(t, err, "missing or corrupted policies data in config map")
+	configData, err := gziputil.Decompress(configGZData)
+	require.NoError(t, err, "missing or corrupted config data in config map")
+
+	var policyList storage.PolicyList
+	require.NoError(t, proto.Unmarshal(policiesData, &policyList), "could not unmarshal policies list")
+
+	var config storage.AdmissionControllerConfig
+	require.NoError(t, proto.Unmarshal(configData, &config), "could not unmarshal config")
+
+	cc := testutils.GRPCConnectionToCentral(t)
+
+	policyServiceClient := v1.NewPolicyServiceClient(cc)
+	newPolicy := &storage.Policy{
+		Name:        "testpolicy_" + t.Name(),
+		Description: "test deploy time policy",
+		Rationale:   "test deploy time policy",
+		Categories:  []string{"test"},
+		Fields: &storage.PolicyFields{
+			ImageName: &storage.ImageNamePolicy{
+				Tag: "admctrl-policy-test-tag",
+			},
+		},
+		Severity:           storage.Severity_HIGH_SEVERITY,
+		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	newPolicy, err = policyServiceClient.PostPolicy(ctx, newPolicy)
+	require.NoError(t, err, "failed to create new policy")
+
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		_, _ = policyServiceClient.DeletePolicy(ctx, &v1.ResourceByID{Id: newPolicy.GetId()})
+	}()
+
+	testutils.Retry(t, 10, 3*time.Second, func(t testutils.T) {
+		newCM, err := k8sClient.CoreV1().ConfigMaps(namespaces.StackRox).Get(admissioncontrol.ConfigMapName, metav1.GetOptions{})
+		require.NoError(t, err, "could not obtain admission controller configmap")
+
+		newTimestamp := newCM.Data[admissioncontrol.LastUpdateTimeDataKey]
+		newTS, err := time.Parse(time.RFC3339Nano, newTimestamp)
+		assert.NoErrorf(t, err, "unparseable last update timestamp %q", timestamp)
+		assert.True(t, newTS.After(ts), "expected updated timestamp in configmap")
+
+		newPoliciesGZData := newCM.BinaryData[admissioncontrol.PoliciesGZDataKey]
+		newConfigGZData := newCM.BinaryData[admissioncontrol.ConfigGZDataKey]
+
+		newPoliciesData, err := gziputil.Decompress(newPoliciesGZData)
+		require.NoError(t, err, "missing or corrupted policies data in config map")
+		newConfigData, err := gziputil.Decompress(newConfigGZData)
+		require.NoError(t, err, "missing or corrupted config data in config map")
+
+		var newPolicyList storage.PolicyList
+		require.NoError(t, proto.Unmarshal(newPoliciesData, &newPolicyList), "could not unmarshal policies list")
+		assert.Len(t, newPolicyList.GetPolicies(), len(policyList.GetPolicies())+1, "expected one additional policy")
+		numMatches := 0
+		for _, policy := range newPolicyList.GetPolicies() {
+			if proto.Equal(policy, newPolicy) {
+				numMatches++
+			}
+		}
+		assert.Equal(t, 1, numMatches, "expected new policy list to contain new policy exactly once")
+
+		var newConfig storage.AdmissionControllerConfig
+		require.NoError(t, proto.Unmarshal(newConfigData, &newConfig), "could not unmarshal config")
+		assert.True(t, proto.Equal(&newConfig, &config), "new and old config should be equal")
+	})
+}
