@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { differenceInHours, format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { eventTypes, graphTypes } from 'constants/timelineTypes';
@@ -28,7 +28,7 @@ export const getContainerEvents = (containers, selectedEventType) => {
             .map(({ processId, timestamp, edges, type }) => ({
                 id: processId,
                 type,
-                timestamp,
+                differenceInHours: differenceInHours(timestamp, startTime),
                 edges
             })),
         hasChildren: false
