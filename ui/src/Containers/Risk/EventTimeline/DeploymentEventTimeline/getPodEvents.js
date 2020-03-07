@@ -1,6 +1,6 @@
-import { format } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
+import { timelineStartTimeFormat } from 'constants/dateTimeFormat';
 import { eventTypes, graphTypes } from 'constants/timelineTypes';
 
 const filterByEventType = selectedEventType => event => {
@@ -13,13 +13,13 @@ const getPodEvents = (pods, selectedEventType) => {
         type: graphTypes.POD,
         id,
         name,
-        subText: inactive ? 'Inactive' : format(startTime, dateTimeFormat),
+        subText: inactive ? 'Inactive' : format(startTime, timelineStartTimeFormat),
         events: events
             .filter(filterByEventType(selectedEventType))
             .map(({ processId, timestamp, edges, type }) => ({
                 id: processId,
                 type,
-                timestamp,
+                differenceInHours: differenceInHours(timestamp, startTime),
                 edges
             })),
         hasChildren: numContainers > 0

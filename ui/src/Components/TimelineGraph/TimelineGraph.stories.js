@@ -12,23 +12,53 @@ export const withData = () => {
         {
             type: 'graph-type-1',
             id: 'id-1',
-            name: 'name-1',
-            subText: 'sub-text-1',
+            name: 'the podfather',
+            subText: 'Started Jan 14, 1:00pm',
             events: [
-                { id: 'event-1', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-1' },
-                { id: 'event-2', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-2' },
-                { id: 'event-3', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-3' }
+                {
+                    id: 'event-1',
+                    differenceInHours: 5,
+                    type: 'event-type-1',
+                    edges: []
+                },
+                {
+                    id: 'event-2',
+                    differenceInHours: 2,
+                    type: 'event-type-2',
+                    edges: []
+                },
+                {
+                    id: 'event-3',
+                    differenceInHours: 1,
+                    type: 'event-type-3',
+                    edges: []
+                }
             ]
         },
         {
             type: 'graph-type-1',
             id: 'id-2',
-            name: 'name-2',
-            subText: 'sub-text-2',
+            name: 'poddy',
+            subText: 'Started Jan 1, 1:00pm',
             events: [
-                { id: 'event-4', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-1' },
-                { id: 'event-5', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-2' },
-                { id: 'event-6', timestamp: '2019-12-09T06:51:52Z', type: 'event-type-3' }
+                {
+                    id: 'event-4',
+                    differenceInHours: 5,
+                    type: 'event-type-1',
+                    edges: []
+                },
+                {
+                    id: 'event-5',
+                    differenceInHours: 6,
+                    type: 'event-type-2',
+                    edges: []
+                },
+                {
+                    id: 'event-6',
+                    differenceInHours: 9,
+                    type: 'event-type-3',
+                    edges: []
+                }
             ]
         }
     ];
