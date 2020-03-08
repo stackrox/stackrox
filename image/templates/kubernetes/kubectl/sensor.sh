@@ -103,6 +103,11 @@ echo "Creating secrets for collector..."
 ${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 ${KUBE_COMMAND} -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
 
+{{ if .AdmissionControlService }}
+${KUBE_COMMAND} create secret -n "stackrox" generic admission-control-tls --from-file="$DIR/admission-control-cert.pem" --from-file="$DIR/admission-control-key.pem" --from-file="$DIR/ca.pem"
+${KUBE_COMMAND} -n "stackrox" label secret/admission-control-tls 'auto-upgrade.stackrox.io/component=sensor'
+{{- end }}
+
 if [[ -d "$DIR/additional-cas" ]]; then
 	echo "Creating secret for additional CAs for sensor..."
 	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"

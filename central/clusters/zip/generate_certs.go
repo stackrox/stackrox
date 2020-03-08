@@ -15,6 +15,7 @@ import (
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/sac"
@@ -114,13 +115,20 @@ func AddCertificatesToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identi
 	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
 
 	// Add MTLS files for sensor
-	if err := createIdentity(wrapper, cluster.Id, "sensor", storage.ServiceType_SENSOR_SERVICE, identityStore); err != nil {
+	if err := createIdentity(wrapper, cluster.GetId(), "sensor", storage.ServiceType_SENSOR_SERVICE, identityStore); err != nil {
 		return nil, err
 	}
 
 	// Add MTLS files for collector
-	if err := createIdentity(wrapper, cluster.Id, "collector", storage.ServiceType_COLLECTOR_SERVICE, identityStore); err != nil {
+	if err := createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE, identityStore); err != nil {
 		return nil, err
+	}
+
+	if features.AdmissionControlService.Enabled() && cluster.GetAdmissionController() {
+		if err := createIdentity(wrapper, cluster.GetId(), "admission-control",
+			storage.ServiceType_ADMISSION_CONTROL_SERVICE, identityStore); err != nil {
+			return nil, err
+		}
 	}
 
 	additionalCAFiles, err := getAdditionalCAs()

@@ -26,4 +26,5 @@ enum ServiceType {
     BENCHMARK_SERVICE         = 8;
     SCANNER_SERVICE           = 9;
     SCANNER_DB_SERVICE        = 10;
+    ADMISSION_CONTROL_SERVICE = 11;
 }

@@ -11,6 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
+var (
+	hostnameOverrides = map[storage.ServiceType]string{
+		storage.ServiceType_ADMISSION_CONTROL_SERVICE: "admission-control",
+	}
+)
+
 // Identity identifies a particular certificate.
 type Identity struct {
 	Subject Subject
@@ -74,6 +80,9 @@ func (s Subject) AllHostnames() []string {
 }
 
 func hostname(t storage.ServiceType) string {
+	if hn := hostnameOverrides[t]; hn != "" {
+		return hn
+	}
 	return strings.ToLower(strings.Split(t.String(), "_")[0])
 }
 

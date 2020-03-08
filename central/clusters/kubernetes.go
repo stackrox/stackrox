@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/admissioncontrol"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 )
@@ -44,6 +46,11 @@ func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOption
 
 	if cluster.AdmissionController {
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
+		fields["AdmissionControlService"] = features.AdmissionControlService.Enabled()
+		if features.AdmissionControlService.Enabled() {
+			fields["AdmissionControlConfigMapName"] = admissioncontrol.ConfigMapName
+		}
+
 		filenames.Add(admissionController)
 	}
 
