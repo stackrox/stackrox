@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+
+import "storage/cluster.proto";
+import "storage/policy.proto";
+import "google/protobuf/timestamp.proto";
+
+package sensor;
+
+message AdmissionControlSettings {
+    storage.AdmissionControllerConfig config         = 1;
+    storage.PolicyList enforced_deploy_time_policies = 2;
+    google.protobuf.Timestamp timestamp              = 3;
+}
