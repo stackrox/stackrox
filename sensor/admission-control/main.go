@@ -7,11 +7,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/admission-control/manager"
+	"github.com/stackrox/rox/sensor/admission-control/service"
 	"github.com/stackrox/rox/sensor/admission-control/settingswatch"
+)
+
+const (
+	webhookEndpoint = ":8443"
 )
 
 var (
@@ -40,6 +47,21 @@ func mainCmd() error {
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC()); err != nil {
 		log.Errorf("Could not watch Kubernetes for settings updates: %v. Functionality might be impacted", err)
 	}
+
+	serverConfig := grpc.Config{
+		Endpoints: []*grpc.EndpointConfig{
+			{
+				ListenEndpoint: webhookEndpoint,
+				TLS:            verifier.NonCA{},
+				ServeHTTP:      true,
+			},
+		},
+	}
+
+	apiServer := grpc.NewAPI(serverConfig)
+	apiServer.Register(service.New(mgr))
+
+	apiServer.Start()
 
 	sig := <-sigC
 	log.Infof("Received signal %v", sig)
