@@ -103,13 +103,13 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "could not read gzipped config data from configmap")
 	}
 
-	var config storage.AdmissionControllerConfig
+	var config storage.DynamicClusterConfig
 	if err := proto.Unmarshal(configData, &config); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 
 	settings := &sensor.AdmissionControlSettings{
-		Config:                     &config,
+		ClusterConfig:              &config,
 		EnforcedDeployTimePolicies: &policies,
 		Timestamp:                  tsProto,
 	}

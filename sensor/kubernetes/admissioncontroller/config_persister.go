@@ -38,7 +38,7 @@ type policiesUpdate struct {
 }
 
 type configUpdate struct {
-	config *storage.AdmissionControllerConfig
+	config *storage.DynamicClusterConfig
 	time   time.Time
 }
 
@@ -52,7 +52,7 @@ type configPersister struct {
 	lastPoliciesUpdate time.Time
 
 	configUpdateC    chan configUpdate
-	config           *storage.AdmissionControllerConfig
+	config           *storage.DynamicClusterConfig
 	lastConfigUpdate time.Time
 }
 
@@ -113,7 +113,7 @@ func (p *configPersister) UpdatePolicies(policies []*storage.Policy) {
 	}()
 }
 
-func (p *configPersister) UpdateConfig(config *storage.AdmissionControllerConfig) {
+func (p *configPersister) UpdateConfig(config *storage.DynamicClusterConfig) {
 	now := time.Now()
 	go func() {
 		select {

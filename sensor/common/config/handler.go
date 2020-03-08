@@ -72,7 +72,7 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		defer c.lock.Unlock()
 		c.config = config.Config
 		if c.admCtrlConfigPersister != nil {
-			c.admCtrlConfigPersister.UpdateConfig(config.GetConfig().GetAdmissionControllerConfig())
+			c.admCtrlConfigPersister.UpdateConfig(config.GetConfig())
 		}
 		return nil
 	}

@@ -41,7 +41,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 	var policyList storage.PolicyList
 	require.NoError(t, proto.Unmarshal(policiesData, &policyList), "could not unmarshal policies list")
 
-	var config storage.AdmissionControllerConfig
+	var config storage.DynamicClusterConfig
 	require.NoError(t, proto.Unmarshal(configData, &config), "could not unmarshal config")
 
 	cc := testutils.GRPCConnectionToCentral(t)
@@ -101,7 +101,7 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 		}
 		assert.Equal(t, 1, numMatches, "expected new policy list to contain new policy exactly once")
 
-		var newConfig storage.AdmissionControllerConfig
+		var newConfig storage.DynamicClusterConfig
 		require.NoError(t, proto.Unmarshal(newConfigData, &newConfig), "could not unmarshal config")
 		assert.True(t, proto.Equal(&newConfig, &config), "new and old config should be equal")
 	})

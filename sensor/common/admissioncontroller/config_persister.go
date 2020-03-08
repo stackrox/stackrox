@@ -11,5 +11,5 @@ type ConfigPersister interface {
 	common.SensorComponent
 
 	UpdatePolicies(allPolicies []*storage.Policy)
-	UpdateConfig(config *storage.AdmissionControllerConfig)
+	UpdateConfig(config *storage.DynamicClusterConfig)
 }

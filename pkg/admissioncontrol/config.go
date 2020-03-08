@@ -4,7 +4,7 @@ const (
 	// ConfigMapName is the name of the config map that stores the admission controller configuration.
 	ConfigMapName = `admission-control`
 
-	// ConfigGZDataKey is the key in the config map under which the serialized admission controller config is stored.
+	// ConfigGZDataKey is the key in the config map under which the serialized dynamic cluster config is stored.
 	ConfigGZDataKey = `config.pb.gz`
 
 	// PoliciesGZDataKey is the key in the config map under which the serialized enforced deploy-time policies are
