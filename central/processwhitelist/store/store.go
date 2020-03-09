@@ -3,6 +3,7 @@ package store
 import (
 	bbolt "github.com/etcd-io/bbolt"
 	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/storecache"
 )
 
 // Store provides storage functionality for process whitelists.
@@ -17,6 +18,6 @@ type Store interface {
 }
 
 // New provides a new instance of Store.
-func New(db *bbolt.DB) (Store, error) {
-	return newStore(db)
+func New(db *bbolt.DB, cache storecache.Cache) (Store, error) {
+	return newStore(db, cache)
 }

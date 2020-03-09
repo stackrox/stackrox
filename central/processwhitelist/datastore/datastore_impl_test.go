@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -51,7 +52,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
 
 	suite.NoError(err)
-	suite.storage, err = store.New(db)
+	suite.storage, err = store.New(db, storecache.NewMapBackedCache())
 	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")

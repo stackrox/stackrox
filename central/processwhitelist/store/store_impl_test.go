@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,7 +31,7 @@ func (suite *ProcessWhitelistStoreTestSuite) SetupSuite() {
 	}
 
 	suite.db = db
-	suite.store, err = New(db)
+	suite.store, err = New(db, storecache.NewMapBackedCache())
 	suite.NoError(err)
 }
 

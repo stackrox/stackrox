@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -71,7 +72,7 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	var err error
 	suite.db, err = bolthelper.NewTemp("process_whitelist_service_test.db")
 	suite.NoError(err)
-	wlStore, err := store.New(suite.db)
+	wlStore, err := store.New(suite.db, storecache.NewMapBackedCache())
 	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
