@@ -53,7 +53,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 		{
 			Cve:     "CVE-2017-7246",
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
-			Summary: "Stack-based buffer overflow in the pcre32_copy_substring...",
+			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Cvss:    6.8,
 			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "",
@@ -74,7 +74,7 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*storage.EmbeddedVulnerability) 
 		{
 			Cve:     "CVE-2017-7247",
 			Link:    "https://security-tracker.debian.org/tracker/CVE-2017-7246",
-			Summary: "Stack-based buffer overflow in the pcre32_copy_substring...",
+			Summary: "Stack-based buffer overflow in the pcre32_copy_substring function in pcre_get.c in libpcre1 in PCRE 8.40 allows remote attackers to cause a denial of service (WRITE of size 268) or possibly have unspecified other impact via a crafted file.",
 			Cvss:    7.5,
 			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 				FixedBy: "",
