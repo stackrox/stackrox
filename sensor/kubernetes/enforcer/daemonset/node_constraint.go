@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the daemon set with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current DaemonSet for the deployment.
 	var ds *appsV1.DaemonSet
 	ds, err = client.AppsV1().DaemonSets(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

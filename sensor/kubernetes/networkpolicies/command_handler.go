@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"k8s.io/client-go/kubernetes"
 	networkingV1Client "k8s.io/client-go/kubernetes/typed/networking/v1"
 )
 
@@ -28,8 +28,8 @@ type commandHandler struct {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler() common.SensorComponent {
-	return newCommandHandler(client.MustCreateClientSet().NetworkingV1())
+func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
+	return newCommandHandler(client.NetworkingV1())
 }
 
 func newCommandHandler(networkingV1Client networkingV1Client.NetworkingV1Interface) *commandHandler {

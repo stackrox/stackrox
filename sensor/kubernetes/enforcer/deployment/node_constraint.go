@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the Deployment with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current Deployment.
 	var d *appsV1.Deployment
 	d, err = client.AppsV1().Deployments(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"k8s.io/client-go/informers"
 )
 
@@ -20,7 +21,7 @@ const (
 )
 
 type listenerImpl struct {
-	clients *clientSet
+	client  client.Interface
 	eventsC chan *central.MsgFromSensor
 	stopSig concurrency.Signal
 
@@ -32,14 +33,14 @@ func (k *listenerImpl) Start() error {
 	// Create informer factories for needed orchestrators.
 	var osFactory externalversions.SharedInformerFactory
 
-	k8sFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncPeriod)
-	k8sResyncingFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncingPeriod)
-	if k.clients.openshift != nil {
-		osFactory = externalversions.NewSharedInformerFactory(k.clients.openshift, resyncingPeriod)
+	k8sFactory := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncPeriod)
+	k8sResyncingFactory := informers.NewSharedInformerFactory(k.client.Kubernetes(), resyncingPeriod)
+	if k.client.Openshift() != nil {
+		osFactory = externalversions.NewSharedInformerFactory(k.client.Openshift(), resyncingPeriod)
 	}
 
 	// Patch namespaces to include labels
-	patchNamespaces(k.clients.k8s, &k.stopSig)
+	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
 
 	// Start handling resource events.
 	go handleAllEvents(k8sFactory, k8sResyncingFactory, osFactory, k.eventsC, &k.stopSig, k.configHandler, k.detector)

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
 	"k8s.io/client-go/kubernetes"
@@ -39,8 +38,8 @@ type commandHandler struct {
 }
 
 // NewCommandHandler creates a new network policies command handler.
-func NewCommandHandler() common.SensorComponent {
-	return newCommandHandler(client.MustCreateClientSet())
+func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
+	return newCommandHandler(client)
 }
 
 func newCommandHandler(k8sClient kubernetes.Interface) *commandHandler {

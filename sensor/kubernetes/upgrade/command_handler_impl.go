@@ -37,11 +37,12 @@ type commandHandler struct {
 func NewCommandHandler() (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "obtaining Kubernetes REST config")
+		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
 	}
-	k8sClient, err := kubernetes.NewForConfig(config)
+
+	k8sClientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating Kubernetes client set")
+		return nil, errors.Wrap(err, "create Kubernetes clientset")
 	}
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.CentralEndpoint.Setting(), mtls.CentralSubject, clientconn.UseServiceCertToken(true))
 	if err != nil {
@@ -50,7 +51,7 @@ func NewCommandHandler() (common.SensorComponent, error) {
 
 	return &commandHandler{
 		baseK8sRESTConfig: config,
-		k8sClient:         k8sClient,
+		k8sClient:         k8sClientSet,
 		checkInClient:     central.NewSensorUpgradeControlServiceClient(conn),
 	}, nil
 }

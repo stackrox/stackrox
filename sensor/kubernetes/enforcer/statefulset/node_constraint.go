@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the StatefulSet with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current StatefulSet for the deployment.
 	var ds *appsV1.StatefulSet
 	ds, err = client.AppsV1beta1().StatefulSets(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

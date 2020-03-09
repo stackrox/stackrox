@@ -45,7 +45,7 @@ type UpgradeContext struct {
 	scheme                 *runtime.Scheme
 	codecs                 serializer.CodecFactory
 	resources              map[schema.GroupVersionKind]*resources.Metadata
-	clientSet              *kubernetes.Clientset
+	clientSet              kubernetes.Interface
 	dynamicClientGenerator dynamic.Interface
 	schemaValidator        validation.Schema
 
@@ -224,7 +224,7 @@ func (c *UpgradeContext) Resources() []*resources.Metadata {
 }
 
 // ClientSet returns the Kubernetes client set.
-func (c *UpgradeContext) ClientSet() *kubernetes.Clientset {
+func (c *UpgradeContext) ClientSet() kubernetes.Interface {
 	return c.clientSet
 }
 

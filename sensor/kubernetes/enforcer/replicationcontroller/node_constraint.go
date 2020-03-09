@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the ReplicationController with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current ReplicationController for the deployment.
 	var rc *coreV1.ReplicationController
 	rc, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

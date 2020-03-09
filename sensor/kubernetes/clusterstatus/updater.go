@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -25,7 +24,7 @@ var (
 )
 
 type updaterImpl struct {
-	client *kubernetes.Clientset
+	client kubernetes.Interface
 
 	updates chan *central.MsgFromSensor
 	stopSig concurrency.Signal
@@ -101,7 +100,7 @@ func (u *updaterImpl) run() {
 }
 
 func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
-	serverVersion, err := u.client.ServerVersion()
+	serverVersion, err := u.client.Discovery().ServerVersion()
 	if err != nil {
 		log.Errorf("Could not get cluster metadata: %v", err)
 		return nil
@@ -141,9 +140,9 @@ func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.Pro
 }
 
 // NewUpdater returns a new ready-to-use updater.
-func NewUpdater() common.SensorComponent {
+func NewUpdater(client kubernetes.Interface) common.SensorComponent {
 	return &updaterImpl{
-		client:  client.MustCreateClientSet(),
+		client:  client,
 		updates: make(chan *central.MsgFromSensor),
 		stopSig: concurrency.NewSignal(),
 	}

@@ -17,7 +17,7 @@ var (
 )
 
 // EnforceKill kills the pod holding the container info specified container instance.
-func EnforceKill(client *kubernetes.Clientset, containerInfo *central.ContainerInstanceEnforcement) (bool, error) {
+func EnforceKill(client kubernetes.Interface, containerInfo *central.ContainerInstanceEnforcement) (bool, error) {
 	podID := containerInfo.GetPodId()
 	ns := containerInfo.GetDeploymentEnforcement().GetNamespace()
 

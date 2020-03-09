@@ -9,7 +9,7 @@ import (
 )
 
 // EnforceZeroReplica scales a ReplicationController down to 0 instances.
-func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	scaleRequest := &autoscalingv1.Scale{
 		Spec: autoscalingv1.ScaleSpec{Replicas: 0},
 		ObjectMeta: metav1.ObjectMeta{

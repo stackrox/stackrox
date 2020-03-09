@@ -14,7 +14,7 @@ import (
 )
 
 // Helper setup func which creates the event recorder.
-func eventRecorder(kubeClient *kubernetes.Clientset) record.EventRecorder {
+func eventRecorder(kubeClient kubernetes.Interface) record.EventRecorder {
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&clientCoreV1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(

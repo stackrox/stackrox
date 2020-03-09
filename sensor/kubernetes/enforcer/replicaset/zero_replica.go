@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceZeroReplica scales a ReplicaSet down to 0 instances.
-func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	scaleRequest := &autoscalingV1.Scale{
 		Spec: pkgKubernetes.ScaleToZeroSpec,
 		ObjectMeta: metav1.ObjectMeta{

@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/enforcer"
-	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
 )
@@ -14,13 +13,13 @@ var (
 )
 
 type enforcerImpl struct {
-	client   *kubernetes.Clientset
+	client   kubernetes.Interface
 	recorder record.EventRecorder
 }
 
 // MustCreate creates a new enforcer or panics.
-func MustCreate() enforcer.Enforcer {
-	e, err := New()
+func MustCreate(client kubernetes.Interface) enforcer.Enforcer {
+	e, err := New(client)
 	if err != nil {
 		panic(err)
 	}
@@ -28,8 +27,7 @@ func MustCreate() enforcer.Enforcer {
 }
 
 // New returns a new Kubernetes Enforcer.
-func New() (enforcer.Enforcer, error) {
-	cl := client.MustCreateClientSet()
+func New(cl kubernetes.Interface) (enforcer.Enforcer, error) {
 	e := &enforcerImpl{
 		client:   cl,
 		recorder: eventRecorder(cl),

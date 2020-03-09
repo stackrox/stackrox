@@ -9,7 +9,7 @@ import (
 )
 
 // EnforceZeroReplica scales a StatefulSet down to 0 instances.
-func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
+func EnforceZeroReplica(client kubernetes.Interface, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	var ss *appsV1.StatefulSet
 	ss, err = client.AppsV1beta1().StatefulSets(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})
 	if err != nil {
@@ -20,7 +20,7 @@ func EnforceZeroReplica(client *kubernetes.Clientset, deploymentInfo *central.De
 	return retry.MakeRetryable(err)
 }
 
-func scaleStatefulSetToZero(client *kubernetes.Clientset, ss *appsV1.StatefulSet) (err error) {
+func scaleStatefulSetToZero(client kubernetes.Interface, ss *appsV1.StatefulSet) (err error) {
 	ss.Spec.Replicas = &[]int32{0}[0]
 	_, err = client.AppsV1beta1().StatefulSets(ss.GetNamespace()).Update(ss)
 	return
