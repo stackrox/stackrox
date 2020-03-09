@@ -59,15 +59,15 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// This allows for a consistent ID to be inserted into the DB
 		id.SetIndicatorID(indicator)
 
-		return s.process(indicator, injector)
+		return s.process(indicator)
 	default:
 		return fmt.Errorf("action %q for process indicator is not supported", event.GetAction())
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) process(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
-	return s.manager.IndicatorAdded(indicator, injector)
+func (s *pipelineImpl) process(indicator *storage.ProcessIndicator) error {
+	return s.manager.IndicatorAdded(indicator)
 }
 
 func (s *pipelineImpl) OnFinish(clusterID string) {}

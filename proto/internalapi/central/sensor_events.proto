@@ -28,9 +28,8 @@ enum ResourceAction {
 // Event updates from sensor to central.
 ////////////////////////////////////////
 
-message ReprocessDeployment {
+message ReprocessDeploymentRisk {
     string deployment_id = 1;
-    bool   risk_only     = 2;
 }
 
 message AlertResults {
@@ -62,7 +61,7 @@ message SensorEvent {
         ResourcesSynced                 synced                  = 11;
         storage.OrchestratorMetadata    orchestrator_metadata   = 12;
         storage.ImageIntegration        image_integration       = 13;
-        ReprocessDeployment             reprocess_deployment    = 17;
+        ReprocessDeploymentRisk         reprocess_deployment    = 17;
         AlertResults                    alert_results           = 18;
     }
 }

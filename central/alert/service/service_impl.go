@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -228,17 +227,15 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 			if err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			}
-			if features.SensorBasedDetection.Enabled() {
-				err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), &central.MsgToSensor{
-					Msg: &central.MsgToSensor_WhitelistSync{
-						WhitelistSync: &central.WhitelistSync{
-							Whitelists: []*storage.ProcessWhitelist{whitelist},
-						},
+			err = s.connectionManager.SendMessage(alert.GetDeployment().GetClusterId(), &central.MsgToSensor{
+				Msg: &central.MsgToSensor_WhitelistSync{
+					WhitelistSync: &central.WhitelistSync{
+						Whitelists: []*storage.ProcessWhitelist{whitelist},
 					},
-				})
-				if err != nil {
-					log.Errorf("error syncing whitelist with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
-				}
+				},
+			})
+			if err != nil {
+				log.Errorf("error syncing whitelist with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
 		}
 	}

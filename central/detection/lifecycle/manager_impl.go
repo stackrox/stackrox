@@ -20,20 +20,13 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/sensor/service/common"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	deployTimePkg "github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/process/filter"
 	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -53,11 +46,6 @@ type processWhitelistKey struct {
 	namespace     string
 }
 
-type indicatorWithInjector struct {
-	indicator           *storage.ProcessIndicator
-	msgToSensorInjector common.MessageInjector
-}
-
 type managerImpl struct {
 	reprocessor        reprocessor.Loop
 	enricher           enrichment.Enricher
@@ -73,26 +61,24 @@ type managerImpl struct {
 	deletedDeploymentsCache expiringcache.Cache
 	processFilter           filter.Filter
 
-	queuedIndicators map[string]indicatorWithInjector
+	queuedIndicators map[string]*storage.ProcessIndicator
 
 	indicatorQueueLock   sync.Mutex
 	flushProcessingLock  concurrency.TransparentMutex
 	indicatorRateLimiter *rate.Limiter
 	indicatorFlushTicker *time.Ticker
 
-	deploymentsPendingEnrichment *deploymentsPendingEnrichment
-
 	policyAlertsLock *concurrency.KeyedMutex
 }
 
-func (m *managerImpl) copyAndResetIndicatorQueue() map[string]indicatorWithInjector {
+func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
 	m.indicatorQueueLock.Lock()
 	defer m.indicatorQueueLock.Unlock()
 	if len(m.queuedIndicators) == 0 {
 		return nil
 	}
 	copiedMap := m.queuedIndicators
-	m.queuedIndicators = make(map[string]indicatorWithInjector)
+	m.queuedIndicators = make(map[string]*storage.ProcessIndicator)
 
 	return copiedMap
 }
@@ -138,47 +124,6 @@ func (m *managerImpl) flushQueuePeriodically() {
 	}
 }
 
-func (m *managerImpl) generateProcessAlertsAndEnforcement(indicators map[string]indicatorWithInjector, whitelistMap map[processWhitelistKey][]*storage.ProcessIndicator) {
-	deploymentIDs := uniqueDeploymentIDs(indicators)
-
-	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
-	if err != nil {
-		log.Errorf("Failed to compute runtime alerts: %s", err)
-		return
-	}
-
-	deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
-	for key, indicators := range whitelistMap {
-		userWhitelist, err := m.checkAndUpdateWhitelist(key, indicators)
-		if err != nil {
-			log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
-			continue
-		}
-		if userWhitelist {
-			deploymentToMatchingIndicators[key.deploymentID] = indicators
-		}
-	}
-	if len(deploymentToMatchingIndicators) > 0 {
-		// Compute whitelist alerts here
-		whitelistAlerts, err := m.getWhitelistAlerts(deploymentToMatchingIndicators)
-		if err != nil {
-			log.Errorf("failed to get whitelist alerts: %v", err)
-			return
-		}
-		newAlerts = append(newAlerts, whitelistAlerts...)
-	}
-
-	modifiedDeployments, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
-	if err != nil {
-		log.Errorf("Couldn't alert and notify: %s", err)
-	} else if modifiedDeployments.Cardinality() > 0 {
-		defer m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
-	}
-
-	// Create enforcement actions for the new alerts and send them with the stored injectors.
-	m.generateAndSendEnforcements(newAlerts, indicators)
-}
-
 func indicatorToWhitelistKey(indicator *storage.ProcessIndicator) processWhitelistKey {
 	return processWhitelistKey{
 		deploymentID:  indicator.GetDeploymentId(),
@@ -203,18 +148,18 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
-	for id, i := range copiedQueue {
-		if deleted, _ := m.deletedDeploymentsCache.Get(i.indicator.GetDeploymentId()).(bool); deleted {
+	for id, indicator := range copiedQueue {
+		if deleted, _ := m.deletedDeploymentsCache.Get(indicator.GetDeploymentId()).(bool); deleted {
 			delete(copiedQueue, id)
 			continue
 		}
-		if !m.processFilter.Add(i.indicator) {
+		if !m.processFilter.Add(indicator) {
 			delete(copiedQueue, id)
 			metrics.ProcessFilterCounterInc("NotAdded")
 			continue
 		}
 		metrics.ProcessFilterCounterInc("Added")
-		indicatorSlice = append(indicatorSlice, i.indicator)
+		indicatorSlice = append(indicatorSlice, indicator)
 	}
 
 	// Index the process indicators in batch
@@ -229,33 +174,18 @@ func (m *managerImpl) flushIndicatorQueue() {
 		whitelistMap[key] = append(whitelistMap[key], indicator)
 	}
 
-	if !features.SensorBasedDetection.Enabled() {
-		m.generateProcessAlertsAndEnforcement(copiedQueue, whitelistMap)
-	} else {
-		for key, indicators := range whitelistMap {
-			if _, err := m.checkAndUpdateWhitelist(key, indicators); err != nil {
-				log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
-			}
+	for key, indicators := range whitelistMap {
+		if _, err := m.checkAndUpdateWhitelist(key, indicators); err != nil {
+			log.Errorf("error checking and updating whitelist for %+v: %v", key, err)
 		}
 	}
 }
 
-func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector common.MessageInjector) {
+func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator) {
 	m.indicatorQueueLock.Lock()
 	defer m.indicatorQueueLock.Unlock()
 
-	m.queuedIndicators[indicator.GetId()] = indicatorWithInjector{
-		indicator:           indicator,
-		msgToSensorInjector: injector,
-	}
-}
-
-func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*storage.ProcessIndicator) ([]*storage.Alert, error) {
-	whitelistExecutor := newWhitelistExecutor(lifecycleMgrCtx, m.deploymentDataStore, deploymentsToIndicators)
-	if err := m.runtimeDetector.PolicySet().ForEach(whitelistExecutor); err != nil {
-		return nil, err
-	}
-	return whitelistExecutor.alerts, nil
+	m.queuedIndicators[indicator.GetId()] = indicator
 }
 
 func (m *managerImpl) checkAndUpdateWhitelist(whitelistKey processWhitelistKey, indicators []*storage.ProcessIndicator) (bool, error) {
@@ -309,63 +239,15 @@ func (m *managerImpl) checkAndUpdateWhitelist(whitelistKey processWhitelistKey, 
 	return userWhitelist, err
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
+func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
 	}
 
-	m.addToQueue(indicator, injector)
+	m.addToQueue(indicator)
 
 	if m.indicatorRateLimiter.Allow() {
 		go m.flushIndicatorQueue()
-	}
-	return nil
-}
-
-func (m *managerImpl) generateRuntimeAlertsOnCreate(deployment *storage.Deployment, injector common.MessageInjector) error {
-	indicatorQuery := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery()
-	indicators, err := m.processesDataStore.SearchRawProcessIndicators(lifecycleMgrCtx, indicatorQuery)
-	if err != nil {
-		return err
-	}
-	if len(indicators) == 0 {
-		return nil
-	}
-
-	indicatorMap := make(map[string]indicatorWithInjector, len(indicators))
-	for _, ind := range indicators {
-		indicatorMap[ind.GetId()] = indicatorWithInjector{
-			indicator:           ind,
-			msgToSensorInjector: injector,
-		}
-	}
-
-	m.generateProcessAlertsAndEnforcement(indicatorMap, nil)
-	return nil
-}
-
-func (m *managerImpl) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, create bool, injector common.MessageInjector) error {
-	retrievedInjector := m.deploymentsPendingEnrichment.removeAndRetrieveInjector(deployment.GetId())
-	// Enforcement-related: IF the pending deployment had an injector, that means we have an enforcement decision pending.
-	// If we deleted it, we would lose the opportunity to perform that enforcement forever.
-	// So, delete it, but keep the enforcement injector.
-	// Doing it this way ensures that we are performing detection on the most up-to-date version of the deployment
-	// (which is the argument passed to this function); the one in the pendingCache might be stale.
-	// This also ensures that we're more likely to persist the image (since we may not get the image ID until an update)
-	if injector == nil && retrievedInjector != nil {
-		injector = retrievedInjector
-	}
-	enrichmentPending, err := m.processDeploymentUpdate(ctx, deployment, injector)
-	if err != nil {
-		return err
-	}
-	if enrichmentPending {
-		m.deploymentsPendingEnrichment.add(ctx, deployment, injector)
-	}
-	if create {
-		if err := m.generateRuntimeAlertsOnCreate(deployment, injector); err != nil {
-			log.Errorf("Could not generate runtime alerts for deployment %s: %v", deployment.GetId(), err)
-		}
 	}
 	return nil
 }
@@ -379,70 +261,6 @@ func (m *managerImpl) HandleAlerts(deploymentID string, alerts []*storage.Alert,
 	}
 
 	return nil
-}
-
-func (m *managerImpl) processDeploymentUpdate(ctx enricher.EnrichmentContext, deployment *storage.Deployment, injector common.MessageInjector) (bool, error) {
-	// Attempt to enrich the image before detection.
-	images, updatedIndices, pendingEnrichment, err := m.enricher.EnrichDeployment(ctx, deployment)
-	if err != nil {
-		log.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
-	}
-	if len(updatedIndices) > 0 {
-		for _, idx := range updatedIndices {
-			img := images[idx]
-			if img.GetId() == "" {
-				continue
-			}
-			if err := m.imageDataStore.UpsertImage(lifecycleMgrCtx, img); err != nil {
-				log.Errorf("Error persisting image %s: %s", img.GetName().GetFullName(), err)
-			}
-		}
-	}
-
-	// Update risk after processing and save the deployment.
-	// There is no need to save the deployment in this function as it will be saved post reprocessing risk
-	defer m.riskManager.ReprocessDeploymentRiskWithImages(deployment, images)
-
-	presentAlerts, err := m.deploytimeDetector.Detect(deployTimePkg.DetectionContext{}, deployment, images)
-	if err != nil {
-		return false, errors.Wrap(err, "fetching deploy time alerts")
-	}
-	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, presentAlerts,
-		alertmanager.WithLifecycleStage(storage.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
-		return false, err
-	}
-	m.maybeInjectEnforcement(presentAlerts, deployment, injector)
-
-	return pendingEnrichment, nil
-}
-
-func (m *managerImpl) maybeInjectEnforcement(presentAlerts []*storage.Alert, deployment *storage.Deployment, injector common.MessageInjector) {
-	// If we're not passed an injector, that's our signal that nobody cares about any enforcement action. (example: on deployment updates)
-	if injector == nil {
-		return
-	}
-
-	// Generate enforcement actions based on the currently generated alerts.
-	resp := determineEnforcementForDeployment(presentAlerts, deployment)
-	// No enforcement, all good!
-	if resp == nil {
-		return
-	}
-
-	// Log if we are not enforcing because of an annotation.
-	if !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-		log.Warnf("Did not inject enforcement because deployment %s contained Enforcement Bypass annotations", deployment.GetName())
-		return
-	}
-
-	err := injector.InjectMessage(context.Background(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_Enforcement{
-			Enforcement: resp,
-		},
-	})
-	if err != nil {
-		log.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(resp), err)
-	}
 }
 
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
@@ -495,7 +313,6 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
-	m.deploymentsPendingEnrichment.remove(deployment.GetId())
 	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
 	return err
 }
@@ -517,92 +334,4 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 		m.reprocessor.ReprocessRiskForDeployments(modifiedDeployments.AsSlice()...)
 	}
 	return nil
-}
-
-func deploymentAndAlertToEnforcementProto(deployment *storage.Deployment, alert *storage.Alert) *central.SensorEnforcement {
-	return &central.SensorEnforcement{
-		Enforcement: alert.GetEnforcement().GetAction(),
-		Resource: &central.SensorEnforcement_Deployment{
-			Deployment: &central.DeploymentEnforcement{
-				DeploymentId:   deployment.GetId(),
-				DeploymentName: deployment.GetName(),
-				DeploymentType: deployment.GetType(),
-				Namespace:      deployment.GetNamespace(),
-				AlertId:        alert.GetId(),
-				PolicyName:     alert.GetPolicy().GetName(),
-			},
-		},
-	}
-}
-
-// determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).
-func determineEnforcementForDeployment(alerts []*storage.Alert, deployment *storage.Deployment) *central.SensorEnforcement {
-	// Only form and return the response if there is an enforcement action to be taken.
-	var candidate *central.SensorEnforcement
-	for _, alert := range alerts {
-		// Prioritize scale to zero, so return immediately.
-		if alert.GetEnforcement().GetAction() == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
-			return deploymentAndAlertToEnforcementProto(deployment, alert)
-		}
-		if candidate == nil && alert.GetEnforcement().GetAction() != storage.EnforcementAction_UNSET_ENFORCEMENT {
-			candidate = deploymentAndAlertToEnforcementProto(deployment, alert)
-		}
-	}
-	return candidate
-}
-
-func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorWithInjector) []string {
-	m := set.NewStringSet()
-	for _, infoWithInjector := range indicatorsToInfo {
-		deploymentID := infoWithInjector.indicator.GetDeploymentId()
-		if deploymentID == "" {
-			continue
-		}
-		m.Add(deploymentID)
-	}
-	return m.AsSlice()
-}
-
-func (m *managerImpl) generateAndSendEnforcements(alerts []*storage.Alert, indicatorsToInfo map[string]indicatorWithInjector) {
-	for _, alert := range alerts {
-		// Skip alerts without runtime enforcement.
-		if alert.GetEnforcement().GetAction() != storage.EnforcementAction_KILL_POD_ENFORCEMENT {
-			continue
-		}
-
-		// If the alert has enforcement, we want to generate a list of enforcement and injector pairs.
-		for _, singleIndicator := range alert.GetProcessViolation().GetProcesses() {
-			if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
-				// Generate the enforcement action.
-				enforcement := createEnforcementAction(alert, infoWithInjector.indicator.GetPodId())
-				// Attempt to send the enforcement with the injector.
-				err := infoWithInjector.msgToSensorInjector.InjectMessage(context.Background(), &central.MsgToSensor{
-					Msg: &central.MsgToSensor_Enforcement{
-						Enforcement: enforcement,
-					},
-				})
-				if err != nil {
-					log.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(enforcement), err)
-				}
-			}
-		}
-	}
-}
-
-func createEnforcementAction(alert *storage.Alert, podID string) *central.SensorEnforcement {
-	resource := &central.SensorEnforcement_ContainerInstance{
-		ContainerInstance: &central.ContainerInstanceEnforcement{
-			PodId: podID,
-			DeploymentEnforcement: &central.DeploymentEnforcement{
-				DeploymentId:   alert.GetDeployment().GetId(),
-				DeploymentName: alert.GetDeployment().GetName(),
-				Namespace:      alert.GetDeployment().GetNamespace(),
-				PolicyName:     alert.GetPolicy().GetName(),
-			},
-		},
-	}
-	return &central.SensorEnforcement{
-		Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
-		Resource:    resource,
-	}
 }

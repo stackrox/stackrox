@@ -24,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -474,20 +473,18 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 }
 
 func (s *serviceImpl) syncPoliciesWithSensors() error {
-	if features.SensorBasedDetection.Enabled() {
-		policies, err := s.policies.GetPolicies(policySyncReadCtx)
-		if err != nil {
-			return errors.Wrap(err, "error reading policies from store")
-		}
-		msg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_PolicySync{
-				PolicySync: &central.PolicySync{
-					Policies: policies,
-				},
-			},
-		}
-		s.connectionManager.BroadcastMessage(msg)
+	policies, err := s.policies.GetPolicies(policySyncReadCtx)
+	if err != nil {
+		return errors.Wrap(err, "error reading policies from store")
 	}
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_PolicySync{
+			PolicySync: &central.PolicySync{
+				Policies: policies,
+			},
+		},
+	}
+	s.connectionManager.BroadcastMessage(msg)
 	return nil
 }
 

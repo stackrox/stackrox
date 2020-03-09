@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -26,7 +25,6 @@ var (
 	log = logging.LoggerForModule()
 
 	riskDedupeNamespace = uuid.NewV4()
-	dedupeNamespace     = uuid.NewV4()
 
 	once sync.Once
 	loop Loop
@@ -128,17 +126,12 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
-	if features.SensorBasedDetection.Enabled() && !l.stopped.IsDone() {
+	if !l.stopped.IsDone() {
 		l.connManager.BroadcastMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_ReassessPolicies{
 				ReassessPolicies: &central.ReassessPolicies{},
 			},
 		})
-		return
-	}
-	select {
-	case l.shortChan <- struct{}{}:
-	case <-l.stopped.Done():
 	}
 }
 
@@ -183,8 +176,6 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 		var dedupeKey string
 		if riskOnly {
 			dedupeKey = uuid.NewV5(riskDedupeNamespace, r.Id).String()
-		} else {
-			dedupeKey = uuid.NewV5(dedupeNamespace, r.Id).String()
 		}
 		if injectionLimiter != nil {
 			_ = injectionLimiter.Wait(context.Background())
@@ -196,9 +187,8 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Resource: &central.SensorEvent_ReprocessDeployment{
-						ReprocessDeployment: &central.ReprocessDeployment{
+						ReprocessDeployment: &central.ReprocessDeploymentRisk{
 							DeploymentId: r.Id,
-							RiskOnly:     riskOnly,
 						},
 					},
 				},
@@ -220,11 +210,7 @@ func (l *loopImpl) loop() {
 		case <-l.shortChan:
 			l.sendDeployments(false, 0)
 		case <-l.enrichAndDetectTicker.C:
-			if features.SensorBasedDetection.Enabled() {
-				l.ShortCircuit()
-			} else {
-				l.sendDeployments(false, l.enrichAndDetectInjectionPeriod)
-			}
+			l.ShortCircuit()
 		case <-l.deploymentRiskTicker.C:
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {

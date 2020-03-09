@@ -131,9 +131,7 @@ func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action cent
 		d.endpointManager.OnDeploymentRemove(wrap)
 		d.processFilter.Delete(wrap.GetId())
 	}
-	if features.SensorBasedDetection.Enabled() {
-		d.detector.ProcessDeployment(wrap.GetDeployment(), action)
-	}
+	d.detector.ProcessDeployment(wrap.GetDeployment(), action)
 	events = append(events, wrap.toEvent(action))
 	return events
 }

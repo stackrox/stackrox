@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -70,16 +69,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return err
 	}
 
-	if reprocessMsg.RiskOnly {
-		s.riskManager.ReprocessDeploymentRisk(deployment)
-	} else {
-		return s.manager.DeploymentUpdated(
-			enricher.EnrichmentContext{FetchOpt: enricher.IgnoreExistingImages, UseNonBlockingCallsWherePossible: true},
-			deployment,
-			false,
-			nil,
-		)
-	}
+	s.riskManager.ReprocessDeploymentRisk(deployment)
 	return nil
 }
 

@@ -16,8 +16,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -210,25 +208,9 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		return err
 	}
 
-	if !features.SensorBasedDetection.Enabled() {
-		// Update the deployments images with the latest version from storage.
-		s.updateImages.do(ctx, deployment)
+	// Update risk asynchronously
+	s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
 
-		// Process the deployment (alert generation, enforcement action generation)
-		// Only pass in the enforcement injector (which is a signal to the lifecycle manager
-		// that it should inject enforcement) on creates.
-		var injectorToPass common.MessageInjector
-		create := action == central.ResourceAction_CREATE_RESOURCE
-		if create {
-			injectorToPass = injector
-		}
-		if err := s.lifecycleManager.DeploymentUpdated(enricher.EnrichmentContext{UseNonBlockingCallsWherePossible: true}, deployment, create, injectorToPass); err != nil {
-			return err
-		}
-	} else {
-		// Update risk asynchronously
-		s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
-	}
 	if incrementNetworkGraphEpoch {
 		s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
 	}

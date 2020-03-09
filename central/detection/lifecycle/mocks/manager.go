@@ -6,9 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	common "github.com/stackrox/rox/central/sensor/service/common"
 	storage "github.com/stackrox/rox/generated/storage"
-	enricher "github.com/stackrox/rox/pkg/images/enricher"
 	reflect "reflect"
 )
 
@@ -36,31 +34,17 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // IndicatorAdded mocks base method
-func (m *MockManager) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
+func (m *MockManager) IndicatorAdded(indicator *storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndicatorAdded", indicator, injector)
+	ret := m.ctrl.Call(m, "IndicatorAdded", indicator)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // IndicatorAdded indicates an expected call of IndicatorAdded
-func (mr *MockManagerMockRecorder) IndicatorAdded(indicator, injector interface{}) *gomock.Call {
+func (mr *MockManagerMockRecorder) IndicatorAdded(indicator interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndicatorAdded", reflect.TypeOf((*MockManager)(nil).IndicatorAdded), indicator, injector)
-}
-
-// DeploymentUpdated mocks base method
-func (m *MockManager) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, create bool, injector common.MessageInjector) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeploymentUpdated", ctx, deployment, create, injector)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeploymentUpdated indicates an expected call of DeploymentUpdated
-func (mr *MockManagerMockRecorder) DeploymentUpdated(ctx, deployment, create, injector interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeploymentUpdated", reflect.TypeOf((*MockManager)(nil).DeploymentUpdated), ctx, deployment, create, injector)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndicatorAdded", reflect.TypeOf((*MockManager)(nil).IndicatorAdded), indicator)
 }
 
 // UpsertPolicy mocks base method

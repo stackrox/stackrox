@@ -18,7 +18,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -64,8 +63,6 @@ type ProcessWhitelistServiceTestSuite struct {
 	resultDatastore *resultsMocks.MockDataStore
 	connectionMgr   *connectionMocks.MockManager
 	mockCtrl        *gomock.Controller
-
-	envIsolator *testutils.EnvIsolator
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
@@ -90,15 +87,11 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.service = New(suite.datastore, suite.reprocessor, suite.connectionMgr)
-
-	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.SensorBasedDetection.EnvVar(), "true")
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 	suite.mockCtrl.Finish()
-	suite.envIsolator.RestoreAll()
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {

@@ -260,7 +260,7 @@ func (c *sensorConnection) Run(ctx context.Context, server central.SensorService
 		return errors.Wrapf(err, "unable to sync config to cluster %q", c.clusterID)
 	}
 
-	if features.SensorBasedDetection.Enabled() && connectionCapabilities.Contains(centralsensor.SensorDetectionCap) {
+	if connectionCapabilities.Contains(centralsensor.SensorDetectionCap) {
 		msg, err = c.getPolicySyncMsg(ctx)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get policy sync msg for %q", c.clusterID)

@@ -13,11 +13,9 @@ import (
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"golang.org/x/time/rate"
@@ -36,14 +34,9 @@ var (
 // A Manager manages deployment/policy lifecycle updates.
 //go:generate mockgen-wrapper
 type Manager interface {
-	IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error
-	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store.
-	// It also performs any enforcement actions necessary IF it is passed a non-nil injector to send the enforcement to.
-	DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment, create bool, injector common.MessageInjector) error
+	IndicatorAdded(indicator *storage.ProcessIndicator) error
 	UpsertPolicy(policy *storage.Policy) error
-
 	HandleAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
-
 	DeploymentRemoved(deployment *storage.Deployment) error
 	RemovePolicy(policyID string) error
 }
@@ -67,7 +60,7 @@ func newManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Dete
 		deletedDeploymentsCache: deletedDeploymentsCache,
 		processFilter:           filter,
 
-		queuedIndicators: make(map[string]indicatorWithInjector),
+		queuedIndicators: make(map[string]*storage.ProcessIndicator),
 
 		indicatorRateLimiter: rate.NewLimiter(rate.Every(rateLimitDuration), 5),
 		indicatorFlushTicker: time.NewTicker(indicatorFlushTickerDuration),
@@ -75,8 +68,6 @@ func newManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Dete
 		policyAlertsLock: concurrency.NewKeyedMutex(alertsLockPoolSize),
 	}
 
-	deploymentsPendingEnrichment := newDeploymentsPendingEnrichment(m)
-	m.deploymentsPendingEnrichment = deploymentsPendingEnrichment
 	go m.flushQueuePeriodically()
 	return m
 }

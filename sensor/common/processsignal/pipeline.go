@@ -3,7 +3,6 @@ package processsignal
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -73,9 +72,7 @@ func (p *Pipeline) sendIndicatorEvent() {
 		if !p.processFilter.Add(indicator) {
 			continue
 		}
-		if features.SensorBasedDetection.Enabled() {
-			p.detector.ProcessIndicator(indicator)
-		}
+		p.detector.ProcessIndicator(indicator)
 
 		p.indicators <- &central.MsgFromSensor{Msg: &central.MsgFromSensor_Event{Event: &central.SensorEvent{
 			Id:     indicator.GetId(),

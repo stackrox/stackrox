@@ -22,7 +22,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -72,30 +71,20 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return errors.New("permission denied")
 	}
 
-	idSet := set.NewStringSet()
-	var filteredIndicators []*storage.ProcessIndicator
-	// Iterate over the processes in reverse chronological ordering
-	// so we will maintain the most recent ones
-	for i := len(indicators) - 1; i >= 0; i-- {
-		if idSet.Add(indicators[i].GetId()) {
-			filteredIndicators = append(filteredIndicators, indicators[i])
-		}
-	}
-
-	err := ds.storage.AddProcessIndicators(filteredIndicators...)
+	err := ds.storage.AddProcessIndicators(indicators...)
 	if err != nil {
 		return err
 	}
 
-	if err := ds.indexer.AddProcessIndicators(filteredIndicators); err != nil {
+	if err := ds.indexer.AddProcessIndicators(indicators); err != nil {
 		return err
 	}
 
-	filteredKeys := make([]string, 0, len(filteredIndicators))
-	for _, fi := range filteredIndicators {
-		filteredKeys = append(filteredKeys, fi.GetId())
+	keys := make([]string, 0, len(indicators))
+	for _, indicator := range indicators {
+		keys = append(keys, indicator.GetId())
 	}
-	if err := ds.storage.AckKeysIndexed(filteredKeys...); err != nil {
+	if err := ds.storage.AckKeysIndexed(keys...); err != nil {
 		return errors.Wrap(err, "error acknowledging added process indexing")
 	}
 	return nil
