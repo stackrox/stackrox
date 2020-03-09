@@ -9,7 +9,7 @@ const NameList = ({ names, onClick }) => {
             {names.map(({ type, id, name, subText, hasChildren = false }) => {
                 return (
                     <NameListItem
-                        key={name}
+                        key={id}
                         id={id}
                         type={type}
                         name={name}

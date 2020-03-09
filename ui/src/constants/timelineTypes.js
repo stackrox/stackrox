@@ -17,9 +17,9 @@ export const graphTypes = {
 };
 
 export const eventTypes = {
-    ALL: 'ALL',
-    POLICY_VIOLATION: 'POLICY_VIOLATION',
-    PROCESS_ACTIVITY: 'PROCESS_ACTIVITY',
-    RESTART: 'RESTART',
-    FAILURE: 'FAILURE'
+    ALL: 'All',
+    POLICY_VIOLATION: 'PolicyViolationEvent',
+    PROCESS_ACTIVITY: 'ProcessActivityEvent',
+    RESTART: 'ContainerRestartEvent',
+    TERMINATION: 'ContainerTerminationEvent'
 };

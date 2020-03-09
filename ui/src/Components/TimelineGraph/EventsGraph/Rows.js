@@ -6,12 +6,12 @@ const Rows = ({ data, translateX, translateY }) => {
     return (
         <g transform={`translate(${translateX}, ${translateY})`}>
             {data.map((datum, index) => {
-                const { name, events } = datum;
+                const { id, name, events } = datum;
                 const isOddRow = index % 2 !== 0;
                 const rowHeight = 48;
                 return (
                     <Row
-                        key={name}
+                        key={id}
                         name={name}
                         events={events}
                         isOdd={isOddRow}

@@ -16,7 +16,7 @@ const getPodEvents = (pods, selectedEventType) => {
         subText: inactive ? 'Inactive' : format(startTime, timelineStartTimeFormat),
         events: events
             .filter(filterByEventType(selectedEventType))
-            .map(({ processId, timestamp, edges, type }) => ({
+            .map(({ id: processId, timestamp, edges, type }) => ({
                 id: processId,
                 type,
                 differenceInHours: differenceInHours(timestamp, startTime),

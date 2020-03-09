@@ -1,24 +1,38 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
+import { useQuery } from 'react-apollo';
+import Raven from 'raven-js';
 
-import { podsData } from 'mockData/timelineData';
 import Panel from 'Components/Panel';
 import TimelineGraph from 'Components/TimelineGraph';
+import Loader from 'Components/Loader';
 import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
+import { GET_DEPLOYMENT_EVENT_TIMELINE } from '../timelineQueries';
 
-// eslint-disable-next-line
 const DeploymentEventTimeline = ({ id, goToNextView, selectedEventType, selectEventType }) => {
-    // data fetching with "id", filtered by "selectedEventType" will happen here...
+    const { loading, error, data } = useQuery(GET_DEPLOYMENT_EVENT_TIMELINE, {
+        variables: { deploymentId: id }
+    });
+
+    if (error) Raven.captureException(error);
+
+    if (loading)
+        return (
+            <div className="py-4">
+                <Loader message="Loading Event Timeline..." />
+            </div>
+        );
+
     const {
         numPolicyViolations,
         numProcessActivities,
         numRestarts,
-        numFailures,
+        numTerminations,
         numTotalPods
-    } = podsData.deployment;
-    const numEvents = numPolicyViolations + numProcessActivities + numRestarts + numFailures;
+    } = data.deployment;
+    const numEvents = numPolicyViolations + numProcessActivities + numRestarts + numTerminations;
 
     const header = `${numEvents} ${pluralize(
         'event',
@@ -29,7 +43,7 @@ const DeploymentEventTimeline = ({ id, goToNextView, selectedEventType, selectEv
         <EventTypeSelect selectedEventType={selectedEventType} selectEventType={selectEventType} />
     );
 
-    const timelineData = getPodEvents(podsData.pods, selectedEventType);
+    const timelineData = getPodEvents(data.pods, selectedEventType);
 
     return (
         <Panel header={header} headerComponents={headerComponents}>
