@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dackbox/keys"
 	"github.com/stackrox/rox/pkg/dackbox/utils/trie"
 )
 
@@ -233,5 +234,51 @@ func BackwardFromContext() OneToMany {
 			return nil
 		}
 		return g.GetRefsTo(key)
+	}
+}
+
+// Both returns the results of both transformations.
+func Both(f1, f2 OneToMany) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		return append(f1(ctx, key), f2(ctx, key)...)
+	}
+}
+
+// ForwardEdgeKeys produces a group of pair keys that represent edges.
+// The first OneToMany function produces the keys that become the first keys in the pair keys produced.
+// The second transforms the first keys into a list of second keys, which will be used to create the edges.
+// For example, if input is k:
+// Step 1) toP(ctx, k) outputs { k1, k2 }
+// Step 2) pToC(ctx, k1) outputs { c1, c2 }, and pToC(ctx, k2) outputs { c1, c3 }
+// Final Output) { pairKey(k1, c1), pairKey(k1, c2), pairKey(k2, c1), pairKey(k2, c3) }
+func ForwardEdgeKeys(toP, pToC OneToMany) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		ps := toP(ctx, key)
+		ret := make([][]byte, 0, len(ps))
+		for _, p := range ps {
+			for _, c := range pToC(ctx, p) {
+				ret = append(ret, keys.CreatePairKey(p, c))
+			}
+		}
+		return ret
+	}
+}
+
+// ReverseEdgeKeys works essentially the same way as ForwardEdgeKeys, however the output pair keys produced have the
+// order of the keys reversed.
+// Where ForwardEdgeKeys would produce
+// Final Output) { pairKey(k1, c1), pairKey(k1, c2), pairKey(k2, c1), pairKey(k2, c3) }
+// ReverseEdgeKeys would produce
+// Final Output) { pairKey(c1, k1), pairKey(c2, k1), pairKey(c1, k2), pairKey(c3, k2) }
+func ReverseEdgeKeys(toP, pToC OneToMany) OneToMany {
+	return func(ctx context.Context, key []byte) [][]byte {
+		ps := toP(ctx, key)
+		ret := make([][]byte, 0, len(ps))
+		for _, p := range ps {
+			for _, c := range pToC(ctx, p) {
+				ret = append(ret, keys.CreatePairKey(c, p))
+			}
+		}
+		return ret
 	}
 }
