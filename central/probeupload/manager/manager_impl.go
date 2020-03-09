@@ -128,7 +128,13 @@ func (m *manager) cleanUpRootDir() error {
 
 func (m *manager) freeBytes() (int64, error) {
 	var stfs unix.Statfs_t
-	if err := unix.Statfs(m.rootDir, &stfs); err != nil {
+	err := unix.Statfs(m.rootDir, &stfs)
+	retries := 0
+	for err == unix.EINTR && retries < 3 {
+		retries++
+		err = unix.Statfs(m.rootDir, &stfs)
+	}
+	if err != nil {
 		return 0, err
 	}
 	return int64(stfs.Bavail) * int64(stfs.Bsize), nil

@@ -46,6 +46,12 @@ func (d *databaseGatherer) Gather() *data.StorageInfo {
 func getDiskStats(path string) (int64, int64, error) {
 	var diskStats unix.Statfs_t
 	err := unix.Statfs(path, &diskStats)
+	retries := 0
+	for err == unix.EINTR && retries < 3 {
+		retries++
+		err = unix.Statfs(path, &diskStats)
+	}
+
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get Central disk stats: %s", err.Error())
 	}

@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/migrations"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -21,8 +21,14 @@ const (
 )
 
 func availableBytes(path string) (uint64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
+	var stat unix.Statfs_t
+	err := unix.Statfs(path, &stat)
+	retries := 0
+	for err == unix.EINTR && retries < 3 {
+		retries++
+		err = unix.Statfs(path, &stat)
+	}
+	if err != nil {
 		return 0, err
 	}
 	return stat.Bavail * uint64(stat.Bsize), nil
