@@ -30,9 +30,15 @@ enum {{ .Name }} {
     {{ . }}
 {{- end }}
 }
+{{- else if .InterfaceFields -}}
+interface {{ .Name }} {
+{{- range .InterfaceFields }}
+    {{ . }}
+{{- end }}
+}
 {{- else if .Unions -}}
 union {{ .Name }} =
-{{- range $ui, $ud := .Unions }}{{if $ui }} |{{ end }} {{ . }}{{- end }}
+{{- range $ui, $ud := .Unions }}{{ if $ui }} |{{ end }} {{ . }}{{- end }}
 {{- else if .InputFields -}}
 input {{ .Name }} {
 {{- range .InputFields }}
@@ -40,7 +46,7 @@ input {{ .Name }} {
 {{- end }}
 }
 {{- else }}
-{{- if $typeIndex }}type {{ end }}{{ .Name }} {
+{{- if $typeIndex }}type {{ .Name }} {{- range $ui, $ud := .Interfaces }}{{ if $ui }} &{{ else }} implements {{- end }} {{ . }}{{- end }}{{ else }}{{ .Name }} {{- end }} {
 {{- range .Fields }}
 	{{ . }}
 {{- end }}
@@ -53,12 +59,14 @@ input {{ .Name }} {
 {{end -}}
 scalar Time
 `
-	// todo: add "AddScalar" API and stop hardcoding Time
+	// todo: add "AddScalar" API and stop hard-coding Time
 )
 
 type typeEntry struct {
 	name                             string
+	interfaces                       []string
 	enumValues                       []string
+	interfaceFields                  []string
 	unionValues                      []string
 	definedResolvers, extraResolvers []string
 	inputFields                      []string
@@ -68,12 +76,20 @@ func (t *typeEntry) Enums() []string {
 	return t.enumValues
 }
 
+func (t *typeEntry) Interfaces() []string {
+	return t.interfaces
+}
+
 func (t *typeEntry) Unions() []string {
 	return t.unionValues
 }
 
 func (t *typeEntry) Name() string {
 	return t.name
+}
+
+func (t *typeEntry) InterfaceFields() []string {
+	return t.interfaceFields
 }
 
 func (t *typeEntry) Fields() []string {
@@ -97,9 +113,10 @@ type schemaBuilderImpl struct {
 
 // SchemaBuilder is a builder for schemas
 type SchemaBuilder interface {
-	AddType(name string, resolvers []string) error
+	AddType(name string, resolvers []string, interfaces ...string) error
 	AddInput(name string, fields []string) error
 	AddEnumType(name string, values []string) error
+	AddInterfaceType(name string, fields []string) error
 	AddUnionType(name string, types []string) error
 	AddExtraResolver(name string, resolver string) error
 	AddQuery(resolver string) error
@@ -116,12 +133,13 @@ func NewSchemaBuilder() SchemaBuilder {
 	return val
 }
 
-func (s *schemaBuilderImpl) AddType(name string, resolvers []string) error {
+func (s *schemaBuilderImpl) AddType(name string, resolvers []string, interfaces ...string) error {
 	if _, ok := s.entries[name]; ok {
 		return fmt.Errorf("already type registered with name %q", name)
 	}
 	s.entries[name] = &typeEntry{
 		name:             name,
+		interfaces:       interfaces,
 		definedResolvers: resolvers,
 	}
 	return nil
@@ -144,6 +162,17 @@ func (s *schemaBuilderImpl) AddEnumType(name string, values []string) error {
 	s.entries[name] = &typeEntry{
 		name:       name,
 		enumValues: values,
+	}
+	return nil
+}
+
+func (s *schemaBuilderImpl) AddInterfaceType(name string, fields []string) error {
+	if _, ok := s.entries[name]; ok {
+		return fmt.Errorf("already type registered with name %q", name)
+	}
+	s.entries[name] = &typeEntry{
+		name:            name,
+		interfaceFields: fields,
 	}
 	return nil
 }

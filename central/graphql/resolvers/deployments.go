@@ -50,6 +50,10 @@ func init() {
 		schema.AddExtraResolver("Deployment", "secretCount(query: String): Int!"),
 		schema.AddExtraResolver("Deployment", "policyStatus(query: String) : String!"),
 		schema.AddExtraResolver("Deployment", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("Deployment", "processActivityCount: Int!"),
+		schema.AddExtraResolver("Deployment", "podCount: Int!"),
+		schema.AddExtraResolver("Deployment", "containerRestartCount: Int!"),
+		schema.AddExtraResolver("Deployment", "containerTerminationCount: Int!"),
 	)
 }
 
@@ -536,6 +540,42 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 		return "fail", nil
 	}
 	return "pass", nil
+}
+
+// ProcessActivityCount returns the number of tracked processes of both dead and live containers.
+// For solely live containers, see GroupedProcesses
+func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ProcessActivityCount")
+
+	if err := readIndicators(ctx); err != nil {
+		return 0, err
+	}
+	// TODO: Retrieve the number of processes from both dead and live containers.
+	return 10, nil
+}
+
+// PodCount returns the number of pods (active and inactive) deployed for this deployment.
+func (resolver *deploymentResolver) PodCount(_ context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PodCount")
+
+	// TODO: Retrieve the number of pods (both active and inactive)
+	return 10, nil
+}
+
+// ContainerRestartCount returns the number of container restarts for this deployment.
+func (resolver *deploymentResolver) ContainerRestartCount(_ context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ContainerRestartCount")
+
+	// TODO: Retrieve the number of restarted containers.
+	return 10, nil
+}
+
+// ContainerTerminationCount returns the number of terminated containers for this deployment.
+func (resolver *deploymentResolver) ContainerTerminationCount(_ context.Context) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ContainerTerminationCount")
+
+	// TODO: Retrieve the number of terminated containers.
+	return 10, nil
 }
 
 func (resolver *deploymentResolver) hasImages() bool {

@@ -45,17 +45,25 @@ scalar Time
 
 func TestSchemaBuilderImpl_AddEnumType(t *testing.T) {
 	b := NewSchemaBuilder()
-	err := b.AddEnumType("Enum", []string{"A", "B", "C"})
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, b.AddEnumType("Enum", []string{"A", "B", "C"}))
 	actual, err := b.Render()
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
 	expected := `
 schema {}
 enum Enum {A B C}
+scalar Time
+`
+	assertSchemaSame(t, expected, actual)
+}
+
+func TestSchemaBuilderImpl_AddInterfaceType(t *testing.T) {
+	b := NewSchemaBuilder()
+	assert.NoError(t, b.AddInterfaceType("Interface", []string{"a: String"}))
+	actual, err := b.Render()
+	assert.NoError(t, err)
+	expected := `
+schema {}
+interface Interface { a: String }
 scalar Time
 `
 	assertSchemaSame(t, expected, actual)
@@ -82,12 +90,38 @@ func TestSchemaBuilderImpl_AddType(t *testing.T) {
 	b := NewSchemaBuilder()
 	assert.NoError(t, b.AddType("T", []string{"t: String"}))
 	actual, err := b.Render()
+	assert.NoError(t, err)
 	expected := `
 schema {}
 type T { t: String }
 scalar Time
 `
+	assertSchemaSame(t, expected, actual)
+}
+
+func TestSchemaBuilderImpl_AddTypeWithInterface(t *testing.T) {
+	b := NewSchemaBuilder()
+	assert.NoError(t, b.AddType("T", []string{"t: String"}, "I"))
+	actual, err := b.Render()
 	assert.NoError(t, err)
+	expected := `
+schema {}
+type T implements I { t: String }
+scalar Time
+`
+	assertSchemaSame(t, expected, actual)
+}
+
+func TestSchemaBuilderImpl_AddTypeWithMultipleInterfaces(t *testing.T) {
+	b := NewSchemaBuilder()
+	assert.NoError(t, b.AddType("T", []string{"t: String"}, "I1", "I2"))
+	actual, err := b.Render()
+	assert.NoError(t, err)
+	expected := `
+schema {}
+type T implements I1 & I2 { t: String }
+scalar Time
+`
 	assertSchemaSame(t, expected, actual)
 }
 
@@ -95,12 +129,12 @@ func TestSchemaBuilderImpl_AddInput(t *testing.T) {
 	b := NewSchemaBuilder()
 	assert.NoError(t, b.AddInput("I", []string{"i: String"}))
 	actual, err := b.Render()
+	assert.NoError(t, err)
 	expected := `
 schema {}
 input I { i: String }
 scalar Time
 `
-	assert.NoError(t, err)
 	assertSchemaSame(t, expected, actual)
 }
 
@@ -109,6 +143,7 @@ func TestSchemaBuilderImpl_AddExtraResolver(t *testing.T) {
 	assert.NoError(t, b.AddType("T", []string{"t: String"}))
 	assert.NoError(t, b.AddExtraResolver("T", "extra: String"))
 	actual, err := b.Render()
+	assert.NoError(t, err)
 	expected := `
 schema {}
 type T {
@@ -117,7 +152,6 @@ type T {
 }
 scalar Time
 `
-	assert.NoError(t, err)
 	assertSchemaSame(t, expected, actual)
 }
 
@@ -126,12 +160,12 @@ func TestSchemaBuilderImpl_AddMutation(t *testing.T) {
 	assert.NoError(t, b.AddInput("I", []string{"i: String"}))
 	assert.NoError(t, b.AddMutation("mut(i: I): String"))
 	actual, err := b.Render()
+	assert.NoError(t, err)
 	expected := `
 schema { mutation: Mutation }
 type Mutation { mut(i: I): String }
 input I { i: String }
 scalar Time
 `
-	assert.NoError(t, err)
 	assertSchemaSame(t, expected, actual)
 }
