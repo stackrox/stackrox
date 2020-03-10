@@ -291,3 +291,18 @@ func (s *ErrorSignal) SignalWhen(triggerCond Waitable, cancelCond Waitable) bool
 		return false
 	}
 }
+
+// SignalWithErrorWhen triggers this signal with a specified error when the given trigger condition is satisfied. It
+// returns as soon as either this signal is triggered (either by this function or another goroutine), or cancelCond is
+// triggered (in which case the signal will not be triggered).
+// CAREFUL: This function blocks; if you do not want this, invoke it in a goroutine.
+func (s *ErrorSignal) SignalWithErrorWhen(err error, triggerCond Waitable, cancelCond Waitable) bool {
+	select {
+	case <-triggerCond.Done():
+		return s.SignalWithError(err)
+	case <-cancelCond.Done():
+		return false
+	case <-s.Done():
+		return false
+	}
+}
