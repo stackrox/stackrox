@@ -1,6 +1,7 @@
 package sensor
 
 import (
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/sensor/common"
@@ -32,8 +33,10 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr)
 
 	enforcer := enforcer.MustCreate(client.Kubernetes())
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr)
-	listener := listener.New(client, configHandler, policyDetector)
+
+	var isSyncingFlag concurrency.Flag
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, &isSyncingFlag)
+	listener := listener.New(client, configHandler, policyDetector, &isSyncingFlag)
 
 	o := orchestrator.New(client.Kubernetes())
 	complianceService := compliance.NewService(o)

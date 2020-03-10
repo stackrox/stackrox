@@ -27,6 +27,7 @@ message ScanImageRequest {
 
 message ScanImageInternalRequest {
     storage.ContainerImage image = 1;
+    bool    use_saved            = 2;
 }
 
 message ScanImageInternalResponse {

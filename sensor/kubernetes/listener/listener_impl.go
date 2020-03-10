@@ -21,9 +21,10 @@ const (
 )
 
 type listenerImpl struct {
-	client  client.Interface
-	eventsC chan *central.MsgFromSensor
-	stopSig concurrency.Signal
+	client        client.Interface
+	eventsC       chan *central.MsgFromSensor
+	stopSig       concurrency.Signal
+	isSyncingFlag *concurrency.Flag
 
 	configHandler config.Handler
 	detector      detector.Detector
@@ -43,7 +44,7 @@ func (k *listenerImpl) Start() error {
 	patchNamespaces(k.client.Kubernetes(), &k.stopSig)
 
 	// Start handling resource events.
-	go handleAllEvents(k8sFactory, k8sResyncingFactory, osFactory, k.eventsC, &k.stopSig, k.configHandler, k.detector)
+	go handleAllEvents(k8sFactory, k8sResyncingFactory, osFactory, k.eventsC, &k.stopSig, k.isSyncingFlag, k.configHandler, k.detector)
 	return nil
 }
 

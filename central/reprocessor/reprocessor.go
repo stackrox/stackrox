@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -58,7 +59,7 @@ type Loop interface {
 
 // NewLoop returns a new instance of a Loop.
 func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Loop {
-	return newLoopWithDuration(connManager, deployments, 4*time.Hour, 30*time.Minute, 15*time.Second)
+	return newLoopWithDuration(connManager, deployments, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.

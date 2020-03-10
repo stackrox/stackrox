@@ -15,8 +15,8 @@ func Sub(ts1, ts2 *types.Timestamp) time.Duration {
 	if ts1 == nil || ts2 == nil {
 		return 0
 	}
-	seconds := int64(ts1.GetSeconds() - ts2.GetSeconds())
+	seconds := ts1.GetSeconds() - ts2.GetSeconds()
 	nanos := int64(ts1.GetNanos() - ts2.GetNanos())
 
-	return time.Duration(int64(seconds)*secondInt64 + int64(nanos))
+	return time.Duration(seconds*secondInt64 + nanos)
 }

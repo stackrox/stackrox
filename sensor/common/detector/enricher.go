@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 )
@@ -34,6 +35,7 @@ type imageChanResult struct {
 type enricher struct {
 	imageSvc       v1.ImageServiceClient
 	scanResultChan chan scanResult
+	isSyncing      *concurrency.Flag
 
 	imageCache expiringcache.Cache
 	stopSig    concurrency.Signal
@@ -49,13 +51,14 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage) {
+func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, useSaved bool) {
 	defer c.signal.Signal()
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image: ci,
+		Image:    ci,
+		UseSaved: useSaved,
 	})
 	if err != nil {
 		c.image = types.ToImage(ci)
@@ -64,11 +67,12 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher() *enricher {
+func newEnricher(isSyncing *concurrency.Flag) *enricher {
 	return &enricher{
 		scanResultChan: make(chan scanResult),
+		isSyncing:      isSyncing,
 
-		imageCache: expiringcache.NewExpiringCache(1 * time.Hour),
+		imageCache: expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting()),
 		stopSig:    concurrency.NewSignal(),
 	}
 }
@@ -110,7 +114,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci)
+		value.scanAndSet(e.imageSvc, ci, e.isSyncing.Get())
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),

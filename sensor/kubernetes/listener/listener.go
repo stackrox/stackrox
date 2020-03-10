@@ -15,13 +15,14 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, detector detector.Detector) common.SensorComponent {
+func New(client client.Interface, configHandler config.Handler, detector detector.Detector, isSyncingFlag *concurrency.Flag) common.SensorComponent {
 	k := &listenerImpl{
 		client:        client,
 		eventsC:       make(chan *central.MsgFromSensor, 10),
 		stopSig:       concurrency.NewSignal(),
 		configHandler: configHandler,
 		detector:      detector,
+		isSyncingFlag: isSyncingFlag,
 	}
 	return k
 }
