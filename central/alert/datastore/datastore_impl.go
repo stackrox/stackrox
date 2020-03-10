@@ -306,23 +306,23 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storag
 	return ds.commentsStorage.RemoveAlertComment(request.GetResourceId(), request.GetCommentId())
 }
 
-func (ds *datastoreImpl) AddAlertTags(ctx context.Context, alertID string, tags []string) (*storage.Tags, error) {
+func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertTags")
 
-	alert, exists, err := ds.storage.GetAlert(alertID)
+	alert, exists, err := ds.storage.GetAlert(resourceID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", alertID)
+		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
 	if !exists {
-		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", alertID)
+		return nil, fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
 		return nil, errors.New("permission denied")
 	}
 
-	allTags := sliceutils.StringUnion(alert.GetTags().GetTags(), tags)
+	allTags := sliceutils.StringUnion(alert.GetTags(), tags)
 	sort.Strings(allTags)
-	alert.Tags = &storage.Tags{Tags: allTags}
+	alert.Tags = allTags
 	if err := ds.updateAlertNoLock(alert); err != nil {
 		return nil, errors.Wrapf(err, "error upserting alert %q", alert.GetId())
 	}
@@ -330,27 +330,27 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, alertID string, tags 
 	return alert.GetTags(), nil
 }
 
-func (ds *datastoreImpl) DeleteAlertTags(ctx context.Context, alertID string, tags []string) error {
+func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string, tags []string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "DeleteAlertTags")
 
-	alert, exists, err := ds.storage.GetAlert(alertID)
+	alert, exists, err := ds.storage.GetAlert(resourceID)
 	if err != nil {
-		return errors.Wrapf(err, "error fetching alert %q from the DB", alertID)
+		return errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
 	if !exists {
-		return fmt.Errorf("cannot add tags to alert %q that no longer exists", alertID)
+		return fmt.Errorf("cannot add tags to alert %q that no longer exists", resourceID)
 	}
 	if ok, err := alertSAC.WriteAllowed(ctx, sac.KeyForNSScopedObj(alert.GetDeployment())...); err != nil || !ok {
 		return errors.New("permission denied")
 	}
 
-	remainingTags := sliceutils.StringDifference(alert.GetTags().GetTags(), tags)
+	remainingTags := sliceutils.StringDifference(alert.GetTags(), tags)
 	sort.Strings(remainingTags)
 
 	if len(remainingTags) == 0 {
 		alert.Tags = nil
 	} else {
-		alert.GetTags().Tags = remainingTags
+		alert.Tags = remainingTags
 	}
 	if err := ds.updateAlertNoLock(alert); err != nil {
 		return fmt.Errorf("error upserting alert %q", alert.GetId())

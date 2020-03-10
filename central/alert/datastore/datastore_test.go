@@ -339,9 +339,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
 	s.storage.EXPECT().UpsertAlert(fakeAlertWithTwoTags).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithTwoTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithTwoTags.GetId()).Return(nil)
-	expectedResponse := &storage.Tags{
-		Tags: alerttest.NewFakeTwoTags(),
-	}
+	expectedResponse := alerttest.NewFakeTwoTags()
 
 	response, err := s.dataStore.AddAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.NoError(err)
@@ -355,9 +353,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed2() {
 	s.storage.EXPECT().UpsertAlert(fakeAlertWithThreeTags).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithThreeTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithThreeTags.GetId()).Return(nil)
-	expectedResponse := &storage.Tags{
-		Tags: alerttest.NewFakeThreeTags(),
-	}
+	expectedResponse := alerttest.NewFakeThreeTags()
 
 	response, err := s.dataStore.AddAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTagsHasOverlap())
 	s.NoError(err)
@@ -372,7 +368,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsEnforced() {
 	s.EqualError(err, "permission denied")
 }
 
-func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed() {
+func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed() {
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 	fakeAlertWithNoTags := alerttest.NewFakeAlert()
@@ -380,11 +376,11 @@ func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed() {
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithNoTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithNoTags.GetId()).Return(nil)
 
-	err := s.dataStore.DeleteAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	err := s.dataStore.RemoveAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.NoError(err)
 }
 
-func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed2() {
+func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed2() {
 	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithThreeTags, true, nil)
 	fakeAlertWithOneTag := alerttest.NewFakeAlertWithOneTag()
@@ -392,15 +388,15 @@ func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsAllowed2() {
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithOneTag)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithOneTag.GetId()).Return(nil)
 
-	err := s.dataStore.DeleteAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	err := s.dataStore.RemoveAlertTags(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.NoError(err)
 }
 
-func (s *alertDataStoreWithSACTestSuite) TestDeleteAlertTagsEnforced() {
+func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsEnforced() {
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 
-	err := s.dataStore.DeleteAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
+	err := s.dataStore.RemoveAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.EqualError(err, "permission denied")
 }
 

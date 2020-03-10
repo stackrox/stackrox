@@ -41,8 +41,8 @@ type DataStore interface {
 	UpdateAlertComment(ctx context.Context, request *storage.Comment) error
 	RemoveAlertComment(ctx context.Context, request *storage.Comment) error
 
-	AddAlertTags(ctx context.Context, alertID string, tags []string) (*storage.Tags, error)
-	DeleteAlertTags(ctx context.Context, alertID string, tags []string) error
+	AddAlertTags(ctx context.Context, alertID string, tags []string) ([]string, error)
+	RemoveAlertTags(ctx context.Context, alertID string, tags []string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.
