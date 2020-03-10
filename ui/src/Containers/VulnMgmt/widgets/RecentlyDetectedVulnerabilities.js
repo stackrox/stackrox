@@ -36,11 +36,10 @@ export const RECENTLY_DETECTED_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState, limit) => {
+const processData = (data, workflowState) => {
     let results = data && data.results && data.results.filter(datum => datum.createdAt);
-    results = sortBy(results, ['createdAt', 'cvss', 'envImpact'])
-        .slice(-limit)
-        .reverse(); // @TODO: filter on the client side until we have pagination on Vulnerabilities
+    // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
+    results = sortBy(results, ['createdAt', 'cvss', 'envImpact']).reverse();
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
     return getVulnerabilityChips(workflowState, results);
@@ -75,7 +74,7 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, limit);
+        const processedData = processData(data, workflowState);
 
         if (!processedData || processedData.length === 0) {
             content = (

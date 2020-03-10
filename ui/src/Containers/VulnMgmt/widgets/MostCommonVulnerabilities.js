@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
-import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
@@ -12,10 +11,10 @@ import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import queryService from 'modules/queryService';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
+import { getTooltip } from 'utils/vulnerabilityUtils';
 
 const MOST_COMMON_VULNERABILITIES = gql`
     query mostCommonVulnerabilities($query: String, $vulnPagination: Pagination) {
@@ -33,50 +32,24 @@ const MOST_COMMON_VULNERABILITIES = gql`
     }
 `;
 
-const processData = (data, workflowState, limit) => {
-    const results = sortBy(data.results, ['deploymentCount', 'cvss']).slice(-limit); // @TODO: Remove when we have pagination on Vulnerabilities
-    return results.map(
-        ({
-            id,
-            cve,
-            cvss,
-            summary,
-            scoreVersion,
-            isFixable,
-            deploymentCount,
-            imageCount,
-            lastScanned
-        }) => {
-            const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
-            const tooltipTitle = lastScanned ? format(lastScanned, dateTimeFormat) : 'N/A';
-            const tooltipBody = (
-                <ul className="flex-1 border-base-300 overflow-hidden">
-                    <li className="py-1 flex flex-col" key="description">
-                        <span className="text-base-600 font-700 mr-2">Description:</span>
-                        <span className="font-600">{summary}</span>
-                    </li>
-                    <li className="py-1 flex flex-col" key="latestViolation">
-                        <span className="text-base-600 font-700 mr-2">Impact:</span>
-                        <span className="font-600">{`${deploymentCount} deployments, ${imageCount} images`}</span>
-                    </li>
-                </ul>
-            );
-            const tooltipFooter = `Scored using CVSS ${scoreVersion}`;
+const processData = (data, workflowState) => {
+    // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
+    const results = sortBy(data.results, ['cvss']);
 
-            return {
-                x: deploymentCount,
-                y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
-                    isFixable ? ' / Fixable' : ''
-                }`,
-                url,
-                hint: {
-                    title: tooltipTitle,
-                    body: tooltipBody,
-                    footer: tooltipFooter
-                }
-            };
-        }
-    );
+    return results.map(vuln => {
+        const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
+        const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
+        const tooltip = getTooltip(vuln);
+
+        return {
+            x: deploymentCount,
+            y: `${cve} / CVSS: ${cvss.toFixed(1)} (${scoreVersion}) ${
+                isFixable ? ' / Fixable' : ''
+            }`,
+            url,
+            hint: tooltip
+        };
+    });
 };
 
 const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
@@ -103,7 +76,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, limit);
+        const processedData = processData(data, workflowState);
         if (!processedData || processedData.length === 0) {
             content = (
                 <NoResultsMessage message="No vulnerabilities found" className="p-3" icon="info" />
