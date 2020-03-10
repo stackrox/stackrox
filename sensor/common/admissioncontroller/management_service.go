@@ -19,14 +19,14 @@ var (
 )
 
 type managementService struct {
-	settingsStreamIt concurrency.ValueStreamIter
+	settingsStream concurrency.ReadOnlyValueStream
 }
 
 // NewManagementService retrieves a new admission control management service, that allows pushing config updates out
 // to admission control service replicas.
 func NewManagementService(mgr SettingsManager) pkgGRPC.APIService {
 	return &managementService{
-		settingsStreamIt: mgr.SettingsStream().Iterator(false),
+		settingsStream: mgr.SettingsStream(),
 	}
 }
 
@@ -61,8 +61,8 @@ func (s *managementService) runRecv(
 	}
 }
 
-func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer) error {
-	settings, _ := s.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
+func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlManagementService_CommunicateServer, settingsIt concurrency.ValueStreamIter) error {
+	settings, _ := settingsIt.Value().(*sensor.AdmissionControlSettings)
 	if settings == nil {
 		return nil
 	}
@@ -78,7 +78,9 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 		return errors.Wrap(err, "sending header metadata")
 	}
 
-	if err := s.sendCurrentSettings(stream); err != nil {
+	settingsIt := s.settingsStream.Iterator(false)
+
+	if err := s.sendCurrentSettings(stream, settingsIt); err != nil {
 		return errors.Wrap(err, "sending initial settings")
 	}
 
@@ -96,9 +98,9 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 		case <-recvdMsgC:
 			log.Warn("Received message from admission control service, not sure what to do with it...")
 
-		case <-s.settingsStreamIt.Done():
-			s.settingsStreamIt = s.settingsStreamIt.TryNext()
-			if err := s.sendCurrentSettings(stream); err != nil {
+		case <-settingsIt.Done():
+			settingsIt = settingsIt.TryNext()
+			if err := s.sendCurrentSettings(stream, settingsIt); err != nil {
 				return errors.Wrap(err, "sending settings push")
 			}
 
