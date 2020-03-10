@@ -259,9 +259,9 @@ describe('Config Management Dashboard Page', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.cisStandardsAcrossClusters.select.value).should('contain', 'CIS Docker');
         cy.get(selectors.cisStandardsAcrossClusters.select.input).click();
-        cy.get(selectors.cisStandardsAcrossClusters.select.options)
+        cy.get(selectors.cisStandardsAcrossClusters.select.options, { timeout: 8000 })
             .last()
-            .click();
+            .click({ force: true });
         cy.get(selectors.cisStandardsAcrossClusters.select.value).should(
             'contain',
             'CIS Kubernetes'
