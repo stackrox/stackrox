@@ -46,8 +46,6 @@ func Newk8sIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveD
 		},
 	}
 
-	if err := m.initialize(); err != nil {
-		return nil, err
-	}
+	m.initialize()
 	return m, nil
 }

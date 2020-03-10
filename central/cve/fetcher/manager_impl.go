@@ -42,7 +42,7 @@ const (
 )
 
 // Init copies build time CVEs to persistent volume
-func (m *k8sIstioCVEManagerImpl) initialize() error {
+func (m *k8sIstioCVEManagerImpl) initialize() {
 	offlineModeSetting := env.OfflineModeEnv.Setting()
 	if offlineModeSetting == "true" {
 		m.mgrMode = offline
@@ -51,20 +51,19 @@ func (m *k8sIstioCVEManagerImpl) initialize() error {
 	}
 
 	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(converter.K8s); err != nil {
-		return errors.Wrapf(err, "could not copy preloaded k8s CVE files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir))
+		log.Errorf("could not copy preloaded k8s CVE files to persistent volume %q:%v", path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir), err)
+		return
 	}
 	log.Infof("successfully copied preloaded k8s CVE files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, k8sCVEsDir))
 
 	if err := copyCVEsFromPreloadedToPersistentDirIfAbsent(converter.Istio); err != nil {
-		return errors.Wrapf(err, "could not copy preloaded istio CVE files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
+		log.Errorf("could not copy preloaded istio CVE files to persistent volume %q: %v", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir), err)
+		return
 	}
 	log.Infof("successfully copied preloaded CVE istio files to persistent volume: %q", path.Join(persistentCVEsPath, commonCveDir, istioCVEsDir))
 
-	err := m.k8sCVEMgr.initialize()
-	if err != nil {
-		return err
-	}
-	return m.istioCVEMgr.initialize()
+	m.k8sCVEMgr.initialize()
+	m.istioCVEMgr.initialize()
 }
 
 // Fetch (works only in online mode) fetches new CVEs and reconciles them

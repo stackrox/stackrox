@@ -72,15 +72,13 @@ func fetchRemote(baseURL string) (string, error) {
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to download from %q, additionally, there was an error reading the response body. status code: %d, status: %s", url, resp.StatusCode, resp.Status)
 		}
-		return "", fmt.Errorf("failed to download from %q. status code: %d, status: %s, response body: %s", url, resp.StatusCode, resp.Status, string(buf))
+		return "", errors.Errorf("failed to download from %q. status code: %d, status: %s, response body: %s", url, resp.StatusCode, resp.Status, string(buf))
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrapf(err, "got HTTP response %d, but failed to read from response body", resp.StatusCode)
 	}
-	log.Infof("successful fetch from %s, bytes read : %d", url, len(b))
-
 	return string(b), nil
 }
 

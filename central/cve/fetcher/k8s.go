@@ -32,17 +32,18 @@ type k8sCVEManager struct {
 	mutex sync.Mutex
 }
 
-func (m *k8sCVEManager) initialize() error {
+func (m *k8sCVEManager) initialize() {
 	//Load the k8s CVEs in mem
 	newK8sCVEs, err := getLocalCVEs(persistentK8sCVEsFilePath)
 	if err != nil {
-		return err
+		log.Errorf("failed to get local k8s cves: %v", err)
+		return
 	}
 	if err := m.updateCVEs(newK8sCVEs); err != nil {
-		return err
+		log.Errorf("failed to get update k8s cves: %v", err)
+		return
 	}
 	log.Infof("successfully fetched %d k8s CVEs", len(m.nvdCVEs))
-	return nil
 }
 
 func (m *k8sCVEManager) getCVEs(ctx context.Context, q *v1.Query) ([]*storage.EmbeddedVulnerability, error) {

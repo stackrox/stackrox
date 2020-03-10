@@ -27,17 +27,18 @@ type istioCVEManager struct {
 	mutex sync.Mutex
 }
 
-func (m *istioCVEManager) initialize() error {
+func (m *istioCVEManager) initialize() {
 	//Load the istio CVEs in mem
 	newIstioCVEs, err := getLocalCVEs(persistentIstioCVEsFilePath)
 	if err != nil {
-		return err
+		log.Errorf("failed to get local istio cves: %v", err)
+		return
 	}
 	if err := m.updateCVEs(newIstioCVEs); err != nil {
-		return err
+		log.Errorf("failed to update istio cves: %v", err)
+		return
 	}
 	log.Infof("successfully fetched %d istio CVEs", len(m.nvdCVEs))
-	return nil
 }
 
 func (m *istioCVEManager) getCVEs(ctx context.Context, q *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
