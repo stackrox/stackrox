@@ -4,10 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -185,4 +188,24 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 	}
 
 	return resolver.istioVulnerabilitiesV1(ctx, args)
+}
+
+func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
+	var suppressedSet bool
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == search.CVESuppressed.String() && mfQ.MatchFieldQuery.GetValue() == "true" {
+			suppressedSet = true
+		}
+	})
+	if suppressedSet {
+		return q
+	}
+
+	local := proto.Clone(q).(*v1.Query)
+	pagination := local.GetPagination()
+	local.Pagination = nil
+	local = search.NewConjunctionQuery(local, search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery())
+	local.Pagination = pagination
+	return local
 }

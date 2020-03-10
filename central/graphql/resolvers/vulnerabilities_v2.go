@@ -45,6 +45,8 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 	if err != nil {
 		return nil, err
 	}
+
+	query = tryUnsuppressedQuery(query)
 	vulns, err := resolver.wrapCVEs(vulnLoader.FromQuery(ctx, query))
 
 	ret := make([]VulnerabilityResolver, 0, len(vulns))
@@ -67,6 +69,7 @@ func (resolver *Resolver) vulnerabilityCountV2Query(ctx context.Context, query *
 	if err != nil {
 		return 0, err
 	}
+	query = tryUnsuppressedQuery(query)
 	return vulnLoader.CountFromQuery(ctx, query)
 }
 
@@ -83,7 +86,7 @@ func (resolver *Resolver) vulnCounterV2Query(ctx context.Context, query *v1.Quer
 	if err != nil {
 		return nil, err
 	}
-
+	query = tryUnsuppressedQuery(query)
 	fixableVulnsQuery := search.NewConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableVulnsQuery)
 	if err != nil {

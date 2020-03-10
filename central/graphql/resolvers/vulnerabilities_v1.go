@@ -92,6 +92,7 @@ func (resolver *Resolver) k8sVulnerabilitiesV1(ctx context.Context, args Paginat
 	if err != nil {
 		return nil, err
 	}
+
 	pagination := query.Pagination
 	query.Pagination = nil
 
@@ -125,6 +126,7 @@ func (resolver *Resolver) istioVulnerabilitiesV1(ctx context.Context, args Pagin
 	if err != nil {
 		return nil, err
 	}
+
 	pagination := query.Pagination
 	query.Pagination = nil
 
@@ -172,6 +174,7 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 		return nil, err
 	}
 
+	query = tryUnsuppressedQuery(query)
 	// Run search on images.
 	images, err := imageLoader.FromQuery(ctx, query)
 	if err != nil {
@@ -205,6 +208,7 @@ func k8sVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([
 		return nil, nil
 	}
 
+	query = tryUnsuppressedQuery(query)
 	cves, err := root.k8sIstioCVEManager.GetK8sCVEs(ctx, query)
 	if err != nil {
 		return nil, err
@@ -219,6 +223,7 @@ func istioVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) 
 		return nil, nil
 	}
 
+	query = tryUnsuppressedQuery(query)
 	cves, err := root.k8sIstioCVEManager.GetIstioCVEs(ctx, query)
 	if err != nil {
 		return nil, err
