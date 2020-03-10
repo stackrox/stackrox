@@ -153,12 +153,6 @@ func (m *managerImpl) flushIndicatorQueue() {
 			delete(copiedQueue, id)
 			continue
 		}
-		if !m.processFilter.Add(indicator) {
-			delete(copiedQueue, id)
-			metrics.ProcessFilterCounterInc("NotAdded")
-			continue
-		}
-		metrics.ProcessFilterCounterInc("Added")
 		indicatorSlice = append(indicatorSlice, indicator)
 	}
 
@@ -244,6 +238,12 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error 
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
 	}
 
+	// Evaluate filter before even adding to the queue
+	if !m.processFilter.Add(indicator) {
+		metrics.ProcessFilterCounterInc("NotAdded")
+		return nil
+	}
+	metrics.ProcessFilterCounterInc("Added")
 	m.addToQueue(indicator)
 
 	if m.indicatorRateLimiter.Allow() {
