@@ -5,7 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import gql from 'graphql-tag';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
+import { VULN_CVE_ONLY_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
@@ -70,7 +70,7 @@ const VulnMgmtImage = ({
                 }
             }
         }
-        ${VULN_CVE_LIST_FRAGMENT}
+        ${VULN_CVE_ONLY_FRAGMENT}
     `;
 
     function getListQuery(listFieldName, fragmentName, fragment) {
