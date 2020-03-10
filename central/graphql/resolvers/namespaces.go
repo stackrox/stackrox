@@ -344,7 +344,9 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{}
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: pagination.GetSortOptions(),
+	}
 
 	resolvers, err := paginationWrapper{
 		pv: pagination,

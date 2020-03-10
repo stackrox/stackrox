@@ -20,6 +20,7 @@ var (
 )
 
 // Store provides storage functionality for policies.
+//go:generate mockgen-wrapper
 type Store interface {
 	GetPolicy(id string) (*storage.Policy, bool, error)
 	GetPolicies() ([]*storage.Policy, error)

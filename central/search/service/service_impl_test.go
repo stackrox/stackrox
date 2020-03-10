@@ -23,6 +23,8 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
+	policySearcher "github.com/stackrox/rox/central/policy/search"
+	policyStoreMocks "github.com/stackrox/rox/central/policy/store/mocks"
 	"github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -219,13 +221,16 @@ func TestAutocompleteForEnums(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	// Create Deployment Indexer
+	// Create Policy Searcher
+	policyStore := policyStoreMocks.NewMockStore(mockCtrl)
+	policyStore.EXPECT().GetPolicies()
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 	policyIndexer := policyIndex.New(idx)
 	require.NoError(t, policyIndexer.AddPolicy(fixtures.GetPolicy()))
-
-	ds := policyDatastore.New(nil, policyIndexer, nil)
+	policySearcher, err := policySearcher.New(policyStore, policyIndexer)
+	require.NoError(t, err)
+	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher)
 
 	service := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).

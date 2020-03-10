@@ -30,7 +30,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
-	return ds.indexer.Search(q)
+	return ds.searcher.Search(ctx, q)
 }
 
 // SearchPolicies
