@@ -21,10 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-const (
-	batchSize = 500
-)
-
 type flowStoreImpl struct {
 	db        *badger.DB
 	keyPrefix []byte
@@ -84,9 +80,18 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	}
 
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
+	batch := s.db.NewWriteBatch()
+	defer batch.Cancel()
 
-	_, err = badgerhelper.PutAllBatched(s.db, kvs, batchSize)
-	return err
+	for _, kv := range kvs {
+		if err := batch.Set(kv.Key, kv.Value); err != nil {
+			return errors.Wrap(err, "error setting network flows")
+		}
+	}
+	if err := batch.Flush(); err != nil {
+		return errors.Wrap(err, "error flushing network flows")
+	}
+	return nil
 }
 
 // RemoveFlow removes an flow from the store if it is present.
