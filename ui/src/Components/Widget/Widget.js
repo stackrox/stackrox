@@ -78,14 +78,14 @@ function Widget({
             <div className="border-b border-base-300">
                 <div className="flex flex-auto min-h-10 word-break">
                     <div
-                        className="flex flex-auto text-sm text-base-600 uppercase items-center tracking-wide px-3 leading-normal font-700"
+                        className="flex flex-auto text-sm text-base-600 uppercase items-center tracking-wide px-2 leading-normal font-700"
                         data-test-id="widget-header"
                     >
                         <div className="w-full">{headerContent}</div>
                         {pagerControls ? pagerControls.arrows : null}
                     </div>
                     {headerComponents && (
-                        <div className="flex justify-end items-center pr-3 relative">
+                        <div className="flex justify-end items-center pr-2 relative border-l border-base-300 pl-2">
                             {headerComponents}
                         </div>
                     )}

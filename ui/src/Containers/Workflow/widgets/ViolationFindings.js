@@ -21,37 +21,40 @@ const ViolationFindings = ({ data, message }) => {
     let content = null;
     if (policyViolation) {
         content = (
-            <div className="grid grid-gap-0 grid-columns-3 w-full">
+            <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-4 xl:grid-gap-6 mb-4 xxxl:grid-gap-8 grid-columns-1 md:grid-columns-2 lg:grid-columns-3 w-full">
                 <Widget
                     header="Time of Violation"
-                    className="s-1 m-4"
+                    className="s-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
                     {format(policyViolation.time, dateTimeFormat)}
                 </Widget>
                 <Widget
                     header="Enforcement"
-                    className="s-1 m-4"
+                    className="s-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
                     {policyViolation.policy.enforcementActions.join(', ') || 'No Enforcement'}
                 </Widget>
                 <Widget
                     header="Category"
-                    className="s-1 m-4"
+                    className="s-full lg:s-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
                     {policyViolation.policy.categories.join(', ')}
                 </Widget>
                 <Widget
                     header="Violation"
-                    className="sx-2 m-4 flex-1"
+                    className="s-full flex-1"
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
                     <ul className="leading-loose">
                         {policyViolation.violations.map(violation => {
                             return (
-                                <li className="border-b border-base-300" key={violation.message}>
+                                <li
+                                    className="border-b border-base-300 py-2"
+                                    key={violation.message}
+                                >
                                     {violation.message}
                                 </li>
                             );
@@ -59,14 +62,14 @@ const ViolationFindings = ({ data, message }) => {
                     </ul>
                 </Widget>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="sx-1 sy-2 bg-base-100 m-4 rounded shadow">
+                    <div className="sx-1 sy-2 bg-base-100 rounded shadow">
                         <AnalystComments
                             type={ANALYST_NOTES_TYPES.ALERT}
                             id={policyViolation.id}
                             className="h-full"
                         />
                     </div>
-                    <div className="sx-2 sy-1 bg-base-100 m-4 rounded shadow">
+                    <div className="sx-2 sy-1 bg-base-100 rounded shadow">
                         <AnalystTags type="Violation" id={policyViolation.id} className="h-full" />
                     </div>
                 </FeatureEnabled>
