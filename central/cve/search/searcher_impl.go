@@ -32,6 +32,7 @@ import (
 	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
 var (
@@ -168,36 +169,50 @@ func getCompoundCVESearcher(
 	return compound.NewSearcher([]compound.SearcherSpec{
 		{
 			IsDefault: true,
-			Searcher:  cveSearcher,
+			Searcher:  scoped.WithScoping(cveSearcher, dackbox.ToCategory(v1.SearchCategory_VULNERABILITIES)),
 			Options:   cveMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(componentCVEEdgeSearcher, dackbox.ComponentCVEEdgeToCVETransformation),
-			Options:  componentCVEEdgeMappings.OptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(componentCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_COMPONENT_VULN_EDGE)),
+				dackbox.FromCategory(v1.SearchCategory_COMPONENT_VULN_EDGE).Get(v1.SearchCategory_VULNERABILITIES)),
+			Options: componentCVEEdgeMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(clusterCVEEdgeSearcher, dackbox.ClusterCVEEdgeToCVETransformation),
-			Options:  clusterCVEEdgeMappings.OptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(clusterCVEEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTER_VULN_EDGE)),
+				dackbox.GraphTransformations[v1.SearchCategory_CLUSTER_VULN_EDGE][v1.SearchCategory_VULNERABILITIES]),
+			Options: clusterCVEEdgeMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(componentSearcher, dackbox.ComponentToCVETransformation),
-			Options:  componentMappings.OptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(componentSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENTS)),
+				dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENTS][v1.SearchCategory_VULNERABILITIES]),
+			Options: componentMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(imageComponentEdgeSearcher, dackbox.ImageComponentEdgeToCVETransformation),
-			Options:  imageComponentEdgeMappings.OptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(imageComponentEdgeSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENT_EDGE)),
+				dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENT_EDGE][v1.SearchCategory_VULNERABILITIES]),
+			Options: imageComponentEdgeMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(clusterSearcher, dackbox.ClusterToCVETransformation, dackbox.ClusterToClusterCVETransformation),
-			Options:  clusterMappings.OptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(clusterSearcher, dackbox.ToCategory(v1.SearchCategory_CLUSTERS)),
+				dackbox.GraphTransformations[v1.SearchCategory_CLUSTERS][v1.SearchCategory_VULNERABILITIES]),
+			Options: clusterMappings.OptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(deploymentSearcher, dackbox.DeploymentToCVETransformation),
-			Options:  deploymentOnlyOptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
+				dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_VULNERABILITIES]),
+			Options: deploymentOnlyOptionsMap,
 		},
 		{
-			Searcher: idspace.WithKeyTransformations(imageSearcher, dackbox.ImageToCVETransformation),
-			Options:  imageOnlyOptionsMap,
+			Searcher: idspace.WithKeyTransformations(
+				scoped.WithScoping(imageSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGES)),
+				dackbox.GraphTransformations[v1.SearchCategory_IMAGES][v1.SearchCategory_VULNERABILITIES]),
+			Options: imageOnlyOptionsMap,
 		},
 	}...)
 }

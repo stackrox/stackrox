@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -193,7 +194,10 @@ func (resolver *imageResolver) Vulns(ctx context.Context, args PaginatedQuery) (
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 // VulnCount returns the number of vulnerabilities the image has.
@@ -202,14 +206,20 @@ func (resolver *imageResolver) VulnCount(ctx context.Context, args RawQuery) (in
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.VulnerabilityCount(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
 func (resolver *imageResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 // Vulns returns all of the vulnerabilities in the image.
@@ -218,7 +228,10 @@ func (resolver *imageResolver) Components(ctx context.Context, args PaginatedQue
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -226,7 +239,10 @@ func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
 
-	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
+	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGES,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *imageResolver) ensureImage(ctx context.Context) error {

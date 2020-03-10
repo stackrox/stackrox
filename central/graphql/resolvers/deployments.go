@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -491,7 +492,10 @@ func (resolver *deploymentResolver) Components(ctx context.Context, args Paginat
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
-	return resolver.root.Components(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Components(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -499,7 +503,10 @@ func (resolver *deploymentResolver) ComponentCount(ctx context.Context, args Raw
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
-	return resolver.root.ComponentCount(ctx, RawQuery{Query: &query})
+	return resolver.root.ComponentCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *deploymentResolver) Vulns(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -507,7 +514,10 @@ func (resolver *deploymentResolver) Vulns(ctx context.Context, args PaginatedQue
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
-	return resolver.root.Vulnerabilities(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Vulnerabilities(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	}), PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
 func (resolver *deploymentResolver) VulnCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -515,7 +525,10 @@ func (resolver *deploymentResolver) VulnCount(ctx context.Context, args RawQuery
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
-	return resolver.root.VulnerabilityCount(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnerabilityCount(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *deploymentResolver) VulnCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
@@ -523,7 +536,10 @@ func (resolver *deploymentResolver) VulnCounter(ctx context.Context, args RawQue
 
 	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
 
-	return resolver.root.VulnCounter(ctx, RawQuery{Query: &query})
+	return resolver.root.VulnCounter(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_DEPLOYMENTS,
+		ID:    resolver.data.GetId(),
+	}), RawQuery{Query: &query})
 }
 
 func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQuery) (string, error) {

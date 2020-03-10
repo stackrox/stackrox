@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/search"
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
+	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
 // Top Level Resolvers.
@@ -159,7 +160,10 @@ func (eicr *imageComponentResolver) Vulns(ctx context.Context, args PaginatedQue
 		return nil, err
 	}
 	query.Pagination = pagination
-	return eicr.root.vulnerabilitiesV2Query(ctx, query)
+	return eicr.root.vulnerabilitiesV2Query(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    eicr.data.GetId(),
+	}), query)
 }
 
 // VulnCount resolves the number of vulnerabilities contained in the image component.
@@ -172,7 +176,10 @@ func (eicr *imageComponentResolver) VulnCount(ctx context.Context, args RawQuery
 	if err != nil {
 		return 0, err
 	}
-	return eicr.root.vulnerabilityCountV2Query(ctx, query)
+	return eicr.root.vulnerabilityCountV2Query(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    eicr.data.GetId(),
+	}), query)
 }
 
 // VulnCounter resolves the number of different types of vulnerabilities contained in an image component.
@@ -183,13 +190,19 @@ func (eicr *imageComponentResolver) VulnCounter(ctx context.Context, args RawQue
 	}
 
 	fixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
-	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableVulnsQuery)
+	fixableVulns, err := vulnLoader.FromQuery(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    eicr.data.GetId(),
+	}), fixableVulnsQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	unFixableVulnsQuery := search.NewConjunctionQuery(eicr.componentQuery(), search.NewQueryBuilder().AddBools(search.Fixable, false).ProtoQuery())
-	unFixableCVEs, err := vulnLoader.FromQuery(ctx, unFixableVulnsQuery)
+	unFixableCVEs, err := vulnLoader.FromQuery(scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_IMAGE_COMPONENTS,
+		ID:    eicr.data.GetId(),
+	}), unFixableVulnsQuery)
 	if err != nil {
 		return nil, err
 	}
