@@ -49,5 +49,11 @@ var (
 			Optional: true,
 			Files:    []string{"collector-cert.pem", "collector-key.pem", "ca.pem"},
 		},
+		{
+			Kind:     OpaqueSecret,
+			Name:     "admission-control-tls",
+			Optional: true,
+			Files:    []string{"admission-control-cert.pem", "admission-control-key.pem", "ca.pem"},
+		},
 	}
 )

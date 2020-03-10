@@ -23,6 +23,73 @@ rules:
     resources: ['configmaps']
     verbs: ['get', 'list', 'watch']
 ---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-admission-control
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'secret'
+    - 'downwardAPI'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-admission-control-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-admission-control
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-admission-control-psp
+  namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-admission-control-psp
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: stackrox
+---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

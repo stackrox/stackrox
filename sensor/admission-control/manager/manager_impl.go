@@ -11,24 +11,35 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/logging"
-	deploymentOptions "github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/pkg/set"
+	admission "k8s.io/api/admission/v1beta1"
 )
 
 var (
-	builder = matcher.NewBuilder(
-		matcher.NewRegistry(
-			nil,
-		),
-		deploymentOptions.OptionsMap,
+	log = logging.LoggerForModule()
+
+	allowAlwaysUsers = set.NewFrozenStringSet(
+		"system:kube-scheduler",
+		"system:kube-controller-manager",
+		"system:kube-proxy",
 	)
 
-	log = logging.LoggerForModule()
+	allowAlwaysGroups = set.NewFrozenStringSet(
+		"system:nodes",
+	)
 )
 
-type settingsAndDetector struct {
-	settings *sensor.AdmissionControlSettings
+type state struct {
+	*sensor.AdmissionControlSettings
 	detector deploytime.Detector
+
+	bypassForUsers, bypassForGroups set.FrozenStringSet
+	enforcedOps                     map[admission.Operation]struct{}
+}
+
+func (s *state) activeForOperation(op admission.Operation) bool {
+	_, active := s.enforcedOps[op]
+	return active
 }
 
 type manager struct {
@@ -40,7 +51,7 @@ type manager struct {
 	settingsC          chan *sensor.AdmissionControlSettings
 	lastSettingsUpdate *types.Timestamp
 
-	settingsAndDetectorPtr unsafe.Pointer
+	statePtr unsafe.Pointer
 }
 
 func newManager() *manager {
@@ -51,8 +62,8 @@ func newManager() *manager {
 	}
 }
 
-func (m *manager) currentSettingsAndDetector() *settingsAndDetector {
-	return (*settingsAndDetector)(atomic.LoadPointer(&m.settingsAndDetectorPtr))
+func (m *manager) currentState() *state {
+	return (*state)(atomic.LoadPointer(&m.statePtr))
 }
 
 func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream {
@@ -60,7 +71,7 @@ func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream {
 }
 
 func (m *manager) IsReady() bool {
-	return m.currentSettingsAndDetector() != nil
+	return m.currentState() != nil
 }
 
 func (m *manager) Start() error {
@@ -101,7 +112,7 @@ func (m *manager) runSettingsWatch() {
 func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSettings) {
 	if newSettings == nil {
 		log.Info("DISABLING admission control service (config map was deleted).")
-		atomic.StorePointer(&m.settingsAndDetectorPtr, nil)
+		atomic.StorePointer(&m.statePtr, nil)
 		m.lastSettingsUpdate = nil
 		m.settingsStream.Push(newSettings) // typed nil ptr, not nil!
 		return
@@ -118,14 +129,24 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		}
 	}
 
-	detector := deploytime.NewDetector(policySet)
-
-	newSettingsAndDetector := &settingsAndDetector{
-		settings: newSettings,
-		detector: detector,
+	var detector deploytime.Detector
+	if newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled() && len(policySet.GetCompiledPolicies()) > 0 {
+		detector = deploytime.NewDetector(policySet)
 	}
 
-	atomic.StorePointer(&m.settingsAndDetectorPtr, unsafe.Pointer(newSettingsAndDetector))
+	enforcedOperations := map[admission.Operation]struct{}{
+		admission.Create: {},
+	}
+
+	newSettingsAndDetector := &state{
+		AdmissionControlSettings: newSettings,
+		detector:                 detector,
+		bypassForUsers:           allowAlwaysUsers,
+		bypassForGroups:          allowAlwaysGroups,
+		enforcedOps:              enforcedOperations,
+	}
+
+	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newSettingsAndDetector))
 	if m.lastSettingsUpdate == nil {
 		log.Info("RE-ENABLING admission control service")
 	}
@@ -133,4 +154,14 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	log.Infof("Applied new admission control settings (enforcing on %d policies).", len(newSettings.GetEnforcedDeployTimePolicies().GetPolicies()))
 	m.settingsStream.Push(newSettings)
+}
+
+func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
+	state := m.currentState()
+
+	if state == nil {
+		return nil, errors.New("admission controller is disabled, not handling request")
+	}
+
+	return m.evaluateAdmissionRequest(state, req)
 }

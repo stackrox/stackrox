@@ -2035,6 +2035,7 @@ jobs:
       - ROX_TELEMETRY: true
       - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_SENSOR_DETECTION: true
+      - ROX_ADMISSION_CONTROL_SERVICE: true
 
     steps:
       - run-qa-tests:
