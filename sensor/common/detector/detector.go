@@ -35,7 +35,7 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlConfigPersister admissioncontroller.ConfigPersister) Detector {
+func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager) Detector {
 	builder := matcher.NewBuilder(
 		matcher.NewRegistry(
 			nil,
@@ -57,7 +57,7 @@ func New(enforcer enforcer.Enforcer, admCtrlConfigPersister admissioncontroller.
 		deduper:         newDeduper(),
 		enforcer:        enforcer,
 
-		admCtrlConfigPersister: admCtrlConfigPersister,
+		admCtrlSettingsMgr: admCtrlSettingsMgr,
 
 		detectorStopper:   concurrency.NewStopper(),
 		serializerStopper: concurrency.NewStopper(),
@@ -82,7 +82,7 @@ type detectorImpl struct {
 	enforcer        enforcer.Enforcer
 	deduper         *deduper
 
-	admCtrlConfigPersister admissioncontroller.ConfigPersister
+	admCtrlSettingsMgr admissioncontroller.SettingsManager
 
 	detectorStopper   concurrency.Stopper
 	serializerStopper concurrency.Stopper
@@ -209,8 +209,8 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 	})
 	d.deduper.reset()
 
-	if d.admCtrlConfigPersister != nil {
-		d.admCtrlConfigPersister.UpdatePolicies(sync.GetPolicies())
+	if d.admCtrlSettingsMgr != nil {
+		d.admCtrlSettingsMgr.UpdatePolicies(sync.GetPolicies())
 	}
 	return nil
 }

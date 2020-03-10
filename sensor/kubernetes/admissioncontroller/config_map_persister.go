@@ -2,19 +2,18 @@ package admissioncontroller
 
 import (
 	"compress/gzip"
-	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,41 +31,23 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type policiesUpdate struct {
-	policies []*storage.Policy
-	time     time.Time
-}
-
-type configUpdate struct {
-	config *storage.DynamicClusterConfig
-	time   time.Time
-}
-
-type configPersister struct {
+type configMapPersister struct {
 	stopSig concurrency.ErrorSignal
 
 	client v1client.ConfigMapInterface
 
-	policiesUpdateC    chan policiesUpdate
-	policies           []*storage.Policy
-	lastPoliciesUpdate time.Time
-
-	configUpdateC    chan configUpdate
-	config           *storage.DynamicClusterConfig
-	lastConfigUpdate time.Time
+	settingsStreamIt concurrency.ValueStreamIter
 }
 
-// NewConfigPersister creates a config persister object for the admission controller.
-func NewConfigPersister(k8sClient kubernetes.Interface) admissioncontroller.ConfigPersister {
-	return &configPersister{
-		client: k8sClient.CoreV1().ConfigMaps(namespaces.StackRox),
-
-		policiesUpdateC: make(chan policiesUpdate),
-		configUpdateC:   make(chan configUpdate),
+// NewConfigMapSettingsPersister creates a config persister object for the admission controller.
+func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager) common.SensorComponent {
+	return &configMapPersister{
+		client:           k8sClient.CoreV1().ConfigMaps(namespaces.StackRox),
+		settingsStreamIt: settingsMgr.SettingsStream().Iterator(false),
 	}
 }
 
-func (p *configPersister) Start() error {
+func (p *configMapPersister) Start() error {
 	if !p.stopSig.Reset() {
 		return errors.New("config persister was already started")
 	}
@@ -75,80 +56,35 @@ func (p *configPersister) Start() error {
 	return nil
 }
 
-func (p *configPersister) Stop(err error) {
+func (p *configMapPersister) Stop(err error) {
 	p.stopSig.SignalWithError(err)
 }
 
-func (p *configPersister) Capabilities() []centralsensor.SensorCapability {
+func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (p *configPersister) ProcessMessage(msg *central.MsgToSensor) error {
+func (p *configMapPersister) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
-func (p *configPersister) ResponsesC() <-chan *central.MsgFromSensor {
+func (p *configMapPersister) ResponsesC() <-chan *central.MsgFromSensor {
 	return nil
 }
 
-func (p *configPersister) UpdatePolicies(policies []*storage.Policy) {
-	var filtered []*storage.Policy
-	for _, policy := range policies {
-		if !isEnforcedDeployTimePolicy(policy) {
-			continue
-		}
-
-		filtered = append(filtered, protoutils.CloneStoragePolicy(policy))
+func (p *configMapPersister) run() {
+	// Attempt to apply the initial config, if any.
+	if err := p.applyCurrentConfigMap(); err != nil {
+		log.Errorf("Could not apply admission controller config map: %v", err)
 	}
 
-	now := time.Now()
-	go func() {
-		select {
-		case p.policiesUpdateC <- policiesUpdate{
-			policies: filtered,
-			time:     now,
-		}:
-		case <-p.stopSig.Done():
-		}
-	}()
-}
-
-func (p *configPersister) UpdateConfig(config *storage.DynamicClusterConfig) {
-	now := time.Now()
-	go func() {
-		select {
-		case p.configUpdateC <- configUpdate{
-			config: config,
-			time:   now,
-		}:
-		case <-p.stopSig.Done():
-		}
-	}()
-}
-
-func (p *configPersister) run() {
 	for !p.stopSig.IsDone() {
 		select {
 		case <-p.stopSig.Done():
 			return
 
-		case cfgUpdate := <-p.configUpdateC:
-			if !cfgUpdate.time.After(p.lastConfigUpdate) {
-				continue
-			}
-
-			p.config, p.lastConfigUpdate = cfgUpdate.config, cfgUpdate.time
-
-			if err := p.applyCurrentConfigMap(); err != nil {
-				log.Errorf("Could not apply admission controller config map: %v", err)
-			}
-
-		case policiesUpdate := <-p.policiesUpdateC:
-			if !policiesUpdate.time.After(p.lastPoliciesUpdate) {
-				continue
-			}
-
-			p.policies, p.lastPoliciesUpdate = policiesUpdate.policies, policiesUpdate.time
+		case <-p.settingsStreamIt.Done():
+			p.settingsStreamIt = p.settingsStreamIt.TryNext()
 
 			if err := p.applyCurrentConfigMap(); err != nil {
 				log.Errorf("Could not apply admission controller config map: %v", err)
@@ -157,10 +93,13 @@ func (p *configPersister) run() {
 	}
 }
 
-func (p *configPersister) applyCurrentConfigMap() error {
+func (p *configMapPersister) applyCurrentConfigMap() error {
 	configMap, err := p.createCurrentConfigMap()
 	if err != nil {
 		return errors.Wrap(err, "instantiating config map")
+	}
+	if configMap == nil {
+		return nil
 	}
 
 	_, err = p.client.Create(configMap)
@@ -177,8 +116,13 @@ func (p *configPersister) applyCurrentConfigMap() error {
 	return nil
 }
 
-func (p *configPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
-	configBytes, err := proto.Marshal(p.config)
+func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
+	settings, _ := p.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
+	if settings == nil {
+		return nil, nil
+	}
+
+	configBytes, err := proto.Marshal(settings.GetClusterConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +131,7 @@ func (p *configPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
 		return nil, err
 	}
 
-	policiesBytes, err := proto.Marshal(&storage.PolicyList{Policies: p.policies})
+	policiesBytes, err := proto.Marshal(settings.GetEnforcedDeployTimePolicies())
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding policies")
 	}
@@ -209,7 +153,7 @@ func (p *configPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
 			},
 		},
 		Data: map[string]string{
-			admissioncontrol.LastUpdateTimeDataKey: time.Now().Format(time.RFC3339Nano),
+			admissioncontrol.LastUpdateTimeDataKey: settings.GetTimestamp().String(),
 		},
 		BinaryData: map[string][]byte{
 			admissioncontrol.ConfigGZDataKey:   configBytesGZ,

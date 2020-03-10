@@ -35,6 +35,8 @@ type manager struct {
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.ErrorSignal
 
+	settingsStream *concurrency.ValueStream
+
 	settingsC          chan *sensor.AdmissionControlSettings
 	lastSettingsUpdate *types.Timestamp
 
@@ -43,13 +45,18 @@ type manager struct {
 
 func newManager() *manager {
 	return &manager{
-		settingsC:  make(chan *sensor.AdmissionControlSettings),
-		stoppedSig: concurrency.NewErrorSignal(),
+		settingsStream: concurrency.NewValueStream(nil),
+		settingsC:      make(chan *sensor.AdmissionControlSettings),
+		stoppedSig:     concurrency.NewErrorSignal(),
 	}
 }
 
 func (m *manager) currentSettingsAndDetector() *settingsAndDetector {
 	return (*settingsAndDetector)(atomic.LoadPointer(&m.settingsAndDetectorPtr))
+}
+
+func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream {
+	return m.settingsStream
 }
 
 func (m *manager) IsReady() bool {
@@ -96,6 +103,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		log.Info("DISABLING admission control service (config map was deleted).")
 		atomic.StorePointer(&m.settingsAndDetectorPtr, nil)
 		m.lastSettingsUpdate = nil
+		m.settingsStream.Push(newSettings) // typed nil ptr, not nil!
 		return
 	}
 
@@ -124,4 +132,5 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.lastSettingsUpdate = newSettings.GetTimestamp()
 
 	log.Infof("Applied new admission control settings (enforcing on %d policies).", len(newSettings.GetEnforcedDeployTimePolicies().GetPolicies()))
+	m.settingsStream.Push(newSettings)
 }

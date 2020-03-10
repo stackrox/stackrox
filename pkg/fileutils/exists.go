@@ -29,3 +29,17 @@ func AllExist(filePaths ...string) (bool, error) {
 	}
 	return allExist, nil
 }
+
+// NoneExists checks if none of the given files exist. If there is an error stat'ing any
+// of the files (which is not due to its non-existence), this error is guaranteed to be
+// returned.
+func NoneExists(filePaths ...string) (bool, error) {
+	for _, filePath := range filePaths {
+		if exists, err := Exists(filePath); err != nil {
+			return false, err
+		} else if exists {
+			return false, nil
+		}
+	}
+	return true, nil
+}

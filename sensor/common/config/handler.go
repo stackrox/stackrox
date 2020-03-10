@@ -25,10 +25,10 @@ type Handler interface {
 }
 
 // NewCommandHandler returns a new instance of a Handler using the input image and Orchestrator.
-func NewCommandHandler(admCtrlConfigPersister admissioncontroller.ConfigPersister) Handler {
+func NewCommandHandler(admCtrlSettingsMgr admissioncontroller.SettingsManager) Handler {
 	return &configHandlerImpl{
-		stopC:                  concurrency.NewErrorSignal(),
-		admCtrlConfigPersister: admCtrlConfigPersister,
+		stopC:              concurrency.NewErrorSignal(),
+		admCtrlSettingsMgr: admCtrlSettingsMgr,
 	}
 }
 
@@ -36,7 +36,7 @@ type configHandlerImpl struct {
 	config *storage.DynamicClusterConfig
 	lock   sync.RWMutex
 
-	admCtrlConfigPersister admissioncontroller.ConfigPersister
+	admCtrlSettingsMgr admissioncontroller.SettingsManager
 
 	stopC concurrency.ErrorSignal
 }
@@ -71,8 +71,8 @@ func (c *configHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 		c.lock.Lock()
 		defer c.lock.Unlock()
 		c.config = config.Config
-		if c.admCtrlConfigPersister != nil {
-			c.admCtrlConfigPersister.UpdateConfig(config.GetConfig())
+		if c.admCtrlSettingsMgr != nil {
+			c.admCtrlSettingsMgr.UpdateConfig(config.GetConfig())
 		}
 		return nil
 	}

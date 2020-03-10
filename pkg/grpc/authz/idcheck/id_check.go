@@ -19,3 +19,8 @@ func ScannerOnly() authz.Authorizer {
 func CollectorOnly() authz.Authorizer {
 	return Wrap(serviceType(storage.ServiceType_COLLECTOR_SERVICE))
 }
+
+// AdmissionControlOnly returns an authorizer that checks for the Admission Control type.
+func AdmissionControlOnly() authz.Authorizer {
+	return Wrap(serviceType(storage.ServiceType_ADMISSION_CONTROL_SERVICE))
+}

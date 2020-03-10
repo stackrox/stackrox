@@ -129,8 +129,11 @@ func (w *k8sSettingsWatch) parseAndSendSettings(cm *v1.ConfigMap) {
 func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSettings) {
 	select {
 	case <-w.ctx.Done():
+		return
 	case w.outC <- settings:
 	}
+
+	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().String())
 }
 
 func (w *k8sSettingsWatch) start() error {

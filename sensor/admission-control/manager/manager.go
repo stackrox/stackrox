@@ -12,6 +12,7 @@ type Manager interface {
 	Stopped() concurrency.ErrorWaitable
 
 	SettingsUpdateC() chan<- *sensor.AdmissionControlSettings
+	SettingsStream() concurrency.ReadOnlyValueStream
 
 	IsReady() bool
 }

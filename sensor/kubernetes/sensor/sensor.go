@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
@@ -23,15 +24,15 @@ import (
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(client client.Interface, extraComponents ...common.SensorComponent) *sensor.Sensor {
-	var admCtrlConfigPersister admissioncontroller.ConfigPersister
+	var admCtrlSettingsMgr admissioncontroller.SettingsManager
 	if features.AdmissionControlService.Enabled() {
-		admCtrlConfigPersister = k8sadmctrl.NewConfigPersister(client.Kubernetes())
+		admCtrlSettingsMgr = admissioncontroller.NewSettingsManager()
 	}
 
-	configHandler := config.NewCommandHandler(admCtrlConfigPersister)
+	configHandler := config.NewCommandHandler(admCtrlSettingsMgr)
 
 	enforcer := enforcer.MustCreate(client.Kubernetes())
-	policyDetector := detector.New(enforcer, admCtrlConfigPersister)
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr)
 	listener := listener.New(client, configHandler, policyDetector)
 
 	o := orchestrator.New(client.Kubernetes())
@@ -51,12 +52,12 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 	}
 	components = append(components, extraComponents...)
 
-	if admCtrlConfigPersister != nil {
-		components = append(components, admCtrlConfigPersister)
-	}
-
 	if features.DiagnosticBundle.Enabled() || features.Telemetry.Enabled() {
 		components = append(components, telemetry.NewCommandHandler(client.Kubernetes()))
+	}
+
+	if admCtrlSettingsMgr != nil {
+		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
 	}
 
 	s := sensor.NewSensor(
@@ -65,10 +66,16 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 		components...,
 	)
 
-	s.AddAPIServices(
+	apiServices := []grpc.APIService{
 		service.Singleton(),
 		processSignals,
 		complianceService,
-	)
+	}
+
+	if admCtrlSettingsMgr != nil {
+		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr))
+	}
+
+	s.AddAPIServices(apiServices...)
 	return s
 }

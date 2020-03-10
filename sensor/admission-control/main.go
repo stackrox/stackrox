@@ -6,9 +6,12 @@ import (
 	"syscall"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/grpc"
+	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -44,12 +47,26 @@ func mainCmd() error {
 		return errors.Wrap(err, "starting admission control manager")
 	}
 
+	sensorConn, err := clientconn.AuthenticatedGRPCConnection(env.SensorEndpoint.Setting(), mtls.SensorSubject)
+	if err != nil {
+		log.Errorf("Could not establish a gRPC connection to Sensor: %v. Some features will not work.", err)
+	}
+
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC()); err != nil {
 		log.Errorf("Could not watch Kubernetes for settings updates: %v. Functionality might be impacted", err)
 	}
+	if err := settingswatch.WatchMountPathForSettingsUpdateAsync(mgr.Stopped(), mgr.SettingsUpdateC()); err != nil {
+		log.Errorf("Could not watch mount path for settings updates: %v. Functionality might be impacted", err)
+	}
+	if err := settingswatch.RunSettingsPersister(mgr); err != nil {
+		log.Errorf("Could not run settings persister: %v. Admission control service might take longer to become ready after container restarts", err)
+	}
+	if sensorConn != nil {
+		settingswatch.WatchSensorSettingsPush(mgr, sensorConn)
+	}
 
-	serverConfig := grpc.Config{
-		Endpoints: []*grpc.EndpointConfig{
+	serverConfig := pkgGRPC.Config{
+		Endpoints: []*pkgGRPC.EndpointConfig{
 			{
 				ListenEndpoint: webhookEndpoint,
 				TLS:            verifier.NonCA{},
@@ -58,7 +75,7 @@ func mainCmd() error {
 		},
 	}
 
-	apiServer := grpc.NewAPI(serverConfig)
+	apiServer := pkgGRPC.NewAPI(serverConfig)
 	apiServer.Register(service.New(mgr))
 
 	apiServer.Start()

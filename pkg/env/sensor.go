@@ -8,4 +8,7 @@ var (
 	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = RegisterSetting("ROX_ADVERTISED_ENDPOINT", WithDefault("sensor.stackrox:443"))
+
+	// SensorEndpoint is used to communicate the sensor endpoint to other services in the same cluster.
+	SensorEndpoint = RegisterSetting("ROX_SENSOR_ENDPOINT", WithDefault("sensor.stackrox:443"))
 )

@@ -113,6 +113,8 @@ spec:
             - name: config
               mountPath: /run/config/stackrox.io/admission-control/config/
               readOnly: true
+            - name: config-store
+              mountPath: /var/lib/stackrox/admission-control/
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
               readOnly: true
@@ -131,6 +133,8 @@ spec:
           configMap:
             name: {{.AdmissionControlConfigMapName}}
             optional: true
+        - name: config-store
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
