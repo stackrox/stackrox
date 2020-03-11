@@ -150,21 +150,16 @@ export function getImageTableColumns(workflowState) {
             entityType: entityTypes.COMPONENT,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            Cell: ({ original, pdf }) => {
-                const { scan, id } = original;
-                if (!scan) return '-';
-                const { components } = scan;
-                return (
-                    <TableCountLink
-                        entityType={entityTypes.COMPONENT}
-                        count={components.length}
-                        textOnly={pdf}
-                        selectedRowId={id}
-                    />
-                );
-            },
+            Cell: ({ original, pdf }) => (
+                <TableCountLink
+                    entityType={entityTypes.COMPONENT}
+                    count={original.componentCount}
+                    textOnly={pdf}
+                    selectedRowId={original.id}
+                />
+            ),
             id: imageSortFields.COMPONENT_COUNT,
-            accessor: 'scan.components',
+            accessor: 'componentCount',
             sortField: imageSortFields.COMPONENT_COUNT
         },
         {

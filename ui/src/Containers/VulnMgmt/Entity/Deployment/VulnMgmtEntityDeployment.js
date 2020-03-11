@@ -40,23 +40,11 @@ const VulmMgmtDeployment = ({
                     lifecycleStages
                     enforcementActions
                 }
-                policies(query: $policyQuery) {
-                    id
-                    name
-                    description
-                    policyStatus(query: $scopeQuery)
-                    latestViolation(query: $scopeQuery)
-                    severity
-                    lifecycleStages
-                    enforcementActions
-                }
                 annotations {
                     key
                     value
                 }
                 ${entityContext[entityTypes.CLUSTER] ? '' : 'cluster { id name }'}
-                hostNetwork: id
-                imagePullSecrets
                 inactive
                 labels {
                     key
@@ -64,41 +52,11 @@ const VulmMgmtDeployment = ({
                 }
                 name
                 ${entityContext[entityTypes.NAMESPACE] ? '' : 'namespace namespaceId'}
-                ports {
-                    containerPort
-                    exposedPort
-                    exposure
-                    exposureInfos {
-                        externalHostnames
-                        externalIps
-                        level
-                        nodePort
-                        serviceClusterIp
-                        serviceId
-                        serviceName
-                        servicePort
-                    }
-                    name
-                    protocol
-                }
                 priority
-                replicas
-                ${
-                    entityContext[entityTypes.SERVICE_ACCOUNT]
-                        ? ''
-                        : 'serviceAccount serviceAccountID'
-                }
                 failingPolicyCount(query: $policyQuery)
                 policyCount(query: $policyQuery)
-                tolerations {
-                    key
-                    operator
-                    taintEffect
-                    value
-                }
                 type
                 created
-                secretCount
                 imageCount
                 componentCount
                 vulnCount

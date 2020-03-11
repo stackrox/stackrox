@@ -113,9 +113,6 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         clusterId
         namespace
         namespaceId
-        serviceAccount
-        serviceAccountID
-        secretCount
         imageCount
         latestViolation(query: $scopeQuery)
         priority
@@ -139,12 +136,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
                 created
             }
         }
-        scan {
-            scanTime
-            components(query: $query) {
-                name
-            }
-        }
+        componentCount(query: $query)
         vulnCounter {
             all {
                 total
