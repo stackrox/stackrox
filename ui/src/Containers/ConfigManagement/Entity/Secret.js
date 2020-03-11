@@ -259,7 +259,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Secret Details">
+                        <CollapsibleSection title="Secret Summary">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"

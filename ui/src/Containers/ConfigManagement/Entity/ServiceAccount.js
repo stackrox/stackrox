@@ -148,7 +148,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Service Account Details">
+                        <CollapsibleSection title="Service Account Summary">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"

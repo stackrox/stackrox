@@ -107,7 +107,7 @@ describe('Policies Sagas', () => {
             .silentRun();
     });
 
-    it('should fetch policy details on Policies page with policy selected', () => {
+    it('should fetch policy summary on Policies page with policy selected', () => {
         const policyId = '12345';
         const response = { entities: { policy: [policy] } };
         const fetchMock = jest.fn().mockReturnValueOnce({ response });

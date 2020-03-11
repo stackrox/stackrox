@@ -93,7 +93,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="Cluster Details">
+                <CollapsibleSection title="Cluster Summary">
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata

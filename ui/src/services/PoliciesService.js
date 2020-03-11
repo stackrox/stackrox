@@ -8,7 +8,7 @@ const baseUrl = '/v1/policies';
 const policyCategoriesUrl = '/v1/policyCategories';
 
 /**
- * Fetches policy details for a given policy ID.
+ * Fetches policy summary for a given policy ID.
  * Returns normalized response with policy entity extracted.
  *
  * @param {!string} policyId

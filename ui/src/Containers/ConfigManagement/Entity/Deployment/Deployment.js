@@ -160,7 +160,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Deployment Details">
+                        <CollapsibleSection title="Deployment Summary">
                             <div className="flex mb-4 flex-wrap pdf-page">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"

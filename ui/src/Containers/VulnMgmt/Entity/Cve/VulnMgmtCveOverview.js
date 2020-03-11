@@ -106,10 +106,10 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     return (
         <div className="flex h-full">
             <div className="flex flex-col flex-grow min-w-0">
-                <CollapsibleSection title="CVE summary">
+                <CollapsibleSection title="CVE Summary">
                     <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4">
                         <Widget
-                            header="Details"
+                            header="Description & Details"
                             headerComponents={linkToMoreInfo}
                             className="bg-base-100 min-h-48 lg:s-2 pdf-page pdf-stretch"
                         >

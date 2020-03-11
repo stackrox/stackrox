@@ -140,7 +140,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Cluster Details">
+                        <CollapsibleSection title="Cluster Summary">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata
                                     className="mx-4 min-w-48 bg-base-100 min-h-48 mb-4"

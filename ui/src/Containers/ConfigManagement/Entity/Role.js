@@ -137,7 +137,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 return (
                     <div className="w-full">
-                        <CollapsibleSection title="Role Details">
+                        <CollapsibleSection title="Role Summary">
                             <div className="flex mb-4 flex-wrap">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"

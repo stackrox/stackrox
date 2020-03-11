@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const MetadataStatsList = ({ statTiles }) => {
     return (
-        <div className="border-b border-base-300 text-base-500 flex justify-between items-center">
+        <div className="border-b border-base-300 text-base-600 flex justify-between items-center">
             {statTiles.map((stat, i, arr) => {
                 return (
                     <div

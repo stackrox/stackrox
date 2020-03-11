@@ -100,7 +100,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Control Details">
+                        <CollapsibleSection title="Control Summary">
                             <div className="flex flex-wrap pdf-page">
                                 <ControlDetails
                                     standardId={standardId}

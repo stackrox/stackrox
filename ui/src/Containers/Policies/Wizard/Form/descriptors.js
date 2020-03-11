@@ -657,7 +657,7 @@ const policyFormFields = {
         descriptor: policyStatusDescriptor
     },
     policyDetails: {
-        header: 'Policy Details',
+        header: 'Policy Summary',
         descriptor: policyDetailsFormDescriptor
     },
     policyConfiguration: {

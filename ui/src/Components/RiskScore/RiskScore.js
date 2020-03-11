@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 const RiskScore = ({ score }) => {
     return (
         <div className="flex justify-center items-center">
-            <span className="pr-1">Risk priority:</span>
+            <span className="pr-1 text-xl">Risk priority:</span>
             <span className="pl-1 text-3xl">{score}</span>
         </div>
     );

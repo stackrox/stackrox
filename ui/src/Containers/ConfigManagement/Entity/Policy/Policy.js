@@ -170,7 +170,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
                         <CollapsibleSection
-                            title="Policy Details"
+                            title="Policy Summary"
                             headerComponents={<PolicyEditButton id={id} />}
                         >
                             <div className="grid grid-gap-6 grid-columns-4 mx-4 grid-dense mb-4 pdf-page">

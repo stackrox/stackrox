@@ -117,7 +117,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
 
                 return (
                     <div className="w-full" id="capture-dashboard-stretch">
-                        <CollapsibleSection title="Namespace Details">
+                        <CollapsibleSection title="Namespace Summary">
                             <div className="flex flex-wrap pdf-page">
                                 <Metadata
                                     className="mx-4 bg-base-100 min-h-48 mb-4"
