@@ -7,9 +7,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,17 +57,11 @@ func (suite *AlertCommentsStoreTestSuite) mustGetCommentsAndSort(alertID string)
 	return comments
 }
 
-func (suite *AlertCommentsStoreTestSuite) validateBetweenNowAnd(ts *types.Timestamp, earliest time.Time, latest time.Time) {
-	asGoTime := protoconv.ConvertTimestampToTimeOrNow(ts)
-	suite.True(asGoTime.After(earliest), "earliest: %s, got time: %s", earliest, asGoTime)
-	suite.True(asGoTime.Before(latest), "latest: %s, got time: %s", latest, asGoTime)
-}
-
 // validateCommentsEqual validates that the got comment is equal to the expected comment
 // while satisfying our expected properties for the createdat and modified at time.
 func (suite *AlertCommentsStoreTestSuite) validateCommentsEqual(expected, got *storage.Comment, earliestCreatedAt, latestCreatedAt, earliestModifiedAt, latestModifiedAt time.Time) {
-	suite.validateBetweenNowAnd(got.GetCreatedAt(), earliestCreatedAt, latestCreatedAt)
-	suite.validateBetweenNowAnd(got.GetLastModified(), earliestModifiedAt, latestModifiedAt)
+	testutils.ValidateTSInWindow(got.GetCreatedAt(), earliestCreatedAt, latestCreatedAt, suite.T())
+	testutils.ValidateTSInWindow(got.GetLastModified(), earliestModifiedAt, latestModifiedAt, suite.T())
 	suite.Equal(storage.ResourceType_ALERT, got.GetResourceType())
 	gotCloned := cloneComment(got)
 	gotCloned.CommentId = expected.CommentId // We don't need to compare
