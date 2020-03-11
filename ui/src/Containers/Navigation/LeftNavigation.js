@@ -126,7 +126,7 @@ const LeftNavigation = ({ location, metadata }) => {
     useEffect(componentDidMount, []);
 
     const darkModeClasses = isDarkMode
-        ? 'bg-base-100 border-t border-r border-base-300'
+        ? 'bg-base-100 border-t -mt-px border-r border-base-300'
         : 'bg-primary-800';
     return (
         <>
