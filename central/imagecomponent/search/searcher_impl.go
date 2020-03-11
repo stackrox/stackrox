@@ -185,7 +185,7 @@ func getCompoundComponentSearcher(
 		},
 		{
 			Searcher: idspace.WithKeyTransformations(
-				scoped.WithScoping(imageSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
+				scoped.WithScoping(deploymentSearcher, dackbox.ToCategory(v1.SearchCategory_DEPLOYMENTS)),
 				dackbox.GraphTransformations[v1.SearchCategory_DEPLOYMENTS][v1.SearchCategory_IMAGE_COMPONENTS]),
 			Options: deploymentOnlyOptionsMap,
 		},
