@@ -1,5 +1,7 @@
 import { url as dashboardUrl } from '../constants/DashboardPage';
+import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
+import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
 //
@@ -51,5 +53,20 @@ describe('General sanity checks', () => {
             expect($lis.eq(0)).to.contain('Documentation');
             expect($lis.eq(1)).to.contain('API Reference');
         });
+    });
+
+    it('should allow to navigate to another page after exception happens on a page', () => {
+        cy.server();
+        cy.route('GET', api.alerts.alerts, { alerts: [{ id: 'broken one' }] }).as('alerts');
+
+        cy.visit(violationsUrl);
+        cy.wait('@alerts');
+
+        cy.get(selectors.errorBoundary).contains(
+            "We're sorry — something's gone wrong. The error has been logged."
+        );
+
+        cy.get(selectors.navLinks.first).click();
+        cy.get(selectors.errorBoundary).should('not.exist'); // error screen should be gone
     });
 });

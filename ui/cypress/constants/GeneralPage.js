@@ -6,7 +6,8 @@ const selectors = {
         apidocs: '[data-test-id="api-docs"]',
         apiDocsMenuLinks: '[data-test-id="api-docs-menu"] li'
     },
-    sidePanel: '.navigation-panel'
+    sidePanel: '.navigation-panel',
+    errorBoundary: '[data-testid="error-boundary"]'
 };
 
 export default selectors;
