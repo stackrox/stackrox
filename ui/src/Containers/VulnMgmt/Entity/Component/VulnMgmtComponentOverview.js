@@ -36,6 +36,10 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
         {
             key: 'Component Version',
             value: version
+        },
+        {
+            key: 'Location',
+            value: 'N/A'
         }
     ];
 

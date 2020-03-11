@@ -395,9 +395,9 @@ export class WorkflowState {
      *
      * @param   {string}  entityType  the entityType constant to check
      *
-     * @return  {boolean}              true if the parent is a single of the given entity type, false otherwise
+     * @return  {boolean}              true if the preceding entity type is a single of the given entity type, false otherwise
      */
-    isChildOfEntity(entityType) {
+    isPreceding(entityType) {
         return (
             this.stateStack &&
             this.stateStack.length > 1 &&

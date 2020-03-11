@@ -692,36 +692,36 @@ describe('WorkflowState', () => {
         });
     });
 
-    describe('isChildOfEntity', () => {
-        it('should return true when the parent of leaf state is the given entity', () => {
+    describe('isPreceding', () => {
+        it('should return true when the preceding entity type of leaf state is the given entity', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT)
             ]);
 
-            const actual = workflowState.isChildOfEntity(entityTypes.CVE);
+            const actual = workflowState.isPreceding(entityTypes.CVE);
 
             expect(actual).toEqual(true);
         });
 
-        it('should return true when the parent of leaf state is given entity, alternate test', () => {
+        it('should return true when the preceding entity type of leaf state is given entity, alternate test', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
                 new WorkflowEntity(entityTypes.COMPONENT)
             ]);
 
-            const actual = workflowState.isChildOfEntity(entityTypes.DEPLOYMENT);
+            const actual = workflowState.isPreceding(entityTypes.DEPLOYMENT);
 
             expect(actual).toEqual(true);
         });
 
-        it('should return false when the parent of leaf state is NOT the given entity', () => {
+        it('should return false when the preceding entity type of leaf state is NOT the given entity', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.CLUSTER, '4321-dcba'),
                 new WorkflowEntity(entityTypes.DEPLOYMENT)
             ]);
 
-            const actual = workflowState.isChildOfEntity(entityTypes.CVE);
+            const actual = workflowState.isPreceding(entityTypes.CVE);
 
             expect(actual).toEqual(false);
         });
