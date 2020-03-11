@@ -11,10 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
-	scanTimeout = 3 * time.Minute
+	scanTimeout        = 6 * time.Minute
+	maxConcurrentScans = 20
 )
 
 type scanResult struct {
@@ -39,6 +41,8 @@ type enricher struct {
 
 	imageCache expiringcache.Cache
 	stopSig    concurrency.Signal
+
+	concurrentScanSemaphore *semaphore.Weighted
 }
 
 type cacheValue struct {
@@ -51,9 +55,15 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, useSaved bool) {
+func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, useSaved bool, concurrentScanSemaphore *semaphore.Weighted) {
 	defer c.signal.Signal()
 
+	if err := concurrentScanSemaphore.Acquire(concurrency.AsContext(&c.signal), 1); err != nil {
+		log.Errorf("error acquiring scan semaphore: %v", err)
+		c.image = types.ToImage(ci)
+		return
+	}
+	defer concurrentScanSemaphore.Release(1)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
@@ -72,8 +82,9 @@ func newEnricher(isSyncing *concurrency.Flag) *enricher {
 		scanResultChan: make(chan scanResult),
 		isSyncing:      isSyncing,
 
-		imageCache: expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting()),
-		stopSig:    concurrency.NewSignal(),
+		concurrentScanSemaphore: semaphore.NewWeighted(maxConcurrentScans),
+		imageCache:              expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting()),
+		stopSig:                 concurrency.NewSignal(),
 	}
 }
 
@@ -114,7 +125,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci, e.isSyncing.Get())
+		value.scanAndSet(e.imageSvc, ci, e.isSyncing.Get(), e.concurrentScanSemaphore)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),

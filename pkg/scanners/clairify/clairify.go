@@ -1,7 +1,6 @@
 package clairify
 
 import (
-	"math"
 	"net"
 	"net/http"
 	"time"
@@ -26,7 +25,8 @@ import (
 const (
 	typeString = "clairify"
 
-	clientTimeout = 2 * time.Minute
+	clientTimeout      = 5 * time.Minute
+	maxConcurrentScans = 30
 )
 
 var (
@@ -91,7 +91,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		protoImageIntegration: protoImageIntegration,
 		activeRegistries:      activeRegistries,
 
-		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(math.MaxInt32),
+		ScanSemaphore: scannerTypes.NewSemaphoreWithValue(maxConcurrentScans),
 	}
 	return scanner, nil
 }
