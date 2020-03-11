@@ -14,6 +14,7 @@ import objects.NetworkPolicy
 import orchestratormanager.OrchestratorType
 import services.AlertService
 import services.BaseService
+import io.stackrox.proto.api.v1.ImageServiceOuterClass.ListImagesResponse
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
@@ -80,9 +81,13 @@ class Services extends BaseService {
 
     static Policy getPolicyByName(String policyName) {
         return getPolicy(
-                        getPolicies().find { it.name == policyName }.id
-            )
+                getPolicies().find { it.name == policyName }.id
+        )
       }
+
+    static ImageOuterClass.Image getImageById(String id) {
+        return getImageClient().getImage(getResourceByID(id))
+    }
 
     static Policy getPolicy(String id) {
         return getPolicyClient().getPolicy(getResourceByID(id))
@@ -284,6 +289,19 @@ class Services extends BaseService {
                 ImageServiceOuterClass.ScanImageRequest.newBuilder()
                          .setImageName(image).build()
         )
+    }
+
+    static String getImageIdByName(String imageName) {
+        String id = null
+        Timer t = new Timer(10, 1)
+        while (id == null &&  t.IsValid()) {
+            id = ImageService.getImages().find { it?.name == imageName }?.id
+        }
+        return id
+    }
+
+    static List<ListImagesResponse> getImages(RawQuery query = RawQuery.newBuilder().build()) {
+        return getImageClient().listImages(query)
     }
 
     static requestBuildImageScan(String registry, String remote, String tag) {
