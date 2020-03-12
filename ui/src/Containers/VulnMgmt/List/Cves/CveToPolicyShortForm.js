@@ -36,6 +36,19 @@ const lifecycleOptions = [
     // no RUNTIME enforcement for policies based on CVEs
 ];
 
+export const emptyPolicy = {
+    name: '',
+    severity: '',
+    lifecycleStages: [],
+    description: '',
+    disabled: false,
+    categories: ['Vulnerability Management'],
+    fields: {
+        cve: ''
+    },
+    whitelists: []
+};
+
 function wrapSelectEvent(key, handleChange) {
     return function compareSelected(selectedOption) {
         const syntheticEvent = {
@@ -52,7 +65,7 @@ function wrapSelectEvent(key, handleChange) {
 function CveToPolicyShortForm({
     policy,
     handleChange,
-    existingPolicies,
+    policies,
     selectedPolicy,
     setSelectedPolicy
 }) {
@@ -64,6 +77,20 @@ function CveToPolicyShortForm({
     const identifierForNameField = 'policy-name-to-use';
     const identifierForSeverityField = 'severity-to-use';
     const identifierForLifecycleField = 'lifecycle-to-use';
+
+    function createNewOption(policyName) {
+        const newPolicy = {
+            ...emptyPolicy,
+            name: policyName,
+            label: policyName,
+            value: policies.length
+        };
+        setSelectedPolicy(newPolicy);
+    }
+
+    function onChange(idx) {
+        setSelectedPolicy(policies[idx]);
+    }
 
     return (
         <form className="w-full mb-4" data-testid="policy-short-form">
@@ -84,11 +111,13 @@ function CveToPolicyShortForm({
                 <div className="flex">
                     <Creatable
                         key="policy"
-                        onChange={setSelectedPolicy}
-                        options={existingPolicies}
+                        onChange={onChange}
+                        onCreateOption={createNewOption}
+                        options={policies}
                         placeholder="Type a name, or select an existing policy"
                         value={selectedPolicy}
                         data-testid={identifierForNameField}
+                        allowCreateWhileLoading
                     />
                 </div>
                 <div className="p-2 text-sm font-500">
@@ -208,7 +237,7 @@ CveToPolicyShortForm.propTypes = {
         }),
         whitelists: PropTypes.array
     }).isRequired,
-    existingPolicies: PropTypes.arrayOf(
+    policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })
     ),
     selectedPolicy: PropTypes.string,
@@ -217,7 +246,7 @@ CveToPolicyShortForm.propTypes = {
 };
 
 CveToPolicyShortForm.defaultProps = {
-    existingPolicies: [],
+    policies: [],
     selectedPolicy: ''
 };
 

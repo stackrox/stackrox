@@ -15,20 +15,7 @@ import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
 import { splitCvesByType } from 'utils/vulnerabilityUtils';
 
-import CveToPolicyShortForm from './CveToPolicyShortForm';
-
-const emptyPolicy = {
-    name: '',
-    severity: '',
-    lifecycleStages: [],
-    description: '',
-    disabled: false,
-    categories: ['Vulnerability Management'],
-    fields: {
-        cve: ''
-    },
-    whitelists: []
-};
+import CveToPolicyShortForm, { emptyPolicy } from './CveToPolicyShortForm';
 
 const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [messageObj, setMessageObj] = useState(null);
@@ -42,6 +29,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     // prepare policy object
     const populatedPolicy = { ...emptyPolicy, fields: { cve: cvesStr } };
     const [policy, setPolicy] = useState(populatedPolicy);
+    const [policies, setPolicies] = useState([]);
 
     // use GraphQL to get the (hopefully cached) cve summaries to display in the dialog
     const CVES_QUERY = gql`
@@ -93,10 +81,21 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         POLICIES_QUERY,
         policyQueryOptions
     );
-    const existingPolicies =
-        !policyLoading && policyData && policyData.results && policyData.results.length
-            ? policyData.results.map(pol => ({ ...pol, value: pol.id, label: pol.name }))
-            : [];
+
+    if (
+        !policyLoading &&
+        policyData &&
+        policyData.results &&
+        policyData.results.length &&
+        policies.length === 0
+    ) {
+        const existingPolicies = policyData.results.map((pol, idx) => ({
+            ...pol,
+            value: idx,
+            label: pol.name
+        }));
+        setPolicies(existingPolicies);
+    }
 
     function handleChange(event) {
         if (get(policy, event.target.name) !== undefined) {
@@ -108,31 +107,31 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         }
     }
 
-    function setSelectedPolicy(value) {
-        // some string was typed or selected
-        const existingPolicy =
-            existingPolicies && existingPolicies.find(pol => pol.value === value);
+    function setSelectedPolicy(selectedPolicy) {
+        // checking if the policy already exists or has already been added to the policy list
+        const policyExists = policies && policies.find(pol => pol.value === selectedPolicy.value);
+        let newPolicy = selectedPolicy;
 
-        if (existingPolicy) {
+        if (policyExists) {
             // it matches an existing policy's ID, so must have been selected from existing list
-            const newCveList = existingPolicy.fields.cve
-                ? `${existingPolicy.fields.cve},${allowedCvesStr}`
+            const newCveList = selectedPolicy.fields.cve
+                ? `${selectedPolicy.fields.cve},${allowedCvesStr}`
                 : allowedCvesStr;
-            const newFields = { ...existingPolicy.fields, cve: newCveList };
-
-            const newPolicy = { ...existingPolicy, fields: newFields, id: value };
-
-            setPolicy(newPolicy);
+            const newFields = { ...selectedPolicy.fields, cve: newCveList };
+            newPolicy = { ...selectedPolicy, fields: newFields };
         } else {
             // 1. not in existing list, so must be a typed name instead of an ID
             // 2. also use this opportunity to only add allowed CVEs to new policy
-            const newPolicy = { ...policy, name: value, id: '', fields: { cve: allowedCvesStr } };
-
-            setPolicy(newPolicy);
+            newPolicy = { ...selectedPolicy, fields: { cve: allowedCvesStr } };
         }
 
         // update the form
-        setPolicyIdentifier(value);
+        setPolicy(newPolicy);
+        setPolicyIdentifier(selectedPolicy.value);
+
+        if (!policyExists) {
+            setPolicies([...policies, newPolicy]);
+        }
     }
 
     function handleClose(idsToStaySelected) {
@@ -207,7 +206,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                         <CveToPolicyShortForm
                             policy={policy}
                             handleChange={handleChange}
-                            existingPolicies={existingPolicies}
+                            policies={policies}
                             selectedPolicy={policyIdentifer}
                             setSelectedPolicy={setSelectedPolicy}
                         />
