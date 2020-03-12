@@ -8,17 +8,32 @@ import (
 )
 
 func createLinkedStructPredicate(preds ...internalPredicate) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	filtered := preds[:0]
+	for _, pred := range preds {
+		if pred == alwaysTrue {
+			continue
+		}
+		if pred == alwaysFalse {
+			return alwaysFalse
+		}
+		filtered = append(filtered, pred)
+	}
+
+	if len(filtered) == 0 {
+		return alwaysTrue
+	}
+
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		var results []*search.Result
-		for _, pred := range preds {
-			res, match := pred(instance)
+		for _, pred := range filtered {
+			res, match := pred.Evaluate(instance)
 			if !match {
 				return nil, false
 			}
 			results = append(results, res)
 		}
 		return MergeResults(results...), true
-	}
+	})
 }
 
 // createLinkedNestedPredicate returns a predicate that combines all of the input predicates as linked values on the
@@ -38,7 +53,7 @@ func createLinkedNestedPredicate(fieldType reflect.Type, preds ...internalPredic
 
 // Returns true if any values in the slice matches all input predicates.
 func createSliceLinkedPredicate(preds ...internalPredicate) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() || instance.IsZero() {
 			return nil, false
 		}
@@ -47,7 +62,7 @@ func createSliceLinkedPredicate(preds ...internalPredicate) internalPredicate {
 			var localResults []*search.Result
 			matchesAll := true
 			for _, pred := range preds {
-				res, match := pred(instance.Index(i))
+				res, match := pred.Evaluate(instance.Index(i))
 				if !match {
 					matchesAll = false
 					break
@@ -63,13 +78,13 @@ func createSliceLinkedPredicate(preds ...internalPredicate) internalPredicate {
 			return MergeResults(results...), true
 		}
 		return nil, false
-	}
+	})
 }
 
 // Right now this assumes that if you are doing linked values on a map, then the key and value are the same type,
 // And you don't care which one matches, as long as one of the two matches every input predicate.
 func createMapLinkedPredicate(preds ...internalPredicate) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsNil() || instance.IsZero() {
 			return nil, false
 		}
@@ -81,12 +96,12 @@ func createMapLinkedPredicate(preds ...internalPredicate) internalPredicate {
 			var results []*search.Result
 			matchesAll := true
 			for _, pred := range preds {
-				keyRes, match := pred(key)
+				keyRes, match := pred.Evaluate(key)
 				if !match {
 					matchesAll = false
 					break
 				}
-				valRes, match := pred(val)
+				valRes, match := pred.Evaluate(val)
 				if !match {
 					matchesAll = false
 					break
@@ -99,5 +114,5 @@ func createMapLinkedPredicate(preds ...internalPredicate) internalPredicate {
 			return MergeResults(results...), true
 		}
 		return nil, false
-	}
+	})
 }

@@ -72,7 +72,7 @@ func createTimestampPredicate(fullPath, value string) (internalPredicate, error)
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		ts := timestampValue
 		if durationValue != nil {
 			var err error
@@ -93,7 +93,7 @@ func createTimestampPredicate(fullPath, value string) (internalPredicate, error)
 		return &search.Result{
 			Matches: formatSingleMatchf(fullPath, "%d", instanceTS.Seconds),
 		}, true
-	}, nil
+	}), nil
 }
 
 func parseDuration(d string) (time.Duration, bool) {

@@ -584,7 +584,7 @@ func mapImagesToVulnerabilityResolvers(root *Resolver, images []*storage.Image, 
 	cveToResolver := make(map[string]*EmbeddedVulnerabilityResolver)
 	for _, image := range images {
 		for _, component := range image.GetScan().GetComponents() {
-			if _, matches := componentPred(component); !matches {
+			if !componentPred.Matches(component) {
 				continue
 			}
 			for _, vuln := range component.GetVulns() {

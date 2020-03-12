@@ -36,7 +36,7 @@ func (m *matcherImpl) errorPrefixForMatchOne() string {
 func (m *matcherImpl) MatchOne(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator) (violations searchbasedpolicies.Violations, err error) {
 	var results []*search.Result
 	if indicator != nil {
-		result, matches := m.processPredicate(indicator)
+		result, matches := m.processPredicate.Evaluate(indicator)
 		if !matches {
 			return
 		}
@@ -44,7 +44,7 @@ func (m *matcherImpl) MatchOne(ctx context.Context, deployment *storage.Deployme
 	}
 
 	if deployment != nil {
-		result, matches := m.deploymentPredicate(deployment)
+		result, matches := m.deploymentPredicate.Evaluate(deployment)
 		if !matches {
 			return
 		}
@@ -54,7 +54,7 @@ func (m *matcherImpl) MatchOne(ctx context.Context, deployment *storage.Deployme
 	if len(images) > 0 {
 		var foundMatch bool
 		for _, img := range images {
-			result, matches := m.imagePredicate(img)
+			result, matches := m.imagePredicate.Evaluate(img)
 			if matches {
 				foundMatch = true
 				results = append(results, result)

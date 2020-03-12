@@ -452,3 +452,55 @@ func TestSearchPredicateWithEnums(t *testing.T) {
 		})
 	}
 }
+
+func TestSimplifications_AlwaysTrue(t *testing.T) {
+	positive := []internalPredicate{
+		andOf(),
+		alwaysTrue,
+		andOf(alwaysTrue, alwaysTrue),
+		orOf(alwaysTrue, alwaysFalse),
+		createLinkedStructPredicate(alwaysTrue, alwaysTrue),
+	}
+
+	for _, ip := range positive {
+		assert.True(t, AlwaysTrue == wrapInternal(ip))
+	}
+
+	negative := []internalPredicate{
+		orOf(),
+		orOf(alwaysFalse, alwaysFalse),
+		andOf(alwaysTrue, alwaysFalse),
+		createMapLinkedPredicate(alwaysTrue),
+		createSliceLinkedPredicate(),
+	}
+
+	for _, ip := range negative {
+		assert.True(t, AlwaysTrue != wrapInternal(ip))
+	}
+}
+
+func TestSimplifications_AlwaysFalse(t *testing.T) {
+	positive := []internalPredicate{
+		orOf(),
+		alwaysFalse,
+		andOf(alwaysTrue, alwaysFalse),
+		orOf(alwaysFalse, alwaysFalse),
+		createLinkedStructPredicate(alwaysTrue, alwaysFalse),
+	}
+
+	for _, ip := range positive {
+		assert.True(t, AlwaysFalse == wrapInternal(ip))
+	}
+
+	negative := []internalPredicate{
+		andOf(),
+		andOf(alwaysTrue, alwaysTrue),
+		orOf(alwaysTrue, alwaysFalse),
+		createMapLinkedPredicate(alwaysFalse),
+		createSliceLinkedPredicate(),
+	}
+
+	for _, ip := range negative {
+		assert.True(t, AlwaysFalse != wrapInternal(ip))
+	}
+}

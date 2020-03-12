@@ -63,7 +63,7 @@ func TestImageSearchResults(t *testing.T) {
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
-			predResult, matches := predicate(c.image)
+			predResult, matches := predicate.Evaluate(c.image)
 
 			require.NoError(t, index.AddImage(c.image))
 			searchResults, err := index.Search(c.query)
@@ -105,7 +105,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 			predicate, err := factory.GeneratePredicate(c.query)
 			require.NoError(t, err)
 
-			predResult, matches := predicate(c.deployment)
+			predResult, matches := predicate.Evaluate(c.deployment)
 
 			require.NoError(t, index.AddDeployment(c.deployment))
 			searchResults, err := index.Search(c.query)

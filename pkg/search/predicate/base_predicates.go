@@ -69,12 +69,21 @@ func createPtrPredicate(fullPath string, fieldType reflect.Type, value string) (
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+
+	_, matchOnNull := resultIfNullValue(value)
+	if basePred == alwaysTrue && matchOnNull {
+		return alwaysTrue, nil
+	}
+	if basePred == alwaysFalse && !matchOnNull {
+		return alwaysFalse, nil
+	}
+
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
 			return resultIfNullValue(value)
 		}
-		return basePred(instance.Elem())
-	}, nil
+		return basePred.Evaluate(instance.Elem())
+	}), nil
 }
 
 func createSlicePredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
@@ -83,17 +92,17 @@ func createSlicePredicate(fullPath string, fieldType reflect.Type, value string)
 		return nil, err
 	}
 
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
 			return resultIfNullValue(value)
 		}
 		for i := 0; i < instance.Len(); i++ {
-			if res, match := basePred(instance.Index(i)); match {
+			if res, match := basePred.Evaluate(instance.Index(i)); match {
 				return res, true
 			}
 		}
 		return nil, false
-	}, nil
+	}), nil
 }
 
 func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
@@ -119,7 +128,11 @@ func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (
 }
 
 func createMatchAllMapPredicate(keyPred, valPred internalPredicate) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	if keyPred == alwaysTrue && valPred == alwaysTrue {
+		return alwaysTrue
+	}
+
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
 			// This is a hack!  This path is used by RequiredMapValue policies so it needs to return true if the
 			// required value isn't in the map even though there were no matches in the empty map.  This should
@@ -132,21 +145,25 @@ func createMatchAllMapPredicate(keyPred, valPred internalPredicate) internalPred
 		for iter.Next() {
 			key := iter.Key()
 			val := iter.Value()
-			_, keyMatch := keyPred(key)
+			_, keyMatch := keyPred.Evaluate(key)
 			if !keyMatch {
 				return nil, false
 			}
-			_, valueMatch := valPred(val)
+			_, valueMatch := valPred.Evaluate(val)
 			if !valueMatch {
 				return nil, false
 			}
 		}
 		return &search.Result{}, true
-	}
+	})
 }
 
 func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	if keyPred == alwaysFalse && valPred == alwaysFalse {
+		return alwaysFalse
+	}
+
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.IsZero() || instance.IsNil() {
 			return nil, false
 		}
@@ -156,11 +173,11 @@ func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPred
 		for iter.Next() {
 			key := iter.Key()
 			val := iter.Value()
-			keyResult, keyMatch := keyPred(key)
+			keyResult, keyMatch := keyPred.Evaluate(key)
 			if !keyMatch {
 				continue
 			}
-			valueResult, valueMatch := valPred(val)
+			valueResult, valueMatch := valPred.Evaluate(val)
 			if !valueMatch {
 				continue
 			}
@@ -168,7 +185,7 @@ func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPred
 			return MergeResults(keyResult, valueResult), true
 		}
 		return nil, false
-	}
+	})
 }
 
 func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
@@ -176,7 +193,7 @@ func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Kind() != reflect.Bool {
 			return nil, false
 		}
@@ -186,7 +203,7 @@ func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
 		return &search.Result{
 			Matches: formatSingleMatchf(fullPath, "%t", instance.Bool()),
 		}, true
-	}, nil
+	}), nil
 }
 
 func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum) (internalPredicate, error) {
@@ -214,7 +231,7 @@ func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum)
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
 			if comparator(instance.Int(), int64Value) {
@@ -224,7 +241,7 @@ func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum)
 			}
 		}
 		return nil, false
-	}, nil
+	}), nil
 }
 
 func createIntPredicate(fullPath, value string) (internalPredicate, error) {
@@ -237,7 +254,7 @@ func createIntPredicate(fullPath, value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
 			if !comparator(instance.Int(), intValue) {
@@ -248,7 +265,7 @@ func createIntPredicate(fullPath, value string) (internalPredicate, error) {
 			}, true
 		}
 		return nil, false
-	}, nil
+	}), nil
 }
 
 func createUintPredicate(fullPath, value string) (internalPredicate, error) {
@@ -261,7 +278,7 @@ func createUintPredicate(fullPath, value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 			if !comparator(instance.Uint(), uintValue) {
@@ -272,7 +289,7 @@ func createUintPredicate(fullPath, value string) (internalPredicate, error) {
 			}, true
 		}
 		return nil, false
-	}, nil
+	}), nil
 }
 
 func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
@@ -285,7 +302,7 @@ func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
 			if !comparator(instance.Float(), floatValue) {
@@ -296,7 +313,7 @@ func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
 			}, true
 		}
 		return nil, false
-	}, nil
+	}), nil
 }
 
 func createStringPredicate(fullPath, value string) (internalPredicate, error) {
@@ -355,12 +372,12 @@ func stringPrefixPredicate(fullPath, value string, negated bool) (internalPredic
 }
 
 func wrapStringPredicate(pred func(string) (*search.Result, bool)) internalPredicate {
-	return func(instance reflect.Value) (*search.Result, bool) {
+	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Kind() != reflect.String {
 			return nil, false
 		}
 		return pred(instance.String())
-	}
+	})
 }
 
 func mapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[string]int32) {
