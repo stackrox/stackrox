@@ -137,12 +137,20 @@ staticcheck: $(STATICCHECK_BIN)
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
+.PHONY: fast-sensor
+fast-sensor:
+	@echo "+ $@"
+	$(GOBUILD) sensor/kubernetes
+
+.PHONY: fast-central
+fast-central:
+	@echo "+ $@"
+	$(GOBUILD) central
+
 # fast is a dev mode options when using local dev
 # it will automatically restart Central or Sensor if there are changes to the binary
 .PHONY: fast
-fast:
-	@echo "+ $@"
-	$(GOBUILD) central sensor/kubernetes
+fast: fast-central fast-sensor
 
 .PHONY: fmt
 fmt: blanks

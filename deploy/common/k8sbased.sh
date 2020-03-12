@@ -23,12 +23,12 @@ function launch_service {
 }
 
 function hotload_binary {
-  local binary="$1"
-  local deployment="$2"
+  local binary_name="$1"
+  local local_name="$2"
+  local deployment="$3"
 
-  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${binary}")
-
-  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${deployment}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux/${local_name}")
+  kubectl -n stackrox patch "deploy/${deployment}" -p '{"spec":{"template":{"spec":{"containers":[{"name":"'${deployment}'","volumeMounts":[{"mountPath":"/stackrox/'${binary_name}'","name":"binary"}]}],"volumes":[{"hostPath":{"path":"'${binary_path}'","type":""},"name":"binary"}]}}}}'
 }
 
 function launch_central {
@@ -172,7 +172,7 @@ function launch_central {
     if [[ "${is_local_dev}" == "true" ]]; then
         kubectl -n stackrox patch deploy/central --patch '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"limits":{"cpu":"1","memory":"4Gi"},"requests":{"cpu":"1","memory":"1Gi"}}}]}}}}'
         if [[ "${HOTRELOAD}" == "true" ]]; then
-          hotload_binary central central
+          hotload_binary central central central
         fi
     fi
 
@@ -257,7 +257,7 @@ function launch_sensor {
 
     if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${HOTRELOAD}" == "true" ]]; then
-         hotload_binary kubernetes-sensor sensor
+         hotload_binary kubernetes-sensor kubernetes sensor
        fi
        kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
     fi

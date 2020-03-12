@@ -28,11 +28,16 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex() error {
+	log.Info("[STARTUP] Indexing risk")
 	risks, err := d.storage.ListRisks()
 	if err != nil {
 		return err
 	}
-	return d.indexer.AddRisks(risks)
+	if err := d.indexer.AddRisks(risks); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed risk")
+	return nil
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

@@ -81,11 +81,16 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex() error {
+	log.Info("[STARTUP] Indexing namespaces")
 	namespaces, err := b.store.GetNamespaces()
 	if err != nil {
 		return err
 	}
-	return b.indexer.AddNamespaceMetadatas(namespaces)
+	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed namespaces")
+	return nil
 }
 
 // GetNamespace returns namespace with given id.

@@ -32,6 +32,7 @@ type searcherImpl struct {
 
 func (s *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing process whitelists")
 	whitelists := make([]*storage.ProcessWhitelist, 0, whitelistBatchLimit)
 	if err := s.storage.WalkAll(func(whitelist *storage.ProcessWhitelist) error {
 		whitelists = append(whitelists, whitelist)
@@ -51,7 +52,7 @@ func (s *searcherImpl) buildIndex() error {
 	if len(whitelists) > 0 {
 		return s.indexer.AddWhitelists(whitelists)
 	}
-
+	log.Info("[STARTUP] Successfully indexed process whitelists")
 	return nil
 }
 

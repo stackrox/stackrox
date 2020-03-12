@@ -27,11 +27,17 @@ type datastoreImpl struct {
 
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+
+	log.Info("[STARTUP] Indexing roles")
 	roles, err := d.storage.ListRoles()
 	if err != nil {
 		return err
 	}
-	return d.indexer.AddK8SRoles(roles)
+	if err := d.indexer.AddK8SRoles(roles); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed roles")
+	return nil
 }
 
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {

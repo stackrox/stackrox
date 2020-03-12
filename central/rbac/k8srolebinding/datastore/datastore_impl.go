@@ -27,11 +27,16 @@ type datastoreImpl struct {
 
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing rolebindings")
 	bindings, err := d.storage.ListRoleBindings()
 	if err != nil {
 		return err
 	}
-	return d.indexer.AddK8sRoleBindings(bindings)
+	if err := d.indexer.AddK8sRoleBindings(bindings); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed rolebindings")
+	return nil
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {

@@ -25,11 +25,16 @@ type datastoreImpl struct {
 }
 
 func (d *datastoreImpl) buildIndex() error {
+	log.Info("[STARTUP] Indexing process whitelists")
 	serviceAccounts, err := d.storage.ListServiceAccounts()
 	if err != nil {
 		return err
 	}
-	return d.indexer.AddServiceAccounts(serviceAccounts)
+	if err := d.indexer.AddServiceAccounts(serviceAccounts); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed service accounts")
+	return nil
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {

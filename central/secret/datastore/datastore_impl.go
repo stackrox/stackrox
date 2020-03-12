@@ -27,11 +27,16 @@ type datastoreImpl struct {
 
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
+	log.Info("[STARTUP] Indexing secrets")
 	secrets, err := d.storage.GetAllSecrets()
 	if err != nil {
 		return err
 	}
-	return d.indexer.AddSecrets(secrets)
+	if err := d.indexer.AddSecrets(secrets); err != nil {
+		return err
+	}
+	log.Info("[STARTUP] Successfully indexed secrets")
+	return nil
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
