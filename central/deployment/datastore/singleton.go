@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/globaldb"
-	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"

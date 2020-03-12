@@ -1,6 +1,8 @@
 package reconciliation
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -21,7 +23,7 @@ func Perform(store Store, existingIDs set.StringSet, resourceType string, remove
 
 	log.Infof("Deleting %d %s as a part of reconciliation", len(idsToDelete), resourceType)
 
-	errList := errorhelpers.NewErrorList("Network Policy reconciliation")
+	errList := errorhelpers.NewErrorList(fmt.Sprintf("%s reconciliation", resourceType))
 	for _, id := range idsToDelete {
 		errList.AddError(removeFunc(id))
 	}

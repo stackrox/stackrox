@@ -88,9 +88,9 @@ message Volume {
 // Pod represents information for a currently running pod or deleted pod in an active deployment.
 message Pod {
     string id                            = 1;
-    string deployment_id                 = 2;
-    string namespace                     = 3;
-    string cluster_id                    = 4;
+    string deployment_id                 = 2 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
+    string namespace                     = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id                    = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     bool active                          = 5;
     repeated ContainerInstance instances = 6;
 }

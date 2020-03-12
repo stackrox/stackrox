@@ -146,33 +146,43 @@ func (d *deploymentHandler) maybeProcessPodEvent(pod *v1.Pod, oldObj interface{}
 	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
 	var events []*central.SensorEvent
 	if features.PodDeploymentSeparation.Enabled() {
-		if len(owners) != 1 {
+		if action == central.ResourceAction_REMOVE_RESOURCE {
+			// Number of owners does not matter when it's a remove event.
+			// This is necessary to note because if the pod's top-level resource is
+			// deleted before the pod is, then there will be no way to associate the
+			// pod back to its respective owner.
+			events = append(events, d.processPodEvent(nil, pod, action))
+		} else if len(owners) > 1 {
 			var candidates []string
 			for _, candidate := range owners {
 				candidates = append(candidates, candidate.GetId())
 			}
 			log.Errorf("cannot associate the pod %s/%s back to a single deployment wrapper; candidates: %+v", pod.GetNamespace(), pod.GetName(), candidates)
 			return nil
+		} else if len(owners) == 0 {
+			// No need to potentially spam the log upon startup or impending removal.
+			return nil
+		} else {
+			// There is only one owner, and this is not a remove event.
+			events = append(events, d.processPodEvent(owners[0], pod, action))
 		}
-		log.Debugf("Owner of %s is %s", pod.Name, owners[0].Name)
-		events = append(events, d.processPodEvent(owners[0], pod, action))
 	}
 
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
-		return nil
+		return events
 	}
 
 	if action != central.ResourceAction_REMOVE_RESOURCE && oldObj != nil {
 		oldPod, ok := oldObj.(*v1.Pod)
 		if !ok {
 			log.Error("previous version of pod is not a pod")
-			return nil
+			return events
 		}
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
 		// In the cases of CREATES or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
-			return nil
+			return events
 		}
 	}
 	for _, owner := range owners {
@@ -186,12 +196,26 @@ func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, a
 	// TODO: This is called after some prior work potentially changes the action.
 	// If this pod were also the top-level deployment, then if it's status is SUCCEEDED or FAILED, then we set the
 	// action to REMOVE_RESOURCE before this point. See if this matters...
+	if action == central.ResourceAction_REMOVE_RESOURCE {
+		// Only the ID and Active fields are necessary for remove events.
+		return &central.SensorEvent{
+			Id:     string(pod.GetUID()),
+			Action: action,
+			Resource: &central.SensorEvent_Pod{
+				Pod: &storage.Pod{
+					Id:     string(pod.GetUID()),
+					Active: false,
+				},
+			},
+		}
+	}
+
 	p := &storage.Pod{
 		Id:           string(pod.GetUID()),
 		DeploymentId: wrap.GetId(),
 		ClusterId:    wrap.GetClusterId(),
 		Namespace:    wrap.GetNamespace(),
-		Active:       action != central.ResourceAction_REMOVE_RESOURCE,
+		Active:       true,
 	}
 	for i, instance := range containerInstances(pod) {
 		// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated

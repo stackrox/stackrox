@@ -79,7 +79,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		return s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
+		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id})
 	})
 }
 
@@ -98,7 +98,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		err = s.runRemovePipeline(ctx, event.GetAction(), deployment)
+		err = s.runRemovePipeline(ctx, deployment)
 	default:
 		err = s.runGeneralPipeline(ctx, event.GetAction(), deployment, injector)
 	}
@@ -106,13 +106,13 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return err
 	}
 
-	// Add/Update/Remove the deployment from persistence depending on the deployment action.
+	// Remove the deployment from persistence.
 	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
 
-	// Add/Update/Remove the deployment from persistence depending on the deployment action.
+	// Add/Update the deployment from persistence depending on the deployment action.
 	if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 		return err
 	}

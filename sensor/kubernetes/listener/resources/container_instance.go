@@ -33,6 +33,8 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			result[i].Started = startTime
 		}
 		if features.PodDeploymentSeparation.Enabled() {
+			result[i].ContainerName = c.Name
+
 			// Track terminated containers.
 			if terminated := c.State.Terminated; terminated != nil {
 				startTime, err := types.TimestampProto(terminated.StartedAt.Time)
@@ -43,7 +45,6 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 				if err != nil {
 					log.Errorf("converting finish time from Kubernetes (%v) to proto: %v", terminated.FinishedAt.Time, err)
 				}
-				result[i].ContainerName = c.Name
 				result[i].Started = startTime
 				result[i].Finished = endTime
 				result[i].ExitCode = terminated.ExitCode

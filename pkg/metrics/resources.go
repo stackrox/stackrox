@@ -21,4 +21,5 @@ const (
 	Role
 	RoleBinding
 	DeploymentReprocess
+	Pod
 )

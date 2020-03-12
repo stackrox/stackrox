@@ -23,11 +23,12 @@ func _() {
 	_ = x[Role-12]
 	_ = x[RoleBinding-13]
 	_ = x[DeploymentReprocess-14]
+	_ = x[Pod-15]
 }
 
-const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeProviderMetadataComplianceReturnImageIntegrationServiceAccountRoleRoleBindingDeploymentReprocess"
+const _Resource_name = "AlertDeploymentProcessIndicatorImageSecretNamespaceNetworkPolicyNodeProviderMetadataComplianceReturnImageIntegrationServiceAccountRoleRoleBindingDeploymentReprocessPod"
 
-var _Resource_index = [...]uint8{0, 5, 15, 31, 36, 42, 51, 64, 68, 84, 100, 116, 130, 134, 145, 164}
+var _Resource_index = [...]uint8{0, 5, 15, 31, 36, 42, 51, 64, 68, 84, 100, 116, 130, 134, 145, 164, 167}
 
 func (i Resource) String() string {
 	if i < 0 || i >= Resource(len(_Resource_index)-1) {
