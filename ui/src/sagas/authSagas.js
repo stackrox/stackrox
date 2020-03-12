@@ -249,18 +249,6 @@ function* deleteAuthProvider(action) {
     }
 }
 
-function* selectAuthProvider(action) {
-    const { authProvider } = action;
-    try {
-        if (!authProvider) {
-            const authProviders = yield select(selectors.getAuthProviders);
-            yield put(actions.selectAuthProvider(authProviders[0]));
-        }
-    } catch (error) {
-        Raven.captureException(error);
-    }
-}
-
 function* watchAuthHttpErrors() {
     yield takeEvery(types.AUTH_HTTP_ERROR, handleHttpError);
 }
@@ -271,10 +259,6 @@ function* watchSaveAuthProvider() {
 
 function* watchDeleteAuthProvider() {
     yield takeLatest(types.DELETE_AUTH_PROVIDER, deleteAuthProvider);
-}
-
-function* watchSelectAuthProvider() {
-    yield takeLatest(types.SELECTED_AUTH_PROVIDER, selectAuthProvider);
 }
 
 export default function* auth() {
@@ -302,7 +286,6 @@ export default function* auth() {
         fork(watchAuthProvidersFetchRequest),
         fork(watchLoginAuthProvidersFetchRequest),
         fork(watchLogout),
-        fork(watchAuthHttpErrors),
-        fork(watchSelectAuthProvider)
+        fork(watchAuthHttpErrors)
     ]);
 }

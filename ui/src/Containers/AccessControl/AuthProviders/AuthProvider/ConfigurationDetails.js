@@ -81,7 +81,8 @@ const detailsComponents = {
 
 const ConfigurationDetails = ({ authProvider }) => {
     const DetailsComponent = detailsComponents[authProvider.type];
-    if (!DetailsComponent) throw new Error(`Unknown auth provider type: ${authProvider}`);
+    if (!DetailsComponent)
+        throw new Error(`Unknown auth provider type: ${JSON.stringify(authProvider)}`);
 
     return <DetailsComponent authProvider={authProvider} />;
 };

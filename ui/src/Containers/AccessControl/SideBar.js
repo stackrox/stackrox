@@ -28,7 +28,6 @@ const SideBar = ({
         return e => {
             e.stopPropagation();
             onDelete(row);
-            onSelectRow();
         };
     }
 

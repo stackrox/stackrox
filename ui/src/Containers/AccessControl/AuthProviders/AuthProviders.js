@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -20,6 +20,27 @@ const AuthProviders = ({
     groups,
     isEditing
 }) => {
+    const setDefaultSelection = useCallback(
+        () => {
+            // sets selection to the first provider in the list, or to `null` if there are none
+            if (authProviders.length) {
+                selectAuthProvider(authProviders[0]);
+            } else if (selectedAuthProvider) {
+                // optimization: clear selection only if it isn't cleared
+                selectAuthProvider(null);
+            }
+        },
+        [authProviders, selectAuthProvider, selectedAuthProvider]
+    );
+
+    useEffect(
+        () => {
+            // select default / first auth provider when nothing is selected
+            if (!selectedAuthProvider && authProviders.length) setDefaultSelection();
+        },
+        [authProviders.length, selectedAuthProvider, setDefaultSelection]
+    );
+
     const [providerToDelete, setProviderToDelete] = useState(null);
 
     function onEdit() {
@@ -34,7 +55,8 @@ const AuthProviders = ({
     function onCancel() {
         setAuthProviderEditingState(false);
         if (selectedAuthProvider && !selectedAuthProvider.id) {
-            selectAuthProvider(authProviders[0]);
+            // selected auth provider was the one we were editing
+            setDefaultSelection();
         }
     }
 

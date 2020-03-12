@@ -76,13 +76,17 @@ const loginAuthProviders = (state = [], action) => {
 const selectedAuthProvider = (state = null, action) => {
     if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS) {
         const providers = filterAuthProviders(action.response);
-        if (providers.length) {
-            return state || providers[0];
+        if (state?.id && !providers.find(provider => provider.id === state.id)) {
+            // the selected auth provider isn't anymore in the list of auth providers => deselect
+            return null;
         }
-        return null;
     }
-    if (action.type === types.SELECTED_AUTH_PROVIDER && action.authProvider) {
+    if (action.type === types.SELECTED_AUTH_PROVIDER) {
+        if (!action.authProvider) return null;
         return isEqual(action.authProvider, state) ? state : action.authProvider;
+    }
+    if (action.type === types.DELETE_AUTH_PROVIDER && state?.id === action.id) {
+        return null; // selected auth provider got deleted => deselect
     }
     return state;
 };

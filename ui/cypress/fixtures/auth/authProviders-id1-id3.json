@@ -1,0 +1,32 @@
+{
+    "authProviders": [
+        {
+            "id": "authProvider-id1",
+            "name": "auth-provider-1",
+            "type": "saml",
+            "uiEndpoint": "irrelevant",
+            "enabled": true,
+            "config": {
+                "idp_metadata_url": "irrelevant",
+                "sp_issuer": "irrelevant"
+            },
+            "loginUrl": "irrelevant",
+            "validated": false,
+            "active": false
+        },
+        {
+            "id": "authProvider-id3",
+            "name": "auth-provider-3",
+            "type": "saml",
+            "uiEndpoint": "irrelevant",
+            "enabled": true,
+            "config": {
+                "idp_metadata_url": "irrelevant",
+                "sp_issuer": "irrelevant"
+            },
+            "loginUrl": "irrelevant",
+            "validated": false,
+            "active": false
+        }
+    ]
+}

@@ -4,37 +4,36 @@ import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
 describe('Access Control Page', () => {
-    describe('Auth Provider Rules', () => {
-        withAuth();
+    withAuth();
 
-        beforeEach(() => {
+    describe('Auth Provider Rules', () => {
+        function navigateToThePanel(authProviders = 'fixture:auth/authProviders-id1-id2-id3.json') {
             cy.server();
-            // TODO-ivan: remove once ROX_REFRESH_TOKENS is enabled by default
-            cy.route('GET', api.featureFlags, {
-                featureFlags: [
-                    { name: 'Refresh tokens', envVar: 'ROX_REFRESH_TOKENS', enabled: true },
-                    { name: 'Vuln Mgmt', envVar: 'ROX_VULN_MGMT_UI', enabled: false }
-                ]
-            }).as('featureFlags');
+            cy.route('GET', api.auth.authProviders, authProviders).as('authProviders');
 
             cy.visit(url);
             cy.get(selectors.tabs.authProviders).click();
-        });
+            cy.wait('@authProviders');
+        }
 
         it('should open the new auth provider panel', () => {
+            navigateToThePanel();
+
             cy.get(selectors.authProviders.addProviderSelect).select(
                 selectors.authProviders.newAuth0Option
             );
-            cy.get(selectors.authProviders.newAuthProviderPanel).contains(
+            cy.get(selectors.authProviders.authProviderPanel).contains(
                 'Create New Auth0 Auth Provider'
             );
         });
 
         it('should open the new OIDC provider form with client secret', () => {
+            navigateToThePanel();
+
             cy.get(selectors.authProviders.addProviderSelect).select(
                 selectors.authProviders.newOidcOption
             );
-            cy.get(selectors.authProviders.newAuthProviderPanel).contains(
+            cy.get(selectors.authProviders.authProviderPanel).contains(
                 'Create New OpenID Connect Auth Provider'
             );
 
@@ -62,11 +61,95 @@ describe('Access Control Page', () => {
                 expect(p.text()).not.to.contain('(required)');
             });
         });
+
+        it('should select the first auth provider by default', () => {
+            navigateToThePanel();
+
+            const { leftSidePanel } = selectors.authProviders;
+            cy.get(leftSidePanel.selectedRow).contains('auth-provider-1');
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('auth-provider-1');
+        });
+
+        it('should select the first auth provider after deleting the selected one', () => {
+            navigateToThePanel();
+            const { leftSidePanel } = selectors.authProviders;
+
+            cy.get(leftSidePanel.secondRow).click({ force: true }); // forcing since it's a div
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('auth-provider-2'); // check selection
+
+            cy.get(leftSidePanel.selectedRowDeleteButton).click({ force: true }); // forcing as its a hover button
+
+            // mock now with the second one deleted
+            cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders-id1-id3.json').as(
+                'authProviders'
+            );
+
+            cy.get(selectors.modal.deleteButton).click();
+
+            cy.wait('@authProviders');
+            // first one should become selected
+            cy.get(leftSidePanel.selectedRow).contains('auth-provider-1');
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('auth-provider-1');
+        });
+
+        it('should not change selection if non-selected deleted', () => {
+            navigateToThePanel();
+            const { leftSidePanel } = selectors.authProviders;
+
+            cy.get(leftSidePanel.thirdRow).click({ force: true }); // forcing since it's a div
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('auth-provider-3'); // check selection
+
+            cy.get(leftSidePanel.secondRowDeleteButton).click({ force: true }); // forcing as its a hover button
+
+            // mock now with the second one deleted
+            cy.route('GET', api.auth.authProviders, 'fixture:auth/authProviders-id1-id3.json').as(
+                'authProviders'
+            );
+
+            cy.get(selectors.modal.deleteButton).click();
+
+            cy.wait('@authProviders');
+            // third one should remain selected
+            cy.get(leftSidePanel.selectedRow).contains('auth-provider-3');
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('auth-provider-3');
+        });
+
+        it('should show empty state after deleting the last provider', () => {
+            navigateToThePanel();
+            const { leftSidePanel } = selectors.authProviders;
+
+            cy.get(leftSidePanel.selectedRowDeleteButton).click({ force: true }); // forcing as its a hover button
+
+            // mock now with empty list of providers like nothing is left
+            cy.route('GET', api.auth.authProviders, { authProviders: [] }).as('authProviders');
+            cy.get(selectors.modal.deleteButton).click();
+
+            cy.wait('@authProviders');
+            // should show empty state
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('Getting Started');
+        });
+
+        it('should show empty state with no auth providers', () => {
+            navigateToThePanel({ authProviders: [] });
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('Getting Started');
+        });
+
+        it('should return to the empty state after cancelling addition of the first provider (ROX-4359)', () => {
+            navigateToThePanel({ authProviders: [] });
+
+            cy.get(selectors.authProviders.addProviderSelect).select(
+                selectors.authProviders.newOidcOption
+            );
+            cy.get(selectors.authProviders.authProviderPanel).contains(
+                'Create New OpenID Connect Auth Provider'
+            );
+
+            cy.get(selectors.cancelButton).click();
+            cy.get(selectors.authProviders.authProviderPanelHeader).contains('Getting Started');
+        });
     });
 
     describe('Roles and Permissions', () => {
-        withAuth();
-
         beforeEach(() => {
             cy.visit(url);
             cy.get(selectors.tabs.roles).click();
