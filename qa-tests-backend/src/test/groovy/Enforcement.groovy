@@ -678,7 +678,7 @@ class Enforcement extends BaseSpecification {
                 .addAnnotation("test", "annotation")
                 .setEnv(["CLUSTER_NAME": "main"])
                 .addLabel("app", "test")
-        orchestrator.createDeployment(wpDeployment)
+        orchestrator.createDeploymentNoWait(wpDeployment)
         String clusterId = ClusterService.getClusterId()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, wpDeployment)
