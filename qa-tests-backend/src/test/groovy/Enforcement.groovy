@@ -658,19 +658,12 @@ class Enforcement extends BaseSpecification {
                 APT_GET_POLICY
     }
 
-    @Category([PolicyEnforcement])
+    @Category([BAT, PolicyEnforcement])
     def "Test Alert and  Kill Pod Enforcement - Whitelist Process"() {
         // This test verifies enforcement of kill pod after triggering a policy violation of
         //  Unauthorized Process Execution
         given:
-        "policy violation to whitelist process policy"
-        def startEnforcements = Services.updatePolicyEnforcement(
-                WHITELISTPROCESS_POLICY,
-                [EnforcementAction.KILL_POD_ENFORCEMENT,
-                ]
-        )
-        assert !startEnforcements.contains("EXCEPTION")
-        when:
+        "launch deployment and policy violation to whitelist process policy"
         Deployment wpDeployment = new Deployment()
                 .setName("deploymentnginx")
                 .setImage("nginx:1.7.9")
@@ -678,7 +671,15 @@ class Enforcement extends BaseSpecification {
                 .addAnnotation("test", "annotation")
                 .setEnv(["CLUSTER_NAME": "main"])
                 .addLabel("app", "test")
-        orchestrator.createDeploymentNoWait(wpDeployment)
+        orchestrator.createDeployment(wpDeployment)
+
+        def startEnforcements = Services.updatePolicyEnforcement(
+                WHITELISTPROCESS_POLICY,
+                [EnforcementAction.KILL_POD_ENFORCEMENT,
+                ]
+        )
+        assert !startEnforcements.contains("EXCEPTION")
+        when:
         String clusterId = ClusterService.getClusterId()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(clusterId, wpDeployment)
