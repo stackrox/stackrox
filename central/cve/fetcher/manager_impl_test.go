@@ -220,7 +220,7 @@ func TestReconcileCVEsInDB(t *testing.T) {
 
 	mockCVEs.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	mockClusters.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{cluster}, nil).AnyTimes()
-	mockNamespaces.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	mockNamespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
 	mockCVEs.EXPECT().UpsertClusterCVEs(gomock.Any(), cvesToUpsert).Return(nil)
 	mockCVEs.EXPECT().Delete(gomock.Any(), []*storage.CVE{}).Return(nil)

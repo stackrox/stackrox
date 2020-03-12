@@ -97,7 +97,7 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	require.NoError(t, err)
 
 	clusterDataStore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
-	nsDataStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nsDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	clusterDataStore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
 
 	resolver := &Resolver{

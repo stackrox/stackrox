@@ -150,7 +150,7 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 
 func (m *CVEMatcher) isIstioControlPlaneRunning(ctx context.Context) (bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, "istio-system").ProtoQuery()
-	res, err := m.namespaces.SearchNamespaces(ctx, q)
+	res, err := m.namespaces.Search(ctx, q)
 	if err != nil {
 		return false, err
 	}

@@ -53,7 +53,7 @@ const VulmMgmtEntityCluster = ({
                         version
                     }
                 }
-                #istioEnabled
+                istioEnabled
                 policyCount(query: $policyQuery)
                 namespaceCount
                 deploymentCount

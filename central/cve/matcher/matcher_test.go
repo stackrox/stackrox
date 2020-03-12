@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -699,12 +700,9 @@ func (s *cveMatcherTestSuite) TestIstioCVEImpactsCluster() {
 		},
 	}
 
-	namespaces := []*storage.NamespaceMetadata{
+	namespaces := []search.Result{
 		{
-			Id:          "test_namespace1",
-			Name:        "istio-system",
-			ClusterId:   "test_cluster_id1",
-			ClusterName: "cluster1",
+			ID: "test_namespace1",
 		},
 	}
 
@@ -748,7 +746,7 @@ func (s *cveMatcherTestSuite) TestIstioCVEImpactsCluster() {
 	}
 
 	s.clusters.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
-	s.namespaces.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(namespaces, nil).AnyTimes()
+	s.namespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(namespaces, nil).AnyTimes()
 	s.images.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(images, nil).AnyTimes()
 
 	ok, err := s.cveMatcher.isIstioControlPlaneRunning(context.Background())

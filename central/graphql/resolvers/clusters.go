@@ -75,6 +75,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `risk: Risk`),
 		schema.AddExtraResolver("Cluster", `isGKECluster: Boolean!`),
 		schema.AddExtraResolver("Cluster", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("Cluster", `istioEnabled: Boolean!`),
 	)
 }
 
@@ -875,6 +876,14 @@ func (resolver *clusterResolver) IsGKECluster() (bool, error) {
 	version := resolver.data.GetStatus().GetOrchestratorMetadata().GetVersion()
 	ok := resolver.root.cveMatcher.IsGKEVersion(version)
 	return ok, nil
+}
+
+func (resolver *clusterResolver) IstioEnabled(ctx context.Context) (bool, error) {
+	res, err := resolver.root.NamespaceDataStore.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.Namespace, "istio-system").ProtoQuery())
+	if err != nil {
+		return false, err
+	}
+	return len(res) > 0, nil
 }
 
 func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
