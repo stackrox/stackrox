@@ -37,7 +37,7 @@ const SideBar = ({
             <div className="border-2 border-base-400 bg-base-100 flex">
                 <RowActionButton
                     text={`Delete ${type}`}
-                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
                     onClick={onDeleteHandler(row)}
                 />
             </div>

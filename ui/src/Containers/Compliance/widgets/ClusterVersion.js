@@ -36,7 +36,7 @@ const ClusterVersion = ({ clusterId }) => {
                                     {orchestratorMetadata.version}
                                 </div>
                                 <div className="text-base-500">
-                                    Build Date:&nbsp;
+                                    Build date:&nbsp;
                                     {dateFormat(orchestratorMetadata.buildDate, 'MMMM DD, YYYY')}
                                 </div>
                             </div>

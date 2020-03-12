@@ -157,7 +157,7 @@ class APITokensModal extends Component {
         <div className="border-2 border-r-2 border-base-400 bg-base-100">
             <RowActionButton
                 text="Revoke token"
-                icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
                 onClick={this.onRevokeHandler(token)}
             />
         </div>

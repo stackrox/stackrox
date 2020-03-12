@@ -56,7 +56,7 @@ const renderName = data => {
 const Metadata = ({ keyValuePairs, labels, annotations, whitelists, secrets, ...rest }) => {
     const keyValueList = keyValuePairs.map(({ key, value }) => (
         <li className="border-b border-base-300 px-4 py-2" key={key}>
-            <span className="text-base-700 font-600 mr-2">{key}:</span>
+            <span className="text-base-700 font-600 mr-2 font-700">{key}:</span>
             {value}
         </li>
     ));

@@ -272,7 +272,7 @@ const VulnMgmtPolicies = ({
                 text="Delete this Policy"
                 onClick={deletePolicy(id)}
                 icon={
-                    <Trash2 className="hover:bg-alert-200 text-alert-600 hover:text-alert-700 mt-1 h-4 w-4" />
+                    <Trash2 className="hover:bg-alert-200 text-alert-600 hover:text-alert-700 my-1 h-4 w-4" />
                 }
             />
         </div>

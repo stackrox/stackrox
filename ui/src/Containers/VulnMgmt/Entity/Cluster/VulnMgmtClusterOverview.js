@@ -66,7 +66,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
 
     const metadataKeyValuePairs = [
         {
-            key: 'Build Date',
+            key: 'Build date',
             value: <DateTimeField date={buildDate} asString />
         },
         {
@@ -74,7 +74,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
             value: version
         },
         {
-            key: 'Istio Enabled',
+            key: 'Istio enabled',
             value: yesNoMaybe(istioEnabled)
         }
     ];

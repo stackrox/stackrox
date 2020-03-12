@@ -90,7 +90,7 @@ class NamespaceDetails extends Component {
                 <RowActionButton
                     text="Navigate to Deployment"
                     onClick={this.navigate(node)}
-                    icon={<Icon.ArrowUpRight className="mt-1 h-4 w-4" />}
+                    icon={<Icon.ArrowUpRight className="my-1 h-4 w-4" />}
                 />
             </div>
         );

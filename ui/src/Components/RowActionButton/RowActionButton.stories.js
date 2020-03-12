@@ -14,7 +14,7 @@ function fn() {
 }
 
 export const basicRowActionButton = () => (
-    <RowActionButton text="Suppress CVE" onClick={fn} icon={<Trash2 className="mt-1 h-4 w-4" />} />
+    <RowActionButton text="Suppress CVE" onClick={fn} icon={<Trash2 className="my-1 h-4 w-4" />} />
 );
 
 export const customRowActionButton = () => (
@@ -22,7 +22,7 @@ export const customRowActionButton = () => (
         text="Delete policy"
         onClick={fn}
         className="hover:bg-alert-200 text-alert-600 hover:text-alert-700"
-        icon={<Trash2 className="mt-1 h-4 w-4" />}
+        icon={<Trash2 className="my-1 h-4 w-4" />}
     />
 );
 
@@ -31,13 +31,13 @@ export const multipleRowActionButtons = () => (
         <RowActionButton
             text="Add To Policy"
             onClick={fn}
-            icon={<Trash2 className="mt-1 h-4 w-4" />}
+            icon={<Trash2 className="my-1 h-4 w-4" />}
         />
         <RowActionButton
             text="Suppress CVE"
             onClick={fn}
             border="border-l-2 border-base-400"
-            icon={<Trash2 className="mt-1 h-4 w-4" />}
+            icon={<Trash2 className="my-1 h-4 w-4" />}
         />
     </div>
 );

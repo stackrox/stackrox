@@ -43,7 +43,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                             className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
                             onClick={resolveAlertAction(true)}
                         >
-                            <Icon.ShieldOff className="mt-1 h-4 w-4" />
+                            <Icon.ShieldOff className="my-1 h-4 w-4" />
                         </button>
                     </Tooltip>
                     <Tooltip content={<TooltipOverlay>Mark as resolved</TooltipOverlay>}>
@@ -53,7 +53,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                             className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 border-l-2 border-base-400"
                             onClick={resolveAlertAction(false)}
                         >
-                            <Icon.Check className="mt-1 h-4 w-4" />
+                            <Icon.Check className="my-1 h-4 w-4" />
                         </button>
                     </Tooltip>
                 </div>
@@ -70,7 +70,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     }`}
                     onClick={whitelistDeploymentAction}
                 >
-                    <Icon.BellOff className="mt-1 h-4 w-4" />
+                    <Icon.BellOff className="my-1 h-4 w-4" />
                 </button>
             </Tooltip>
         </div>

@@ -145,7 +145,7 @@ class IntegrationTable extends Component {
                     text={enableTooltip}
                     onClick={this.onActivateHandler(integration)}
                     className={`hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                    icon={<Icon.Power className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Power className="my-1 h-4 w-4" />}
                 />
             );
         }
@@ -156,7 +156,7 @@ class IntegrationTable extends Component {
                     text="Delete integration"
                     onClick={this.onDeleteHandler(integration)}
                     border={`${source === 'authProviders' ? 'border-l-2 border-base-400' : ''}`}
-                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
                 />
             </div>
         );

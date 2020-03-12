@@ -320,7 +320,7 @@ const VulnMgmtCves = ({
                 text="Add to Policy"
                 onClick={addToPolicy(id)}
                 date-testid="row-action-add-to-policy"
-                icon={<Icon.Plus className="mt-1 h-4 w-4" />}
+                icon={<Icon.Plus className="my-1 h-4 w-4" />}
             />
             <RowActionButton
                 text={`${viewingSuppressed ? 'Unsuppress CVE' : 'Suppress CVE'}`}
@@ -329,9 +329,9 @@ const VulnMgmtCves = ({
                 date-testid="row-action-toggle-suppression"
                 icon={
                     viewingSuppressed ? (
-                        <Icon.Bell className="mt-1 h-4 w-4" />
+                        <Icon.Bell className="my-1 h-4 w-4" />
                     ) : (
-                        <Icon.BellOff className="mt-1 h-4 w-4" />
+                        <Icon.BellOff className="my-1 h-4 w-4" />
                     )
                 }
             />

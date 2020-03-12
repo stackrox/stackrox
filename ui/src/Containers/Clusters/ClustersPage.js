@@ -104,7 +104,7 @@ const ClustersPage = ({
             <div className="border-2 border-r-2 border-base-400 bg-base-100">
                 <RowActionButton
                     text="Delete cluster"
-                    icon={<Icon.Trash2 className="mt-1 h-4 w-4" />}
+                    icon={<Icon.Trash2 className="my-1 h-4 w-4" />}
                     className="hover:bg-alert-200 text-alert-600 hover:text-alert-700"
                     onClick={onDeleteHandler(cluster)}
                 />
