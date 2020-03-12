@@ -175,7 +175,7 @@ func TestValueStream_SubscribeChan(t *testing.T) {
 
 	subscribeErrC := make(chan error)
 	go func() {
-		subscribeErrC <- vs.SubscribeChan(&errSig, ch, false)
+		subscribeErrC <- vs.SubscribeChan(&errSig, ch, true)
 	}()
 
 	go func() {
@@ -212,7 +212,7 @@ func TestValueStream_SubscribeChanTyped(t *testing.T) {
 
 	subscribeErrC := make(chan error)
 	go func() {
-		subscribeErrC <- vs.SubscribeChanTyped(&errSig, ch, false)
+		subscribeErrC <- vs.SubscribeChanTyped(&errSig, ch, true)
 	}()
 
 	go func() {
