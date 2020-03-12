@@ -189,6 +189,8 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 		return err
 	}
 	incrementNetworkGraphEpoch := true
+
+	needsRiskReprocessing := true
 	// If it exists, check to see if we can dedupe it
 	if exists {
 		if oldDeployment.GetHash() == deployment.GetHash() {
@@ -199,6 +201,8 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 			if !hasUnsavedImages {
 				return s.rewriteInstancesAndPersist(ctx, oldDeployment, deployment)
 			}
+			// The hash is the same and only instances have changed, so don't reprocess risk
+			needsRiskReprocessing = false
 		}
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
@@ -209,7 +213,9 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	}
 
 	// Update risk asynchronously
-	s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
+	if needsRiskReprocessing {
+		s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
+	}
 
 	if incrementNetworkGraphEpoch {
 		s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
