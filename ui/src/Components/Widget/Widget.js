@@ -91,7 +91,7 @@ function Widget({
                     )}
                 </div>
             </div>
-            <div className={`flex h-full ${bodyClassName}`}>
+            <div className={`flex h-full ${bodyClassName}`} data-testid="widget-body">
                 <ErrorBoundary>{childrenWithPageProp}</ErrorBoundary>
             </div>
             {pagerControls ? pagerControls.dots : null}

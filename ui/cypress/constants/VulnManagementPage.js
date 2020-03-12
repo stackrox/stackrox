@@ -87,6 +87,7 @@ export const dashboardSelectors = {
     getAllClickableTileLinks: title => {
         return `[data-test-id="tile-link-value"]:contains('${title}')`;
     },
+    widgetBody: '[data-testid="widget-body"]',
     viewAllButton: 'button:contains("View All")',
     dataRowLink: '[data-testid="numbered-list-item-name"]',
     topMostRowMCV:

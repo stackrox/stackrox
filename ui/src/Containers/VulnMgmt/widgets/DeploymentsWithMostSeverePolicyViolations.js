@@ -103,7 +103,7 @@ const processData = (data, workflowState, limit) => {
 };
 
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
-    const { loading, data = {} } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
+    const { loading, data = {}, error } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             policyQuery: queryService.objectToWhereClause({
@@ -124,7 +124,7 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
         // ])
         .toUrl();
 
-    if (!loading) {
+    if (!loading && !error) {
         const processedData = processData(data, workflowState, limit);
 
         if (!processedData || processedData.length === 0) {

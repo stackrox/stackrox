@@ -16,7 +16,6 @@ import TextSelect from 'Components/TextSelect';
 import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import { severityLabels } from 'messages/common';
-import isGQLLoading from 'utils/gqlLoading';
 import {
     severityColorMap,
     severityTextColorMap,
@@ -27,7 +26,7 @@ import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
 
 const ENTITY_COUNT = 25;
-const VULN_COUNT = 100;
+const VULN_COUNT = 50;
 
 const TopRiskyEntitiesByVulnerabilities = ({
     entityContext,
@@ -40,7 +39,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
     const entityOptions = riskEntityTypes.map(entityType => ({
-        label: `top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
+        label: `Top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
         value: entityType
     }));
     function onChange(datum) {
@@ -336,7 +335,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
 
     let content = <Loader />;
 
-    if (!isGQLLoading(loading, data)) {
+    if (!loading && data) {
         results = processData(data);
         if (error) {
             content = (

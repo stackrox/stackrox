@@ -6,19 +6,19 @@ function validateTopRiskyEntities(entityName) {
     cy.visit(url.dashboard);
     cy.get(selectors.topRiskyItems.select.value).should(
         'contain',
-        'top risky deployments by CVE count & CVSS score'
+        'Top risky deployments by CVE count & CVSS score'
     );
     cy.get(selectors.topRiskyItems.select.input)
         .first()
         .click();
     cy.get(selectors.topRiskyItems.select.options)
-        .contains(`top risky ${entityName} by CVE count & CVSS score`)
+        .contains(`Top risky ${entityName} by CVE count & CVSS score`)
         .click();
     cy.get(selectors.topRiskyItems.select.value).should(
         'contain',
-        `top risky ${entityName} by CVE count & CVSS score`
+        `Top risky ${entityName} by CVE count & CVSS score`
     );
-    cy.get(selectors.getWidget(`top risky ${entityName} by CVE count & CVSS score`))
+    cy.get(selectors.getWidget(`Top risky ${entityName} by CVE count & CVSS score`))
         .find(selectors.viewAllButton)
         .click();
     cy.wait(500);
@@ -110,6 +110,18 @@ describe('Vuln Management Dashboard Page', () => {
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         cy.get(selectors.getMenuListItem('images')).click();
         cy.url().should('contain', url.list.images);
+    });
+
+    // @TODO: add check that changing entity type re-displays the loader
+    //   not reliable to test without a good way to mock GraphQL responses
+    it('"Top Riskiest <entities>" widget should start with a loading indicator', () => {
+        cy.visit(url.dashboard);
+        cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
+            .find(selectors.widgetBody)
+            .invoke('text')
+            .then(bodyText => {
+                expect(bodyText).to.contain('Loading');
+            });
     });
 
     // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
