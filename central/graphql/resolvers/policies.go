@@ -28,11 +28,11 @@ func init() {
 		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
 		schema.AddExtraResolver("Policy", "latestViolation(query: String): Time"),
 
-		schema.AddExtraResolver("PolicyFields", "imageAgeDays: Int!"),
-		schema.AddExtraResolver("PolicyFields", "scanAgeDays: Int!"),
-		schema.AddExtraResolver("PolicyFields", "noScanExists: Boolean!"),
-		schema.AddExtraResolver("PolicyFields", "privileged: Boolean!"),
-		schema.AddExtraResolver("PolicyFields", "readOnlyRootFs: Boolean!"),
+		schema.AddExtraResolver("PolicyFields", "imageAgeDays: Int"),
+		schema.AddExtraResolver("PolicyFields", "scanAgeDays: Int"),
+		schema.AddExtraResolver("PolicyFields", "noScanExists: Boolean"),
+		schema.AddExtraResolver("PolicyFields", "privileged: Boolean"),
+		schema.AddExtraResolver("PolicyFields", "readOnlyRootFs: Boolean"),
 		schema.AddExtraResolver("PolicyFields", "whitelistEnabled: Boolean!"),
 		schema.AddExtraResolver("Policy", `unusedVarSink(query: String): Int`),
 	)
@@ -231,26 +231,46 @@ func (resolver *policyResolver) UnusedVarSink(ctx context.Context, args RawQuery
 // Following handle the basic type oneOf fields in policy fields that the codegen does not handle.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-func (pf *policyFieldsResolver) ImageAgeDays(ctx context.Context) int32 {
-	return int32(pf.data.GetImageAgeDays())
-}
-
-func (pf *policyFieldsResolver) ScanAgeDays(ctx context.Context) int32 {
-	return int32(pf.data.GetScanAgeDays())
-}
-
-func (pf *policyFieldsResolver) NoScanExists(ctx context.Context) bool {
-	return pf.data.GetNoScanExists()
-}
-
-func (pf *policyFieldsResolver) Privileged(ctx context.Context) bool {
-	return pf.data.GetPrivileged()
-}
-
 func (pf *policyFieldsResolver) WhitelistEnabled(ctx context.Context) bool {
 	return pf.data.GetWhitelistEnabled()
 }
 
-func (pf *policyFieldsResolver) ReadOnlyRootFs(ctx context.Context) bool {
-	return pf.data.GetReadOnlyRootFs()
+func (pf *policyFieldsResolver) ImageAgeDays(ctx context.Context) *int32 {
+	if pf.data.GetSetImageAgeDays() == nil {
+		return nil
+	}
+	ret := int32(pf.data.GetImageAgeDays())
+	return &ret
+}
+
+func (pf *policyFieldsResolver) ScanAgeDays(ctx context.Context) *int32 {
+	if pf.data.GetSetScanAgeDays() == nil {
+		return nil
+	}
+	ret := int32(pf.data.GetScanAgeDays())
+	return &ret
+}
+
+func (pf *policyFieldsResolver) NoScanExists(ctx context.Context) *bool {
+	if pf.data.GetSetNoScanExists() == nil {
+		return nil
+	}
+	ret := pf.data.GetNoScanExists()
+	return &ret
+}
+
+func (pf *policyFieldsResolver) Privileged(ctx context.Context) *bool {
+	if pf.data.GetSetPrivileged() == nil {
+		return nil
+	}
+	ret := pf.data.GetPrivileged()
+	return &ret
+}
+
+func (pf *policyFieldsResolver) ReadOnlyRootFs(ctx context.Context) *bool {
+	if pf.data.GetSetReadOnlyRootFs() == nil {
+		return nil
+	}
+	ret := pf.data.GetReadOnlyRootFs()
+	return &ret
 }
