@@ -40,6 +40,7 @@ const POLICIES_QUERY = gql`
                 lifecycleStages
                 enforcementActions
                 notifiers
+                lastUpdated
             }
         }
     }

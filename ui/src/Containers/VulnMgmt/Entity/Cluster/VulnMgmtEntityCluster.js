@@ -43,6 +43,7 @@ const VulmMgmtEntityCluster = ({
                         lifecycleStages
                         enforcementActions
                         notifiers
+                        lastUpdated
                     }
                 }
                 #createdAt

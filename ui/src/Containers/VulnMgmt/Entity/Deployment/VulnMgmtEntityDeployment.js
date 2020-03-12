@@ -40,6 +40,7 @@ const VulmMgmtDeployment = ({
                     lifecycleStages
                     enforcementActions
                     notifiers
+                    lastUpdated
                 }
                 annotations {
                     key

@@ -54,6 +54,7 @@ const VulnMgmtNamespace = ({
                         lifecycleStages
                         enforcementActions
                         notifiers
+                        lastUpdated
                     }
                 }
                 policyCount(query: $policyQuery)
