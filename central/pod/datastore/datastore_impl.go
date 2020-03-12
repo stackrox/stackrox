@@ -202,13 +202,13 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
 		if err := ds.podStore.UpsertPod(pod); err != nil {
-			return errors.Wrapf(err, "inserting pod %q to store", pod.GetId())
+			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
 		if err := ds.podIndexer.AddPod(pod); err != nil {
-			return errors.Wrapf(err, "inserting pod %q to index", pod.GetId())
+			return errors.Wrapf(err, "inserting pod %q to index", pod.GetName())
 		}
 		if err := ds.podStore.AckKeysIndexed(pod.GetId()); err != nil {
-			return errors.Wrapf(err, "could not acknowledge indexing for %q", pod.GetId())
+			return errors.Wrapf(err, "could not acknowledge indexing for %q", pod.GetName())
 		}
 		return nil
 	})

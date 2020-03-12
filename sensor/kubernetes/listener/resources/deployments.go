@@ -212,6 +212,7 @@ func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, a
 
 	p := &storage.Pod{
 		Id:           string(pod.GetUID()),
+		Name:         pod.GetName(),
 		DeploymentId: wrap.GetId(),
 		ClusterId:    wrap.GetClusterId(),
 		Namespace:    wrap.GetNamespace(),
