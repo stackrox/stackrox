@@ -40,7 +40,8 @@ func collectMappingsFromDeploymentKey(deploymentKey []byte, db *badger.DB, mappi
 
 	// Generate the keys for the cluster, namespace, deployment and images.
 	clusterKey := getClusterKey(deployment.GetClusterId())
-	namespaceKey := getNamespaceKey(deployment.GetNamespace())
+	namespaceKey := getNamespaceKey(deployment.GetNamespaceId())
+	namespaceSACKey := getNamespaceSACKey(deployment.GetNamespace())
 	imageKeys := make([][]byte, 0, len(deployment.GetContainers()))
 	for _, container := range deployment.GetContainers() {
 		imageKeys = append(imageKeys, getImageKey(container.GetImage().GetId()))
@@ -48,7 +49,9 @@ func collectMappingsFromDeploymentKey(deploymentKey []byte, db *badger.DB, mappi
 
 	// Add the mappings between the objects to the map.
 	mappings[string(clusterKey)], _ = mappings[string(clusterKey)].Insert(namespaceKey)
+	mappings[string(clusterKey)], _ = mappings[string(clusterKey)].Insert(namespaceSACKey)
 	mappings[string(namespaceKey)], _ = mappings[string(namespaceKey)].Insert(deploymentKey)
+	mappings[string(namespaceSACKey)], _ = mappings[string(namespaceSACKey)].Insert(deploymentKey)
 	mappings[string(deploymentKey)] = SortedCopy(imageKeys)
 
 	return nil

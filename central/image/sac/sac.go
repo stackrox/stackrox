@@ -19,14 +19,14 @@ var (
 	imageClusterPath = [][]byte{
 		imageDackBox.Bucket,
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 		clusterDackBox.Bucket,
 	}
 
 	imageNamespacePath = [][]byte{
 		imageDackBox.Bucket,
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 	}
 
 	imageSACFilter filtered.Filter

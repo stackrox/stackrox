@@ -20,8 +20,8 @@ import (
 var (
 	prefix1 = []byte("pre1")
 	prefix2 = []byte("pre2")
-	prefix3 = []byte("namespace")
-	prefix4 = []byte("cluster")
+	prefix3 = []byte("namespacesSACBucket")
+	prefix4 = []byte("clusters")
 
 	id1 = []byte("id1")
 	id2 = []byte("id2")

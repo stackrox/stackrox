@@ -36,12 +36,13 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 	ts := timestamp.TimestampNow()
 	deployments := []*storage.Deployment{
 		{
-			ClusterId: "cid1",
-			Namespace: "ns1",
-			Id:        "did1",
-			Name:      "foo",
-			Type:      "Replicated",
-			Created:   ts,
+			ClusterId:   "cid1",
+			Namespace:   "ns1",
+			NamespaceId: "ns1",
+			Id:          "did1",
+			Name:        "foo",
+			Type:        "Replicated",
+			Created:     ts,
 			Containers: []*storage.Container{
 				{
 					Image: &storage.ContainerImage{
@@ -56,12 +57,13 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			},
 		},
 		{
-			ClusterId: "cid1",
-			Namespace: "ns2",
-			Id:        "did2",
-			Name:      "bar",
-			Type:      "Global",
-			Created:   ts,
+			ClusterId:   "cid1",
+			Namespace:   "ns2",
+			NamespaceId: "ns2",
+			Id:          "did2",
+			Name:        "bar",
+			Type:        "Global",
+			Created:     ts,
 		},
 	}
 
@@ -472,13 +474,21 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 	// Check that the graph is what we expect.
 	tos, err := readMapping(suite.db, getClusterKey("cid1"))
 	suite.NoError(err)
-	suite.Equal(SortedKeys{getNamespaceKey("ns1"), getNamespaceKey("ns2")}, tos)
+	suite.Equal(SortedKeys{getNamespaceKey("ns1"), getNamespaceKey("ns2"), getNamespaceSACKey("ns1"), getNamespaceSACKey("ns2")}, tos)
 
 	tos, err = readMapping(suite.db, getNamespaceKey("ns1"))
 	suite.NoError(err)
 	suite.Equal(SortedKeys{getDeploymentKey(deployments[0].GetId())}, tos)
 
+	tos, err = readMapping(suite.db, getNamespaceSACKey("ns1"))
+	suite.NoError(err)
+	suite.Equal(SortedKeys{getDeploymentKey(deployments[0].GetId())}, tos)
+
 	tos, err = readMapping(suite.db, getNamespaceKey("ns2"))
+	suite.NoError(err)
+	suite.Equal(SortedKeys{getDeploymentKey(deployments[1].GetId())}, tos)
+
+	tos, err = readMapping(suite.db, getNamespaceSACKey("ns2"))
 	suite.NoError(err)
 	suite.Equal(SortedKeys{getDeploymentKey(deployments[1].GetId())}, tos)
 

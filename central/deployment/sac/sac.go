@@ -17,13 +17,13 @@ var (
 
 	deploymentClusterPath = [][]byte{
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 		clusterDackBox.Bucket,
 	}
 
 	deploymentNamespacePath = [][]byte{
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 	}
 
 	imageSACFilter filtered.Filter

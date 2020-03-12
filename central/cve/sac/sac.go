@@ -28,7 +28,7 @@ var (
 		componentDackBox.Bucket,
 		imageDackBox.Bucket,
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 		clusterDackBox.Bucket,
 	}
 
@@ -37,7 +37,7 @@ var (
 		componentDackBox.Bucket,
 		imageDackBox.Bucket,
 		deploymentDackBox.Bucket,
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 	}
 
 	clusterCVESACFilter filtered.Filter

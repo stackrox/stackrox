@@ -15,7 +15,7 @@ var (
 	nsSAC = sac.ForResource(resources.Namespace)
 
 	namespaceClusterPath = [][]byte{
-		namespaceDackBox.Bucket,
+		namespaceDackBox.SACBucket,
 		clusterDackBox.Bucket,
 	}
 
@@ -31,7 +31,7 @@ func GetSACFilter(graphProvider graph.Provider) filtered.Filter {
 			filtered.WithResourceHelper(nsSAC),
 			filtered.WithGraphProvider(graphProvider),
 			filtered.WithClusterPath(namespaceClusterPath...),
-			filtered.WithNamespacePath(namespaceDackBox.Bucket),
+			filtered.WithNamespacePath(namespaceDackBox.SACBucket),
 		)
 		utils.Must(err)
 	})

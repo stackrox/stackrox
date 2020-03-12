@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	clusterBucketName    = []byte("clusters")
-	namespaceBucketName  = []byte("namespaces")
-	deploymentBucketName = []byte("deployments")
+	clusterBucketName      = []byte("clusters")
+	namespaceSACBucketName = []byte("namespacesSACBucket")
+	namespaceBucketName    = []byte("namespaces")
+	deploymentBucketName   = []byte("deployments")
 
 	imageBucketName             = []byte("imageBucket")
 	imageToComponentsBucketName = []byte("image_to_comp")
@@ -35,6 +36,10 @@ func getClusterKey(id string) []byte {
 
 func getNamespaceKey(id string) []byte {
 	return prefixKey(namespaceBucketName, []byte(id))
+}
+
+func getNamespaceSACKey(name string) []byte {
+	return prefixKey(namespaceSACBucketName, []byte(name))
 }
 
 func getDeploymentKey(id string) []byte {
