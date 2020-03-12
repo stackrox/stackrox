@@ -18,7 +18,7 @@ const riskPanelTabs = [
 function ViolationTabs({ alert }) {
     return (
         <Tabs headers={riskPanelTabs}>
-            <TabContent>
+            <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <ViolationsDetails
                         violationId={alert.id}
@@ -27,17 +27,17 @@ function ViolationTabs({ alert }) {
                     />
                 </div>
             </TabContent>
-            <TabContent>
+            <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <EnforcementDetails listAlert={alert} />
                 </div>
             </TabContent>
-            <TabContent>
+            <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <DeploymentDetails deployment={alert.deployment} />
                 </div>
             </TabContent>
-            <TabContent>
+            <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
                     <PolicyDetails wizardPolicy={alert.policy} />
                 </div>

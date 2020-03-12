@@ -11,6 +11,7 @@ import Query from 'Components/ThrowingQuery';
 import { standardLabels } from 'messages/standards';
 import isGQLLoading from 'utils/gqlLoading';
 import { searchParams } from 'constants/searchParams';
+import { useTheme } from 'Containers/ThemeProvider';
 
 const standardsResultsMap = {
     passing: 'var(--tertiary-400)',
@@ -18,6 +19,7 @@ const standardsResultsMap = {
 };
 
 const DashboardCompliance = ({ match, location }) => {
+    const { isDarkMode } = useTheme();
     function processData(data) {
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
@@ -113,7 +115,11 @@ const DashboardCompliance = ({ match, location }) => {
 
     return (
         <div className="w-full">
-            <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+            <h2
+                className={`-ml-6 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase ${
+                    !isDarkMode ? 'bg-base-100' : 'bg-base-0'
+                }`}
+            >
                 <Link
                     className="text-base-600 hover:text-primary-600 flex items-center h-10"
                     to="/main/compliance"

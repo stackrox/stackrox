@@ -1,14 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const TabContent = ({ children }) => <div className="h-full overflow-auto">{children}</div>;
+const TabContent = ({ children, extraClasses }) => (
+    <div className={` ${extraClasses} h-full overflow-auto"`}>{children}</div>
+);
 
 TabContent.defaultProps = {
-    children: []
+    children: [],
+    extraClasses: ''
 };
 
 TabContent.propTypes = {
-    children: PropTypes.node
+    children: PropTypes.node,
+    extraClasses: PropTypes.string
 };
 
 export default TabContent;

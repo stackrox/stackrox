@@ -85,7 +85,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         <div className="flex px-4">
             <PanelButton
                 icon={<Power className="h-4 w-4 xl:ml-1" />}
-                className={`btn ml-2 ${currentDisabledState ? 'btn-tertiary' : 'btn-success'}`}
+                className={`btn ml-2 ${currentDisabledState ? 'btn-base' : 'btn-success'}`}
                 onClick={togglePolicy}
                 tooltip={`${currentDisabledState ? 'Toggle Policy On' : 'Toggle Policy Off'}`}
             >
@@ -106,7 +106,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                     small
                 />
             </PanelButton>
-            <ButtonLink linkTo={`/main/policies/${id}/edit`} extraClassNames="mx-1 ml-2 lg:mr-3">
+            <ButtonLink linkTo={`/main/policies/${id}/edit`} extraClassNames="ml-2">
                 <span className="mr-2">Edit</span>
                 <Edit size="16" />
             </ButtonLink>

@@ -39,7 +39,7 @@ const DashboardPage = props => {
                 <div className="overflow-auto z-0">
                     <div
                         className={`flex flex-wrap bg-dashboard ${
-                            !isDarkMode ? 'bg-base-300' : 'bg-base-200'
+                            !isDarkMode ? 'bg-base-300' : 'bg-base-100'
                         }`}
                     >
                         <div className="w-full lg:w-1/2 p-6 z-1">
@@ -54,7 +54,7 @@ const DashboardPage = props => {
                             <div className="flex w-full flex-wrap -mx-6 p-3">
                                 <div className="w-full lg:w-1/2 xl:w-1/3 p-3">
                                     <div className="flex flex-col bg-base-100 rounded-sm shadow h-full rounded">
-                                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-200 border-b">
+                                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-300 border-b">
                                             <Icon.Layers className="h-4 w-4 m-3" />
                                             <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
                                                 Violations by Cluster
@@ -70,7 +70,7 @@ const DashboardPage = props => {
                                 </div>
                                 <div className="p-3 w-full lg:w-1/2 xl:w-1/3">
                                     <div className="flex flex-col bg-base-100 rounded-sm shadow h-full rounded">
-                                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-200 border-b">
+                                        <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-300 border-b">
                                             <Icon.AlertTriangle className="h-4 w-4 m-3" />
                                             <span className="px-4 py-4 pl-3 uppercase text-base tracking-wide pb-3 border-l border-base-300">
                                                 Active Violations by Time
