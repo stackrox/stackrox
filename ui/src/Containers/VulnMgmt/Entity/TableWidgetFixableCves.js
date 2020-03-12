@@ -6,7 +6,7 @@ import { useQuery } from 'react-apollo';
 
 import Loader from 'Components/Loader';
 import Message from 'Components/Message';
-import { getCveTableColumns } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
+import { getCveTableColumns, defaultCveSort } from 'Containers/VulnMgmt/List/Cves/VulnMgmtListCves';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityTypes from 'constants/entityTypes';
@@ -19,6 +19,7 @@ import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
 
 const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name, id }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
+    const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const displayedEntityType = resourceLabels[entityType];
     const idFieldName = entityType === entityTypes.IMAGE ? 'sha' : 'id';
@@ -54,11 +55,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
             query: '',
             scopeQuery: getScopeQuery(entityContext),
             vulnQuery: queryService.objectToWhereClause({ Fixable: true }),
-            vulnPagination: queryService.getPagination(
-                { id: 'CVSS', desc: true },
-                fixableCvesPage,
-                LIST_PAGE_SIZE
-            )
+            vulnPagination: queryService.getPagination(cveSort, fixableCvesPage, LIST_PAGE_SIZE)
         }
     };
     const { loading: cvesLoading, data: fixableCvesData, error: cvesError } = useQuery(
@@ -81,6 +78,12 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
             entityName={name}
         />
     );
+
+    // @TODO: wrapping the sort state updater,
+    //        to document that we may eventually have to handle multi-columns sorts here
+    function onSortedChange(newSort) {
+        setCveSort(newSort);
+    }
 
     return (
         <>
@@ -110,6 +113,9 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
                     idAttribute="cve"
                     pageSize={LIST_PAGE_SIZE}
                     parentPageState={fixableCveState}
+                    currentSort={cveSort}
+                    defaultSorted={[]}
+                    sortHandler={onSortedChange}
                 />
             )}
         </>

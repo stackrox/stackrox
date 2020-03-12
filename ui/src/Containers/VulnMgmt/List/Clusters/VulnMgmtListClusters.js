@@ -48,15 +48,11 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
         ${CLUSTER_LIST_FRAGMENT}
     `;
 
-    // @TODO: uncomment once Clusters pagination is fixed on the back end
     const tableSort = sort || defaultClusterSort;
     const queryOptions = {
         variables: {
             ...vulMgmtPolicyQuery,
             query: queryService.objectToWhereClause(search),
-            // @TODO: delete the following line
-            //        and uncomment the line after that, once Clusters pagination is fixed on the back end
-            // pagination: queryService.getPagination({}, page, LIST_PAGE_SIZE)
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };

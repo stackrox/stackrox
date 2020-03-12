@@ -10,7 +10,16 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import TablePagination from 'Components/TablePagination';
 import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 
-const TableWidget = ({ history, header, entityType, pageSize, parentPageState, ...rest }) => {
+const TableWidget = ({
+    history,
+    header,
+    entityType,
+    pageSize,
+    parentPageState,
+    currentSort,
+    sortHandler,
+    ...rest
+}) => {
     const workflowState = useContext(workflowStateContext);
     const [localPage, setLocalPage] = useState(0);
     const {
@@ -33,6 +42,7 @@ const TableWidget = ({ history, header, entityType, pageSize, parentPageState, .
     const currentPage = parentPageState?.page || localPage;
     const currentPageHandler = parentPageState?.setPage || setLocalPage;
     const totalCount = parentPageState?.totalCount || rows.length;
+    const useServerSidePagination = !!sortHandler;
 
     const headerComponents = (
         <div className="flex">
@@ -73,7 +83,10 @@ const TableWidget = ({ history, header, entityType, pageSize, parentPageState, .
                         SubComponent={SubComponent}
                         page={currentPage}
                         defaultSorted={defaultSorted}
-                        manual={!!parentPageState}
+                        sorted={currentSort || undefined}
+                        manual={useServerSidePagination}
+                        onSortedChange={sortHandler}
+                        disableSortRemove={useServerSidePagination}
                     />
                 </Widget>
             ) : (
@@ -93,12 +106,16 @@ TableWidget.propTypes = {
         setPage: PropTypes.func,
         totalCount: PropTypes.number
     }),
+    currentSort: PropTypes.arrayOf(PropTypes.shape({})),
+    sortHandler: PropTypes.func,
     entityType: PropTypes.string.isRequired
 };
 
 TableWidget.defaultProps = {
     idAttribute: 'id',
     pageSize: DEFAULT_PAGE_SIZE,
-    parentPageState: null
+    parentPageState: null,
+    currentSort: null,
+    sortHandler: null
 };
 export default withRouter(TableWidget);
