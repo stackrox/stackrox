@@ -39,6 +39,7 @@ const POLICIES_QUERY = gql`
                 deploymentCount(query: $query)
                 lifecycleStages
                 enforcementActions
+                notifiers
             }
         }
     }

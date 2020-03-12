@@ -42,6 +42,7 @@ const VulmMgmtEntityCluster = ({
                         deploymentCount(query: $scopeQuery)
                         lifecycleStages
                         enforcementActions
+                        notifiers
                     }
                 }
                 #createdAt

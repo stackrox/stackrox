@@ -39,6 +39,7 @@ const VulmMgmtDeployment = ({
                     severity
                     lifecycleStages
                     enforcementActions
+                    notifiers
                 }
                 annotations {
                     key

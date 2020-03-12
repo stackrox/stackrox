@@ -53,6 +53,7 @@ const VulnMgmtNamespace = ({
                         deploymentCount(query: $scopeQuery)
                         lifecycleStages
                         enforcementActions
+                        notifiers
                     }
                 }
                 policyCount(query: $policyQuery)
