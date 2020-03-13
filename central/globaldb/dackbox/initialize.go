@@ -184,5 +184,8 @@ func setDoesNotNeedReindex(dacky *dackbox.DackBox, reindexBucket, bucket, reInde
 	txn := dacky.NewTransaction()
 	defer txn.Discard()
 
-	return txn.BadgerTxn().Set(badgerhelper.GetBucketKey(reindexBucket, bucket), reIndexValue)
+	if err := txn.BadgerTxn().Set(badgerhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
+		return err
+	}
+	return txn.Commit()
 }
