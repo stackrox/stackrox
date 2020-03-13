@@ -12,10 +12,12 @@ var (
 )
 
 // Store stores process comments.
+//go:generate mockgen-wrapper
 type Store interface {
 	AddProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) (string, error)
 	UpdateProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) error
 
+	GetComment(key *comments.ProcessCommentKey, commentID string) (*storage.Comment, error)
 	GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([]*storage.Comment, error)
 
 	RemoveProcessComment(key *comments.ProcessCommentKey, commentID string) error

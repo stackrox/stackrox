@@ -82,12 +82,8 @@ func (resolver *Resolver) RemoveAlertComment(ctx context.Context, args struct{ R
 	if err := writeAlerts(ctx); err != nil {
 		return false, err
 	}
-	request := &storage.Comment{
-		ResourceId: string(args.ResourceID),
-		CommentId:  string(args.CommentID),
-	}
 
-	err := resolver.ViolationsDataStore.RemoveAlertComment(ctx, request)
+	err := resolver.ViolationsDataStore.RemoveAlertComment(ctx, string(args.ResourceID), string(args.CommentID))
 	if err != nil {
 		return false, err
 	}

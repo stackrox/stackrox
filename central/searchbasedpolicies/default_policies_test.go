@@ -112,7 +112,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	processStore := processIndicatorBadgerStore.New(suite.db)
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
 	processSearcher := processIndicatorSearch.New(processStore, processIndexer)
-	suite.processDataStore, err = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
+	suite.processDataStore, err = processIndicatorDataStore.New(processStore, nil, processIndexer, processSearcher, nil)
 	suite.Require().NoError(err)
 
 	suite.matcherBuilder = matcher.NewBuilder(

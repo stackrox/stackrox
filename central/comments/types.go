@@ -21,7 +21,7 @@ func (k *ProcessCommentKey) Validate() error {
 	if k == nil {
 		return errors.New("process comment key is nil")
 	}
-	if stringutils.AtLeastOneEmpty(k.DeploymentID, k.ContainerName, k.ExecFilePath, k.ExecFilePath) {
+	if stringutils.AtLeastOneEmpty(k.DeploymentID, k.ContainerName, k.ExecFilePath, k.Args) {
 		return errors.Errorf("invalid process key %v: has missing fields", k)
 	}
 	return nil

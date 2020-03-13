@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator/index"
+	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
@@ -30,13 +31,14 @@ var (
 
 func initialize() {
 	storage := badgerStore.New(globaldb.GetGlobalBadgerDB())
+	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetGlobalIndex())
 	searcher := search.New(storage, indexer)
 
 	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
 	var err error
-	ad, err = New(storage, indexer, searcher, p)
+	ad, err = New(storage, commentsStorage, indexer, searcher, p)
 	utils.Must(errors.Wrap(err, "unable to load datastore for process indicators"))
 }
 

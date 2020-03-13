@@ -62,7 +62,7 @@ func setup(b require.TestingT) (processIndicatorDataStore.DataStore, imageIndexe
 	deploymentIndexer := index.New(bleveIndex)
 	imageIdx := imageIndexer.New(bleveIndex)
 
-	processDataStore, err := processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
+	processDataStore, err := processIndicatorDataStore.New(processStore, nil, processIndexer, processSearcher, nil)
 	require.NoError(b, err)
 
 	return processDataStore, imageIdx, deploymentIndexer

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/comments"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -75,13 +76,14 @@ func (suite *StoreTestSuite) checkCommentIsHydratedVersionOf(
 	gotComment, expectedBaseComment *storage.Comment,
 	earliestCreated, latestCreated, earliestModifed, latestModified time.Time) {
 
-	testutils.ValidateTSInWindow(gotComment.GetCreatedAt(), earliestCreated, latestCreated, suite.T())
-	testutils.ValidateTSInWindow(gotComment.GetLastModified(), earliestModifed, latestModified, suite.T())
-	gotComment.CreatedAt = nil
-	gotComment.LastModified = nil
+	clonedGotComment := proto.Clone(gotComment).(*storage.Comment)
+	testutils.ValidateTSInWindow(clonedGotComment.GetCreatedAt(), earliestCreated, latestCreated, suite.T())
+	testutils.ValidateTSInWindow(clonedGotComment.GetLastModified(), earliestModifed, latestModified, suite.T())
+	clonedGotComment.CreatedAt = nil
+	clonedGotComment.LastModified = nil
 
 	expectedBaseComment.ResourceType = storage.ResourceType_PROCESS
-	suite.Equal(expectedBaseComment, gotComment)
+	suite.Equal(expectedBaseComment, clonedGotComment)
 }
 
 func (suite *StoreTestSuite) TestStore() {
@@ -102,6 +104,10 @@ func (suite *StoreTestSuite) TestStore() {
 		justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 	suite.checkCommentIsHydratedVersionOf(commentsAfterAdd[2], getBareComment(thirdID, "COMMENT3"),
 		justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
+
+	comment1ByID, err := suite.store.GetComment(getKey(1, 1), firstID)
+	suite.NoError(err)
+	suite.Equal(commentsAfterAdd[0], comment1ByID)
 
 	justBeforeUpdate := time.Now()
 	suite.NoError(suite.store.UpdateProcessComment(getKey(1, 1), getBareComment(firstID, "COMMENT1UPDATED")))

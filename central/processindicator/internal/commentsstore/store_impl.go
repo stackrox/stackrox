@@ -175,6 +175,30 @@ func (s *storeImpl) GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([
 	return comments, nil
 }
 
+func (s *storeImpl) GetComment(key *comments.ProcessCommentKey, commentID string) (*storage.Comment, error) {
+	var comment *storage.Comment
+	err := s.bucketRef.View(func(b *bbolt.Bucket) error {
+		processSubBucket := getProcessSubBucket(b, key)
+		// No comments.
+		if processSubBucket == nil {
+			return nil
+		}
+		commentBytes := processSubBucket.Get([]byte(commentID))
+		if commentBytes == nil {
+			return nil
+		}
+		comment = new(storage.Comment)
+		if err := proto.Unmarshal(commentBytes, comment); err != nil {
+			return errors.Wrap(err, "proto unmarshaling")
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return comment, nil
+}
+
 func (s *storeImpl) RemoveProcessComment(key *comments.ProcessCommentKey, commentID string) error {
 	if err := key.Validate(); err != nil {
 		return err

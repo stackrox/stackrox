@@ -54,7 +54,7 @@ func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
 	processStore := processIndicatorBadgerStore.New(s.db)
 	processIndexer := processIndicatorIndex.New(s.bleveIndex)
 	processSearcher := processIndicatorSearch.New(processStore, processIndexer)
-	s.processDataStore, err = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
+	s.processDataStore, err = processIndicatorDataStore.New(processStore, nil, processIndexer, processSearcher, nil)
 	s.Require().NoError(err)
 
 	policy := &storage.Policy{

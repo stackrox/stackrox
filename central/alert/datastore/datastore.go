@@ -39,7 +39,7 @@ type DataStore interface {
 	GetAlertComments(ctx context.Context, alertID string) (comments []*storage.Comment, err error)
 	AddAlertComment(ctx context.Context, request *storage.Comment) (string, error)
 	UpdateAlertComment(ctx context.Context, request *storage.Comment) error
-	RemoveAlertComment(ctx context.Context, request *storage.Comment) error
+	RemoveAlertComment(ctx context.Context, alertID, commentID string) error
 
 	AddAlertTags(ctx context.Context, alertID string, tags []string) ([]string, error)
 	RemoveAlertTags(ctx context.Context, alertID string, tags []string) error

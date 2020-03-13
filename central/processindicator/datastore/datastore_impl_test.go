@@ -7,12 +7,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	indexMocks "github.com/stackrox/rox/central/processindicator/index/mocks"
+	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
+	commentsStoreMocks "github.com/stackrox/rox/central/processindicator/internal/commentsstore/mocks"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	prunerMocks "github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
@@ -39,10 +43,15 @@ func TestIndicatorDatastore(t *testing.T) {
 
 type IndicatorDataStoreTestSuite struct {
 	suite.Suite
-	datastore DataStore
-	storage   store.Store
-	indexer   index.Indexer
-	searcher  processSearch.Searcher
+	datastore       DataStore
+	storage         store.Store
+	commentsStorage commentsstore.Store
+	indexer         index.Indexer
+	searcher        processSearch.Searcher
+
+	badgerDB  *badger.DB
+	badgerDir string
+	boltDB    *bolt.DB
 
 	hasNoneCtx  context.Context
 	hasReadCtx  context.Context
@@ -62,9 +71,13 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 
-	db, _, err := badgerhelper.NewTemp(testutils.DBFileName(suite))
+	var err error
+	suite.badgerDB, suite.badgerDir, err = badgerhelper.NewTemp(testutils.DBFileName(suite))
 	suite.NoError(err)
-	suite.storage = badgerStore.New(db)
+	suite.storage = badgerStore.New(suite.badgerDB)
+
+	suite.boltDB = testutils.DBForSuite(suite)
+	suite.commentsStorage = commentsstore.New(suite.boltDB)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)
@@ -76,12 +89,14 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
+	testutils.TearDownBadger(suite.badgerDB, suite.badgerDir)
+	testutils.TearDownDB(suite.boltDB)
 	suite.mockCtrl.Finish()
 }
 
 func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	var err error
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, nil)
+	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.Require().NoError(err)
 }
 
@@ -89,12 +104,14 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreWithMocks() (*storeMocks
 	mockStorage := storeMocks.NewMockStore(suite.mockCtrl)
 	mockStorage.EXPECT().GetKeysToIndex().Return(nil, nil)
 
+	mockCommentsStorage := commentsStoreMocks.NewMockStore(suite.mockCtrl)
+
 	mockIndexer := indexMocks.NewMockIndexer(suite.mockCtrl)
 	mockIndexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	mockSearcher := searchMocks.NewMockSearcher(suite.mockCtrl)
 	var err error
-	suite.datastore, err = New(mockStorage, mockIndexer, mockSearcher, nil)
+	suite.datastore, err = New(mockStorage, mockCommentsStorage, mockIndexer, mockSearcher, nil)
 	suite.Require().NoError(err)
 
 	return mockStorage, mockIndexer, mockSearcher
@@ -136,28 +153,76 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 
 	indicators = []*storage.ProcessIndicator{
 		{
-			Id:           "id1",
-			DeploymentId: "d1",
+			Id:            "id1",
+			DeploymentId:  "d1",
+			ContainerName: "container1",
 
 			Signal: repeatedSignal,
 		},
 		{
-			Id:           "id2",
-			DeploymentId: "d2",
+			Id:            "id2",
+			DeploymentId:  "d2",
+			ContainerName: "container1",
 
 			Signal: &storage.ProcessSignal{
-				Name: "blah",
-				Args: "args2",
+				Name:         "blah",
+				Args:         "args2",
+				ExecFilePath: "blahpath",
 			},
 		},
 	}
 
 	repeatIndicator = &storage.ProcessIndicator{
-		Id:           "id1",
-		DeploymentId: "d1",
-		Signal:       repeatedSignal,
+		Id:            "id1",
+		DeploymentId:  "d1",
+		ContainerName: "container1",
+		Signal:        repeatedSignal,
 	}
 	return
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestComments() {
+	suite.setupDataStoreNoPruning()
+
+	indicators, _ := getIndicators()
+	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+
+	_, err := suite.datastore.AddProcessComment(suite.hasNoneCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	suite.Error(err)
+	_, err = suite.datastore.AddProcessComment(suite.hasReadCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	suite.Error(err)
+	id, err := suite.datastore.AddProcessComment(suite.hasWriteCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	suite.NoError(err)
+	suite.NotEmpty(id)
+
+	comments, err := suite.datastore.GetCommentsForProcess(suite.hasNoneCtx, indicators[0].GetId())
+	suite.NoError(err)
+	suite.Empty(comments)
+
+	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	suite.NoError(err)
+	suite.Len(comments, 1)
+	suite.Equal(id, comments[0].GetCommentId())
+	suite.Equal("blah", comments[0].GetCommentMessage())
+
+	suite.Error(suite.datastore.UpdateProcessComment(suite.hasNoneCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.Error(suite.datastore.UpdateProcessComment(suite.hasReadCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+
+	suite.NoError(suite.datastore.UpdateProcessComment(suite.hasWriteCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+
+	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	suite.NoError(err)
+	suite.Len(comments, 1)
+	suite.Equal(id, comments[0].GetCommentId())
+	suite.Equal("blah2", comments[0].GetCommentMessage())
+
+	suite.Error(suite.datastore.RemoveProcessComment(suite.hasNoneCtx, indicators[0].GetId(), id))
+	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, indicators[0].GetId(), id))
+	suite.NoError(suite.datastore.RemoveProcessComment(suite.hasWriteCtx, indicators[0].GetId(), id))
+
+	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	suite.NoError(err)
+	suite.Empty(comments)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
@@ -358,7 +423,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		})
 	}
 	var err error
-	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
+	suite.datastore, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, mockPrunerFactory)
 	suite.Require().NoError(err)
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -554,9 +619,10 @@ func TestProcessIndicatorReindexSuite(t *testing.T) {
 type ProcessIndicatorReindexSuite struct {
 	suite.Suite
 
-	storage  *storeMocks.MockStore
-	indexer  *indexMocks.MockIndexer
-	searcher *searchMocks.MockSearcher
+	storage         *storeMocks.MockStore
+	commentsStorage *commentsStoreMocks.MockStore
+	indexer         *indexMocks.MockIndexer
+	searcher        *searchMocks.MockSearcher
 
 	mockCtrl *gomock.Controller
 }
@@ -564,6 +630,7 @@ type ProcessIndicatorReindexSuite struct {
 func (suite *ProcessIndicatorReindexSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
+	suite.commentsStorage = commentsStoreMocks.NewMockStore(suite.mockCtrl)
 	suite.indexer = indexMocks.NewMockIndexer(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 }
@@ -585,7 +652,7 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().AddProcessIndicators(processes).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
-	_, err := New(suite.storage, suite.indexer, suite.searcher, nil)
+	_, err := New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 
 	// Make listAlerts just A,B so C should be deleted
@@ -598,6 +665,6 @@ func (suite *ProcessIndicatorReindexSuite) TestReconciliationPartialReindex() {
 	suite.indexer.EXPECT().DeleteProcessIndicators([]string{"C"}).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
-	_, err = New(suite.storage, suite.indexer, suite.searcher, nil)
+	_, err = New(suite.storage, suite.commentsStorage, suite.indexer, suite.searcher, nil)
 	suite.NoError(err)
 }

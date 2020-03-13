@@ -319,7 +319,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
-	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
+	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
 	s.NoError(err)
 }
 
@@ -328,7 +328,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
-	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
+	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
 	s.EqualError(err, "permission denied")
 }
 

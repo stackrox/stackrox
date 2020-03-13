@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	"github.com/stackrox/rox/central/comments"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -260,7 +261,7 @@ func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.C
 		return "", errors.New("permission denied")
 	}
 
-	request.User = getCurrUser(ctx)
+	request.User = comments.UserFromContext(ctx)
 	return ds.commentsStorage.AddAlertComment(request)
 }
 
@@ -274,20 +275,20 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 		return errors.New("permission denied")
 	}
 
-	request.User = getCurrUser(ctx)
+	request.User = comments.UserFromContext(ctx)
 	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")
 	}
 	if comment.GetUser().GetId() != request.GetUser().GetId() {
-		return errors.Errorf("The current user has no privilege to update the comment with id: %q", request.GetCommentId())
+		return errors.Errorf("the current user cannot update the comment with id: %q for alert %q", request.GetCommentId(), request.GetResourceId())
 	}
 	return ds.commentsStorage.UpdateAlertComment(request)
 }
 
-func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storage.Comment) error {
+func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commentID string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "RemoveAlertComment")
-	alert, exists, err := ds.GetAlert(ctx, request.GetResourceId())
+	alert, exists, err := ds.GetAlert(ctx, alertID)
 	if err != nil || !exists {
 		return err
 	}
@@ -295,15 +296,15 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, request *storag
 		return errors.New("permission denied")
 	}
 
-	request.User = getCurrUser(ctx)
-	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
+	user := getCurrUser(ctx)
+	comment, err := ds.commentsStorage.GetComment(alertID, commentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")
 	}
-	if comment.GetUser().GetId() != request.GetUser().GetId() {
-		return errors.Errorf("The current user has no privilege to remove the comment with id: %q", request.GetCommentId())
+	if comment.GetUser().GetId() != user.GetId() {
+		return errors.Errorf("the current user cannot remove the comment with id: %q for alert %q", commentID, alertID)
 	}
-	return ds.commentsStorage.RemoveAlertComment(request.GetResourceId(), request.GetCommentId())
+	return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
 }
 
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
