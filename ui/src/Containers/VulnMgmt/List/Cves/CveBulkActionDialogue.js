@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 import { useQuery } from 'react-apollo';
@@ -19,6 +19,7 @@ import CveToPolicyShortForm, { emptyPolicy } from './CveToPolicyShortForm';
 
 const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [messageObj, setMessageObj] = useState(null);
+    const dialogueRef = useRef(null);
 
     // the combined CVEs are used for the GraphQL query var
     const cvesStr = bulkActionCveIds.join(',');
@@ -152,6 +153,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 setMessageObj({ type: 'info', message: 'Policy successfully saved' });
 
                 // close the dialog after giving the user a little time to process the success message
+                dialogueRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                 setTimeout(handleClose, 3000);
             })
             .catch(error => {
@@ -161,6 +163,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 });
 
                 // hide the error message after giving the user time to read it
+                dialogueRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                 setTimeout(() => {
                     setMessageObj(null);
                 }, 7000);
@@ -195,7 +198,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
             }
             onCancel={closeWithoutSaving}
         >
-            <div className="overflow-auto p-4">
+            <div className="overflow-auto p-4" ref={dialogueRef}>
                 {!cveLoading && allowedCves.length === 0 ? (
                     <p>The selected CVEs cannot be added to a policy.</p>
                 ) : (
