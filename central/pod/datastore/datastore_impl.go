@@ -167,7 +167,7 @@ func (ds *datastoreImpl) GetPods(ctx context.Context, ids []string) ([]*storage.
 	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, errors.New("permission denied")
+		return nil, sac.ErrPermissionDenied
 	}
 
 	pods, _, err := ds.podStore.GetPodsWithIDs(ids...)
@@ -181,7 +181,7 @@ func (ds *datastoreImpl) CountPods(ctx context.Context) (int, error) {
 	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if !ok {
-		return 0, errors.New("permission denied")
+		return 0, sac.ErrPermissionDenied
 	}
 
 	return ds.podStore.CountPods()
@@ -194,7 +194,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	// TODO: Figure out how to update the filter...
@@ -229,7 +229,7 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	ds.keyedMutex.Lock(id)
