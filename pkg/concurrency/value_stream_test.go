@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValueStream_SequentialSync(t *testing.T) {
@@ -130,36 +131,34 @@ func TestValueStream_NonStrict(t *testing.T) {
 	vs := NewValueStream(0)
 	it := vs.Iterator(false)
 
+	evenValC := make(chan int, 1)
+	evenValC <- 0
 	go func() {
 		for i := 1; i <= 10; i++ {
-			time.Sleep(50 * time.Millisecond)
 			vs.Push(i)
+			if i%2 == 0 {
+				evenValC <- i
+			}
 		}
 	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
-	var err error
-	lastVal := -2
-	for err == nil {
-		// Make sure we skip at least one value (but we can never exceed 10)
-		minNextVal := lastVal + 2
-		if minNextVal > 10 {
-			minNextVal = 10
-		}
-		assert.GreaterOrEqual(t, it.Value(), minNextVal)
-		lastVal = it.Value().(int)
+	for {
+		lastEvenVal := <-evenValC
 
-		if lastVal >= 10 {
+		value := it.Value().(int)
+		assert.GreaterOrEqual(t, value, lastEvenVal)
+
+		if value >= 10 {
 			break
 		}
 
-		time.Sleep(150 * time.Millisecond)
+		var err error
 		it, err = it.Next(ctx)
+		require.NoError(t, err)
 	}
-
-	assert.NoError(t, err)
 }
 
 func TestValueStream_SubscribeChan(t *testing.T) {
