@@ -81,7 +81,8 @@ func (rm *RemoteGraph) GetRefsTo(to []byte) [][]byte {
 // so that the modification is consistent with the current remote state.
 func (rm *RemoteGraph) SetRefs(from []byte, to [][]byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
-	rm.copyNeededState(from, to)
+	rm.ensureFrom(from)
+	rm.ensureToAll(rm.GetRefsFrom(from))
 	return rm.RWGraph.SetRefs(from, to)
 }
 
@@ -89,22 +90,23 @@ func (rm *RemoteGraph) SetRefs(from []byte, to [][]byte) error {
 // The remote state for all input keys will be read if not already read to ensure a consistent update.
 func (rm *RemoteGraph) AddRefs(from []byte, to ...[]byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
-	rm.copyNeededState(from, to)
+	rm.ensureFrom(from)
+	rm.ensureToAll(rm.GetRefsFrom(from))
 	return rm.RWGraph.AddRefs(from, to...)
 }
 
-// DeleteRefs removes all children from the input key, and removes the input key from the maps.
-// The remote state will be read for the input key to make sure the modification is consistent.
-func (rm *RemoteGraph) DeleteRefs(from []byte) error {
+// DeleteRefsFrom removes all references from the given input id.
+func (rm *RemoteGraph) DeleteRefsFrom(from []byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
-	rm.copyNeededState(from, nil)
-	return rm.RWGraph.DeleteRefs(from)
+	rm.ensureToAll(rm.GetRefsFrom(from))
+	return rm.RWGraph.DeleteRefsFrom(from)
 }
 
-func (rm *RemoteGraph) copyNeededState(from []byte, to [][]byte) { // Copy the current from value from the underlying state.
-	rm.ensureFrom(from)
-	rm.ensureToAll(rm.GetRefsFrom(from))
-	rm.ensureToAll(to)
+// DeleteRefsTo removes the input id from all ids that reference it.
+func (rm *RemoteGraph) DeleteRefsTo(to []byte) error {
+	// Copy in the state needed to calculate the necessary updates, and apply the updates.
+	rm.ensureFromAll(rm.GetRefsTo(to))
+	return rm.RWGraph.DeleteRefsTo(to)
 }
 
 func (rm *RemoteGraph) ensureFrom(from []byte) {
@@ -129,6 +131,29 @@ func (rm *RemoteGraph) ensureTo(to []byte) {
 	rm.remoteToRead(func(g RGraph) {
 		if g.HasRefsTo(to) {
 			rm.RWGraph.setTo(to, g.GetRefsTo(to))
+		}
+	})
+}
+
+func (rm *RemoteGraph) ensureFromAll(froms [][]byte) {
+	if len(froms) == 0 {
+		return
+	}
+
+	unfetched := make([][]byte, 0, len(froms))
+	for _, from := range froms {
+		strFrom := string(from)
+		if rm.readForward.Add(strFrom) {
+			unfetched = append(unfetched, from)
+		}
+	}
+
+	// Read them all at once.
+	rm.remoteToRead(func(g RGraph) {
+		for _, from := range unfetched {
+			if g.HasRefsFrom(from) {
+				rm.RWGraph.setFrom(from, g.GetRefsFrom(from))
+			}
 		}
 	})
 }

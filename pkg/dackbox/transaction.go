@@ -21,7 +21,7 @@ type Transaction struct {
 
 	txn *badger.Txn
 
-	graph        *graph.PersistedGraph
+	graph        *graph.RemoteGraph
 	modification graph.Modification
 
 	dirtyPrefix []byte
@@ -37,7 +37,7 @@ func (dbt *Transaction) BadgerTxn() *badger.Txn {
 }
 
 // Graph returns the Graph object (the ID->[]ID mapping layer) in the current transaction.
-func (dbt *Transaction) Graph() *graph.PersistedGraph {
+func (dbt *Transaction) Graph() *graph.RemoteGraph {
 	return dbt.graph
 }
 

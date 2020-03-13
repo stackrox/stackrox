@@ -52,7 +52,7 @@ func (rc *DackBox) NewTransaction() *Transaction {
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, remote),
+		graph:        remote,
 		modification: modification,
 		dirtyPrefix:  rc.dirtyPrefix,
 		dirtyMap:     make(map[string]proto.Message),
@@ -73,7 +73,7 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 	return &Transaction{
 		ts:           ts,
 		txn:          txn,
-		graph:        graph.NewPersistedGraph(rc.graphPrefix, txn, remote),
+		graph:        remote,
 		modification: modification,
 		discard:      rc.discard,
 		commit:       rc.commit,
@@ -138,6 +138,16 @@ func (rc *DackBox) commit(openedAt uint64, txn *badger.Txn, modification graph.M
 
 	// Try to commit the disk changes. Do nothing to the in-memory state if that fails.
 	if txn != nil {
+		defer txn.Discard()
+
+		// Persist graph updates.
+		persistor := graph.NewPersistor(rc.graphPrefix, txn)
+		modification.Apply(persistor)
+		if err := persistor.ToError(); err != nil {
+			return err
+		}
+
+		// Commit the transaction with graph updates added.
 		if err := txn.Commit(); err != nil {
 			return err
 		}

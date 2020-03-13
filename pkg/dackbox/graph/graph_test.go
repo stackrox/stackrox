@@ -25,4 +25,16 @@ func TestGraph(t *testing.T) {
 	assert.Equal(t, [][]byte{[]byte("fromKey1"), []byte("fromKey3")}, graph.GetRefsTo([]byte("toKey2")))
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, graph.GetRefsTo([]byte("toKey3")))
 	assert.Equal(t, [][]byte{[]byte("fromKey2")}, graph.GetRefsTo([]byte("toKey4")))
+
+	_ = graph.DeleteRefsFrom([]byte("fromKey2")) // resets
+	_ = graph.DeleteRefsTo([]byte("toKey2"))     // resets
+
+	assert.Equal(t, [][]byte{[]byte("toKey1")}, graph.GetRefsFrom([]byte("fromKey1")))
+	assert.Equal(t, [][]byte(nil), graph.GetRefsFrom([]byte("fromKey2")))
+	assert.Equal(t, [][]byte{[]byte("toKey1")}, graph.GetRefsFrom([]byte("fromKey3")))
+
+	assert.Equal(t, [][]byte{[]byte("fromKey1"), []byte("fromKey3")}, graph.GetRefsTo([]byte("toKey1")))
+	assert.Equal(t, [][]byte(nil), graph.GetRefsTo([]byte("toKey2")))
+	assert.Equal(t, [][]byte(nil), graph.GetRefsTo([]byte("toKey3")))
+	assert.Equal(t, [][]byte(nil), graph.GetRefsTo([]byte("toKey4")))
 }

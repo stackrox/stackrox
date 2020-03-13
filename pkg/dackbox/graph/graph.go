@@ -22,11 +22,16 @@ type RGraph interface {
 //go:generate mockgen-wrapper
 type RWGraph interface {
 	RGraph
+	applyableGraph
 
 	SetRefs(from []byte, to [][]byte) error
 	AddRefs(from []byte, to ...[]byte) error
-	DeleteRefs(from []byte) error
 
+	DeleteRefsFrom(from []byte) error
+	DeleteRefsTo(from []byte) error
+}
+
+type applyableGraph interface {
 	setFrom(from []byte, to [][]byte)
 	deleteFrom(from []byte)
 	setTo(to []byte, from [][]byte)
@@ -96,8 +101,8 @@ func (s *Graph) GetRefsTo(to []byte) [][]byte {
 
 // SetRefs sets the children of 'from' to be the input list of keys 'to'.
 func (s *Graph) SetRefs(from []byte, to [][]byte) error {
-	s.removeMappings(from)
-	s.addMappings(from, to)
+	s.removeMappingsFrom(from)
+	s.setMappings(from, to)
 	return nil
 }
 
@@ -107,10 +112,15 @@ func (s *Graph) AddRefs(from []byte, to ...[]byte) error {
 	return nil
 }
 
-// DeleteRefs removes all children from the input key, and removes the input key from the maps.
-// Calls to HasRefsFrom will return false afterwards.
-func (s *Graph) DeleteRefs(from []byte) error {
-	s.removeMappings(from)
+// DeleteRefsFrom removes all references from the input key.
+func (s *Graph) DeleteRefsFrom(from []byte) error {
+	s.removeMappingsFrom(from)
+	return nil
+}
+
+// DeleteRefsTo removes all references to the input key.
+func (s *Graph) DeleteRefsTo(to []byte) error {
+	s.removeMappingsTo(to)
 	return nil
 }
 
@@ -166,7 +176,16 @@ func (s *Graph) addMappings(from []byte, to [][]byte) {
 	}
 }
 
-func (s *Graph) removeMappings(from []byte) {
+func (s *Graph) setMappings(from []byte, to [][]byte) {
+	sFrom := string(from)
+	s.forward[sFrom] = sortedkeys.Sort(to)
+	for _, t := range to {
+		sTo := string(t)
+		s.backward[sTo], _ = sortedkeys.SortedKeys(s.backward[sTo]).Insert(from)
+	}
+}
+
+func (s *Graph) removeMappingsFrom(from []byte) {
 	sFrom := string(from)
 	tos, exists := s.forward[sFrom]
 	if !exists {
@@ -180,4 +199,20 @@ func (s *Graph) removeMappings(from []byte) {
 		}
 	}
 	delete(s.forward, sFrom)
+}
+
+func (s *Graph) removeMappingsTo(to []byte) {
+	sTo := string(to)
+	froms, exists := s.backward[sTo]
+	if !exists {
+		return
+	}
+	for _, from := range froms {
+		sFrom := string(from)
+		s.forward[sFrom], _ = sortedkeys.SortedKeys(s.forward[sFrom]).Remove(to)
+		if len(s.forward[sFrom]) == 0 {
+			delete(s.forward, sFrom)
+		}
+	}
+	delete(s.backward, sTo)
 }

@@ -11,7 +11,7 @@ type Modification interface {
 	FromModified([]byte) bool
 	ToModified([]byte) bool
 
-	Apply(graph RWGraph)
+	Apply(graph applyableGraph)
 }
 
 // NewModifiedGraph returns a new instance of a ModifiedGraph.
@@ -30,7 +30,7 @@ type ModifiedGraph struct {
 }
 
 // Apply applies a modification to a separate graph object.
-func (ms *ModifiedGraph) Apply(graph RWGraph) {
+func (ms *ModifiedGraph) Apply(graph applyableGraph) {
 	for _, from := range ms.modifiedFrom {
 		tos := ms.GetRefsFrom(from)
 		if tos == nil {
@@ -78,11 +78,20 @@ func (ms *ModifiedGraph) AddRefs(from []byte, to ...[]byte) error {
 	return ms.RWGraph.AddRefs(from, to...)
 }
 
-// DeleteRefs removes all children from the input key, and removes the input key from the maps.
+// DeleteRefsFrom removes all children from the input key, and removes the input key from the maps.
 // The key and it's current list of children will be added to the lists of modified values.
-func (ms *ModifiedGraph) DeleteRefs(from []byte) error {
+func (ms *ModifiedGraph) DeleteRefsFrom(from []byte) error {
 	ms.modifiedFrom, _ = ms.modifiedFrom.Insert(from)
 	ms.modifiedTo = ms.modifiedTo.Union(ms.GetRefsFrom(from))
 
-	return ms.RWGraph.DeleteRefs(from)
+	return ms.RWGraph.DeleteRefsFrom(from)
+}
+
+// DeleteRefsTo removes all parents from the input key, and removes the input key from the maps.
+// The key and it's current list of children will be added to the lists of modified values.
+func (ms *ModifiedGraph) DeleteRefsTo(to []byte) error {
+	ms.modifiedTo, _ = ms.modifiedTo.Insert(to)
+	ms.modifiedFrom = ms.modifiedFrom.Union(ms.GetRefsTo(to))
+
+	return ms.RWGraph.DeleteRefsTo(to)
 }

@@ -223,53 +223,6 @@ func (mr *MockRWGraphMockRecorder) GetRefsTo(to interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefsTo", reflect.TypeOf((*MockRWGraph)(nil).GetRefsTo), to)
 }
 
-// SetRefs mocks base method
-func (m *MockRWGraph) SetRefs(from []byte, to [][]byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetRefs", from, to)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetRefs indicates an expected call of SetRefs
-func (mr *MockRWGraphMockRecorder) SetRefs(from, to interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRefs", reflect.TypeOf((*MockRWGraph)(nil).SetRefs), from, to)
-}
-
-// AddRefs mocks base method
-func (m *MockRWGraph) AddRefs(from []byte, to ...[]byte) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{from}
-	for _, a := range to {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AddRefs", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddRefs indicates an expected call of AddRefs
-func (mr *MockRWGraphMockRecorder) AddRefs(from interface{}, to ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{from}, to...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRefs", reflect.TypeOf((*MockRWGraph)(nil).AddRefs), varargs...)
-}
-
-// DeleteRefs mocks base method
-func (m *MockRWGraph) DeleteRefs(from []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteRefs", from)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteRefs indicates an expected call of DeleteRefs
-func (mr *MockRWGraphMockRecorder) DeleteRefs(from interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRefs", reflect.TypeOf((*MockRWGraph)(nil).DeleteRefs), from)
-}
-
 // setFrom mocks base method
 func (m *MockRWGraph) setFrom(from []byte, to [][]byte) {
 	m.ctrl.T.Helper()
@@ -316,6 +269,138 @@ func (m *MockRWGraph) deleteTo(to []byte) {
 func (mr *MockRWGraphMockRecorder) deleteTo(to interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "deleteTo", reflect.TypeOf((*MockRWGraph)(nil).deleteTo), to)
+}
+
+// SetRefs mocks base method
+func (m *MockRWGraph) SetRefs(from []byte, to [][]byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetRefs", from, to)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetRefs indicates an expected call of SetRefs
+func (mr *MockRWGraphMockRecorder) SetRefs(from, to interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRefs", reflect.TypeOf((*MockRWGraph)(nil).SetRefs), from, to)
+}
+
+// AddRefs mocks base method
+func (m *MockRWGraph) AddRefs(from []byte, to ...[]byte) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{from}
+	for _, a := range to {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddRefs", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddRefs indicates an expected call of AddRefs
+func (mr *MockRWGraphMockRecorder) AddRefs(from interface{}, to ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{from}, to...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRefs", reflect.TypeOf((*MockRWGraph)(nil).AddRefs), varargs...)
+}
+
+// DeleteRefsFrom mocks base method
+func (m *MockRWGraph) DeleteRefsFrom(from []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRefsFrom", from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRefsFrom indicates an expected call of DeleteRefsFrom
+func (mr *MockRWGraphMockRecorder) DeleteRefsFrom(from interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRefsFrom", reflect.TypeOf((*MockRWGraph)(nil).DeleteRefsFrom), from)
+}
+
+// DeleteRefsTo mocks base method
+func (m *MockRWGraph) DeleteRefsTo(from []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRefsTo", from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRefsTo indicates an expected call of DeleteRefsTo
+func (mr *MockRWGraphMockRecorder) DeleteRefsTo(from interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRefsTo", reflect.TypeOf((*MockRWGraph)(nil).DeleteRefsTo), from)
+}
+
+// MockapplyableGraph is a mock of applyableGraph interface
+type MockapplyableGraph struct {
+	ctrl     *gomock.Controller
+	recorder *MockapplyableGraphMockRecorder
+}
+
+// MockapplyableGraphMockRecorder is the mock recorder for MockapplyableGraph
+type MockapplyableGraphMockRecorder struct {
+	mock *MockapplyableGraph
+}
+
+// NewMockapplyableGraph creates a new mock instance
+func NewMockapplyableGraph(ctrl *gomock.Controller) *MockapplyableGraph {
+	mock := &MockapplyableGraph{ctrl: ctrl}
+	mock.recorder = &MockapplyableGraphMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockapplyableGraph) EXPECT() *MockapplyableGraphMockRecorder {
+	return m.recorder
+}
+
+// setFrom mocks base method
+func (m *MockapplyableGraph) setFrom(from []byte, to [][]byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "setFrom", from, to)
+}
+
+// setFrom indicates an expected call of setFrom
+func (mr *MockapplyableGraphMockRecorder) setFrom(from, to interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "setFrom", reflect.TypeOf((*MockapplyableGraph)(nil).setFrom), from, to)
+}
+
+// deleteFrom mocks base method
+func (m *MockapplyableGraph) deleteFrom(from []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "deleteFrom", from)
+}
+
+// deleteFrom indicates an expected call of deleteFrom
+func (mr *MockapplyableGraphMockRecorder) deleteFrom(from interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "deleteFrom", reflect.TypeOf((*MockapplyableGraph)(nil).deleteFrom), from)
+}
+
+// setTo mocks base method
+func (m *MockapplyableGraph) setTo(to []byte, from [][]byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "setTo", to, from)
+}
+
+// setTo indicates an expected call of setTo
+func (mr *MockapplyableGraphMockRecorder) setTo(to, from interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "setTo", reflect.TypeOf((*MockapplyableGraph)(nil).setTo), to, from)
+}
+
+// deleteTo mocks base method
+func (m *MockapplyableGraph) deleteTo(to []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "deleteTo", to)
+}
+
+// deleteTo indicates an expected call of deleteTo
+func (mr *MockapplyableGraphMockRecorder) deleteTo(to interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "deleteTo", reflect.TypeOf((*MockapplyableGraph)(nil).deleteTo), to)
 }
 
 // MockDiscardableRGraph is a mock of DiscardableRGraph interface

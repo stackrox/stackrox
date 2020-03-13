@@ -24,9 +24,14 @@ func (dc *deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error 
 			return err
 		}
 	}
-	// Remove the key from the id map and the DB.
+	// Collect the keys the item currently points to in case we need to clean them up.
 	partialKeys := dackTxn.Graph().GetRefsFrom(key)
-	if err := dackTxn.Graph().DeleteRefs(key); err != nil {
+
+	// Remove the key from the id map and the DB.
+	if err := dackTxn.Graph().DeleteRefsFrom(key); err != nil {
+		return err
+	}
+	if err := dackTxn.Graph().DeleteRefsTo(key); err != nil {
 		return err
 	}
 	if err := dackTxn.BadgerTxn().Delete(key); err != nil {

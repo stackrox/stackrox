@@ -85,7 +85,7 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	defer thirdGraph.Discard()
 
 	// Delete a ref in the second view after three has been created.
-	err = secondGraph.Graph().DeleteRefs([]byte("f3"))
+	err = secondGraph.Graph().DeleteRefsFrom([]byte("f3"))
 	s.NoError(err)
 
 	// Commit the second view.
