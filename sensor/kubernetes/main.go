@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"os/signal"
-	"syscall"
 
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -37,8 +37,7 @@ func main() {
 	metrics.NewDefaultHTTPServer().RunForever()
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, os.Interrupt)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigs, os.Interrupt, unix.SIGTERM)
 
 	upgradeCmdHandler, err := upgrade.NewCommandHandler()
 	utils.Must(err)
