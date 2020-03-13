@@ -527,7 +527,12 @@ class PolicyConfigurationTest extends BaseSpecification {
 
         and:
         "Create deployments"
-        orchestrator.batchCreateDeployments(violatedDeployments + nonViolatedDeployments)
+        violatedDeployments.each {
+            orchestrator.createDeploymentNoWait(it)
+        }
+        nonViolatedDeployments.each {
+            orchestrator.createDeploymentNoWait(it)
+        }
 
         then:
         "Verify Violation #policyName is/is not triggered based on scope"
@@ -535,7 +540,9 @@ class PolicyConfigurationTest extends BaseSpecification {
             assert waitForViolation(it.name, policy.getName(), 90)
         }
         nonViolatedDeployments.each {
-            assert !waitForViolation(it.name, policy.getName(), 30)
+            // We can wait for a very short period of time here because if we have the violation deployments
+            // we have acknowledged that reassessment of the deployments is in progress
+            assert !waitForViolation(it.name, policy.getName(), 5)
         }
 
         cleanup:
