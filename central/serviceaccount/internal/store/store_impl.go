@@ -9,6 +9,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	storecache "github.com/stackrox/rox/pkg/storecache"
 	"time"
 )
 
@@ -28,11 +29,12 @@ func alloc() proto.Message {
 	return new(storage.ServiceAccount)
 }
 
-func newStore(db *bbolt.DB) (*store, error) {
+func newStore(db *bbolt.DB, cache storecache.Cache) (*store, error) {
 	newCrud, err := protoCrud.NewMessageCrud(db, bucketName, key, alloc)
 	if err != nil {
 		return nil, err
 	}
+	newCrud = protoCrud.NewCachedMessageCrud(newCrud, cache, "ServiceAccount", metrics.IncrementDBCacheCounter)
 	return &store{crud: newCrud}, nil
 }
 

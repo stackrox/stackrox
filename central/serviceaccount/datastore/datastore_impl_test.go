@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,7 +45,7 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
-	suite.storage, err = store.New(db)
+	suite.storage, err = store.New(db, storecache.NewMapBackedCache())
 	suite.Require().NoError(err)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
