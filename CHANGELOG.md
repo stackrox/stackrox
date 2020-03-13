@@ -2,6 +2,8 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+### Changed
+- Updated RHEL base images from UBI7.7 to UBI8.1
 
 ## [40.0]
 ### Added
