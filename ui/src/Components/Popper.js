@@ -61,7 +61,7 @@ CustomPopper.propTypes = {
     placement: PropTypes.string,
     reactOutsideClassName: PropTypes.string,
     buttonClass: PropTypes.string,
-    buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
+    buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
     popperContent: PropTypes.element.isRequired
 };
 

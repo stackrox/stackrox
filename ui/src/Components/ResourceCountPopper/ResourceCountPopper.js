@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Popper from 'Components/Popper';
 import pluralize from 'pluralize';
+import { ArrowRightCircle } from 'react-feather';
+
+import Popper from 'Components/Popper';
 
 const renderKeyValuePairs = data => {
     return data.map(({ key, value }) => (
@@ -13,14 +15,20 @@ const renderKeyValuePairs = data => {
 
 const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName }) => {
     const { length } = data;
+    const buttonContent = (
+        <div className="flex justify-between items-center">
+            <span className="pr-2">{`${length} ${pluralize(label, length)}`}</span>
+            <ArrowRightCircle size={12} />
+        </div>
+    );
     return (
         <Popper
             disabled={!length}
             placement="bottom"
             reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`rounded border border-base-400 bg-base-100 p-1 px-4 text-center text-sm ${length &&
+            buttonClass={`uppercase w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-xs ${length &&
                 'hover:bg-base-200'}`}
-            buttonContent={`${length} ${pluralize(label, length)}`}
+            buttonContent={buttonContent}
             popperContent={
                 <div className="border border-base-300 p-4 shadow bg-base-100 whitespace-no-wrap">
                     {renderContent(data)}
