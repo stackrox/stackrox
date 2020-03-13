@@ -696,7 +696,7 @@ h6 {
 }
 
 .btn-base {
-    @apply text-base-600 border-base-400 bg-base-100 text-base-600 !important;
+    @apply text-base-600 border-base-400 bg-base-100 !important;
 }
 
 .btn-base:hover {

@@ -10,6 +10,7 @@ import Widget from 'Components/Widget';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
+import { isValidURL } from 'utils/urlUtils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 
 const emptyCve = {
@@ -49,7 +50,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         scoreVersion
     } = safeData;
 
-    const linkToMoreInfo = (
+    const linkToMoreInfo = isValidURL(link) ? (
         <a
             href={link}
             className="btn-sm btn-base no-underline p-1"
@@ -60,6 +61,10 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
             <span className="pr-1">View Full CVE Description</span>
             <ExternalLink size={16} />
         </a>
+    ) : (
+        <span className="font-600 uppercase text-center text-base-600 bg-base-100 text-xs p-1">
+            Full Description Unavailable
+        </span>
     );
 
     const cvssScoreBreakdown = [
