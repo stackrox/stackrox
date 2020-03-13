@@ -62,15 +62,19 @@ const ViolationFindings = ({ data, message }) => {
                     </ul>
                 </Widget>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="sx-1 sy-2 bg-base-100 rounded shadow">
-                        <AnalystComments
-                            type={ANALYST_NOTES_TYPES.ALERT}
+                    <div className="sx-2 sy-1 bg-base-100 rounded shadow">
+                        <AnalystTags
+                            type={ANALYST_NOTES_TYPES.VIOLATION}
                             id={policyViolation.id}
                             className="h-full"
                         />
                     </div>
-                    <div className="sx-2 sy-1 bg-base-100 rounded shadow">
-                        <AnalystTags type="Violation" id={policyViolation.id} className="h-full" />
+                    <div className="sx-1 sy-2 bg-base-100 rounded shadow">
+                        <AnalystComments
+                            type={ANALYST_NOTES_TYPES.VIOLATION}
+                            id={policyViolation.id}
+                            className="h-full"
+                        />
                     </div>
                 </FeatureEnabled>
             </div>

@@ -12,7 +12,7 @@ import Comment from './Comment';
 
 const CommentThread = ({
     className,
-    type,
+    label,
     comments,
     onCreate,
     onUpdate,
@@ -94,7 +94,7 @@ const CommentThread = ({
     return (
         <CollapsibleCard
             cardClassName={className}
-            title={`${length} ${type} ${pluralize('Comment', length)}`}
+            title={`${length} ${label} ${pluralize('Comment', length)}`}
             headerComponents={
                 <Button
                     className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-sm text-sm text-success-900 uppercase"
@@ -112,7 +112,7 @@ const CommentThread = ({
 };
 
 CommentThread.propTypes = {
-    type: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
     comments: PropTypes.arrayOf(
         PropTypes.shape({
             id: PropTypes.string.isRequired,

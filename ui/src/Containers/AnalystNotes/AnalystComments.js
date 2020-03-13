@@ -4,6 +4,7 @@ import gql from 'graphql-tag';
 import { useQuery, useMutation } from 'react-apollo';
 import Raven from 'raven-js';
 
+import analystNotesLabels from 'messages/analystnotes';
 import CommentThread from 'Components/CommentThread';
 
 const GET_ALERT_COMMENTS = gql`
@@ -83,7 +84,7 @@ const AnalystComments = ({ className, type, id }) => {
     return (
         <CommentThread
             className={className}
-            type={type}
+            label={analystNotesLabels[type]}
             comments={comments}
             onCreate={onCreate}
             onUpdate={onUpdate}

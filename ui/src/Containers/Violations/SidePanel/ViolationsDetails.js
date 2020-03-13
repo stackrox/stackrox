@@ -14,10 +14,10 @@ function ViolationsDetails({ violationId, violations, processViolation }) {
         <div className="w-full px-3 pb-5 mt-5">
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
                 <div className="mb-4">
-                    <AnalystTags type="Violation" />
+                    <AnalystTags type={ANALYST_NOTES_TYPES.VIOLATION} id={violationId} />
                 </div>
                 <div className="mb-4">
-                    <AnalystComments type={ANALYST_NOTES_TYPES.ALERT} id={violationId} />
+                    <AnalystComments type={ANALYST_NOTES_TYPES.VIOLATION} id={violationId} />
                 </div>
             </FeatureEnabled>
             <RuntimeMessages processViolation={processViolation} />
