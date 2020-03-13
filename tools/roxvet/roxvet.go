@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/tools/regexes"
 	"github.com/stackrox/rox/tools/storedprotos/storeinterface"
 	"github.com/stackrox/rox/tools/uncheckederrors"
+	"github.com/stackrox/rox/tools/uncheckedifassign"
 	"golang.org/x/tools/go/analysis/unitchecker"
 )
 
@@ -16,5 +17,6 @@ func main() {
 		uncheckederrors.Analyzer,
 		needlessformat.Analyzer,
 		regexes.Analyzer,
+		uncheckedifassign.Analyzer,
 	)
 }
