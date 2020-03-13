@@ -164,7 +164,7 @@ func (c *crudImpl) CountLeaves(maxDepth int, keyPathPrefix ...Key) (int, error) 
 	err := c.bucketRef.View(func(b *bolt.Bucket) error {
 		currBucket := b
 		for _, prefixKey := range keyPathPrefix {
-			currBucket = b.Bucket(prefixKey)
+			currBucket = currBucket.Bucket(prefixKey)
 			if currBucket == nil {
 				return nil
 			}
