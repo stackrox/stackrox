@@ -4,12 +4,10 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
-	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -59,7 +57,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 
 	// Test Add
 	for _, d := range images {
-		suite.NoError(suite.store.Upsert(d, nil))
+		suite.NoError(suite.store.Upsert(d))
 	}
 
 	for _, d := range images {
@@ -80,7 +78,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		suite.NoError(suite.store.Upsert(d, nil))
+		suite.NoError(suite.store.Upsert(d))
 	}
 
 	for _, d := range images {
@@ -99,76 +97,4 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	count, err := suite.store.CountImages()
 	suite.NoError(err)
 	suite.Equal(len(images), count)
-}
-
-func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
-	ts := timestamp.TimestampNow()
-	var cases = []struct {
-		input    *storage.Image
-		expected *storage.ListImage
-	}{
-		{
-			input: &storage.Image{
-				Id: "sha",
-				Name: &storage.ImageName{
-					FullName: "name",
-				},
-			},
-			expected: &storage.ListImage{
-				Id:   "sha",
-				Name: "name",
-			},
-		},
-		{
-			input: &storage.Image{
-				Id: "sha",
-				Name: &storage.ImageName{
-					FullName: "name",
-				},
-				Metadata: &storage.ImageMetadata{
-					V1: &storage.V1Metadata{
-						Created: ts,
-					},
-				},
-				Scan: &storage.ImageScan{
-					Components: []*storage.EmbeddedImageScanComponent{
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{},
-							},
-						},
-						{
-							Vulns: []*storage.EmbeddedVulnerability{
-								{},
-								{
-									SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
-										FixedBy: "hi",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: &storage.ListImage{
-				Id:      "sha",
-				Name:    "name",
-				Created: ts,
-				SetComponents: &storage.ListImage_Components{
-					Components: 2,
-				},
-				SetCves: &storage.ListImage_Cves{
-					Cves: 3,
-				},
-				SetFixable: &storage.ListImage_FixableCves{
-					FixableCves: 1,
-				},
-			},
-		},
-	}
-	for _, c := range cases {
-		suite.T().Run(c.input.GetName().GetFullName(), func(t *testing.T) {
-			assert.Equal(t, c.expected, convertImageToListImage(c.input))
-		})
-	}
 }

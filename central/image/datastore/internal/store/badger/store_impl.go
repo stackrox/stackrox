@@ -38,7 +38,7 @@ func listAlloc() proto.Message {
 }
 
 func converter(msg proto.Message) proto.Message {
-	return convertImageToListImage(msg.(*storage.Image))
+	return types.ConvertImageToListImage(msg.(*storage.Image))
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
@@ -146,7 +146,7 @@ func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, e
 }
 
 // UpdateImage updates a image to bolt.
-func (b *storeImpl) Upsert(image *storage.Image, _ *storage.ListImage) error {
+func (b *storeImpl) Upsert(image *storage.Image) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	if !b.noUpdateTimestamps {
@@ -161,44 +161,6 @@ func (b *storeImpl) Delete(id string) error {
 
 	digest := types.NewDigest(id).Digest()
 	return b.imageCRUD.Delete(digest)
-}
-
-func convertImageToListImage(i *storage.Image) *storage.ListImage {
-	listImage := &storage.ListImage{
-		Id:          i.GetId(),
-		Name:        i.GetName().GetFullName(),
-		Created:     i.GetMetadata().GetV1().GetCreated(),
-		LastUpdated: i.GetLastUpdated(),
-	}
-
-	if i.GetScan() != nil {
-		listImage.SetComponents = &storage.ListImage_Components{
-			Components: int32(len(i.GetScan().GetComponents())),
-		}
-		var numVulns int32
-		var numFixableVulns int32
-		var fixedByProvided bool
-		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int32(len(c.GetVulns()))
-			for _, v := range c.GetVulns() {
-				if v.GetSetFixedBy() != nil {
-					fixedByProvided = true
-					if v.GetFixedBy() != "" {
-						numFixableVulns++
-					}
-				}
-			}
-		}
-		listImage.SetCves = &storage.ListImage_Cves{
-			Cves: numVulns,
-		}
-		if numVulns == 0 || fixedByProvided {
-			listImage.SetFixable = &storage.ListImage_FixableCves{
-				FixableCves: numFixableVulns,
-			}
-		}
-	}
-	return listImage
 }
 
 func (b *storeImpl) AckKeysIndexed(keys ...string) error {

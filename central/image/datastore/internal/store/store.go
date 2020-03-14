@@ -16,7 +16,7 @@ type Store interface {
 
 	Exists(id string) (bool, error)
 
-	Upsert(image *storage.Image, listImage *storage.ListImage) error
+	Upsert(image *storage.Image) error
 	Delete(id string) error
 
 	AckKeysIndexed(keys ...string) error

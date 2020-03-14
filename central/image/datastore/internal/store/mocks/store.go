@@ -127,17 +127,17 @@ func (mr *MockStoreMockRecorder) Exists(id interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method
-func (m *MockStore) Upsert(image *storage.Image, listImage *storage.ListImage) error {
+func (m *MockStore) Upsert(image *storage.Image) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upsert", image, listImage)
+	ret := m.ctrl.Call(m, "Upsert", image)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Upsert indicates an expected call of Upsert
-func (mr *MockStoreMockRecorder) Upsert(image, listImage interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) Upsert(image interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), image, listImage)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), image)
 }
 
 // Delete mocks base method

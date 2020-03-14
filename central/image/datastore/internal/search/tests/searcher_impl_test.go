@@ -136,7 +136,7 @@ func (s *searcherSuite) TestNoAccess() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.Upsert(img, nil))
+	s.Require().NoError(s.store.Upsert(img))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -211,7 +211,7 @@ func (s *searcherSuite) TestHasAccess() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.Upsert(img, nil))
+	s.Require().NoError(s.store.Upsert(img))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -287,7 +287,7 @@ func (s *searcherSuite) TestPagination() {
 	}
 
 	for _, img := range imgs {
-		s.Require().NoError(s.store.Upsert(img, nil))
+		s.Require().NoError(s.store.Upsert(img))
 		s.Require().NoError(s.indexer.AddImage(img))
 	}
 
@@ -354,7 +354,7 @@ func (s *searcherSuite) TestNoClusterNSScopes() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.Upsert(img, nil))
+	s.Require().NoError(s.store.Upsert(img))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	results, err := s.searcher.Search(s.noAccessCtx, search.EmptyQuery())
@@ -447,7 +447,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 		Id: "img1",
 	}
 
-	s.Require().NoError(s.store.Upsert(img, nil))
+	s.Require().NoError(s.store.Upsert(img))
 	s.Require().NoError(s.indexer.AddImage(img))
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, "clusterA").ProtoQuery()

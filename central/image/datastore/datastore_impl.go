@@ -53,7 +53,7 @@ type datastoreImpl struct {
 
 func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher,
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore,
-	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (*datastoreImpl, error) {
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker, keyedMutex *concurrency.KeyedMutex) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -65,7 +65,7 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
 
-		keyedMutex: concurrency.NewKeyedMutex(16),
+		keyedMutex: keyedMutex,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)
 
-	if err = ds.storage.Upsert(image, nil); err != nil {
+	if err = ds.storage.Upsert(image); err != nil {
 		return err
 	}
 	if features.Dackbox.Enabled() {

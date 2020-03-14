@@ -146,7 +146,7 @@ func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, e
 }
 
 // Upsert writes and image to the DB, overwriting previous data.
-func (b *storeImpl) Upsert(image *storage.Image, listImage *storage.ListImage) error {
+func (b *storeImpl) Upsert(image *storage.Image) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	iTime := protoTypes.TimestampNow()

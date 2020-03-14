@@ -7,9 +7,11 @@ import (
 	"github.com/dgraph-io/badger"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
+	"github.com/stackrox/rox/central/image/datastore/internal/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -49,6 +51,9 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
 	var searcher search.Searcher
 	indexer := imageIndexer.New(bleveIndex)
+
+	keyedMutex := concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
+	storage = cache.NewCachedStore(storage, keyedMutex)
 	if features.Dackbox.Enabled() {
 		searcher = search.New(storage,
 			dacky,
@@ -61,7 +66,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		searcher = search.New(storage, nil, nil, nil, nil, nil, indexer)
 	}
 
-	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker)
+	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker, keyedMutex)
 	if err != nil {
 		return nil, err
 	}

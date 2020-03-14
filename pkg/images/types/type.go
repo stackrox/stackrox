@@ -25,3 +25,29 @@ func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 		NotPullable: ci.GetNotPullable(),
 	}
 }
+
+// ConvertImageToListImage converts an image to a ListImage
+func ConvertImageToListImage(i *storage.Image) *storage.ListImage {
+	listImage := &storage.ListImage{
+		Id:          i.GetId(),
+		Name:        i.GetName().GetFullName(),
+		Created:     i.GetMetadata().GetV1().GetCreated(),
+		LastUpdated: i.GetLastUpdated(),
+	}
+	if i.GetSetComponents() != nil {
+		listImage.SetComponents = &storage.ListImage_Components{
+			Components: i.GetComponents(),
+		}
+	}
+	if i.GetSetCves() != nil {
+		listImage.SetCves = &storage.ListImage_Cves{
+			Cves: i.GetCves(),
+		}
+	}
+	if i.GetSetFixable() != nil {
+		listImage.SetFixable = &storage.ListImage_FixableCves{
+			FixableCves: i.GetFixableCves(),
+		}
+	}
+	return listImage
+}

@@ -28,14 +28,14 @@ func BenchmarkAddImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, store.Upsert(image, nil))
+		require.NoError(b, store.Upsert(image))
 	}
 }
 
 func BenchmarkGetImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	require.NoError(b, store.Upsert(image, nil))
+	require.NoError(b, store.Upsert(image))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.GetImage(image.GetId())
 		require.True(b, exists)
@@ -46,7 +46,7 @@ func BenchmarkGetImage(b *testing.B) {
 func BenchmarkListImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	require.NoError(b, store.Upsert(image, nil))
+	require.NoError(b, store.Upsert(image))
 	for i := 0; i < b.N; i++ {
 		_, exists, err := store.ListImage(image.GetId())
 		require.True(b, exists)

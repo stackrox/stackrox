@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/imagecomponent"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
+	"github.com/stackrox/rox/pkg/images/types"
 )
 
 // Split splits the input image into a set of parts.
@@ -27,7 +28,7 @@ func Split(image *storage.Image) ImageParts {
 }
 
 func splitListImage(parts ImageParts) *storage.ListImage {
-	return convertImageToListImage(parts.image)
+	return types.ConvertImageToListImage(parts.image)
 }
 
 func splitComponents(parts ImageParts) []ComponentParts {
@@ -97,29 +98,4 @@ func generateImageComponentEdge(image *storage.Image, converted *storage.ImageCo
 	}
 	ret.Location = embedded.GetLocation()
 	return ret
-}
-
-func convertImageToListImage(i *storage.Image) *storage.ListImage {
-	listImage := &storage.ListImage{
-		Id:          i.GetId(),
-		Name:        i.GetName().GetFullName(),
-		Created:     i.GetMetadata().GetV1().GetCreated(),
-		LastUpdated: i.GetLastUpdated(),
-	}
-	if i.GetSetComponents() != nil {
-		listImage.SetComponents = &storage.ListImage_Components{
-			Components: i.GetComponents(),
-		}
-	}
-	if i.GetSetCves() != nil {
-		listImage.SetCves = &storage.ListImage_Cves{
-			Cves: i.GetCves(),
-		}
-	}
-	if i.GetSetFixable() != nil {
-		listImage.SetFixable = &storage.ListImage_FixableCves{
-			FixableCves: i.GetFixableCves(),
-		}
-	}
-	return listImage
 }
