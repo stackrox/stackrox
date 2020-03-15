@@ -114,7 +114,7 @@ class Tabs extends Component {
                 <div className={`flex justify-between z-1 shadow-underline font-700 ${className}`}>
                     <div className="flex">{this.getHeaders()}</div>
                 </div>
-                <div className={`overflow-hidden h-full flex-1 ${tabContentBgColor}`}>
+                <div className={`overflow-auto h-full flex-1 ${tabContentBgColor}`}>
                     {this.renderChildren()}
                 </div>
             </div>

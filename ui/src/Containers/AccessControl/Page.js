@@ -20,7 +20,7 @@ function Page({ fetchResources }) {
             <div className="flex flex-shrink-0">
                 <PageHeader header="Access Control" />
             </div>
-            <div className="flex h-full">
+            <div className="flex h-full flex-1">
                 <Tabs headers={tabHeaders}>
                     <TabContent>
                         <AuthProviders />

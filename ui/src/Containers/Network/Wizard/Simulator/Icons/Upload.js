@@ -51,7 +51,7 @@ const Upload = props => {
         <Tooltip content={<TooltipOverlay>Upload a new YAML</TooltipOverlay>}>
             <div
                 {...getRootProps()}
-                className="inline-block mt-auto px-2 py-2 border-r border-base-300 cursor-pointer outline-none"
+                className="inline-block px-2 py-2 border-r border-base-300 cursor-pointer outline-none"
             >
                 <input {...getInputProps()} />
                 <Icon.Upload className="h-4 w-4 text-base-500 hover:bg-base-200" />

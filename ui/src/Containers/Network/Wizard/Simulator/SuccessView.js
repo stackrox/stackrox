@@ -104,12 +104,12 @@ const SuccessView = ({
         <div className="flex flex-col w-full h-full space-between">
             <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
                 <Message type="info" message={successMessage} />
-                <div className="flex relative h-full border-t border-r border-base-300">
+                <div className="flex relative h-full border-t border-r border-base-300 flex-1">
                     <SuccessViewTabs
                         modification={modification}
                         modificationName={modificationName}
                     />
-                    <div className="absolute right-0 top-0 h-9 z-10">
+                    <div className="absolute right-0 top-0 flex z-10 h-10 items-center">
                         <Undo />
                         <Generate />
                         <Upload />
