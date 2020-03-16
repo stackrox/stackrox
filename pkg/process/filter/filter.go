@@ -30,12 +30,15 @@ const (
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
+// TODO: Consider making this based on pods rather than deployments once features.PodDeploymentSeparation is permanently enabled.
 //go:generate mockgen-wrapper
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool
 	Update(deployment *storage.Deployment)
+	UpdateByPod(pod *storage.Pod)
 	UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet)
 	Delete(deploymentID string)
+	DeleteByPod(pod *storage.Pod)
 }
 
 type level struct {
@@ -145,11 +148,19 @@ func (f *filterImpl) Update(deployment *storage.Deployment) {
 	}
 }
 
-// TODO: Once Update(*storage.Deployment) is removed, consider renaming to just Update.
-func (f *filterImpl) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
+func (f *filterImpl) UpdateByPod(pod *storage.Pod) {
 	f.rootLock.Lock()
 	defer f.rootLock.Unlock()
 
+	liveContainerSet := set.NewStringSet()
+	for _, instance := range pod.GetInstances() {
+		liveContainerSet.Add(instance.GetInstanceId().GetId())
+	}
+
+	f.updateByGivenContainersNoLock(pod.GetDeploymentId(), liveContainerSet)
+}
+
+func (f *filterImpl) updateByGivenContainersNoLock(deploymentID string, liveContainerSet set.StringSet) {
 	containersMap := f.containersInDeployment[deploymentID]
 	for k := range containersMap {
 		if !liveContainerSet.Contains(k) {
@@ -158,9 +169,33 @@ func (f *filterImpl) UpdateByGivenContainers(deploymentID string, liveContainerS
 	}
 }
 
+func (f *filterImpl) UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet) {
+	f.rootLock.Lock()
+	defer f.rootLock.Unlock()
+
+	f.updateByGivenContainersNoLock(deploymentID, liveContainerSet)
+}
+
 func (f *filterImpl) Delete(deploymentID string) {
 	f.rootLock.Lock()
 	defer f.rootLock.Unlock()
 
 	delete(f.containersInDeployment, deploymentID)
+}
+
+func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
+	f.rootLock.Lock()
+	defer f.rootLock.Unlock()
+
+	containerSet := set.NewStringSet()
+	for _, instance := range pod.GetInstances() {
+		containerSet.Add(instance.GetInstanceId().GetId())
+	}
+
+	containersMap := f.containersInDeployment[pod.GetDeploymentId()]
+	for k := range containersMap {
+		if containerSet.Contains(k) {
+			delete(containersMap, k)
+		}
+	}
 }

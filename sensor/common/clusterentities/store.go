@@ -12,6 +12,7 @@ type ContainerMetadata struct {
 	DeploymentID  string
 	DeploymentTS  int64
 	PodID         string
+	PodUID        string
 	ContainerName string
 	ContainerID   string
 	Namespace     string

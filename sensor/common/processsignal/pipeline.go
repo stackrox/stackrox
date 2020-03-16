@@ -3,6 +3,7 @@ package processsignal
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -45,6 +46,9 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 	indicator.DeploymentStateTs = cachedContainer.DeploymentTS
 	indicator.ContainerName = cachedContainer.ContainerName
 	indicator.PodId = cachedContainer.PodID
+	if features.PodDeploymentSeparation.Enabled() {
+		indicator.PodUid = cachedContainer.PodUID
+	}
 	indicator.Namespace = cachedContainer.Namespace
 	indicator.ContainerStartTime = cachedContainer.StartTime
 }

@@ -124,6 +124,7 @@ func (suite *PodDataStoreTestSuite) TestUpsertPod() {
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(nil)
+	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), expectedPod).Return(nil)
 	suite.NoError(suite.datastore.UpsertPod(ctx, expectedPod))
 
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(errors.New("error"))
@@ -137,21 +138,38 @@ func (suite *PodDataStoreTestSuite) TestUpsertPod() {
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
+
+	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
+	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(nil)
+	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), expectedPod).Return(errors.New("error"))
+	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod))
 }
 
 func (suite *PodDataStoreTestSuite) TestRemovePod() {
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().RemovePod(expectedPod.GetId()).Return(nil)
 	suite.indexer.EXPECT().DeletePod(expectedPod.GetId()).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(nil)
+	suite.processStore.EXPECT().RemoveProcessIndicatorsByPod(gomock.Any(), expectedPod.GetId())
 	suite.NoError(suite.datastore.RemovePod(ctx, expectedPod.GetId()))
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, false, nil)
+	suite.NoError(suite.datastore.RemovePod(ctx, expectedPod.GetId()))
+
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, false, errors.New("error"))
+	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()))
+
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().RemovePod(expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "error")
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().RemovePod(expectedPod.GetId()).Return(nil)
 	suite.indexer.EXPECT().DeletePod(expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "error")
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(expectedPod, true, nil)
 	suite.storage.EXPECT().RemovePod(expectedPod.GetId()).Return(nil)
 	suite.indexer.EXPECT().DeletePod(expectedPod.GetId()).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(errors.New("error"))

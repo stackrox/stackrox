@@ -9,7 +9,7 @@ import (
 func GetPod() *storage.Pod {
 	return &storage.Pod{
 		Id:           "nginx-7db9fccd9b-92hfs",
-		DeploymentId: "s79mdvmb6dsl",
+		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
 		Active:       true,

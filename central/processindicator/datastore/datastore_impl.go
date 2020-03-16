@@ -164,7 +164,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	err := ds.storage.AddProcessIndicators(indicators...)
@@ -190,7 +190,7 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.Proces
 	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	return ds.storage.WalkAll(fn)
@@ -200,7 +200,7 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	return ds.removeIndicators(ids)
@@ -234,9 +234,23 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return err
+	}
+	return ds.removeMatchingIndicators(results)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
+	}
+	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return err
@@ -248,7 +262,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Co
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
-		return errors.New("permission denied")
+		return sac.ErrPermissionDenied
 	}
 
 	mustConjunction := &v1.ConjunctionQuery{
@@ -261,7 +275,39 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Co
 	currentContainerIDs := containerIds(deployment)
 	queries := make([]*v1.Query, 0, len(currentContainerIDs))
 	for _, containerID := range currentContainerIDs {
-		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.ExactMatchString(containerID)).ProtoQuery())
+		queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ContainerID, containerID).ProtoQuery())
+	}
+
+	mustNotDisjunction := &v1.DisjunctionQuery{
+		Queries: queries,
+	}
+
+	booleanQuery := pkgSearch.NewBooleanQuery(mustConjunction, mustNotDisjunction)
+
+	results, err := ds.Search(ctx, booleanQuery)
+	if err != nil {
+		return err
+	}
+	return ds.removeMatchingIndicators(results)
+}
+
+func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainersByPod(ctx context.Context, pod *storage.Pod) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
+	}
+
+	mustConjunction := &v1.ConjunctionQuery{
+		Queries: []*v1.Query{
+			pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, pod.GetId()).ProtoQuery(),
+		},
+	}
+
+	currentContainerIDs := containerIdsByPod(pod)
+	queries := make([]*v1.Query, 0, len(currentContainerIDs))
+	for _, containerID := range currentContainerIDs {
+		queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ContainerID, containerID).ProtoQuery())
 	}
 
 	mustNotDisjunction := &v1.DisjunctionQuery{
@@ -444,4 +490,15 @@ func containerIds(deployment *storage.Deployment) (ids []string) {
 		}
 	}
 	return
+}
+
+func containerIdsByPod(pod *storage.Pod) []string {
+	var ids []string
+	for _, instance := range pod.GetInstances() {
+		containerID := containerid.ShortContainerIDFromInstance(instance)
+		if containerID != "" {
+			ids = append(ids, containerID)
+		}
+	}
+	return ids
 }

@@ -197,8 +197,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		return sac.ErrPermissionDenied
 	}
 
-	// TODO: Figure out how to update the filter...
-	// ds.processFilter.Update(pod)
+	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
 		if err := ds.podStore.UpsertPod(pod); err != nil {
@@ -216,10 +215,11 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		return err
 	}
 
-	// TODO: Remove the process indicator from the store based on the stale containers
-	// Note: The pod IDs may differ. Be careful.
-
-	return nil
+	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Indicator)))
+	return ds.indicators.RemoveProcessIndicatorsOfStaleContainersByPod(deleteIndicatorsCtx, pod)
 }
 
 // RemovePod removes a pod from the podStore
@@ -232,18 +232,31 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 		return sac.ErrPermissionDenied
 	}
 
-	ds.keyedMutex.Lock(id)
-	defer ds.keyedMutex.Unlock(id)
+	pod, found, err := ds.podStore.GetPod(id)
+	if err != nil || !found {
+		return err
+	}
+	ds.processFilter.DeleteByPod(pod)
 
-	if err := ds.podStore.RemovePod(id); err != nil {
-		return err
-	}
-	if err := ds.podIndexer.DeletePod(id); err != nil {
-		return err
-	}
-	if err := ds.podStore.AckKeysIndexed(id); err != nil {
+	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+		if err := ds.podStore.RemovePod(id); err != nil {
+			return err
+		}
+		if err := ds.podIndexer.DeletePod(id); err != nil {
+			return err
+		}
+		if err := ds.podStore.AckKeysIndexed(id); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return err
 	}
 
-	return nil
+	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Indicator)))
+	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
 }

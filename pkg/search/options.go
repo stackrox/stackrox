@@ -115,6 +115,9 @@ var (
 	ViolationTime  = newFieldLabel("Violation Time")
 	Tag            = newFieldLabel("Tag")
 
+	// Pod Search fields
+	PodUID = newFieldLabel("Pod UID")
+
 	// ProcessIndicator Search fields
 	ProcessID         = newFieldLabel("Process ID")
 	ProcessExecPath   = newFieldLabel("Process Path")

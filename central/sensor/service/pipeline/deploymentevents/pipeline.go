@@ -88,7 +88,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Deployment)
 
 	event := msg.GetEvent()
@@ -100,7 +100,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		err = s.runRemovePipeline(ctx, deployment)
 	default:
-		err = s.runGeneralPipeline(ctx, event.GetAction(), deployment, injector)
+		err = s.runGeneralPipeline(ctx, deployment)
 	}
 	return err
 }
@@ -166,7 +166,7 @@ func (s *pipelineImpl) rewriteInstancesAndPersist(ctx context.Context, oldDeploy
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, deployment *storage.Deployment, injector common.MessageInjector) error {
+func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *storage.Deployment) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return err

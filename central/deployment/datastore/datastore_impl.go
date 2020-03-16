@@ -245,7 +245,9 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
-	ds.processFilter.Update(deployment)
+	if !features.PodDeploymentSeparation.Enabled() {
+		ds.processFilter.Update(deployment)
+	}
 
 	err := ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
 		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
@@ -263,6 +265,10 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	})
 	if err != nil {
 		return err
+	}
+
+	if features.PodDeploymentSeparation.Enabled() {
+		return nil
 	}
 
 	if ds.indicators == nil {
@@ -296,7 +302,9 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return nil
 	}
 	ds.deletedDeploymentCache.Add(id, true)
-	ds.processFilter.Delete(id)
+	if !features.PodDeploymentSeparation.Enabled() {
+		ds.processFilter.Delete(id)
+	}
 
 	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
@@ -330,8 +338,10 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
 	}
-	if err := ds.indicators.RemoveProcessIndicatorsByDeployment(deleteRelatedCtx, id); err != nil {
-		errorList.AddError(err)
+	if !features.PodDeploymentSeparation.Enabled() {
+		if err := ds.indicators.RemoveProcessIndicatorsByDeployment(deleteRelatedCtx, id); err != nil {
+			errorList.AddError(err)
+		}
 	}
 	flowStore := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
 	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {

@@ -775,6 +775,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"namespace: String!",
 		"podId: String!",
+		"podUid: String!",
 		"signal: ProcessSignal",
 	}))
 	utils.Must(builder.AddType("ProcessNameGroup", []string{
@@ -6755,6 +6756,11 @@ func (resolver *processIndicatorResolver) Namespace(ctx context.Context) string 
 
 func (resolver *processIndicatorResolver) PodId(ctx context.Context) string {
 	value := resolver.data.GetPodId()
+	return value
+}
+
+func (resolver *processIndicatorResolver) PodUid(ctx context.Context) string {
+	value := resolver.data.GetPodUid()
 	return value
 }
 

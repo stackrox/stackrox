@@ -127,3 +127,28 @@ func TestDeploymentUpdate(t *testing.T) {
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
 }
+
+func TestPodUpdate(t *testing.T) {
+	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+
+	pi := fixtures.GetProcessIndicator()
+	filter.Add(pi)
+
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
+
+	pod := fixtures.GetPod()
+	assert.Equal(t, pod.GetDeploymentId(), pi.GetDeploymentId())
+
+	filter.UpdateByPod(pod)
+	// The container id of the process and the pod match so there should be no change
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
+
+	// The container id has changed so the container reference should be removed, but the deployment reference should remain
+	filter.Add(pi)
+	pod.Instances[0].InstanceId.Id = "newcontainerid"
+	filter.UpdateByPod(pod)
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
+}
