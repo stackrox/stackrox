@@ -13,6 +13,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkflow/datastore"
+	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	processWhitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -45,8 +46,10 @@ type GarbageCollector interface {
 	Stop()
 }
 
-func newGarbageCollector(alerts alertDatastore.DataStore, images imageDatastore.DataStore, clusters clusterDatastore.DataStore, deployments deploymentDatastore.DataStore,
-	processes processDatastore.DataStore, processwhitelist processWhitelistDatastore.DataStore, networkflows networkFlowDatastore.ClusterDataStore, config configDatastore.DataStore,
+func newGarbageCollector(alerts alertDatastore.DataStore, images imageDatastore.DataStore,
+	clusters clusterDatastore.DataStore, deployments deploymentDatastore.DataStore, pods podDatastore.DataStore,
+	processes processDatastore.DataStore, processwhitelist processWhitelistDatastore.DataStore,
+	networkflows networkFlowDatastore.ClusterDataStore, config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore, risks riskDataStore.DataStore) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:           alerts,
@@ -54,6 +57,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore, images imageDatastore.
 		images:           images,
 		imageComponents:  imageComponents,
 		deployments:      deployments,
+		pods:             pods,
 		processes:        processes,
 		processwhitelist: processwhitelist,
 		networkflows:     networkflows,
@@ -70,6 +74,7 @@ type garbageCollectorImpl struct {
 	images           imageDatastore.DataStore
 	imageComponents  imageComponentDatastore.DataStore
 	deployments      deploymentDatastore.DataStore
+	pods             podDatastore.DataStore
 	processes        processDatastore.DataStore
 	processwhitelist processWhitelistDatastore.DataStore
 	networkflows     networkFlowDatastore.ClusterDataStore
@@ -291,15 +296,33 @@ func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
 	for _, result := range imageResults {
 		q1 := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, result.ID).ProtoQuery()
 		q2 := search.NewQueryBuilder().AddExactMatches(search.ContainerImageDigest, result.ID).ProtoQuery()
-		q := search.NewDisjunctionQuery(q1, q2)
-		results, err := g.deployments.Search(pruningCtx, q)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-		// If there are no deployment queries that match, then allow the image to be pruned
-		if len(results) == 0 {
-			imagesToPrune = append(imagesToPrune, result.ID)
+		if features.PodDeploymentSeparation.Enabled() {
+			deploymentResults, err := g.deployments.Search(pruningCtx, q1)
+			if err != nil {
+				log.Errorf("[Image pruning] searching deployments: %v", err)
+				continue
+			}
+
+			podResults, err := g.pods.Search(pruningCtx, q2)
+			if err != nil {
+				log.Errorf("[Image pruning] searching pods: %v", err)
+				continue
+			}
+
+			if len(deploymentResults) == 0 && len(podResults) == 0 {
+				imagesToPrune = append(imagesToPrune, result.ID)
+			}
+		} else {
+			q := search.NewDisjunctionQuery(q1, q2)
+			results, err := g.deployments.Search(pruningCtx, q)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			// If there are no deployment queries that match, then allow the image to be pruned
+			if len(results) == 0 {
+				imagesToPrune = append(imagesToPrune, result.ID)
+			}
 		}
 	}
 	if len(imagesToPrune) > 0 {

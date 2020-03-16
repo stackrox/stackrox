@@ -18,6 +18,7 @@ import (
 	imageComponentEdgeMapping "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
+	podMapping "github.com/stackrox/rox/central/pod/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	roleOptions "github.com/stackrox/rox/central/rbac/k8srole/mappings"
@@ -118,6 +119,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
 		v1.SearchCategory_ALERTS:               alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:          deployments.OptionsMap,
+		v1.SearchCategory_PODS:                 podMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:               imageSearchOptions,
 		v1.SearchCategory_POLICIES:             policyMapping.OptionsMap,
 		v1.SearchCategory_SECRETS:              secretOptions.OptionsMap,

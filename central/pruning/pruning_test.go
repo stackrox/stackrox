@@ -24,6 +24,7 @@ import (
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkflow/datastore/mocks"
+	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -36,6 +37,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -119,7 +121,20 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 	}
 }
 
-func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, queue.WaitableQueue) {
+func newPod(imageIDs ...string) *storage.Pod {
+	var instances []*storage.ContainerInstance
+	for _, id := range imageIDs {
+		instances = append(instances, &storage.ContainerInstance{
+			ImageDigest: types.NewDigest(id).Digest(),
+		})
+	}
+	return &storage.Pod{
+		Id:        "id",
+		Instances: instances,
+	}
+}
+
+func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
 	db := testutils.BadgerDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
@@ -140,7 +155,8 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	require.NoError(t, err)
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return(nil)
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).Return(nil)
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -151,11 +167,15 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
+	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
 	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
-	return mockAlertDatastore, mockConfigDatastore, images, deployments, indexingQ
+	pods, err := podDatastore.New(db, bleveIndex, mockProcessDataStore, mockFilter)
+	require.NoError(t, err)
+
+	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
 }
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
@@ -194,9 +214,11 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 func TestImagePruning(t *testing.T) {
 	var cases = []struct {
+		sepEnabled  bool
 		name        string
 		images      []*storage.Image
 		deployment  *storage.Deployment
+		pod         *storage.Pod
 		expectedIDs []string
 	}{
 		{
@@ -253,17 +275,126 @@ func TestImagePruning(t *testing.T) {
 				Containers: []*storage.Container{
 					{
 						Image: &storage.ContainerImage{
-							Id: "id1",
+							Id: "sha256:id1",
 						},
 						Instances: []*storage.ContainerInstance{
 							{
-								ImageDigest: "id2",
+								ImageDigest: "sha256:id2",
 							},
 						},
 					},
 				},
 			},
-			expectedIDs: []string{},
+			expectedIDs: []string{"id1", "id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "No pruning",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", 1),
+			},
+			expectedIDs: []string{"id1", "id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "one old and one new - no deployments nor pods",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			expectedIDs: []string{"id1"},
+		},
+		{
+			sepEnabled: true,
+			name:       "one old and one new - 1 deployment with new",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			deployment:  newDeployment("id1"),
+			expectedIDs: []string{"id1"},
+		},
+		{
+			sepEnabled: true,
+			name:       "one old and one new - 1 pod with new",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod("id1"),
+			expectedIDs: []string{"id1"},
+		},
+		{
+			sepEnabled: true,
+			name:       "one old and one new - 1 pod with old",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod("id2"),
+			expectedIDs: []string{"id1", "id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "two old - 1 deployment with old",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			deployment:  newDeployment("id2"),
+			expectedIDs: []string{"id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "two old - 1 deployment and pod with old",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			deployment:  newDeployment("id2"),
+			pod:         newPod("id2"),
+			expectedIDs: []string{"id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "two old - 1 pod with old",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod("id2"),
+			expectedIDs: []string{"id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "two old - 1 pod with old",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod("id2"),
+			expectedIDs: []string{"id2"},
+		},
+		{
+			sepEnabled: true,
+			name:       "two old - 1 deployment and pod with old, but have references to old",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			deployment: &storage.Deployment{
+				Id: "d1",
+				Containers: []*storage.Container{
+					{
+						Image: &storage.ContainerImage{
+							Id: "sha256:id1",
+						},
+					},
+				},
+			},
+			pod:         newPod("id2"),
+			expectedIDs: []string{"id1", "id2"},
 		},
 	}
 
@@ -280,13 +411,16 @@ func TestImagePruning(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			// Get all of the image constructs because I update the time within the store
 			// So to test need to update them separately
-			alerts, config, images, deployments, indexQ := generateImageDataStructures(ctx, t)
+			alerts, config, images, deployments, pods, indexQ := generateImageDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, pods, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
-			// Add images and deployments into the datastores
+			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
+			}
+			if c.sepEnabled && c.pod != nil {
+				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
 				image.Id = types.NewDigest(image.Id).Digest()
@@ -296,6 +430,12 @@ func TestImagePruning(t *testing.T) {
 			indexingDone := concurrency.NewSignal()
 			indexQ.PushSignal(&indexingDone)
 			indexingDone.Wait()
+
+			if c.sepEnabled {
+				envIsolator := testutils.NewEnvIsolator(t)
+				envIsolator.Setenv(features.PodDeploymentSeparation.EnvVar(), "true")
+				defer envIsolator.RestoreAll()
+			}
 
 			conf, err := config.GetConfig(ctx)
 			require.NoError(t, err, "failed to get config")
@@ -398,7 +538,7 @@ func TestAlertPruning(t *testing.T) {
 			// So to test need to update them separately
 			alerts, config, images, deployments := generateAlertDataStructures(ctx, t)
 
-			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
+			gc := newGarbageCollector(alerts, images, nil, deployments, nil, nil, nil, nil, config, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
