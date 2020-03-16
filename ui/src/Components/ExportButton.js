@@ -55,7 +55,8 @@ class ExportButton extends Component {
     };
 
     state = {
-        toggleWidget: false
+        toggleWidget: false,
+        csvIsDownloading: false
     };
 
     handleClickOutside = () => this.setState({ toggleWidget: false });
@@ -69,8 +70,9 @@ class ExportButton extends Component {
                 throw new Error('A CSV export handler was not supplied to handle CSV export');
             }
 
+            this.setState({ csvIsDownloading: true });
             customCsvExportHandler(csvName).finally(() => {
-                this.setState({ toggleWidget: false });
+                this.setState({ toggleWidget: false, csvIsDownloading: false });
             });
         } else {
             // otherwise, use legacy compliance CSV export
@@ -103,7 +105,7 @@ class ExportButton extends Component {
             this.props.type === entityTypes.CVE
                 ? 'Download CVES as CSV'
                 : 'Download Evidence as CSV';
-        const { toggleWidget } = this.state;
+        const { toggleWidget, csvIsDownloading } = this.state;
         if (!toggleWidget) return null;
 
         const headerText = this.props.fileName;
@@ -126,14 +128,15 @@ class ExportButton extends Component {
                                 pdfTitle={headerText}
                             />
                             {this.isCsvSupported() && (
-                                <button
+                                <Button
                                     data-test-id="download-csv-button"
                                     className={btnClassName}
                                     type="button"
                                     onClick={this.downloadCsv}
-                                >
-                                    {csvButtonText}
-                                </button>
+                                    text={csvButtonText}
+                                    isLoading={csvIsDownloading}
+                                    loaderSize={14}
+                                />
                             )}
                         </div>
                     </li>
