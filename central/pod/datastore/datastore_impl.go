@@ -215,6 +215,11 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		return err
 	}
 
+	// For benchmark testing only. Ideally this is not nil in production.
+	if ds.indicators == nil {
+		return nil
+	}
+
 	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
