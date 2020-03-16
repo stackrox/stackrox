@@ -2,7 +2,6 @@ package concurrency
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -30,7 +29,6 @@ func TestValueStream_SequentialSync(t *testing.T) {
 	expect := 4
 	var err error
 	for err == nil {
-		fmt.Println("Value is", iter.Value())
 		assert.Equal(t, expect, iter.Value())
 		expect++
 		if expect == 8 {
@@ -60,7 +58,6 @@ func TestValueStream_SequentialAsync(t *testing.T) {
 	expect := 1
 	var err error
 	for err == nil {
-		fmt.Println("Value is", iter.Value())
 		assert.Equal(t, expect, iter.Value())
 		expect++
 		if expect == 8 {
@@ -131,8 +128,7 @@ func TestValueStream_NonStrict(t *testing.T) {
 	vs := NewValueStream(0)
 	it := vs.Iterator(false)
 
-	evenValC := make(chan int, 1)
-	evenValC <- 0
+	evenValC := make(chan int)
 	go func() {
 		for i := 1; i <= 10; i++ {
 			vs.Push(i)
@@ -145,9 +141,8 @@ func TestValueStream_NonStrict(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
+	lastEvenVal := 0
 	for {
-		lastEvenVal := <-evenValC
-
 		value := it.Value().(int)
 		assert.GreaterOrEqual(t, value, lastEvenVal)
 
@@ -155,9 +150,12 @@ func TestValueStream_NonStrict(t *testing.T) {
 			break
 		}
 
+		lastEvenVal = <-evenValC
+
 		var err error
 		it, err = it.Next(ctx)
 		require.NoError(t, err)
+		require.NotNil(t, it)
 	}
 }
 
