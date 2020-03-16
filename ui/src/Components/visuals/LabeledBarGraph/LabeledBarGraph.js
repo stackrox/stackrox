@@ -77,9 +77,9 @@ const LabeledBarGraph = ({ data, title, history }) => {
                     text={title}
                     className="alt-x-label"
                     includeMargin={false}
-                    xPercent={1.0}
+                    xPercent={0.5}
                     yPercent={1.01}
-                    style={{ transform: 'translate(0, 40)', textAnchor: 'end' }}
+                    style={{ transform: 'translate(0, 40)', textAnchor: 'middle' }}
                 />
                 <LabelSeries
                     className="text-xs text-base-600"
