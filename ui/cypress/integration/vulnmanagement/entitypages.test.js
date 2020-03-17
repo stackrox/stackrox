@@ -245,8 +245,7 @@ describe('Entities single views', () => {
             });
     });
 
-    // @TODO, 2020-03-16, fix scrolling issue and re-enalbe
-    it.skip('should filter component count in images list and image overview by cve when coming from cve list', () => {
+    it('should filter component count in images list and image overview by cve when coming from cve list', () => {
         cy.visit(url.list.cves);
 
         cy.get(selectors.imageCountLink, { timeout: 5000 })
