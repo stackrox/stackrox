@@ -62,7 +62,7 @@ const VulnMgmtImage = ({
                         layerIndex
                         version
                         source
-                        location(query: $scopeQuery)
+                        location
                         vulns {
                             ...cveFields
                         }

@@ -75,6 +75,7 @@ func to{{plural .Data.Name}}(values *[]string) []{{importedName .Data.Type}} {
 }
 {{else}}
 type {{lower .Data.Name}}Resolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *{{importedName .Data.Type}}
 {{- if .ListData}}
@@ -86,7 +87,7 @@ func (resolver *Resolver) wrap{{.Data.Name}}(value *{{importedName .Data.Type}},
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &{{lower .Data.Name}}Resolver{resolver, value{{if .ListData}}, nil{{end}}}, nil
+	return &{{lower .Data.Name}}Resolver{root: resolver, data: value{{if .ListData}}, list: nil{{end}}}, nil
 }
 
 func (resolver *Resolver) wrap{{plural .Data.Name}}(values []*{{importedName .Data.Type}}, err error) ([]*{{lower .Data.Name}}Resolver, error) {
@@ -95,7 +96,7 @@ func (resolver *Resolver) wrap{{plural .Data.Name}}(values []*{{importedName .Da
 	}
 	output := make([]*{{lower .Data.Name}}Resolver, len(values))
 	for i, v := range values {
-		output[i] = &{{lower .Data.Name}}Resolver{resolver, v{{if .ListData}}, nil{{end}}}
+		output[i] = &{{lower .Data.Name}}Resolver{root: resolver, data: v{{if .ListData}}, list: nil{{end}}}
 	}
 	return output, nil
 }
@@ -106,7 +107,7 @@ func (resolver *Resolver) wrapList{{plural .Data.Name}}(values []*{{listName .Da
 	}
 	output := make([]*{{lower .Data.Name}}Resolver, len(values))
 	for i, v := range values {
-		output[i] = &{{lower .Data.Name}}Resolver{resolver, nil, v}
+		output[i] = &{{lower .Data.Name}}Resolver{root: resolver, data: nil, list: v}
 	}
 	return output, nil
 }
@@ -142,7 +143,7 @@ func (resolver *{{lower $td.Data.Name}}Resolver) {{$ud.Name}}() *{{lower $td.Dat
 {{- range $ut := $ud.Entries }}
 	if val := resolver.data.Get{{$ut.Name}}(); val != nil {
 		return &{{lower $td.Data.Name}}{{$ud.Name}}Resolver{
-			resolver: &{{lower $ut.Type.Elem.Name}}Resolver{resolver.root, val},
+			resolver: &{{lower $ut.Type.Elem.Name}}Resolver{root: resolver.root, data: val},
 		}
 	}
 {{- end}}

@@ -7,16 +7,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
 // V2 Connections to root.
@@ -29,7 +28,12 @@ func (resolver *Resolver) vulnerabilityV2(ctx context.Context, args idQuery) (Vu
 	} else if !exists {
 		return nil, errors.Errorf("cve not found: %s", string(*args.ID))
 	}
-	return resolver.wrapCVE(vuln, true, nil)
+	vulnResolver, err := resolver.wrapCVE(vuln, true, nil)
+	if err != nil {
+		return nil, err
+	}
+	vulnResolver.ctx = ctx
+	return vulnResolver, nil
 }
 
 func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQuery) ([]VulnerabilityResolver, error) {
@@ -51,6 +55,7 @@ func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.
 
 	ret := make([]VulnerabilityResolver, 0, len(vulns))
 	for _, resolver := range vulns {
+		resolver.ctx = ctx
 		ret = append(ret, resolver)
 	}
 	return ret, err
@@ -226,12 +231,12 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 func (resolver *cVEResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
 	if val := resolver.data.GetCvssV3(); val != nil {
 		return &EmbeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV3Resolver{resolver.root, val},
+			resolver: &cVSSV3Resolver{resolver.ctx, resolver.root, val},
 		}
 	}
 	if val := resolver.data.GetCvssV2(); val != nil {
 		return &EmbeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV2Resolver{resolver.root, val},
+			resolver: &cVSSV2Resolver{resolver.ctx, resolver.root, val},
 		}
 	}
 	return nil
@@ -378,13 +383,8 @@ func (resolver *cVEResolver) cveQuery() *v1.Query {
 // version instead.
 
 // FixedByVersion returns the version of the parent component that removes this CVE.
-func (resolver *cVEResolver) FixedByVersion(ctx context.Context, args RawQuery) (string, error) {
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
-	}
-
-	return resolver.getCVEFixedByVersion(ctx, q)
+func (resolver *cVEResolver) FixedByVersion(ctx context.Context) (string, error) {
+	return resolver.getCVEFixedByVersion(ctx)
 }
 
 // UnusedVarSink represents a query sink
@@ -392,49 +392,41 @@ func (resolver *cVEResolver) UnusedVarSink(ctx context.Context, args RawQuery) *
 	return nil
 }
 
-func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
+func (resolver *cVEResolver) getCVEFixedByVersion(ctx context.Context) (string, error) {
 	if resolver.data.GetType() == storage.CVE_IMAGE_CVE {
-		return resolver.getComponentFixedByVersion(ctx, q)
+		return resolver.getComponentFixedByVersion(ctx)
 	}
-	return resolver.getClusterFixedByVersion(ctx, q)
+	return resolver.getClusterFixedByVersion(ctx)
 }
 
-func (resolver *cVEResolver) getComponentFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
-	q, containsUnmatchableFields := search.FilterQueryWithMap(q, componentMappings.OptionsMap)
-	if q == nil || containsUnmatchableFields {
+func (resolver *cVEResolver) getComponentFixedByVersion(_ context.Context) (string, error) {
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope {
+		return "", nil
+	}
+	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS {
 		return "", nil
 	}
 
-	results, err := resolver.root.ImageComponentDataStore.Search(ctx, q)
-	if err != nil || len(results) == 0 {
-		return "", err
-	} else if len(results) > 1 {
-		return "", errors.New("multiple components matched for vulnerability fixedByVersion query")
-	}
-
-	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(ctx, edgeID)
+	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
+	edge, found, err := resolver.root.ComponentCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil || !found {
 		return "", err
 	}
 	return edge.GetFixedBy(), nil
 }
 
-func (resolver *cVEResolver) getClusterFixedByVersion(ctx context.Context, q *v1.Query) (string, error) {
-	q, containsUnmatchableFields := search.FilterQueryWithMap(q, clusterMappings.OptionsMap)
-	if q == nil || containsUnmatchableFields {
+func (resolver *cVEResolver) getClusterFixedByVersion(_ context.Context) (string, error) {
+	scope, hasScope := scoped.GetScope(resolver.ctx)
+	if !hasScope {
+		return "", nil
+	}
+	if scope.Level != v1.SearchCategory_CLUSTERS {
 		return "", nil
 	}
 
-	results, err := resolver.root.ClusterDataStore.Search(ctx, q)
-	if err != nil || len(results) == 0 {
-		return "", err
-	} else if len(results) > 1 {
-		return "", errors.New("multiple clusters matched for vulnerability fixedByVersion query")
-	}
-
-	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: resolver.data.GetId()}.ToString()
-	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(ctx, edgeID)
+	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: resolver.data.GetId()}.ToString()
+	edge, found, err := resolver.root.clusterCVEEdgeDataStore.Get(resolver.ctx, edgeID)
 	if err != nil || !found {
 		return "", err
 	}

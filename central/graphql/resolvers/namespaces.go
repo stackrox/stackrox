@@ -200,7 +200,7 @@ func (resolver *namespaceResolver) Subjects(ctx context.Context, args PaginatedQ
 		return nil, err
 	}
 	for _, subject := range subjects {
-		resolvers = append(resolvers, &subjectResolver{resolver.root, subject})
+		resolvers = append(resolvers, &subjectResolver{ctx, resolver.root, subject})
 	}
 
 	paginatedResolvers, err := paginationWrapper{

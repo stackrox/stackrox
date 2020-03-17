@@ -39,7 +39,7 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
                 publishedOn
                 lastModified
                 summary
-                fixedByVersion(query: $scopeQuery)
+                fixedByVersion
                 isFixable(query: $scopeQuery)
                 createdAt
                 componentCount(query: $query)

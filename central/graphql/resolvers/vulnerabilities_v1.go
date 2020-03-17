@@ -198,6 +198,9 @@ func vulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([]*E
 
 	imageVulnResolvers = append(imageVulnResolvers, k8sVulnResolvers...)
 	imageVulnResolvers = append(imageVulnResolvers, istioVulnResolvers...)
+	for _, vulnResolver := range imageVulnResolvers {
+		vulnResolver.ctx = ctx
+	}
 	return imageVulnResolvers, nil
 }
 
@@ -213,7 +216,11 @@ func k8sVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) ([
 	if err != nil {
 		return nil, err
 	}
-	return root.wrapEmbeddedVulns(cves), nil
+	resolvers := root.wrapEmbeddedVulns(cves)
+	for _, resolver := range resolvers {
+		resolver.ctx = ctx
+	}
+	return resolvers, nil
 }
 
 // istioVulnerabilities returns the istio vulnerabilities that match the input query.
@@ -228,7 +235,11 @@ func istioVulnerabilities(ctx context.Context, root *Resolver, query *v1.Query) 
 	if err != nil {
 		return nil, err
 	}
-	return root.wrapEmbeddedVulns(cves), nil
+	resolvers := root.wrapEmbeddedVulns(cves)
+	for _, resolver := range resolvers {
+		resolver.ctx = ctx
+	}
+	return resolvers, nil
 }
 
 func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulnerability, err error) (*EmbeddedVulnerabilityResolver, error) {
@@ -242,6 +253,7 @@ func (resolver *Resolver) wrapEmbeddedVulnerability(value *storage.EmbeddedVulne
 // If using the top level vulnerability resolver (as opposed to the resolver under the top level image resolver) you get
 // a couple of extensions that allow you to resolve some relationships.
 type EmbeddedVulnerabilityResolver struct {
+	ctx         context.Context
 	root        *Resolver
 	lastScanned *protoTypes.Timestamp
 	data        *storage.EmbeddedVulnerability
@@ -251,12 +263,12 @@ type EmbeddedVulnerabilityResolver struct {
 func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
 	if val := evr.data.GetCvssV3(); val != nil {
 		return &EmbeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV3Resolver{evr.root, val},
+			resolver: &cVSSV3Resolver{evr.ctx, evr.root, val},
 		}
 	}
 	if val := evr.data.GetCvssV2(); val != nil {
 		return &EmbeddedVulnerabilityVectorsResolver{
-			resolver: &cVSSV2Resolver{evr.root, val},
+			resolver: &cVSSV2Resolver{evr.ctx, evr.root, val},
 		}
 	}
 	return nil
@@ -294,7 +306,7 @@ func (evr *EmbeddedVulnerabilityResolver) ScoreVersion(ctx context.Context) stri
 }
 
 // FixedByVersion returns the version of the parent component that removes this CVE.
-func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(ctx context.Context, _ RawQuery) (string, error) {
+func (evr *EmbeddedVulnerabilityResolver) FixedByVersion(ctx context.Context) (string, error) {
 	return evr.data.GetFixedBy(), nil
 }
 

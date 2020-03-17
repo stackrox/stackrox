@@ -274,28 +274,28 @@ func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, 
 	switch key.GetScope() {
 	case v1.ComplianceAggregation_CLUSTER:
 		if domain.GetCluster() != nil {
-			return &clusterResolver{root, domain.GetCluster()}
+			return &clusterResolver{ctx, root, domain.GetCluster()}
 		}
 	case v1.ComplianceAggregation_DEPLOYMENT:
 		deployment, found := domain.GetDeployments()[key.GetId()]
 		if found {
-			return &deploymentResolver{root, deployment, nil}
+			return &deploymentResolver{ctx, root, deployment, nil}
 		}
 	case v1.ComplianceAggregation_NAMESPACE:
 		receivedNS, found, err := namespace.ResolveByID(ctx, key.GetId(), root.NamespaceDataStore,
 			root.DeploymentDataStore, root.SecretsDataStore, root.NetworkPoliciesStore)
 		if err == nil && found {
-			return &namespaceResolver{root, receivedNS}
+			return &namespaceResolver{ctx, root, receivedNS}
 		}
 	case v1.ComplianceAggregation_NODE:
 		node, found := domain.GetNodes()[key.GetId()]
 		if found {
-			return &nodeResolver{root, node}
+			return &nodeResolver{ctx, root, node}
 		}
 	case v1.ComplianceAggregation_STANDARD:
 		standard, found, err := root.ComplianceStandardStore.StandardMetadata(key.GetId())
 		if err == nil && found {
-			return &complianceStandardMetadataResolver{root, standard}
+			return &complianceStandardMetadataResolver{ctx, root, standard}
 		}
 	case v1.ComplianceAggregation_CONTROL:
 		controlID := key.GetId()
@@ -484,7 +484,7 @@ func (resolver *controlResultResolver) ToDeployment() (*deploymentResolver, bool
 	if resolver.deployment == nil {
 		return nil, false
 	}
-	return &deploymentResolver{resolver.root, resolver.deployment, nil}, true
+	return &deploymentResolver{nil, resolver.root, resolver.deployment, nil}, true
 }
 
 func (resolver *controlResultResolver) ToCluster() (*clusterResolver, bool) {

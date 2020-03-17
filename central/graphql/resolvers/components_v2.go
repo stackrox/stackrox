@@ -5,13 +5,10 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	imageComponentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/search"
-	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/search/scoped"
 )
 
@@ -25,7 +22,12 @@ func (resolver *Resolver) componentV2(ctx context.Context, args idQuery) (Compon
 	} else if !exists {
 		return nil, errors.Errorf("component not found: %s", string(*args.ID))
 	}
-	return resolver.wrapImageComponent(component, true, nil)
+	componentResolver, err := resolver.wrapImageComponent(component, true, nil)
+	if err != nil {
+		return nil, err
+	}
+	componentResolver.ctx = ctx
+	return componentResolver, nil
 }
 
 func (resolver *Resolver) componentsV2(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {
@@ -49,6 +51,7 @@ func (resolver *Resolver) componentsV2Query(ctx context.Context, query *v1.Query
 
 	ret := make([]ComponentResolver, 0, len(compRes))
 	for _, resolver := range compRes {
+		resolver.ctx = ctx
 		ret = append(ret, resolver)
 	}
 	return ret, err
@@ -300,28 +303,16 @@ func (eicr *imageComponentResolver) componentQuery() *v1.Query {
 // version instead.
 
 // Location returns the location of the component.
-func (eicr *imageComponentResolver) Location(ctx context.Context, args RawQuery) (string, error) {
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
+func (eicr *imageComponentResolver) Location(ctx context.Context) (string, error) {
+	scope, hasScope := scoped.GetScope(eicr.ctx)
+	if !hasScope {
+		return "", nil
 	}
-
-	imageOnlyOptionsMap := search.Difference(
-		search.Difference(imageMappings.ImageOnlyOptionsMap,
-			cveMappings.OptionsMap), imageComponentMappings.OptionsMap)
-	q, containsUnmatchableFields := search.FilterQueryWithMap(q, imageOnlyOptionsMap)
-	if q == nil || containsUnmatchableFields {
+	if scope.Level != v1.SearchCategory_IMAGES {
 		return "", nil
 	}
 
-	results, err := eicr.root.ImageDataStore.Search(ctx, q)
-	if err != nil || len(results) == 0 {
-		return "", err
-	} else if len(results) > 1 {
-		return "", errors.New("multiple images matched for component location query")
-	}
-
-	edgeID := edges.EdgeID{ParentID: results[0].ID, ChildID: eicr.data.GetId()}.ToString()
+	edgeID := edges.EdgeID{ParentID: scope.ID, ChildID: eicr.data.GetId()}.ToString()
 	edge, found, err := eicr.root.ImageComponentEdgeDataStore.Get(ctx, edgeID)
 	if err != nil || !found {
 		return "", err

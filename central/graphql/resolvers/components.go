@@ -36,7 +36,7 @@ func init() {
 			"deploymentCount(query: String): Int!",
 			"priority: Int!",
 			"source: String!",
-			"location(query: String): String!",
+			"location: String!",
 			"riskScore: Float!",
 		}),
 		schema.AddExtraResolver("ImageScan", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
@@ -56,7 +56,7 @@ type ComponentResolver interface {
 	Version(ctx context.Context) string
 	Priority(ctx context.Context) int32
 	Source(ctx context.Context) string
-	Location(ctx context.Context, args RawQuery) (string, error)
+	Location(ctx context.Context) (string, error)
 	LayerIndex() *int32
 	LastScanned(ctx context.Context) (*graphql.Time, error)
 	License(ctx context.Context) (*licenseResolver, error)

@@ -1023,6 +1023,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 }
 
 type aWSProviderMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.AWSProviderMetadata
 }
@@ -1031,7 +1032,7 @@ func (resolver *Resolver) wrapAWSProviderMetadata(value *storage.AWSProviderMeta
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &aWSProviderMetadataResolver{resolver, value}, nil
+	return &aWSProviderMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProviderMetadata, err error) ([]*aWSProviderMetadataResolver, error) {
@@ -1040,7 +1041,7 @@ func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProvider
 	}
 	output := make([]*aWSProviderMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &aWSProviderMetadataResolver{resolver, v}
+		output[i] = &aWSProviderMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1069,6 +1070,7 @@ func toAccesses(values *[]string) []storage.Access {
 }
 
 type admissionControllerConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.AdmissionControllerConfig
 }
@@ -1077,7 +1079,7 @@ func (resolver *Resolver) wrapAdmissionControllerConfig(value *storage.Admission
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &admissionControllerConfigResolver{resolver, value}, nil
+	return &admissionControllerConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAdmissionControllerConfigs(values []*storage.AdmissionControllerConfig, err error) ([]*admissionControllerConfigResolver, error) {
@@ -1086,7 +1088,7 @@ func (resolver *Resolver) wrapAdmissionControllerConfigs(values []*storage.Admis
 	}
 	output := make([]*admissionControllerConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &admissionControllerConfigResolver{resolver, v}
+		output[i] = &admissionControllerConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1112,6 +1114,7 @@ func (resolver *admissionControllerConfigResolver) TimeoutSeconds(ctx context.Co
 }
 
 type alertResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert
 	list *storage.ListAlert
@@ -1121,7 +1124,7 @@ func (resolver *Resolver) wrapAlert(value *storage.Alert, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alertResolver{resolver, value, nil}, nil
+	return &alertResolver{root: resolver, data: value, list: nil}, nil
 }
 
 func (resolver *Resolver) wrapAlerts(values []*storage.Alert, err error) ([]*alertResolver, error) {
@@ -1130,7 +1133,7 @@ func (resolver *Resolver) wrapAlerts(values []*storage.Alert, err error) ([]*ale
 	}
 	output := make([]*alertResolver, len(values))
 	for i, v := range values {
-		output[i] = &alertResolver{resolver, v, nil}
+		output[i] = &alertResolver{root: resolver, data: v, list: nil}
 	}
 	return output, nil
 }
@@ -1141,7 +1144,7 @@ func (resolver *Resolver) wrapListAlerts(values []*storage.ListAlert, err error)
 	}
 	output := make([]*alertResolver, len(values))
 	for i, v := range values {
-		output[i] = &alertResolver{resolver, nil, v}
+		output[i] = &alertResolver{root: resolver, data: nil, list: v}
 	}
 	return output, nil
 }
@@ -1233,6 +1236,7 @@ func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_Violati
 }
 
 type alert_DeploymentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert_Deployment
 }
@@ -1241,7 +1245,7 @@ func (resolver *Resolver) wrapAlert_Deployment(value *storage.Alert_Deployment, 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alert_DeploymentResolver{resolver, value}, nil
+	return &alert_DeploymentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAlert_Deployments(values []*storage.Alert_Deployment, err error) ([]*alert_DeploymentResolver, error) {
@@ -1250,7 +1254,7 @@ func (resolver *Resolver) wrapAlert_Deployments(values []*storage.Alert_Deployme
 	}
 	output := make([]*alert_DeploymentResolver, len(values))
 	for i, v := range values {
-		output[i] = &alert_DeploymentResolver{resolver, v}
+		output[i] = &alert_DeploymentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1311,6 +1315,7 @@ func (resolver *alert_DeploymentResolver) Type(ctx context.Context) string {
 }
 
 type alert_Deployment_ContainerResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert_Deployment_Container
 }
@@ -1319,7 +1324,7 @@ func (resolver *Resolver) wrapAlert_Deployment_Container(value *storage.Alert_De
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alert_Deployment_ContainerResolver{resolver, value}, nil
+	return &alert_Deployment_ContainerResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAlert_Deployment_Containers(values []*storage.Alert_Deployment_Container, err error) ([]*alert_Deployment_ContainerResolver, error) {
@@ -1328,7 +1333,7 @@ func (resolver *Resolver) wrapAlert_Deployment_Containers(values []*storage.Aler
 	}
 	output := make([]*alert_Deployment_ContainerResolver, len(values))
 	for i, v := range values {
-		output[i] = &alert_Deployment_ContainerResolver{resolver, v}
+		output[i] = &alert_Deployment_ContainerResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1344,6 +1349,7 @@ func (resolver *alert_Deployment_ContainerResolver) Name(ctx context.Context) st
 }
 
 type alert_EnforcementResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert_Enforcement
 }
@@ -1352,7 +1358,7 @@ func (resolver *Resolver) wrapAlert_Enforcement(value *storage.Alert_Enforcement
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alert_EnforcementResolver{resolver, value}, nil
+	return &alert_EnforcementResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAlert_Enforcements(values []*storage.Alert_Enforcement, err error) ([]*alert_EnforcementResolver, error) {
@@ -1361,7 +1367,7 @@ func (resolver *Resolver) wrapAlert_Enforcements(values []*storage.Alert_Enforce
 	}
 	output := make([]*alert_EnforcementResolver, len(values))
 	for i, v := range values {
-		output[i] = &alert_EnforcementResolver{resolver, v}
+		output[i] = &alert_EnforcementResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1377,6 +1383,7 @@ func (resolver *alert_EnforcementResolver) Message(ctx context.Context) string {
 }
 
 type alert_ProcessViolationResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert_ProcessViolation
 }
@@ -1385,7 +1392,7 @@ func (resolver *Resolver) wrapAlert_ProcessViolation(value *storage.Alert_Proces
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alert_ProcessViolationResolver{resolver, value}, nil
+	return &alert_ProcessViolationResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAlert_ProcessViolations(values []*storage.Alert_ProcessViolation, err error) ([]*alert_ProcessViolationResolver, error) {
@@ -1394,7 +1401,7 @@ func (resolver *Resolver) wrapAlert_ProcessViolations(values []*storage.Alert_Pr
 	}
 	output := make([]*alert_ProcessViolationResolver, len(values))
 	for i, v := range values {
-		output[i] = &alert_ProcessViolationResolver{resolver, v}
+		output[i] = &alert_ProcessViolationResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1410,6 +1417,7 @@ func (resolver *alert_ProcessViolationResolver) Processes(ctx context.Context) (
 }
 
 type alert_ViolationResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Alert_Violation
 }
@@ -1418,7 +1426,7 @@ func (resolver *Resolver) wrapAlert_Violation(value *storage.Alert_Violation, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alert_ViolationResolver{resolver, value}, nil
+	return &alert_ViolationResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation, err error) ([]*alert_ViolationResolver, error) {
@@ -1427,7 +1435,7 @@ func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation
 	}
 	output := make([]*alert_ViolationResolver, len(values))
 	for i, v := range values {
-		output[i] = &alert_ViolationResolver{resolver, v}
+		output[i] = &alert_ViolationResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1438,6 +1446,7 @@ func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 }
 
 type azureProviderMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.AzureProviderMetadata
 }
@@ -1446,7 +1455,7 @@ func (resolver *Resolver) wrapAzureProviderMetadata(value *storage.AzureProvider
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &azureProviderMetadataResolver{resolver, value}, nil
+	return &azureProviderMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProviderMetadata, err error) ([]*azureProviderMetadataResolver, error) {
@@ -1455,7 +1464,7 @@ func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProv
 	}
 	output := make([]*azureProviderMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &azureProviderMetadataResolver{resolver, v}
+		output[i] = &azureProviderMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1466,6 +1475,7 @@ func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Contex
 }
 
 type cSCCResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CSCC
 }
@@ -1474,7 +1484,7 @@ func (resolver *Resolver) wrapCSCC(value *storage.CSCC, ok bool, err error) (*cS
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cSCCResolver{resolver, value}, nil
+	return &cSCCResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCResolver, error) {
@@ -1483,7 +1493,7 @@ func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCR
 	}
 	output := make([]*cSCCResolver, len(values))
 	for i, v := range values {
-		output[i] = &cSCCResolver{resolver, v}
+		output[i] = &cSCCResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1499,6 +1509,7 @@ func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
 }
 
 type cVEResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CVE
 }
@@ -1507,7 +1518,7 @@ func (resolver *Resolver) wrapCVE(value *storage.CVE, ok bool, err error) (*cVER
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVEResolver{resolver, value}, nil
+	return &cVEResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCVEs(values []*storage.CVE, err error) ([]*cVEResolver, error) {
@@ -1516,7 +1527,7 @@ func (resolver *Resolver) wrapCVEs(values []*storage.CVE, err error) ([]*cVEReso
 	}
 	output := make([]*cVEResolver, len(values))
 	for i, v := range values {
-		output[i] = &cVEResolver{resolver, v}
+		output[i] = &cVEResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1610,6 +1621,7 @@ func toCVE_CVETypes(values *[]string) []storage.CVE_CVEType {
 }
 
 type cVE_ReferenceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CVE_Reference
 }
@@ -1618,7 +1630,7 @@ func (resolver *Resolver) wrapCVE_Reference(value *storage.CVE_Reference, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVE_ReferenceResolver{resolver, value}, nil
+	return &cVE_ReferenceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCVE_References(values []*storage.CVE_Reference, err error) ([]*cVE_ReferenceResolver, error) {
@@ -1627,7 +1639,7 @@ func (resolver *Resolver) wrapCVE_References(values []*storage.CVE_Reference, er
 	}
 	output := make([]*cVE_ReferenceResolver, len(values))
 	for i, v := range values {
-		output[i] = &cVE_ReferenceResolver{resolver, v}
+		output[i] = &cVE_ReferenceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1661,6 +1673,7 @@ func toCVE_ScoreVersions(values *[]string) []storage.CVE_ScoreVersion {
 }
 
 type cVSSV2Resolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CVSSV2
 }
@@ -1669,7 +1682,7 @@ func (resolver *Resolver) wrapCVSSV2(value *storage.CVSSV2, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVSSV2Resolver{resolver, value}, nil
+	return &cVSSV2Resolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCVSSV2s(values []*storage.CVSSV2, err error) ([]*cVSSV2Resolver, error) {
@@ -1678,7 +1691,7 @@ func (resolver *Resolver) wrapCVSSV2s(values []*storage.CVSSV2, err error) ([]*c
 	}
 	output := make([]*cVSSV2Resolver, len(values))
 	for i, v := range values {
-		output[i] = &cVSSV2Resolver{resolver, v}
+		output[i] = &cVSSV2Resolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -1829,6 +1842,7 @@ func toCVSSV2_Severities(values *[]string) []storage.CVSSV2_Severity {
 }
 
 type cVSSV3Resolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CVSSV3
 }
@@ -1837,7 +1851,7 @@ func (resolver *Resolver) wrapCVSSV3(value *storage.CVSSV3, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVSSV3Resolver{resolver, value}, nil
+	return &cVSSV3Resolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCVSSV3s(values []*storage.CVSSV3, err error) ([]*cVSSV3Resolver, error) {
@@ -1846,7 +1860,7 @@ func (resolver *Resolver) wrapCVSSV3s(values []*storage.CVSSV3, err error) ([]*c
 	}
 	output := make([]*cVSSV3Resolver, len(values))
 	for i, v := range values {
-		output[i] = &cVSSV3Resolver{resolver, v}
+		output[i] = &cVSSV3Resolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2043,6 +2057,7 @@ func toCVSSV3_UserInteractions(values *[]string) []storage.CVSSV3_UserInteractio
 }
 
 type certResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Cert
 }
@@ -2051,7 +2066,7 @@ func (resolver *Resolver) wrapCert(value *storage.Cert, ok bool, err error) (*ce
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &certResolver{resolver, value}, nil
+	return &certResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCerts(values []*storage.Cert, err error) ([]*certResolver, error) {
@@ -2060,7 +2075,7 @@ func (resolver *Resolver) wrapCerts(values []*storage.Cert, err error) ([]*certR
 	}
 	output := make([]*certResolver, len(values))
 	for i, v := range values {
-		output[i] = &certResolver{resolver, v}
+		output[i] = &certResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2096,6 +2111,7 @@ func (resolver *certResolver) Subject(ctx context.Context) (*certNameResolver, e
 }
 
 type certNameResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.CertName
 }
@@ -2104,7 +2120,7 @@ func (resolver *Resolver) wrapCertName(value *storage.CertName, ok bool, err err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &certNameResolver{resolver, value}, nil
+	return &certNameResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapCertNames(values []*storage.CertName, err error) ([]*certNameResolver, error) {
@@ -2113,7 +2129,7 @@ func (resolver *Resolver) wrapCertNames(values []*storage.CertName, err error) (
 	}
 	output := make([]*certNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &certNameResolver{resolver, v}
+		output[i] = &certNameResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2164,6 +2180,7 @@ func (resolver *certNameResolver) StreetAddress(ctx context.Context) string {
 }
 
 type clusterResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Cluster
 }
@@ -2172,7 +2189,7 @@ func (resolver *Resolver) wrapCluster(value *storage.Cluster, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &clusterResolver{resolver, value}, nil
+	return &clusterResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]*clusterResolver, error) {
@@ -2181,7 +2198,7 @@ func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]
 	}
 	output := make([]*clusterResolver, len(values))
 	for i, v := range values {
-		output[i] = &clusterResolver{resolver, v}
+		output[i] = &clusterResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2252,6 +2269,7 @@ func (resolver *clusterResolver) Type(ctx context.Context) string {
 }
 
 type clusterStatusResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ClusterStatus
 }
@@ -2260,7 +2278,7 @@ func (resolver *Resolver) wrapClusterStatus(value *storage.ClusterStatus, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &clusterStatusResolver{resolver, value}, nil
+	return &clusterStatusResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, err error) ([]*clusterStatusResolver, error) {
@@ -2269,7 +2287,7 @@ func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, e
 	}
 	output := make([]*clusterStatusResolver, len(values))
 	for i, v := range values {
-		output[i] = &clusterStatusResolver{resolver, v}
+		output[i] = &clusterStatusResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2318,6 +2336,7 @@ func toClusterTypes(values *[]string) []storage.ClusterType {
 }
 
 type clusterUpgradeStatusResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ClusterUpgradeStatus
 }
@@ -2326,7 +2345,7 @@ func (resolver *Resolver) wrapClusterUpgradeStatus(value *storage.ClusterUpgrade
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &clusterUpgradeStatusResolver{resolver, value}, nil
+	return &clusterUpgradeStatusResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUpgradeStatus, err error) ([]*clusterUpgradeStatusResolver, error) {
@@ -2335,7 +2354,7 @@ func (resolver *Resolver) wrapClusterUpgradeStatuses(values []*storage.ClusterUp
 	}
 	output := make([]*clusterUpgradeStatusResolver, len(values))
 	for i, v := range values {
-		output[i] = &clusterUpgradeStatusResolver{resolver, v}
+		output[i] = &clusterUpgradeStatusResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2374,6 +2393,7 @@ func toClusterUpgradeStatus_Upgradabilities(values *[]string) []storage.ClusterU
 }
 
 type clusterUpgradeStatus_UpgradeProcessStatusResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ClusterUpgradeStatus_UpgradeProcessStatus
 }
@@ -2382,7 +2402,7 @@ func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatus(value *s
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &clusterUpgradeStatus_UpgradeProcessStatusResolver{resolver, value}, nil
+	return &clusterUpgradeStatus_UpgradeProcessStatusResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatuses(values []*storage.ClusterUpgradeStatus_UpgradeProcessStatus, err error) ([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, error) {
@@ -2391,7 +2411,7 @@ func (resolver *Resolver) wrapClusterUpgradeStatus_UpgradeProcessStatuses(values
 	}
 	output := make([]*clusterUpgradeStatus_UpgradeProcessStatusResolver, len(values))
 	for i, v := range values {
-		output[i] = &clusterUpgradeStatus_UpgradeProcessStatusResolver{resolver, v}
+		output[i] = &clusterUpgradeStatus_UpgradeProcessStatusResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2445,6 +2465,7 @@ func toCollectionMethods(values *[]string) []storage.CollectionMethod {
 }
 
 type commentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Comment
 }
@@ -2453,7 +2474,7 @@ func (resolver *Resolver) wrapComment(value *storage.Comment, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &commentResolver{resolver, value}, nil
+	return &commentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComments(values []*storage.Comment, err error) ([]*commentResolver, error) {
@@ -2462,7 +2483,7 @@ func (resolver *Resolver) wrapComments(values []*storage.Comment, err error) ([]
 	}
 	output := make([]*commentResolver, len(values))
 	for i, v := range values {
-		output[i] = &commentResolver{resolver, v}
+		output[i] = &commentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2503,6 +2524,7 @@ func (resolver *commentResolver) User(ctx context.Context) (*comment_UserResolve
 }
 
 type comment_UserResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Comment_User
 }
@@ -2511,7 +2533,7 @@ func (resolver *Resolver) wrapComment_User(value *storage.Comment_User, ok bool,
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &comment_UserResolver{resolver, value}, nil
+	return &comment_UserResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComment_Users(values []*storage.Comment_User, err error) ([]*comment_UserResolver, error) {
@@ -2520,7 +2542,7 @@ func (resolver *Resolver) wrapComment_Users(values []*storage.Comment_User, err 
 	}
 	output := make([]*comment_UserResolver, len(values))
 	for i, v := range values {
-		output[i] = &comment_UserResolver{resolver, v}
+		output[i] = &comment_UserResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2559,6 +2581,7 @@ func toComparators(values *[]string) []storage.Comparator {
 }
 
 type complianceAggregation_AggregationKeyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceAggregation_AggregationKey
 }
@@ -2567,7 +2590,7 @@ func (resolver *Resolver) wrapComplianceAggregation_AggregationKey(value *v1.Com
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceAggregation_AggregationKeyResolver{resolver, value}, nil
+	return &complianceAggregation_AggregationKeyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*v1.ComplianceAggregation_AggregationKey, err error) ([]*complianceAggregation_AggregationKeyResolver, error) {
@@ -2576,7 +2599,7 @@ func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*v
 	}
 	output := make([]*complianceAggregation_AggregationKeyResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceAggregation_AggregationKeyResolver{resolver, v}
+		output[i] = &complianceAggregation_AggregationKeyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2592,6 +2615,7 @@ func (resolver *complianceAggregation_AggregationKeyResolver) Scope(ctx context.
 }
 
 type complianceAggregation_ResponseResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceAggregation_Response
 }
@@ -2600,7 +2624,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Response(value *v1.Complianc
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceAggregation_ResponseResolver{resolver, value}, nil
+	return &complianceAggregation_ResponseResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*v1.ComplianceAggregation_Response, err error) ([]*complianceAggregation_ResponseResolver, error) {
@@ -2609,7 +2633,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*v1.Compl
 	}
 	output := make([]*complianceAggregation_ResponseResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceAggregation_ResponseResolver{resolver, v}
+		output[i] = &complianceAggregation_ResponseResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2625,6 +2649,7 @@ func (resolver *complianceAggregation_ResponseResolver) Sources(ctx context.Cont
 }
 
 type complianceAggregation_ResultResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceAggregation_Result
 }
@@ -2633,7 +2658,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Result(value *v1.ComplianceA
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceAggregation_ResultResolver{resolver, value}, nil
+	return &complianceAggregation_ResultResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceAggregation_Results(values []*v1.ComplianceAggregation_Result, err error) ([]*complianceAggregation_ResultResolver, error) {
@@ -2642,7 +2667,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Results(values []*v1.Complia
 	}
 	output := make([]*complianceAggregation_ResultResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceAggregation_ResultResolver{resolver, v}
+		output[i] = &complianceAggregation_ResultResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2686,6 +2711,7 @@ func toComplianceAggregation_Scopes(values *[]string) []v1.ComplianceAggregation
 }
 
 type complianceAggregation_SourceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceAggregation_Source
 }
@@ -2694,7 +2720,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Source(value *v1.ComplianceA
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceAggregation_SourceResolver{resolver, value}, nil
+	return &complianceAggregation_SourceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*v1.ComplianceAggregation_Source, err error) ([]*complianceAggregation_SourceResolver, error) {
@@ -2703,7 +2729,7 @@ func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*v1.Complia
 	}
 	output := make([]*complianceAggregation_SourceResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceAggregation_SourceResolver{resolver, v}
+		output[i] = &complianceAggregation_SourceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2729,6 +2755,7 @@ func (resolver *complianceAggregation_SourceResolver) SuccessfulRun(ctx context.
 }
 
 type complianceControlResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceControl
 }
@@ -2737,7 +2764,7 @@ func (resolver *Resolver) wrapComplianceControl(value *v1.ComplianceControl, ok 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceControlResolver{resolver, value}, nil
+	return &complianceControlResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceControls(values []*v1.ComplianceControl, err error) ([]*complianceControlResolver, error) {
@@ -2746,7 +2773,7 @@ func (resolver *Resolver) wrapComplianceControls(values []*v1.ComplianceControl,
 	}
 	output := make([]*complianceControlResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceControlResolver{resolver, v}
+		output[i] = &complianceControlResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2787,6 +2814,7 @@ func (resolver *complianceControlResolver) StandardId(ctx context.Context) strin
 }
 
 type complianceControlGroupResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceControlGroup
 }
@@ -2795,7 +2823,7 @@ func (resolver *Resolver) wrapComplianceControlGroup(value *v1.ComplianceControl
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceControlGroupResolver{resolver, value}, nil
+	return &complianceControlGroupResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceControlGroups(values []*v1.ComplianceControlGroup, err error) ([]*complianceControlGroupResolver, error) {
@@ -2804,7 +2832,7 @@ func (resolver *Resolver) wrapComplianceControlGroups(values []*v1.ComplianceCon
 	}
 	output := make([]*complianceControlGroupResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceControlGroupResolver{resolver, v}
+		output[i] = &complianceControlGroupResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2835,6 +2863,7 @@ func (resolver *complianceControlGroupResolver) StandardId(ctx context.Context) 
 }
 
 type complianceControlResultResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceControlResult
 }
@@ -2843,7 +2872,7 @@ func (resolver *Resolver) wrapComplianceControlResult(value *storage.ComplianceC
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceControlResultResolver{resolver, value}, nil
+	return &complianceControlResultResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceControlResults(values []*storage.ComplianceControlResult, err error) ([]*complianceControlResultResolver, error) {
@@ -2852,7 +2881,7 @@ func (resolver *Resolver) wrapComplianceControlResults(values []*storage.Complia
 	}
 	output := make([]*complianceControlResultResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceControlResultResolver{resolver, v}
+		output[i] = &complianceControlResultResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2873,6 +2902,7 @@ func (resolver *complianceControlResultResolver) Value(ctx context.Context) (*co
 }
 
 type complianceResourceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResource
 }
@@ -2881,7 +2911,7 @@ func (resolver *Resolver) wrapComplianceResource(value *storage.ComplianceResour
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResourceResolver{resolver, value}, nil
+	return &complianceResourceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResources(values []*storage.ComplianceResource, err error) ([]*complianceResourceResolver, error) {
@@ -2890,7 +2920,7 @@ func (resolver *Resolver) wrapComplianceResources(values []*storage.ComplianceRe
 	}
 	output := make([]*complianceResourceResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResourceResolver{resolver, v}
+		output[i] = &complianceResourceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2902,22 +2932,22 @@ type complianceResourceResourceResolver struct {
 func (resolver *complianceResourceResolver) Resource() *complianceResourceResourceResolver {
 	if val := resolver.data.GetCluster(); val != nil {
 		return &complianceResourceResourceResolver{
-			resolver: &complianceResource_ClusterNameResolver{resolver.root, val},
+			resolver: &complianceResource_ClusterNameResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetDeployment(); val != nil {
 		return &complianceResourceResourceResolver{
-			resolver: &complianceResource_DeploymentNameResolver{resolver.root, val},
+			resolver: &complianceResource_DeploymentNameResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetNode(); val != nil {
 		return &complianceResourceResourceResolver{
-			resolver: &complianceResource_NodeNameResolver{resolver.root, val},
+			resolver: &complianceResource_NodeNameResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetImage(); val != nil {
 		return &complianceResourceResourceResolver{
-			resolver: &imageNameResolver{resolver.root, val},
+			resolver: &imageNameResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -2944,6 +2974,7 @@ func (resolver *complianceResourceResourceResolver) ToImageName() (*imageNameRes
 }
 
 type complianceResource_ClusterNameResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResource_ClusterName
 }
@@ -2952,7 +2983,7 @@ func (resolver *Resolver) wrapComplianceResource_ClusterName(value *storage.Comp
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResource_ClusterNameResolver{resolver, value}, nil
+	return &complianceResource_ClusterNameResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResource_ClusterNames(values []*storage.ComplianceResource_ClusterName, err error) ([]*complianceResource_ClusterNameResolver, error) {
@@ -2961,7 +2992,7 @@ func (resolver *Resolver) wrapComplianceResource_ClusterNames(values []*storage.
 	}
 	output := make([]*complianceResource_ClusterNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResource_ClusterNameResolver{resolver, v}
+		output[i] = &complianceResource_ClusterNameResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -2977,6 +3008,7 @@ func (resolver *complianceResource_ClusterNameResolver) Name(ctx context.Context
 }
 
 type complianceResource_DeploymentNameResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResource_DeploymentName
 }
@@ -2985,7 +3017,7 @@ func (resolver *Resolver) wrapComplianceResource_DeploymentName(value *storage.C
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResource_DeploymentNameResolver{resolver, value}, nil
+	return &complianceResource_DeploymentNameResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResource_DeploymentNames(values []*storage.ComplianceResource_DeploymentName, err error) ([]*complianceResource_DeploymentNameResolver, error) {
@@ -2994,7 +3026,7 @@ func (resolver *Resolver) wrapComplianceResource_DeploymentNames(values []*stora
 	}
 	output := make([]*complianceResource_DeploymentNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResource_DeploymentNameResolver{resolver, v}
+		output[i] = &complianceResource_DeploymentNameResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3020,6 +3052,7 @@ func (resolver *complianceResource_DeploymentNameResolver) Namespace(ctx context
 }
 
 type complianceResource_NodeNameResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResource_NodeName
 }
@@ -3028,7 +3061,7 @@ func (resolver *Resolver) wrapComplianceResource_NodeName(value *storage.Complia
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResource_NodeNameResolver{resolver, value}, nil
+	return &complianceResource_NodeNameResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResource_NodeNames(values []*storage.ComplianceResource_NodeName, err error) ([]*complianceResource_NodeNameResolver, error) {
@@ -3037,7 +3070,7 @@ func (resolver *Resolver) wrapComplianceResource_NodeNames(values []*storage.Com
 	}
 	output := make([]*complianceResource_NodeNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResource_NodeNameResolver{resolver, v}
+		output[i] = &complianceResource_NodeNameResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3058,6 +3091,7 @@ func (resolver *complianceResource_NodeNameResolver) Name(ctx context.Context) s
 }
 
 type complianceResultValueResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResultValue
 }
@@ -3066,7 +3100,7 @@ func (resolver *Resolver) wrapComplianceResultValue(value *storage.ComplianceRes
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResultValueResolver{resolver, value}, nil
+	return &complianceResultValueResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResultValues(values []*storage.ComplianceResultValue, err error) ([]*complianceResultValueResolver, error) {
@@ -3075,7 +3109,7 @@ func (resolver *Resolver) wrapComplianceResultValues(values []*storage.Complianc
 	}
 	output := make([]*complianceResultValueResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResultValueResolver{resolver, v}
+		output[i] = &complianceResultValueResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3091,6 +3125,7 @@ func (resolver *complianceResultValueResolver) OverallState(ctx context.Context)
 }
 
 type complianceResultValue_EvidenceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceResultValue_Evidence
 }
@@ -3099,7 +3134,7 @@ func (resolver *Resolver) wrapComplianceResultValue_Evidence(value *storage.Comp
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceResultValue_EvidenceResolver{resolver, value}, nil
+	return &complianceResultValue_EvidenceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceResultValue_Evidences(values []*storage.ComplianceResultValue_Evidence, err error) ([]*complianceResultValue_EvidenceResolver, error) {
@@ -3108,7 +3143,7 @@ func (resolver *Resolver) wrapComplianceResultValue_Evidences(values []*storage.
 	}
 	output := make([]*complianceResultValue_EvidenceResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceResultValue_EvidenceResolver{resolver, v}
+		output[i] = &complianceResultValue_EvidenceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3129,6 +3164,7 @@ func (resolver *complianceResultValue_EvidenceResolver) State(ctx context.Contex
 }
 
 type complianceRunResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceRun
 }
@@ -3137,7 +3173,7 @@ func (resolver *Resolver) wrapComplianceRun(value *v1.ComplianceRun, ok bool, er
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceRunResolver{resolver, value}, nil
+	return &complianceRunResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceRuns(values []*v1.ComplianceRun, err error) ([]*complianceRunResolver, error) {
@@ -3146,7 +3182,7 @@ func (resolver *Resolver) wrapComplianceRuns(values []*v1.ComplianceRun, err err
 	}
 	output := make([]*complianceRunResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceRunResolver{resolver, v}
+		output[i] = &complianceRunResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3192,6 +3228,7 @@ func (resolver *complianceRunResolver) State(ctx context.Context) string {
 }
 
 type complianceRunMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceRunMetadata
 }
@@ -3200,7 +3237,7 @@ func (resolver *Resolver) wrapComplianceRunMetadata(value *storage.ComplianceRun
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceRunMetadataResolver{resolver, value}, nil
+	return &complianceRunMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceRunMetadatas(values []*storage.ComplianceRunMetadata, err error) ([]*complianceRunMetadataResolver, error) {
@@ -3209,7 +3246,7 @@ func (resolver *Resolver) wrapComplianceRunMetadatas(values []*storage.Complianc
 	}
 	output := make([]*complianceRunMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceRunMetadataResolver{resolver, v}
+		output[i] = &complianceRunMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3250,6 +3287,7 @@ func (resolver *complianceRunMetadataResolver) Success(ctx context.Context) bool
 }
 
 type complianceRunScheduleResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ComplianceRunSchedule
 }
@@ -3258,7 +3296,7 @@ func (resolver *Resolver) wrapComplianceRunSchedule(value *storage.ComplianceRun
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceRunScheduleResolver{resolver, value}, nil
+	return &complianceRunScheduleResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceRunSchedules(values []*storage.ComplianceRunSchedule, err error) ([]*complianceRunScheduleResolver, error) {
@@ -3267,7 +3305,7 @@ func (resolver *Resolver) wrapComplianceRunSchedules(values []*storage.Complianc
 	}
 	output := make([]*complianceRunScheduleResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceRunScheduleResolver{resolver, v}
+		output[i] = &complianceRunScheduleResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3298,6 +3336,7 @@ func (resolver *complianceRunScheduleResolver) Suspended(ctx context.Context) bo
 }
 
 type complianceRunScheduleInfoResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceRunScheduleInfo
 }
@@ -3306,7 +3345,7 @@ func (resolver *Resolver) wrapComplianceRunScheduleInfo(value *v1.ComplianceRunS
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceRunScheduleInfoResolver{resolver, value}, nil
+	return &complianceRunScheduleInfoResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceRunScheduleInfos(values []*v1.ComplianceRunScheduleInfo, err error) ([]*complianceRunScheduleInfoResolver, error) {
@@ -3315,7 +3354,7 @@ func (resolver *Resolver) wrapComplianceRunScheduleInfos(values []*v1.Compliance
 	}
 	output := make([]*complianceRunScheduleInfoResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceRunScheduleInfoResolver{resolver, v}
+		output[i] = &complianceRunScheduleInfoResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3359,6 +3398,7 @@ func toComplianceRun_States(values *[]string) []v1.ComplianceRun_State {
 }
 
 type complianceStandardResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceStandard
 }
@@ -3367,7 +3407,7 @@ func (resolver *Resolver) wrapComplianceStandard(value *v1.ComplianceStandard, o
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceStandardResolver{resolver, value}, nil
+	return &complianceStandardResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceStandards(values []*v1.ComplianceStandard, err error) ([]*complianceStandardResolver, error) {
@@ -3376,7 +3416,7 @@ func (resolver *Resolver) wrapComplianceStandards(values []*v1.ComplianceStandar
 	}
 	output := make([]*complianceStandardResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceStandardResolver{resolver, v}
+		output[i] = &complianceStandardResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3397,6 +3437,7 @@ func (resolver *complianceStandardResolver) Metadata(ctx context.Context) (*comp
 }
 
 type complianceStandardMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ComplianceStandardMetadata
 }
@@ -3405,7 +3446,7 @@ func (resolver *Resolver) wrapComplianceStandardMetadata(value *v1.ComplianceSta
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &complianceStandardMetadataResolver{resolver, value}, nil
+	return &complianceStandardMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComplianceStandardMetadatas(values []*v1.ComplianceStandardMetadata, err error) ([]*complianceStandardMetadataResolver, error) {
@@ -3414,7 +3455,7 @@ func (resolver *Resolver) wrapComplianceStandardMetadatas(values []*v1.Complianc
 	}
 	output := make([]*complianceStandardMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &complianceStandardMetadataResolver{resolver, v}
+		output[i] = &complianceStandardMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3458,6 +3499,7 @@ func toComplianceStates(values *[]string) []storage.ComplianceState {
 }
 
 type componentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Component
 }
@@ -3466,7 +3508,7 @@ func (resolver *Resolver) wrapComponent(value *storage.Component, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &componentResolver{resolver, value}, nil
+	return &componentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapComponents(values []*storage.Component, err error) ([]*componentResolver, error) {
@@ -3475,7 +3517,7 @@ func (resolver *Resolver) wrapComponents(values []*storage.Component, err error)
 	}
 	output := make([]*componentResolver, len(values))
 	for i, v := range values {
-		output[i] = &componentResolver{resolver, v}
+		output[i] = &componentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3491,6 +3533,7 @@ func (resolver *componentResolver) Version(ctx context.Context) string {
 }
 
 type containerResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Container
 }
@@ -3499,7 +3542,7 @@ func (resolver *Resolver) wrapContainer(value *storage.Container, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerResolver{resolver, value}, nil
+	return &containerResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainers(values []*storage.Container, err error) ([]*containerResolver, error) {
@@ -3508,7 +3551,7 @@ func (resolver *Resolver) wrapContainers(values []*storage.Container, err error)
 	}
 	output := make([]*containerResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerResolver{resolver, v}
+		output[i] = &containerResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3564,6 +3607,7 @@ func (resolver *containerResolver) Volumes(ctx context.Context) ([]*volumeResolv
 }
 
 type containerConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerConfig
 }
@@ -3572,7 +3616,7 @@ func (resolver *Resolver) wrapContainerConfig(value *storage.ContainerConfig, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerConfigResolver{resolver, value}, nil
+	return &containerConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerConfigs(values []*storage.ContainerConfig, err error) ([]*containerConfigResolver, error) {
@@ -3581,7 +3625,7 @@ func (resolver *Resolver) wrapContainerConfigs(values []*storage.ContainerConfig
 	}
 	output := make([]*containerConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerConfigResolver{resolver, v}
+		output[i] = &containerConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3617,6 +3661,7 @@ func (resolver *containerConfigResolver) User(ctx context.Context) string {
 }
 
 type containerConfig_EnvironmentConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerConfig_EnvironmentConfig
 }
@@ -3625,7 +3670,7 @@ func (resolver *Resolver) wrapContainerConfig_EnvironmentConfig(value *storage.C
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerConfig_EnvironmentConfigResolver{resolver, value}, nil
+	return &containerConfig_EnvironmentConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*storage.ContainerConfig_EnvironmentConfig, err error) ([]*containerConfig_EnvironmentConfigResolver, error) {
@@ -3634,7 +3679,7 @@ func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*stora
 	}
 	output := make([]*containerConfig_EnvironmentConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerConfig_EnvironmentConfigResolver{resolver, v}
+		output[i] = &containerConfig_EnvironmentConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3673,6 +3718,7 @@ func toContainerConfig_EnvironmentConfig_EnvVarSources(values *[]string) []stora
 }
 
 type containerImageResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerImage
 }
@@ -3681,7 +3727,7 @@ func (resolver *Resolver) wrapContainerImage(value *storage.ContainerImage, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerImageResolver{resolver, value}, nil
+	return &containerImageResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerImages(values []*storage.ContainerImage, err error) ([]*containerImageResolver, error) {
@@ -3690,7 +3736,7 @@ func (resolver *Resolver) wrapContainerImages(values []*storage.ContainerImage, 
 	}
 	output := make([]*containerImageResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerImageResolver{resolver, v}
+		output[i] = &containerImageResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3711,6 +3757,7 @@ func (resolver *containerImageResolver) NotPullable(ctx context.Context) bool {
 }
 
 type containerInstanceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerInstance
 }
@@ -3719,7 +3766,7 @@ func (resolver *Resolver) wrapContainerInstance(value *storage.ContainerInstance
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerInstanceResolver{resolver, value}, nil
+	return &containerInstanceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerInstances(values []*storage.ContainerInstance, err error) ([]*containerInstanceResolver, error) {
@@ -3728,7 +3775,7 @@ func (resolver *Resolver) wrapContainerInstances(values []*storage.ContainerInst
 	}
 	output := make([]*containerInstanceResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerInstanceResolver{resolver, v}
+		output[i] = &containerInstanceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3779,6 +3826,7 @@ func (resolver *containerInstanceResolver) TerminationReason(ctx context.Context
 }
 
 type containerInstanceIDResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerInstanceID
 }
@@ -3787,7 +3835,7 @@ func (resolver *Resolver) wrapContainerInstanceID(value *storage.ContainerInstan
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerInstanceIDResolver{resolver, value}, nil
+	return &containerInstanceIDResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerInstanceIDs(values []*storage.ContainerInstanceID, err error) ([]*containerInstanceIDResolver, error) {
@@ -3796,7 +3844,7 @@ func (resolver *Resolver) wrapContainerInstanceIDs(values []*storage.ContainerIn
 	}
 	output := make([]*containerInstanceIDResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerInstanceIDResolver{resolver, v}
+		output[i] = &containerInstanceIDResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3835,6 +3883,7 @@ func toContainerRuntimes(values *[]string) []storage.ContainerRuntime {
 }
 
 type containerRuntimeInfoResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ContainerRuntimeInfo
 }
@@ -3843,7 +3892,7 @@ func (resolver *Resolver) wrapContainerRuntimeInfo(value *storage.ContainerRunti
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &containerRuntimeInfoResolver{resolver, value}, nil
+	return &containerRuntimeInfoResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapContainerRuntimeInfos(values []*storage.ContainerRuntimeInfo, err error) ([]*containerRuntimeInfoResolver, error) {
@@ -3852,7 +3901,7 @@ func (resolver *Resolver) wrapContainerRuntimeInfos(values []*storage.ContainerR
 	}
 	output := make([]*containerRuntimeInfoResolver, len(values))
 	for i, v := range values {
-		output[i] = &containerRuntimeInfoResolver{resolver, v}
+		output[i] = &containerRuntimeInfoResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -3868,6 +3917,7 @@ func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) strin
 }
 
 type deploymentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Deployment
 	list *storage.ListDeployment
@@ -3877,7 +3927,7 @@ func (resolver *Resolver) wrapDeployment(value *storage.Deployment, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &deploymentResolver{resolver, value, nil}, nil
+	return &deploymentResolver{root: resolver, data: value, list: nil}, nil
 }
 
 func (resolver *Resolver) wrapDeployments(values []*storage.Deployment, err error) ([]*deploymentResolver, error) {
@@ -3886,7 +3936,7 @@ func (resolver *Resolver) wrapDeployments(values []*storage.Deployment, err erro
 	}
 	output := make([]*deploymentResolver, len(values))
 	for i, v := range values {
-		output[i] = &deploymentResolver{resolver, v, nil}
+		output[i] = &deploymentResolver{root: resolver, data: v, list: nil}
 	}
 	return output, nil
 }
@@ -3897,7 +3947,7 @@ func (resolver *Resolver) wrapListDeployments(values []*storage.ListDeployment, 
 	}
 	output := make([]*deploymentResolver, len(values))
 	for i, v := range values {
-		output[i] = &deploymentResolver{resolver, nil, v}
+		output[i] = &deploymentResolver{root: resolver, data: nil, list: v}
 	}
 	return output, nil
 }
@@ -4071,6 +4121,7 @@ func (resolver *deploymentResolver) Type(ctx context.Context) string {
 }
 
 type dockerfileLineRuleFieldResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.DockerfileLineRuleField
 }
@@ -4079,7 +4130,7 @@ func (resolver *Resolver) wrapDockerfileLineRuleField(value *storage.DockerfileL
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &dockerfileLineRuleFieldResolver{resolver, value}, nil
+	return &dockerfileLineRuleFieldResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*storage.DockerfileLineRuleField, err error) ([]*dockerfileLineRuleFieldResolver, error) {
@@ -4088,7 +4139,7 @@ func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*storage.Dockerf
 	}
 	output := make([]*dockerfileLineRuleFieldResolver, len(values))
 	for i, v := range values {
-		output[i] = &dockerfileLineRuleFieldResolver{resolver, v}
+		output[i] = &dockerfileLineRuleFieldResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4104,6 +4155,7 @@ func (resolver *dockerfileLineRuleFieldResolver) Value(ctx context.Context) stri
 }
 
 type dynamicClusterConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.DynamicClusterConfig
 }
@@ -4112,7 +4164,7 @@ func (resolver *Resolver) wrapDynamicClusterConfig(value *storage.DynamicCluster
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &dynamicClusterConfigResolver{resolver, value}, nil
+	return &dynamicClusterConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapDynamicClusterConfigs(values []*storage.DynamicClusterConfig, err error) ([]*dynamicClusterConfigResolver, error) {
@@ -4121,7 +4173,7 @@ func (resolver *Resolver) wrapDynamicClusterConfigs(values []*storage.DynamicClu
 	}
 	output := make([]*dynamicClusterConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &dynamicClusterConfigResolver{resolver, v}
+		output[i] = &dynamicClusterConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4137,6 +4189,7 @@ func (resolver *dynamicClusterConfigResolver) RegistryOverride(ctx context.Conte
 }
 
 type emailResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Email
 }
@@ -4145,7 +4198,7 @@ func (resolver *Resolver) wrapEmail(value *storage.Email, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &emailResolver{resolver, value}, nil
+	return &emailResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*emailResolver, error) {
@@ -4154,7 +4207,7 @@ func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*ema
 	}
 	output := make([]*emailResolver, len(values))
 	for i, v := range values {
-		output[i] = &emailResolver{resolver, v}
+		output[i] = &emailResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4213,6 +4266,7 @@ func toEmail_AuthMethods(values *[]string) []storage.Email_AuthMethod {
 }
 
 type embeddedSecretResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.EmbeddedSecret
 }
@@ -4221,7 +4275,7 @@ func (resolver *Resolver) wrapEmbeddedSecret(value *storage.EmbeddedSecret, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &embeddedSecretResolver{resolver, value}, nil
+	return &embeddedSecretResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapEmbeddedSecrets(values []*storage.EmbeddedSecret, err error) ([]*embeddedSecretResolver, error) {
@@ -4230,7 +4284,7 @@ func (resolver *Resolver) wrapEmbeddedSecrets(values []*storage.EmbeddedSecret, 
 	}
 	output := make([]*embeddedSecretResolver, len(values))
 	for i, v := range values {
-		output[i] = &embeddedSecretResolver{resolver, v}
+		output[i] = &embeddedSecretResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4300,6 +4354,7 @@ func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 }
 
 type generateTokenResponseResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.GenerateTokenResponse
 }
@@ -4308,7 +4363,7 @@ func (resolver *Resolver) wrapGenerateTokenResponse(value *v1.GenerateTokenRespo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &generateTokenResponseResolver{resolver, value}, nil
+	return &generateTokenResponseResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGenerateTokenResponses(values []*v1.GenerateTokenResponse, err error) ([]*generateTokenResponseResolver, error) {
@@ -4317,7 +4372,7 @@ func (resolver *Resolver) wrapGenerateTokenResponses(values []*v1.GenerateTokenR
 	}
 	output := make([]*generateTokenResponseResolver, len(values))
 	for i, v := range values {
-		output[i] = &generateTokenResponseResolver{resolver, v}
+		output[i] = &generateTokenResponseResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4333,6 +4388,7 @@ func (resolver *generateTokenResponseResolver) Token(ctx context.Context) string
 }
 
 type genericResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Generic
 }
@@ -4341,7 +4397,7 @@ func (resolver *Resolver) wrapGeneric(value *storage.Generic, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &genericResolver{resolver, value}, nil
+	return &genericResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]*genericResolver, error) {
@@ -4350,7 +4406,7 @@ func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]
 	}
 	output := make([]*genericResolver, len(values))
 	for i, v := range values {
-		output[i] = &genericResolver{resolver, v}
+		output[i] = &genericResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4396,6 +4452,7 @@ func (resolver *genericResolver) Username(ctx context.Context) string {
 }
 
 type getComplianceRunStatusesResponseResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.GetComplianceRunStatusesResponse
 }
@@ -4404,7 +4461,7 @@ func (resolver *Resolver) wrapGetComplianceRunStatusesResponse(value *v1.GetComp
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &getComplianceRunStatusesResponseResolver{resolver, value}, nil
+	return &getComplianceRunStatusesResponseResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGetComplianceRunStatusesResponses(values []*v1.GetComplianceRunStatusesResponse, err error) ([]*getComplianceRunStatusesResponseResolver, error) {
@@ -4413,7 +4470,7 @@ func (resolver *Resolver) wrapGetComplianceRunStatusesResponses(values []*v1.Get
 	}
 	output := make([]*getComplianceRunStatusesResponseResolver, len(values))
 	for i, v := range values {
-		output[i] = &getComplianceRunStatusesResponseResolver{resolver, v}
+		output[i] = &getComplianceRunStatusesResponseResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4429,6 +4486,7 @@ func (resolver *getComplianceRunStatusesResponseResolver) Runs(ctx context.Conte
 }
 
 type googleProviderMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.GoogleProviderMetadata
 }
@@ -4437,7 +4495,7 @@ func (resolver *Resolver) wrapGoogleProviderMetadata(value *storage.GoogleProvid
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &googleProviderMetadataResolver{resolver, value}, nil
+	return &googleProviderMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGoogleProviderMetadatas(values []*storage.GoogleProviderMetadata, err error) ([]*googleProviderMetadataResolver, error) {
@@ -4446,7 +4504,7 @@ func (resolver *Resolver) wrapGoogleProviderMetadatas(values []*storage.GooglePr
 	}
 	output := make([]*googleProviderMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &googleProviderMetadataResolver{resolver, v}
+		output[i] = &googleProviderMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4462,6 +4520,7 @@ func (resolver *googleProviderMetadataResolver) Project(ctx context.Context) str
 }
 
 type groupResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Group
 }
@@ -4470,7 +4529,7 @@ func (resolver *Resolver) wrapGroup(value *storage.Group, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &groupResolver{resolver, value}, nil
+	return &groupResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGroups(values []*storage.Group, err error) ([]*groupResolver, error) {
@@ -4479,7 +4538,7 @@ func (resolver *Resolver) wrapGroups(values []*storage.Group, err error) ([]*gro
 	}
 	output := make([]*groupResolver, len(values))
 	for i, v := range values {
-		output[i] = &groupResolver{resolver, v}
+		output[i] = &groupResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4495,6 +4554,7 @@ func (resolver *groupResolver) RoleName(ctx context.Context) string {
 }
 
 type groupPropertiesResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.GroupProperties
 }
@@ -4503,7 +4563,7 @@ func (resolver *Resolver) wrapGroupProperties(value *storage.GroupProperties, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &groupPropertiesResolver{resolver, value}, nil
+	return &groupPropertiesResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapGroupPropertieses(values []*storage.GroupProperties, err error) ([]*groupPropertiesResolver, error) {
@@ -4512,7 +4572,7 @@ func (resolver *Resolver) wrapGroupPropertieses(values []*storage.GroupPropertie
 	}
 	output := make([]*groupPropertiesResolver, len(values))
 	for i, v := range values {
-		output[i] = &groupPropertiesResolver{resolver, v}
+		output[i] = &groupPropertiesResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4533,6 +4593,7 @@ func (resolver *groupPropertiesResolver) Value(ctx context.Context) string {
 }
 
 type hostMountPolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.HostMountPolicy
 }
@@ -4541,7 +4602,7 @@ func (resolver *Resolver) wrapHostMountPolicy(value *storage.HostMountPolicy, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &hostMountPolicyResolver{resolver, value}, nil
+	return &hostMountPolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapHostMountPolicies(values []*storage.HostMountPolicy, err error) ([]*hostMountPolicyResolver, error) {
@@ -4550,12 +4611,13 @@ func (resolver *Resolver) wrapHostMountPolicies(values []*storage.HostMountPolic
 	}
 	output := make([]*hostMountPolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &hostMountPolicyResolver{resolver, v}
+		output[i] = &hostMountPolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
 
 type imageResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Image
 	list *storage.ListImage
@@ -4565,7 +4627,7 @@ func (resolver *Resolver) wrapImage(value *storage.Image, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageResolver{resolver, value, nil}, nil
+	return &imageResolver{root: resolver, data: value, list: nil}, nil
 }
 
 func (resolver *Resolver) wrapImages(values []*storage.Image, err error) ([]*imageResolver, error) {
@@ -4574,7 +4636,7 @@ func (resolver *Resolver) wrapImages(values []*storage.Image, err error) ([]*ima
 	}
 	output := make([]*imageResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageResolver{resolver, v, nil}
+		output[i] = &imageResolver{root: resolver, data: v, list: nil}
 	}
 	return output, nil
 }
@@ -4585,7 +4647,7 @@ func (resolver *Resolver) wrapListImages(values []*storage.ListImage, err error)
 	}
 	output := make([]*imageResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageResolver{resolver, nil, v}
+		output[i] = &imageResolver{root: resolver, data: nil, list: v}
 	}
 	return output, nil
 }
@@ -4651,6 +4713,7 @@ func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, er
 }
 
 type imageComponentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageComponent
 }
@@ -4659,7 +4722,7 @@ func (resolver *Resolver) wrapImageComponent(value *storage.ImageComponent, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageComponentResolver{resolver, value}, nil
+	return &imageComponentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageComponents(values []*storage.ImageComponent, err error) ([]*imageComponentResolver, error) {
@@ -4668,7 +4731,7 @@ func (resolver *Resolver) wrapImageComponents(values []*storage.ImageComponent, 
 	}
 	output := make([]*imageComponentResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageComponentResolver{resolver, v}
+		output[i] = &imageComponentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4709,6 +4772,7 @@ func (resolver *imageComponentResolver) Version(ctx context.Context) string {
 }
 
 type imageLayerResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageLayer
 }
@@ -4717,7 +4781,7 @@ func (resolver *Resolver) wrapImageLayer(value *storage.ImageLayer, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageLayerResolver{resolver, value}, nil
+	return &imageLayerResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageLayers(values []*storage.ImageLayer, err error) ([]*imageLayerResolver, error) {
@@ -4726,7 +4790,7 @@ func (resolver *Resolver) wrapImageLayers(values []*storage.ImageLayer, err erro
 	}
 	output := make([]*imageLayerResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageLayerResolver{resolver, v}
+		output[i] = &imageLayerResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4757,6 +4821,7 @@ func (resolver *imageLayerResolver) Value(ctx context.Context) string {
 }
 
 type imageMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageMetadata
 }
@@ -4765,7 +4830,7 @@ func (resolver *Resolver) wrapImageMetadata(value *storage.ImageMetadata, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageMetadataResolver{resolver, value}, nil
+	return &imageMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageMetadatas(values []*storage.ImageMetadata, err error) ([]*imageMetadataResolver, error) {
@@ -4774,7 +4839,7 @@ func (resolver *Resolver) wrapImageMetadatas(values []*storage.ImageMetadata, er
 	}
 	output := make([]*imageMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageMetadataResolver{resolver, v}
+		output[i] = &imageMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4795,6 +4860,7 @@ func (resolver *imageMetadataResolver) V2(ctx context.Context) (*v2MetadataResol
 }
 
 type imageNameResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageName
 }
@@ -4803,7 +4869,7 @@ func (resolver *Resolver) wrapImageName(value *storage.ImageName, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageNameResolver{resolver, value}, nil
+	return &imageNameResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageNames(values []*storage.ImageName, err error) ([]*imageNameResolver, error) {
@@ -4812,7 +4878,7 @@ func (resolver *Resolver) wrapImageNames(values []*storage.ImageName, err error)
 	}
 	output := make([]*imageNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageNameResolver{resolver, v}
+		output[i] = &imageNameResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4838,6 +4904,7 @@ func (resolver *imageNameResolver) Tag(ctx context.Context) string {
 }
 
 type imageNamePolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageNamePolicy
 }
@@ -4846,7 +4913,7 @@ func (resolver *Resolver) wrapImageNamePolicy(value *storage.ImageNamePolicy, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageNamePolicyResolver{resolver, value}, nil
+	return &imageNamePolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageNamePolicies(values []*storage.ImageNamePolicy, err error) ([]*imageNamePolicyResolver, error) {
@@ -4855,7 +4922,7 @@ func (resolver *Resolver) wrapImageNamePolicies(values []*storage.ImageNamePolic
 	}
 	output := make([]*imageNamePolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageNamePolicyResolver{resolver, v}
+		output[i] = &imageNamePolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4876,6 +4943,7 @@ func (resolver *imageNamePolicyResolver) Tag(ctx context.Context) string {
 }
 
 type imagePullSecretResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImagePullSecret
 }
@@ -4884,7 +4952,7 @@ func (resolver *Resolver) wrapImagePullSecret(value *storage.ImagePullSecret, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imagePullSecretResolver{resolver, value}, nil
+	return &imagePullSecretResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImagePullSecrets(values []*storage.ImagePullSecret, err error) ([]*imagePullSecretResolver, error) {
@@ -4893,7 +4961,7 @@ func (resolver *Resolver) wrapImagePullSecrets(values []*storage.ImagePullSecret
 	}
 	output := make([]*imagePullSecretResolver, len(values))
 	for i, v := range values {
-		output[i] = &imagePullSecretResolver{resolver, v}
+		output[i] = &imagePullSecretResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4904,6 +4972,7 @@ func (resolver *imagePullSecretResolver) Registries(ctx context.Context) ([]*ima
 }
 
 type imagePullSecret_RegistryResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImagePullSecret_Registry
 }
@@ -4912,7 +4981,7 @@ func (resolver *Resolver) wrapImagePullSecret_Registry(value *storage.ImagePullS
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imagePullSecret_RegistryResolver{resolver, value}, nil
+	return &imagePullSecret_RegistryResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImagePullSecret_Registries(values []*storage.ImagePullSecret_Registry, err error) ([]*imagePullSecret_RegistryResolver, error) {
@@ -4921,7 +4990,7 @@ func (resolver *Resolver) wrapImagePullSecret_Registries(values []*storage.Image
 	}
 	output := make([]*imagePullSecret_RegistryResolver, len(values))
 	for i, v := range values {
-		output[i] = &imagePullSecret_RegistryResolver{resolver, v}
+		output[i] = &imagePullSecret_RegistryResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4937,6 +5006,7 @@ func (resolver *imagePullSecret_RegistryResolver) Username(ctx context.Context) 
 }
 
 type imageScanResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ImageScan
 }
@@ -4945,7 +5015,7 @@ func (resolver *Resolver) wrapImageScan(value *storage.ImageScan, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageScanResolver{resolver, value}, nil
+	return &imageScanResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error) ([]*imageScanResolver, error) {
@@ -4954,7 +5024,7 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 	}
 	output := make([]*imageScanResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageScanResolver{resolver, v}
+		output[i] = &imageScanResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -4965,6 +5035,7 @@ func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time,
 }
 
 type jiraResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Jira
 }
@@ -4973,7 +5044,7 @@ func (resolver *Resolver) wrapJira(value *storage.Jira, ok bool, err error) (*ji
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &jiraResolver{resolver, value}, nil
+	return &jiraResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapJiras(values []*storage.Jira, err error) ([]*jiraResolver, error) {
@@ -4982,7 +5053,7 @@ func (resolver *Resolver) wrapJiras(values []*storage.Jira, err error) ([]*jiraR
 	}
 	output := make([]*jiraResolver, len(values))
 	for i, v := range values {
-		output[i] = &jiraResolver{resolver, v}
+		output[i] = &jiraResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5018,6 +5089,7 @@ func (resolver *jiraResolver) Username(ctx context.Context) string {
 }
 
 type jira_PriorityMappingResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Jira_PriorityMapping
 }
@@ -5026,7 +5098,7 @@ func (resolver *Resolver) wrapJira_PriorityMapping(value *storage.Jira_PriorityM
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &jira_PriorityMappingResolver{resolver, value}, nil
+	return &jira_PriorityMappingResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapJira_PriorityMappings(values []*storage.Jira_PriorityMapping, err error) ([]*jira_PriorityMappingResolver, error) {
@@ -5035,7 +5107,7 @@ func (resolver *Resolver) wrapJira_PriorityMappings(values []*storage.Jira_Prior
 	}
 	output := make([]*jira_PriorityMappingResolver, len(values))
 	for i, v := range values {
-		output[i] = &jira_PriorityMappingResolver{resolver, v}
+		output[i] = &jira_PriorityMappingResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5051,6 +5123,7 @@ func (resolver *jira_PriorityMappingResolver) Severity(ctx context.Context) stri
 }
 
 type k8SRoleResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.K8SRole
 }
@@ -5059,7 +5132,7 @@ func (resolver *Resolver) wrapK8SRole(value *storage.K8SRole, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &k8SRoleResolver{resolver, value}, nil
+	return &k8SRoleResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapK8SRoles(values []*storage.K8SRole, err error) ([]*k8SRoleResolver, error) {
@@ -5068,7 +5141,7 @@ func (resolver *Resolver) wrapK8SRoles(values []*storage.K8SRole, err error) ([]
 	}
 	output := make([]*k8SRoleResolver, len(values))
 	for i, v := range values {
-		output[i] = &k8SRoleResolver{resolver, v}
+		output[i] = &k8SRoleResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5124,6 +5197,7 @@ func (resolver *k8SRoleResolver) Rules(ctx context.Context) ([]*policyRuleResolv
 }
 
 type k8SRoleBindingResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.K8SRoleBinding
 }
@@ -5132,7 +5206,7 @@ func (resolver *Resolver) wrapK8SRoleBinding(value *storage.K8SRoleBinding, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &k8SRoleBindingResolver{resolver, value}, nil
+	return &k8SRoleBindingResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapK8SRoleBindings(values []*storage.K8SRoleBinding, err error) ([]*k8SRoleBindingResolver, error) {
@@ -5141,7 +5215,7 @@ func (resolver *Resolver) wrapK8SRoleBindings(values []*storage.K8SRoleBinding, 
 	}
 	output := make([]*k8SRoleBindingResolver, len(values))
 	for i, v := range values {
-		output[i] = &k8SRoleBindingResolver{resolver, v}
+		output[i] = &k8SRoleBindingResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5202,6 +5276,7 @@ func (resolver *k8SRoleBindingResolver) Subjects(ctx context.Context) ([]*subjec
 }
 
 type keyValuePairResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.KeyValuePair
 }
@@ -5210,7 +5285,7 @@ func (resolver *Resolver) wrapKeyValuePair(value *storage.KeyValuePair, ok bool,
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &keyValuePairResolver{resolver, value}, nil
+	return &keyValuePairResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapKeyValuePairs(values []*storage.KeyValuePair, err error) ([]*keyValuePairResolver, error) {
@@ -5219,7 +5294,7 @@ func (resolver *Resolver) wrapKeyValuePairs(values []*storage.KeyValuePair, err 
 	}
 	output := make([]*keyValuePairResolver, len(values))
 	for i, v := range values {
-		output[i] = &keyValuePairResolver{resolver, v}
+		output[i] = &keyValuePairResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5235,6 +5310,7 @@ func (resolver *keyValuePairResolver) Value(ctx context.Context) string {
 }
 
 type keyValuePolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.KeyValuePolicy
 }
@@ -5243,7 +5319,7 @@ func (resolver *Resolver) wrapKeyValuePolicy(value *storage.KeyValuePolicy, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &keyValuePolicyResolver{resolver, value}, nil
+	return &keyValuePolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy, err error) ([]*keyValuePolicyResolver, error) {
@@ -5252,7 +5328,7 @@ func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy,
 	}
 	output := make([]*keyValuePolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &keyValuePolicyResolver{resolver, v}
+		output[i] = &keyValuePolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5291,6 +5367,7 @@ func toL4Protocols(values *[]string) []storage.L4Protocol {
 }
 
 type labelSelectorResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.LabelSelector
 }
@@ -5299,7 +5376,7 @@ func (resolver *Resolver) wrapLabelSelector(value *storage.LabelSelector, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &labelSelectorResolver{resolver, value}, nil
+	return &labelSelectorResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapLabelSelectors(values []*storage.LabelSelector, err error) ([]*labelSelectorResolver, error) {
@@ -5308,7 +5385,7 @@ func (resolver *Resolver) wrapLabelSelectors(values []*storage.LabelSelector, er
 	}
 	output := make([]*labelSelectorResolver, len(values))
 	for i, v := range values {
-		output[i] = &labelSelectorResolver{resolver, v}
+		output[i] = &labelSelectorResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5342,6 +5419,7 @@ func toLabelSelector_Operators(values *[]string) []storage.LabelSelector_Operato
 }
 
 type labelSelector_RequirementResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.LabelSelector_Requirement
 }
@@ -5350,7 +5428,7 @@ func (resolver *Resolver) wrapLabelSelector_Requirement(value *storage.LabelSele
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &labelSelector_RequirementResolver{resolver, value}, nil
+	return &labelSelector_RequirementResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapLabelSelector_Requirements(values []*storage.LabelSelector_Requirement, err error) ([]*labelSelector_RequirementResolver, error) {
@@ -5359,7 +5437,7 @@ func (resolver *Resolver) wrapLabelSelector_Requirements(values []*storage.Label
 	}
 	output := make([]*labelSelector_RequirementResolver, len(values))
 	for i, v := range values {
-		output[i] = &labelSelector_RequirementResolver{resolver, v}
+		output[i] = &labelSelector_RequirementResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5380,6 +5458,7 @@ func (resolver *labelSelector_RequirementResolver) Values(ctx context.Context) [
 }
 
 type licenseResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.License
 }
@@ -5388,7 +5467,7 @@ func (resolver *Resolver) wrapLicense(value *storage.License, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &licenseResolver{resolver, value}, nil
+	return &licenseResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapLicenses(values []*storage.License, err error) ([]*licenseResolver, error) {
@@ -5397,7 +5476,7 @@ func (resolver *Resolver) wrapLicenses(values []*storage.License, err error) ([]
 	}
 	output := make([]*licenseResolver, len(values))
 	for i, v := range values {
-		output[i] = &licenseResolver{resolver, v}
+		output[i] = &licenseResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5436,6 +5515,7 @@ func toLifecycleStages(values *[]string) []storage.LifecycleStage {
 }
 
 type metadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.Metadata
 }
@@ -5444,7 +5524,7 @@ func (resolver *Resolver) wrapMetadata(value *v1.Metadata, ok bool, err error) (
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &metadataResolver{resolver, value}, nil
+	return &metadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapMetadatas(values []*v1.Metadata, err error) ([]*metadataResolver, error) {
@@ -5453,7 +5533,7 @@ func (resolver *Resolver) wrapMetadatas(values []*v1.Metadata, err error) ([]*me
 	}
 	output := make([]*metadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &metadataResolver{resolver, v}
+		output[i] = &metadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5497,6 +5577,7 @@ func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
 }
 
 type namespaceResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.Namespace
 }
@@ -5505,7 +5586,7 @@ func (resolver *Resolver) wrapNamespace(value *v1.Namespace, ok bool, err error)
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &namespaceResolver{resolver, value}, nil
+	return &namespaceResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNamespaces(values []*v1.Namespace, err error) ([]*namespaceResolver, error) {
@@ -5514,7 +5595,7 @@ func (resolver *Resolver) wrapNamespaces(values []*v1.Namespace, err error) ([]*
 	}
 	output := make([]*namespaceResolver, len(values))
 	for i, v := range values {
-		output[i] = &namespaceResolver{resolver, v}
+		output[i] = &namespaceResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5540,6 +5621,7 @@ func (resolver *namespaceResolver) NumSecrets(ctx context.Context) int32 {
 }
 
 type namespaceMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NamespaceMetadata
 }
@@ -5548,7 +5630,7 @@ func (resolver *Resolver) wrapNamespaceMetadata(value *storage.NamespaceMetadata
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &namespaceMetadataResolver{resolver, value}, nil
+	return &namespaceMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNamespaceMetadatas(values []*storage.NamespaceMetadata, err error) ([]*namespaceMetadataResolver, error) {
@@ -5557,7 +5639,7 @@ func (resolver *Resolver) wrapNamespaceMetadatas(values []*storage.NamespaceMeta
 	}
 	output := make([]*namespaceMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &namespaceMetadataResolver{resolver, v}
+		output[i] = &namespaceMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5598,6 +5680,7 @@ func (resolver *namespaceMetadataResolver) Priority(ctx context.Context) int32 {
 }
 
 type networkEntityInfoResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NetworkEntityInfo
 }
@@ -5606,7 +5689,7 @@ func (resolver *Resolver) wrapNetworkEntityInfo(value *storage.NetworkEntityInfo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &networkEntityInfoResolver{resolver, value}, nil
+	return &networkEntityInfoResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNetworkEntityInfos(values []*storage.NetworkEntityInfo, err error) ([]*networkEntityInfoResolver, error) {
@@ -5615,7 +5698,7 @@ func (resolver *Resolver) wrapNetworkEntityInfos(values []*storage.NetworkEntity
 	}
 	output := make([]*networkEntityInfoResolver, len(values))
 	for i, v := range values {
-		output[i] = &networkEntityInfoResolver{resolver, v}
+		output[i] = &networkEntityInfoResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5637,7 +5720,7 @@ type networkEntityInfoDescResolver struct {
 func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver {
 	if val := resolver.data.GetDeployment(); val != nil {
 		return &networkEntityInfoDescResolver{
-			resolver: &networkEntityInfo_DeploymentResolver{resolver.root, val},
+			resolver: &networkEntityInfo_DeploymentResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -5649,6 +5732,7 @@ func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() 
 }
 
 type networkEntityInfo_DeploymentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NetworkEntityInfo_Deployment
 }
@@ -5657,7 +5741,7 @@ func (resolver *Resolver) wrapNetworkEntityInfo_Deployment(value *storage.Networ
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &networkEntityInfo_DeploymentResolver{resolver, value}, nil
+	return &networkEntityInfo_DeploymentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*storage.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
@@ -5666,7 +5750,7 @@ func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*storage.Ne
 	}
 	output := make([]*networkEntityInfo_DeploymentResolver, len(values))
 	for i, v := range values {
-		output[i] = &networkEntityInfo_DeploymentResolver{resolver, v}
+		output[i] = &networkEntityInfo_DeploymentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5705,6 +5789,7 @@ func toNetworkEntityInfo_Types(values *[]string) []storage.NetworkEntityInfo_Typ
 }
 
 type networkFlowResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NetworkFlow
 }
@@ -5713,7 +5798,7 @@ func (resolver *Resolver) wrapNetworkFlow(value *storage.NetworkFlow, ok bool, e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &networkFlowResolver{resolver, value}, nil
+	return &networkFlowResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err error) ([]*networkFlowResolver, error) {
@@ -5722,7 +5807,7 @@ func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err er
 	}
 	output := make([]*networkFlowResolver, len(values))
 	for i, v := range values {
-		output[i] = &networkFlowResolver{resolver, v}
+		output[i] = &networkFlowResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5738,6 +5823,7 @@ func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPro
 }
 
 type networkFlowPropertiesResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NetworkFlowProperties
 }
@@ -5746,7 +5832,7 @@ func (resolver *Resolver) wrapNetworkFlowProperties(value *storage.NetworkFlowPr
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &networkFlowPropertiesResolver{resolver, value}, nil
+	return &networkFlowPropertiesResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*storage.NetworkFlowProperties, err error) ([]*networkFlowPropertiesResolver, error) {
@@ -5755,7 +5841,7 @@ func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*storage.NetworkF
 	}
 	output := make([]*networkFlowPropertiesResolver, len(values))
 	for i, v := range values {
-		output[i] = &networkFlowPropertiesResolver{resolver, v}
+		output[i] = &networkFlowPropertiesResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5781,6 +5867,7 @@ func (resolver *networkFlowPropertiesResolver) SrcEntity(ctx context.Context) (*
 }
 
 type nodeResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Node
 }
@@ -5789,7 +5876,7 @@ func (resolver *Resolver) wrapNode(value *storage.Node, ok bool, err error) (*no
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &nodeResolver{resolver, value}, nil
+	return &nodeResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNodes(values []*storage.Node, err error) ([]*nodeResolver, error) {
@@ -5798,7 +5885,7 @@ func (resolver *Resolver) wrapNodes(values []*storage.Node, err error) ([]*nodeR
 	}
 	output := make([]*nodeResolver, len(values))
 	for i, v := range values {
-		output[i] = &nodeResolver{resolver, v}
+		output[i] = &nodeResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5879,6 +5966,7 @@ func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, err
 }
 
 type notifierResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Notifier
 }
@@ -5887,7 +5975,7 @@ func (resolver *Resolver) wrapNotifier(value *storage.Notifier, ok bool, err err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &notifierResolver{resolver, value}, nil
+	return &notifierResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNotifiers(values []*storage.Notifier, err error) ([]*notifierResolver, error) {
@@ -5896,7 +5984,7 @@ func (resolver *Resolver) wrapNotifiers(values []*storage.Notifier, err error) (
 	}
 	output := make([]*notifierResolver, len(values))
 	for i, v := range values {
-		output[i] = &notifierResolver{resolver, v}
+		output[i] = &notifierResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -5943,37 +6031,37 @@ type notifierConfigResolver struct {
 func (resolver *notifierResolver) Config() *notifierConfigResolver {
 	if val := resolver.data.GetJira(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &jiraResolver{resolver.root, val},
+			resolver: &jiraResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetEmail(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &emailResolver{resolver.root, val},
+			resolver: &emailResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetCscc(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &cSCCResolver{resolver.root, val},
+			resolver: &cSCCResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetSplunk(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &splunkResolver{resolver.root, val},
+			resolver: &splunkResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetPagerduty(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &pagerDutyResolver{resolver.root, val},
+			resolver: &pagerDutyResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetGeneric(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &genericResolver{resolver.root, val},
+			resolver: &genericResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetSumologic(); val != nil {
 		return &notifierConfigResolver{
-			resolver: &sumoLogicResolver{resolver.root, val},
+			resolver: &sumoLogicResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -6015,6 +6103,7 @@ func (resolver *notifierConfigResolver) ToSumoLogic() (*sumoLogicResolver, bool)
 }
 
 type numericalPolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.NumericalPolicy
 }
@@ -6023,7 +6112,7 @@ func (resolver *Resolver) wrapNumericalPolicy(value *storage.NumericalPolicy, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &numericalPolicyResolver{resolver, value}, nil
+	return &numericalPolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapNumericalPolicies(values []*storage.NumericalPolicy, err error) ([]*numericalPolicyResolver, error) {
@@ -6032,7 +6121,7 @@ func (resolver *Resolver) wrapNumericalPolicies(values []*storage.NumericalPolic
 	}
 	output := make([]*numericalPolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &numericalPolicyResolver{resolver, v}
+		output[i] = &numericalPolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6048,6 +6137,7 @@ func (resolver *numericalPolicyResolver) Value(ctx context.Context) float64 {
 }
 
 type orchestratorMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.OrchestratorMetadata
 }
@@ -6056,7 +6146,7 @@ func (resolver *Resolver) wrapOrchestratorMetadata(value *storage.OrchestratorMe
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &orchestratorMetadataResolver{resolver, value}, nil
+	return &orchestratorMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapOrchestratorMetadatas(values []*storage.OrchestratorMetadata, err error) ([]*orchestratorMetadataResolver, error) {
@@ -6065,7 +6155,7 @@ func (resolver *Resolver) wrapOrchestratorMetadatas(values []*storage.Orchestrat
 	}
 	output := make([]*orchestratorMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &orchestratorMetadataResolver{resolver, v}
+		output[i] = &orchestratorMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6086,6 +6176,7 @@ func (resolver *orchestratorMetadataResolver) Version(ctx context.Context) strin
 }
 
 type pagerDutyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PagerDuty
 }
@@ -6094,7 +6185,7 @@ func (resolver *Resolver) wrapPagerDuty(value *storage.PagerDuty, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &pagerDutyResolver{resolver, value}, nil
+	return &pagerDutyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPagerDuties(values []*storage.PagerDuty, err error) ([]*pagerDutyResolver, error) {
@@ -6103,7 +6194,7 @@ func (resolver *Resolver) wrapPagerDuties(values []*storage.PagerDuty, err error
 	}
 	output := make([]*pagerDutyResolver, len(values))
 	for i, v := range values {
-		output[i] = &pagerDutyResolver{resolver, v}
+		output[i] = &pagerDutyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6132,6 +6223,7 @@ func toPermissionLevels(values *[]string) []storage.PermissionLevel {
 }
 
 type permissionPolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PermissionPolicy
 }
@@ -6140,7 +6232,7 @@ func (resolver *Resolver) wrapPermissionPolicy(value *storage.PermissionPolicy, 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &permissionPolicyResolver{resolver, value}, nil
+	return &permissionPolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPolicy, err error) ([]*permissionPolicyResolver, error) {
@@ -6149,7 +6241,7 @@ func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPol
 	}
 	output := make([]*permissionPolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &permissionPolicyResolver{resolver, v}
+		output[i] = &permissionPolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6160,6 +6252,7 @@ func (resolver *permissionPolicyResolver) PermissionLevel(ctx context.Context) s
 }
 
 type policyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Policy
 }
@@ -6168,7 +6261,7 @@ func (resolver *Resolver) wrapPolicy(value *storage.Policy, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &policyResolver{resolver, value}, nil
+	return &policyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPolicies(values []*storage.Policy, err error) ([]*policyResolver, error) {
@@ -6177,7 +6270,7 @@ func (resolver *Resolver) wrapPolicies(values []*storage.Policy, err error) ([]*
 	}
 	output := make([]*policyResolver, len(values))
 	for i, v := range values {
-		output[i] = &policyResolver{resolver, v}
+		output[i] = &policyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6273,6 +6366,7 @@ func (resolver *policyResolver) Whitelists(ctx context.Context) ([]*whitelistRes
 }
 
 type policyFieldsResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PolicyFields
 }
@@ -6281,7 +6375,7 @@ func (resolver *Resolver) wrapPolicyFields(value *storage.PolicyFields, ok bool,
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &policyFieldsResolver{resolver, value}, nil
+	return &policyFieldsResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPolicyFieldses(values []*storage.PolicyFields, err error) ([]*policyFieldsResolver, error) {
@@ -6290,7 +6384,7 @@ func (resolver *Resolver) wrapPolicyFieldses(values []*storage.PolicyFields, err
 	}
 	output := make([]*policyFieldsResolver, len(values))
 	for i, v := range values {
-		output[i] = &policyFieldsResolver{resolver, v}
+		output[i] = &policyFieldsResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6421,6 +6515,7 @@ func (resolver *policyFieldsResolver) VolumePolicy(ctx context.Context) (*volume
 }
 
 type policyRuleResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PolicyRule
 }
@@ -6429,7 +6524,7 @@ func (resolver *Resolver) wrapPolicyRule(value *storage.PolicyRule, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &policyRuleResolver{resolver, value}, nil
+	return &policyRuleResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPolicyRules(values []*storage.PolicyRule, err error) ([]*policyRuleResolver, error) {
@@ -6438,7 +6533,7 @@ func (resolver *Resolver) wrapPolicyRules(values []*storage.PolicyRule, err erro
 	}
 	output := make([]*policyRuleResolver, len(values))
 	for i, v := range values {
-		output[i] = &policyRuleResolver{resolver, v}
+		output[i] = &policyRuleResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6469,6 +6564,7 @@ func (resolver *policyRuleResolver) Verbs(ctx context.Context) []string {
 }
 
 type portConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PortConfig
 }
@@ -6477,7 +6573,7 @@ func (resolver *Resolver) wrapPortConfig(value *storage.PortConfig, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &portConfigResolver{resolver, value}, nil
+	return &portConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPortConfigs(values []*storage.PortConfig, err error) ([]*portConfigResolver, error) {
@@ -6486,7 +6582,7 @@ func (resolver *Resolver) wrapPortConfigs(values []*storage.PortConfig, err erro
 	}
 	output := make([]*portConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &portConfigResolver{resolver, v}
+		output[i] = &portConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6522,6 +6618,7 @@ func (resolver *portConfigResolver) Protocol(ctx context.Context) string {
 }
 
 type portConfig_ExposureInfoResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PortConfig_ExposureInfo
 }
@@ -6530,7 +6627,7 @@ func (resolver *Resolver) wrapPortConfig_ExposureInfo(value *storage.PortConfig_
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &portConfig_ExposureInfoResolver{resolver, value}, nil
+	return &portConfig_ExposureInfoResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPortConfig_ExposureInfos(values []*storage.PortConfig_ExposureInfo, err error) ([]*portConfig_ExposureInfoResolver, error) {
@@ -6539,7 +6636,7 @@ func (resolver *Resolver) wrapPortConfig_ExposureInfos(values []*storage.PortCon
 	}
 	output := make([]*portConfig_ExposureInfoResolver, len(values))
 	for i, v := range values {
-		output[i] = &portConfig_ExposureInfoResolver{resolver, v}
+		output[i] = &portConfig_ExposureInfoResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6603,6 +6700,7 @@ func toPortConfig_ExposureLevels(values *[]string) []storage.PortConfig_Exposure
 }
 
 type portExposurePolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PortExposurePolicy
 }
@@ -6611,7 +6709,7 @@ func (resolver *Resolver) wrapPortExposurePolicy(value *storage.PortExposurePoli
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &portExposurePolicyResolver{resolver, value}, nil
+	return &portExposurePolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPortExposurePolicies(values []*storage.PortExposurePolicy, err error) ([]*portExposurePolicyResolver, error) {
@@ -6620,7 +6718,7 @@ func (resolver *Resolver) wrapPortExposurePolicies(values []*storage.PortExposur
 	}
 	output := make([]*portExposurePolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &portExposurePolicyResolver{resolver, v}
+		output[i] = &portExposurePolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6631,6 +6729,7 @@ func (resolver *portExposurePolicyResolver) ExposureLevels(ctx context.Context) 
 }
 
 type portPolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.PortPolicy
 }
@@ -6639,7 +6738,7 @@ func (resolver *Resolver) wrapPortPolicy(value *storage.PortPolicy, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &portPolicyResolver{resolver, value}, nil
+	return &portPolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapPortPolicies(values []*storage.PortPolicy, err error) ([]*portPolicyResolver, error) {
@@ -6648,7 +6747,7 @@ func (resolver *Resolver) wrapPortPolicies(values []*storage.PortPolicy, err err
 	}
 	output := make([]*portPolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &portPolicyResolver{resolver, v}
+		output[i] = &portPolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6664,6 +6763,7 @@ func (resolver *portPolicyResolver) Protocol(ctx context.Context) string {
 }
 
 type processGroupResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ProcessGroup
 }
@@ -6672,7 +6772,7 @@ func (resolver *Resolver) wrapProcessGroup(value *v1.ProcessGroup, ok bool, err 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &processGroupResolver{resolver, value}, nil
+	return &processGroupResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProcessGroups(values []*v1.ProcessGroup, err error) ([]*processGroupResolver, error) {
@@ -6681,7 +6781,7 @@ func (resolver *Resolver) wrapProcessGroups(values []*v1.ProcessGroup, err error
 	}
 	output := make([]*processGroupResolver, len(values))
 	for i, v := range values {
-		output[i] = &processGroupResolver{resolver, v}
+		output[i] = &processGroupResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6697,6 +6797,7 @@ func (resolver *processGroupResolver) Signals(ctx context.Context) ([]*processIn
 }
 
 type processIndicatorResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ProcessIndicator
 }
@@ -6705,7 +6806,7 @@ func (resolver *Resolver) wrapProcessIndicator(value *storage.ProcessIndicator, 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &processIndicatorResolver{resolver, value}, nil
+	return &processIndicatorResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProcessIndicators(values []*storage.ProcessIndicator, err error) ([]*processIndicatorResolver, error) {
@@ -6714,7 +6815,7 @@ func (resolver *Resolver) wrapProcessIndicators(values []*storage.ProcessIndicat
 	}
 	output := make([]*processIndicatorResolver, len(values))
 	for i, v := range values {
-		output[i] = &processIndicatorResolver{resolver, v}
+		output[i] = &processIndicatorResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6770,6 +6871,7 @@ func (resolver *processIndicatorResolver) Signal(ctx context.Context) (*processS
 }
 
 type processNameGroupResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.ProcessNameGroup
 }
@@ -6778,7 +6880,7 @@ func (resolver *Resolver) wrapProcessNameGroup(value *v1.ProcessNameGroup, ok bo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &processNameGroupResolver{resolver, value}, nil
+	return &processNameGroupResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProcessNameGroups(values []*v1.ProcessNameGroup, err error) ([]*processNameGroupResolver, error) {
@@ -6787,7 +6889,7 @@ func (resolver *Resolver) wrapProcessNameGroups(values []*v1.ProcessNameGroup, e
 	}
 	output := make([]*processNameGroupResolver, len(values))
 	for i, v := range values {
-		output[i] = &processNameGroupResolver{resolver, v}
+		output[i] = &processNameGroupResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6808,6 +6910,7 @@ func (resolver *processNameGroupResolver) TimesExecuted(ctx context.Context) int
 }
 
 type processPolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ProcessPolicy
 }
@@ -6816,7 +6919,7 @@ func (resolver *Resolver) wrapProcessPolicy(value *storage.ProcessPolicy, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &processPolicyResolver{resolver, value}, nil
+	return &processPolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, err error) ([]*processPolicyResolver, error) {
@@ -6825,7 +6928,7 @@ func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, e
 	}
 	output := make([]*processPolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &processPolicyResolver{resolver, v}
+		output[i] = &processPolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6851,6 +6954,7 @@ func (resolver *processPolicyResolver) Uid(ctx context.Context) string {
 }
 
 type processSignalResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ProcessSignal
 }
@@ -6859,7 +6963,7 @@ func (resolver *Resolver) wrapProcessSignal(value *storage.ProcessSignal, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &processSignalResolver{resolver, value}, nil
+	return &processSignalResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProcessSignals(values []*storage.ProcessSignal, err error) ([]*processSignalResolver, error) {
@@ -6868,7 +6972,7 @@ func (resolver *Resolver) wrapProcessSignals(values []*storage.ProcessSignal, er
 	}
 	output := make([]*processSignalResolver, len(values))
 	for i, v := range values {
-		output[i] = &processSignalResolver{resolver, v}
+		output[i] = &processSignalResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6924,6 +7028,7 @@ func (resolver *processSignalResolver) Uid(ctx context.Context) int32 {
 }
 
 type providerMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ProviderMetadata
 }
@@ -6932,7 +7037,7 @@ func (resolver *Resolver) wrapProviderMetadata(value *storage.ProviderMetadata, 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &providerMetadataResolver{resolver, value}, nil
+	return &providerMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetadata, err error) ([]*providerMetadataResolver, error) {
@@ -6941,7 +7046,7 @@ func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetada
 	}
 	output := make([]*providerMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &providerMetadataResolver{resolver, v}
+		output[i] = &providerMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -6968,17 +7073,17 @@ type providerMetadataProviderResolver struct {
 func (resolver *providerMetadataResolver) Provider() *providerMetadataProviderResolver {
 	if val := resolver.data.GetGoogle(); val != nil {
 		return &providerMetadataProviderResolver{
-			resolver: &googleProviderMetadataResolver{resolver.root, val},
+			resolver: &googleProviderMetadataResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetAws(); val != nil {
 		return &providerMetadataProviderResolver{
-			resolver: &aWSProviderMetadataResolver{resolver.root, val},
+			resolver: &aWSProviderMetadataResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetAzure(); val != nil {
 		return &providerMetadataProviderResolver{
-			resolver: &azureProviderMetadataResolver{resolver.root, val},
+			resolver: &azureProviderMetadataResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -7000,6 +7105,7 @@ func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*az
 }
 
 type resourcePolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ResourcePolicy
 }
@@ -7008,7 +7114,7 @@ func (resolver *Resolver) wrapResourcePolicy(value *storage.ResourcePolicy, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &resourcePolicyResolver{resolver, value}, nil
+	return &resourcePolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapResourcePolicies(values []*storage.ResourcePolicy, err error) ([]*resourcePolicyResolver, error) {
@@ -7017,7 +7123,7 @@ func (resolver *Resolver) wrapResourcePolicies(values []*storage.ResourcePolicy,
 	}
 	output := make([]*resourcePolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &resourcePolicyResolver{resolver, v}
+		output[i] = &resourcePolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7061,6 +7167,7 @@ func toResourceTypes(values *[]string) []storage.ResourceType {
 }
 
 type resourcesResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Resources
 }
@@ -7069,7 +7176,7 @@ func (resolver *Resolver) wrapResources(value *storage.Resources, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &resourcesResolver{resolver, value}, nil
+	return &resourcesResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapResourceses(values []*storage.Resources, err error) ([]*resourcesResolver, error) {
@@ -7078,7 +7185,7 @@ func (resolver *Resolver) wrapResourceses(values []*storage.Resources, err error
 	}
 	output := make([]*resourcesResolver, len(values))
 	for i, v := range values {
-		output[i] = &resourcesResolver{resolver, v}
+		output[i] = &resourcesResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7104,6 +7211,7 @@ func (resolver *resourcesResolver) MemoryMbRequest(ctx context.Context) float64 
 }
 
 type riskResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Risk
 }
@@ -7112,7 +7220,7 @@ func (resolver *Resolver) wrapRisk(value *storage.Risk, ok bool, err error) (*ri
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &riskResolver{resolver, value}, nil
+	return &riskResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskResolver, error) {
@@ -7121,7 +7229,7 @@ func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskR
 	}
 	output := make([]*riskResolver, len(values))
 	for i, v := range values {
-		output[i] = &riskResolver{resolver, v}
+		output[i] = &riskResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7147,6 +7255,7 @@ func (resolver *riskResolver) Subject(ctx context.Context) (*riskSubjectResolver
 }
 
 type riskSubjectResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.RiskSubject
 }
@@ -7155,7 +7264,7 @@ func (resolver *Resolver) wrapRiskSubject(value *storage.RiskSubject, ok bool, e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &riskSubjectResolver{resolver, value}, nil
+	return &riskSubjectResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapRiskSubjects(values []*storage.RiskSubject, err error) ([]*riskSubjectResolver, error) {
@@ -7164,7 +7273,7 @@ func (resolver *Resolver) wrapRiskSubjects(values []*storage.RiskSubject, err er
 	}
 	output := make([]*riskSubjectResolver, len(values))
 	for i, v := range values {
-		output[i] = &riskSubjectResolver{resolver, v}
+		output[i] = &riskSubjectResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7208,6 +7317,7 @@ func toRiskSubjectTypes(values *[]string) []storage.RiskSubjectType {
 }
 
 type risk_ResultResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Risk_Result
 }
@@ -7216,7 +7326,7 @@ func (resolver *Resolver) wrapRisk_Result(value *storage.Risk_Result, ok bool, e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &risk_ResultResolver{resolver, value}, nil
+	return &risk_ResultResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapRisk_Results(values []*storage.Risk_Result, err error) ([]*risk_ResultResolver, error) {
@@ -7225,7 +7335,7 @@ func (resolver *Resolver) wrapRisk_Results(values []*storage.Risk_Result, err er
 	}
 	output := make([]*risk_ResultResolver, len(values))
 	for i, v := range values {
-		output[i] = &risk_ResultResolver{resolver, v}
+		output[i] = &risk_ResultResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7246,6 +7356,7 @@ func (resolver *risk_ResultResolver) Score(ctx context.Context) float64 {
 }
 
 type risk_Result_FactorResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Risk_Result_Factor
 }
@@ -7254,7 +7365,7 @@ func (resolver *Resolver) wrapRisk_Result_Factor(value *storage.Risk_Result_Fact
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &risk_Result_FactorResolver{resolver, value}, nil
+	return &risk_Result_FactorResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapRisk_Result_Factors(values []*storage.Risk_Result_Factor, err error) ([]*risk_Result_FactorResolver, error) {
@@ -7263,7 +7374,7 @@ func (resolver *Resolver) wrapRisk_Result_Factors(values []*storage.Risk_Result_
 	}
 	output := make([]*risk_Result_FactorResolver, len(values))
 	for i, v := range values {
-		output[i] = &risk_Result_FactorResolver{resolver, v}
+		output[i] = &risk_Result_FactorResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7279,6 +7390,7 @@ func (resolver *risk_Result_FactorResolver) Url(ctx context.Context) string {
 }
 
 type roleResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Role
 }
@@ -7287,7 +7399,7 @@ func (resolver *Resolver) wrapRole(value *storage.Role, ok bool, err error) (*ro
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &roleResolver{resolver, value}, nil
+	return &roleResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapRoles(values []*storage.Role, err error) ([]*roleResolver, error) {
@@ -7296,7 +7408,7 @@ func (resolver *Resolver) wrapRoles(values []*storage.Role, err error) ([]*roleR
 	}
 	output := make([]*roleResolver, len(values))
 	for i, v := range values {
-		output[i] = &roleResolver{resolver, v}
+		output[i] = &roleResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7312,6 +7424,7 @@ func (resolver *roleResolver) Name(ctx context.Context) string {
 }
 
 type scopeResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Scope
 }
@@ -7320,7 +7433,7 @@ func (resolver *Resolver) wrapScope(value *storage.Scope, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &scopeResolver{resolver, value}, nil
+	return &scopeResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapScopes(values []*storage.Scope, err error) ([]*scopeResolver, error) {
@@ -7329,7 +7442,7 @@ func (resolver *Resolver) wrapScopes(values []*storage.Scope, err error) ([]*sco
 	}
 	output := make([]*scopeResolver, len(values))
 	for i, v := range values {
-		output[i] = &scopeResolver{resolver, v}
+		output[i] = &scopeResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7350,6 +7463,7 @@ func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 }
 
 type scope_LabelResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Scope_Label
 }
@@ -7358,7 +7472,7 @@ func (resolver *Resolver) wrapScope_Label(value *storage.Scope_Label, ok bool, e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &scope_LabelResolver{resolver, value}, nil
+	return &scope_LabelResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapScope_Labels(values []*storage.Scope_Label, err error) ([]*scope_LabelResolver, error) {
@@ -7367,7 +7481,7 @@ func (resolver *Resolver) wrapScope_Labels(values []*storage.Scope_Label, err er
 	}
 	output := make([]*scope_LabelResolver, len(values))
 	for i, v := range values {
-		output[i] = &scope_LabelResolver{resolver, v}
+		output[i] = &scope_LabelResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7401,6 +7515,7 @@ func toSearchCategories(values *[]string) []v1.SearchCategory {
 }
 
 type searchResultResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *v1.SearchResult
 }
@@ -7409,7 +7524,7 @@ func (resolver *Resolver) wrapSearchResult(value *v1.SearchResult, ok bool, err 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &searchResultResolver{resolver, value}, nil
+	return &searchResultResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSearchResults(values []*v1.SearchResult, err error) ([]*searchResultResolver, error) {
@@ -7418,7 +7533,7 @@ func (resolver *Resolver) wrapSearchResults(values []*v1.SearchResult, err error
 	}
 	output := make([]*searchResultResolver, len(values))
 	for i, v := range values {
-		output[i] = &searchResultResolver{resolver, v}
+		output[i] = &searchResultResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7449,6 +7564,7 @@ func (resolver *searchResultResolver) Score(ctx context.Context) float64 {
 }
 
 type secretResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Secret
 	list *storage.ListSecret
@@ -7458,7 +7574,7 @@ func (resolver *Resolver) wrapSecret(value *storage.Secret, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &secretResolver{resolver, value, nil}, nil
+	return &secretResolver{root: resolver, data: value, list: nil}, nil
 }
 
 func (resolver *Resolver) wrapSecrets(values []*storage.Secret, err error) ([]*secretResolver, error) {
@@ -7467,7 +7583,7 @@ func (resolver *Resolver) wrapSecrets(values []*storage.Secret, err error) ([]*s
 	}
 	output := make([]*secretResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretResolver{resolver, v, nil}
+		output[i] = &secretResolver{root: resolver, data: v, list: nil}
 	}
 	return output, nil
 }
@@ -7478,7 +7594,7 @@ func (resolver *Resolver) wrapListSecrets(values []*storage.ListSecret, err erro
 	}
 	output := make([]*secretResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretResolver{resolver, nil, v}
+		output[i] = &secretResolver{root: resolver, data: nil, list: v}
 	}
 	return output, nil
 }
@@ -7566,6 +7682,7 @@ func (resolver *secretResolver) Type(ctx context.Context) string {
 }
 
 type secretContainerRelationshipResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecretContainerRelationship
 }
@@ -7574,7 +7691,7 @@ func (resolver *Resolver) wrapSecretContainerRelationship(value *storage.SecretC
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &secretContainerRelationshipResolver{resolver, value}, nil
+	return &secretContainerRelationshipResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecretContainerRelationships(values []*storage.SecretContainerRelationship, err error) ([]*secretContainerRelationshipResolver, error) {
@@ -7583,7 +7700,7 @@ func (resolver *Resolver) wrapSecretContainerRelationships(values []*storage.Sec
 	}
 	output := make([]*secretContainerRelationshipResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretContainerRelationshipResolver{resolver, v}
+		output[i] = &secretContainerRelationshipResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7599,6 +7716,7 @@ func (resolver *secretContainerRelationshipResolver) Path(ctx context.Context) s
 }
 
 type secretDataFileResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecretDataFile
 }
@@ -7607,7 +7725,7 @@ func (resolver *Resolver) wrapSecretDataFile(value *storage.SecretDataFile, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &secretDataFileResolver{resolver, value}, nil
+	return &secretDataFileResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecretDataFiles(values []*storage.SecretDataFile, err error) ([]*secretDataFileResolver, error) {
@@ -7616,7 +7734,7 @@ func (resolver *Resolver) wrapSecretDataFiles(values []*storage.SecretDataFile, 
 	}
 	output := make([]*secretDataFileResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretDataFileResolver{resolver, v}
+		output[i] = &secretDataFileResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7638,12 +7756,12 @@ type secretDataFileMetadataResolver struct {
 func (resolver *secretDataFileResolver) Metadata() *secretDataFileMetadataResolver {
 	if val := resolver.data.GetCert(); val != nil {
 		return &secretDataFileMetadataResolver{
-			resolver: &certResolver{resolver.root, val},
+			resolver: &certResolver{root: resolver.root, data: val},
 		}
 	}
 	if val := resolver.data.GetImagePullSecret(); val != nil {
 		return &secretDataFileMetadataResolver{
-			resolver: &imagePullSecretResolver{resolver.root, val},
+			resolver: &imagePullSecretResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
@@ -7660,6 +7778,7 @@ func (resolver *secretDataFileMetadataResolver) ToImagePullSecret() (*imagePullS
 }
 
 type secretDeploymentRelationshipResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecretDeploymentRelationship
 }
@@ -7668,7 +7787,7 @@ func (resolver *Resolver) wrapSecretDeploymentRelationship(value *storage.Secret
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &secretDeploymentRelationshipResolver{resolver, value}, nil
+	return &secretDeploymentRelationshipResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecretDeploymentRelationships(values []*storage.SecretDeploymentRelationship, err error) ([]*secretDeploymentRelationshipResolver, error) {
@@ -7677,7 +7796,7 @@ func (resolver *Resolver) wrapSecretDeploymentRelationships(values []*storage.Se
 	}
 	output := make([]*secretDeploymentRelationshipResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretDeploymentRelationshipResolver{resolver, v}
+		output[i] = &secretDeploymentRelationshipResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7693,6 +7812,7 @@ func (resolver *secretDeploymentRelationshipResolver) Name(ctx context.Context) 
 }
 
 type secretRelationshipResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecretRelationship
 }
@@ -7701,7 +7821,7 @@ func (resolver *Resolver) wrapSecretRelationship(value *storage.SecretRelationsh
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &secretRelationshipResolver{resolver, value}, nil
+	return &secretRelationshipResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecretRelationships(values []*storage.SecretRelationship, err error) ([]*secretRelationshipResolver, error) {
@@ -7710,7 +7830,7 @@ func (resolver *Resolver) wrapSecretRelationships(values []*storage.SecretRelati
 	}
 	output := make([]*secretRelationshipResolver, len(values))
 	for i, v := range values {
-		output[i] = &secretRelationshipResolver{resolver, v}
+		output[i] = &secretRelationshipResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7749,6 +7869,7 @@ func toSecretTypes(values *[]string) []storage.SecretType {
 }
 
 type securityContextResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecurityContext
 }
@@ -7757,7 +7878,7 @@ func (resolver *Resolver) wrapSecurityContext(value *storage.SecurityContext, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &securityContextResolver{resolver, value}, nil
+	return &securityContextResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext, err error) ([]*securityContextResolver, error) {
@@ -7766,7 +7887,7 @@ func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext
 	}
 	output := make([]*securityContextResolver, len(values))
 	for i, v := range values {
-		output[i] = &securityContextResolver{resolver, v}
+		output[i] = &securityContextResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7797,6 +7918,7 @@ func (resolver *securityContextResolver) Selinux(ctx context.Context) (*security
 }
 
 type securityContext_SELinuxResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SecurityContext_SELinux
 }
@@ -7805,7 +7927,7 @@ func (resolver *Resolver) wrapSecurityContext_SELinux(value *storage.SecurityCon
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &securityContext_SELinuxResolver{resolver, value}, nil
+	return &securityContext_SELinuxResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSecurityContext_SELinuxs(values []*storage.SecurityContext_SELinux, err error) ([]*securityContext_SELinuxResolver, error) {
@@ -7814,7 +7936,7 @@ func (resolver *Resolver) wrapSecurityContext_SELinuxs(values []*storage.Securit
 	}
 	output := make([]*securityContext_SELinuxResolver, len(values))
 	for i, v := range values {
-		output[i] = &securityContext_SELinuxResolver{resolver, v}
+		output[i] = &securityContext_SELinuxResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7840,6 +7962,7 @@ func (resolver *securityContext_SELinuxResolver) User(ctx context.Context) strin
 }
 
 type serviceAccountResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.ServiceAccount
 }
@@ -7848,7 +7971,7 @@ func (resolver *Resolver) wrapServiceAccount(value *storage.ServiceAccount, ok b
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &serviceAccountResolver{resolver, value}, nil
+	return &serviceAccountResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapServiceAccounts(values []*storage.ServiceAccount, err error) ([]*serviceAccountResolver, error) {
@@ -7857,7 +7980,7 @@ func (resolver *Resolver) wrapServiceAccounts(values []*storage.ServiceAccount, 
 	}
 	output := make([]*serviceAccountResolver, len(values))
 	for i, v := range values {
-		output[i] = &serviceAccountResolver{resolver, v}
+		output[i] = &serviceAccountResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -7954,6 +8077,7 @@ func toSourceTypes(values *[]string) []storage.SourceType {
 }
 
 type splunkResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Splunk
 }
@@ -7962,7 +8086,7 @@ func (resolver *Resolver) wrapSplunk(value *storage.Splunk, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &splunkResolver{resolver, value}, nil
+	return &splunkResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*splunkResolver, error) {
@@ -7971,7 +8095,7 @@ func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*s
 	}
 	output := make([]*splunkResolver, len(values))
 	for i, v := range values {
-		output[i] = &splunkResolver{resolver, v}
+		output[i] = &splunkResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8002,6 +8126,7 @@ func (resolver *splunkResolver) Truncate(ctx context.Context) int32 {
 }
 
 type subjectResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Subject
 }
@@ -8010,7 +8135,7 @@ func (resolver *Resolver) wrapSubject(value *storage.Subject, ok bool, err error
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &subjectResolver{resolver, value}, nil
+	return &subjectResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSubjects(values []*storage.Subject, err error) ([]*subjectResolver, error) {
@@ -8019,7 +8144,7 @@ func (resolver *Resolver) wrapSubjects(values []*storage.Subject, err error) ([]
 	}
 	output := make([]*subjectResolver, len(values))
 	for i, v := range values {
-		output[i] = &subjectResolver{resolver, v}
+		output[i] = &subjectResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8058,6 +8183,7 @@ func toSubjectKinds(values *[]string) []storage.SubjectKind {
 }
 
 type sumoLogicResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.SumoLogic
 }
@@ -8066,7 +8192,7 @@ func (resolver *Resolver) wrapSumoLogic(value *storage.SumoLogic, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &sumoLogicResolver{resolver, value}, nil
+	return &sumoLogicResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapSumoLogics(values []*storage.SumoLogic, err error) ([]*sumoLogicResolver, error) {
@@ -8075,7 +8201,7 @@ func (resolver *Resolver) wrapSumoLogics(values []*storage.SumoLogic, err error)
 	}
 	output := make([]*sumoLogicResolver, len(values))
 	for i, v := range values {
-		output[i] = &sumoLogicResolver{resolver, v}
+		output[i] = &sumoLogicResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8091,6 +8217,7 @@ func (resolver *sumoLogicResolver) SkipTLSVerify(ctx context.Context) bool {
 }
 
 type taintResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Taint
 }
@@ -8099,7 +8226,7 @@ func (resolver *Resolver) wrapTaint(value *storage.Taint, ok bool, err error) (*
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &taintResolver{resolver, value}, nil
+	return &taintResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapTaints(values []*storage.Taint, err error) ([]*taintResolver, error) {
@@ -8108,7 +8235,7 @@ func (resolver *Resolver) wrapTaints(values []*storage.Taint, err error) ([]*tai
 	}
 	output := make([]*taintResolver, len(values))
 	for i, v := range values {
-		output[i] = &taintResolver{resolver, v}
+		output[i] = &taintResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8147,6 +8274,7 @@ func toTaintEffects(values *[]string) []storage.TaintEffect {
 }
 
 type tokenMetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.TokenMetadata
 }
@@ -8155,7 +8283,7 @@ func (resolver *Resolver) wrapTokenMetadata(value *storage.TokenMetadata, ok boo
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &tokenMetadataResolver{resolver, value}, nil
+	return &tokenMetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapTokenMetadatas(values []*storage.TokenMetadata, err error) ([]*tokenMetadataResolver, error) {
@@ -8164,7 +8292,7 @@ func (resolver *Resolver) wrapTokenMetadatas(values []*storage.TokenMetadata, er
 	}
 	output := make([]*tokenMetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &tokenMetadataResolver{resolver, v}
+		output[i] = &tokenMetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8200,6 +8328,7 @@ func (resolver *tokenMetadataResolver) Role(ctx context.Context) string {
 }
 
 type tolerationResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Toleration
 }
@@ -8208,7 +8337,7 @@ func (resolver *Resolver) wrapToleration(value *storage.Toleration, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &tolerationResolver{resolver, value}, nil
+	return &tolerationResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapTolerations(values []*storage.Toleration, err error) ([]*tolerationResolver, error) {
@@ -8217,7 +8346,7 @@ func (resolver *Resolver) wrapTolerations(values []*storage.Toleration, err erro
 	}
 	output := make([]*tolerationResolver, len(values))
 	for i, v := range values {
-		output[i] = &tolerationResolver{resolver, v}
+		output[i] = &tolerationResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8261,6 +8390,7 @@ func toToleration_Operators(values *[]string) []storage.Toleration_Operator {
 }
 
 type tolerationsConfigResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.TolerationsConfig
 }
@@ -8269,7 +8399,7 @@ func (resolver *Resolver) wrapTolerationsConfig(value *storage.TolerationsConfig
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &tolerationsConfigResolver{resolver, value}, nil
+	return &tolerationsConfigResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapTolerationsConfigs(values []*storage.TolerationsConfig, err error) ([]*tolerationsConfigResolver, error) {
@@ -8278,7 +8408,7 @@ func (resolver *Resolver) wrapTolerationsConfigs(values []*storage.TolerationsCo
 	}
 	output := make([]*tolerationsConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &tolerationsConfigResolver{resolver, v}
+		output[i] = &tolerationsConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8289,6 +8419,7 @@ func (resolver *tolerationsConfigResolver) Disabled(ctx context.Context) bool {
 }
 
 type upgradeProgressResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.UpgradeProgress
 }
@@ -8297,7 +8428,7 @@ func (resolver *Resolver) wrapUpgradeProgress(value *storage.UpgradeProgress, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &upgradeProgressResolver{resolver, value}, nil
+	return &upgradeProgressResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapUpgradeProgresses(values []*storage.UpgradeProgress, err error) ([]*upgradeProgressResolver, error) {
@@ -8306,7 +8437,7 @@ func (resolver *Resolver) wrapUpgradeProgresses(values []*storage.UpgradeProgres
 	}
 	output := make([]*upgradeProgressResolver, len(values))
 	for i, v := range values {
-		output[i] = &upgradeProgressResolver{resolver, v}
+		output[i] = &upgradeProgressResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8345,6 +8476,7 @@ func toUpgradeProgress_UpgradeStates(values *[]string) []storage.UpgradeProgress
 }
 
 type v1MetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.V1Metadata
 }
@@ -8353,7 +8485,7 @@ func (resolver *Resolver) wrapV1Metadata(value *storage.V1Metadata, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &v1MetadataResolver{resolver, value}, nil
+	return &v1MetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapV1Metadatas(values []*storage.V1Metadata, err error) ([]*v1MetadataResolver, error) {
@@ -8362,7 +8494,7 @@ func (resolver *Resolver) wrapV1Metadatas(values []*storage.V1Metadata, err erro
 	}
 	output := make([]*v1MetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &v1MetadataResolver{resolver, v}
+		output[i] = &v1MetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8413,6 +8545,7 @@ func (resolver *v1MetadataResolver) Volumes(ctx context.Context) []string {
 }
 
 type v2MetadataResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.V2Metadata
 }
@@ -8421,7 +8554,7 @@ func (resolver *Resolver) wrapV2Metadata(value *storage.V2Metadata, ok bool, err
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &v2MetadataResolver{resolver, value}, nil
+	return &v2MetadataResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapV2Metadatas(values []*storage.V2Metadata, err error) ([]*v2MetadataResolver, error) {
@@ -8430,7 +8563,7 @@ func (resolver *Resolver) wrapV2Metadatas(values []*storage.V2Metadata, err erro
 	}
 	output := make([]*v2MetadataResolver, len(values))
 	for i, v := range values {
-		output[i] = &v2MetadataResolver{resolver, v}
+		output[i] = &v2MetadataResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8459,6 +8592,7 @@ func toViolationStates(values *[]string) []storage.ViolationState {
 }
 
 type volumeResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Volume
 }
@@ -8467,7 +8601,7 @@ func (resolver *Resolver) wrapVolume(value *storage.Volume, ok bool, err error) 
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &volumeResolver{resolver, value}, nil
+	return &volumeResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapVolumes(values []*storage.Volume, err error) ([]*volumeResolver, error) {
@@ -8476,7 +8610,7 @@ func (resolver *Resolver) wrapVolumes(values []*storage.Volume, err error) ([]*v
 	}
 	output := make([]*volumeResolver, len(values))
 	for i, v := range values {
-		output[i] = &volumeResolver{resolver, v}
+		output[i] = &volumeResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8507,6 +8641,7 @@ func (resolver *volumeResolver) Type(ctx context.Context) string {
 }
 
 type volumePolicyResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.VolumePolicy
 }
@@ -8515,7 +8650,7 @@ func (resolver *Resolver) wrapVolumePolicy(value *storage.VolumePolicy, ok bool,
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &volumePolicyResolver{resolver, value}, nil
+	return &volumePolicyResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapVolumePolicies(values []*storage.VolumePolicy, err error) ([]*volumePolicyResolver, error) {
@@ -8524,7 +8659,7 @@ func (resolver *Resolver) wrapVolumePolicies(values []*storage.VolumePolicy, err
 	}
 	output := make([]*volumePolicyResolver, len(values))
 	for i, v := range values {
-		output[i] = &volumePolicyResolver{resolver, v}
+		output[i] = &volumePolicyResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8550,6 +8685,7 @@ func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 }
 
 type whitelistResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Whitelist
 }
@@ -8558,7 +8694,7 @@ func (resolver *Resolver) wrapWhitelist(value *storage.Whitelist, ok bool, err e
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &whitelistResolver{resolver, value}, nil
+	return &whitelistResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error) ([]*whitelistResolver, error) {
@@ -8567,7 +8703,7 @@ func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error)
 	}
 	output := make([]*whitelistResolver, len(values))
 	for i, v := range values {
-		output[i] = &whitelistResolver{resolver, v}
+		output[i] = &whitelistResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8593,6 +8729,7 @@ func (resolver *whitelistResolver) Name(ctx context.Context) string {
 }
 
 type whitelist_DeploymentResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Whitelist_Deployment
 }
@@ -8601,7 +8738,7 @@ func (resolver *Resolver) wrapWhitelist_Deployment(value *storage.Whitelist_Depl
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &whitelist_DeploymentResolver{resolver, value}, nil
+	return &whitelist_DeploymentResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapWhitelist_Deployments(values []*storage.Whitelist_Deployment, err error) ([]*whitelist_DeploymentResolver, error) {
@@ -8610,7 +8747,7 @@ func (resolver *Resolver) wrapWhitelist_Deployments(values []*storage.Whitelist_
 	}
 	output := make([]*whitelist_DeploymentResolver, len(values))
 	for i, v := range values {
-		output[i] = &whitelist_DeploymentResolver{resolver, v}
+		output[i] = &whitelist_DeploymentResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
@@ -8626,6 +8763,7 @@ func (resolver *whitelist_DeploymentResolver) Scope(ctx context.Context) (*scope
 }
 
 type whitelist_ImageResolver struct {
+	ctx  context.Context
 	root *Resolver
 	data *storage.Whitelist_Image
 }
@@ -8634,7 +8772,7 @@ func (resolver *Resolver) wrapWhitelist_Image(value *storage.Whitelist_Image, ok
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &whitelist_ImageResolver{resolver, value}, nil
+	return &whitelist_ImageResolver{root: resolver, data: value}, nil
 }
 
 func (resolver *Resolver) wrapWhitelist_Images(values []*storage.Whitelist_Image, err error) ([]*whitelist_ImageResolver, error) {
@@ -8643,7 +8781,7 @@ func (resolver *Resolver) wrapWhitelist_Images(values []*storage.Whitelist_Image
 	}
 	output := make([]*whitelist_ImageResolver, len(values))
 	for i, v := range values {
-		output[i] = &whitelist_ImageResolver{resolver, v}
+		output[i] = &whitelist_ImageResolver{root: resolver, data: v}
 	}
 	return output, nil
 }

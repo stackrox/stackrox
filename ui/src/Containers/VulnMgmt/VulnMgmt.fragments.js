@@ -50,7 +50,7 @@ export const VULN_CVE_ONLY_FRAGMENT = gql`
         cvss
         scoreVersion
         summary
-        fixedByVersion(query: $scopeQuery)
+        fixedByVersion
         isFixable(query: $scopeQuery)
     }
 `;
@@ -64,7 +64,7 @@ export const VULN_CVE_LIST_FRAGMENT = gql`
         envImpact
         impactScore
         summary
-        fixedByVersion(query: $scopeQuery)
+        fixedByVersion
         isFixable(query: $scopeQuery)
         createdAt
         publishedOn
@@ -170,7 +170,7 @@ export const VULN_COMPONENT_LIST_FRAGMENT = gql`
         id
         name
         version
-        location(query: $scopeQuery)
+        location
         source
         vulnCounter {
             all {
