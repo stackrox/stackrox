@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -19,7 +18,6 @@ func init() {
 		schema.AddMutation("addAlertComment(resourceId: ID!, commentMessage: String!): String!"),
 		schema.AddMutation("updateAlertComment(resourceId: ID!, commentId: ID!, commentMessage: String!): Boolean!"),
 		schema.AddMutation("removeAlertComment(resourceId: ID!, commentId: ID!): Boolean!"),
-		schema.AddExtraResolver("Comment", `modifiable: Boolean!`),
 	)
 }
 
@@ -89,25 +87,4 @@ func (resolver *Resolver) RemoveAlertComment(ctx context.Context, args struct{ R
 	}
 
 	return true, nil
-}
-
-// Modifiable represents whether current user could modify the comment
-func (resolver *commentResolver) Modifiable(ctx context.Context) (bool, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Modifiable")
-	if err := readAlerts(ctx); err != nil {
-		return false, err
-	}
-	var curUser *storage.Comment_User
-	identity := authn.IdentityFromContext(ctx)
-	if identity != nil {
-		curUser = &storage.Comment_User{
-			Id:   identity.UID(),
-			Name: identity.FriendlyName(),
-		}
-		if user := identity.User(); user != nil {
-			curUser.Email = user.Username
-		}
-	}
-
-	return curUser.GetId() == resolver.data.GetUser().GetId(), nil
 }

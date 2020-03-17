@@ -150,6 +150,7 @@ var (
 	writeCompliance            = writeAuth(resources.Compliance)
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
 	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)
+	writeIndicators            = writeAuth(resources.Indicator)
 )
 
 type authorizerOverride struct{}
