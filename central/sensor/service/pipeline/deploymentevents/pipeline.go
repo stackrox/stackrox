@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -194,6 +195,13 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	// If it exists, check to see if we can dedupe it
 	if exists {
 		if oldDeployment.GetHash() == deployment.GetHash() {
+			if features.PodDeploymentSeparation.Enabled() {
+				// There is a separate handler for ContainerInstances,
+				// so there is no longer a need to continue from this point.
+				// This will only be reached upon a re-sync event from k8s
+				// and the flag is enabled.
+				return nil
+			}
 			hasUnsavedImages, err := s.updateImages.HasUnsavedImages(ctx, deployment)
 			if err != nil {
 				return err
