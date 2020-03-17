@@ -6,6 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +33,7 @@ func listAlloc() proto.Message {
 }
 
 func deploymentConverter(msg proto.Message) proto.Message {
-	return convertDeploymentToDeploymentList(msg.(*storage.Deployment))
+	return types.ConvertDeploymentToDeploymentList(msg.(*storage.Deployment))
 }
 
 func keyFunc(msg proto.Message) []byte {
@@ -106,19 +107,6 @@ func (b *storeImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 		return nil, nil, err
 	}
 	return b.msgsToListDeployments(msgs), indices, nil
-}
-
-func convertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeployment {
-	return &storage.ListDeployment{
-		Id:        d.GetId(),
-		Hash:      d.GetHash(),
-		Name:      d.GetName(),
-		Cluster:   d.GetClusterName(),
-		ClusterId: d.GetClusterId(),
-		Namespace: d.GetNamespace(),
-		Created:   d.GetCreated(),
-		Priority:  d.GetPriority(),
-	}
 }
 
 // GetDeployment returns deployment with given id.

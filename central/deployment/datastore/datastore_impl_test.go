@@ -9,10 +9,12 @@ import (
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
+	"github.com/stackrox/rox/central/globaldb"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -57,7 +59,8 @@ func (suite *DeploymentDataStoreTestSuite) TestIndexerAcknowledgement() {
 	suite.indexer.EXPECT().NeedsInitialIndexing().Return(false, nil)
 
 	datastore, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
+		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)
 
 	deployment := fixtures.GetDeployment()
@@ -94,7 +97,8 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationFullReindex() {
 	suite.indexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
 
 	_, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
+		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)
 }
 
@@ -116,7 +120,8 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationPartialReindex() {
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err := newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
+		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)
 
 	// Make deploymentlist just A,B so C should be deleted
@@ -130,7 +135,8 @@ func (suite *DeploymentDataStoreTestSuite) TestReconciliationPartialReindex() {
 	suite.storage.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err = newDatastoreImpl(suite.storage, suite.indexer, nil, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
+		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)
 }
 
@@ -140,7 +146,8 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	deploymentRanker := ranking.NewRanker()
 
 	ds, err := newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
-		suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
+		suite.riskStore, nil, suite.filter, clusterRanker,
+		nsRanker, deploymentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)
 
 	deployments := []*storage.Deployment{

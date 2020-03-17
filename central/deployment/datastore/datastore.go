@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
+	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -65,6 +67,9 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex 
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
 	var searcher search.Searcher
 	indexer := index.New(bleveIndex)
+
+	keyedMutex := concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
+	storage = cache.NewCachedStore(storage, keyedMutex)
 	if features.Dackbox.Enabled() {
 		searcher = search.New(storage,
 			graphProvider,
@@ -79,7 +84,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex 
 	}
 
 	ds, err := newDatastoreImpl(storage, indexer, searcher, images, indicators, whitelists, networkFlows, risks,
-		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, keyedMutex)
 
 	if err != nil {
 		return nil, err
