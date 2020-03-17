@@ -16,12 +16,13 @@ type ProcessCommentKey struct {
 	Args          string
 }
 
-// Validate validates that a Proces
+// Validate validates that a ProcessCommentKey is well-formed.
 func (k *ProcessCommentKey) Validate() error {
 	if k == nil {
 		return errors.New("process comment key is nil")
 	}
-	if stringutils.AtLeastOneEmpty(k.DeploymentID, k.ContainerName, k.ExecFilePath, k.Args) {
+	// It's okay for k.Args to be empty.
+	if stringutils.AtLeastOneEmpty(k.DeploymentID, k.ContainerName, k.ExecFilePath) {
 		return errors.Errorf("invalid process key %v: has missing fields", k)
 	}
 	return nil

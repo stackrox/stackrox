@@ -15,12 +15,15 @@ import (
 )
 
 func getKey(deploymentSeed, containerSeed int) *comments.ProcessCommentKey {
-	return &comments.ProcessCommentKey{
+	key := &comments.ProcessCommentKey{
 		DeploymentID:  fmt.Sprintf("DEPLOY%d", deploymentSeed),
 		ContainerName: fmt.Sprintf("CONTAINER%d", containerSeed),
 		ExecFilePath:  "EXEC",
-		Args:          "ARGS",
 	}
+	if deploymentSeed%2 == 0 {
+		key.Args = "ARGS"
+	}
+	return key
 }
 
 func TestStore(t *testing.T) {
