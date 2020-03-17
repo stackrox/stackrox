@@ -19,6 +19,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 
 	GetPod(ctx context.Context, id string) (*storage.Pod, bool, error)
 	GetPods(ctx context.Context, ids []string) ([]*storage.Pod, error)
@@ -33,6 +34,6 @@ type DataStore interface {
 func New(db *badger.DB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store := badgerStore.New(db)
 	indexer := index.New(bleveIndex)
-	searcher := search.New(indexer)
+	searcher := search.New(store, indexer)
 	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
 }

@@ -40,6 +40,8 @@ class ReconciliationTest extends BaseSpecification {
         // Wait is builtin
         orchestrator.createDeployment(dep)
         assert Services.waitForDeployment(dep)
+        // Testing out feature behind the ROX_POD_DEPLOY_SEPARATE feature flag
+        assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
 
         NetworkPolicy policy = new NetworkPolicy("do-nothing")
                 .setNamespace(ns)
@@ -74,19 +76,21 @@ class ReconciliationTest extends BaseSpecification {
         // Get the resources from central and make sure the values exist
         int retries = maxWaitForSync / interval
         Timer t = new Timer(retries, interval)
-        int numDeployments, numNamespaces, numNetworkPolicies, numSecrets
+        int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
         while (t.IsValid()) {
             numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
+            numPods = Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
 
-            if (numDeployments + numNamespaces + numNetworkPolicies + numSecrets == 0) {
+            if (numDeployments + numPods + numNamespaces + numNetworkPolicies + numSecrets == 0) {
                 break
             }
             println "Waiting for all resources to be reconciled"
         }
         assert numDeployments == 0
+        assert numPods == 0
         assert numNamespaces == 0
         assert numNetworkPolicies == 0
         assert numSecrets == 0

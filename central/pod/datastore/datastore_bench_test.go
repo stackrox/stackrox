@@ -47,7 +47,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 
 	podsStore := badgerStore.New(db)
 	podsIndexer := index.New(bleveIndex)
-	podsSearcher := search.New(podsIndexer)
+	podsSearcher := search.New(podsStore, podsIndexer)
 	simpleFilter := filter.NewFilter(5, []int{5, 4, 3, 2, 1})
 
 	podsDatastore, err := newDatastoreImpl(podsStore, podsIndexer, podsSearcher, nil, simpleFilter)
@@ -68,6 +68,14 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	b.Run("SearchRetrieval", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			pods, err := podsDatastore.Search(ctx, search2.EmptyQuery())
+			assert.NoError(b, err)
+			assert.Len(b, pods, numPods)
+		}
+	})
+
+	b.Run("RawSearchRetrieval", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			pods, err := podsDatastore.SearchRawPods(ctx, search2.EmptyQuery())
 			assert.NoError(b, err)
 			assert.Len(b, pods, numPods)
 		}

@@ -151,6 +151,12 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	return ds.podSearcher.Search(ctx, q)
 }
 
+func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Pod", "SearchRawPods")
+
+	return ds.podSearcher.SearchRawPods(ctx, q)
+}
+
 func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
 	pod, found, err := ds.podStore.GetPod(id)
 	if err != nil || !found {

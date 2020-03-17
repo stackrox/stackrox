@@ -35,7 +35,6 @@ type pipelineImpl struct {
 	pods podDataStore.DataStore
 }
 
-// TODO: Add CI test
 func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.pods.Search(ctx, query)

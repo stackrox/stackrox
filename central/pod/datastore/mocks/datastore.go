@@ -51,6 +51,21 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
+// SearchRawPods mocks base method
+func (m *MockDataStore) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawPods", ctx, q)
+	ret0, _ := ret[0].([]*storage.Pod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawPods indicates an expected call of SearchRawPods
+func (mr *MockDataStoreMockRecorder) SearchRawPods(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPods", reflect.TypeOf((*MockDataStore)(nil).SearchRawPods), ctx, q)
+}
+
 // GetPod mocks base method
 func (m *MockDataStore) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
 	m.ctrl.T.Helper()

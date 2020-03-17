@@ -4,7 +4,9 @@ import (
 	"context"
 
 	podIndexer "github.com/stackrox/rox/central/pod/index"
+	"github.com/stackrox/rox/central/pod/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -17,11 +19,13 @@ var (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.
-func New(podIndexer podIndexer.Indexer) Searcher {
+func New(storage store.Store, podIndexer podIndexer.Indexer) Searcher {
 	return &searcherImpl{
+		storage:  storage,
 		searcher: formatSearcher(podIndexer),
 	}
 }

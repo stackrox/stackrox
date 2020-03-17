@@ -8,6 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -48,4 +49,19 @@ func (m *MockSearcher) Search(ctx context.Context, q *v1.Query) ([]search.Result
 func (mr *MockSearcherMockRecorder) Search(ctx, q interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, q)
+}
+
+// SearchRawPods mocks base method
+func (m *MockSearcher) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchRawPods", ctx, q)
+	ret0, _ := ret[0].([]*storage.Pod)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchRawPods indicates an expected call of SearchRawPods
+func (mr *MockSearcherMockRecorder) SearchRawPods(ctx, q interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPods", reflect.TypeOf((*MockSearcher)(nil).SearchRawPods), ctx, q)
 }

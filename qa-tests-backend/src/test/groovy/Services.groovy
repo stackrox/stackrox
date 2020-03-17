@@ -5,6 +5,7 @@ import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
+import io.stackrox.proto.storage.DeploymentOuterClass.Pod
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import io.stackrox.proto.storage.NotifierOuterClass.Email
@@ -17,6 +18,7 @@ import services.BaseService
 import io.stackrox.proto.api.v1.ImageServiceOuterClass.ListImagesResponse
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
+import io.stackrox.proto.api.v1.PodServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
@@ -45,7 +47,7 @@ class Services extends BaseService {
 
     static ResourceByID getResourceByID(String id) {
         return ResourceByID.newBuilder().setId(id).build()
-      }
+    }
 
     static getImageClient() {
         return ImageServiceGrpc.newBlockingStub(getChannel())
@@ -53,23 +55,27 @@ class Services extends BaseService {
 
     static getIntegrationClient() {
         return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
-      }
+    }
 
     static getDetectionClient() {
         return DetectionServiceGrpc.newBlockingStub(getChannel())
-      }
+    }
 
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
-      }
+    }
 
     static getDeploymentClient() {
         return DeploymentServiceGrpc.newBlockingStub(getChannel())
-      }
+    }
+
+    static getPodClient() {
+        return PodServiceGrpc.newBlockingStub(getChannel())
+    }
 
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
-      }
+    }
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
@@ -77,13 +83,13 @@ class Services extends BaseService {
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
         return getPolicyClient().listPolicies(query).policiesList
-      }
+    }
 
     static Policy getPolicyByName(String policyName) {
         return getPolicy(
                 getPolicies().find { it.name == policyName }.id
         )
-      }
+    }
 
     static ImageOuterClass.Image getImageById(String id) {
         return getImageClient().getImage(getResourceByID(id))
@@ -91,7 +97,7 @@ class Services extends BaseService {
 
     static Policy getPolicy(String id) {
         return getPolicyClient().getPolicy(getResourceByID(id))
-      }
+    }
 
     static deletePolicy(String policyID) {
         getPolicyClient().deletePolicy(
@@ -99,7 +105,7 @@ class Services extends BaseService {
                                     .setId(policyID)
                                     .build()
             )
-      }
+    }
 
     static int getAlertEnforcementCount(String deploymentName, String policyName) {
         def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
@@ -109,14 +115,18 @@ class Services extends BaseService {
 
     static List<ListDeployment> getDeployments(RawQuery query = RawQuery.newBuilder().build()) {
         return getDeploymentClient().listDeployments(query).deploymentsList
-      }
+    }
 
     static Deployment getDeployment(String id) {
         return getDeploymentClient().getDeployment(getResourceByID(id))
-      }
+    }
 
     static DeploymentServiceOuterClass.GetDeploymentWithRiskResponse getDeploymentWithRisk(String id) {
         return getDeploymentClient().getDeploymentWithRisk(getResourceByID(id))
+    }
+
+    static List<Pod> getPods(RawQuery query = RawQuery.newBuilder().build()) {
+        return getPodClient().getPods(query).podsList
     }
 
     static SearchServiceOuterClass.SearchResponse getSearchResponse(
@@ -126,7 +136,7 @@ class Services extends BaseService {
                         .setQuery(query)
                         .build()
         return getSearchServiceClient().search(rawSearchRequest)
-      }
+    }
 
     static waitForSuspiciousProcessInRiskIndicators(String deploymentId, int timeoutSeconds = 30) {
         int intervalSeconds = 3
@@ -147,7 +157,7 @@ class Services extends BaseService {
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
         return violations != null && violations.size() > 0
-      }
+    }
 
     private static getViolationsHelper(String query, String policyName, int timeoutSeconds) {
         int intervalSeconds = 3
