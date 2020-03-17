@@ -26,6 +26,7 @@ const TimelineOverview = ({ type, total, counts, onClick }) => {
                     text={text}
                     className={`p-2 border-dashed border-r ${index === 0 &&
                         'border-l'} border-primary-300`}
+                    textWrap
                 />
             ))}
             <TileContent

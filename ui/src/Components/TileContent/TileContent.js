@@ -1,7 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const TileContent = ({ className, superText, subText, icon, text, short, textColorClass }) => {
+const TileContent = ({
+    className,
+    superText,
+    subText,
+    icon,
+    text,
+    short,
+    textColorClass,
+    textWrap
+}) => {
     return (
         <div className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}>
             {superText !== null && (
@@ -11,7 +20,8 @@ const TileContent = ({ className, superText, subText, icon, text, short, textCol
             )}
             {icon !== null && <div className="p-1 flex justify-center">{icon}</div>}
             <div
-                className="flex whitespace-no-wrap items-center font-600 font-condensed uppercase justify-center"
+                className={`flex ${!textWrap &&
+                    'whitespace-no-wrap'} items-center font-600 font-condensed uppercase justify-center`}
                 data-test-id="tile-link-value"
             >
                 {text}
@@ -36,7 +46,8 @@ TileContent.propTypes = {
     icon: PropTypes.element,
     text: PropTypes.string.isRequired,
     short: PropTypes.bool,
-    textColorClass: PropTypes.string
+    textColorClass: PropTypes.string,
+    textWrap: PropTypes.bool
 };
 
 TileContent.defaultProps = {
@@ -45,7 +56,8 @@ TileContent.defaultProps = {
     subText: null,
     icon: null,
     short: false,
-    textColorClass: 'text-base-600'
+    textColorClass: 'text-base-600',
+    textWrap: false
 };
 
 export default TileContent;
