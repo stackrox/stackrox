@@ -170,6 +170,9 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 
 	// Push them into the indexing queue.
 	for _, key := range keys {
+		if badgerhelper.HasPrefix(dirtyBucket, key) {
+			key = badgerhelper.StripBucket(dirtyBucket, key)
+		}
 		msg, err := reader.ReadIn(key, txn)
 		if err != nil {
 			return err
