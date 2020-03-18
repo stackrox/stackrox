@@ -4,32 +4,32 @@ import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
 
-const uploadYAMLFile = (fileName, selector) => {
+function uploadYAMLFile(fileName, selector) {
     cy.fixture(fileName).then(fileContent => {
         cy.get(selector).upload({ fileContent, fileName, mimeType: 'text/yaml', encoding: 'utf8' });
     });
-};
+}
+
+function navigateToNetworkGraphWithMockedData() {
+    cy.server();
+    cy.fixture('network/networkGraph.json').as('networkGraphJson');
+    cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
+    cy.visit(networkUrl);
+    cy.wait('@networkGraph');
+}
 
 describe('Network page', () => {
     withAuth();
 
     it('should have selected item in nav bar', () => {
-        cy.server();
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
+        navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.network).click();
         cy.get(networkPageSelectors.network).should('have.class', 'bg-primary-700');
     });
 
     it('should display a legend', () => {
-        cy.server();
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
+        navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.legend.deployments)
             .eq(0)
@@ -73,11 +73,7 @@ describe('Network page', () => {
     });
 
     it('should handle toggle click on simulator network policy button', () => {
-        cy.server();
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
+        navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         cy.get(networkPageSelectors.buttons.viewActiveYamlButton).should('be.visible');
@@ -87,11 +83,7 @@ describe('Network page', () => {
     });
 
     it('should display error messages when uploaded wrong yaml', () => {
-        cy.server();
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
+        navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithoutnamespace.yaml', 'input[type="file"]');
@@ -100,11 +92,7 @@ describe('Network page', () => {
     });
 
     it('should display success messages when uploaded right yaml', () => {
-        cy.server();
-        cy.fixture('network/networkGraph.json').as('networkGraphJson');
-        cy.route('GET', api.network.networkGraph, '@networkGraphJson').as('networkGraph');
-        cy.visit(networkUrl);
-        cy.wait('@networkGraph');
+        navigateToNetworkGraphWithMockedData();
 
         cy.get(networkPageSelectors.buttons.simulatorButtonOff).click();
         uploadYAMLFile('network/policywithnamespace.yaml', 'input[type="file"]');
