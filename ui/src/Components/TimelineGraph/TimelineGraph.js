@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import NameList from 'Components/TimelineGraph/NameList';
 import MainView from 'Components/TimelineGraph/MainView';
 import Minimap from 'Components/TimelineGraph/Minimap';
+import Pagination from 'Components/TimelineGraph/Pagination';
 
 const ABSOLUTE_MIN_TIME_RANGE = 0;
 const ABSOLUTE_MAX_TIME_RANGE = 24;
@@ -38,7 +39,7 @@ const TimelineGraph = ({ data, goToNextView }) => {
             </div>
             <div className="flex border-t border-base-300">
                 <div className="w-1/4 p-3 border-r border-base-300 font-700">
-                    Show Pagination Controls here...
+                    <Pagination />
                 </div>
                 <div className="w-3/4 font-700">
                     <Minimap
