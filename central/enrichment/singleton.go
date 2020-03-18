@@ -54,7 +54,7 @@ func ImageScanCacheSingleton() expiringcache.Cache {
 // ImageMetadataCacheSingleton returns the cache for image metadata
 func ImageMetadataCacheSingleton() expiringcache.Cache {
 	metadataCacheOnce.Do(func() {
-		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration)
+		metadataCache = expiringcache.NewExpiringCache(imageCacheExpiryDuration, expiringcache.UpdateExpirationOnGets)
 	})
 	return metadataCache
 }

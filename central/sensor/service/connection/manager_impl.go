@@ -246,7 +246,7 @@ func (m *manager) BroadcastMessage(msg *central.MsgToSensor) {
 
 	for clusterID, connAndUpgradeCtrl := range m.connectionsByClusterID {
 		if connAndUpgradeCtrl.connection == nil {
-			log.Errorf("could not broadcast message to cluster %q which has no active connection", clusterID)
+			log.Debugf("could not broadcast message to cluster %q which has no active connection", clusterID)
 			continue
 		}
 		if err := connAndUpgradeCtrl.connection.InjectMessage(concurrency.Never(), msg); err != nil {

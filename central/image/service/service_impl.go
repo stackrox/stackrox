@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 
-	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -12,7 +11,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -21,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
@@ -51,8 +48,6 @@ var (
 			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
 	})
-
-	reprocessInterval = env.ReprocessInterval.DurationSetting()
 )
 
 // serviceImpl provides APIs for alerts.
@@ -143,16 +138,15 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 
 // ScanImage handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
-	// if use saved image is true, then get all of the saved images and also add them to the central cache
-	// Otherwise, we'll rely on the cache to get the data and when that data is invalidated by Central
-	// then sensor will end up reaching out externally
-	if request.GetUseSaved() && request.GetImage().GetId() != "" {
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
+	// images
+	if request.GetImage().GetId() != "" {
 		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
 		if err != nil {
 			return nil, err
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
-		if exists && protoutils.Sub(gogoTypes.TimestampNow(), img.GetScan().GetScanTime()) < reprocessInterval {
+		if exists {
 			return &v1.ScanImageInternalResponse{
 				Image: img,
 			}, nil

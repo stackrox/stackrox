@@ -20,6 +20,7 @@ const (
 	NoExternalMetadata
 	IgnoreExistingImages
 	ForceRefetch
+	ForceRefetchScansOnly
 )
 
 var (
@@ -70,6 +71,7 @@ const (
 )
 
 // ImageEnricher provides functions for enriching images with integrations.
+//go:generate mockgen-wrapper
 type ImageEnricher interface {
 	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
 }

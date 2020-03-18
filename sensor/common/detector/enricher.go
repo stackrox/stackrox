@@ -37,7 +37,6 @@ type imageChanResult struct {
 type enricher struct {
 	imageSvc       v1.ImageServiceClient
 	scanResultChan chan scanResult
-	isSyncing      *concurrency.Flag
 
 	imageCache expiringcache.Cache
 	stopSig    concurrency.Signal
@@ -55,7 +54,7 @@ func (c *cacheValue) waitAndGet() *storage.Image {
 	return c.image
 }
 
-func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, useSaved bool, concurrentScanSemaphore *semaphore.Weighted) {
+func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.ContainerImage, concurrentScanSemaphore *semaphore.Weighted) {
 	defer c.signal.Signal()
 
 	if err := concurrentScanSemaphore.Acquire(concurrency.AsContext(&c.signal), 1); err != nil {
@@ -67,8 +66,7 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	scannedImage, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
-		Image:    ci,
-		UseSaved: useSaved,
+		Image: ci,
 	})
 	if err != nil {
 		c.image = types.ToImage(ci)
@@ -77,10 +75,9 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(isSyncing *concurrency.Flag) *enricher {
+func newEnricher() *enricher {
 	return &enricher{
 		scanResultChan: make(chan scanResult),
-		isSyncing:      isSyncing,
 
 		concurrentScanSemaphore: semaphore.NewWeighted(maxConcurrentScans),
 		imageCache:              expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting()),
@@ -125,7 +122,7 @@ func (e *enricher) runScan(containerIdx int, ci *storage.ContainerImage) imageCh
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if newValue == value {
-		value.scanAndSet(e.imageSvc, ci, e.isSyncing.Get(), e.concurrentScanSemaphore)
+		value.scanAndSet(e.imageSvc, ci, e.concurrentScanSemaphore)
 	}
 	return imageChanResult{
 		image:        value.waitAndGet(),

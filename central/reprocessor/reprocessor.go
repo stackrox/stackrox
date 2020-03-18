@@ -4,13 +4,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/pkg/errors"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -18,7 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 )
 
@@ -36,12 +42,17 @@ var (
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Deployment)))
+
+	getAndWriteImagesContext = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Image)))
 )
 
 // Singleton returns the singleton reprocessor loop
 func Singleton() Loop {
 	once.Do(func() {
-		loop = NewLoop(connection.ManagerSingleton(), datastore.Singleton())
+		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), deploymentDatastore.Singleton(), imageDatastore.Singleton())
 	})
 	return loop
 }
@@ -58,19 +69,22 @@ type Loop interface {
 }
 
 // NewLoop returns a new instance of a Loop.
-func NewLoop(connManager connection.Manager, deployments datastore.DataStore) Loop {
-	return newLoopWithDuration(connManager, deployments, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
+func NewLoop(connManager connection.Manager, enricher enricher.ImageEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore) Loop {
+	return newLoopWithDuration(connManager, enricher, deployments, images, env.ReprocessInterval.DurationSetting(), 30*time.Minute, 15*time.Second)
 }
 
 // newLoopWithDuration returns a loop that ticks at the given duration.
 // It is NOT exported, since we don't want clients to control the duration; it only exists as a separate function
 // to enable testing.
-func newLoopWithDuration(connManager connection.Manager, deployments datastore.DataStore, enrichAndDetectDuration,
+func newLoopWithDuration(connManager connection.Manager, enricher enricher.ImageEnricher, deployments deploymentDatastore.DataStore, images imageDatastore.DataStore, enrichAndDetectDuration,
 	enrichAndDetectInjectionPeriod, deploymentRiskDuration time.Duration) Loop {
 	return &loopImpl{
 		enrichAndDetectTickerDuration:  enrichAndDetectDuration,
 		deploymenRiskTickerDuration:    deploymentRiskDuration,
 		enrichAndDetectInjectionPeriod: enrichAndDetectInjectionPeriod,
+
+		enricher: enricher,
+		images:   images,
 
 		deployments:       deployments,
 		deploymentRiskSet: set.NewStringSet(),
@@ -89,7 +103,10 @@ type loopImpl struct {
 	enrichAndDetectInjectionPeriod time.Duration
 	enrichAndDetectTicker          *time.Ticker
 
-	deployments                 datastore.DataStore
+	images   imageDatastore.DataStore
+	enricher enricher.ImageEnricher
+
+	deployments                 deploymentDatastore.DataStore
 	deploymentRiskSet           set.StringSet
 	deploymentRiskLock          sync.Mutex
 	deploymentRiskTicker        *time.Ticker
@@ -127,13 +144,7 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
-	if !l.stopped.IsDone() {
-		l.connManager.BroadcastMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_ReassessPolicies{
-				ReassessPolicies: &central.ReassessPolicies{},
-			},
-		})
-	}
+	go l.reprocessImagesAndResyncDeployments(enricher.UseCachesIfPossible)
 }
 
 func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration, deploymentIDs ...string) {
@@ -200,10 +211,109 @@ func (l *loopImpl) sendDeployments(riskOnly bool, injectionPeriod time.Duration,
 	}
 }
 
+func (l *loopImpl) reprocessImage(id string, sema *semaphore.Weighted, wg *sync.WaitGroup, fetchOpts enricher.FetchOption) {
+	defer sema.Release(1)
+	defer wg.Done()
+
+	image, exists, err := l.images.GetImage(getAndWriteImagesContext, id)
+	if err != nil {
+		log.Errorf("error fetching image %q from the database: %v", id, err)
+		return
+	}
+	if !exists {
+		return
+	}
+
+	result, err := l.enricher.EnrichImage(enricher.EnrichmentContext{
+		FetchOpt: fetchOpts,
+	}, image)
+
+	if err != nil {
+		log.Errorf("error enriching image: %v", err)
+		return
+	}
+	if result.ImageUpdated {
+		if err := l.images.UpsertImage(getAndWriteImagesContext, image); err != nil {
+			log.Errorf("error upserting image %q into datastore: %v", image.GetName().GetFullName(), err)
+		}
+	}
+}
+
+func (l *loopImpl) getActiveImageIDs() ([]string, error) {
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.ImageSHA, search.WildcardString).ProtoQuery()
+	results, err := l.deployments.Search(getDeploymentsContext, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "error searching for active image IDs")
+	}
+
+	field, ok := deployments.OptionsMap.Get(search.ImageSHA.String())
+	if !ok {
+		utils.Should(errors.New("Search Option ImageSHA should exist in deployments option map"))
+		return nil, nil
+	}
+
+	imagesSet := set.NewStringSet()
+	for _, result := range results {
+		field, ok := result.Fields[field.GetFieldPath()]
+		if !ok {
+			continue
+		}
+		switch obj := field.(type) {
+		case string:
+			imagesSet.Add(obj)
+		case []interface{}:
+			for _, i := range obj {
+				if digest, ok := i.(string); ok {
+					imagesSet.Add(digest)
+				}
+			}
+		}
+	}
+	return imagesSet.AsSlice(), nil
+}
+
+func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpts enricher.FetchOption) {
+	if l.stopped.IsDone() {
+		return
+	}
+	imageIDs, err := l.getActiveImageIDs()
+	if err != nil {
+		log.Errorf("error retrieving active image ids: %v", err)
+		return
+	}
+	log.Infof("Found %d images to rescan", len(imageIDs))
+	imageSemaphore := semaphore.NewWeighted(5)
+	var wg sync.WaitGroup
+	for _, imageID := range imageIDs {
+		wg.Add(1)
+		// Go over the image IDs
+		if err := imageSemaphore.Acquire(concurrency.AsContext(&l.stopChan), 1); err != nil {
+			log.Errorf("context cancelled via stop: %v", err)
+			return
+		}
+		go l.reprocessImage(imageID, imageSemaphore, &wg, fetchOpts)
+	}
+	wg.Wait()
+	log.Infof("Successfully reprocessed %d images. Reevaluating deployments...", len(imageIDs))
+	// Once the images have been rescanned, then reprocess the images
+	// This should not take a particular long period of time
+	if !l.stopped.IsDone() {
+		l.connManager.BroadcastMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_ReassessPolicies{
+				ReassessPolicies: &central.ReassessPolicies{},
+			},
+		})
+	}
+}
+
 func (l *loopImpl) loop() {
 	defer l.stopped.Signal()
 	defer l.enrichAndDetectTicker.Stop()
 	defer l.deploymentRiskTicker.Stop()
+
+	// Call reprocessImagesAndResyncDeployments on start to try and ensure that the deployments are processed
+	// in <= the reprocessing interval
+	go l.reprocessImagesAndResyncDeployments(enricher.ForceRefetch)
 	for {
 		select {
 		case <-l.stopChan.Done():
@@ -211,7 +321,7 @@ func (l *loopImpl) loop() {
 		case <-l.shortChan:
 			l.sendDeployments(false, 0)
 		case <-l.enrichAndDetectTicker.C:
-			l.ShortCircuit()
+			l.reprocessImagesAndResyncDeployments(enricher.ForceRefetchScansOnly)
 		case <-l.deploymentRiskTicker.C:
 			l.deploymentRiskLock.Lock()
 			if l.deploymentRiskSet.Cardinality() > 0 {

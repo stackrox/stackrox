@@ -35,7 +35,7 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager, isSyncing *concurrency.Flag) Detector {
+func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager) Detector {
 	builder := matcher.NewBuilder(
 		matcher.NewRegistry(
 			nil,
@@ -51,7 +51,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:        newEnricher(isSyncing),
+		enricher:        newEnricher(),
 		deploymentStore: newDeploymentStore(),
 		whitelistEval:   whitelist.NewWhitelistEvaluator(),
 		deduper:         newDeduper(),

@@ -125,7 +125,7 @@ func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Imag
 }
 
 func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.Image) bool {
-	if ctx.FetchOpt == ForceRefetch {
+	if ctx.FetchOpt == ForceRefetch || ctx.FetchOpt == ForceRefetchScansOnly {
 		return false
 	}
 	ref := getRef(image)
