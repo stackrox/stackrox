@@ -257,10 +257,11 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 			if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
 				return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 			}
+			if err := ds.deploymentStore.AckKeysIndexed(deployment.GetId()); err != nil {
+				return errors.Wrapf(err, "could not acknowledge indexing for %q", deployment.GetId())
+			}
 		}
-		if err := ds.deploymentStore.AckKeysIndexed(deployment.GetId()); err != nil {
-			return errors.Wrapf(err, "could not acknowledge indexing for %q", deployment.GetId())
-		}
+
 		return nil
 	})
 	if err != nil {
