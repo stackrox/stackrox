@@ -164,5 +164,5 @@ func TestGetActiveImageIDs(t *testing.T) {
 
 	ids, err = loop.getActiveImageIDs()
 	require.NoError(t, err)
-	require.Equal(t, imageIDs, ids)
+	require.ElementsMatch(t, imageIDs, ids)
 }
