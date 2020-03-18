@@ -2009,6 +2009,7 @@ jobs:
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
+      - ROX_POD_DEPLOY_SEPARATE: "true"
     steps:
       - checkout
       - check-backend-changes
@@ -2067,6 +2068,7 @@ jobs:
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ROX_SENSOR_DETECTION: true
+      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-qa-tests:
@@ -2487,6 +2489,7 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
+      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-openshift-tests:
@@ -2504,6 +2507,7 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
+      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-openshift-tests:
