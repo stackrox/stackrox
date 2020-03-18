@@ -29,6 +29,9 @@ func Context(ctx context.Context, scope Scope) context.Context {
 
 // GetScope returns the Scope from the input context as well as a boolean indicating if there was a Scope attached.
 func GetScope(hasGraphContext context.Context) (Scope, bool) {
+	if hasGraphContext == nil {
+		return Scope{}, false
+	}
 	inter := hasGraphContext.Value(scopedContextKey{})
 	if inter == nil {
 		return Scope{}, false

@@ -11,6 +11,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -114,9 +115,16 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 		return nil, nil
 	}
 
-	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
+	var err error
+	deploymentFilterQuery := search.EmptyQuery()
+	if scope, hasScope := scoped.GetScope(ctx); hasScope {
+		if field, ok := idField[scope.Level]; ok {
+			deploymentFilterQuery = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+		}
+	} else {
+		if deploymentFilterQuery, err = args.AsV1QueryOrEmpty(); err != nil {
+			return nil, err
+		}
 	}
 
 	pagination := deploymentFilterQuery.GetPagination()
@@ -127,16 +135,26 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 		return nil, err
 	}
 
-	deploymentQuery := search.NewConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery(),
-		deploymentFilterQuery)
+	deploymentQuery := search.NewConjunctionQuery(deploymentFilterQuery,
+		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery())
 	deploymentQuery.Pagination = pagination
 
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapDeployments(deploymentLoader.FromQuery(ctx, deploymentQuery))
+	deploymentResolvers, err := resolver.root.wrapDeployments(deploymentLoader.FromQuery(ctx, deploymentQuery))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deploymentResolver := range deploymentResolvers {
+		deploymentResolver.ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_POLICIES,
+			ID:    resolver.data.GetId(),
+		})
+	}
+	return deploymentResolvers, nil
 }
 
 // DeploymentCount returns the count of all deployments that this policy applies to
@@ -162,9 +180,16 @@ func (resolver *policyResolver) PolicyStatus(ctx context.Context, args RawQuery)
 		return "", nil
 	}
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
+	var err error
+	q := search.EmptyQuery()
+	if scope, hasScope := scoped.GetScope(ctx); hasScope {
+		if field, ok := idField[scope.Level]; ok {
+			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+		}
+	} else {
+		if q, err = args.AsV1QueryOrEmpty(); err != nil {
+			return "", err
+		}
 	}
 
 	q, err = search.AddAsConjunction(q, resolver.getPolicyQuery())
@@ -203,9 +228,16 @@ func (resolver *policyResolver) getDeploymentsForPolicy(ctx context.Context) ([]
 func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "Latest Violation")
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
+	var err error
+	q := search.EmptyQuery()
+	if scope, hasScope := scoped.GetScope(ctx); hasScope {
+		if field, ok := idField[scope.Level]; ok {
+			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
+		}
+	} else {
+		if q, err = args.AsV1QueryOrEmpty(); err != nil {
+			return nil, err
+		}
 	}
 
 	q, err = search.AddAsConjunction(q, resolver.getPolicyQuery())

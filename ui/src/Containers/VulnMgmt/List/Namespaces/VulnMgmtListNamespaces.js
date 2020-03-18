@@ -192,12 +192,7 @@ export function getNamespaceTableColumns(workflowState) {
 
 const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
-        query getNamespaces(
-            $query: String
-            $policyQuery: String
-            $scopeQuery: String
-            $pagination: Pagination
-        ) {
+        query getNamespaces($query: String, $policyQuery: String, $pagination: Pagination) {
             results: namespaces(query: $query, pagination: $pagination) {
                 ...namespaceFields
                 unusedVarSink(query: $policyQuery)

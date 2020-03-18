@@ -219,9 +219,20 @@ func (resolver *deploymentResolver) Policies(ctx context.Context, args Paginated
 		SortOptions: pagination.GetSortOptions(),
 	}
 
+	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	for _, policyResolver := range policyResolvers {
+		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_DEPLOYMENTS,
+			ID:    resolver.data.GetId(),
+		})
+	}
+
 	resolvers, err := paginationWrapper{
 		pv: pagination,
-	}.paginate(resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q)))
+	}.paginate(policyResolvers, nil)
 	return resolvers.([]*policyResolver), err
 }
 
@@ -274,7 +285,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 
 	// remove pagination from query since we want to paginate the final result
 	pagination := q.GetPagination()
-	q.Pagination = &v1.QueryPagination{}
+	q.Pagination = &v1.QueryPagination{SortOptions: pagination.GetSortOptions()}
 
 	alerts, err := resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, q)
 	if err != nil {
@@ -289,9 +300,20 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 		}
 	}
 
+	policyResolvers, err := resolver.root.wrapPolicies(policies, nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, policyResolver := range policyResolvers {
+		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_DEPLOYMENTS,
+			ID:    resolver.data.GetId(),
+		})
+	}
+
 	resolvers, err := paginationWrapper{
 		pv: pagination,
-	}.paginate(resolver.root.wrapPolicies(policies, nil))
+	}.paginate(policyResolvers, nil)
 	return resolvers.([]*policyResolver), err
 }
 
@@ -545,9 +567,15 @@ func (resolver *deploymentResolver) VulnCounter(ctx context.Context, args RawQue
 func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQuery) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PolicyStatus")
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return "", err
+	// If we are coming from policy context, use policy context to build the query.
+	var err error
+	var q *v1.Query
+	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+	} else {
+		if q, err = args.AsV1QueryOrEmpty(); err != nil {
+			return "", err
+		}
 	}
 
 	alertExists, err := resolver.unresolvedAlertsExists(ctx, q)
@@ -631,8 +659,7 @@ func (resolver *deploymentResolver) getDeploymentRawQuery() string {
 }
 
 func (resolver *deploymentResolver) getConjunctionQuery(q *v1.Query) (*v1.Query, error) {
-	q1 := resolver.getDeploymentQuery()
-	return search.AddAsConjunction(q, q1)
+	return search.AddAsConjunction(q, resolver.getDeploymentQuery())
 }
 
 func (resolver *deploymentResolver) getFailingAlertsQuery(q *v1.Query) (*v1.Query, error) {
@@ -646,9 +673,15 @@ func (resolver *deploymentResolver) getFailingAlertsQuery(q *v1.Query) (*v1.Quer
 func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args RawQuery) (*graphql.Time, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Latest Violation")
 
-	q, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
+	// If we are coming from policy context, use policy context to build the query.
+	var err error
+	var q *v1.Query
+	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope && scope.Level == v1.SearchCategory_POLICIES {
+		q = search.NewQueryBuilder().AddExactMatches(search.PolicyID, scope.ID).ProtoQuery()
+	} else {
+		if q, err = args.AsV1QueryOrEmpty(); err != nil {
+			return nil, err
+		}
 	}
 
 	q, err = resolver.getConjunctionQuery(q)

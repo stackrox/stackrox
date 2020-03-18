@@ -25,7 +25,7 @@ const VulmMgmtEntityCluster = ({
     setRefreshTrigger
 }) => {
     const overviewQuery = gql`
-        query getCluster($id: ID!, $policyQuery: String, $scopeQuery: String) {
+        query getCluster($id: ID!, $policyQuery: String) {
             result: cluster(id: $id) {
                 id
                 name
@@ -36,10 +36,10 @@ const VulmMgmtEntityCluster = ({
                         id
                         name
                         description
-                        policyStatus(query: $scopeQuery)
-                        latestViolation(query: $scopeQuery)
+                        policyStatus
+                        latestViolation
                         severity
-                        deploymentCount(query: $scopeQuery)
+                        deploymentCount
                         lifecycleStages
                         enforcementActions
                         notifiers
@@ -92,7 +92,7 @@ const VulmMgmtEntityCluster = ({
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery({ [entityTypes.CLUSTER]: entityId })
+            scopeQuery: getScopeQuery(entityContext)
         }
     };
 

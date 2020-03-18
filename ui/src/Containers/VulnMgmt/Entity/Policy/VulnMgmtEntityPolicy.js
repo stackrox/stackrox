@@ -25,7 +25,7 @@ const VulmMgmtEntityPolicy = ({
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
     const queryVarConcat = entityContext[entityTypes.POLICY] ? '' : ', query: $scopeQuery';
     const overviewQuery = gql`
-        query getPolicy($id: ID!, $scopeQuery: String) {
+        query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: policy(id: $id) {
                 id
                 name
@@ -166,6 +166,7 @@ const VulmMgmtEntityPolicy = ({
                 deployments${queryVarParam} {
                     ...deploymentFields
                 }
+                unusedVarSink(query: $scopeQuery)
             }
         }
         ${DEPLOYMENT_LIST_FRAGMENT}

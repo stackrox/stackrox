@@ -35,10 +35,10 @@ export const CLUSTER_LIST_FRAGMENT = gql`
         namespaceCount
         deploymentCount
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
-        policyStatus(query: $scopeQuery) {
+        policyStatus(query: $policyQuery) {
             status
         }
-        latestViolation(query: $scopeQuery)
+        latestViolation(query: $policyQuery)
         priority
     }
 `;
@@ -108,13 +108,13 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         }
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         # failingPolicyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
-        policyStatus(query: $scopeQuery)
+        policyStatus(query: $policyQuery)
         clusterName
         clusterId
         namespace
         namespaceId
         imageCount
-        latestViolation(query: $scopeQuery)
+        latestViolation(query: $policyQuery)
         priority
     }
 `;
@@ -238,10 +238,10 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         deploymentCount
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
-        policyStatus(query: $scopeQuery) {
+        policyStatus(query: $policyQuery) {
             status
         }
-        latestViolation(query: $scopeQuery)
+        latestViolation(query: $policyQuery)
     }
 `;
 
@@ -263,8 +263,8 @@ export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
     fragment unscopedPolicyFields on Policy {
         ...corePolicyFields
         deploymentCount(query: $scopeQuery)
-        latestViolation(query: $scopeQuery)
-        policyStatus(query: $scopeQuery)
+        latestViolation
+        policyStatus
     }
     ${POLICY_LIST_FRAGMENT_CORE}
 `;
@@ -273,8 +273,8 @@ export const POLICY_LIST_FRAGMENT = gql`
     fragment policyFields on Policy {
         ...corePolicyFields
         deploymentCount(query: $scopeQuery)
-        latestViolation(query: $scopeQuery)
-        policyStatus(query: $scopeQuery)
+        latestViolation
+        policyStatus
     }
     ${POLICY_LIST_FRAGMENT_CORE}
 `;
@@ -288,7 +288,7 @@ export const POLICY_ENTITY_ALL_FIELDS_FRAGMENT = gql`
         rationale
         remediation
         severity
-        policyStatus(query: $scopeQuery)
+        policyStatus
         categories
         lastUpdated
         enforcementActions

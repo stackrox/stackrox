@@ -19,6 +19,7 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { deploymentSortFields } from 'constants/sortFields';
+import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultDeploymentSort = [
     {
@@ -189,7 +190,7 @@ export function getDeploymentTableColumns(workflowState) {
 
 const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalResults }) => {
     const query = gql`
-        query getDeployments($query: String, $scopeQuery: String, $pagination: Pagination) {
+        query getDeployments($query: String, $policyQuery: String, $pagination: Pagination) {
             results: deployments(query: $query, pagination: $pagination) {
                 ...deploymentFields
             }
@@ -201,6 +202,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
+            ...vulMgmtPolicyQuery,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
         }
     };

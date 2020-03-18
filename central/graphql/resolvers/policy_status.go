@@ -7,6 +7,7 @@ import (
 )
 
 type policyStatusResolver struct {
+	ctx              context.Context
 	root             *Resolver
 	status           string
 	failingPolicyIds []string
@@ -22,7 +23,7 @@ func (resolver *policyStatusResolver) FailingPolicies(ctx context.Context) ([]*p
 	}
 	return resolver.root.wrapPolicies(
 		resolver.root.PolicyDataStore.SearchRawPolicies(
-			ctx,
+			resolver.ctx,
 			search.NewQueryBuilder().AddDocIDs(resolver.failingPolicyIds...).ProtoQuery(),
 		),
 	)

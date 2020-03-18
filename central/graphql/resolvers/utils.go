@@ -15,6 +15,16 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+// idField map holds id search field label for corresponding search category
+var (
+	idField = map[v1.SearchCategory]search.FieldLabel{
+		v1.SearchCategory_CLUSTERS:    search.ClusterID,
+		v1.SearchCategory_NAMESPACES:  search.NamespaceID,
+		v1.SearchCategory_DEPLOYMENTS: search.DeploymentID,
+		v1.SearchCategory_POLICIES:    search.PolicyID,
+	}
+)
+
 type idQuery struct {
 	ID *graphql.ID
 }

@@ -27,8 +27,7 @@ const VulnMgmtNamespace = ({
     const overviewQuery = gql`
         query getNamespace(
             $id: ID!
-            $policyQuery: String,
-            $scopeQuery: String
+            $policyQuery: String
         ) {
             result: namespace(id: $id) {
                 metadata {
@@ -47,10 +46,10 @@ const VulnMgmtNamespace = ({
                         id
                         name
                         description
-                        policyStatus(query: $scopeQuery)
-                        latestViolation(query: $scopeQuery)
+                        policyStatus
+                        latestViolation
                         severity
-                        deploymentCount(query: $scopeQuery)
+                        deploymentCount
                         lifecycleStages
                         enforcementActions
                         notifiers

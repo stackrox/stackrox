@@ -2,6 +2,7 @@ import React from 'react';
 import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
+import queryService from 'modules/queryService';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
@@ -10,8 +11,7 @@ import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
 import {
     vulMgmtPolicyQuery,
-    tryUpdateQueryWithVulMgmtPolicyClause,
-    getScopeQuery
+    tryUpdateQueryWithVulMgmtPolicyClause
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulmMgmtDeployment = ({
@@ -30,12 +30,12 @@ const VulmMgmtDeployment = ({
                 id
                 priority
                 policyStatus(query: $scopeQuery)
-                failingPolicies(query: $policyQuery) {
+                failingPolicies(query: $scopeQuery) {
                     id
                     name
                     description
-                    policyStatus(query: $scopeQuery)
-                    latestViolation(query: $scopeQuery)
+                    policyStatus
+                    latestViolation
                     severity
                     lifecycleStages
                     enforcementActions
@@ -55,7 +55,7 @@ const VulmMgmtDeployment = ({
                 name
                 ${entityContext[entityTypes.NAMESPACE] ? '' : 'namespace namespaceId'}
                 priority
-                failingPolicyCount(query: $policyQuery)
+                failingPolicyCount(query: $scopeQuery)
                 policyCount(query: $policyQuery)
                 type
                 created
@@ -87,7 +87,10 @@ const VulmMgmtDeployment = ({
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: queryService.objectToWhereClause({
+                ...queryService.entityContextToQueryObject(entityContext),
+                Category: 'Vulnerability Management'
+            })
         }
     };
 

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -606,9 +607,20 @@ func (resolver *clusterResolver) Policies(ctx context.Context, args PaginatedQue
 		SortOptions: pagination.GetSortOptions(),
 	}
 
+	policyResolvers, err := resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	for _, policyResolver := range policyResolvers {
+		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_CLUSTERS,
+			ID:    resolver.data.GetId(),
+		})
+	}
+
 	resolvers, err := paginationWrapper{
 		pv: pagination,
-	}.paginate(resolver.root.wrapPolicies(resolver.getApplicablePolicies(ctx, q)))
+	}.paginate(policyResolvers, nil)
 	return resolvers.([]*policyResolver), err
 }
 
@@ -669,8 +681,13 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context, args RawQuery
 		return nil, err
 	}
 
+	scopedCtx := scoped.Context(ctx, scoped.Scope{
+		Level: v1.SearchCategory_CLUSTERS,
+		ID:    resolver.data.GetId(),
+	})
+
 	if len(alerts) == 0 {
-		return &policyStatusResolver{resolver.root, "pass", nil}, nil
+		return &policyStatusResolver{scopedCtx, resolver.root, "pass", nil}, nil
 	}
 
 	policyIDs := set.NewStringSet()
@@ -678,7 +695,7 @@ func (resolver *clusterResolver) PolicyStatus(ctx context.Context, args RawQuery
 		policyIDs.Add(alert.GetPolicy().GetId())
 	}
 
-	return &policyStatusResolver{resolver.root, "fail", policyIDs.AsSlice()}, nil
+	return &policyStatusResolver{scopedCtx, resolver.root, "fail", policyIDs.AsSlice()}, nil
 }
 
 func (resolver *clusterResolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*secretResolver, error) {
