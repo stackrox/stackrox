@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -33,6 +36,7 @@ var (
 // serviceImpl provides APIs for cves.
 type serviceImpl struct {
 	cves        datastore.DataStore
+	indexQ      queue.WaitableQueue
 	reprocessor reprocessor.Loop
 }
 
@@ -72,7 +76,11 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	} else {
 		err = s.cves.Unsuppress(ctx, request.GetIds()...)
 	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 
+	err = s.waitForCVEToBeIndexed(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -80,6 +88,18 @@ func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVER
 	s.reprocessDeployments()
 
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) waitForCVEToBeIndexed(ctx context.Context) error {
+	cveSynchronized := concurrency.NewSignal()
+	s.indexQ.PushSignal(&cveSynchronized)
+
+	select {
+	case <-ctx.Done():
+		return errors.New("timed out waiting for indexing")
+	case <-cveSynchronized.Done():
+		return nil
+	}
 }
 
 func (s *serviceImpl) reprocessDeployments() {

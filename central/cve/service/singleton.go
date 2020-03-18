@@ -2,6 +2,7 @@ package service
 
 import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
+	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
@@ -18,7 +19,7 @@ func initialize() {
 		as = nil
 		return
 	}
-	as = New(cveDataStore.Singleton(), reprocessor.Singleton())
+	as = New(cveDataStore.Singleton(), dackbox.GetIndexQueue(), reprocessor.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

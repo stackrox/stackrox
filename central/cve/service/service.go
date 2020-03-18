@@ -6,6 +6,7 @@ import (
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -24,9 +25,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(cveDataStore cveDataStore.DataStore, reprocessor reprocessor.Loop) Service {
+func New(cveDataStore cveDataStore.DataStore, indexQ queue.WaitableQueue, reprocessor reprocessor.Loop) Service {
 	return &serviceImpl{
 		cves:        cveDataStore,
+		indexQ:      indexQ,
 		reprocessor: reprocessor,
 	}
 }
