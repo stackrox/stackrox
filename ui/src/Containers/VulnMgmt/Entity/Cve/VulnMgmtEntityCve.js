@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import gql from 'graphql-tag';
+
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import gql from 'graphql-tag';
+import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtCveOverview from './VulnMgmtCveOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
@@ -14,6 +16,8 @@ import {
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getCve($id: ID!, $query: String, $scopeQuery: String) {
             result: vulnerability(id: $id) {
@@ -64,12 +68,13 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery(fullEntityContext)
         }
     };
 

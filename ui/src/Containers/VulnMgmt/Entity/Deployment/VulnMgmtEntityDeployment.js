@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
@@ -6,6 +6,7 @@ import queryService from 'modules/queryService';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
+import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import VulnMgmtDeploymentOverview from './VulnMgmtDeploymentOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -24,6 +25,8 @@ const VulmMgmtDeployment = ({
     refreshTrigger,
     setRefreshTrigger
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getDeployment($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: deployment(id: $id) {
@@ -81,6 +84,7 @@ const VulmMgmtDeployment = ({
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
@@ -88,7 +92,7 @@ const VulmMgmtDeployment = ({
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
             scopeQuery: queryService.objectToWhereClause({
-                ...queryService.entityContextToQueryObject(entityContext),
+                ...queryService.entityContextToQueryObject(fullEntityContext),
                 Category: 'Vulnerability Management'
             })
         }

@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import gql from 'graphql-tag';
-import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
+
+import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import useCases from 'constants/useCaseTypes';
+import workflowStateContext from 'Containers/workflowStateContext';
+import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import EntityList from '../../List/VulnMgmtList';
 import VulnMgmtComponentOverview from './VulnMgmtComponentOverview';
 import {
@@ -22,6 +24,8 @@ const VulnMgmtComponent = ({
     refreshTrigger,
     setRefreshTrigger
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getComponent($id: ID!, $query: String) {
             result: component(id: $id) {
@@ -55,13 +59,14 @@ const VulnMgmtComponent = ({
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery(fullEntityContext)
         }
     };
 

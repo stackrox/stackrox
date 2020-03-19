@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import gql from 'graphql-tag';
 
 import useCases from 'constants/useCaseTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
+import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
     vulMgmtPolicyQuery,
@@ -24,6 +25,8 @@ const VulmMgmtEntityCluster = ({
     refreshTrigger,
     setRefreshTrigger
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getCluster($id: ID!, $policyQuery: String) {
             result: cluster(id: $id) {
@@ -86,13 +89,14 @@ const VulmMgmtEntityCluster = ({
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery(fullEntityContext)
         }
     };
 

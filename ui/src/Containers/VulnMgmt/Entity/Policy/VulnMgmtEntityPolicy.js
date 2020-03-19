@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import gql from 'graphql-tag';
 
@@ -6,6 +6,7 @@ import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/e
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
+import workflowStateContext from 'Containers/workflowStateContext';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import queryService from 'modules/queryService';
@@ -24,6 +25,8 @@ const VulmMgmtEntityPolicy = ({
 }) => {
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
     const queryVarConcat = entityContext[entityTypes.POLICY] ? '' : ', query: $scopeQuery';
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getPolicy($id: ID!, $policyQuery: String, $scopeQuery: String) {
             result: policy(id: $id) {
@@ -191,12 +194,13 @@ const VulmMgmtEntityPolicy = ({
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
             query: queryService.objectToWhereClause({ ...search }),
             ...vulMgmtPolicyQuery,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery(fullEntityContext)
         }
     };
 

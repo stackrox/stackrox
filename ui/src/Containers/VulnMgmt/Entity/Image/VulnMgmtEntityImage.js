@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import gql from 'graphql-tag';
+
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
-import gql from 'graphql-tag';
+import workflowStateContext from 'Containers/workflowStateContext';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import { VULN_CVE_ONLY_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import VulnMgmtImageOverview from './VulnMgmtImageOverview';
@@ -24,6 +26,8 @@ const VulnMgmtImage = ({
     refreshTrigger,
     setRefreshTrigger
 }) => {
+    const workflowState = useContext(workflowStateContext);
+
     const overviewQuery = gql`
         query getImage($id: ID!, $query: String, $scopeQuery: String) {
             result: image(sha: $id) {
@@ -88,13 +92,14 @@ const VulnMgmtImage = ({
     `;
     }
 
+    const fullEntityContext = workflowState.getEntityContext();
     const queryOptions = {
         variables: {
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(entityContext)
+            scopeQuery: getScopeQuery(fullEntityContext)
         }
     };
 
