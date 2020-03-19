@@ -33,6 +33,7 @@ func init() {
 		schema.AddExtraResolver("Image", "components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
 		schema.AddExtraResolver("Image", `componentCount(query: String): Int!`),
 		schema.AddExtraResolver("Image", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("Image", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -280,6 +281,11 @@ func (resolver *imageResolver) getImageRawQuery() string {
 
 func (resolver *imageResolver) getImageQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetId()).ProtoQuery()
+}
+
+func (resolver *imageResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getImageRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 func (resolver *imageResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

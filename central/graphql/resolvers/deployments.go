@@ -55,6 +55,7 @@ func init() {
 		schema.AddExtraResolver("Deployment", "podCount: Int!"),
 		schema.AddExtraResolver("Deployment", "containerRestartCount: Int!"),
 		schema.AddExtraResolver("Deployment", "containerTerminationCount: Int!"),
+		schema.AddExtraResolver("Deployment", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -690,6 +691,11 @@ func (resolver *deploymentResolver) LatestViolation(ctx context.Context, args Ra
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
+}
+
+func (resolver *deploymentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 func (resolver *deploymentResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

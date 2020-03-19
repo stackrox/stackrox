@@ -71,7 +71,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
         fragment vulnFields on EmbeddedVulnerability {
             cve
             cvss
-            isFixable(query: $scopeQuery)
             severity
         }
     `;
@@ -79,7 +78,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
         query topRiskyDeployments(
             $query: String
             $vulnQuery: String
-            $scopeQuery: String
             $entityPagination: Pagination
             $vulnPagination: Pagination
         ) {
@@ -89,14 +87,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 clusterName
                 namespaceName: namespace
                 priority
-                vulnCounter {
-                    all {
-                        total
-                        fixable
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
                     }
-                }
-                vulns(query: $vulnQuery, pagination: $vulnPagination) {
-                    ...vulnFields
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
                 }
             }
         }
@@ -106,7 +106,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const CLUSTER_QUERY = gql`
         query topRiskyClusters(
             $query: String
-            $scopeQuery: String
             $vulnQuery: String
             $entityPagination: Pagination
             $vulnPagination: Pagination
@@ -115,14 +114,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 id
                 name
                 priority
-                vulnCounter {
-                    all {
-                        total
-                        fixable
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
                     }
-                }
-                vulns(query: $vulnQuery, pagination: $vulnPagination) {
-                    ...vulnFields
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
                 }
             }
         }
@@ -132,7 +133,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const NAMESPACE_QUERY = gql`
         query topRiskyNamespaces(
             $query: String
-            $scopeQuery: String
             $vulnQuery: String
             $entityPagination: Pagination
             $vulnPagination: Pagination
@@ -144,14 +144,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     id
                     priority
                 }
-                vulnCounter {
-                    all {
-                        total
-                        fixable
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
                     }
-                }
-                vulns(query: $vulnQuery, pagination: $vulnPagination) {
-                    ...vulnFields
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
                 }
             }
         }
@@ -161,7 +163,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const IMAGE_QUERY = gql`
         query topRiskyImages(
             $query: String
-            $scopeQuery: String
             $vulnQuery: String
             $entityPagination: Pagination
             $vulnPagination: Pagination
@@ -172,14 +173,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     fullName
                 }
                 priority
-                vulnCounter {
-                    all {
-                        total
-                        fixable
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
                     }
-                }
-                vulns(query: $vulnQuery, pagination: $vulnPagination) {
-                    ...vulnFields
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
                 }
             }
         }
@@ -189,7 +192,6 @@ const TopRiskyEntitiesByVulnerabilities = ({
     const COMPONENT_QUERY = gql`
         query topRiskyComponents(
             $query: String
-            $scopeQuery: String
             $vulnQuery: String
             $entityPagination: Pagination
             $vulnPagination: Pagination
@@ -198,14 +200,16 @@ const TopRiskyEntitiesByVulnerabilities = ({
                 id
                 name
                 priority
-                vulnCounter {
-                    all {
-                        total
-                        fixable
+                plottedVulns(query: $vulnQuery) {
+                    basicVulnCounter {
+                        all {
+                            total
+                            fixable
+                        }
                     }
-                }
-                vulns(query: $vulnQuery, pagination: $vulnPagination) {
-                    ...vulnFields
+                    vulns(pagination: $vulnPagination) {
+                        ...vulnFields
+                    }
                 }
             }
         }
@@ -250,8 +254,9 @@ const TopRiskyEntitiesByVulnerabilities = ({
         const severityTextColor = severityTextColorMap[severityKey];
         const severityText = severityLabels[severityKey];
 
-        let cveCountText = filter !== 'Fixable' ? `${datum.vulnCounter.all.total} total / ` : '';
-        cveCountText += `${datum.vulnCounter.all.fixable} fixable`;
+        let cveCountText =
+            filter !== 'Fixable' ? `${datum.plottedVulns.basicVulnCounter.all.total} total / ` : '';
+        cveCountText += `${datum.plottedVulns.basicVulnCounter.all.fixable} fixable`;
 
         return {
             title:
@@ -283,14 +288,12 @@ const TopRiskyEntitiesByVulnerabilities = ({
     }
     function processData(data) {
         if (!data || !data.results) return [];
-
         const results = data.results
-            .filter(datum => datum.vulns && datum.vulns.length > 0)
             .map(result => {
                 const entityId = result.id || result.metadata.id;
-                const vulnCount = result?.vulnCounter?.all?.total;
+                const vulnCount = result?.plottedVulns?.basicVulnCounter?.all?.total;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
-                const avgSeverity = getAverageSeverity(result.vulns);
+                const avgSeverity = getAverageSeverity(result.plottedVulns.vulns);
                 const color = severityColorMap[getSeverityByCvss(avgSeverity)];
 
                 return {

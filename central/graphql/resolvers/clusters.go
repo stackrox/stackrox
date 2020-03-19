@@ -77,6 +77,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `isGKECluster: Boolean!`),
 		schema.AddExtraResolver("Cluster", `unusedVarSink(query: String): Int`),
 		schema.AddExtraResolver("Cluster", `istioEnabled: Boolean!`),
+		schema.AddExtraResolver("Cluster", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -917,6 +918,11 @@ func (resolver *clusterResolver) LatestViolation(ctx context.Context, args RawQu
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
+}
+
+func (resolver *clusterResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 func (resolver *clusterResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {

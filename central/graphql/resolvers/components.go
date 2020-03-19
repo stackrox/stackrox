@@ -45,6 +45,7 @@ func init() {
 		schema.AddQuery("components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!"),
 		schema.AddQuery("componentCount(query: String): Int!"),
 		schema.AddExtraResolver("EmbeddedImageScanComponent", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("EmbeddedImageScanComponent", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -72,6 +73,8 @@ type ComponentResolver interface {
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
+	PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error)
+
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
 }
 

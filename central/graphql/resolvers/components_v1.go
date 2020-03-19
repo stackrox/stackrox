@@ -6,6 +6,7 @@ import (
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/imagecomponent"
@@ -122,6 +123,11 @@ type EmbeddedImageScanComponentResolver struct {
 	root        *Resolver
 	lastScanned *protoTypes.Timestamp
 	data        *storage.EmbeddedImageScanComponent
+}
+
+// PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
+func (eicr *EmbeddedImageScanComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	return nil, errors.New("not implemented")
 }
 
 // UnusedVarSink represents a query sink

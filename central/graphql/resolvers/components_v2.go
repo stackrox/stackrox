@@ -299,6 +299,10 @@ func (eicr *imageComponentResolver) componentQuery() *v1.Query {
 	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, eicr.data.GetId()).ProtoQuery()
 }
 
+func (eicr *imageComponentResolver) componentRawQuery() string {
+	return search.NewQueryBuilder().AddExactMatches(search.ComponentID, eicr.data.GetId()).Query()
+}
+
 // These return dummy values, as they should not be accessed from the top level component resolver, but the embedded
 // version instead.
 
@@ -323,6 +327,12 @@ func (eicr *imageComponentResolver) Location(ctx context.Context) (string, error
 // LayerIndex is the index in the parent image.
 func (eicr *imageComponentResolver) LayerIndex() *int32 {
 	return nil
+}
+
+// PlottedVulns returns the data required by top risky component scatter-plot on vuln mgmt dashboard
+func (eicr *imageComponentResolver) PlottedVulns(ctx context.Context, args RawQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), eicr.componentRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, eicr.root, RawQuery{Query: &query})
 }
 
 // UnusedVarSink represents a query sink

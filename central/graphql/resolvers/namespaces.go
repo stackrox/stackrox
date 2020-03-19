@@ -52,6 +52,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `risk: Risk`),
 		schema.AddExtraResolver("Namespace", "latestViolation(query: String): Time"),
 		schema.AddExtraResolver("Namespace", `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver("Namespace", "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -587,6 +588,11 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 	}
 
 	return getLatestViolationTime(ctx, resolver.root, q)
+}
+
+func (resolver *namespaceResolver) PlottedVulns(ctx context.Context, args PaginatedQuery) (*PlottedVulnerabilitiesResolver, error) {
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getClusterNamespaceRawQuery())
+	return newPlottedVulnerabilitiesResolver(ctx, resolver.root, RawQuery{Query: &query})
 }
 
 func (resolver *namespaceResolver) UnusedVarSink(ctx context.Context, args RawQuery) *int32 {
