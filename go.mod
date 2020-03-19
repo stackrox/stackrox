@@ -48,7 +48,9 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jstemmer/go-junit-report v0.9.1
+	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63
+	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/goveralls v0.0.2
 	github.com/mauricelam/genny v0.0.0-20190320071652-0800202903e5
 	github.com/mitchellh/go-wordwrap v1.0.0
