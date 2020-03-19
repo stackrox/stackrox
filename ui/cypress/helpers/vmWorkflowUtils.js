@@ -45,7 +45,6 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
             cy.get(colSelector)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
             let entitySelector;
             const col1 = col.toLowerCase();
             if (col1.includes('image')) entitySelector = vulnManagementSelectors.imageTileLink;
@@ -74,13 +73,11 @@ function validateTabsInEntityPage(parentUrl, colSelector, col) {
             cy.get(colSelector)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
             cy.get(vulnManagementSelectors.sidePanelExpandButton).click({ force: true });
             cy.get(vulnManagementSelectors.getSidePanelTabLink(col.toLowerCase())).click({
                 force: true
             });
             expect(cy.get(vulnManagementSelectors.tabHeader).contains(parseInt(value, 10)));
-            cy.wait(3000);
             cy.visit(parentUrl);
         });
 }
@@ -94,8 +91,10 @@ function validateCVETileLinksInSidePanel(parentUrl) {
             cy.get(vulnManagementSelectors.tableBodyColumn)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
-            cy.get(vulnManagementSelectors.getTileLink('CVE'))
+            // not reusing a predefined selector below, because we had made this function so DRY,
+            //   we created a false positive that was labyrinthine to track down
+            //   see: https://engblog.nextdoor.com/how-to-dry-up-your-tests-without-making-mummies-of-them-7de79a8e3df1
+            cy.get('[data-test-id="CVE-tile-link"]:contains("CVES")')
                 .find(vulnManagementSelectors.tileLinkValue)
                 .contains('CVE');
             cy.get(vulnManagementSelectors.tileLinkText).contains(cveCount);
@@ -111,7 +110,6 @@ function validateAllCVELinks(prevUrl) {
             cy.get(`${vulnManagementSelectors.allCVEColumnLink}`)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
             validateDataInEntityListPage(value.toUpperCase(), prevUrl);
         });
 }
@@ -124,7 +122,6 @@ function validateFixableCVELinks(urlBack) {
             cy.get(`${vulnManagementSelectors.fixableCVELink}`)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
             if (parseInt(value, 10) === 1)
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);
             if (parseInt(value, 10) > 1)
@@ -141,13 +138,14 @@ function validateCVETabsInSidePanel(parentUrl, colSelector, col) {
             cy.get(vulnManagementSelectors.tableBodyColumn)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
-            cy.get(vulnManagementSelectors.sidePanelExpandButton).click({ force: true });
+            cy.get(vulnManagementSelectors.sidePanelExpandButton).click({
+                force: true,
+                timeout: 6000
+            });
             cy.get(vulnManagementSelectors.getSidePanelTabLink(col.toUpperCase())).click({
                 force: true
             });
             expect(cy.get(vulnManagementSelectors.tabHeader).contains(cveCount));
-            cy.wait(2000);
             cy.visit(parentUrl);
         }
     });
@@ -164,9 +162,8 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
             cy.get(vulnManagementSelectors.tableBodyColumn)
                 .eq(0)
                 .click({ force: true });
-            cy.wait(2000);
             if (!parentUrl.includes('components')) {
-                cy.get(vulnManagementSelectors.tabButton)
+                cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
                     .contains('Fixable CVEs')
                     .click();
             }

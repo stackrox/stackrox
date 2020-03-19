@@ -12,8 +12,7 @@ describe('Entities single views', () => {
 
     withAuth();
 
-    // @TODO, 2020-02-28, re-try when Dackbox in master
-    it.skip('related entities tile links should unset search params upon navigation', () => {
+    it('related entities tile links should unset search params upon navigation', () => {
         // arrange
         cy.visit(url.list.clusters);
 
@@ -173,8 +172,7 @@ describe('Entities single views', () => {
             });
     });
 
-    // @TODO, 2020-02-28, re-try when Dackbox in master
-    it.skip('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
+    it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
         cy.visit(url.list.namespaces);
 
         cy.get(selectors.deploymentCountLink, { timeout: 10000 })
@@ -209,7 +207,7 @@ describe('Entities single views', () => {
             });
     });
 
-    // @TODO, 2020-02-28, re-try when Dackbox in master
+    // @TODO, test needs to be re-structured
     it.skip('should filter deployment count in failing policies section in namespace findings by namespace', () => {
         cy.visit(url.list.namespaces);
 
@@ -271,8 +269,7 @@ describe('Entities single views', () => {
             });
     });
 
-    // @TODO, 2020-03-01, re-try when Dackbox in master
-    it.skip('should not filter cluster entity page regardless of entity context', () => {
+    it('should not filter cluster entity page regardless of entity context', () => {
         cy.visit(url.list.namespaces);
 
         cy.get(`${selectors.tableRows}:contains(No deployments)`, { timeout: 10000 })

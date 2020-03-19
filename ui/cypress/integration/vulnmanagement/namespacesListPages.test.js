@@ -8,7 +8,7 @@ import {
     allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
 
-describe.skip('Namespaces list Page and its entity detail page , (related entities) sub list  validations ', () => {
+describe('Namespaces list Page and its entity detail page , (related entities) sub list  validations ', () => {
     before(function beforeHook() {
         // skip the whole suite if vuln mgmt isn't enabled
         if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {
