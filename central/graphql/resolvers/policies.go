@@ -182,7 +182,7 @@ func (resolver *policyResolver) PolicyStatus(ctx context.Context, args RawQuery)
 
 	var err error
 	q := search.EmptyQuery()
-	if scope, hasScope := scoped.GetScope(ctx); hasScope {
+	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope {
 		if field, ok := idField[scope.Level]; ok {
 			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
 		}
@@ -230,7 +230,7 @@ func (resolver *policyResolver) LatestViolation(ctx context.Context, args RawQue
 
 	var err error
 	q := search.EmptyQuery()
-	if scope, hasScope := scoped.GetScope(ctx); hasScope {
+	if scope, hasScope := scoped.GetScope(resolver.ctx); hasScope {
 		if field, ok := idField[scope.Level]; ok {
 			q = search.NewQueryBuilder().AddExactMatches(field, scope.ID).ProtoQuery()
 		}

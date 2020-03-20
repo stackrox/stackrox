@@ -13,6 +13,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import { severityValues, severities } from 'constants/severities';
 
 import { severityColorMap, severityTextColorMap } from 'constants/severityColors';
+import { policySortFields } from 'constants/sortFields';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -77,7 +78,8 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
     const workflowState = useContext(workflowStateContext);
     const viewAllURL = workflowState
         .pushList(entityTypes.POLICY)
-        .setSort([{ id: 'policyStatus', desc: true }, { id: 'severity', desc: true }])
+        // @TODO: remove this fake default sort on Policy name, when latest violation is available
+        .setSort([{ id: policySortFields.POLICY, desc: false }])
         .toUrl();
 
     if (!loading) {
@@ -196,7 +198,7 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
 
         const links = [];
 
-        const newState = workflowState.resetPage(entityTypes.POLICY);
+        const newState = workflowState.pushList(entityTypes.POLICY);
         if (criticalCount)
             links.push({
                 text: `${criticalCount} rated as critical`,
