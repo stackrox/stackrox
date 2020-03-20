@@ -60,6 +60,22 @@ func FilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
 	return filtered, areFieldsFiltered
 }
 
+// InverseFilterQueryWithMap removes match fields portions of the query that are in the input options map.
+func InverseFilterQueryWithMap(q *v1.Query, optionsMap OptionsMap) (*v1.Query, bool) {
+	var areFieldsFiltered bool
+	filtered, _ := FilterQuery(q, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok {
+			if _, isValid := optionsMap.Get(matchFieldQuery.MatchFieldQuery.GetField()); !isValid {
+				areFieldsFiltered = true
+				return true
+			}
+		}
+		return false
+	})
+	return filtered, areFieldsFiltered
+}
+
 // AddAsConjunction adds the input toAdd query to the input addTo query at the top level, either by appending it to the
 // conjunction list, or, if it is a base query, by making it a conjunction. Explicity disallows nested queries, as the
 // resulting query is expected to be either a base query, or a flat query.

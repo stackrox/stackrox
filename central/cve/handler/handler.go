@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"context"
 	"encoding/csv"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -15,10 +13,13 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
-	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func writeErr(w http.ResponseWriter, code int, err error) {
@@ -100,14 +101,6 @@ func fromTS(timestamp *graphql.Time) string {
 	return timestamp.Time.Format(time.RFC1123)
 }
 
-func getCVEQuery(cveID string) resolvers.RawQuery {
-	q := fmt.Sprintf("CVE:%s", cveID)
-	rawQuery := resolvers.RawQuery{
-		Query: &q,
-	}
-	return rawQuery
-}
-
 func buildQueryFromParams(values url.Values) string {
 	var pairs []string
 	for k, v := range values {
@@ -121,53 +114,64 @@ func buildQueryFromParams(values url.Values) string {
 // CSVHandler is an HTTP handler that outputs CSV exports of CVE data for Vuln Mgmt
 func CSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var output csvResults
-		q := buildQueryFromParams(r.URL.Query())
-		output.header = []string{"CVE", "Fixable", "CVSS Score", "Env Impact", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"}
-		resolver := resolvers.New()
-		query := resolvers.PaginatedQuery{
-			Query: &q,
-		}
+		ctx := loaders.WithLoaderContext(r.Context())
 
-		// TODO: Implement CVE SAC filter
-		ctx := sac.WithAllAccess(context.Background())
-		ctx = resolvers.SetAuthorizerOverride(ctx, allow.Anonymous())
-		ctx = loaders.WithLoaderContext(ctx)
-		vulnResolvers, err := resolver.Vulnerabilities(ctx, query)
+		q := buildQueryFromParams(r.URL.Query())
+		rawQuery := resolvers.RawQuery{Query: &q}
+
+		resolver := resolvers.New()
+		vulnResolvers, err := resolver.Vulnerabilities(ctx, resolvers.PaginatedQuery{Query: &q})
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err)
-			log.Println(err)
+			log.Errorf("unable to get vulnerabilities for csv export: %v", err)
 			return
 		}
 
+		var output csvResults
+		var errorList errorhelpers.ErrorList
+		output.header = []string{"CVE", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"}
 		for _, d := range vulnResolvers {
 			dataRow := cveRow{}
 			dataRow.cveID = d.Cve(ctx)
-			rawQuery := getCVEQuery(dataRow.cveID)
 			isFixable, err := d.IsFixable(ctx, rawQuery)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.fixable = strconv.FormatBool(isFixable)
 			dataRow.cvssScore = fmt.Sprintf("%.2f (%s)", d.Cvss(ctx), d.ScoreVersion(ctx))
 			envImpact, err := d.EnvImpact(ctx)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.envImpact = fmt.Sprintf("%.2f", envImpact*100)
 			dataRow.impactScore = fmt.Sprintf("%.2f", d.ImpactScore(ctx))
 			deploymentCount, err := d.DeploymentCount(ctx, rawQuery)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.deploymentCount = fmt.Sprint(deploymentCount)
 			imageCount, err := d.ImageCount(ctx, rawQuery)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.imageCount = fmt.Sprint(imageCount)
 			componentCount, err := d.ComponentCount(ctx, rawQuery)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.componentCount = fmt.Sprint(componentCount)
 			scannedTime, err := d.LastScanned(ctx)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.scannedTime = fromTS(scannedTime)
 			publishedTime, err := d.PublishedOn(ctx)
-			utils.Must(err)
+			if err != nil {
+				errorList.AddError(err)
+			}
 			dataRow.publishedTime = fromTS(publishedTime)
 			dataRow.summary = d.Summary(ctx)
+
 			output.addRow(dataRow)
 		}
 
