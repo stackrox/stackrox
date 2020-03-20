@@ -1,0 +1,142 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-sensor-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-sensor
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-sensor-psp
+  namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-sensor-psp
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: stackrox
+  - kind: ServiceAccount
+    name: sensor-upgrader
+    namespace: stackrox
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-sensor
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+    - 'hostPath'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-collector-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-collector
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-collector-psp
+  namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-collector-psp
+subjects:
+  - kind: ServiceAccount
+    name: collector
+    namespace: stackrox
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-collector
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+    - '*'
+  volumes:
+    - '*'
+  allowedHostPaths:
+    - pathPrefix: /var/run
+    - pathPrefix: /proc
+    - pathPrefix: /etc
+    - pathPrefix: /sys
+    - pathPrefix: /dev
+    - pathPrefix: /lib
+    - pathPrefix: /usr
+    - pathPrefix: /var
+    - pathPrefix: /run
+  hostNetwork: false
+  hostIPC: false
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
