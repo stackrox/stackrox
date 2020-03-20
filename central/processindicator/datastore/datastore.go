@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/comments"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
@@ -30,14 +31,10 @@ type DataStore interface {
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 
 	// Comments-related methods.
-	// Note that the following methods take an indicator id, even though the comment is tied
-	// to a _group_ of related processes. This is required for SAC-related purposes -- clients
-	// have to specify the id of _some_ process that would be in the group that the comment
-	// is applied to.
-	AddProcessComment(ctx context.Context, processID string, comment *storage.Comment) (string, error)
-	UpdateProcessComment(ctx context.Context, processID string, comment *storage.Comment) error
-	GetCommentsForProcess(ctx context.Context, processID string) ([]*storage.Comment, error)
-	RemoveProcessComment(ctx context.Context, processID, commentID string) error
+	AddProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) (string, error)
+	UpdateProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) error
+	GetCommentsForProcess(ctx context.Context, processKey *comments.ProcessCommentKey) ([]*storage.Comment, error)
+	RemoveProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, commentID string) error
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error
 

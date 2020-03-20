@@ -11,6 +11,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/comments"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
@@ -187,42 +188,44 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	indicators, _ := getIndicators()
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 
-	_, err := suite.datastore.AddProcessComment(suite.hasNoneCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	key := comments.ProcessToKey(indicators[0])
+
+	_, err := suite.datastore.AddProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.Error(err)
-	_, err = suite.datastore.AddProcessComment(suite.hasReadCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	_, err = suite.datastore.AddProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.Error(err)
-	id, err := suite.datastore.AddProcessComment(suite.hasWriteCtx, indicators[0].GetId(), &storage.Comment{CommentMessage: "blah"})
+	id, err := suite.datastore.AddProcessComment(suite.hasWriteCtx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.NoError(err)
 	suite.NotEmpty(id)
 
-	comments, err := suite.datastore.GetCommentsForProcess(suite.hasNoneCtx, indicators[0].GetId())
+	gotComments, err := suite.datastore.GetCommentsForProcess(suite.hasNoneCtx, key)
 	suite.NoError(err)
-	suite.Empty(comments)
+	suite.Empty(gotComments)
 
-	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
 	suite.NoError(err)
-	suite.Len(comments, 1)
-	suite.Equal(id, comments[0].GetCommentId())
-	suite.Equal("blah", comments[0].GetCommentMessage())
+	suite.Len(gotComments, 1)
+	suite.Equal(id, gotComments[0].GetCommentId())
+	suite.Equal("blah", gotComments[0].GetCommentMessage())
 
-	suite.Error(suite.datastore.UpdateProcessComment(suite.hasNoneCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
-	suite.Error(suite.datastore.UpdateProcessComment(suite.hasReadCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.Error(suite.datastore.UpdateProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.Error(suite.datastore.UpdateProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 
-	suite.NoError(suite.datastore.UpdateProcessComment(suite.hasWriteCtx, indicators[0].GetId(), &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.NoError(suite.datastore.UpdateProcessComment(suite.hasWriteCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 
-	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
 	suite.NoError(err)
-	suite.Len(comments, 1)
-	suite.Equal(id, comments[0].GetCommentId())
-	suite.Equal("blah2", comments[0].GetCommentMessage())
+	suite.Len(gotComments, 1)
+	suite.Equal(id, gotComments[0].GetCommentId())
+	suite.Equal("blah2", gotComments[0].GetCommentMessage())
 
-	suite.Error(suite.datastore.RemoveProcessComment(suite.hasNoneCtx, indicators[0].GetId(), id))
-	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, indicators[0].GetId(), id))
-	suite.NoError(suite.datastore.RemoveProcessComment(suite.hasWriteCtx, indicators[0].GetId(), id))
+	suite.Error(suite.datastore.RemoveProcessComment(suite.hasNoneCtx, key, id))
+	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, key, id))
+	suite.NoError(suite.datastore.RemoveProcessComment(suite.hasWriteCtx, key, id))
 
-	comments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, indicators[0].GetId())
+	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
 	suite.NoError(err)
-	suite.Empty(comments)
+	suite.Empty(gotComments)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {

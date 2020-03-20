@@ -52,34 +52,14 @@ func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (
 	return indicatorSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).Allowed(ctx)
 }
 
-func checkWriteAccess(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
-	return indicatorSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(indicator).Allowed(ctx)
-}
-
-func (ds *datastoreImpl) getIndicatorAndCheckWriteAccess(ctx context.Context, id string) (*storage.ProcessIndicator, error) {
-	indicator, exists, err := ds.GetProcessIndicator(ctx, id)
-	if err != nil {
-		return nil, errors.Wrap(err, "retrieving existing indicator")
-	}
-	if !exists {
-		return nil, errors.Errorf("no indicator exists with id: %q", id)
-	}
-
-	if ok, err := checkWriteAccess(ctx, indicator); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrPermissionDenied
-	}
-	return indicator, nil
-}
-
-func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processID string, comment *storage.Comment) (string, error) {
-	indicator, err := ds.getIndicatorAndCheckWriteAccess(ctx, processID)
-	if err != nil {
+func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return "", err
+	} else if !ok {
+		return "", sac.ErrPermissionDenied
 	}
 	comment.User = comments.UserFromContext(ctx)
-	return ds.commentsStorage.AddProcessComment(comments.ProcessToKey(indicator), comment)
+	return ds.commentsStorage.AddProcessComment(processKey, comment)
 }
 
 func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, key *comments.ProcessCommentKey, commentID string) error {
@@ -97,46 +77,41 @@ func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, k
 	return nil
 }
 
-func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processID string, comment *storage.Comment) error {
-	indicator, err := ds.getIndicatorAndCheckWriteAccess(ctx, processID)
-	if err != nil {
+func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
 	}
 	comment.User = comments.UserFromContext(ctx)
-	key := comments.ProcessToKey(indicator)
-	if err := ds.checkUserCanModifyComment(comment.GetUser(), key, comment.GetCommentId()); err != nil {
+	if err := ds.checkUserCanModifyComment(comment.GetUser(), processKey, comment.GetCommentId()); err != nil {
 		return err
 	}
-	return ds.commentsStorage.UpdateProcessComment(key, comment)
+	return ds.commentsStorage.UpdateProcessComment(processKey, comment)
 }
 
-func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processID string) ([]*storage.Comment, error) {
-	indicator, exists, err := ds.GetProcessIndicator(ctx, processID)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting indicator")
+func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *comments.ProcessCommentKey) ([]*storage.Comment, error) {
+	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil || !ok {
+		return nil, err
 	}
-	// No process, no comments.
-	if !exists {
-		return nil, nil
-	}
-	return ds.commentsStorage.GetCommentsForProcessKey(comments.ProcessToKey(indicator))
+
+	return ds.commentsStorage.GetCommentsForProcessKey(processKey)
 }
 
-func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processID, commentID string) error {
-	indicator, err := ds.getIndicatorAndCheckWriteAccess(ctx, processID)
-	if err != nil {
+func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, commentID string) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
 	}
-
-	key := comments.ProcessToKey(indicator)
-	if err := ds.checkUserCanModifyComment(comments.UserFromContext(ctx), key, commentID); err != nil {
+	if err := ds.checkUserCanModifyComment(comments.UserFromContext(ctx), processKey, commentID); err != nil {
 		// comment not existing is okay for remove
 		if err == errCommentDoesntExist {
 			return nil
 		}
 		return err
 	}
-	return ds.commentsStorage.RemoveProcessComment(key, commentID)
+	return ds.commentsStorage.RemoveProcessComment(processKey, commentID)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {

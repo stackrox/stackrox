@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	comments "github.com/stackrox/rox/central/comments"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -173,61 +174,61 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessIndicators(ctx, ids interface{
 }
 
 // AddProcessComment mocks base method
-func (m *MockDataStore) AddProcessComment(ctx context.Context, processID string, comment *storage.Comment) (string, error) {
+func (m *MockDataStore) AddProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddProcessComment", ctx, processID, comment)
+	ret := m.ctrl.Call(m, "AddProcessComment", ctx, processKey, comment)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddProcessComment indicates an expected call of AddProcessComment
-func (mr *MockDataStoreMockRecorder) AddProcessComment(ctx, processID, comment interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) AddProcessComment(ctx, processKey, comment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessComment", reflect.TypeOf((*MockDataStore)(nil).AddProcessComment), ctx, processID, comment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessComment", reflect.TypeOf((*MockDataStore)(nil).AddProcessComment), ctx, processKey, comment)
 }
 
 // UpdateProcessComment mocks base method
-func (m *MockDataStore) UpdateProcessComment(ctx context.Context, processID string, comment *storage.Comment) error {
+func (m *MockDataStore) UpdateProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProcessComment", ctx, processID, comment)
+	ret := m.ctrl.Call(m, "UpdateProcessComment", ctx, processKey, comment)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateProcessComment indicates an expected call of UpdateProcessComment
-func (mr *MockDataStoreMockRecorder) UpdateProcessComment(ctx, processID, comment interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateProcessComment(ctx, processKey, comment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessComment", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessComment), ctx, processID, comment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessComment", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessComment), ctx, processKey, comment)
 }
 
 // GetCommentsForProcess mocks base method
-func (m *MockDataStore) GetCommentsForProcess(ctx context.Context, processID string) ([]*storage.Comment, error) {
+func (m *MockDataStore) GetCommentsForProcess(ctx context.Context, processKey *comments.ProcessCommentKey) ([]*storage.Comment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommentsForProcess", ctx, processID)
+	ret := m.ctrl.Call(m, "GetCommentsForProcess", ctx, processKey)
 	ret0, _ := ret[0].([]*storage.Comment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetCommentsForProcess indicates an expected call of GetCommentsForProcess
-func (mr *MockDataStoreMockRecorder) GetCommentsForProcess(ctx, processID interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetCommentsForProcess(ctx, processKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsForProcess), ctx, processID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsForProcess), ctx, processKey)
 }
 
 // RemoveProcessComment mocks base method
-func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processID, commentID string) error {
+func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, commentID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveProcessComment", ctx, processID, commentID)
+	ret := m.ctrl.Call(m, "RemoveProcessComment", ctx, processKey, commentID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveProcessComment indicates an expected call of RemoveProcessComment
-func (mr *MockDataStoreMockRecorder) RemoveProcessComment(ctx, processID, commentID interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) RemoveProcessComment(ctx, processKey, commentID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessComment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessComment), ctx, processID, commentID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessComment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessComment), ctx, processKey, commentID)
 }
 
 // WalkAll mocks base method
