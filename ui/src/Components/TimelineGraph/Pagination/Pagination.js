@@ -1,14 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 
 import { PaginationInput, PrevPaginationButton, NextPaginationButton } from 'Components/Pagination';
 
-const Pagination = () => {
-    const [currentPage, setPage] = useState(1);
-    const totalSize = 50;
-    const pageSize = 10;
-    function onChange(page) {
-        setPage(page);
-    }
+const Pagination = ({ currentPage, totalSize, pageSize, onChange }) => {
     return (
         <div className="flex flex-col h-full items-center justify-center">
             <div className="mb-4">
@@ -35,6 +30,13 @@ const Pagination = () => {
             />
         </div>
     );
+};
+
+Pagination.propTypes = {
+    currentPage: PropTypes.number.isRequired,
+    pageSize: PropTypes.number.isRequired,
+    totalSize: PropTypes.number.isRequired,
+    onChange: PropTypes.func.isRequired
 };
 
 export default Pagination;

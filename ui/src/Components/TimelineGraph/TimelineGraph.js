@@ -9,9 +9,7 @@ import Pagination from 'Components/TimelineGraph/Pagination';
 const ABSOLUTE_MIN_TIME_RANGE = 0;
 const ABSOLUTE_MAX_TIME_RANGE = 24;
 
-const NUM_ROWS = 10;
-
-const TimelineGraph = ({ data, goToNextView }) => {
+const TimelineGraph = ({ data, goToNextView, currentPage, totalSize, pageSize, onPageChange }) => {
     const [minTimeRange, setMinTimeRange] = useState(ABSOLUTE_MIN_TIME_RANGE);
     const [maxTimeRange, setMaxTimeRange] = useState(ABSOLUTE_MAX_TIME_RANGE);
 
@@ -33,13 +31,18 @@ const TimelineGraph = ({ data, goToNextView }) => {
                         data={data}
                         minTimeRange={minTimeRange}
                         maxTimeRange={maxTimeRange}
-                        numRows={NUM_ROWS}
+                        numRows={pageSize}
                     />
                 </div>
             </div>
             <div className="flex border-t border-base-300">
                 <div className="w-1/4 p-3 border-r border-base-300 font-700">
-                    <Pagination />
+                    <Pagination
+                        currentPage={currentPage}
+                        totalSize={totalSize}
+                        pageSize={pageSize}
+                        onChange={onPageChange}
+                    />
                 </div>
                 <div className="w-3/4 font-700">
                     <Minimap
@@ -48,7 +51,7 @@ const TimelineGraph = ({ data, goToNextView }) => {
                         maxTimeRange={ABSOLUTE_MAX_TIME_RANGE}
                         setMaxTimeRange={setMaxTimeRange}
                         data={data}
-                        numRows={NUM_ROWS}
+                        numRows={pageSize}
                     />
                 </div>
             </div>
@@ -73,7 +76,11 @@ TimelineGraph.propTypes = {
             )
         })
     ),
-    goToNextView: PropTypes.func.isRequired
+    goToNextView: PropTypes.func.isRequired,
+    currentPage: PropTypes.number.isRequired,
+    pageSize: PropTypes.number.isRequired,
+    totalSize: PropTypes.number.isRequired,
+    onPageChange: PropTypes.func.isRequired
 };
 
 TimelineGraph.defaultProps = {

@@ -6,6 +6,13 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import DeploymentEventTimeline from './DeploymentEventTimeline';
 import PodEventTimeline from './PodEventTimeline';
 
+const PAGE_SIZE = 10;
+
+const defaultSort = {
+    id: 'name',
+    desc: false
+};
+
 const EventTimelineComponentMap = {
     [rootTypes.DEPLOYMENT]: DeploymentEventTimeline,
     [rootTypes.POD]: PodEventTimeline
@@ -18,7 +25,7 @@ const EventTimeline = ({ deploymentId }) => {
             id: deploymentId
         }
     ];
-
+    const [currentPage, setPage] = useState(1);
     const [selectedEventType, selectEventType] = useState(eventTypes.ALL);
     const [view, setView] = useState(rootView);
 
@@ -65,6 +72,10 @@ const EventTimeline = ({ deploymentId }) => {
             goToPreviousView={goToPreviousView}
             selectedEventType={selectedEventType}
             selectEventType={selectEventType}
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+            sort={defaultSort}
         />
     );
 };

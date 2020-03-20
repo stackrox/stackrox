@@ -10,7 +10,7 @@ export default {
 };
 
 export const basicUsage = () => {
-    const [currentPage, setPage] = useState(1);
+    const [currentPage, setPage] = useState(5);
     const totalSize = 50;
     const pageSize = 10;
 
