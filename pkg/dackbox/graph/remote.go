@@ -83,6 +83,7 @@ func (rm *RemoteGraph) SetRefs(from []byte, to [][]byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
+	rm.ensureToAll(to)
 	return rm.RWGraph.SetRefs(from, to)
 }
 
@@ -92,12 +93,14 @@ func (rm *RemoteGraph) AddRefs(from []byte, to ...[]byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
 	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
+	rm.ensureToAll(to)
 	return rm.RWGraph.AddRefs(from, to...)
 }
 
 // DeleteRefsFrom removes all references from the given input id.
 func (rm *RemoteGraph) DeleteRefsFrom(from []byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
+	rm.ensureFrom(from)
 	rm.ensureToAll(rm.GetRefsFrom(from))
 	return rm.RWGraph.DeleteRefsFrom(from)
 }
@@ -105,6 +108,7 @@ func (rm *RemoteGraph) DeleteRefsFrom(from []byte) error {
 // DeleteRefsTo removes the input id from all ids that reference it.
 func (rm *RemoteGraph) DeleteRefsTo(to []byte) error {
 	// Copy in the state needed to calculate the necessary updates, and apply the updates.
+	rm.ensureTo(to)
 	rm.ensureFromAll(rm.GetRefsTo(to))
 	return rm.RWGraph.DeleteRefsTo(to)
 }

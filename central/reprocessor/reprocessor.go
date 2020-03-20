@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/throttle"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
@@ -240,34 +239,15 @@ func (l *loopImpl) reprocessImage(id string, sema *semaphore.Weighted, wg *sync.
 }
 
 func (l *loopImpl) getActiveImageIDs() ([]string, error) {
-	query := search.NewQueryBuilder().AddStringsHighlighted(search.ImageSHA, search.WildcardString).ProtoQuery()
-	results, err := l.deployments.Search(getDeploymentsContext, query)
+	query := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, search.WildcardString).ProtoQuery()
+	results, err := l.images.Search(getAndWriteImagesContext, query)
 	if err != nil {
 		return nil, errors.Wrap(err, "error searching for active image IDs")
 	}
 
-	field, ok := deployments.OptionsMap.Get(search.ImageSHA.String())
-	if !ok {
-		utils.Should(errors.New("Search Option ImageSHA should exist in deployments option map"))
-		return nil, nil
-	}
-
 	imagesSet := set.NewStringSet()
 	for _, result := range results {
-		field, ok := result.Fields[field.GetFieldPath()]
-		if !ok {
-			continue
-		}
-		switch obj := field.(type) {
-		case string:
-			imagesSet.Add(obj)
-		case []interface{}:
-			for _, i := range obj {
-				if digest, ok := i.(string); ok {
-					imagesSet.Add(digest)
-				}
-			}
-		}
+		imagesSet.Add(result.ID)
 	}
 	return imagesSet.AsSlice(), nil
 }

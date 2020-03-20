@@ -43,6 +43,7 @@ type loopTestSuite struct {
 func (suite *loopTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.mockImage = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.mockDeployment = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 
 }
@@ -57,7 +58,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 		timesSpec = (*gomock.Call).MinTimes
 	}
 
-	timesSpec(suite.mockDeployment.EXPECT().Search(getDeploymentsContext, gomock.Any()).Return(nil, nil), times)
+	timesSpec(suite.mockImage.EXPECT().Search(getAndWriteImagesContext, gomock.Any()).Return(nil, nil), times)
 	timesSpec(suite.mockManager.EXPECT().BroadcastMessage(&central.MsgToSensor{
 		Msg: &central.MsgToSensor_ReassessPolicies{
 			ReassessPolicies: &central.ReassessPolicies{},
