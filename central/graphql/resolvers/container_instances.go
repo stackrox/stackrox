@@ -15,8 +15,8 @@ func init() {
 	utils.Must(
 		schema.AddType("ContainerInstanceMock", []string{
 			"id: ID!",
-			"name: String!",
-			"startTime: Int!",
+			"containerName: String!",
+			"startTime: Time",
 		}),
 		schema.AddQuery("containerInstances(id: ID): [ContainerInstanceMock!]!"),
 		schema.AddExtraResolver("ContainerInstanceMock", "events: [DeploymentEvent!]!"),
@@ -25,9 +25,9 @@ func init() {
 
 // ContainerInstanceMockResolver is a temporary dummy resolver for container instances.
 type ContainerInstanceMockResolver struct {
-	id        graphql.ID
-	name      string
-	startTime int32
+	id            graphql.ID
+	containerName string
+	startTime     time.Time
 }
 
 // ContainerInstances returns GraphQL resolvers for all container instances associated with the given pod ID.
@@ -36,21 +36,24 @@ func (resolver *Resolver) ContainerInstances(ctx context.Context, _ struct{ *gra
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	return []*ContainerInstanceMockResolver{
 		{
-			id:        "432143",
-			name:      "scanner",
-			startTime: 123123,
+			id:            "432143",
+			containerName: "scanner",
+			startTime:     now,
 		},
 		{
-			id:        "23748732",
-			name:      "scanner-db",
-			startTime: 1234321,
+			id:            "23748732",
+			containerName: "scanner-db",
+			// 30 milliseconds after 'now'
+			startTime: now.Add(3e7),
 		},
 		{
-			id:        "23748735",
-			name:      "nginx",
-			startTime: 1234325,
+			id:            "23748735",
+			containerName: "nginx",
+			// 1 second after 'now'
+			startTime: now.Add(1e9),
 		},
 	}, nil
 }
@@ -60,14 +63,14 @@ func (resolver *ContainerInstanceMockResolver) ID(_ context.Context) graphql.ID 
 	return resolver.id
 }
 
-// Name returns the container instance's name.
-func (resolver *ContainerInstanceMockResolver) Name(_ context.Context) string {
-	return resolver.name
+// ContainerName returns the container instance's name.
+func (resolver *ContainerInstanceMockResolver) ContainerName(_ context.Context) string {
+	return resolver.containerName
 }
 
 // StartTime returns the container instance's start time.
-func (resolver *ContainerInstanceMockResolver) StartTime(_ context.Context) int32 {
-	return resolver.startTime
+func (resolver *ContainerInstanceMockResolver) StartTime(_ context.Context) *graphql.Time {
+	return &graphql.Time{Time: resolver.startTime}
 }
 
 // Events returns the events associated with this container instance.
@@ -75,9 +78,10 @@ func (resolver *ContainerInstanceMockResolver) Events(_ context.Context) []*Depl
 	return []*DeploymentEventResolver{
 		{
 			&ProcessActivityEventResolver{
-				id:        "23432",
-				name:      "/bin/bash",
-				timestamp: 12343428,
+				id:   "23432",
+				name: "/bin/bash",
+				// 2 seconds from 'now'
+				timestamp: time.Now().Add(2e9),
 				uid:       4000,
 			},
 		},

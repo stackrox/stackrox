@@ -16,7 +16,7 @@ func init() {
 		schema.AddType("PodMock", []string{
 			"id: ID!",
 			"name: String!",
-			"startTime: Int!",
+			"startTime: Time",
 			"inactive: Boolean!",
 			"containerCount: Int!",
 		}),
@@ -30,7 +30,7 @@ func init() {
 type PodMockResolver struct {
 	id             graphql.ID
 	name           string
-	startTime      int32
+	startTime      time.Time
 	inactive       bool
 	containerCount int32
 }
@@ -44,7 +44,7 @@ func (resolver *Resolver) Pod(ctx context.Context, args struct{ *graphql.ID }) (
 	return &PodMockResolver{
 		id:             *args.ID,
 		name:           "nginx-7db9fccd9b-92hfs",
-		startTime:      123124,
+		startTime:      time.Now(),
 		inactive:       false,
 		containerCount: 3,
 	}, nil
@@ -56,74 +56,84 @@ func (resolver *Resolver) Pods(ctx context.Context, _ PaginatedQuery) ([]*PodMoc
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	return []*PodMockResolver{
 		{
 			id:             "0",
 			name:           "scanner-84c6678b58-2dj5j",
-			startTime:      123123,
+			startTime:      now,
 			inactive:       false,
 			containerCount: 3,
 		},
 		{
-			id:             "1",
-			name:           "scanner-db-6dcf8894d7-k2mcw",
-			startTime:      123124,
+			id:   "1",
+			name: "scanner-db-6dcf8894d7-k2mcw",
+			// 1 millisecond from 'now'
+			startTime:      now.Add(1e6),
 			inactive:       true,
 			containerCount: 3,
 		},
 		{
-			id:             "2",
-			name:           "nginx-7db9fccd9b-92hfs",
-			startTime:      123124,
+			id:   "2",
+			name: "nginx-7db9fccd9b-92hfs",
+			// 3 millisecond from 'now'
+			startTime:      now.Add(3e6),
 			inactive:       false,
 			containerCount: 3,
 		},
 		{
-			id:             "3",
-			name:           "nginx-7db9fccd9b-sl2mk",
-			startTime:      123124,
+			id:   "3",
+			name: "nginx-7db9fccd9b-sl2mk",
+			// 10 milliseconds from 'now'
+			startTime:      now.Add(1e7),
 			inactive:       false,
 			containerCount: 3,
 		},
 		{
-			id:             "4",
-			name:           "nginx-7db9fccd9b-xkqv9",
-			startTime:      123124,
+			id:   "4",
+			name: "nginx-7db9fccd9b-xkqv9",
+			// 1 second from 'now'
+			startTime:      now.Add(1e9),
 			inactive:       false,
 			containerCount: 3,
 		},
 		{
-			id:             "5",
-			name:           "nginx-7db9fccd9b-9w8bz",
-			startTime:      123124,
+			id:   "5",
+			name: "nginx-7db9fccd9b-9w8bz",
+			// 3 seconds from 'now'
+			startTime:      now.Add(3e9),
 			inactive:       true,
 			containerCount: 3,
 		},
 		{
-			id:             "6",
-			name:           "scanner-db-6dcf8894d7-k2mcw",
-			startTime:      123124,
+			id:   "6",
+			name: "scanner-db-6dcf8894d7-k2mcw",
+			// 5 minutes from 'now'
+			startTime:      now.Add(3e11),
 			inactive:       true,
 			containerCount: 3,
 		},
 		{
-			id:             "7",
-			name:           "scanner-db-6dcf8894d7-k2mcw",
-			startTime:      123124,
+			id:   "7",
+			name: "scanner-db-6dcf8894d7-k2mcw",
+			// 20 microseconds from 'now'
+			startTime:      now.Add(2e4),
 			inactive:       true,
 			containerCount: 3,
 		},
 		{
-			id:             "8",
-			name:           "scanner-db-6dcf8894d7-k2mcw",
-			startTime:      123124,
+			id:   "8",
+			name: "scanner-db-6dcf8894d7-k2mcw",
+			// 17 milliseconds from 'now'
+			startTime:      now.Add(1.7e7),
 			inactive:       true,
 			containerCount: 3,
 		},
 		{
-			id:             "9",
-			name:           "scanner-db-6dcf8894d7-k2mcw",
-			startTime:      123124,
+			id:   "9",
+			name: "scanner-db-6dcf8894d7-k2mcw",
+			// 1 hour from 'now'
+			startTime:      now.Add(3.6e12),
 			inactive:       true,
 			containerCount: 3,
 		},
@@ -141,8 +151,8 @@ func (resolver *PodMockResolver) Name(_ context.Context) string {
 }
 
 // StartTime returns the pod's start time.
-func (resolver *PodMockResolver) StartTime(_ context.Context) int32 {
-	return resolver.startTime
+func (resolver *PodMockResolver) StartTime(_ context.Context) *graphql.Time {
+	return &graphql.Time{Time: resolver.startTime}
 }
 
 // Inactive says whether or not this pod is inactive.
@@ -157,37 +167,42 @@ func (resolver *PodMockResolver) ContainerCount(_ context.Context) int32 {
 
 // Events returns the events associated with this pod.
 func (resolver *PodMockResolver) Events(_ context.Context) []*DeploymentEventResolver {
+	now := time.Now()
 	return []*DeploymentEventResolver{
 		{
 			&ContainerTerminationEventResolver{
-				id:        "1234",
-				name:      "nginx",
-				timestamp: 12343421,
+				id:   "1234",
+				name: "nginx",
+				// 1 minute from 'now'
+				timestamp: now.Add(6e10),
 				exitCode:  0,
 				reason:    "Completed",
 			},
 		},
 		{
 			&ContainerTerminationEventResolver{
-				id:        "1235",
-				name:      "nginx",
-				timestamp: 12343421,
+				id:   "1235",
+				name: "nginx",
+				// 1 second from 'now'
+				timestamp: now.Add(1e9),
 				exitCode:  137,
 				reason:    "Finished",
 			},
 		},
 		{
 			&ContainerRestartEventResolver{
-				id:        "1236",
-				name:      "nginx",
-				timestamp: 12343427,
+				id:   "1236",
+				name: "nginx",
+				// 20 milliseconds from 'now'
+				timestamp: now.Add(2e7),
 			},
 		},
 		{
 			&ProcessActivityEventResolver{
-				id:        "23432",
-				name:      "/bin/bash",
-				timestamp: 12343428,
+				id:   "23432",
+				name: "/bin/bash",
+				// 500 milliseconds from 'now'
+				timestamp: now.Add(5e8),
 				uid:       4000,
 			},
 		},
