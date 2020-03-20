@@ -3,6 +3,8 @@ package sortedkeys
 import (
 	"bytes"
 	"sort"
+
+	"github.com/stackrox/rox/pkg/dackbox/utils"
 )
 
 // SortedKeys is a helper class that is a serializable list of keys with a maximum length of 1 << 16 (maximum supported
@@ -61,6 +63,9 @@ func (sk SortedKeys) Remove(key []byte) (SortedKeys, bool) {
 
 // Union combines two sets of sorted keys.
 func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
+	if len(other) == 0 {
+		return utils.CopyKeys(sk)
+	}
 	newKeys := make([][]byte, 0, len(sk)+len(other))
 	otherIdx := 0
 	thisIdx := 0
@@ -98,6 +103,9 @@ func (sk SortedKeys) Union(other SortedKeys) SortedKeys {
 
 // Difference removes all of the keys in other from the received set of keys.
 func (sk SortedKeys) Difference(other SortedKeys) SortedKeys {
+	if len(other) == 0 {
+		return utils.CopyKeys(sk)
+	}
 	newKeys := make([][]byte, 0, len(sk))
 	otherIdx := 0
 	for _, elem := range sk {
@@ -113,6 +121,10 @@ func (sk SortedKeys) Difference(other SortedKeys) SortedKeys {
 
 // Intersect creates a new set with only the overlapping keys.
 func (sk SortedKeys) Intersect(other SortedKeys) SortedKeys {
+	if len(other) == 0 {
+		return nil
+	}
+
 	newKeys := make([][]byte, 0, len(sk))
 	otherIdx := 0
 	thisIdx := 0

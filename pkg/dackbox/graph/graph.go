@@ -177,6 +177,7 @@ func (s *Graph) addMappings(from []byte, to [][]byte) {
 }
 
 func (s *Graph) setMappings(from []byte, to [][]byte) {
+
 	sFrom := string(from)
 	s.forward[sFrom] = sortedkeys.Sort(to)
 	for _, t := range to {

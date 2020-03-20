@@ -26,6 +26,7 @@ var (
 						Then(transformation.HasPrefix(componentDackBox.Bucket)).
 						ThenMapEachToMany(transformation.BackwardFromContext()).
 						Then(transformation.HasPrefix(imageDackBox.Bucket)).
+						Then(transformation.Dedupe()).
 						ThenMapEachToMany(transformation.BackwardFromContext()).
 						Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
 						Then(transformation.Dedupe()).
@@ -48,6 +49,7 @@ var (
 			Then(transformation.HasPrefix(componentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(imageDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.Dedupe()).
 			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
@@ -62,9 +64,10 @@ var (
 			Then(transformation.HasPrefix(componentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(imageDackBox.Bucket)).
-			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.Dedupe()).
+			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToOne(transformation.StripPrefix(deploymentDackBox.Bucket)),
 
 		// CVE (backwards) Components (backwards) Images
@@ -73,6 +76,7 @@ var (
 			Then(transformation.HasPrefix(componentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(imageDackBox.Bucket)).
+			Then(transformation.Dedupe()).
 			ThenMapEachToOne(transformation.StripPrefix(imageDackBox.Bucket)),
 
 		// CombineReversed ( { k2, k1 }

@@ -78,7 +78,6 @@ var (
 		// Image (forwards) Components (forwards) CVEs
 		v1.SearchCategory_VULNERABILITIES: transformation.AddPrefix(imageDackBox.Bucket).
 			ThenMapToMany(transformation.ForwardFromContext()).
-			Then(transformation.Dedupe()).
 			Then(transformation.HasPrefix(componentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.ForwardFromContext()).
 			Then(transformation.Dedupe()).

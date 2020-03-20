@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/keys"
-	"github.com/stackrox/rox/pkg/dackbox/utils/trie"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // OneToOne is a transformation that changes one key into another key.
@@ -152,14 +152,12 @@ func (otm ManyToMany) ThenMapEachToOne(fn OneToOne) ManyToMany {
 // Dedupe removed duplicate key values before outputing.
 func Dedupe() ManyToMany {
 	return func(ctx context.Context, keys [][]byte) [][]byte {
-		keySet := trie.New()
+		seen := set.NewStringSet()
 		deduped := keys[:0]
 		for _, key := range keys {
-			if keySet.Contains(key) {
-				continue
+			if seen.Add(string(key)) {
+				deduped = append(deduped, key)
 			}
-			deduped = append(deduped, key)
-			keySet.Insert(key)
 		}
 		return deduped
 	}

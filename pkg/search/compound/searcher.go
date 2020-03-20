@@ -5,34 +5,43 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 )
 
 // SearcherSpec specifies a searcher for the compound searcher to use.
 type SearcherSpec struct {
-	IsDefault   bool
-	DropHandled bool
-	Searcher    search.Searcher
-	Options     search.OptionsMap
+	IsDefault bool
+	Searcher  search.Searcher
+	Options   search.OptionsMap
+
+	// If you want a transformation applied to the resultss prior to aggregation.
+	Transformation transformation.OneToMany
+
+	// Provides the ability to do linked fields queries. You should populate this field with a transformation that
+	// converts an id from the following searcher to an id of this searchers type.
+	// For instance, if you wanted to do a linked field search on component and cve fields:
+	// NewSearcher(
+	//    &SearcherSpec{ Searcher: cveSearcher }
+	//    // Can do a linked field search with component and CVE fields.
+	//    &SearcherSpec{ Searcher: componentSearcher LinkToPrev: <Mapping from CVE -> Components>}
+	//    // No LinkToPrev, so you can't do a linked search with Image fields and component fields
+	//     &SearcherSpec{ Searcher: imageSearcher }
+	// )
+	LinkToPrev transformation.OneToMany
 }
 
 // NewSearcher returns a searcher that applies search terms to the first input index that supports the term.
 // If no index supports the term, then the search will return an error.
-func NewSearcher(specs ...SearcherSpec) search.Searcher {
-	optMaps := make([]search.OptionsMap, 0, len(specs))
-	for _, spec := range specs {
-		optMaps = append(optMaps, spec.Options)
-	}
+func NewSearcher(specs []SearcherSpec, names ...string) search.Searcher {
 	return paginated.Paginated(&compoundSearcherImpl{
-		specs:    specs,
-		combined: search.CombineOptionsMaps(optMaps...),
+		specs: specs,
 	})
 }
 
 type compoundSearcherImpl struct {
-	specs    []SearcherSpec
-	combined search.OptionsMap
+	specs []SearcherSpec
 }
 
 // Search constructs and executes the necessary queries on the searchers that the compound searcher is configured to

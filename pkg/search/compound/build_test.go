@@ -457,3 +457,43 @@ func (suite *BuildRequestTestSuite) TestBuildBoolean() {
 	suite.Nil(err)
 	suite.Equal(expected, actual)
 }
+
+func (suite *BuildRequestTestSuite) TestBuildSingleLinked() {
+	searcherSpecs := []SearcherSpec{
+		{
+			Searcher: suite.mockSearcher1,
+			Options:  suite.mockOptions1,
+		},
+		{
+			Searcher: suite.mockSearcher2,
+			Options:  suite.mockOptions2,
+		},
+	}
+
+	q1 := search.NewQueryBuilder().AddLinkedFields(
+		[]search.FieldLabel{"s1field", "s2field"},
+		[]string{"s1value", "s2value"},
+	).ProtoQuery()
+
+	// Look for a searcher with all linked fields.
+	suite.mockOptions1.EXPECT().Get("s1field").Return(nil, true)
+	suite.mockOptions1.EXPECT().Get("s2field").Return(nil, false)
+	suite.mockOptions2.EXPECT().Get("s1field").Return(nil, false)
+
+	// Fall back to allowing linked from the first with a match.
+	suite.mockOptions2.EXPECT().Get("s1field").Return(nil, true)
+
+	expectedQuery := search.NewConjunctionQuery(
+		search.NewQueryBuilder().
+			AddStrings("s1field", "s1value").
+			ProtoQuery(),
+		search.NewQueryBuilder().
+			AddStrings("s2field", "s2value").
+			ProtoQuery(),
+	)
+
+	actual, err := build(q1, searcherSpecs)
+	suite.Nil(err)
+	suite.NotNil(actual.base)
+	suite.Equal(expectedQuery, actual.base.Query)
+}

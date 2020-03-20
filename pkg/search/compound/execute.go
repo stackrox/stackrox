@@ -92,10 +92,15 @@ func executeLeftJoinWithRightOrderRec(ctx context.Context, parts *joinRequestSpe
 }
 
 func executeBase(ctx context.Context, base *baseRequestSpec) (resultSet, error) {
+	// Run base search.
 	results, err := base.Spec.Searcher.Search(ctx, base.Query)
 	if err != nil {
 		return resultSet{}, err
 	}
-	ordered := len(base.Query.GetPagination().GetSortOptions()) > 0
-	return newResultSet(results, ordered), nil
+	// Apply transform is needed.
+	if base.Spec.Transformation != nil {
+		results = TransformResults(ctx, results, base.Spec.Transformation)
+	}
+	// Return results.
+	return newResultSet(results, len(base.Query.GetPagination().GetSortOptions()) > 0), nil
 }
