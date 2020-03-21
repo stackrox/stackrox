@@ -449,4 +449,7 @@ func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
 			portCfg.Exposure = exposureInfo.GetLevel()
 		}
 	}
+	sort.Slice(w.Ports, func(i, j int) bool {
+		return w.Ports[i].ContainerPort < w.Ports[j].ContainerPort
+	})
 }
