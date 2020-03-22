@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/containerid"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -27,6 +29,10 @@ import (
 
 const (
 	maxArgSize = 16
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
@@ -136,7 +142,7 @@ func (f *filterImpl) Update(deployment *storage.Deployment) {
 	liveContainerSet := set.NewStringSet()
 	for _, c := range deployment.GetContainers() {
 		for _, inst := range c.GetInstances() {
-			liveContainerSet.Add(inst.InstanceId.Id)
+			liveContainerSet.Add(containerid.ShortContainerIDFromInstance(inst))
 		}
 	}
 
@@ -154,7 +160,7 @@ func (f *filterImpl) UpdateByPod(pod *storage.Pod) {
 
 	liveContainerSet := set.NewStringSet()
 	for _, instance := range pod.GetInstances() {
-		liveContainerSet.Add(instance.GetInstanceId().GetId())
+		liveContainerSet.Add(containerid.ShortContainerIDFromInstance(instance))
 	}
 
 	f.updateByGivenContainersNoLock(pod.GetDeploymentId(), liveContainerSet)
@@ -189,7 +195,7 @@ func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
 
 	containerSet := set.NewStringSet()
 	for _, instance := range pod.GetInstances() {
-		containerSet.Add(instance.GetInstanceId().GetId())
+		containerSet.Add(containerid.ShortContainerIDFromInstance(instance))
 	}
 
 	containersMap := f.containersInDeployment[pod.GetDeploymentId()]

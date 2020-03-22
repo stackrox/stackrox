@@ -128,6 +128,21 @@ func TestDeploymentUpdate(t *testing.T) {
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
 }
 
+func TestDeploymentUpdateWithInstanceTruncation(t *testing.T) {
+	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+
+	pi := fixtures.GetProcessIndicator()
+	pi.Signal.ContainerId = "0123456789ab"
+	filter.Add(pi)
+
+	dep := fixtures.GetDeployment()
+	// instance id to > 12 digits but it should be truncated to the proper length
+	dep.Containers[0].Instances[0].InstanceId.Id = "0123456789abcdef"
+	filter.Update(dep)
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
+}
+
 func TestPodUpdate(t *testing.T) {
 	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
 
