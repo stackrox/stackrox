@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/migrations"
+	bolt "go.etcd.io/bbolt"
 	"golang.org/x/sys/unix"
 )
 

@@ -1,13 +1,13 @@
 package globalstore
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

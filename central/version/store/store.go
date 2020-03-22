@@ -2,9 +2,9 @@ package store
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

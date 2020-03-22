@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

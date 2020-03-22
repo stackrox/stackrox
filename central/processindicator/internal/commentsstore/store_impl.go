@@ -3,7 +3,6 @@ package commentsstore
 import (
 	"fmt"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/uuid"
+	"go.etcd.io/bbolt"
 )
 
 var (

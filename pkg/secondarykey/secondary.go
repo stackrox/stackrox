@@ -3,7 +3,7 @@ package secondarykey
 import (
 	"fmt"
 
-	bolt "github.com/etcd-io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 // GetCurrentUniqueKey returns the secondary key for the input primary key.

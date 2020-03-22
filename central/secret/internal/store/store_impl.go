@@ -5,12 +5,12 @@ import (
 	"time"
 
 	mapset "github.com/deckarep/golang-set"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	bolt "go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

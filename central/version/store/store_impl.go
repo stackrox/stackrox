@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	bolt "go.etcd.io/bbolt"
 )
 
 var key = []byte("\x00")

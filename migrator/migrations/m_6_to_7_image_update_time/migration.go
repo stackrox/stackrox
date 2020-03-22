@@ -2,12 +2,12 @@ package m6to7
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

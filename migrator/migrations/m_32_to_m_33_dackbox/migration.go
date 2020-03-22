@@ -2,12 +2,12 @@ package m32tom33
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/features"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

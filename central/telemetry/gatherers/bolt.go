@@ -3,9 +3,9 @@ package gatherers
 import (
 	"os"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/telemetry/data"
+	"go.etcd.io/bbolt"
 )
 
 type boltGatherer struct {

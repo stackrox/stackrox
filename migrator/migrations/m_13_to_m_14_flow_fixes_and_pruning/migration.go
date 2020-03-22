@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger"
-	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
+	"go.etcd.io/bbolt"
 )
 
 var migration = types.Migration{

@@ -1,7 +1,7 @@
 package bolthelper
 
 import (
-	bolt "github.com/etcd-io/bbolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 // KV is a key/value pair.

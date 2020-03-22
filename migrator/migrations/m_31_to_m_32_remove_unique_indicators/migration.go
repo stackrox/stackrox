@@ -2,13 +2,13 @@ package m31to32
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/process/id"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

@@ -1,10 +1,10 @@
 package export
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/store"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/pkg/secrets"
+	bolt "go.etcd.io/bbolt"
 )
 
 func scrubSensitiveData(db *bolt.DB) error {

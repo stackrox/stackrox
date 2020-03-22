@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 )
 
 func TestMigration(t *testing.T) {

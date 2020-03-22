@@ -3,8 +3,8 @@ package bolthelper
 import (
 	"encoding/binary"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/conv"
+	"go.etcd.io/bbolt"
 )
 
 // NewBoltWrapper returns a db wrapper that will increment txn counts

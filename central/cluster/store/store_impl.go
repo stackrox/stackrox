@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -16,6 +15,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/uuid"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (

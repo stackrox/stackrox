@@ -1,9 +1,9 @@
 package globalstore
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	bolt "go.etcd.io/bbolt"
 )
 
 // GlobalStore stores the nodes for all clusters.

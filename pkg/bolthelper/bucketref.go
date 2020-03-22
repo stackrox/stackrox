@@ -1,8 +1,8 @@
 package bolthelper
 
 import (
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
