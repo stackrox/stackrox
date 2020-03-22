@@ -97,7 +97,7 @@ func (b *storeImpl) CountPods() (int, error) {
 
 // UpsertPod adds a pod to badger, or updates it if it exists already.
 func (b *storeImpl) UpsertPod(pod *storage.Pod) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Add, "Pod")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Pod")
 	return b.podCRUD.Upsert(pod)
 }
 
@@ -119,6 +119,6 @@ func (b *storeImpl) GetKeysToIndex() ([]string, error) {
 
 // GetPodIDs returns the ID for each Pod in the store.
 func (b *storeImpl) GetPodIDs() ([]string, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "IDs")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "PodID")
 	return b.podCRUD.GetKeys()
 }
