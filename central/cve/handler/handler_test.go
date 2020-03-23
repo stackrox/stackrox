@@ -20,12 +20,14 @@ import (
 )
 
 func TestCVEScoping(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(CVEScopingTestSuite))
 }
 
 type CVEScopingTestSuite struct {
 	suite.Suite
 	ctx                 context.Context
+	mockCtrl            *gomock.Controller
 	clusterDataStore    *clusterMocks.MockDataStore
 	nsDataStore         *nsMocks.MockDataStore
 	deploymentDataStore *deploymentMocks.MockDataStore
@@ -35,14 +37,14 @@ type CVEScopingTestSuite struct {
 	resolver            *resolvers.Resolver
 }
 
-func (suite *CVEScopingTestSuite) SetupSuite() {
-	mockCtrl := gomock.NewController(suite.T())
-	suite.clusterDataStore = clusterMocks.NewMockDataStore(mockCtrl)
-	suite.nsDataStore = nsMocks.NewMockDataStore(mockCtrl)
-	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(mockCtrl)
-	suite.imageDataStore = imageMocks.NewMockDataStore(mockCtrl)
-	suite.componentDataStore = componentMocks.NewMockDataStore(mockCtrl)
-	suite.cveDataStore = cveMocks.NewMockDataStore(mockCtrl)
+func (suite *CVEScopingTestSuite) SetupTest() {
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.clusterDataStore = clusterMocks.NewMockDataStore(suite.mockCtrl)
+	suite.nsDataStore = nsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
+	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.cveDataStore = cveMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.resolver = &resolvers.Resolver{
 		ClusterDataStore:        suite.clusterDataStore,
@@ -54,6 +56,10 @@ func (suite *CVEScopingTestSuite) SetupSuite() {
 	}
 
 	suite.ctx = sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+}
+
+func (suite *CVEScopingTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
 }
 
 func (suite *CVEScopingTestSuite) TestGetVulnsWithScoping() {
