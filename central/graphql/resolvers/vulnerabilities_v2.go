@@ -7,10 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
-	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
 	"github.com/stackrox/rox/central/cve/converter"
-	cveMappings "github.com/stackrox/rox/central/cve/mappings"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -19,7 +16,6 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 // V2 Connections to root.
@@ -45,60 +41,7 @@ func (resolver *Resolver) vulnerabilitiesV2(ctx context.Context, args PaginatedQ
 	if err != nil {
 		return nil, err
 	}
-
-	if _, hasScope := scoped.GetScope(ctx); !hasScope {
-		return resolver.runQueryAsComponentScopedQuery(ctx, query)
-	}
 	return resolver.vulnerabilitiesV2Query(ctx, query)
-}
-
-func (resolver *Resolver) runQueryAsComponentScopedQuery(ctx context.Context, q *v1.Query) ([]VulnerabilityResolver, error) {
-	// Since we receive only conjunctions from frontend we can perform following.
-	// Following does not handles complex queries for example, component=<> OR CVE=<>
-	// If cve edge search fields are not in the query, run the query without scoping
-	cveEdgesOptionsMap := search.CombineOptionsMaps(componentCVEEdgeMappings.OptionsMap, clusterCVEEdgeMappings.OptionsMap)
-	edgeQuery, _ := search.FilterQueryWithMap(q, cveEdgesOptionsMap)
-	if edgeQuery == nil {
-		return resolver.vulnerabilitiesV2Query(ctx, q)
-	}
-
-	// If search fields other than cve and its edges are not in the query, run the query without scoping
-	combinedOptionsMap := search.CombineOptionsMaps(cveMappings.OptionsMap, cveEdgesOptionsMap)
-	notCVEQuery, containsUnmatchableFields := search.InverseFilterQueryWithMap(q, combinedOptionsMap)
-	if notCVEQuery == nil || !containsUnmatchableFields {
-		return resolver.vulnerabilitiesV2Query(ctx, q)
-	}
-
-	// Now run the query and get all matching image components.
-	// This is because image component is parent to cve and determines whether a CVE is fixable or not.
-	results, err := resolver.ImageComponentDataStore.Search(ctx, notCVEQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	cveQuery, _ := search.FilterQueryWithMap(q, combinedOptionsMap)
-	if cveQuery == nil {
-		cveQuery = search.EmptyQuery()
-	}
-
-	var ret []VulnerabilityResolver
-	seenIDs := set.NewStringSet()
-	for _, result := range results {
-		vulns, err := resolver.vulnerabilitiesV2Query(scoped.Context(ctx, scoped.Scope{Level: v1.SearchCategory_IMAGE_COMPONENTS, ID: result.ID}), cveQuery)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, vuln := range vulns {
-			if seenIDs.Contains(vuln.Cve(ctx)) {
-				continue
-			}
-			ret = append(ret, vuln)
-			seenIDs.Add(vuln.Cve(ctx))
-		}
-	}
-
-	return ret, nil
 }
 
 func (resolver *Resolver) vulnerabilitiesV2Query(ctx context.Context, query *v1.Query) ([]VulnerabilityResolver, error) {
