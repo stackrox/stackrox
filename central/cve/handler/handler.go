@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/graph-gophers/graphql-go"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
@@ -293,12 +294,14 @@ func scopeByCategory(query *v1.Query, category v1.SearchCategory) bool {
 		return false
 	}
 
-	notCVEQuery, _ := search.FilterQueryWithMap(query, optionsMap)
+	local := proto.Clone(query).(*v1.Query)
+	notCVEQuery, _ := search.FilterQueryWithMap(local, optionsMap)
 	return notCVEQuery != nil
 }
 
 func isScopable(query *v1.Query) bool {
-	filtered, _ := search.InverseFilterQueryWithMap(query, search.CombineOptionsMaps(
+	local := proto.Clone(query).(*v1.Query)
+	filtered, _ := search.InverseFilterQueryWithMap(local, search.CombineOptionsMaps(
 		cveMappings.OptionsMap, componentCVEEdgeMappings.OptionsMap, clusterCVEEdgeMappings.OptionsMap))
 	if filtered == nil {
 		return false
