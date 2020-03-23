@@ -77,6 +77,20 @@ func (mr *MockOptionsMapMockRecorder) Add(label, field interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockOptionsMap)(nil).Add), label, field)
 }
 
+// Remove mocks base method
+func (m *MockOptionsMap) Remove(label search.FieldLabel) search.OptionsMap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", label)
+	ret0, _ := ret[0].(search.OptionsMap)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockOptionsMapMockRecorder) Remove(label interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockOptionsMap)(nil).Remove), label)
+}
+
 // Original mocks base method
 func (m *MockOptionsMap) Original() map[search.FieldLabel]*v1.SearchField {
 	m.ctrl.T.Helper()

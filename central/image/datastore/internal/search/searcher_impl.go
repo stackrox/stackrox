@@ -38,11 +38,12 @@ var (
 	}
 	imagesSACSearchHelper = sac.ForResource(resources.Image).MustCreateSearchHelper(imageMappings.OptionsMap)
 
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
 	imageOnlyOptionsMap = search.Difference(
 		imageMappings.OptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
+			componentOptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
@@ -190,7 +191,7 @@ func getCompoundImageSearcher(
 		{
 			Searcher:       scoped.WithScoping(componentSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENTS][v1.SearchCategory_IMAGES],
-			Options:        componentMappings.OptionsMap,
+			Options:        componentOptionsMap,
 			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_COMPONENT_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
 		},
 		{

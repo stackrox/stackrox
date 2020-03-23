@@ -27,6 +27,8 @@ type OptionsMap interface {
 	MustGet(field string) *v1.SearchField
 	// Add adds a search field to the map
 	Add(label FieldLabel, field *v1.SearchField) OptionsMap
+	// Remove removes a search field from the map
+	Remove(label FieldLabel) OptionsMap
 	// Original returns the original options-map, with cases preserved for FieldLabels.
 	// Use this if you need the entire map, with values preserved.
 	Original() map[FieldLabel]*v1.SearchField
@@ -66,6 +68,12 @@ func (o *optionsMapImpl) Add(label FieldLabel, field *v1.SearchField) OptionsMap
 	}
 	o.original[label] = field
 	o.normalized[strings.ToLower(label.String())] = field
+	return o
+}
+
+func (o *optionsMapImpl) Remove(label FieldLabel) OptionsMap {
+	delete(o.original, label)
+	delete(o.normalized, strings.ToLower(label.String()))
 	return o
 }
 

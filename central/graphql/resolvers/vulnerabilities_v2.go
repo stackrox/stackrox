@@ -150,7 +150,7 @@ func (resolver *cVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool
 		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
 	)
 
-	results, err := resolver.root.CVEDataStore.Search(ctx, fixableCVEQuery)
+	results, err := resolver.root.CVEDataStore.Search(resolver.ctx, fixableCVEQuery)
 	if err != nil {
 		return false, err
 	}

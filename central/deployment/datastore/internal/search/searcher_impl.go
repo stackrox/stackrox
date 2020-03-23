@@ -42,16 +42,17 @@ var (
 		Reversed: false,
 	}
 
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageMappings.ImageOnlyOptionsMap)
-	imageOnlyOptionsMap      = search.Difference(
+	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
+	imageOnlyOptionsMap = search.Difference(
 		imageMappings.ImageOnlyOptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,
-			componentMappings.OptionsMap,
+			componentOptionsMap,
 			componentCVEEdgeMappings.OptionsMap,
 			cveMappings.OptionsMap,
 		),
-	)
+	).Remove(search.RiskScore)
+	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageOnlyOptionsMap)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -201,7 +202,7 @@ func getDeploymentCompoundSearcher(
 		{
 			Searcher:       scoped.WithScoping(componentSearcher, dackbox.ToCategory(v1.SearchCategory_IMAGE_COMPONENTS)),
 			Transformation: dackbox.GraphTransformations[v1.SearchCategory_IMAGE_COMPONENTS][v1.SearchCategory_DEPLOYMENTS],
-			Options:        componentMappings.OptionsMap,
+			Options:        componentOptionsMap,
 			LinkToPrev:     dackbox.GraphTransformations[v1.SearchCategory_COMPONENT_VULN_EDGE][v1.SearchCategory_IMAGE_COMPONENTS],
 		},
 		{
