@@ -16,7 +16,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("processTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!): [String!]!"),
 		schema.AddMutation("addProcessTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, tags: [String!]!): Boolean!"),
-		schema.AddMutation("removeProcessTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!): Boolean!"),
+		schema.AddMutation("removeProcessTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, tags: [String!]!): Boolean!"),
 	)
 }
 
