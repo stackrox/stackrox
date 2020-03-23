@@ -39,7 +39,7 @@ func (resolver *Resolver) RemoveAlertTags(ctx context.Context, args struct {
 	ResourceID graphql.ID
 	Tags       []string
 }) (bool, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "DeleteAlertTags")
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "RemoveAlertTags")
 	if err := writeAlerts(ctx); err != nil {
 		return false, err
 	}
