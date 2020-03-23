@@ -55,12 +55,12 @@ var (
 	)
 
 	// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
-	scopeLevels = map[v1.SearchCategory]search.OptionsMap{
-		v1.SearchCategory_IMAGE_COMPONENTS: componentMappings.OptionsMap,
-		v1.SearchCategory_IMAGES:           imageOnlyOptionsMap,
-		v1.SearchCategory_DEPLOYMENTS:      deploymentOnlyOptionsMap,
-		v1.SearchCategory_NAMESPACES:       nsOnlyOptionsMap,
-		v1.SearchCategory_CLUSTERS:         clusterMappings.OptionsMap,
+	scopeLevels = []scopeLevel{
+		{v1.SearchCategory_IMAGE_COMPONENTS, componentMappings.OptionsMap},
+		{v1.SearchCategory_IMAGES, imageOnlyOptionsMap},
+		{v1.SearchCategory_DEPLOYMENTS, deploymentOnlyOptionsMap},
+		{v1.SearchCategory_NAMESPACES, nsOnlyOptionsMap},
+		{v1.SearchCategory_CLUSTERS, clusterMappings.OptionsMap},
 	}
 
 	// idFields holds id search field label for various search category
@@ -70,6 +70,11 @@ var (
 		search.ImageSHA.String(),
 		search.ComponentID.String())
 )
+
+type scopeLevel struct {
+	category   v1.SearchCategory
+	optionsMap search.OptionsMap
+}
 
 func writeErr(w http.ResponseWriter, code int, err error) {
 	w.Header().Set("Content-Type", "text/plain")
@@ -269,33 +274,28 @@ func getScopeContexts(ctx context.Context, resolver *resolvers.Resolver, query *
 		return []context.Context{ctx}, nil
 	}
 
-	for category := range scopeLevels {
-		if !scopeByCategory(query, category) {
+	for _, scopeLevel := range scopeLevels {
+		if !scopeByCategory(query, scopeLevel) {
 			continue
 		}
 
-		scopeIDs, err := getScopeIDs(ctx, resolver, category, query)
+		scopeIDs, err := getScopeIDs(ctx, resolver, scopeLevel.category, query)
 		if err != nil {
 			return nil, err
 		}
 
 		ret := make([]context.Context, 0, len(scopeIDs))
 		for _, id := range scopeIDs {
-			ret = append(ret, scoped.Context(ctx, scoped.Scope{Level: category, ID: id}))
+			ret = append(ret, scoped.Context(ctx, scoped.Scope{Level: scopeLevel.category, ID: id}))
 		}
 		return ret, nil
 	}
 	return []context.Context{ctx}, nil
 }
 
-func scopeByCategory(query *v1.Query, category v1.SearchCategory) bool {
-	optionsMap, ok := scopeLevels[category]
-	if !ok {
-		return false
-	}
-
+func scopeByCategory(query *v1.Query, scopeLevel scopeLevel) bool {
 	local := proto.Clone(query).(*v1.Query)
-	notCVEQuery, _ := search.FilterQueryWithMap(local, optionsMap)
+	notCVEQuery, _ := search.FilterQueryWithMap(local, scopeLevel.optionsMap)
 	return notCVEQuery != nil
 }
 
