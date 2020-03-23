@@ -28,8 +28,8 @@ func init() {
 			publickeys.Dev,
 			func() validator.SigningKeyRestrictions {
 				return getDevSigningKeyRestrictions(
-					timeutil.MustParse(time.RFC3339, "2019-12-01T00:00:00Z"),
-					timeutil.MustParse(time.RFC3339, "2020-04-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2019-03-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2020-07-01T00:00:00Z"),
 				)
 			},
 		},
@@ -38,8 +38,8 @@ func init() {
 			publickeys.DevOld,
 			func() validator.SigningKeyRestrictions {
 				return getDevSigningKeyRestrictions(
-					timeutil.MustParse(time.RFC3339, "2019-09-01T00:00:00Z"),
-					timeutil.MustParse(time.RFC3339, "2020-01-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2019-12-01T00:00:00Z"),
+					timeutil.MustParse(time.RFC3339, "2020-04-01T00:00:00Z"),
 				)
 			},
 		},
