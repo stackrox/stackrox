@@ -2,9 +2,12 @@ package datastore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/analystnotes"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
@@ -28,10 +31,12 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
+	indicatorSAC   = sac.ForResource(resources.Indicator)
 )
 
 const deploymentBatchSize = 500
@@ -40,6 +45,8 @@ type datastoreImpl struct {
 	deploymentStore    deploymentStore.Store
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
+
+	processTagsStore processtagsstore.Store
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
@@ -56,13 +63,14 @@ type datastoreImpl struct {
 	deploymentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
+func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
 	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker, keyedMutex *concurrency.KeyedMutex) (*datastoreImpl, error) {
 
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
+		processTagsStore:       processTagsStore,
 		deploymentIndexer:      indexer,
 		deploymentSearcher:     searcher,
 		images:                 images,
@@ -225,18 +233,18 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
-	return ds.upsertDeployment(ctx, deployment, true)
+	return ds.upsertDeployment(ctx, deployment, true, true)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore
 func (ds *datastoreImpl) UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeploymentIntoStoreOnly")
 
-	return ds.upsertDeployment(ctx, deployment, false)
+	return ds.upsertDeployment(ctx, deployment, false, true)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
-func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, indexingRequired bool) error {
+func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, indexingRequired bool, populateTagsFromExisting bool) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -250,6 +258,13 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	}
 
 	err := ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
+		if populateTagsFromExisting {
+			existingDeployment, _, err := ds.deploymentStore.GetDeployment(deployment.GetId())
+			// Best-effort, don't bother checking the error.
+			if err == nil && existingDeployment != nil {
+				deployment.Tags = existingDeployment.GetTags()
+			}
+		}
 		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}
@@ -486,4 +501,55 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs() ([]string, error) {
 	return ds.deploymentStore.GetDeploymentIDs()
+}
+
+func checkIndicatorWriteSAC(ctx context.Context) error {
+	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrPermissionDenied
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
+	if err := checkIndicatorWriteSAC(ctx); err != nil {
+		return err
+	}
+
+	// This is a bit ugly -- users can comment on processes, which, as a side-effect, affects tags on deployments.
+	// However, the tags being stored in the deployment is an internal indexing consistency mechanism for indexing only, and we do NOT
+	// want to not do this just because the user has process indicator SAC but not deployment SAC.
+	// Therefore, we use an elevated context for all deployment operations.
+	elevatedCtx := sac.WithAllAccess(context.Background())
+	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
+	// It's possible to comment on tags for deployments that no longer exist.
+	if err == nil && deployment != nil {
+		existingTags := deployment.GetTags()
+		unionTags := sliceutils.StringUnion(existingTags, tags)
+		sort.Strings(unionTags)
+		deployment.Tags = unionTags
+		if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
+			return err
+		}
+	}
+
+	return ds.processTagsStore.UpsertProcessTags(key, tags)
+}
+
+func (ds *datastoreImpl) RemoveTagsFromProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
+	if err := checkIndicatorWriteSAC(ctx); err != nil {
+		return err
+	}
+
+	return ds.processTagsStore.RemoveProcessTags(key, tags)
+}
+
+func (ds *datastoreImpl) GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error) {
+	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+	return ds.processTagsStore.GetTagsForProcessKey(key)
 }

@@ -408,6 +408,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceAccount: String!",
 		"serviceAccountPermissionLevel: PermissionLevel!",
 		"stateTimestamp: Int!",
+		"tags: [String!]!",
 		"tolerations: [Toleration]!",
 		"type: String!",
 	}))
@@ -4106,6 +4107,12 @@ func (resolver *deploymentResolver) StateTimestamp(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetStateTimestamp()
 	return int32(value)
+}
+
+func (resolver *deploymentResolver) Tags(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetTags()
+	return value
 }
 
 func (resolver *deploymentResolver) Tolerations(ctx context.Context) ([]*tolerationResolver, error) {

@@ -141,7 +141,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	imageDS, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
-	deploymentsDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, bleveIndex, nil, nil, nil, nil, nil,
+	deploymentsDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, nil, bleveIndex, nil, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 

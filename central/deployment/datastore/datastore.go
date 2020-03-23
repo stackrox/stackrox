@@ -5,8 +5,10 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
+	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
@@ -47,13 +49,17 @@ type DataStore interface {
 	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetDeployments(ctx context.Context, ids []string) ([]*storage.Deployment, error)
 	CountDeployments(ctx context.Context) (int, error)
-	// UpsertDeployment adds or updates a deployment. It should only be called the caller
-	// is okay with inserting the passed deployment if it doesn't already exist in the store.
-	// If you only want to update a deployment if it exists, call UpdateDeployment below.
+	// UpsertDeployment adds or updates a deployment. If the deployment exists, the tags in the deployment are taken from
+	// the stored deployment.
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 
-	// UpsertDeploymentIntoStoreOnly does not index the data on insertion
+	// UpsertDeploymentIntoStoreOnly does not index the data on insertion. If the deployment exists, the tags in the deployment
+	// are taken from the stored deployment.
 	UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error
+
+	AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error
+	RemoveTagsFromProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error
+	GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error)
 
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
@@ -61,7 +67,7 @@ type DataStore interface {
 	GetDeploymentIDs() ([]string, error)
 }
 
-func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex bleve.Index,
+func newDataStore(storage store.Store, graphProvider graph.Provider, processTagsStore processtagsstore.Store, bleveIndex bleve.Index,
 	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -83,7 +89,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex 
 		searcher = search.New(storage, nil, nil, nil, nil, nil, nil, indexer)
 	}
 
-	ds, err := newDatastoreImpl(storage, indexer, searcher, images, indicators, whitelists, networkFlows, risks,
+	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, indicators, whitelists, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, keyedMutex)
 
 	if err != nil {
@@ -95,7 +101,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, bleveIndex 
 }
 
 // NewBadger creates a deployment datastore based on BadgerDB
-func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, bleveIndex bleve.Index,
+func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, processTagsStore processtagsstore.Store, bleveIndex bleve.Index,
 	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
@@ -113,5 +119,5 @@ func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger
 		}
 	}
 
-	return newDataStore(storage, dacky, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
+	return newDataStore(storage, dacky, processTagsStore, bleveIndex, images, indicators, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

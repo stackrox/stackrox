@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
@@ -31,6 +32,7 @@ func initialize() {
 	ad, err = NewBadger(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
 		globaldb.GetGlobalBadgerDB(),
+		processtagsstore.New(globaldb.GetGlobalDB()),
 		globalindex.GetGlobalIndex(),
 		imageDatastore.Singleton(),
 		piDS.Singleton(),

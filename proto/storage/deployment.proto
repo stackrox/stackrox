@@ -13,7 +13,7 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
-// Next available tag: 30
+// Next available tag: 31
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -44,6 +44,8 @@ message Deployment {
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
     float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+
+    repeated string tags                       = 30 [(gogoproto.moretags) = "search:\"Tag,store\""];
 }
 
 message ContainerImage {

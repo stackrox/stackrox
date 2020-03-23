@@ -6,6 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/analystnotes"
+	"github.com/stackrox/rox/central/deployment/datastore/internal/processtagsstore"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
@@ -18,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -57,12 +60,43 @@ func (suite *DeploymentDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
+func getCommentKey(deploymentID string) *analystnotes.ProcessNoteKey {
+	return &analystnotes.ProcessNoteKey{DeploymentID: deploymentID, ExecFilePath: "/bin/sh", ContainerName: "container"}
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestTags() {
+	testDB := testutils.DBForSuite(suite)
+	defer testutils.TearDownDB(testDB)
+
+	processTagsStorage := processtagsstore.New(testDB)
+	datastore, err := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil, nil,
+		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
+		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+	suite.NoError(err)
+
+	suite.storage.EXPECT().GetDeployment("blah").Return(nil, false, nil)
+	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("blah"), []string{"new", "tag"}))
+
+	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", Tags: []string{"existing", "tag"}}, true, nil)
+	suite.storage.EXPECT().UpsertDeployment(&storage.Deployment{Id: "exists", Tags: []string{"existing", "new", "tag"}, Priority: 1}).Return(nil)
+	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag"}))
+
+	tags, err := datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
+	suite.Require().NoError(err)
+	suite.Equal([]string{"new", "tag"}, tags)
+
+	suite.NoError(datastore.RemoveTagsFromProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag"}))
+	tags, err = datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
+	suite.Require().NoError(err)
+	suite.Empty(tags)
+}
+
 func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	clusterRanker := ranking.NewRanker()
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds, err := newDatastoreImpl(suite.storage, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
+	ds, err := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
 		suite.riskStore, nil, suite.filter, clusterRanker,
 		nsRanker, deploymentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
 	suite.NoError(err)

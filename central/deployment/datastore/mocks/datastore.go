@@ -7,6 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	analystnotes "github.com/stackrox/rox/central/analystnotes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -184,6 +185,49 @@ func (m *MockDataStore) UpsertDeploymentIntoStoreOnly(ctx context.Context, deplo
 func (mr *MockDataStoreMockRecorder) UpsertDeploymentIntoStoreOnly(ctx, deployment interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeploymentIntoStoreOnly", reflect.TypeOf((*MockDataStore)(nil).UpsertDeploymentIntoStoreOnly), ctx, deployment)
+}
+
+// AddTagsToProcessKey mocks base method
+func (m *MockDataStore) AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTagsToProcessKey", ctx, key, tags)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddTagsToProcessKey indicates an expected call of AddTagsToProcessKey
+func (mr *MockDataStoreMockRecorder) AddTagsToProcessKey(ctx, key, tags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTagsToProcessKey", reflect.TypeOf((*MockDataStore)(nil).AddTagsToProcessKey), ctx, key, tags)
+}
+
+// RemoveTagsFromProcessKey mocks base method
+func (m *MockDataStore) RemoveTagsFromProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveTagsFromProcessKey", ctx, key, tags)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveTagsFromProcessKey indicates an expected call of RemoveTagsFromProcessKey
+func (mr *MockDataStoreMockRecorder) RemoveTagsFromProcessKey(ctx, key, tags interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveTagsFromProcessKey", reflect.TypeOf((*MockDataStore)(nil).RemoveTagsFromProcessKey), ctx, key, tags)
+}
+
+// GetTagsForProcessKey mocks base method
+func (m *MockDataStore) GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTagsForProcessKey", ctx, key)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTagsForProcessKey indicates an expected call of GetTagsForProcessKey
+func (mr *MockDataStoreMockRecorder) GetTagsForProcessKey(ctx, key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTagsForProcessKey", reflect.TypeOf((*MockDataStore)(nil).GetTagsForProcessKey), ctx, key)
 }
 
 // RemoveDeployment mocks base method

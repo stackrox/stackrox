@@ -52,7 +52,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 	}
 	fields := strings.Split(tag, ",")
 	if !FieldLabelSet.Contains(fields[0]) {
-		log.Panicf("Field %q is not a valid FieldLabel. You may need to add it pkg/search/options.go", fields[0])
+		log.Panicf("Field %q is not a valid FieldLabel. You may need to add it to pkg/search/options.go", fields[0])
 	}
 
 	fieldName := fields[0]
