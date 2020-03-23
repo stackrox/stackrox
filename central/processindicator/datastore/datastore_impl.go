@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
@@ -52,17 +52,17 @@ func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (
 	return indicatorSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ForNamespaceScopedObject(indicator).Allowed(ctx)
 }
 
-func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
+func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return "", err
 	} else if !ok {
 		return "", sac.ErrPermissionDenied
 	}
-	comment.User = comments.UserFromContext(ctx)
+	comment.User = analystnotes.UserFromContext(ctx)
 	return ds.commentsStorage.AddProcessComment(processKey, comment)
 }
 
-func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, key *comments.ProcessCommentKey, commentID string) error {
+func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, key *analystnotes.ProcessNoteKey, commentID string) error {
 	// TODO: check access control with new ProcessComment permissions
 	existingComment, err := ds.commentsStorage.GetComment(key, commentID)
 	if err != nil {
@@ -77,20 +77,20 @@ func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, k
 	return nil
 }
 
-func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) error {
+func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrPermissionDenied
 	}
-	comment.User = comments.UserFromContext(ctx)
+	comment.User = analystnotes.UserFromContext(ctx)
 	if err := ds.checkUserCanModifyComment(comment.GetUser(), processKey, comment.GetCommentId()); err != nil {
 		return err
 	}
 	return ds.commentsStorage.UpdateProcessComment(processKey, comment)
 }
 
-func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *comments.ProcessCommentKey) ([]*storage.Comment, error) {
+func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
@@ -98,13 +98,13 @@ func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *
 	return ds.commentsStorage.GetCommentsForProcessKey(processKey)
 }
 
-func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, commentID string) error {
+func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {
 	if ok, err := indicatorSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrPermissionDenied
 	}
-	if err := ds.checkUserCanModifyComment(comments.UserFromContext(ctx), processKey, commentID); err != nil {
+	if err := ds.checkUserCanModifyComment(analystnotes.UserFromContext(ctx), processKey, commentID); err != nil {
 		// comment not existing is okay for remove
 		if err == errCommentDoesntExist {
 			return nil

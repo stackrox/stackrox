@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -34,7 +34,7 @@ func (resolver *Resolver) ProcessComments(ctx context.Context, args struct {
 		return nil, err
 	}
 	return resolver.wrapComments(
-		resolver.ProcessIndicatorStore.GetCommentsForProcess(ctx, &comments.ProcessCommentKey{
+		resolver.ProcessIndicatorStore.GetCommentsForProcess(ctx, &analystnotes.ProcessNoteKey{
 			DeploymentID:  string(args.DeploymentID),
 			ContainerName: args.ContainerName,
 			ExecFilePath:  args.ExecFilePath,
@@ -58,7 +58,7 @@ func (resolver *Resolver) AddProcessComment(ctx context.Context, args struct {
 	comment := &storage.Comment{
 		CommentMessage: args.CommentMessage,
 	}
-	commentID, err := resolver.ProcessIndicatorStore.AddProcessComment(ctx, &comments.ProcessCommentKey{
+	commentID, err := resolver.ProcessIndicatorStore.AddProcessComment(ctx, &analystnotes.ProcessNoteKey{
 		DeploymentID:  string(args.DeploymentID),
 		ContainerName: args.ContainerName,
 		ExecFilePath:  args.ExecFilePath,
@@ -88,7 +88,7 @@ func (resolver *Resolver) UpdateProcessComment(ctx context.Context, args struct 
 		CommentMessage: args.CommentMessage,
 	}
 
-	err := resolver.ProcessIndicatorStore.UpdateProcessComment(ctx, &comments.ProcessCommentKey{
+	err := resolver.ProcessIndicatorStore.UpdateProcessComment(ctx, &analystnotes.ProcessNoteKey{
 		DeploymentID:  string(args.DeploymentID),
 		ContainerName: args.ContainerName,
 		ExecFilePath:  args.ExecFilePath,
@@ -114,7 +114,7 @@ func (resolver *Resolver) RemoveProcessComment(ctx context.Context, args struct 
 		return false, err
 	}
 
-	err := resolver.ProcessIndicatorStore.RemoveProcessComment(ctx, &comments.ProcessCommentKey{
+	err := resolver.ProcessIndicatorStore.RemoveProcessComment(ctx, &analystnotes.ProcessNoteKey{
 		DeploymentID:  string(args.DeploymentID),
 		ContainerName: args.ContainerName,
 		ExecFilePath:  args.ExecFilePath,

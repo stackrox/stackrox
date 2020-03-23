@@ -10,7 +10,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
@@ -188,7 +188,7 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	indicators, _ := getIndicators()
 	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
 
-	key := comments.ProcessToKey(indicators[0])
+	key := analystnotes.ProcessToKey(indicators[0])
 
 	_, err := suite.datastore.AddProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.Error(err)

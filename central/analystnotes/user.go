@@ -1,4 +1,4 @@
-package comments
+package analystnotes
 
 import (
 	"context"

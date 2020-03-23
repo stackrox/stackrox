@@ -1,7 +1,7 @@
 package commentsstore
 
 import (
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"go.etcd.io/bbolt"
@@ -14,14 +14,14 @@ var (
 // Store stores process comments.
 //go:generate mockgen-wrapper
 type Store interface {
-	AddProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) (string, error)
-	UpdateProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) error
+	AddProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error)
+	UpdateProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) error
 
-	GetComment(key *comments.ProcessCommentKey, commentID string) (*storage.Comment, error)
-	GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([]*storage.Comment, error)
+	GetComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error)
+	GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error)
 
-	RemoveProcessComment(key *comments.ProcessCommentKey, commentID string) error
-	RemoveAllProcessComments(key *comments.ProcessCommentKey) error
+	RemoveProcessComment(key *analystnotes.ProcessNoteKey, commentID string) error
+	RemoveAllProcessComments(key *analystnotes.ProcessNoteKey) error
 }
 
 // New returns a new, ready-to-use, store.

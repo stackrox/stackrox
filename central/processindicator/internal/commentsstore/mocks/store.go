@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	comments "github.com/stackrox/rox/central/comments"
+	analystnotes "github.com/stackrox/rox/central/analystnotes"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -35,7 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddProcessComment mocks base method
-func (m *MockStore) AddProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
+func (m *MockStore) AddProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddProcessComment", key, comment)
 	ret0, _ := ret[0].(string)
@@ -50,7 +50,7 @@ func (mr *MockStoreMockRecorder) AddProcessComment(key, comment interface{}) *go
 }
 
 // UpdateProcessComment mocks base method
-func (m *MockStore) UpdateProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) error {
+func (m *MockStore) UpdateProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateProcessComment", key, comment)
 	ret0, _ := ret[0].(error)
@@ -64,7 +64,7 @@ func (mr *MockStoreMockRecorder) UpdateProcessComment(key, comment interface{}) 
 }
 
 // GetComment mocks base method
-func (m *MockStore) GetComment(key *comments.ProcessCommentKey, commentID string) (*storage.Comment, error) {
+func (m *MockStore) GetComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetComment", key, commentID)
 	ret0, _ := ret[0].(*storage.Comment)
@@ -79,7 +79,7 @@ func (mr *MockStoreMockRecorder) GetComment(key, commentID interface{}) *gomock.
 }
 
 // GetCommentsForProcessKey mocks base method
-func (m *MockStore) GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([]*storage.Comment, error) {
+func (m *MockStore) GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommentsForProcessKey", key)
 	ret0, _ := ret[0].([]*storage.Comment)
@@ -94,7 +94,7 @@ func (mr *MockStoreMockRecorder) GetCommentsForProcessKey(key interface{}) *gomo
 }
 
 // RemoveProcessComment mocks base method
-func (m *MockStore) RemoveProcessComment(key *comments.ProcessCommentKey, commentID string) error {
+func (m *MockStore) RemoveProcessComment(key *analystnotes.ProcessNoteKey, commentID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveProcessComment", key, commentID)
 	ret0, _ := ret[0].(error)
@@ -108,7 +108,7 @@ func (mr *MockStoreMockRecorder) RemoveProcessComment(key, commentID interface{}
 }
 
 // RemoveAllProcessComments mocks base method
-func (m *MockStore) RemoveAllProcessComments(key *comments.ProcessCommentKey) error {
+func (m *MockStore) RemoveAllProcessComments(key *analystnotes.ProcessNoteKey) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveAllProcessComments", key)
 	ret0, _ := ret[0].(error)

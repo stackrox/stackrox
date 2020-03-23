@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -261,7 +261,7 @@ func (ds *datastoreImpl) AddAlertComment(ctx context.Context, request *storage.C
 		return "", errors.New("permission denied")
 	}
 
-	request.User = comments.UserFromContext(ctx)
+	request.User = analystnotes.UserFromContext(ctx)
 	return ds.commentsStorage.AddAlertComment(request)
 }
 
@@ -275,7 +275,7 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 		return errors.New("permission denied")
 	}
 
-	request.User = comments.UserFromContext(ctx)
+	request.User = analystnotes.UserFromContext(ctx)
 	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")

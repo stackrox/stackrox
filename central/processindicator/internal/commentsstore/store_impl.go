@@ -1,26 +1,15 @@
 package commentsstore
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/comments"
+	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/uuid"
 	"go.etcd.io/bbolt"
 )
-
-var (
-	processCommentKeyNS = uuid.FromStringOrPanic("c19c0cea-b5df-40c4-80e7-836a1b0785e6")
-)
-
-func serializeProcessKey(key *comments.ProcessCommentKey) string {
-	return uuid.NewV5(processCommentKeyNS, fmt.Sprintf("%s\x00%s\x00:%s", key.ContainerName, key.ExecFilePath, key.Args)).String()
-}
 
 type storeImpl struct {
 	bucketRef bolthelper.BucketRef
@@ -31,7 +20,7 @@ func addStandardFields(comment *storage.Comment, lastModified *types.Timestamp) 
 	comment.LastModified = lastModified
 }
 
-func validateKeyAndComment(key *comments.ProcessCommentKey, comment *storage.Comment) error {
+func validateKeyAndComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
 	if err := key.Validate(); err != nil {
 		return err
 	}
@@ -43,24 +32,24 @@ func validateKeyAndComment(key *comments.ProcessCommentKey, comment *storage.Com
 	return nil
 }
 
-func getOrCreateProcessSubBucket(b *bbolt.Bucket, key *comments.ProcessCommentKey) (*bbolt.Bucket, error) {
+func getOrCreateProcessSubBucket(b *bbolt.Bucket, key *analystnotes.ProcessNoteKey) (*bbolt.Bucket, error) {
 	deploymentSubBucket, err := b.CreateBucketIfNotExists([]byte(key.DeploymentID))
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating sub-bucket for deploymentID %q", key.DeploymentID)
 	}
-	processSubBucket, err := deploymentSubBucket.CreateBucketIfNotExists([]byte(serializeProcessKey(key)))
+	processSubBucket, err := deploymentSubBucket.CreateBucketIfNotExists(key.Serialize())
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating sub-bucket for key: %v", key)
 	}
 	return processSubBucket, nil
 }
 
-func getProcessSubBucket(b *bbolt.Bucket, key *comments.ProcessCommentKey) *bbolt.Bucket {
+func getProcessSubBucket(b *bbolt.Bucket, key *analystnotes.ProcessNoteKey) *bbolt.Bucket {
 	deploymentSubBucket := b.Bucket([]byte(key.DeploymentID))
 	if deploymentSubBucket == nil {
 		return nil
 	}
-	return deploymentSubBucket.Bucket([]byte(serializeProcessKey(key)))
+	return deploymentSubBucket.Bucket(key.Serialize())
 }
 
 func marshalAndPutComment(processSubBucket *bbolt.Bucket, key []byte, comment *storage.Comment) error {
@@ -74,7 +63,7 @@ func marshalAndPutComment(processSubBucket *bbolt.Bucket, key []byte, comment *s
 	return nil
 }
 
-func (s *storeImpl) AddProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
+func (s *storeImpl) AddProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
 	if err := validateKeyAndComment(key, comment); err != nil {
 		return "", err
 	}
@@ -111,7 +100,7 @@ func (s *storeImpl) AddProcessComment(key *comments.ProcessCommentKey, comment *
 	return commentID, nil
 }
 
-func (s *storeImpl) UpdateProcessComment(key *comments.ProcessCommentKey, comment *storage.Comment) error {
+func (s *storeImpl) UpdateProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
 	if err := validateKeyAndComment(key, comment); err != nil {
 		return err
 	}
@@ -152,7 +141,7 @@ func (s *storeImpl) UpdateProcessComment(key *comments.ProcessCommentKey, commen
 	return nil
 }
 
-func (s *storeImpl) GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([]*storage.Comment, error) {
+func (s *storeImpl) GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	var comments []*storage.Comment
 	err := s.bucketRef.View(func(b *bbolt.Bucket) error {
 		processSubBucket := getProcessSubBucket(b, key)
@@ -175,7 +164,7 @@ func (s *storeImpl) GetCommentsForProcessKey(key *comments.ProcessCommentKey) ([
 	return comments, nil
 }
 
-func (s *storeImpl) GetComment(key *comments.ProcessCommentKey, commentID string) (*storage.Comment, error) {
+func (s *storeImpl) GetComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error) {
 	var comment *storage.Comment
 	err := s.bucketRef.View(func(b *bbolt.Bucket) error {
 		processSubBucket := getProcessSubBucket(b, key)
@@ -199,7 +188,7 @@ func (s *storeImpl) GetComment(key *comments.ProcessCommentKey, commentID string
 	return comment, nil
 }
 
-func (s *storeImpl) RemoveProcessComment(key *comments.ProcessCommentKey, commentID string) error {
+func (s *storeImpl) RemoveProcessComment(key *analystnotes.ProcessNoteKey, commentID string) error {
 	if err := key.Validate(); err != nil {
 		return err
 	}
@@ -212,7 +201,7 @@ func (s *storeImpl) RemoveProcessComment(key *comments.ProcessCommentKey, commen
 	})
 }
 
-func (s *storeImpl) RemoveAllProcessComments(key *comments.ProcessCommentKey) error {
+func (s *storeImpl) RemoveAllProcessComments(key *analystnotes.ProcessNoteKey) error {
 	if err := key.Validate(); err != nil {
 		return err
 	}
@@ -222,6 +211,6 @@ func (s *storeImpl) RemoveAllProcessComments(key *comments.ProcessCommentKey) er
 		if deploymentSubBucket == nil {
 			return nil
 		}
-		return deploymentSubBucket.DeleteBucket([]byte(serializeProcessKey(key)))
+		return deploymentSubBucket.DeleteBucket(key.Serialize())
 	})
 }

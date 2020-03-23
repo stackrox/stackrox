@@ -7,7 +7,7 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
-	comments "github.com/stackrox/rox/central/comments"
+	analystnotes "github.com/stackrox/rox/central/analystnotes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
@@ -174,7 +174,7 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessIndicators(ctx, ids interface{
 }
 
 // AddProcessComment mocks base method
-func (m *MockDataStore) AddProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) (string, error) {
+func (m *MockDataStore) AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddProcessComment", ctx, processKey, comment)
 	ret0, _ := ret[0].(string)
@@ -189,7 +189,7 @@ func (mr *MockDataStoreMockRecorder) AddProcessComment(ctx, processKey, comment 
 }
 
 // UpdateProcessComment mocks base method
-func (m *MockDataStore) UpdateProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, comment *storage.Comment) error {
+func (m *MockDataStore) UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateProcessComment", ctx, processKey, comment)
 	ret0, _ := ret[0].(error)
@@ -203,7 +203,7 @@ func (mr *MockDataStoreMockRecorder) UpdateProcessComment(ctx, processKey, comme
 }
 
 // GetCommentsForProcess mocks base method
-func (m *MockDataStore) GetCommentsForProcess(ctx context.Context, processKey *comments.ProcessCommentKey) ([]*storage.Comment, error) {
+func (m *MockDataStore) GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCommentsForProcess", ctx, processKey)
 	ret0, _ := ret[0].([]*storage.Comment)
@@ -218,7 +218,7 @@ func (mr *MockDataStoreMockRecorder) GetCommentsForProcess(ctx, processKey inter
 }
 
 // RemoveProcessComment mocks base method
-func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processKey *comments.ProcessCommentKey, commentID string) error {
+func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveProcessComment", ctx, processKey, commentID)
 	ret0, _ := ret[0].(error)
