@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -173,4 +174,17 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 			assert.Equal(t, c.expectedName, img.Name)
 		})
 	}
+}
+
+func TestStripCVEDescriptions(t *testing.T) {
+	newImg := StripCVEDescriptions(fixtures.GetImage())
+	var hitOne bool
+	for _, comp := range newImg.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			hitOne = true
+			assert.Empty(t, vuln.Summary)
+		}
+	}
+	// Validate that we at least removed one summary
+	assert.True(t, hitOne)
 }
