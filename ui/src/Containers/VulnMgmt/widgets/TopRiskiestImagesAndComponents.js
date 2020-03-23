@@ -62,6 +62,7 @@ const TOP_RISKIEST_COMPONENTS = gql`
             id
             name
             version
+            lastScanned
             vulnCounter {
                 all {
                     total
@@ -114,8 +115,7 @@ const processData = (data, entityType, workflowState) => {
             }
             return d;
         })
-        .map(({ id, vulnCounter, ...rest }) => {
-            const { scan } = rest;
+        .map(({ id, vulnCounter, scan, lastScanned, ...rest }) => {
             const text = getTextByEntityType(entityType, { ...rest });
             const newState = workflowState.pushRelatedEntity(entityType, id);
 
@@ -126,7 +126,12 @@ const processData = (data, entityType, workflowState) => {
 
             const { critical, high, medium, low } = vulnCounter;
 
-            const tooltipTitle = scan ? format(scan.scanTime, dateTimeFormat) : 'N/A';
+            const scanTimeToUse = scan?.scanTime || lastScanned;
+            const formattedDate = format(scanTimeToUse, dateTimeFormat);
+            const tooltipTitle =
+                formattedDate && formattedDate !== 'Invalid Date'
+                    ? formattedDate
+                    : 'Date and time not available';
             const tooltipBody = (
                 <div className="flex-1 border-base-300 overflow-hidden">
                     <div className="mb-2">
