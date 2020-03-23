@@ -13,7 +13,17 @@ const Icon = (
 
 const BackLink = ({ workflowState, enabled }) => {
     const { isDarkMode } = useTheme();
-    const url = !enabled ? null : workflowState.pop().toUrl();
+
+    // if the link for this particular crumb is enabled, calculate the URL
+    //   necessary to go back up the stack,
+    //   and remove any existing sort on a sublist (fixes https://stack-rox.atlassian.net/browse/ROX-4449)
+    const url = !enabled
+        ? null
+        : workflowState
+              .pop()
+              .clearSort()
+              .toUrl();
+
     return url ? (
         <Link
             className="flex items-center justify-center text-base-600 border-r border-base-300 px-4 mr-4 h-full hover:bg-primary-200 w-16"

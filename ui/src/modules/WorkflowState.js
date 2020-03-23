@@ -166,6 +166,15 @@ export class WorkflowState {
         return currentEntity.t;
     }
 
+    // Returns ID of the current entity (top of stack)
+    getCurrentEntityId() {
+        const currentEntity = this.getCurrentEntity();
+
+        if (!currentEntity) return null;
+
+        return currentEntity.i;
+    }
+
     // Returns base (first) entity of stack
     getBaseEntity() {
         if (!this.stateStack.length) return null;

@@ -1,4 +1,4 @@
-import React, { useContext, useRef } from 'react';
+import React, { useContext, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import pluralize from 'pluralize';
@@ -79,11 +79,20 @@ const EntityList = ({
         rowData.length
     )}`;
 
-    // TODO: fix big StackRox logo on PDF
-    if (rowData.length) {
-        const query = {}; // TODO: improve sep. of concerns in pdfUtils
-        createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
-    }
+    // need `useLayoutEffect` here to solve an edge case,
+    //   where the use have navigated to a single-page sublist,
+    //   then clicked "Open in current window",
+    //   then clicked the browser's back button
+    //   see: https://stack-rox.atlassian.net/browse/ROX-4450
+    useLayoutEffect(
+        () => {
+            if (rowData.length) {
+                const query = {}; // TODO: improve sep. of concerns in pdfUtils
+                createPDFTable(rowData, entityType, query, 'capture-list', tableColumns);
+            }
+        },
+        [entityType, rowData, tableColumns]
+    );
 
     const availableCategories = [searchCategories[entityType]];
     const headerComponents = (
