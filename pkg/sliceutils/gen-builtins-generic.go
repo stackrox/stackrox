@@ -105,26 +105,34 @@ func BoolDifference(slice1, slice2 []bool) []bool {
 
 // BoolUnion returns the union array of slice1 and slice2 without duplicates
 func BoolUnion(slice1, slice2 []bool) []bool {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]bool, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = BoolUnique(slice1)
+	slice2 = BoolUnique(slice2)
 
 	slice1Map := make(map[bool]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]bool, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -228,26 +236,34 @@ func ByteDifference(slice1, slice2 []byte) []byte {
 
 // ByteUnion returns the union array of slice1 and slice2 without duplicates
 func ByteUnion(slice1, slice2 []byte) []byte {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]byte, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = ByteUnique(slice1)
+	slice2 = ByteUnique(slice2)
 
 	slice1Map := make(map[byte]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]byte, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -351,26 +367,34 @@ func Complex128Difference(slice1, slice2 []complex128) []complex128 {
 
 // Complex128Union returns the union array of slice1 and slice2 without duplicates
 func Complex128Union(slice1, slice2 []complex128) []complex128 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]complex128, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Complex128Unique(slice1)
+	slice2 = Complex128Unique(slice2)
 
 	slice1Map := make(map[complex128]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]complex128, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -474,26 +498,34 @@ func Complex64Difference(slice1, slice2 []complex64) []complex64 {
 
 // Complex64Union returns the union array of slice1 and slice2 without duplicates
 func Complex64Union(slice1, slice2 []complex64) []complex64 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]complex64, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Complex64Unique(slice1)
+	slice2 = Complex64Unique(slice2)
 
 	slice1Map := make(map[complex64]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]complex64, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -597,26 +629,34 @@ func ErrorDifference(slice1, slice2 []error) []error {
 
 // ErrorUnion returns the union array of slice1 and slice2 without duplicates
 func ErrorUnion(slice1, slice2 []error) []error {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]error, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = ErrorUnique(slice1)
+	slice2 = ErrorUnique(slice2)
 
 	slice1Map := make(map[error]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]error, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -720,26 +760,34 @@ func Float32Difference(slice1, slice2 []float32) []float32 {
 
 // Float32Union returns the union array of slice1 and slice2 without duplicates
 func Float32Union(slice1, slice2 []float32) []float32 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]float32, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Float32Unique(slice1)
+	slice2 = Float32Unique(slice2)
 
 	slice1Map := make(map[float32]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]float32, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -843,26 +891,34 @@ func Float64Difference(slice1, slice2 []float64) []float64 {
 
 // Float64Union returns the union array of slice1 and slice2 without duplicates
 func Float64Union(slice1, slice2 []float64) []float64 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]float64, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Float64Unique(slice1)
+	slice2 = Float64Unique(slice2)
 
 	slice1Map := make(map[float64]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]float64, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -966,26 +1022,34 @@ func IntDifference(slice1, slice2 []int) []int {
 
 // IntUnion returns the union array of slice1 and slice2 without duplicates
 func IntUnion(slice1, slice2 []int) []int {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]int, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = IntUnique(slice1)
+	slice2 = IntUnique(slice2)
 
 	slice1Map := make(map[int]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]int, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1089,26 +1153,34 @@ func Int16Difference(slice1, slice2 []int16) []int16 {
 
 // Int16Union returns the union array of slice1 and slice2 without duplicates
 func Int16Union(slice1, slice2 []int16) []int16 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]int16, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Int16Unique(slice1)
+	slice2 = Int16Unique(slice2)
 
 	slice1Map := make(map[int16]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]int16, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1212,26 +1284,34 @@ func Int32Difference(slice1, slice2 []int32) []int32 {
 
 // Int32Union returns the union array of slice1 and slice2 without duplicates
 func Int32Union(slice1, slice2 []int32) []int32 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]int32, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Int32Unique(slice1)
+	slice2 = Int32Unique(slice2)
 
 	slice1Map := make(map[int32]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]int32, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1335,26 +1415,34 @@ func Int64Difference(slice1, slice2 []int64) []int64 {
 
 // Int64Union returns the union array of slice1 and slice2 without duplicates
 func Int64Union(slice1, slice2 []int64) []int64 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]int64, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Int64Unique(slice1)
+	slice2 = Int64Unique(slice2)
 
 	slice1Map := make(map[int64]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]int64, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1458,26 +1546,34 @@ func Int8Difference(slice1, slice2 []int8) []int8 {
 
 // Int8Union returns the union array of slice1 and slice2 without duplicates
 func Int8Union(slice1, slice2 []int8) []int8 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]int8, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Int8Unique(slice1)
+	slice2 = Int8Unique(slice2)
 
 	slice1Map := make(map[int8]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]int8, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1581,26 +1677,34 @@ func RuneDifference(slice1, slice2 []rune) []rune {
 
 // RuneUnion returns the union array of slice1 and slice2 without duplicates
 func RuneUnion(slice1, slice2 []rune) []rune {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]rune, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = RuneUnique(slice1)
+	slice2 = RuneUnique(slice2)
 
 	slice1Map := make(map[rune]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]rune, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1704,26 +1808,34 @@ func StringDifference(slice1, slice2 []string) []string {
 
 // StringUnion returns the union array of slice1 and slice2 without duplicates
 func StringUnion(slice1, slice2 []string) []string {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]string, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = StringUnique(slice1)
+	slice2 = StringUnique(slice2)
 
 	slice1Map := make(map[string]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]string, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1827,26 +1939,34 @@ func UintDifference(slice1, slice2 []uint) []uint {
 
 // UintUnion returns the union array of slice1 and slice2 without duplicates
 func UintUnion(slice1, slice2 []uint) []uint {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uint, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = UintUnique(slice1)
+	slice2 = UintUnique(slice2)
 
 	slice1Map := make(map[uint]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uint, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -1950,26 +2070,34 @@ func Uint16Difference(slice1, slice2 []uint16) []uint16 {
 
 // Uint16Union returns the union array of slice1 and slice2 without duplicates
 func Uint16Union(slice1, slice2 []uint16) []uint16 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uint16, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Uint16Unique(slice1)
+	slice2 = Uint16Unique(slice2)
 
 	slice1Map := make(map[uint16]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uint16, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -2073,26 +2201,34 @@ func Uint32Difference(slice1, slice2 []uint32) []uint32 {
 
 // Uint32Union returns the union array of slice1 and slice2 without duplicates
 func Uint32Union(slice1, slice2 []uint32) []uint32 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uint32, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Uint32Unique(slice1)
+	slice2 = Uint32Unique(slice2)
 
 	slice1Map := make(map[uint32]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uint32, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -2196,26 +2332,34 @@ func Uint64Difference(slice1, slice2 []uint64) []uint64 {
 
 // Uint64Union returns the union array of slice1 and slice2 without duplicates
 func Uint64Union(slice1, slice2 []uint64) []uint64 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uint64, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Uint64Unique(slice1)
+	slice2 = Uint64Unique(slice2)
 
 	slice1Map := make(map[uint64]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uint64, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -2319,26 +2463,34 @@ func Uint8Difference(slice1, slice2 []uint8) []uint8 {
 
 // Uint8Union returns the union array of slice1 and slice2 without duplicates
 func Uint8Union(slice1, slice2 []uint8) []uint8 {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uint8, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = Uint8Unique(slice1)
+	slice2 = Uint8Unique(slice2)
 
 	slice1Map := make(map[uint8]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uint8, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 
@@ -2442,25 +2594,33 @@ func UintptrDifference(slice1, slice2 []uintptr) []uintptr {
 
 // UintptrUnion returns the union array of slice1 and slice2 without duplicates
 func UintptrUnion(slice1, slice2 []uintptr) []uintptr {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]uintptr, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = UintptrUnique(slice1)
+	slice2 = UintptrUnique(slice2)
 
 	slice1Map := make(map[uintptr]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]uintptr, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }

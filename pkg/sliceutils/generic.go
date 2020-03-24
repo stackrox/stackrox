@@ -107,26 +107,34 @@ func ElemTypeDifference(slice1, slice2 []ElemType) []ElemType {
 
 // ElemTypeUnion returns the union array of slice1 and slice2 without duplicates
 func ElemTypeUnion(slice1, slice2 []ElemType) []ElemType {
-	// Fast path
+	// Fast-path checks
 	if len(slice1) == 0 {
 		return slice2
 	}
 	if len(slice2) == 0 {
 		return slice1
 	}
-
-	newSlice := make([]ElemType, len(slice1))
-	copy(newSlice, slice1)
+	//Preprocess
+	slice1 = ElemTypeUnique(slice1)
+	slice2 = ElemTypeUnique(slice2)
 
 	slice1Map := make(map[ElemType]struct{}, len(slice1))
-	for _, s := range slice1 {
-		slice1Map[s] = struct{}{}
-	}
-	for _, s := range slice2 {
-		if _, ok := slice1Map[s]; !ok {
-			newSlice = append(newSlice, s)
+	for _, elem := range slice1 {
+		if _, ok := slice1Map[elem]; !ok {
+			slice1Map[elem] = struct{}{}
 		}
 	}
+	newSlice := make([]ElemType, 0, len(slice1Map))
+	for elem := range slice1Map {
+		newSlice = append(newSlice, elem)
+	}
+
+	for _, elem := range slice2 {
+		if _, ok := slice1Map[elem]; !ok {
+			newSlice = append(newSlice, elem)
+		}
+	}
+
 	return newSlice
 }
 

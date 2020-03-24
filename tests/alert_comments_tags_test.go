@@ -39,7 +39,7 @@ type CommentStruct struct {
 	LastModified   string                `json:"lastModified"`
 }
 
-func TestAlert(t *testing.T) {
+func TestAlertCommentsTags(t *testing.T) {
 	httpReq := http.Request{Header: make(http.Header)}
 	httpReq.SetBasicAuth(testutils.RoxUsername(t), testutils.RoxPassword(t))
 	headerWithBasicAuth := httpReq.Header
@@ -51,7 +51,7 @@ func TestAlert(t *testing.T) {
 
 	// Test addAlertComment
 	justBeforeAdd := time.Now()
-	outputCommentID := addAlertComment(alertID, t, headerWithBasicAuth, url)
+	outputCommentID := addAlertComment(alertID, commentMessage, t, headerWithBasicAuth, url)
 	gotComments := getAlertComments(alertID, t, headerWithBasicAuth, url)
 	justAfterAdd := time.Now()
 	require.Equal(t, outputCommentID, commentID)
@@ -98,6 +98,21 @@ func TestAlert(t *testing.T) {
 	require.True(t, removeSuccess)
 	outputCommentsAfterRemove := getAlertComments(alertID, t, headerWithBasicAuth, url)
 	require.Empty(t, outputCommentsAfterRemove)
+
+	// Test addAlertTags
+	require.Empty(t, getAlertTags(alertID, t, headerWithBasicAuth, url))
+	expectedTagsAfterAdd := []string{"awesome", "is", "test", "this"}
+	require.Equal(t, addAlertTags(alertID, []string{"this", "test", "is", "awesome"}, t, headerWithBasicAuth, url), expectedTagsAfterAdd)
+	require.Equal(t, getAlertTags(alertID, t, headerWithBasicAuth, url), expectedTagsAfterAdd)
+
+	// Test removeAlertTags
+	require.True(t, removeAlertTags(alertID, []string{"this", "is", "bla"}, t, headerWithBasicAuth, url))
+	expectedTagsAfterDelete := []string{"awesome", "test"}
+	require.Equal(t, getAlertTags(alertID, t, headerWithBasicAuth, url), expectedTagsAfterDelete)
+
+	// Cleanup all tags
+	require.True(t, removeAlertTags(alertID, []string{"test", "awesome"}, t, headerWithBasicAuth, url))
+	require.Empty(t, getAlertTags(alertID, t, headerWithBasicAuth, url))
 }
 
 func getAnAlertID(t *testing.T, header http.Header, url string) string {
@@ -106,6 +121,7 @@ func getAnAlertID(t *testing.T, header http.Header, url string) string {
 			ID string `json:"id"`
 		} `json:"violations"`
 	}
+
 	req := graphql.NewRequest(`
   		query violations($query: String) {
 			violations(query: $query) {
@@ -120,8 +136,8 @@ func getAnAlertID(t *testing.T, header http.Header, url string) string {
 	var respData resp
 	err := client.Run(ctx, req, &respData)
 	require.NoError(t, err)
-
 	require.True(t, len(respData.Violations) >= 1)
+
 	return respData.Violations[0].ID
 }
 
@@ -159,7 +175,7 @@ func getAlertComments(alertID string, t *testing.T, header http.Header, url stri
 	return respData.AlertComments
 }
 
-func addAlertComment(alertID string, t *testing.T, header http.Header, url string) string {
+func addAlertComment(alertID string, message string, t *testing.T, header http.Header, url string) string {
 	type resp struct {
 		AddAlertComment string `json:"addAlertComment"`
 	}
@@ -173,7 +189,7 @@ func addAlertComment(alertID string, t *testing.T, header http.Header, url strin
 	client := graphql.NewClient(url, graphql.WithHTTPClient(httpClient))
 	req.Header = header
 	req.Var("resourceId", alertID)
-	req.Var("commentMessage", commentMessage)
+	req.Var("commentMessage", message)
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	var respData resp
@@ -230,6 +246,82 @@ func removeAlertComment(alertID string, t *testing.T, header http.Header, url st
 	require.NoError(t, err)
 
 	return respData.RemoveAlertComment
+}
+
+func getAlertTags(alertID string, t *testing.T, header http.Header, url string) []string {
+	type resp struct {
+		Violation struct {
+			ID   string   `json:"id"`
+			Tags []string `json:"tags"`
+		} `json:"violation"`
+	}
+
+	req := graphql.NewRequest(`
+  		query Violation($id: ID!) {
+  			violation(id: $id) {
+    			id
+				tags
+  			}
+		}
+	`)
+	client := graphql.NewClient(url, graphql.WithHTTPClient(httpClient))
+	req.Header = header
+	req.Var("id", alertID)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var respData resp
+	err := client.Run(ctx, req, &respData)
+	require.NoError(t, err)
+
+	return respData.Violation.Tags
+}
+
+func addAlertTags(alertID string, tags []string, t *testing.T, header http.Header, url string) []string {
+	type resp struct {
+		AddAlertTags []string `json:"addAlertTags"`
+	}
+
+	req := graphql.NewRequest(`
+ 		mutation addAlertTags($resourceId: ID!, $tags: [String!]!) {
+  			addAlertTags(resourceId: $resourceId, tags: $tags) {
+  			}
+		}
+	`)
+	client := graphql.NewClient(url, graphql.WithHTTPClient(httpClient))
+	req.Header = header
+	req.Var("resourceId", alertID)
+	req.Var("tags", tags)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var respData resp
+	err := client.Run(ctx, req, &respData)
+	require.NoError(t, err)
+
+	return respData.AddAlertTags
+}
+
+func removeAlertTags(alertID string, tags []string, t *testing.T, header http.Header, url string) bool {
+	type resp struct {
+		RemoveAlertTags bool `json:"removeAlertTags"`
+	}
+
+	req := graphql.NewRequest(`
+ 		mutation removeAlertTags($resourceId: ID!, $tags: [String!]!) {
+  			removeAlertTags(resourceId: $resourceId, tags: $tags) {
+  			}
+		}
+	`)
+	client := graphql.NewClient(url, graphql.WithHTTPClient(httpClient))
+	req.Header = header
+	req.Var("resourceId", alertID)
+	req.Var("tags", tags)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	var respData resp
+	err := client.Run(ctx, req, &respData)
+	require.NoError(t, err)
+
+	return respData.RemoveAlertTags
 }
 
 func assertCommentsEqual(comment, expectedComment *CommentStruct, t *testing.T) {
