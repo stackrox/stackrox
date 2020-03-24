@@ -4,6 +4,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/assert"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -56,6 +57,10 @@ func read(tx *badger.Txn, prefix []byte, deserializer Deserializer, id string) (
 		return nil, err
 	}
 	err = item.Value(func(v []byte) error {
+		if len(v) == 0 {
+			assert.Panicf("key %q has length 0", id)
+			return badger.ErrKeyNotFound
+		}
 		msg, err = deserializer(v)
 		return err
 	})
@@ -185,6 +190,9 @@ func (c *crudImpl) resolveMsgBytes(msg proto.Message) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	key := badgerhelper.GetBucketKey(c.prefix, c.keyFunc(msg))
+	if len(bytes) == 0 {
+		assert.Panicf("key %q has value of len 0", key)
+	}
 	return key, bytes, nil
 }
 
@@ -197,7 +205,11 @@ func (c *crudImpl) resolvePartialMsgBytes(msg proto.Message) ([]byte, []byte, er
 	if err != nil {
 		return nil, nil, err
 	}
-	return c.getPartialKey(string(c.keyFunc(msg))), bytes, nil
+	key := c.getPartialKey(string(c.keyFunc(msg)))
+	if len(bytes) == 0 {
+		assert.Panicf("key %q has value of len 0", key)
+	}
+	return key, bytes, nil
 }
 
 func (c *crudImpl) runUpdate(msg proto.Message, mustExist bool) error {

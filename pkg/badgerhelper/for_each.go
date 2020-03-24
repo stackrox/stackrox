@@ -5,6 +5,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/assert"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -90,6 +91,10 @@ func BucketKeyForEach(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do
 func ForEachWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k, v []byte) error) error {
 	closure := func(k []byte, item *badger.Item) error {
 		return item.Value(func(v []byte) error {
+			if len(v) == 0 {
+				assert.Panicf("%s has value of length 0", k)
+				return nil
+			}
 			return do(k, v)
 		})
 	}

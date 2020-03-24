@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -282,4 +283,33 @@ func (s *CRUDTestSuite) TestKeysToIndex() {
 
 	s.NoError(s.crud.DeleteBatch([]string{alert1ID, alert2ID}))
 	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
+}
+
+func (s *CRUDTestSuite) TestEmptyValues() {
+	if devbuild.IsEnabled() {
+		defer func() {
+			obj := recover()
+			s.NotNil(obj)
+		}()
+	}
+	err := s.db.Update(func(tx *badger.Txn) error {
+		return tx.Set([]byte("bucket\x00id"), []byte{})
+	})
+	s.NoError(err)
+
+	alert, exists, err := s.crud.Read("id")
+	s.NoError(err)
+	s.False(exists)
+	s.Nil(alert)
+
+	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
+	msgs, err := s.crud.ReadAll()
+	s.NoError(err)
+	alertMsgList := []proto.Message{alert1, alert2}
+	s.Equal(alertMsgList, msgs)
+
+	msgs, missing, err := s.crud.ReadBatch([]string{alert1.GetId(), "id", alert2.GetId()})
+	s.NoError(err)
+	s.Equal([]int{1}, missing)
+	s.Equal(alertMsgList, msgs)
 }
