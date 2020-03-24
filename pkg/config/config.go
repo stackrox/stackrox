@@ -47,6 +47,7 @@ func (c *Compaction) validate() error {
 
 // Maintenance defines the maintenance functions to use when Central starts
 type Maintenance struct {
+	SafeMode   bool       `yaml:"safeMode"`
 	Compaction Compaction `yaml:"compaction"`
 }
 
@@ -80,21 +81,23 @@ func (c *Config) validate() error {
 }
 
 // ReadConfig reads the configuration file
-func ReadConfig() (*Config, bool, error) {
+func ReadConfig() (*Config, error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, false, nil
+			conf := new(Config)
+			conf.applyDefaults()
+			return conf, nil
 		}
-		return nil, false, err
+		return nil, err
 	}
 	var conf Config
 	if err := yaml.Unmarshal(bytes, &conf); err != nil {
-		return nil, true, err
+		return nil, err
 	}
 	conf.applyDefaults()
 	if err := conf.validate(); err != nil {
-		return nil, true, err
+		return nil, err
 	}
-	return &conf, true, nil
+	return &conf, nil
 }

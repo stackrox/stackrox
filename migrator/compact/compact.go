@@ -59,22 +59,17 @@ func determineLargeEnoughDir(currSize uint64) (string, error) {
 	return "", fmt.Errorf("not enough disk space: (needed: %d, /tmp: %d, %s: %d)", desiredSpace, tmpAvailBytes, migrations.DBMountPath, mountAvailBytes)
 }
 
-func checkIfCompactionIsNeeded() (*config.Config, error) {
-	conf, exists, err := config.ReadConfig()
-	if err != nil {
-		return conf, err
-	}
-
-	if !exists {
+func checkIfCompactionIsNeeded(conf *config.Config) bool {
+	if conf == nil {
 		log.WriteToStderr("compaction defaults to false in the absence of a central-config configmap")
-		return nil, nil
+		return false
 	}
 
 	if !*conf.Maintenance.Compaction.Enabled {
 		log.WriteToStderr("compaction is not triggered based on the central-config configmap")
-		return nil, nil
+		return false
 	}
-	return conf, nil
+	return true
 }
 
 func transferFromScratchToDevice(dst, src string) error {
@@ -120,12 +115,8 @@ func checkCompactionThreshold(config *config.Config, dbSize uint64, db *bolt.DB)
 }
 
 // Compact attempts to compact the DB
-func Compact() error {
-	config, err := checkIfCompactionIsNeeded()
-	if err != nil {
-		return err
-	}
-	if config == nil {
+func Compact(config *config.Config) error {
+	if !checkIfCompactionIsNeeded(config) {
 		return nil
 	}
 

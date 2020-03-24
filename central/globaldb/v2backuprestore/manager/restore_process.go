@@ -144,7 +144,6 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 	defer utils.IgnoreError(p.data.Close)
 	defer p.cleanUp(tempOutputDir)
 	defer p.cancelSig.Signal()
-	defer p.currentAttemptSig.Signal()
 
 	// Make sure the process runs in a context that respects the stop signal.
 	ctx, cancel := concurrency.DependentContext(context.Background(), &p.cancelSig)
@@ -152,7 +151,9 @@ func (p *restoreProcess) run(tempOutputDir, finalDir string) {
 
 	go p.resumeCtrl()
 
-	p.completionSig.SignalWithError(p.doRun(ctx, tempOutputDir, finalDir))
+	err := p.doRun(ctx, tempOutputDir, finalDir)
+	p.currentAttemptSig.SignalWithError(err)
+	p.completionSig.SignalWithError(err)
 }
 
 func (p *restoreProcess) doRun(ctx context.Context, tempOutputDir, finalDir string) error {

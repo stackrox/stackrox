@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/runner"
+	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 )
 
@@ -35,7 +36,18 @@ func startProfilingServer() {
 }
 
 func run() error {
-	if err := compact.Compact(); err != nil {
+	conf, err := config.ReadConfig()
+	if err != nil {
+		log.WriteToStderrf("error reading configuration: %v. Skipping migrator", err)
+		return nil
+	}
+
+	if conf.Maintenance.SafeMode {
+		log.WriteToStderr("configuration has safe mode set. Skipping migrator")
+		return nil
+	}
+
+	if err := compact.Compact(conf); err != nil {
 		log.WriteToStderrf("error compacting DB: %v", err)
 	}
 

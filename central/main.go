@@ -109,6 +109,7 @@ import (
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/debughandler"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -171,8 +172,28 @@ func init() {
 	}
 }
 
+func runSafeMode() {
+	log.Info("Started Central up in safe mode. Sleeping forever...")
+
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	sig := <-signalsC
+	log.Infof("Caught %s signal", sig)
+	log.Info("Central terminated")
+}
+
 func main() {
 	premain.StartMain()
+
+	conf, err := config.ReadConfig()
+	if err != nil || conf.Maintenance.SafeMode {
+		if err != nil {
+			log.Errorf("error reading config file: %v. Starting up in safe mode", err)
+		}
+		runSafeMode()
+		return
+	}
 
 	proxy.WatchProxyConfig(context.Background(), proxyConfigPath, proxyConfigFile, true)
 
