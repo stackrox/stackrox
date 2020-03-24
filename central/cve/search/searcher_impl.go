@@ -38,8 +38,14 @@ var (
 		Field: search.CVE.String(),
 	}
 
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageMappings.ImageOnlyOptionsMap)
-	imageOnlyOptionsMap      = search.Difference(
+	deploymentOnlyOptionsMap = search.Difference(
+		deploymentMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			imageMappings.ImageOnlyOptionsMap,
+			clusterMappings.OptionsMap,
+		),
+	)
+	imageOnlyOptionsMap = search.Difference(
 		imageMappings.ImageOnlyOptionsMap,
 		search.CombineOptionsMaps(
 			imageComponentEdgeMappings.OptionsMap,

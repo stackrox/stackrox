@@ -152,7 +152,7 @@ func (otm ManyToMany) ThenMapEachToOne(fn OneToOne) ManyToMany {
 // Dedupe removed duplicate key values before outputing.
 func Dedupe() ManyToMany {
 	return func(ctx context.Context, keys [][]byte) [][]byte {
-		seen := set.NewStringSet()
+		seen := set.StringSet(make(map[string]struct{}, len(keys)))
 		deduped := keys[:0]
 		for _, key := range keys {
 			if seen.Add(string(key)) {
