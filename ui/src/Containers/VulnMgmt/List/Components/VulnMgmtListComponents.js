@@ -100,7 +100,7 @@ export function getComponentTableColumns(workflowState) {
         {
             Header: `Location`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            className: `w-1/8 word-break-all ${defaultColumnClassName}`,
             Cell: ({ original }) => original.location || 'N/A',
             id: componentSortFields.LOCATION,
             accessor: 'location',
