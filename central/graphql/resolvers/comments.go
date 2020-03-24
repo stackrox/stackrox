@@ -6,8 +6,15 @@ import (
 
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	deleteNonOwnedCommentsAuthorizer = user.With(permissions.Modify(resources.AllComments))
 )
 
 func init() {
@@ -22,6 +29,6 @@ func (resolver *commentResolver) Modifiable(ctx context.Context) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Modifiable")
 
 	// TODO: update this after the access control changes go in.
-	user := analystnotes.UserFromContext(ctx)
-	return user.GetId() == resolver.data.GetUser().GetId(), nil
+	curUser := analystnotes.UserFromContext(ctx)
+	return curUser.GetId() == resolver.data.GetUser().GetId() || deleteNonOwnedCommentsAuthorizer.Authorized(ctx, "graphql") == nil, nil
 }

@@ -13,6 +13,7 @@ import (
 var (
 	APIToken              = newResourceMetadata("APIToken", permissions.GlobalScope)
 	Alert                 = newResourceMetadata("Alert", permissions.NamespaceScope)
+	AllComments           = newResourceMetadata("AllComments", permissions.GlobalScope)
 	AuthPlugin            = newResourceMetadata("AuthPlugin", permissions.GlobalScope)
 	AuthProvider          = newResourceMetadata("AuthProvider", permissions.GlobalScope)
 	BackupPlugins         = newResourceMetadata("BackupPlugins", permissions.GlobalScope)

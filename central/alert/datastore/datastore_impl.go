@@ -18,11 +18,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -35,7 +37,8 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	alertSAC = sac.ForResource(resources.Alert)
+	alertSAC                         = sac.ForResource(resources.Alert)
+	deleteNonOwnedCommentsAuthorizer = user.With(permissions.Modify(resources.AllComments))
 )
 
 const (
@@ -301,10 +304,11 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commen
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")
 	}
-	if comment.GetUser().GetId() != user.GetId() {
-		return errors.Errorf("the current user cannot remove the comment with id: %q for alert %q", commentID, alertID)
+	if comment.GetUser().GetId() == user.GetId() || deleteNonOwnedCommentsAuthorizer.Authorized(ctx, "") == nil {
+		return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
+
 	}
-	return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
+	return errors.Errorf("the current user cannot remove the comment with id: %q for alert %q", commentID, alertID)
 }
 
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
