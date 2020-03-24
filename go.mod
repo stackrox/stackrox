@@ -104,7 +104,7 @@ replace (
 	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20200303185535-b6fb59df2573
 	github.com/couchbase/ghistogram => github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6
 	github.com/couchbase/vellum => github.com/couchbase/vellum v0.0.0-20190829182332-ef2e028c01fd
-	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20191025195058-f2b50b9f079c
+	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20200323231458-fbe3e8f8d16e
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20191120225537-fe4e9a7e467f
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
