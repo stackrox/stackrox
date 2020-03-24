@@ -350,6 +350,18 @@ export class WorkflowState {
         return new WorkflowState(useCase, stateStack, search, newSort, paging);
     }
 
+    clearSearch() {
+        const { useCase, stateStack, search, sort, paging, sidePanelActive } = this;
+        const param = sidePanelActive ? searchParams.sidePanel : searchParams.page;
+
+        const newSearch = {
+            ...search,
+            [param]: undefined
+        };
+
+        return new WorkflowState(useCase, stateStack, newSearch, sort, paging);
+    }
+
     clearSort() {
         const { useCase, stateStack, search, sort, paging, sidePanelActive } = this;
         const param = sidePanelActive ? sortParams.sidePanel : sortParams.page;

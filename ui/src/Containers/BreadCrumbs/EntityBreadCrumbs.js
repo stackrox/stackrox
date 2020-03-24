@@ -16,12 +16,13 @@ const BackLink = ({ workflowState, enabled }) => {
 
     // if the link for this particular crumb is enabled, calculate the URL
     //   necessary to go back up the stack,
-    //   and remove any existing sort on a sublist (fixes https://stack-rox.atlassian.net/browse/ROX-4449)
+    //   and remove any existing sort and search on a sublist (fixes https://stack-rox.atlassian.net/browse/ROX-4449)
     const url = !enabled
         ? null
         : workflowState
               .pop()
               .clearSort()
+              .clearSearch()
               .toUrl();
 
     return url ? (
@@ -46,7 +47,10 @@ const getUrl = (workflowState, steps) => {
     // TODO: do this with .call
     let newState = workflowState;
     for (let x = 1; x < steps; x += 1) {
-        newState = newState.pop();
+        newState = newState
+            .pop()
+            .clearSort()
+            .clearSearch();
     }
     const newURL = newState.toUrl();
     const currentURL = workflowState.toUrl();
