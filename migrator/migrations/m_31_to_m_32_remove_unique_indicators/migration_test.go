@@ -3,6 +3,7 @@ package m31to32
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/dgraph-io/badger"
@@ -56,48 +57,45 @@ func TestMigration(t *testing.T) {
 	}()
 
 	var expectedIndicators []*storage.ProcessIndicator
-	err = db.Update(func(tx *badger.Txn) error {
-		for i := 0; i < 10; i++ {
-			pi := &storage.ProcessIndicator{
-				Id:    fmt.Sprintf("%d", i),
-				PodId: fmt.Sprintf("%d", i),
-			}
-			data, err := proto.Marshal(pi)
-			if err != nil {
-				return err
-			}
 
-			if err := tx.Set(getKey(oldProcessBucket, pi.GetId()), data); err != nil {
-				return err
-			}
+	batch := db.NewWriteBatch()
+	defer batch.Cancel()
 
-			uniqueData, err := getSecondaryKey(pi)
-			if err != nil {
-				return err
-			}
-			if err := tx.Set(getKey(uniqueProcessBucket, pi.GetId()), uniqueData); err != nil {
-				return err
-			}
-
-			// Add to expected indicators
-			// Change ID of indicator
-			id.SetIndicatorID(pi)
-			expectedIndicators = append(expectedIndicators, pi)
+	numIndicators := 50000
+	for i := 0; i < numIndicators; i++ {
+		pi := &storage.ProcessIndicator{
+			Id:    fmt.Sprintf("%d", i),
+			PodId: fmt.Sprintf("%d", i),
 		}
-		return nil
-	})
+		data, err := proto.Marshal(pi)
+		require.NoError(t, err)
+
+		require.NoError(t, batch.Set(getKey(oldProcessBucket, pi.GetId()), data))
+
+		uniqueData, err := getSecondaryKey(pi)
+		require.NoError(t, err)
+		require.NoError(t, batch.Set(getKey(uniqueProcessBucket, pi.GetId()), uniqueData))
+
+		// Add to expected indicators
+		// Change ID of indicator
+		id.SetIndicatorID(pi)
+		expectedIndicators = append(expectedIndicators, pi)
+	}
 	require.NoError(t, err)
+	require.NoError(t, batch.Flush())
 
 	// Make sure there are 20 entries before running
 	numKeys, err := getKeyCount(db)
 	require.NoError(t, err)
-	assert.Equal(t, 20, numKeys)
+	// 1 key for process indicator and 1 key for unique indicator
+	assert.Equal(t, numIndicators*2, numKeys)
 
 	require.NoError(t, removeUniqueProcessPrefix(nil, db))
 
 	numKeys, err = getKeyCount(db)
 	require.NoError(t, err)
-	assert.Equal(t, 10, numKeys)
+	// Should only be the new keys
+	assert.Equal(t, numIndicators, numKeys)
 
 	// Validate the results
 	var actualIndicators []*storage.ProcessIndicator
@@ -119,5 +117,12 @@ func TestMigration(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
-	assert.ElementsMatch(t, expectedIndicators, actualIndicators)
+
+	sort.Slice(expectedIndicators, func(i, j int) bool {
+		return expectedIndicators[i].GetId() < expectedIndicators[j].GetId()
+	})
+	sort.Slice(actualIndicators, func(i, j int) bool {
+		return actualIndicators[i].GetId() < actualIndicators[j].GetId()
+	})
+	assert.Equal(t, expectedIndicators, actualIndicators)
 }

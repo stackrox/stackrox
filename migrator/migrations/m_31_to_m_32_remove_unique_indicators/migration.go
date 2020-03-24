@@ -22,10 +22,30 @@ var (
 	}
 )
 
+func removePrefix(db *badger.DB, prefix []byte) error {
+	removeBatch := db.NewWriteBatch()
+	defer removeBatch.Cancel()
+
+	err := db.View(func(tx *badger.Txn) error {
+		itOpts := badger.DefaultIteratorOptions
+		itOpts.Prefix = prefix
+		it := tx.NewIterator(itOpts)
+		defer it.Close()
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			if err := removeBatch.Delete(it.Item().KeyCopy(nil)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return removeBatch.Flush()
+}
+
 func removeUniqueProcessPrefix(_ *bolt.DB, badgerDB *badger.DB) error {
-	// Generally, we try to avoid drop prefix because if multiple run at once, there have been some issues filed.
-	// In this case, it'll be the only thing run so it should be safe
-	if err := badgerDB.DropPrefix(uniqueProcessBucket); err != nil {
+	if err := removePrefix(badgerDB, uniqueProcessBucket); err != nil {
 		return err
 	}
 
@@ -35,11 +55,12 @@ func removeUniqueProcessPrefix(_ *bolt.DB, badgerDB *badger.DB) error {
 
 	count := 0
 	err := badgerDB.View(func(tx *badger.Txn) error {
-		it := tx.NewIterator(badger.DefaultIteratorOptions)
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = oldProcessBucket
+		it := tx.NewIterator(opts)
 		defer it.Close()
 		for it.Seek(oldProcessBucket); it.ValidForPrefix(oldProcessBucket); it.Next() {
 			var indicator storage.ProcessIndicator
-
 			err := it.Item().Value(func(v []byte) error {
 				return proto.Unmarshal(v, &indicator)
 			})
@@ -69,15 +90,11 @@ func removeUniqueProcessPrefix(_ *bolt.DB, badgerDB *badger.DB) error {
 	if err != nil {
 		return err
 	}
-
 	if err := newBatch.Flush(); err != nil {
 		return err
 	}
 
-	if err := badgerDB.DropPrefix(oldProcessBucket); err != nil {
-		return err
-	}
-	return nil
+	return removePrefix(badgerDB, oldProcessBucket)
 }
 
 func init() {
