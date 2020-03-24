@@ -7,7 +7,7 @@ import { createStructuredSelector } from 'reselect';
 import removeEmptyFields from 'utils/removeEmptyFields';
 
 import fieldsMap from 'Containers/Policies/Wizard/Details/descriptors';
-import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
+import { policyConfiguration } from 'Containers/Policies/Wizard/Form/descriptors';
 
 class ConfigurationFields extends Component {
     static propTypes = {
@@ -28,7 +28,7 @@ class ConfigurationFields extends Component {
             <div className="px-3 pt-5">
                 <div className="bg-base-100 shadow">
                     <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg">
-                        {policyFormFields.policyConfiguration.header}
+                        {policyConfiguration.header}
                     </div>
                     <div className="h-full p-3 pb-0">
                         {fieldKeys.map(key => {

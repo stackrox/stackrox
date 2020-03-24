@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { formValueSelector } from 'redux-form';
+import { createStructuredSelector } from 'reselect';
+import { ArrowRight } from 'react-feather';
+
 import { selectors } from 'reducers';
+import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/policies/wizard';
-import { createStructuredSelector } from 'reselect';
-import wizardStages from 'Containers/Policies/Wizard/wizardStages';
-
-import { formValueSelector } from 'redux-form';
-import * as Icon from 'react-feather';
-
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 
@@ -77,7 +76,7 @@ class Buttons extends Component {
     render() {
         return (
             <PanelButton
-                icon={<Icon.ArrowRight className="h-4 w-4" />}
+                icon={<ArrowRight className="h-4 w-4" />}
                 className="btn btn-base"
                 onClick={this.goToPreview}
                 tooltip="Go to next step"

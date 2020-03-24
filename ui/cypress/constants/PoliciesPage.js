@@ -29,7 +29,7 @@ export const selectors = {
         select: '#policyConfigurationSelect',
         selectArrow: '#policyConfigurationSelect .react-select__dropdown-indicator',
         options: '#policyConfigurationSelect .react-select__option',
-        numericInput: '[data-test-id="policyConfiguration"] .react-numeric-input input'
+        numericInput: '[data-test-id="policyConfigurationFields"] .react-numeric-input input'
     },
     imageRegistry: {
         input: 'input[name="fields.imageName.registry"]',

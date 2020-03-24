@@ -1,25 +1,20 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, change } from 'redux-form';
-import Select from 'Components/ReactSelect';
+import sortBy from 'lodash/sortBy';
 
+import Select from 'Components/ReactSelect';
 import flattenObject from 'utils/flattenObject';
 import removeEmptyFields from 'utils/removeEmptyFields';
 import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
-import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
-
 import FormField from 'Components/FormField';
-
 import Field from 'Containers/Policies/Wizard/Form/Field';
-import sortBy from 'lodash/sortBy';
-import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
 class FieldGroupCards extends Component {
     static propTypes = {
-        policyFormFields: PropTypes.shape({}).isRequired,
+        fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({}).isRequired,
         change: PropTypes.func.isRequired
     };
@@ -35,10 +30,8 @@ class FieldGroupCards extends Component {
     addFormField = option => {
         let fieldToAdd = {};
 
-        Object.keys(this.props.policyFormFields).forEach(fieldGroup => {
-            const field = this.props.policyFormFields[fieldGroup].descriptor.find(
-                obj => obj.jsonpath === option
-            );
+        this.props.fieldGroups.forEach(fieldGroup => {
+            const field = fieldGroup.descriptor.find(obj => obj.jsonpath === option);
             if (field) fieldToAdd = field;
         });
         this.setState(prevState => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
@@ -49,10 +42,8 @@ class FieldGroupCards extends Component {
 
     removeField = jsonpath => {
         let fieldToRemove = {};
-        Object.keys(this.props.policyFormFields).forEach(fieldGroup => {
-            const field = this.props.policyFormFields[fieldGroup].descriptor.find(
-                obj => obj.jsonpath === jsonpath
-            );
+        this.props.fieldGroups.forEach(fieldGroup => {
+            const field = fieldGroup.descriptor.find(obj => obj.jsonpath === jsonpath);
 
             if (field) fieldToRemove = field;
         });
@@ -145,18 +136,15 @@ class FieldGroupCards extends Component {
         formFields.length === 1 && formFields.find(field => field.header);
 
     render() {
-        const fieldGroups = this.props.policyFormFields;
-        const fieldGroupKeys = Object.keys(fieldGroups);
         const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
 
-        return fieldGroupKeys.map(fieldGroupKey => {
-            const fieldGroupName = fieldGroups[fieldGroupKey].header;
-            const formFields = fieldGroups[fieldGroupKey].descriptor;
+        return this.props.fieldGroups.map(fieldGroup => {
+            const { header: fieldGroupName, descriptor: formFields, dataTestId } = fieldGroup;
             const headerControl = this.renderHeaderControl(formFields);
             const border = this.isHeaderOnlyCard(formFields) ? '' : 'border';
             const leading = headerControl ? 'leading-loose' : 'leading-normal';
             return (
-                <div className="px-3 pt-5" data-test-id={fieldGroupKey} key={fieldGroupKey}>
+                <div className="px-3 pt-5" data-test-id={dataTestId} key={fieldGroupName}>
                     <div className={`bg-base-100 ${border} border-base-200 shadow`}>
                         <div
                             className={`p-2 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between ${leading}`}
@@ -173,48 +161,6 @@ class FieldGroupCards extends Component {
     }
 }
 
-const getPolicyFormFields = createSelector(
-    [
-        selectors.getNotifiers,
-        selectors.getClusters,
-        selectors.getImages,
-        selectors.getPolicyCategories
-    ],
-    (notifiers, clusters, images, policyCategories) => {
-        const { descriptor } = policyFormFields.policyDetails;
-        const policyDetailsFormFields = descriptor.map(field => {
-            const newField = Object.assign({}, field);
-            let { options } = newField;
-            switch (field.jsonpath) {
-                case 'categories':
-                    options = policyCategories.map(category => ({
-                        label: category,
-                        value: category
-                    }));
-                    break;
-                case clientOnlyWhitelistFieldNames.WHITELISTED_IMAGE_NAMES:
-                    options = images.map(image => ({
-                        label: image.name,
-                        value: image.name
-                    }));
-                    break;
-                case 'notifiers':
-                    options = notifiers.map(notifier => ({
-                        label: notifier.name,
-                        value: notifier.id
-                    }));
-                    break;
-                default:
-                    break;
-            }
-            newField.options = options;
-            return newField;
-        });
-        policyFormFields.policyDetails.descriptor = policyDetailsFormFields;
-        return policyFormFields;
-    }
-);
-
 const formFields = state =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
 
@@ -224,7 +170,6 @@ const getFormData = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    policyFormFields: getPolicyFormFields,
     formData: getFormData
 });
 

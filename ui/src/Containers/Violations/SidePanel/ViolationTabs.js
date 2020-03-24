@@ -6,7 +6,7 @@ import TabContent from 'Components/TabContent';
 import { Details as EnforcementDetails } from 'Containers/Violations/Enforcement/Details';
 import DeploymentDetails from '../../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
-import { Panel as PolicyDetails } from '../../Policies/Wizard/Details/Panel';
+import PolicyDetailsPanel from '../../Policies/Wizard/Details/PolicyDetailsPanel';
 
 const riskPanelTabs = [
     { text: 'Violation' },
@@ -39,7 +39,7 @@ function ViolationTabs({ alert }) {
             </TabContent>
             <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
-                    <PolicyDetails wizardPolicy={alert.policy} />
+                    <PolicyDetailsPanel wizardPolicy={alert.policy} />
                 </div>
             </TabContent>
         </Tabs>

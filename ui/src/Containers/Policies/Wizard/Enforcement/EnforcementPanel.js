@@ -1,15 +1,17 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
 import intersection from 'lodash/intersection';
 
+import { selectors } from 'reducers';
+import Panel from 'Components/Panel';
 import { actions } from 'reducers/policies/wizard';
 import Tile from 'Containers/Policies/Wizard/Enforcement/Tile/Tile';
 import lifecycleTileMap, {
     lifecycleToEnforcementsMap
 } from 'Containers/Policies/Wizard/Enforcement/descriptors';
+import EnforcementButtons from 'Containers/Policies/Wizard/Enforcement/EnforcementButtons';
 
 function enforcementActionsEmpty(enforcementActions) {
     return (
@@ -19,69 +21,72 @@ function enforcementActionsEmpty(enforcementActions) {
     );
 }
 
-class Panel extends Component {
-    static propTypes = {
-        wizardPolicy: PropTypes.shape({
-            enforcementActions: PropTypes.arrayOf(PropTypes.string),
-            lifecycleStages: PropTypes.arrayOf(PropTypes.string)
-        }).isRequired,
-
-        setWizardPolicy: PropTypes.func.isRequired
-    };
-
+function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
     // Check that the lifecycle stage for an enforcement type is present.
-    lifecycleStageEnabled = stage =>
-        intersection(this.props.wizardPolicy.lifecycleStages, [stage]).length > 0;
+    function lifecycleStageEnabled(stage) {
+        return intersection(wizardPolicy.lifecycleStages, [stage]).length > 0;
+    }
 
     // Check if enforcement types are present.
-    hasEnforcementForLifecycle = stage =>
-        intersection(this.props.wizardPolicy.enforcementActions, lifecycleToEnforcementsMap[stage])
-            .length > 0;
+    function hasEnforcementForLifecycle(stage) {
+        return (
+            intersection(wizardPolicy.enforcementActions, lifecycleToEnforcementsMap[stage])
+                .length > 0
+        );
+    }
 
     // Add enforcement types.
-    addEnforcementsForLifecycle = stage => {
-        const newPolicy = Object.assign({}, this.props.wizardPolicy);
+    function addEnforcementsForLifecycle(stage) {
+        const newPolicy = Object.assign({}, wizardPolicy);
         if (enforcementActionsEmpty(newPolicy.enforcementActions)) {
             newPolicy.enforcementActions = [];
         }
         newPolicy.enforcementActions = newPolicy.enforcementActions.concat(
             ...lifecycleToEnforcementsMap[stage]
         );
-        this.props.setWizardPolicy(newPolicy);
-    };
+        setWizardPolicy(newPolicy);
+    }
 
     // Remove enforcement types.
-    removeEnforcementsForLifecycle = stage => {
+    function removeEnforcementsForLifecycle(stage) {
         if (
-            intersection(
-                this.props.wizardPolicy.enforcementActions,
-                lifecycleToEnforcementsMap[stage]
-            ).length > 0
+            intersection(wizardPolicy.enforcementActions, lifecycleToEnforcementsMap[stage])
+                .length > 0
         ) {
-            const newPolicy = Object.assign({}, this.props.wizardPolicy);
+            const newPolicy = Object.assign({}, wizardPolicy);
             newPolicy.enforcementActions = newPolicy.enforcementActions.filter(
                 d => !lifecycleToEnforcementsMap[stage].find(v => v === d)
             );
-            this.props.setWizardPolicy(newPolicy);
+            setWizardPolicy(newPolicy);
         }
-    };
+    }
 
     // Add or remove enforcement actions from the policy being edited (form data).
-    toggleOn = stage => () => {
-        if (!this.hasEnforcementForLifecycle(stage)) {
-            this.addEnforcementsForLifecycle(stage);
-        }
-    };
+    function toggleOn(stage) {
+        return () => {
+            if (!hasEnforcementForLifecycle(stage)) {
+                addEnforcementsForLifecycle(stage);
+            }
+        };
+    }
 
-    toggleOff = stage => () => {
-        if (this.hasEnforcementForLifecycle(stage)) {
-            this.removeEnforcementsForLifecycle(stage);
-        }
-    };
+    function toggleOff(stage) {
+        return () => {
+            if (hasEnforcementForLifecycle(stage)) {
+                removeEnforcementsForLifecycle(stage);
+            }
+        };
+    }
 
-    render() {
-        const lifecycles = Object.keys(lifecycleToEnforcementsMap);
-        return (
+    const lifecycles = Object.keys(lifecycleToEnforcementsMap);
+    return (
+        <Panel
+            header={header}
+            headerComponents={<EnforcementButtons />}
+            onClose={onClose}
+            id="side-panel"
+            className="w-1/2"
+        >
             <div className="flex flex-col overflow-y-scroll w-full h-1/3 bg-primary-100">
                 <h2 className="font-700 flex justify-center top-0 py-4 px-8 sticky text-xs text-base-600 uppercase items-center tracking-wide leading-normal font-700">
                     BASED ON THE FIELDS SELECTED IN YOUR POLICY CONFIGURATION, YOU MAY CHOOSE TO
@@ -93,18 +98,33 @@ class Panel extends Component {
                         <Tile
                             key={key}
                             lifecycle={key}
-                            enabled={this.lifecycleStageEnabled(key)}
-                            applied={this.hasEnforcementForLifecycle(key)}
+                            enabled={lifecycleStageEnabled(key)}
+                            applied={hasEnforcementForLifecycle(key)}
                             enforcement={lifecycleTileMap[key]}
-                            onAction={this.toggleOn(key)}
-                            offAction={this.toggleOff(key)}
+                            onAction={toggleOn(key)}
+                            offAction={toggleOff(key)}
                         />
                     ))}
                 </div>
             </div>
-        );
-    }
+        </Panel>
+    );
 }
+
+EnforcementPanel.propTypes = {
+    header: PropTypes.string,
+    wizardPolicy: PropTypes.shape({
+        enforcementActions: PropTypes.arrayOf(PropTypes.string),
+        lifecycleStages: PropTypes.arrayOf(PropTypes.string)
+    }).isRequired,
+
+    setWizardPolicy: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired
+};
+
+EnforcementPanel.defaultProps = {
+    header: ''
+};
 
 const mapStateToProps = createStructuredSelector({
     wizardPolicy: selectors.getWizardPolicy
@@ -121,4 +141,4 @@ const mapDispatchToProps = {
 export default connect(
     mapStateToProps,
     mapDispatchToProps
-)(Panel);
+)(EnforcementPanel);

@@ -1,4 +1,8 @@
-import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
+import {
+    policyDetails,
+    policyConfiguration,
+    policyStatus
+} from 'Containers/Policies/Wizard/Form/descriptors';
 import removeEmptyFields from 'utils/removeEmptyFields';
 import { clientOnlyWhitelistFieldNames } from './whitelistFieldNames';
 
@@ -88,7 +92,6 @@ export function mapDescriptorToKey(descriptor) {
 }
 
 export function getPolicyFormDataKeys() {
-    const { policyDetails, policyConfiguration, policyStatus } = policyFormFields;
     const policyDetailsKeys = mapDescriptorToKey(policyDetails.descriptor);
     const policyConfigurationKeys = mapDescriptorToKey(policyConfiguration.descriptor);
     const policyStatusKeys = mapDescriptorToKey(policyStatus.descriptor);

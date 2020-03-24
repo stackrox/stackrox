@@ -651,19 +651,20 @@ const policyConfigurationDescriptor = [
     }
 ];
 
-const policyFormFields = {
-    policyStatus: {
-        header: 'Enable Policy',
-        descriptor: policyStatusDescriptor
-    },
-    policyDetails: {
-        header: 'Policy Summary',
-        descriptor: policyDetailsFormDescriptor
-    },
-    policyConfiguration: {
-        header: 'Policy Criteria',
-        descriptor: policyConfigurationDescriptor
-    }
+export const policyStatus = {
+    header: 'Enable Policy',
+    descriptor: policyStatusDescriptor,
+    dataTestId: 'policyStatusField'
 };
 
-export default policyFormFields;
+export const policyDetails = {
+    header: 'Policy Summary',
+    descriptor: policyDetailsFormDescriptor,
+    dataTestId: 'policyDetailsFields'
+};
+
+export const policyConfiguration = {
+    header: 'Policy Criteria',
+    descriptor: policyConfigurationDescriptor,
+    dataTestId: 'policyConfigurationFields'
+};
