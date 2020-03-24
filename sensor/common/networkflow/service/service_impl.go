@@ -2,11 +2,16 @@ package service
 
 import (
 	"context"
+	"io"
+	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -15,6 +20,11 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	capMetadataKey     = `rox-collector-capabilities`
+	publicIPsUpdateCap = `public-ips`
 )
 
 type serviceImpl struct {
@@ -51,6 +61,12 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		return status.Error(codes.Internal, "collector did not transmit a hostname in initial metadata")
 	}
 
+	capsStr := incomingMD.Get(capMetadataKey)
+	var capsSet set.FrozenStringSet
+	if capsStr != "" {
+		capsSet = set.NewFrozenStringSet(strings.Split(capsStr, ",")...)
+	}
+
 	if err := stream.SendHeader(metadata.MD{}); err != nil {
 		return status.Errorf(codes.Internal, "error sending initial metadata: %v", err)
 	}
@@ -58,25 +74,88 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	hostConnections, sequenceID := s.manager.RegisterCollector(hostname)
 	defer s.manager.UnregisterCollector(hostname, sequenceID)
 
-	for stream.Context().Err() == nil {
-		msg, err := stream.Recv()
-		if err != nil {
-			log.Errorf("error dequeueing message: %s", err)
-			return status.Errorf(codes.Internal, "error dequeueing message: %s", err)
-		}
+	recvdMsgC := make(chan *sensor.NetworkConnectionInfoMessage)
+	recvErrC := make(chan error, 1)
 
-		networkInfoMsg := msg.GetInfo()
-		networkInfoMsgTimestamp := timestamp.Now()
+	go s.runRecv(stream, recvdMsgC, recvErrC)
 
-		if networkInfoMsg == nil {
-			return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
-		}
-
-		metrics.IncrementTotalNetworkFlowsReceivedCounter(clusterid.Get(), len(msg.GetInfo().GetUpdatedConnections()))
-		if err := hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, sequenceID); err != nil {
-			return status.Errorf(codes.Internal, "could not process connections: %v", err)
+	var publicIPsIterator concurrency.ValueStreamIter
+	if capsSet.Contains(publicIPsUpdateCap) {
+		publicIPsIterator = s.manager.PublicIPsValueStream().Iterator(false)
+		if err := s.sendPublicIPList(stream, publicIPsIterator); err != nil {
+			return err
 		}
 	}
 
-	return stream.Context().Err()
+	for {
+		// If the publicIPsIterator is nil (i.e., Sensor does not support receive public IP list updates), leave this
+		// as nil, which means the respective select branch will never be taken.
+		var itDoneC <-chan struct{}
+		if publicIPsIterator != nil {
+			itDoneC = publicIPsIterator.Done()
+		}
+
+		select {
+		case <-stream.Context().Done():
+			return stream.Context().Err()
+
+		case err := <-recvErrC:
+			recvErrC = nil
+			if err == io.EOF {
+				err = nil
+			}
+			return errors.Wrap(err, "receiving message from collector")
+
+		case msg := <-recvdMsgC:
+			networkInfoMsg := msg.GetInfo()
+			networkInfoMsgTimestamp := timestamp.Now()
+
+			if networkInfoMsg == nil {
+				return status.Errorf(codes.Internal, "received unexpected message type %T from hostname %s", networkInfoMsg, hostname)
+			}
+
+			metrics.IncrementTotalNetworkFlowsReceivedCounter(clusterid.Get(), len(msg.GetInfo().GetUpdatedConnections()))
+			if err := hostConnections.Process(networkInfoMsg, networkInfoMsgTimestamp, sequenceID); err != nil {
+				return status.Errorf(codes.Internal, "could not process connections: %v", err)
+			}
+
+		case <-itDoneC:
+			publicIPsIterator = publicIPsIterator.TryNext()
+			if err := s.sendPublicIPList(stream, publicIPsIterator); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, msgC chan<- *sensor.NetworkConnectionInfoMessage, errC chan<- error) {
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			errC <- err
+			return
+		}
+
+		select {
+		case <-stream.Context().Done():
+			return
+		case msgC <- msg:
+		}
+	}
+}
+
+func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter) error {
+	listProto, _ := iter.Value().(*sensor.IPAddressList)
+	if listProto == nil {
+		return nil
+	}
+
+	controlMsg := &sensor.NetworkFlowsControlMessage{
+		PublicIpAddresses: listProto,
+	}
+
+	if err := stream.Send(controlMsg); err != nil {
+		return errors.Wrap(err, "sending public IPs list")
+	}
+	return nil
 }

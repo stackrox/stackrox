@@ -16,9 +16,25 @@ message NetworkConnectionInfoMessage {
     }
 }
 
+message NetworkFlowsControlMessage {
+    IPAddressList public_ip_addresses = 1;
+}
+
+message IPAddressList {
+    // A list of IPv4 addresses, encoded in correct byte order (i.e., 127.0.0.1 is encoded as 0x7f000001). On a
+    // little-endian system, you must convert to big endian to interpret the value as a binary address.
+    repeated fixed32 ipv4_addresses = 1;
+
+    // A list of IPv6 addresses, as uint64 pairs. Each pair is ordered in network order (big endian, i.e., first high,
+    // then low); each uint64 is encoded in the correct byte order and may need to be converted to big endian on little
+    // endian System. E.g., the IPv6 address ::1 (local loopback) is encoded as a `0` uint64 followed by a `1` uint64.
+    // This field must always have an even number of values; otherwise it should be discarded.
+    repeated fixed64 ipv6_addresses = 2;
+}
+
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 service NetworkConnectionInfoService {
     // Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
     // send anything via this stream.
-    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream v1.Empty);
+    rpc PushNetworkConnectionInfo (stream NetworkConnectionInfoMessage) returns (stream NetworkFlowsControlMessage);
 }

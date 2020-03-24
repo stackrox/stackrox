@@ -303,6 +303,40 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([NetworkFlowVisualization])
+    def "Verify intra-cluster connection via external IP"() {
+        given:
+        "Only run on non-OpenShift until we can fix the route issue in CI"
+        Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
+        "Deployment A, exposed via LB"
+        String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        assert deploymentUid != null
+        String deploymentIP = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+        assert deploymentIP != null
+
+        when:
+        "create a new deployment that talks to A via the LB IP"
+        def newDeployment = new Deployment()
+                .setName("talk-to-lb-ip")
+                .setImage("nginx:1.15.4-alpine")
+                .addLabel("app", "talk-to-lb-ip")
+                .setCommand(["/bin/sh", "-c",])
+                .setArgs(["while sleep 5; do wget -S -T 2 http://${deploymentIP}; done"])
+
+        orchestrator.createDeployment(newDeployment)
+
+        then:
+        "Check for edge in network graph"
+        println "Checking for edge from external target to ${EXTERNALDESTINATION}"
+        List<Edge> edges = checkForEdge(newDeployment.deploymentUid, deploymentUid, null, 180)
+        assert edges
+
+        cleanup:
+        "remove the new deployment"
+        orchestrator.deleteDeployment(newDeployment)
+    }
+
+    @Category([NetworkFlowVisualization])
     def "Verify no connections between 2 deployments"() {
         given:
         "Two deployments, A and B, where neither communicates to the other"

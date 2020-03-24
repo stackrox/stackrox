@@ -37,8 +37,10 @@ func (m *endpointManager) addEndpointDataForContainerPort(podIP, podHostIP net.I
 		PortName:      port.Name,
 	}
 
-	podEndpoint := net.MakeNumericEndpoint(podIP, uint16(port.ContainerPort), l4Proto)
-	data.AddEndpoint(podEndpoint, targetInfo)
+	if podIP.IsValid() {
+		podEndpoint := net.MakeNumericEndpoint(podIP, uint16(port.ContainerPort), l4Proto)
+		data.AddEndpoint(podEndpoint, targetInfo)
+	}
 
 	if port.HostPort != 0 {
 		var hostIPs []net.IPAddress

@@ -2,6 +2,7 @@ package manager
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,6 +27,12 @@ const (
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
 
 	connectionDeletionGracePeriod = 5 * time.Minute
+)
+
+var (
+	// these are "canonical" external addresses sent by collector when we don't care about the precise IP address.
+	externalIPv4Addr = net.ParseIP("255.255.255.255")
+	externalIPv6Addr = net.ParseIP("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")
 )
 
 type hostConnections struct {
@@ -80,6 +87,16 @@ type connection struct {
 	incoming    bool
 }
 
+func (c *connection) String() string {
+	var arrow string
+	if c.incoming {
+		arrow = "<-"
+	} else {
+		arrow = "->"
+	}
+	return fmt.Sprintf("%s: %s %s %s", c.containerID, c.local, arrow, c.remote)
+}
+
 type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
@@ -90,6 +107,8 @@ type networkFlowManager struct {
 
 	done        concurrency.Signal
 	flowUpdates chan *central.MsgFromSensor
+
+	publicIPs *publicIPsManager
 }
 
 func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor) error {
@@ -98,6 +117,7 @@ func (m *networkFlowManager) ProcessMessage(msg *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections()
+	go m.publicIPs.Run(&m.done, m.clusterEntities)
 	return nil
 }
 
@@ -152,6 +172,13 @@ func (m *networkFlowManager) enrichAndSend() {
 
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+
+	isExternal := false
+	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
+		isExternal = true
+		isFresh = false
+	}
+
 	if !isFresh {
 		status.used = true
 	}
@@ -163,7 +190,11 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		return
 	}
 
-	lookupResults := m.clusterEntities.LookupByEndpoint(conn.remote)
+	var lookupResults []clusterentities.LookupResult
+	if !isExternal {
+		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
+	}
+
 	if len(lookupResults) == 0 {
 		if isFresh {
 			return
@@ -458,4 +489,8 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 	}
 
 	return updatedConnections
+}
+
+func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream {
+	return m.publicIPs.PublicIPsProtoStream()
 }

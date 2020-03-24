@@ -2,6 +2,7 @@ package manager
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
@@ -15,6 +16,8 @@ var (
 type Manager interface {
 	UnregisterCollector(hostname string, sequenceID int64)
 	RegisterCollector(hostname string) (HostNetworkInfo, int64)
+
+	PublicIPsValueStream() concurrency.ReadOnlyValueStream
 
 	common.SensorComponent
 }

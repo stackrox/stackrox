@@ -2,9 +2,11 @@ package clusterentities
 
 import (
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -17,6 +19,14 @@ type ContainerMetadata struct {
 	ContainerID   string
 	Namespace     string
 	StartTime     *types.Timestamp
+}
+
+// PublicIPsListener is an interface for listeners on changes to the set of public IP addresses.
+// Note: Implementors of this interface must ensure the methods complete in a very short time/do not block, as they
+// get invoked synchronously in a critical section.
+type PublicIPsListener interface {
+	OnAdded(ip net.IPAddress)
+	OnRemoved(ip net.IPAddress)
 }
 
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
@@ -38,6 +48,9 @@ type Store struct {
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
+	publicIPRefCounts  map[net.IPAddress]*int
+	publicIPsListeners map[PublicIPsListener]struct{}
+
 	mutex sync.RWMutex
 }
 
@@ -52,6 +65,8 @@ func NewStore() *Store {
 		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
 		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
 		reverseContainerIDMap: make(map[string]map[string]struct{}),
+		publicIPRefCounts:     make(map[net.IPAddress]*int),
+		publicIPsListeners:    make(map[PublicIPsListener]struct{}),
 	}
 }
 
@@ -106,6 +121,9 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		delete(set, deploymentID)
 		if len(set) == 0 {
 			delete(e.ipMap, ip)
+			if ip.IsPublic() {
+				e.decPublicIPRefNoLock(ip)
+			}
 		}
 	}
 	for ep := range e.reverseEndpointMap[deploymentID] {
@@ -113,6 +131,9 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		delete(set, deploymentID)
 		if len(set) == 0 {
 			delete(e.endpointMap, ep)
+			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
+				e.decPublicIPRefNoLock(ipAddr)
+			}
 		}
 	}
 	for containerID := range e.reverseContainerIDMap[deploymentID] {
@@ -155,6 +176,9 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		if epMap == nil {
 			epMap = make(map[string]map[EndpointTargetInfo]struct{})
 			e.endpointMap[ep] = epMap
+			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
+				e.incPublicIPRefNoLock(ipAddr)
+			}
 		}
 		targetSet := epMap[deploymentID]
 		if targetSet == nil {
@@ -177,6 +201,9 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		if ipMap == nil {
 			ipMap = make(map[string]struct{})
 			e.ipMap[ip] = ipMap
+			if ip.IsPublic() {
+				e.incPublicIPRefNoLock(ip)
+			}
 		}
 		ipMap[deploymentID] = struct{}{}
 	}
@@ -265,4 +292,62 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 	}
 
 	return
+}
+
+// RegisterPublicIPsListener registers a listener that listens on changes to the set of public IP addresses.
+// It returns a boolean indicating whether the listener was actually unregistered (i.e., a return value of false
+// indicates that the listener was already registered).
+func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
+	// This mutex is pretty broad in scope, but since registering listeners occurs rarely, it's better than adding
+	// another mutex that would need to get locked separately.
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	oldLen := len(e.publicIPsListeners)
+	e.publicIPsListeners[listener] = struct{}{}
+
+	return len(e.publicIPsListeners) > oldLen
+}
+
+// UnregisterPublicIPsListener unregisters a previously registered listener for public IP events. It returns a boolean
+// indicating whether the listener was actually unregistered (i.e., a return value of false indicates that the listener
+// was not registered in the first place).
+func (e *Store) UnregisterPublicIPsListener(listener PublicIPsListener) bool {
+	e.mutex.Lock()
+	defer e.mutex.Lock()
+
+	oldLen := len(e.publicIPsListeners)
+	delete(e.publicIPsListeners, listener)
+
+	return len(e.publicIPsListeners) < oldLen
+}
+
+func (e *Store) incPublicIPRefNoLock(addr net.IPAddress) {
+	refCnt := e.publicIPRefCounts[addr]
+	if refCnt == nil {
+		refCnt = new(int)
+		e.publicIPRefCounts[addr] = refCnt
+		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnAdded, addr)
+	}
+	*refCnt++
+}
+
+func (e *Store) decPublicIPRefNoLock(addr net.IPAddress) {
+	refCnt := e.publicIPRefCounts[addr]
+	if refCnt == nil {
+		utils.Should(errors.New("public IP has zero refcount already"))
+		return
+	}
+
+	*refCnt--
+	if *refCnt == 0 {
+		delete(e.publicIPRefCounts, addr)
+		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnRemoved, addr)
+	}
+}
+
+func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, net.IPAddress), ip net.IPAddress) {
+	for listener := range e.publicIPsListeners {
+		notifyFunc(listener, ip)
+	}
 }

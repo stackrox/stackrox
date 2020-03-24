@@ -3,6 +3,8 @@ package net
 import (
 	"bytes"
 	"net"
+
+	"github.com/stackrox/rox/pkg/netutil"
 )
 
 // Family represents the address family of an IP address.
@@ -15,6 +17,27 @@ const (
 	IPv4
 	// IPv6 represents the IPv6 address family.
 	IPv6
+)
+
+var (
+	ipV4PrivateNetworks = []*net.IPNet{
+		// private networks per RFC1918
+		netutil.MustParseCIDR("10.0.0.0/8"),
+		netutil.MustParseCIDR("172.16.0.0/12"),
+		netutil.MustParseCIDR("192.168.0.0/16"),
+	}
+
+	ipV6PrivateNetworks = []*net.IPNet{
+		// Unique Local Addresses (ULA)
+		netutil.MustParseCIDR("fd00::/8"),
+
+		// IPv4-mapped IPv6 for private networks per RFC1918
+		netutil.MustParseCIDR("::ffff:10.0.0.0/104"),
+		netutil.MustParseCIDR("::ffff:172.16.0.0/108"),
+		netutil.MustParseCIDR("::ffff:192.168.0.0/112"),
+	}
+
+	ipV4MappedIPv6Loopback = netutil.MustParseCIDR("::ffff:127.0.0.1/104")
 )
 
 // String returns a string representation of the family
@@ -33,6 +56,8 @@ type ipAddrData interface {
 	family() Family
 	bytes() []byte
 	isLoopback() bool
+	isPublic() bool
+	canonicalize() ipAddrData
 }
 
 type ipv4data [4]byte
@@ -48,6 +73,20 @@ func (d ipv4data) isLoopback() bool {
 	return d[0] == 127
 }
 
+func (d ipv4data) isPublic() bool {
+	netIP := net.IP(d.bytes())
+	for _, privateIPNet := range ipV4PrivateNetworks {
+		if privateIPNet.Contains(netIP) {
+			return false
+		}
+	}
+	return true
+}
+
+func (d ipv4data) canonicalize() ipAddrData {
+	return d
+}
+
 type ipv6data [16]byte
 
 func (d ipv6data) family() Family {
@@ -57,11 +96,25 @@ func (d ipv6data) bytes() []byte {
 	return d[:]
 }
 func (d ipv6data) isLoopback() bool {
+	if ipV4MappedIPv6Loopback.Contains(net.IP(d.bytes())) {
+		return true
+	}
+
 	if d[15] != 1 {
 		return false
 	}
 	for i := 0; i < 15; i++ {
 		if d[i] != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (d ipv6data) isPublic() bool {
+	netIP := net.IP(d.bytes())
+	for _, privateIPNet := range ipV6PrivateNetworks {
+		if privateIPNet.Contains(netIP) {
 			return false
 		}
 	}
@@ -129,6 +182,12 @@ func (a IPAddress) String() string {
 // IsValid checks if the IP address is valid, i.e., is non-nil.
 func (a IPAddress) IsValid() bool {
 	return a.data != nil
+}
+
+// IsPublic checks if the IP is a public IP address (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 for IPv4; fd00::/8 for
+// IPv6). For an invalid IP, it returns false.
+func (a IPAddress) IsPublic() bool {
+	return a.data != nil && a.data.isPublic()
 }
 
 // IsLoopback checks if the IP is a local loopback address (127.0.0.0/8 or ::1)

@@ -13,18 +13,21 @@ var (
 )
 
 // newService creates a new streaming service with the collector. It should only be called once.
-func newManager() Manager {
-	return &networkFlowManager{
+func newManager(clusterEntities *clusterentities.Store) Manager {
+	mgr := &networkFlowManager{
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterentities.StoreInstance(),
 		flowUpdates:       make(chan *central.MsgFromSensor),
+		publicIPs:         newPublicIPsManager(),
 	}
+
+	return mgr
 }
 
 func initialize() {
 	// Creates the signal service
-	manager = newManager()
+	manager = newManager(clusterentities.StoreInstance())
 }
 
 // Singleton implements a singleton for a network flow manager
