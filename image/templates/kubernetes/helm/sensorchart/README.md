@@ -11,4 +11,3 @@ helm install --name sensor .
 ```
 helm install sensor .
 ```
-{{- end}}

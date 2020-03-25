@@ -1,6 +1,6 @@
 name: sensor
 description: StackRox Sensor
-version: {{.Version}}
+version: !!.MainVersion!!
 maintainers:
   - name: stackrox
     email: support@stackrox.com

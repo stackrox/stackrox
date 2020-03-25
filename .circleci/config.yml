@@ -3141,6 +3141,13 @@ jobs:
               gcloud auth list
               TAG="$(make --quiet tag)"
               gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
+      - run:
+          name: Publish Helm charts to public github repository stackrox/helm-charts
+          command: |
+            MAIN_TAG=$(make --quiet tag)
+            make render-helm-yamls
+            .circleci/publish-helm-charts "/tmp/${MAIN_TAG}"
+            rm -rf "/tmp/${MAIN_TAG}"
 
   scan-images-in-quay:
       executor: custom

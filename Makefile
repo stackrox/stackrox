@@ -559,6 +559,18 @@ else
 	@echo $(TAG)
 endif
 
+
+.PHONY: render-helm-yamls
+sensorChartDir="image/templates/kubernetes/helm/sensorchart"
+collectorVersion=$(shell cat COLLECTOR_VERSION)
+render-helm-yamls:
+	@rm -rf /tmp/$(TAG)
+	@mkdir -p /tmp/$(TAG)
+	cp -R $(sensorChartDir)/* /tmp/$(TAG)
+	@rm -f /tmp/$(TAG)/main.go
+	cp $(BASE_DIR)/deploy/common/docker-auth.sh  /tmp/$(TAG)/scripts/
+	@go run $(BASE_DIR)/$(sensorChartDir)/main.go "$(TAG)" "$(collectorVersion)" "${BASE_DIR}/$(sensorChartDir)"
+
 .PHONY: ossls-audit
 ossls-audit: download-deps
 	ossls version

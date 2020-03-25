@@ -7,12 +7,10 @@ endpoint:
   advertised: sensor.stackrox:443
 
 image:
-  main:
-  collector:
   repository:
     main: stackrox/main
     collector: stackrox/collector
-  registry: https://stackrox.io
+  registry: stackrox.io
 
 config:
   runtimeSupport: false
