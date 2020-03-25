@@ -412,7 +412,9 @@ func (ds *datastoreImpl) fullReindex() error {
 		if err := ds.deploymentIndexer.AddDeployments(deployments); err != nil {
 			return err
 		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d deployments", end, len(deploymentIDs))
+		if end%(deploymentBatchSize*2) == 0 {
+			log.Infof("[STARTUP] Successfully indexed %d/%d deployments", end, len(deploymentIDs))
+		}
 	}
 	log.Infof("[STARTUP] Successfully indexed %d deployments", len(deploymentIDs))
 

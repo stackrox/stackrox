@@ -411,7 +411,9 @@ func (ds *datastoreImpl) fullReindex() error {
 		if err := ds.indexer.AddListAlerts(listAlerts); err != nil {
 			return err
 		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(alertIDs))
+		if end%(alertBatchSize*10) == 0 {
+			log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(alertIDs))
+		}
 	}
 	log.Infof("[STARTUP] Successfully indexed %d alerts", len(alertIDs))
 
@@ -476,6 +478,7 @@ func (ds *datastoreImpl) buildIndex() error {
 		if err := ds.storage.AckKeysIndexed(keysToIndex[start:end]...); err != nil {
 			return err
 		}
+
 		log.Infof("[STARTUP] Successfully indexed %d/%d alerts", end, len(keysToIndex))
 	}
 
