@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -62,7 +61,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	require.NoError(b, err)
 
 	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil,
-		nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 
 	deploymentPrototype := proto.Clone(fixtures.GetDeployment()).(*storage.Deployment)

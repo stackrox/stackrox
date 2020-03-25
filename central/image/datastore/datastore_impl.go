@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/central/image/index"
@@ -53,7 +54,7 @@ type datastoreImpl struct {
 
 func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher search.Searcher,
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore,
-	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker, keyedMutex *concurrency.KeyedMutex) (*datastoreImpl, error) {
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (*datastoreImpl, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
 		indexer:  indexer,
@@ -65,7 +66,7 @@ func newDatastoreImpl(storage store.Store, indexer index.Indexer, searcher searc
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
 
-		keyedMutex: keyedMutex,
+		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err

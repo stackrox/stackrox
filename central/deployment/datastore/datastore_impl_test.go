@@ -11,12 +11,10 @@ import (
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
-	"github.com/stackrox/rox/central/globaldb"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -71,7 +69,7 @@ func (suite *DeploymentDataStoreTestSuite) TestTags() {
 	processTagsStorage := processtagsstore.New(testDB)
 	datastore, err := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil, nil,
 		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
-		ranking.NewRanker(), ranking.NewRanker(), concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
 
 	suite.storage.EXPECT().GetDeployment("blah").Return(nil, false, nil)
@@ -98,7 +96,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 
 	ds, err := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
 		suite.riskStore, nil, suite.filter, clusterRanker,
-		nsRanker, deploymentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		nsRanker, deploymentRanker)
 	suite.NoError(err)
 
 	deployments := []*storage.Deployment{

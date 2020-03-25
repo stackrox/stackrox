@@ -4,21 +4,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestImageCache(t *testing.T) {
-	mutex := concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
-
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 	baseStore := mocks.NewMockStore(mockCtrl)
-	cacheStore := NewCachedStore(baseStore, mutex)
+	cacheStore := NewCachedStore(baseStore)
 
 	img1 := fixtures.GetImage()
 

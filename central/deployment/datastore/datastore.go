@@ -15,7 +15,6 @@ import (
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
-	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	componentIndexer "github.com/stackrox/rox/central/imagecomponent/index"
@@ -74,8 +73,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	var searcher search.Searcher
 	indexer := index.New(bleveIndex)
 
-	keyedMutex := concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
-	storage = cache.NewCachedStore(storage, keyedMutex)
+	storage = cache.NewCachedStore(storage)
 	if features.Dackbox.Enabled() {
 		searcher = search.New(storage,
 			graphProvider,
@@ -90,7 +88,7 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	}
 
 	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, indicators, whitelists, networkFlows, risks,
-		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, keyedMutex)
+		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 
 	if err != nil {
 		return nil, err

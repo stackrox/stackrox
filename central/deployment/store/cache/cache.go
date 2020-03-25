@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
@@ -30,16 +29,15 @@ func sizeFunc(k, v interface{}) int64 {
 }
 
 // NewCachedStore returns an deployment store implementation that caches deployments
-func NewCachedStore(store store.Store, keyedMutex *concurrency.KeyedMutex) store.Store {
+func NewCachedStore(store store.Store) store.Store {
 	// This is a size based cache, where we use LRU to determine which of the oldest elements should
 	// be removed to allow a new element
 	cache, err := sizeboundedcache.New(maxCacheSize, maxCachedDeploymentSize, sizeFunc)
 	utils.Must(err)
 
 	return &cachedStore{
-		store:      store,
-		cache:      cache,
-		keyedMutex: keyedMutex,
+		store: store,
+		cache: cache,
 	}
 }
 
@@ -49,21 +47,14 @@ func NewCachedStore(store store.Store, keyedMutex *concurrency.KeyedMutex) store
 // - Keyed mutexes are being used, which means that we will not have two concurrent writers to the same key. The keyed mutex
 //   used in the datastore MUST be the same keyed mutex used in this cache to provide consistency
 type cachedStore struct {
-	store      store.Store
-	cache      sizeboundedcache.Cache
-	keyedMutex *concurrency.KeyedMutex
+	store store.Store
+	cache sizeboundedcache.Cache
 }
 
 func (c *cachedStore) testAndSetCacheEntry(id string, deployment *storage.Deployment) {
-	// Backfill the cache by using the cacheLock Write mode which is used to ensure only one lock holder
-	c.keyedMutex.Lock(id)
-	defer c.keyedMutex.Unlock(id)
-	// Check the cache if it has a value (which can be either storage.Deployment or an deploymentTombstone)
-	// If it does, then return as we don't want to overwrite the value set
-	if _, ok := c.cache.Get(id); ok {
-		return
-	}
-	c.cache.Add(id, deployment)
+	c.cache.TestAndSet(id, deployment, func(_ interface{}, exists bool) bool {
+		return !exists
+	})
 	c.updateStats()
 }
 

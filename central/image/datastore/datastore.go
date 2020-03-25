@@ -7,7 +7,6 @@ import (
 	"github.com/dgraph-io/badger"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
@@ -52,8 +51,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 	var searcher search.Searcher
 	indexer := imageIndexer.New(bleveIndex)
 
-	keyedMutex := concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize)
-	storage = cache.NewCachedStore(storage, keyedMutex)
+	storage = cache.NewCachedStore(storage)
 	if features.Dackbox.Enabled() {
 		searcher = search.New(storage,
 			dacky,
@@ -66,7 +64,7 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 		searcher = search.New(storage, nil, nil, nil, nil, nil, indexer)
 	}
 
-	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker, keyedMutex)
+	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker)
 	if err != nil {
 		return nil, err
 	}

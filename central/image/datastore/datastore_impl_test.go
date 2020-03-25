@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	searchMock "github.com/stackrox/rox/central/image/datastore/internal/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/datastore/internal/store/mocks"
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
@@ -15,7 +14,6 @@ import (
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
@@ -75,7 +73,7 @@ func (suite *ImageDataStoreTestSuite) SetupTest() {
 
 	var err error
 	suite.datastore, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher,
-		suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		suite.mockComponents, suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
@@ -259,7 +257,7 @@ func (suite *ImageReindexSuite) TestReconciliationFullReindex() {
 	suite.mockIndexer.EXPECT().MarkInitialIndexingComplete().Return(nil)
 
 	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents,
-		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
@@ -281,7 +279,7 @@ func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
 	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents,
-		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 
 	// Make deploymentlist just A,B so C should be deleted
@@ -295,13 +293,13 @@ func (suite *ImageReindexSuite) TestReconciliationPartialReindex() {
 	suite.mockStore.EXPECT().AckKeysIndexed([]string{"A", "B", "C"}).Return(nil)
 
 	_, err = newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents,
-		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 }
 
 func (suite *ImageReindexSuite) TestInitializeRanker() {
 	ds, err := newDatastoreImpl(suite.mockStore, suite.mockIndexer, suite.mockSearcher, suite.mockComponents,
-		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker, concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize))
+		suite.mockRisks, suite.imageRanker, suite.imageComponentRanker)
 	suite.Require().NoError(err)
 
 	images := []*storage.Image{

@@ -11,6 +11,7 @@ import (
 	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
@@ -66,7 +67,7 @@ type datastoreImpl struct {
 func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
 	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
-	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker, keyedMutex *concurrency.KeyedMutex) (*datastoreImpl, error) {
+	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (*datastoreImpl, error) {
 
 	ds := &datastoreImpl{
 		deploymentStore:        storage,
@@ -78,7 +79,7 @@ func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtag
 		whitelists:             whitelists,
 		networkFlows:           networkFlows,
 		risks:                  risks,
-		keyedMutex:             keyedMutex,
+		keyedMutex:             concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		deletedDeploymentCache: deletedDeploymentCache,
 		processFilter:          processFilter,
 

@@ -17,6 +17,7 @@ var (
 // Cache is the interface for a simple size-bounded cache
 type Cache interface {
 	Add(key, value interface{})
+	TestAndSet(key interface{}, value interface{}, pred func(oldValue interface{}, exists bool) bool)
 	Get(key interface{}) (interface{}, bool)
 	Remove(key interface{})
 	RemoveIf(key interface{}, valPred func(interface{}) bool)
@@ -80,14 +81,25 @@ func (c *sizeBoundedCache) Get(key interface{}) (interface{}, bool) {
 	return valueE.value, true
 }
 
-func (c *sizeBoundedCache) Add(key, value interface{}) {
+// TestAndSet takes in a key, value and a predicate that must return true for the value to be inserted into the cache
+func (c *sizeBoundedCache) TestAndSet(key interface{}, value interface{}, pred func(oldValue interface{}, exists bool) bool) {
 	itemSize := c.sizeFunc(key, value)
 	if itemSize > c.maxItemSize {
 		return
 	}
+	// This function needs to be atomic so must grab the write lock
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 
+	oldObj, ok := c.cache.Get(key)
+	if !pred(oldObj, ok) {
+		return
+	}
+
+	c.addNoLock(itemSize, key, value)
+}
+
+func (c *sizeBoundedCache) addNoLock(itemSize int64, key, value interface{}) {
 	var sizeDelta int64
 	currValue, ok := c.cache.Get(key)
 	if !ok {
@@ -95,7 +107,6 @@ func (c *sizeBoundedCache) Add(key, value interface{}) {
 	} else {
 		sizeDelta = itemSize - currValue.(*valueEntry).totalSize
 	}
-
 	for atomic.LoadInt64(&c.currSize)+sizeDelta > c.maxSize {
 		if !c.removeOldestNoLock() {
 			log.Error("internal cache error. We should always be able to make room for a valid cache object")
@@ -104,6 +115,17 @@ func (c *sizeBoundedCache) Add(key, value interface{}) {
 	}
 	c.cache.Add(key, &valueEntry{value: value, totalSize: itemSize})
 	atomic.AddInt64(&c.currSize, sizeDelta)
+}
+
+func (c *sizeBoundedCache) Add(key, value interface{}) {
+	itemSize := c.sizeFunc(key, value)
+	if itemSize > c.maxItemSize {
+		return
+	}
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+
+	c.addNoLock(itemSize, key, value)
 }
 
 func (c *sizeBoundedCache) removeOldestNoLock() bool {
