@@ -102,7 +102,7 @@ func TestAlertCommentsTags(t *testing.T) {
 	// Test addAlertTags
 	require.Empty(t, getAlertTags(alertID, t, headerWithBasicAuth, url))
 	expectedTagsAfterAdd := []string{"awesome", "is", "test", "this"}
-	require.Equal(t, addAlertTags(alertID, []string{"this", "test", "is", "awesome"}, t, headerWithBasicAuth, url), expectedTagsAfterAdd)
+	require.Equal(t, addAlertTags(alertID, []string{"this", "test", "test", "is", "awesome"}, t, headerWithBasicAuth, url), expectedTagsAfterAdd)
 	require.Equal(t, getAlertTags(alertID, t, headerWithBasicAuth, url), expectedTagsAfterAdd)
 
 	// Test removeAlertTags

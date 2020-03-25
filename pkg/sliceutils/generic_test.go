@@ -88,6 +88,11 @@ func TestUnion(t *testing.T) {
 		},
 		{
 			slice1:        []string{"A", "A"},
+			slice2:        []string{},
+			expectedSlice: []string{"A"},
+		},
+		{
+			slice1:        []string{"A", "A"},
 			slice2:        []string{"B"},
 			expectedSlice: []string{"A", "B"},
 		},
