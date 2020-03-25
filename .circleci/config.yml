@@ -90,23 +90,23 @@ setupHelm: &setupHelm
   run:
     name: Setup tiller by default in GKE Cluster
     command:  |
-       kubectl apply -f ./deploy/k8s/tillerbind.yaml
+      kubectl apply -f ./deploy/k8s/tillerbind.yaml
 
-       SUCCESS=0
-       for i in {1..10}; do
-         if helm init --service-account helm  --tiller-connection-timeout 5 --wait; then
-           SUCCESS=1
-           break
-         fi
-         echo "Failed to connect to helm. Retrying in 5 seconds"
-         sleep 5
-         kubectl -n kube-system get pod
-       done
+      SUCCESS=0
+      for i in {1..10}; do
+        if helm init --service-account helm  --tiller-connection-timeout 5 --wait; then
+          SUCCESS=1
+          break
+        fi
+        echo "Failed to connect to helm. Retrying in 5 seconds"
+        sleep 5
+        kubectl -n kube-system get pod
+      done
 
-       if (( ! SUCCESS )); then
-         echo "Failed to connect to helm"
-         exit 1
-       fi
+      if (( ! SUCCESS )); then
+        echo "Failed to connect to helm"
+        exit 1
+      fi
 
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
@@ -411,17 +411,6 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
-check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
-  run:
-    name: Determine whether to run qa tests with kernel module
-    command: |
-      set +e
-      .circleci/pr_has_label.sh ci-qa-tests-kernel-module
-      if [ $? -eq 1 ]; then
-        echo "Skipping tests because we're on a PR. Apply the ci-qa-tests-kernel-module label to your PR if you want to run them."
-        circleci step halt
-      fi
-
 backupDB: &backupDB
   run:
     name: Backup DB
@@ -586,7 +575,7 @@ commands:
             done
             echo
 
-            if [[ "$CIRCLE_JOB" == "openshift-crio-tests" ]]; then
+            if [[ "$CIRCLE_JOB" == "openshift-crio-api-e2e-tests" ]]; then
               echo "Skipping egress isolation on CRI-O due to network policy issues."
               exit 0
             fi
@@ -1382,23 +1371,147 @@ commands:
       target-dir:
         type: string
     steps:
-    - run:
-        name: Copy gradle test result files
-        command: |
-          mkdir -p qa-tests-backend/gradle-results
-          mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >>
-        when: always
+      - run:
+          name: Copy gradle test result files
+          command: |
+            mkdir -p qa-tests-backend/gradle-results
+            mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >>
+          when: always
 
 jobs:
-  provision-cluster-k8s-tests:
+  ###
+  # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
+  ###
+
+  unit-tests:
     executor: custom
+    resource_class: xlarge
     steps:
       - checkout
-      - check-label-to-skip-tests:
-          label: ci-no-k8s-tests
-      - provision-gke-cluster:
-          cluster-id: k8s-tests
-          num-nodes: 2
+
+      - *restoreGoModCache
+      - *restoreGradle
+      - *restoreUI
+
+      - *restoreGoBuildCache
+
+      - run:
+          name: Run Go unit tests
+          command: make go-unit-tests
+
+      - *saveGoBuildCache
+
+      - run:
+          name: Generate JUnit reports
+          command: make generate-junit-reports
+          when: always
+
+      - store_test_results:
+          path: junit-reports
+
+      - store_artifacts:
+          path: junit-reports
+          destination: junit-reports
+
+      - run:
+          name: Run UI unit tests
+          command: make ui-test
+
+      - run:
+          name: Upload coverage information
+          command: |
+            retries=0
+            success=0
+            while (( retries < 5 && success == 0 )); do
+              retries=$((retries + 1))
+              success=1
+              make upload-coverage || success=0
+            done
+          when: always
+
+  style-checks:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+
+      - *restoreGoModCache
+      - *restoreGradle
+      - *restoreUI
+
+      - run:
+          name: Run style checks
+          command: make style
+
+      - store_artifacts:
+          path: qa-tests-backend/build/reports/codenarc
+          destination: reports/codenarc
+
+  check-generated-files-up-to-date:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+
+      - *restoreGoModCache
+      - run:
+          name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
+          command: |
+            git ls-files --others --exclude-standard >/tmp/untracked
+            make go-generated-srcs
+            git diff --exit-code HEAD
+            { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
+            if [[ -s /tmp/untracked-new ]]; then
+              echo 'Found new untracked files after running `make go-generated-srcs`. Did you forget to git add generated mocks?'
+              cat /tmp/untracked-new
+              exit 1
+            fi
+
+      - run:
+          name: Ensure that all TODO references to fixed tickets are gone
+          command: |
+            .circleci/check-pr-fixes.sh
+
+      - run:
+          name: Ensure that there are no TODO references that the developer has marked as blocking a merge
+          command: |
+            # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
+            ./scripts/check-todos.sh 'do\s?n.*merge'
+
+  integration-unit-tests:
+    executor: custom
+    resource_class: large
+    steps:
+      - checkout
+
+      - *restoreGoModCache
+
+      - *restoreGoBuildCache
+
+      - run:
+          name: Run integration tests
+          # Retry a few times if the tests fail since they can be flaky.
+          command: |
+            success=0
+            max_tries=5
+            for i in $(seq 1 "${max_tries}"); do
+              if make integration-unit-tests; then
+                success=1
+                break
+              fi
+              echo "Retrying (failed ${i} times)"
+            done
+            if [[ "${success}" == 0 ]]; then
+              echo "Failed after ${max_tries} tries"
+              exit 1
+            fi
+
+      - *saveGoBuildCache
+
+
+  ###
+  # Build jobs
+  ###
 
   pre-build-ui:
     executor: custom
@@ -1603,7 +1716,6 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-
   build-rhel:
     executor: custom
     resource_class: large
@@ -1681,6 +1793,105 @@ jobs:
 
       - cleanup-clusters-on-fail
 
+  ###
+  # Jobs that build and provision test resources (like cluster provisioning)
+  # Recommended naming format: provision-{test_job_name}
+  # Note: cluster provisioning job names used as resource label values, they must contain only letters and '-'
+  ###
+
+  provision-gke-api-nongroovy-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-label-to-skip-tests:
+          label: ci-no-api-tests
+      - provision-gke-cluster:
+          cluster-id: api-nongroovy-tests
+          num-nodes: 2
+
+  provision-gke-ui-e2e-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-label-to-skip-tests:
+          label: ci-no-ui-tests
+      - provision-gke-cluster:
+          cluster-id: ui-e2e-tests
+          num-nodes: 2
+
+  provision-gke-api-e2e-tests:
+    executor: custom
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
+      - ROX_POD_DEPLOY_SEPARATE: "true"
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-label-to-skip-tests:
+          label: ci-no-qa-tests
+
+      - provision-gke-cluster:
+          cluster-id: api-e2e-tests
+
+  provision-openshift-rhel-api-e2e-tests:
+    machine: true
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-master-or-tag-or-label:
+          label: ci-rhel-tests
+          run-on-master: false
+          run-on-tags: true
+
+      - provision-openshift-cluster:
+          crio: false
+          suffix: -rhel
+          flavor: lite
+          version: 0.6.2
+
+  provision-gke-rhel-api-e2e-tests:
+    executor: custom
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+      - POD_SECURITY_POLICIES: "true"
+    steps:
+      - checkout
+      - check-backend-changes
+      - check-master-or-tag-or-label:
+          label: ci-rhel-tests
+          run-on-master: false
+          run-on-tags: true
+
+      - provision-gke-cluster:
+          cluster-id: rhel-api-e2e-tests
+
+  provision-gke-kernelmodule-api-e2e-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-backend-changes
+
+      - check-master-or-tag-or-label:
+          label: ci-kernel-module-tests
+          run-on-master: true
+          run-on-tags: true
+
+      - provision-gke-cluster:
+          cluster-id: kernelmodule-api-e2e-tests
+
+  provision-gke-api-upgrade-tests:
+    executor: custom
+    steps:
+      - checkout
+      - check-backend-changes
+      - provision-gke-cluster:
+          cluster-id: upgrade-test
+
   build-scale-monitoring-and-mock-server:
     executor: custom
     resource_class: large
@@ -1715,132 +1926,167 @@ jobs:
 
       - cleanup-clusters-on-fail
 
-  unit-tests:
+  provision-gke-api-scale-tests:
     executor: custom
-    resource_class: xlarge
     steps:
       - checkout
+      - check-backend-changes
+      - check-label-exists-or-skip:
+          label: ci-scale-tests
+          run-on-master: false
+      - provision-gke-cluster:
+          cluster-id: scale-test
 
-      - *restoreGoModCache
-      - *restoreGradle
-      - *restoreUI
+  provision-openshift-api-e2e-tests:
+    machine: true
+    steps:
+      - provision-openshift-cluster:
+          crio: false
+          flavor: lite
+          gate-label: ci-openshift-tests
+          version: 0.6.2
 
-      - *restoreGoBuildCache
+  provision-openshift-crio-api-e2e-tests:
+    machine: true
+    steps:
+      - provision-openshift-cluster:
+          crio: true
+          flavor: multi
+          gate-label: ci-openshift-crio-tests
+          suffix: -crio
+          version: 0.6.2
+
+  provision-eks-api-e2e-tests:
+    executor: custom
+    environment:
+      - EKS_AUTOMATION_VERSION: 0.0.1
+    steps:
+      - checkout
+      - check-label-exists-or-skip:
+          label: ci-eks-tests
+          run-on-master: false
+
+      - setup_remote_docker
 
       - run:
-          name: Run Go unit tests
-          command: make go-unit-tests
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
-      - *saveGoBuildCache
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
 
       - run:
-          name: Generate JUnit reports
-          command: make generate-junit-reports
-          when: always
+          name: Create EKS cluster
+          command: |
+            mkdir $PWD/eks
+            docker run --name eks-automation -t \
+              -v $PWD/eks:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
+            docker cp eks-automation:/data $PWD/eks
 
-      - store_test_results:
-          path: junit-reports
+      - run:
+          name: Validate Kubeconfig
+          command: |
+            ls -lh $PWD/eks/data
+            export KUBECONFIG=$PWD/eks/data/eks-kube.yaml
+            sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
+            kubectl get nodes
 
       - store_artifacts:
-          path: junit-reports
-          destination: junit-reports
+          path: eks
+          destination: eks
+
+      - build-liveness-check
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - eks
 
       - run:
-          name: Run UI unit tests
-          command: make ui-test
-
-      - run:
-          name: Upload coverage information
+          name: Destroy EKS cluster
           command: |
-            retries=0
-            success=0
-            while (( retries < 5 && success == 0 )); do
-              retries=$((retries + 1))
-              success=1
-              make upload-coverage || success=0
-            done
-          when: always
+            docker run --rm -t \
+              -v $PWD/eks/data:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: on_fail
 
-  style-checks:
-    executor: custom
-    resource_class: large
+  provision-kops-api-e2e-tests:
+    machine: true
+    environment:
+      - KOPS_AUTOMATION_VERSION: 0.2.6
     steps:
       - checkout
-
-      - *restoreGoModCache
-      - *restoreGradle
-      - *restoreUI
+      - check-label-exists-or-skip:
+          label: ci-kops-tests
+          run-on-master: false
 
       - run:
-          name: Run style checks
-          command: make style
+          name: Login to Docker Hub
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
+
+      - run:
+          name: Install kubectl
+          working_directory: /tmp
+          command: |
+            wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
+            sudo install kubectl /usr/bin
 
       - store_artifacts:
-          path: qa-tests-backend/build/reports/codenarc
-          destination: reports/codenarc
-
-  check-generated-files-up-to-date:
-    executor: custom
-    resource_class: large
-    steps:
-      - checkout
-
-      - *restoreGoModCache
-      - run:
-          name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
-          command: |
-            git ls-files --others --exclude-standard >/tmp/untracked
-            make go-generated-srcs
-            git diff --exit-code HEAD
-            { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
-            if [[ -s /tmp/untracked-new ]]; then
-              echo 'Found new untracked files after running `make go-generated-srcs`. Did you forget to git add generated mocks?'
-              cat /tmp/untracked-new
-              exit 1
-            fi
+          path: kops
+          destination: kops
 
       - run:
-          name: Ensure that all TODO references to fixed tickets are gone
+          name: Create Kops cluster
           command: |
-            .circleci/check-pr-fixes.sh
+            docker run --rm -t \
+              -v $PWD/kops:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - run:
-          name: Ensure that there are no TODO references that the developer has marked as blocking a merge
-          command: |
-            # Matches comments of the form TODO(x), where x can be "DO NOT MERGE/don't-merge"/"dont-merge"/similar
-            ./scripts/check-todos.sh 'do\s?n.*merge'
-
-  integration-unit-tests:
-    executor: custom
-    resource_class: large
-    steps:
-      - checkout
-
-      - *restoreGoModCache
-
-      - *restoreGoBuildCache
+          name: Add /etc/hosts entry
+          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
 
       - run:
-          name: Run integration tests
-          # Retry a few times if the tests fail since they can be flaky.
+          name: Configure Kubeconfig
           command: |
-            success=0
-            max_tries=5
-            for i in $(seq 1 "${max_tries}"); do
-              if make integration-unit-tests; then
-                success=1
-                break
-              fi
-              echo "Retrying (failed ${i} times)"
-            done
-            if [[ "${success}" == 0 ]]; then
-              echo "Failed after ${max_tries} tries"
-              exit 1
-            fi
+            ls -lh $PWD/kops
+            export KUBECONFIG=$PWD/kops/kube.yaml
+            sudo chown "$USER" $PWD/kops/kube.yaml
+            sudo chown "$USER" $PWD/kops/id_rsa
+            kubectl get nodes
 
-      - *saveGoBuildCache
+      - store_artifacts:
+          path: kops
+          destination: kops
 
-  k8s-tests:
+      - build-liveness-check
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - kops
+
+      - run:
+          name: Destroy Kops cluster
+          command: |
+            docker run --rm -t \
+              -v $PWD/kops:/data \
+              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
+          when: on_fail
+
+
+  ###
+  # Test jobs against built artifacts
+  # Recommended naming format: {cluster_type}-[{flavor}-]{test_target_type}-{any_test_name}-tests
+  #   e.g. 'gke-ui-e2e-tests' or 'openshift-crio-api-e2e-tests'
+  ###
+
+  gke-api-nongroovy-tests:
     executor: custom
     environment:
       - MONITORING_SUPPORT: true
@@ -1862,7 +2108,7 @@ jobs:
     steps:
       - checkout
       - check-label-to-skip-tests:
-          label: ci-no-k8s-tests
+          label: ci-no-api-tests
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1878,7 +2124,7 @@ jobs:
       - setup-dep-env
 
       - attach-gke-cluster:
-          cluster-id: k8s-tests
+          cluster-id: api-nongroovy-tests
       - remove-existing-stackrox-resources
 
       - run:
@@ -2030,6 +2276,60 @@ jobs:
             echo "Total: ${failures} failures."
             (( failures == 0 ))
 
+      - *collectK8sLogs
+      - get-and-store-debug-dump
+      - *backupDB
+      - *storeDBBackupArtifact
+      - *verifyNoStackRoxRestarts
+      - *storeK8sLogs
+
+      - teardown-gke
+
+  gke-ui-e2e-tests:
+    executor: custom
+    environment:
+      - MONITORING_SUPPORT: true
+      - SCANNER_SUPPORT: true
+      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - LOAD_BALANCER: lb
+      - ROX_VULN_MGMT_UI: true
+      - ROX_ANALYST_NOTES_UI: true
+      - ROX_BADGER_DB: true
+      - ROX_TELEMETRY: true
+      - ROX_DIAGNOSTIC_BUNDLE: true
+      - ROX_EVENT_TIMELINE_UI: true
+      - ROX_SENSOR_DETECTION: true
+      - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
+      - ROX_ADMISSION_CONTROL_SERVICE: true
+
+    steps:
+      - checkout
+      - check-label-to-skip-tests:
+          label: ci-no-ui-tests
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - setup_remote_docker
+      - setup-gcp
+      - setup-dep-env
+
+      - attach-gke-cluster:
+          cluster-id: ui-e2e-tests
+      - remove-existing-stackrox-resources
+
+      - *setupGoogleAppCreds
+      - *setupLicense
+      - *setupDefaultTLSCerts
+
+      - deploy-stackrox:
+          require-cluster-admin: true
+          validate-autoupgrade-label: true
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
+            - setup-egress-proxies
+
       - *restoreUI
       - *determineWhetherToRunUIDevServer
       - *runUIDevServer
@@ -2053,56 +2353,7 @@ jobs:
       - *storeCypressVideos
       - *storeUITestCoverage
 
-  provision-cluster-qa-tests:
-    executor: custom
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-      - ROX_POD_DEPLOY_SEPARATE: "true"
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-label-to-skip-tests:
-          label: ci-no-qa-tests
-
-      - provision-gke-cluster:
-          cluster-id: qa-tests
-
-
-  provision-openshift-cluster-qa-tests-rhel:
-    executor: custom
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-    steps:
-      - check-master-or-tag-or-label:
-          label: ci-run-against-rhel
-          run-on-master: false
-          run-on-tags: true
-
-      - provision-openshift-cluster:
-          crio: false
-          flavor: lite
-          gate-label: ci-openshift-rhel-tests
-          version: 0.6.2
-
-  provision-kubernetes-cluster-qa-tests-rhel:
-    executor: custom
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
-      - POD_SECURITY_POLICIES: "true"
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-master-or-tag-or-label:
-          label: ci-run-against-rhel
-          run-on-master: false
-          run-on-tags: true
-
-      - provision-gke-cluster:
-          cluster-id: ci-kubernetes-rhel-tests
-
-  qa-tests:
+  gke-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -2123,12 +2374,12 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: qa-tests
+          cluster-id: api-e2e-tests
           determine-whether-to-run:
             - check-label-to-skip-tests:
                 label: ci-no-qa-tests
 
-  openshift-qa-tests-rhel:
+  openshift-rhel-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
@@ -2140,17 +2391,19 @@ jobs:
       - ROX_SENSOR_DETECTION: true
 
     steps:
+      - checkout
+      - check-backend-changes
       - check-master-or-tag-or-label:
-          label: ci-run-against-rhel
+          label: ci-rhel-tests
           run-on-master: false
           run-on-tags: true
       - run-openshift-tests:
-          gate-label: ci-openshift-rhel-tests
+          suffix: -rhel
           flavor: lite
           version: 0.6.2
           use-main-rhel: true
 
-  qa-tests-rhel:
+  gke-rhel-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -2171,25 +2424,15 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: ci-kubernetes-rhel-tests
+          cluster-id: rhel-api-e2e-tests
           determine-whether-to-run:
             - check-master-or-tag-or-label:
-                label: ci-run-against-rhel
+                label: ci-rhel-tests
                 run-on-master: false
                 run-on-tags: true
           use-main-rhel: true
 
-  provision-cluster-qa-tests-kernel-module:
-    executor: custom
-
-    steps:
-      - checkout
-      - check-backend-changes
-      - *check-qa-tests-kernel-module-label
-      - provision-gke-cluster:
-          cluster-id: qa-tests-kernel-module
-
-  qa-tests-kernel-module:
+  gke-kernelmodule-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 443
@@ -2205,19 +2448,14 @@ jobs:
 
     steps:
       - run-qa-tests:
-          cluster-id: qa-tests-kernel-module
+          cluster-id: kernelmodule-api-e2e-tests
           determine-whether-to-run:
-            - *check-qa-tests-kernel-module-label
+            - check-master-or-tag-or-label:
+                label: ci-kernel-module-tests
+                run-on-master: true
+                run-on-tags: true
 
-  provision-cluster-upgrade-test:
-    executor: custom
-    steps:
-      - checkout
-      - check-backend-changes
-      - provision-gke-cluster:
-          cluster-id: upgrade-test
-
-  upgrade-test:
+  gke-api-upgrade-tests:
     executor: custom
     environment:
       - STORAGE: pvc
@@ -2437,92 +2675,7 @@ jobs:
 
       - teardown-gke
 
-  provision-cluster-scale-nightly:
-    executor: custom
-    steps:
-      - checkout
-      - check-backend-changes
-      - provision-gke-cluster:
-          cluster-id: scale-test
-
-  provision-cluster-scale:
-    executor: custom
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-label-exists-or-skip:
-          label: ci-scale-tests
-          run-on-master: false
-      - provision-gke-cluster:
-          cluster-id: scale-test
-
-  scale-nightly:
-    executor: custom
-    environment:
-      - MONITORING_SUPPORT: true
-      - SCANNER_SUPPORT: true
-      - STORAGE: pvc
-      - LOAD_BALANCER: lb
-      - OUTPUT_FORMAT: helm
-
-    steps:
-      - checkout
-      - check-backend-changes
-      - check-label-exists-or-skip:
-          label: ci-scale-tests
-          run-on-master: true
-      - setup_remote_docker
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - *setupRoxctl
-      - setup-gcp
-      - setup-dep-env
-      - attach-gke-cluster:
-          cluster-id: scale-test
-      - remove-existing-stackrox-resources
-
-      - *setupHelm
-      - *setupGoogleAppCreds
-      - *setupLicense
-
-      - run:
-          name: Launch Central only
-          command: |
-            ./deploy/k8s/central.sh
-
-            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cci-export ROX_USERNAME "$ROX_USERNAME"
-            cci-export ROX_PASSWORD "$ROX_PASSWORD"
-            cci-export ROX_RECORDER_DB_CREDS /tmp/gcp.json
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
-
-      - *waitForAPI
-
-      - run:
-          name: Launch Replay
-          command: |
-            ./scale/flightreplay/launch_replay.sh
-            mkdir /tmp/pprof
-            # 65 min run so that we are confident that the run has completely finished
-            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
-      - *storeProfilingResults
-      - *verifyNoStackRoxRestarts
-      - *connectToMonitoring
-      - *collectMonitoringImages
-      - *storeMonitoringImages
-      - *storeMonitoringMetrics
-      - *benchmarkDashboard
-      - *storeDashBenchImages
-      - *benchmarkCompliance
-      - *storeComplianceBenchImages
-      - *collectK8sLogs
-      - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
-
-      - teardown-gke
-
-  scale:
+  gke-api-scale-tests:
     executor: custom
     environment:
       - MONITORING_SUPPORT: true
@@ -2589,26 +2742,7 @@ jobs:
 
       - teardown-gke
 
-  provision-openshift:
-    machine: true
-    steps:
-      - provision-openshift-cluster:
-          crio: false
-          flavor: lite
-          gate-label: ci-openshift-tests
-          version: 0.6.2
-
-  provision-openshift-crio:
-    machine: true
-    steps:
-      - provision-openshift-cluster:
-          crio: true
-          flavor: multi
-          gate-label: ci-openshift-crio
-          suffix: -crio
-          version: 0.6.2
-
-  openshift-tests:
+  openshift-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
@@ -2626,7 +2760,7 @@ jobs:
           flavor: lite
           version: 0.6.2
 
-  openshift-crio-tests:
+  openshift-crio-api-e2e-tests:
     executor: custom
     environment:
       - LOCAL_PORT: 8000
@@ -2641,69 +2775,11 @@ jobs:
     steps:
       - run-openshift-tests:
           suffix: "-crio"
-          gate-label: ci-openshift-crio
+          gate-label: ci-openshift-crio-tests
           flavor: multi
           version: 0.6.2
 
-  provision-eks:
-    executor: custom
-    environment:
-      - EKS_AUTOMATION_VERSION: 0.0.1
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-eks-tests
-          run-on-master: false
-
-      - setup_remote_docker
-
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: Create EKS cluster
-          command: |
-            mkdir $PWD/eks
-            docker run --name eks-automation -t \
-              -v $PWD/eks:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
-            docker cp eks-automation:/data $PWD/eks
-
-      - run:
-          name: Validate Kubeconfig
-          command: |
-            ls -lh $PWD/eks/data
-            export KUBECONFIG=$PWD/eks/data/eks-kube.yaml
-            sudo chown "$USER" $PWD/eks/data/eks-kube.yaml
-            kubectl get nodes
-
-      - store_artifacts:
-          path: eks
-          destination: eks
-
-      - build-liveness-check
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - eks
-
-      - run:
-          name: Destroy EKS cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/eks/data:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
-
-  eks-tests:
+  eks-api-e2e-tests:
     executor: custom
     environment:
       - EKS_AUTOMATION_VERSION: 0.0.1
@@ -2804,74 +2880,7 @@ jobs:
               stackrox/eks-automation:$EKS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
-  provision-kops:
-    machine: true
-    environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
-    steps:
-      - checkout
-      - check-label-exists-or-skip:
-          label: ci-kops-tests
-          run-on-master: false
-
-      - run:
-          name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
-
-      - run:
-          name: Install kubectl
-          working_directory: /tmp
-          command: |
-            wget https://storage.googleapis.com/kubernetes-release/release/v1.13.3/bin/linux/amd64/kubectl
-            sudo install kubectl /usr/bin
-
-      - store_artifacts:
-          path: kops
-          destination: kops
-
-      - run:
-          name: Create Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
-
-      - run:
-          name: Add /etc/hosts entry
-          command: echo "$(cat $PWD/kops/master_ip) api.$(cat $PWD/kops/cluster_name)" | sudo tee -a /etc/hosts
-
-      - run:
-          name: Configure Kubeconfig
-          command: |
-            ls -lh $PWD/kops
-            export KUBECONFIG=$PWD/kops/kube.yaml
-            sudo chown "$USER" $PWD/kops/kube.yaml
-            sudo chown "$USER" $PWD/kops/id_rsa
-            kubectl get nodes
-
-      - store_artifacts:
-          path: kops
-          destination: kops
-
-      - build-liveness-check
-
-      - persist_to_workspace:
-          root: .
-          paths:
-            - kops
-
-      - run:
-          name: Destroy Kops cluster
-          command: |
-            docker run --rm -t \
-              -v $PWD/kops:/data \
-              -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
-          when: on_fail
-
-
-  kops-tests:
+  kops-api-e2e-tests:
     executor: custom
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.6
@@ -2989,6 +2998,40 @@ jobs:
               stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
+  roxctl-windows-test:
+    executor: custom
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: "Install Wine"
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y wine64
+
+      - run:
+          name: "Generate a K8s/OpenShift bundles using roxctl.exe"
+          command: |
+            wine64 ./bin/windows/roxctl.exe central generate k8s none --output-dir 'Z:\home\circleci\rox-k8s-bundle'
+            wine64 ./bin/windows/roxctl.exe central generate openshift none --output-dir 'Z:\home\circleci\rox-openshift-bundle'
+
+      - run:
+          name: "Verify contents of generated bundles"
+          command: |
+            ls /home/circleci/rox-k8s-bundle
+            test -f /home/circleci/rox-k8s-bundle/README
+
+            ls /home/circleci/rox-openshift-bundle
+            test -f /home/circleci/rox-openshift-bundle/README
+
+
+  ###
+  # Post-build jobs to handle built artifacts (like tag, scan and publish images)
+  ###
+
   mark-collector-release:
     executor: custom
     resource_class: small
@@ -2996,7 +3039,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-          - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
+            - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
 
       - run:
           name: Add SSH key of github.com
@@ -3137,10 +3180,10 @@ jobs:
       - run:
           name: Upload main image RHEL DSOP bundle to dsop-artifacts.stackrox.io
           command: |
-              gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-              gcloud auth list
-              TAG="$(make --quiet tag)"
-              gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
+            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+            gcloud auth list
+            TAG="$(make --quiet tag)"
+            gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
       - run:
           name: Publish Helm charts to public github repository stackrox/helm-charts
           command: |
@@ -3150,27 +3193,31 @@ jobs:
             rm -rf "/tmp/${MAIN_TAG}"
 
   scan-images-in-quay:
-      executor: custom
-      resource_class: small
-      steps:
-        - checkout
-        - setup_remote_docker
-        - attach_workspace:
-            at: /go/src/github.com/stackrox/rox
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
 
-        - run:
-            name: Push images into quay.io
-            command: |
-              docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
-              docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
-              ./release/scripts/vuln_scan.sh
+      - run:
+          name: Push images into quay.io
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+            ./release/scripts/vuln_scan.sh
 
-        - run:
-            name: Check for fixable vulns
-            command: |
-              export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
-              ./release/scripts/vuln_check.sh
+      - run:
+          name: Check for fixable vulns
+          command: |
+            export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
+            ./release/scripts/vuln_check.sh
 
+
+  ###
+  # Infrastructure and workflow utility jobs
+  ###
 
   retrigger-master-workflow:
     executor: custom
@@ -3292,40 +3339,20 @@ jobs:
           command: |
             git push origin "$NIGHTLY_TAG"
 
-  roxctl-windows-test:
-    executor: custom
-
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
-
-      - run:
-          name: "Install Wine"
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y wine64
-
-      - run:
-          name: "Generate a K8s/OpenShift bundles using roxctl.exe"
-          command: |
-            wine64 ./bin/windows/roxctl.exe central generate k8s none --output-dir 'Z:\home\circleci\rox-k8s-bundle'
-            wine64 ./bin/windows/roxctl.exe central generate openshift none --output-dir 'Z:\home\circleci\rox-openshift-bundle'
-
-      - run:
-          name: "Verify contents of generated bundles"
-          command: |
-            ls /home/circleci/rox-k8s-bundle
-            test -f /home/circleci/rox-k8s-bundle/README
-
-            ls /home/circleci/rox-openshift-bundle
-            test -f /home/circleci/rox-openshift-bundle/README
 
 workflows:
   version: 2
 
   build_all:
     jobs:
+      - style-checks:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - check-generated-files-up-to-date:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - unit-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - integration-unit-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-ui:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - pre-build-cli:
@@ -3350,86 +3377,86 @@ workflows:
             - pre-build-cli
       - build-scale-monitoring-and-mock-server:
           <<: *runOnAllTagsWithDockerIOPushCtx
-      - unit-tests:
+      - provision-gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - style-checks:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - check-generated-files-up-to-date:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - integration-unit-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - provision-cluster-k8s-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - k8s-tests:
+      - gke-api-nongroovy-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-cluster-k8s-tests
-      - provision-cluster-qa-tests:
+            - provision-gke-api-nongroovy-tests
+      - provision-gke-ui-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - qa-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-cluster-qa-tests
-      - provision-cluster-qa-tests-kernel-module:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - qa-tests-kernel-module:
+      - gke-ui-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-cluster-qa-tests-kernel-module
-      - provision-cluster-upgrade-test:
+            - provision-gke-ui-e2e-tests
+      - provision-gke-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - upgrade-test:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-cluster-upgrade-test
-      - provision-cluster-scale:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - scale:
+      - gke-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-cluster-scale
-      - provision-openshift:
+            - provision-gke-api-e2e-tests
+      - provision-gke-kernelmodule-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - provision-openshift-crio:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-tests:
+      - gke-kernelmodule-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-openshift
-      - openshift-crio-tests:
+            - provision-gke-kernelmodule-api-e2e-tests
+      - provision-gke-api-upgrade-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - gke-api-upgrade-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-openshift-crio
-      - provision-eks:
+            - provision-gke-api-upgrade-tests
+      - provision-gke-api-scale-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - eks-tests:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build
-            - build-scale-monitoring-and-mock-server
-            - provision-eks
-      - provision-kops:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - kops-tests:
+      - gke-api-scale-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build
             - build-scale-monitoring-and-mock-server
-            - provision-kops
+            - provision-gke-api-scale-tests
+      - provision-openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - openshift-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-api-e2e-tests
+      - provision-openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - openshift-crio-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-openshift-crio-api-e2e-tests
+      - provision-eks-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - eks-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-eks-api-e2e-tests
+      - provision-kops-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - kops-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build
+            - build-scale-monitoring-and-mock-server
+            - provision-kops-api-e2e-tests
       - roxctl-windows-test:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
@@ -3441,22 +3468,22 @@ workflows:
             - build
             - unit-tests
             - push-release
-      - provision-openshift-cluster-qa-tests-rhel:
+      - provision-openshift-rhel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
-      - openshift-qa-tests-rhel:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-          requires:
-            - build-rhel
-            - build-scale-monitoring-and-mock-server
-            - provision-openshift-cluster-qa-tests-rhel
-      - provision-kubernetes-cluster-qa-tests-rhel:
-          <<: *runOnAllTagsWithDockerIOPullCtx
-      - qa-tests-rhel:
+      - openshift-rhel-api-e2e-tests:
           <<: *runOnAllTagsWithDockerIOPullCtx
           requires:
             - build-rhel
             - build-scale-monitoring-and-mock-server
-            - provision-kubernetes-cluster-qa-tests-rhel
+            - provision-openshift-rhel-api-e2e-tests
+      - provision-gke-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+      - gke-rhel-api-e2e-tests:
+          <<: *runOnAllTagsWithDockerIOPullCtx
+          requires:
+            - build-rhel
+            - build-scale-monitoring-and-mock-server
+            - provision-gke-rhel-api-e2e-tests
 
       - push-release:
           <<: *runOnlyOnReleaseBuilds
