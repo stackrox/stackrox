@@ -1,13 +1,20 @@
 package m29to30
 
 import (
+	"time"
+
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	bolt "go.etcd.io/bbolt"
+)
+
+const (
+	logInterval = 30 * time.Second
 )
 
 var (
@@ -59,6 +66,9 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 
 		batch := badgerDB.NewWriteBatch()
 		defer batch.Cancel()
+
+		lastLog := time.Now()
+		count := 0
 		for it.Seek(alertBucketName); it.ValidForPrefix(alertBucketName); it.Next() {
 			if batch.Error() != nil {
 				return batch.Error()
@@ -89,6 +99,13 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 				if err := batch.Set(key, data); err != nil {
 					return errors.Wrapf(err, "error setting key/value in Badger for bucket %q", string(alertBucketName))
 				}
+
+				count++
+				if time.Since(lastLog) > logInterval {
+					log.WriteToStderrf("Successfully rewrote %d alerts", count)
+					lastLog = time.Now()
+				}
+
 				return nil
 			})
 			if err != nil {
@@ -98,6 +115,7 @@ func updateAlertDeployments(badgerDB *badger.DB, namespaceKeyMap map[namespaceKe
 		if err := batch.Flush(); err != nil {
 			return errors.Wrapf(err, "error flushing BadgerDB for bucket %q", string(alertBucketName))
 		}
+		log.WriteToStderrf("Successfully rewrote all %d alerts", count)
 		return nil
 	})
 }
