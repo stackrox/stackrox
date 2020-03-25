@@ -43,6 +43,11 @@ func TestDifference(t *testing.T) {
 			slice2:        []string{"B"},
 			expectedSlice: []string{"A", "C"},
 		},
+		{
+			slice1:        []string{"A", "B", "A", "C", "B"},
+			slice2:        []string{"B"},
+			expectedSlice: []string{"A", "C"},
+		},
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s - %s", strings.Join(c.slice1, " "), strings.Join(c.slice2, " ")), func(t *testing.T) {
@@ -91,10 +96,23 @@ func TestUnion(t *testing.T) {
 			slice2:        []string{"B"},
 			expectedSlice: []string{"A", "B", "C"},
 		},
+		{
+			slice1:        []string{"A", "B", "A", "C"},
+			slice2:        []string{},
+			expectedSlice: []string{"A", "B", "C"},
+		},
+		{
+			slice1:        nil,
+			slice2:        []string{"A", "B", "A", "C"},
+			expectedSlice: []string{"A", "B", "C"},
+		},
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s - %s", strings.Join(c.slice1, " "), strings.Join(c.slice2, " ")), func(t *testing.T) {
-			assert.Equal(t, c.expectedSlice, StringUnion(c.slice1, c.slice2))
+			// Run multiple times to ensure deterministic output.
+			for i := 0; i < 10; i++ {
+				assert.Equal(t, c.expectedSlice, StringUnion(c.slice1, c.slice2))
+			}
 		})
 	}
 }

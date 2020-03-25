@@ -92,45 +92,44 @@ func ElemTypeDifference(slice1, slice2 []ElemType) []ElemType {
 		return slice1
 	}
 
-	slice2Map := make(map[ElemType]struct{}, len(slice2))
+	blockedElems := make(map[ElemType]struct{}, len(slice2))
 	for _, s := range slice2 {
-		slice2Map[s] = struct{}{}
+		blockedElems[s] = struct{}{}
 	}
 	var newSlice []ElemType
 	for _, s := range slice1 {
-		if _, ok := slice2Map[s]; !ok {
+		if _, ok := blockedElems[s]; !ok {
 			newSlice = append(newSlice, s)
+			blockedElems[s] = struct{}{}
 		}
 	}
 	return newSlice
 }
 
-// ElemTypeUnion returns the union array of slice1 and slice2 without duplicates
+// ElemTypeUnion returns the union array of slice1 and slice2 without duplicates.
+// The elements in the returned slice will be in the same order as if you concatenated
+// the two slices, and then removed all copies of repeated elements except the first one.
 func ElemTypeUnion(slice1, slice2 []ElemType) []ElemType {
 	// Fast-path checks
 	if len(slice1) == 0 {
-		return slice2
+		return ElemTypeUnique(slice2)
 	}
 	if len(slice2) == 0 {
-		return slice1
+		return ElemTypeUnique(slice1)
 	}
-	//Preprocess
-	slice1 = ElemTypeUnique(slice1)
-	slice2 = ElemTypeUnique(slice2)
 
-	slice1Map := make(map[ElemType]struct{}, len(slice1))
+	elemSet := make(map[ElemType]struct{}, len(slice1))
+	var newSlice []ElemType
 	for _, elem := range slice1 {
-		if _, ok := slice1Map[elem]; !ok {
-			slice1Map[elem] = struct{}{}
+		if _, ok := elemSet[elem]; !ok {
+			elemSet[elem] = struct{}{}
+			newSlice = append(newSlice, elem)
 		}
-	}
-	newSlice := make([]ElemType, 0, len(slice1Map))
-	for elem := range slice1Map {
-		newSlice = append(newSlice, elem)
 	}
 
 	for _, elem := range slice2 {
-		if _, ok := slice1Map[elem]; !ok {
+		if _, ok := elemSet[elem]; !ok {
+			elemSet[elem] = struct{}{}
 			newSlice = append(newSlice, elem)
 		}
 	}
