@@ -333,7 +333,9 @@ class NetworkFlowTest extends BaseSpecification {
 
         cleanup:
         "remove the new deployment"
-        orchestrator.deleteDeployment(newDeployment)
+        if (newDeployment) {
+            orchestrator.deleteDeployment(newDeployment)
+        }
     }
 
     @Category([NetworkFlowVisualization])
