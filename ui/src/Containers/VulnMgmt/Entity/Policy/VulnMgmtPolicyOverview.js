@@ -192,8 +192,15 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
 
     const newEntityContext = { ...entityContext, [entityTypes.POLICY]: id };
 
+    // the parent entity is needed for cases where the policy single is a child
+    //   from a click on a Failing Deployments table row
+    const parentEntity = workflowState.pop();
+
     let policyFindingsContent = null;
-    if (entityContext[entityTypes.DEPLOYMENT]) {
+    if (
+        entityContext[entityTypes.DEPLOYMENT] ||
+        parentEntity.getCurrentEntityType() === entityTypes.DEPLOYMENT
+    ) {
         policyFindingsContent = (
             <ViolationsAcrossThisDeployment
                 deploymentID={entityContext[entityTypes.DEPLOYMENT]}
