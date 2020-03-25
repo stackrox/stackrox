@@ -15,7 +15,8 @@ export const knownBackendFlags = {
     ROX_TELEMETRY: 'ROX_TELEMETRY',
     ROX_DIAGNOSTIC_BUNDLE: 'ROX_DIAGNOSTIC_BUNDLE',
     ROX_REFRESH_TOKENS: 'ROX_REFRESH_TOKENS',
-    ROX_NIST_800_53: 'ROX_NIST_800_53'
+    ROX_NIST_800_53: 'ROX_NIST_800_53',
+    ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: 'ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE'
 };
 
 // isBackendFeatureFlagEnabled returns whether a feature flag retrieved from the backend is enabled.

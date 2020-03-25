@@ -2365,11 +2365,13 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_BADGER_DB: true
       - ROX_TELEMETRY: true
       - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
+      - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
@@ -2415,11 +2417,13 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_BADGER_DB: true
       - ROX_TELEMETRY: true
       - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
+      - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
@@ -2443,8 +2447,10 @@ jobs:
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_SENSOR_DETECTION: true
       - ROX_POD_DEPLOY_SEPARATE: true
+      - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
 
     steps:
       - run-qa-tests:
@@ -2789,6 +2795,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
 
     steps:
       - checkout
@@ -2891,6 +2898,7 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
+      - ADMISSION_CONTROLLER_UPDATES: true
 
     steps:
       - checkout

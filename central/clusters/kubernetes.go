@@ -48,6 +48,7 @@ func (*kubernetes) Render(cluster *storage.Cluster, ca []byte, opts RenderOption
 		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
 		fields["AdmissionControlService"] = features.AdmissionControlService.Enabled()
 		if features.AdmissionControlService.Enabled() {
+			fields["AdmissionControlListenOnUpdates"] = features.AdmissionControlEnforceOnUpdate.Enabled() && cluster.GetAdmissionControllerUpdates()
 			fields["AdmissionControlConfigMapName"] = admissioncontrol.ConfigMapName
 		}
 

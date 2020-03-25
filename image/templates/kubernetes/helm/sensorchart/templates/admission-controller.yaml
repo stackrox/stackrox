@@ -164,6 +164,9 @@ webhooks:
           - '*'
         operations:
           - CREATE
+        {{ if .Values.config.admissionControl.listenOnUpdates }}
+          - UPDATE
+        {{ end }}
         resources:
           - pods
           - deployments

@@ -4,6 +4,8 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
+import FeatureEnabled from '../FeatureEnabled';
+import { knownBackendFlags } from '../../utils/featureFlags';
 
 // factory that returns a handler to normalize our generic Select component's return value
 function getSelectComparison(options, key, selectedCluster, handleChange) {
@@ -177,20 +179,46 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                         </div>
                     </div>
                     {selectedCluster.type === 'KUBERNETES_CLUSTER' && (
-                        <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
-                            <label
-                                htmlFor="admissionController"
-                                className="block py-2 text-base-600 font-700"
+                        <>
+                            <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                                <label
+                                    htmlFor="admissionController"
+                                    className="block py-2 text-base-600 font-700"
+                                >
+                                    Create Admission Controller Webhook
+                                </label>
+                                <ToggleSwitch
+                                    id="admissionController"
+                                    name="admissionController"
+                                    toggleHandler={handleChange}
+                                    enabled={selectedCluster.admissionController}
+                                />
+                            </div>
+                            <FeatureEnabled
+                                featureFlag={
+                                    knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE
+                                }
                             >
-                                Create Admission Controller Webhook
-                            </label>
-                            <ToggleSwitch
-                                id="admissionController"
-                                name="admissionController"
-                                toggleHandler={handleChange}
-                                enabled={selectedCluster.admissionController}
-                            />
-                        </div>
+                                <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                                    <label
+                                        htmlFor="admissionControllerUpdates"
+                                        className="block py-2 text-base-600 font-700"
+                                    >
+                                        Configure Admission Controller Webhook to listen on updates
+                                    </label>
+                                    <ToggleSwitch
+                                        id="admissionControllerUpdates"
+                                        name="admissionControllerUpdates"
+                                        toggleHandler={handleChange}
+                                        enabled={
+                                            selectedCluster.admissionController &&
+                                            selectedCluster.admissionControllerUpdates
+                                        }
+                                        disabled={!selectedCluster.admissionController}
+                                    />
+                                </div>
+                            </FeatureEnabled>
+                        </>
                     )}
                     <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
                         <div className="flex items-center justify-between">
@@ -266,6 +294,33 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                                 }
                             />
                         </div>
+                        <FeatureEnabled
+                            featureFlag={knownBackendFlags.ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE}
+                        >
+                            <div className="mb-4 flex bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 items-center justify-between">
+                                <label
+                                    htmlFor="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                    className="block py-2 text-base-600 font-700"
+                                >
+                                    Enforce on Updates
+                                </label>
+                                <ToggleSwitch
+                                    id="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                    name="dynamicConfig.admissionControllerConfig.enforceOnUpdates"
+                                    toggleHandler={handleChange}
+                                    enabled={
+                                        selectedCluster.dynamicConfig.admissionControllerConfig
+                                            .enabled &&
+                                        selectedCluster.dynamicConfig.admissionControllerConfig
+                                            .enforceOnUpdates
+                                    }
+                                    disabled={
+                                        !selectedCluster.dynamicConfig.admissionControllerConfig
+                                            .enabled
+                                    }
+                                />
+                            </div>
+                        </FeatureEnabled>
                         <div className="mb-4 flex px-2 py-2 items-center justify-between">
                             <label
                                 htmlFor="dynamicConfig.admissionControllerConfig
@@ -336,6 +391,7 @@ ClusterEditForm.propTypes = {
         collectionMethod: PropTypes.string,
         collectorImage: PropTypes.string,
         admissionController: PropTypes.string,
+        admissionControllerUpdates: PropTypes.bool,
         tolerationsConfig: PropTypes.shape({
             disabled: PropTypes.bool
         }),
@@ -343,6 +399,7 @@ ClusterEditForm.propTypes = {
             registryOverride: PropTypes.string,
             admissionControllerConfig: PropTypes.shape({
                 enabled: PropTypes.bool,
+                enforceOnUpdates: PropTypes.bool,
                 timeoutSeconds: PropTypes.number,
                 scanInline: PropTypes.bool,
                 disableBypass: PropTypes.bool

@@ -1123,6 +1123,15 @@ h6 {
     @apply right-0;
 }
 
+.toggle-switch-checkbox:disabled + .toggle-switch-label {
+    @apply opacity-50;
+}
+
+.toggle-switch-checkbox:disabled + .toggle-switch-label:before {
+    @apply bg-base-200;
+}
+
+
 /* React-vis */
 @import '../node_modules/react-vis/dist/style.css';
 

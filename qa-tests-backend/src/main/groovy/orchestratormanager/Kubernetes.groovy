@@ -142,6 +142,15 @@ class Kubernetes implements OrchestratorMain {
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
+    boolean updateDeploymentNoWait(Deployment deployment) {
+        if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
+            println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."
+        } else {
+            println "Deployment ${deployment.name} NOT found in namespace ${deployment.namespace}. Creating..."
+        }
+        return createDeploymentNoWait(deployment)
+    }
+
     def updateDeployment(Deployment deployment) {
         if (deployments.inNamespace(deployment.namespace).withName(deployment.name).get()) {
             println "Deployment ${deployment.name} found in namespace ${deployment.namespace}. Updating..."

@@ -17,7 +17,9 @@ config:
   collectionMethod: EBPF
   admissionControl:
     createService: false
+    listenOnUpdates: false
     enableService: false
+    enforceOnUpdates: false
     scanInline: false
     disableBypass: false
     timeout: 3

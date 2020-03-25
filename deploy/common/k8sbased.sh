@@ -231,6 +231,10 @@ function launch_sensor {
     	extra_config+=("--admission-controller=true")
     	extra_json_config+=', "admissionController": true'
     fi
+    if [[ "$ADMISSION_CONTROLLER_UPDATES" == "true" ]]; then
+    	extra_config+=("--admission-controller-listen-on-updates=true")
+    	extra_json_config+=', "admissionControllerUpdates": true'
+    fi
 
     if [[ -n "$COLLECTOR_IMAGE_REPO" ]]; then
         extra_config+=("--collector-image=${COLLECTOR_IMAGE_REPO}")

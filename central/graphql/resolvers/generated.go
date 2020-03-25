@@ -22,6 +22,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AdmissionControllerConfig", []string{
 		"disableBypass: Boolean!",
 		"enabled: Boolean!",
+		"enforceOnUpdates: Boolean!",
 		"scanInline: Boolean!",
 		"timeoutSeconds: Int!",
 	}))
@@ -157,6 +158,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
+		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
 		"collectorImage: String!",
@@ -1101,6 +1103,11 @@ func (resolver *admissionControllerConfigResolver) DisableBypass(ctx context.Con
 
 func (resolver *admissionControllerConfigResolver) Enabled(ctx context.Context) bool {
 	value := resolver.data.GetEnabled()
+	return value
+}
+
+func (resolver *admissionControllerConfigResolver) EnforceOnUpdates(ctx context.Context) bool {
+	value := resolver.data.GetEnforceOnUpdates()
 	return value
 }
 
@@ -2206,6 +2213,11 @@ func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]
 
 func (resolver *clusterResolver) AdmissionController(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionController()
+	return value
+}
+
+func (resolver *clusterResolver) AdmissionControllerUpdates(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerUpdates()
 	return value
 }
 

@@ -238,6 +238,9 @@ webhooks:
           - '*'
         operations:
           - CREATE
+{{ if .AdmissionControlListenOnUpdates }}
+          - UPDATE
+{{ end }}
         resources:
           - pods
           - deployments

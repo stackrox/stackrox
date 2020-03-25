@@ -56,10 +56,12 @@ enum CollectionMethod {
 }
 
 message AdmissionControllerConfig {
-    bool                  enabled                              = 1;
-    int32                 timeout_seconds                      = 2;
-    bool                  scan_inline                          = 3;
-    bool                  disable_bypass                       = 4;
+    bool  enabled            = 1;
+    int32 timeout_seconds    = 2;
+    bool  scan_inline        = 3;
+    bool  disable_bypass     = 4;
+
+    bool  enforce_on_updates = 5;
 }
 
 message TolerationsConfig {
@@ -87,6 +89,7 @@ message Cluster {
 
     ProviderMetadata          DEPRECATED_provider_metadata     = 12;
     bool                      admission_controller             = 13;
+    bool                      admission_controller_updates     = 21;
     OrchestratorMetadata      DEPRECATED_orchestrator_metadata = 14;
 
     ClusterStatus             status                           = 15;

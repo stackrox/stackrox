@@ -21,6 +21,7 @@ interface OrchestratorMain {
     def createDeploymentNoWait(Deployment deployment)
     def createDeployment(Deployment deployment)
     def updateDeployment(Deployment deployment)
+    boolean updateDeploymentNoWait(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
     def deleteAndWaitForDeploymentDeletion(Deployment... deployments)
     def deleteDeployment(Deployment deployment)

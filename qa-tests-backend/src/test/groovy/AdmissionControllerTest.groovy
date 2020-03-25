@@ -6,6 +6,7 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
+import services.FeatureFlagService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -120,6 +121,65 @@ class AdmissionControllerTest extends BaseSpecification {
         "Data inputs are: "
 
         timeout | scan  | bypassable | deployment                   | launched | desc
+        3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
+        3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
+        3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
+        30      | true  | false      | GCR_NGINX_DEPLOYMENT         | false    | "nginx w/ inline scan"
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify Admission Controller Enforcement on Updates (#desc)"() {
+        when:
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE"))
+
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(true)
+                .setEnforceOnUpdates(true)
+                .setDisableBypass(!bypassable)
+                .setScanInline(scan)
+                .setTimeoutSeconds(timeout)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Maximum time to wait for propagation to sensor
+        sleep 5000
+
+        and:
+        "Create the deployment with a harmless image"
+        def modDeployment = deployment.clone()
+        modDeployment.image = "busybox:1.31.1"
+        def created = orchestrator.createDeploymentNoWait(modDeployment)
+        assert created
+
+        then:
+        "Verify that the admission controller reacts to an update"
+        def updated = orchestrator.updateDeploymentNoWait(deployment)
+        assert updated == success
+
+        cleanup:
+        "Revert Cluster"
+        if (created) {
+            def timer = new Timer(30, 1)
+            def deleted = false
+            while (!deleted && timer.IsValid()) {
+                try {
+                    orchestrator.deleteDeployment(deployment)
+                    deleted = true
+                } catch (NullPointerException ignore) {
+                    println "Caught NPE while deleting deployment, retrying in 1s..."
+                }
+            }
+            if (!deleted) {
+                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+            }
+        }
+
+        where:
+        "Data inputs are: "
+
+        timeout | scan  | bypassable | deployment                   | success  | desc
         3       | false | false      | BUSYBOX_NO_BYPASS_DEPLOYMENT | false    | "no bypass annotation, non-bypassable"
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"

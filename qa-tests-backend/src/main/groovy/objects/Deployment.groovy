@@ -1,8 +1,10 @@
 package objects
 
 import common.Constants
+import groovy.transform.AutoClone
 import orchestratormanager.OrchestratorType
 
+@AutoClone
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE

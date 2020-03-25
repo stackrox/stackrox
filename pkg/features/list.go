@@ -42,4 +42,7 @@ var (
 
 	// PodDeploymentSeparation enables support for tracking pods and deployments separately
 	PodDeploymentSeparation = registerFeature("Separate Pods and Deployments", "ROX_POD_DEPLOY_SEPARATE", false)
+
+	// AdmissionControlEnforceOnUpdate enables support for having the admission controller enforce on updates.
+	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", false)
 )

@@ -47,7 +47,9 @@ fi
   --argjson rs "${config_runtimeSupport}" \
   --arg cm "${config_collectionMethod}" \
   --argjson ac "${config_admissionControl_createService}" \
+  --argjson acu "${config_admissionControl_listenOnUpdates}" \
   --argjson aes "${config_admissionControl_enableService}" \
+  --argjson aeu "${config_admissionControl_enforceOnUpdates}" \
   --arg to "${config_admissionControl_timeout}" \
   --argjson aes "${config_admissionControl_enableService}" \
   --argjson si "${config_admissionControl_scanInline}" \
@@ -56,7 +58,8 @@ fi
   --argjson td "${config_disableTaintTolerations}" \
   '{"cluster": { "name": $cn, "type": $ct, "mainImage": $mr, "collectorImage": $cr,
   "centralApiEndpoint": $ce, "runtimeSupport": $rs, "collectionMethod": $cm, "admissionController": $ac,
-  "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes, "timeoutSeconds": $to, "scanInline": $si,
+  "admissionControllerUpdates": $acu, "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes,
+  "timeoutSeconds": $to, "scanInline": $si, "enforceOnUpdates": $aeu,
   "disableBypass": $db }, "registryOverride": $ro }, "tolerationsConfig": {"disabled": $td} } }')
 
   auth_header="Authorization: Bearer ${ROX_API_TOKEN}"

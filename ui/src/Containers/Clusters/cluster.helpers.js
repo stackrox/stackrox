@@ -52,6 +52,7 @@ export const newClusterDefault = {
     collectionMethod: defaultCollectionMethod,
     DEPRECATEDProviderMetadata: null,
     admissionController: false,
+    admissionControllerUpdates: false,
     DEPRECATEDOrchestratorMetadata: null,
     status: null,
     tolerationsConfig: {
@@ -60,6 +61,7 @@ export const newClusterDefault = {
     dynamicConfig: {
         admissionControllerConfig: {
             enabled: false,
+            enforceOnUpdates: false,
             timeoutSeconds: 3,
             scanInline: false,
             disableBypass: false
