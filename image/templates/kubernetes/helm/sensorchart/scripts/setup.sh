@@ -21,20 +21,28 @@ function parseYaml {
 
 function printHelp {
       echo "Usage:"
-      echo "./setup.sh -h                         Display this help message."
-      echo "./setup.sh -f <path-to-values-yaml>   Add Helm Cluster with values specified in the file."
+      echo "./setup.sh [options]"
+      echo "Options:"
+      echo "-h             help for setup.sh."
+      echo "-f string      add Helm Cluster with values specified in the file."
+      echo "-e string      endpoint for service to contact (default "localhost:8443")"
 }
 
 
 valuesFile="${DIR}/../values.yaml"
+endpoint="localhost:8443"
 
-while getopts "hf:?:" opt; do
+while getopts "hf:e:?:" opt; do
   case ${opt} in
     h )
       printHelp
+      exit 0
       ;;
     f )
       valuesFile=$OPTARG
+      ;;
+    e )
+      endpoint=$OPTARG
       ;;
     \? )
       echo "Invalid option: $OPTARG" 1>&2
@@ -48,10 +56,11 @@ while getopts "hf:?:" opt; do
 done
 shift $((OPTIND -1))
 
+
 # parse values.yaml to generate config variables
 parseYaml "${valuesFile}" > "${DIR}"/config.sh
 
 . "${DIR}"/config.sh
 
 echo "Adding cluster ${cluster_name} ..."
-"${DIR}"/add-cluster.sh "${cluster_name}"
+"${DIR}"/add-cluster.sh "${endpoint}"

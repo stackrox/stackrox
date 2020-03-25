@@ -13,7 +13,6 @@ image:
   registry: stackrox.io
 
 config:
-  runtimeSupport: false
   collectionMethod: EBPF
   admissionControl:
     createService: false
@@ -26,8 +25,5 @@ config:
   registryOverride:
   disableTaintTolerations: false
   createUpgraderServiceAccount: false
-
-
-
 
 

@@ -1,4 +1,4 @@
-{{ if .Values.config.admissionControl.createService }}
+{{ if eq .Values.config.admissionControl.createService true}}
   apiVersion: v1
   kind: ServiceAccount
   metadata:

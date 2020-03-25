@@ -24,7 +24,7 @@ spec:
       labels:
         app: sensor
     spec:
-      {{if eq ".Values.cluster.type" "OPENSHIFT_CLUSTER"}}
+      {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -53,13 +53,13 @@ spec:
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
-      {{if eq ".Values.cluster.type" "KUBERNETES_CLUSTER" }}
+      {{if eq .Values.cluster.type "KUBERNETES_CLUSTER" }}
       imagePullSecrets:
         - name: stackrox
       {{- end}}
       serviceAccount: sensor
       containers:
-      - image: {{ printf %s/%s:!!.MainVersion!! .Values.image.registry .Values.image.repository.main }}
+      - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry .Values.image.repository.main }}
         name: sensor
         readinessProbe:
           httpGet:
@@ -186,15 +186,15 @@ spec:
         app: collector
       namespace: stackrox
     spec:
-      {{if ne .Values.config.disableTaintTolerations true}}
+      {{- if ne .Values.config.disableTaintTolerations true}}
       tolerations:
       - operator: "Exists"
       {{- end}}
       serviceAccount: collector
       containers:
-{{if ne ".Values.config.collectionMethod" "NO_COLLECTION"}}
+{{ if ne .Values.config.collectionMethod "NO_COLLECTION"}}
       - name: collector
-        image: {{ printf %s/%s:!!.CollectorVersion!!-latest .Values.image.registry .Values.image.repository.collector }}
+        image: {{ printf "%s/%s:!!.CollectorVersion!!-latest" .Values.image.registry .Values.image.repository.collector }}
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
@@ -239,7 +239,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-{{- end}}
+{{ - end }}
       - command:
         - stackrox/compliance
         env:
@@ -249,8 +249,8 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
-          value: sensor.stackrox:443
-        image: {{ printf %s/%s:!!.MainVersion!! .Values.image.registry .Values.image.repository.main }}
+          value: {{ .Values.endpoint.advertised }}
+        image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry .Values.image.repository.main }}
         imagePullPolicy: IfNotPresent
         name: compliance
         resources:

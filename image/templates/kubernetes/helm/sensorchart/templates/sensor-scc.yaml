@@ -1,0 +1,79 @@
+{{ if eq .Values.cluster.type "OPENSHIFT_CLUSTER" }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: sensor is the security constraint for the sensor
+  name: sensor
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+users:
+  - system:serviceaccount:stackrox:sensor
+  - system:serviceaccount:stackrox:sensor-upgrader
+priority: 100
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+fsGroup:
+  type: RunAsAny
+groups: []
+readOnlyRootFilesystem: true
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - secret
+{{ if ne .Values.config.collectionMethod "NO_COLLECTION" }}
+---
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: This SCC is based on privileged, hostaccess, and hostmount-anyuid
+  name: collector
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+users:
+  - system:serviceaccount:stackrox:collector
+allowHostDirVolumePlugin: true
+allowPrivilegedContainer: true
+fsGroup:
+  type: RunAsAny
+groups: []
+priority: 100
+readOnlyRootFilesystem: true
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+supplementalGroups:
+  type: RunAsAny
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - hostPath
+  - secret
+{{ end }}
+{{ end }}

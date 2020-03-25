@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ "$#" -ne 1 ]; then
+    echo "error: central endpoint not specified, use -e with ./setup.sh"
+    exit 1
+fi
+
+endpoint="${1}"
 KUBE_COMMAND="${KUBE_COMMAND:-kubectl}"
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,10 +37,12 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
+runtimeSupport=false
 if [ "${config_collectionMethod}" != "" ]; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry}")"
   [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   echo "${registry_auth}" > "${SECRETS_DIR}/collector-imagepull-secret"
+  runtimeSupport=true
 fi
 
 # add cluster
@@ -44,7 +52,7 @@ fi
   --arg mr "${image_repository_main}" \
   --arg cr "${image_repository_collector}" \
   --arg ce "${endpoint_central}" \
-  --argjson rs "${config_runtimeSupport}" \
+  --argjson rs "${runtimeSupport}" \
   --arg cm "${config_collectionMethod}" \
   --argjson ac "${config_admissionControl_createService}" \
   --argjson acu "${config_admissionControl_listenOnUpdates}" \
@@ -67,7 +75,7 @@ fi
 
  # add cluster, get certs bundle
   curl --insecure -sSKOJ -H "${auth_header}" -H "Accept-Encoding: zip" -H "Content-Type: application/json" \
-  -X POST --data "${cluster}" -o "${certsZipFile}" "https://${endpoint_central}/api/helm/cluster/add"
+  -X POST --data "${cluster}" -o "${certsZipFile}" "https://${endpoint}/api/helm/cluster/add"
 
   if [ ! -f "${certsZipFile}" ]; then
     echo "Error: ${certsZipFile} not found."
