@@ -132,8 +132,8 @@ func (ds *searcherImpl) searchDeployments(ctx context.Context, q *v1.Query) ([]*
 }
 
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
-	graph.Context(ctx, ds.graphProvider, func(ctx context.Context) {
-		res, err = ds.searcher.Search(ctx, q)
+	graph.Context(ctx, ds.graphProvider, func(inner context.Context) {
+		res, err = ds.searcher.Search(inner, q)
 	})
 	return res, err
 }

@@ -24,11 +24,10 @@ func ContextWithStatus(ctx context.Context, provider Provider, fn func(hasGraphC
 
 // GetGraph returns the RGraph from the input context, or nil if the input context has no graph context.
 func GetGraph(hasGraphContext context.Context) RGraph {
-	inter := hasGraphContext.Value(graphContextKey{})
-	if inter == nil {
+	gc, ok := hasGraphContext.Value(graphContextKey{}).(*graphContext)
+	if !ok {
 		return nil
 	}
-	gc := inter.(*graphContext)
 	if gc.graph == nil {
 		gc.graph = gc.provider.NewGraphView()
 	}
@@ -44,11 +43,10 @@ type graphContext struct {
 }
 
 func discardGraph(ctx context.Context) {
-	inter := ctx.Value(graphContextKey{})
-	if inter == nil {
+	gc, ok := ctx.Value(graphContextKey{}).(*graphContext)
+	if !ok {
 		return
 	}
-	gc := inter.(*graphContext)
 	if gc.graph == nil {
 		return
 	}
