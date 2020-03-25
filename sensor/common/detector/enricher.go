@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/types"
 	"golang.org/x/sync/semaphore"
@@ -75,12 +74,12 @@ func (c *cacheValue) scanAndSet(svc v1.ImageServiceClient, ci *storage.Container
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher() *enricher {
+func newEnricher(cache expiringcache.Cache) *enricher {
 	return &enricher{
 		scanResultChan: make(chan scanResult),
 
 		concurrentScanSemaphore: semaphore.NewWeighted(maxConcurrentScans),
-		imageCache:              expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting()),
+		imageCache:              cache,
 		stopSig:                 concurrency.NewSignal(),
 	}
 }

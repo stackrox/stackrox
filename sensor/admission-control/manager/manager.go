@@ -3,6 +3,7 @@ package manager
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"google.golang.org/grpc"
 
 	admission "k8s.io/api/admission/v1beta1"
 )
@@ -22,6 +23,6 @@ type Manager interface {
 }
 
 // New creates a new admission control manager
-func New() Manager {
-	return newManager()
+func New(conn *grpc.ClientConn) Manager {
+	return newManager(conn)
 }

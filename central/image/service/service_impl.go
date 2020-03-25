@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -136,6 +137,16 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 	return &v1.Empty{}, nil
 }
 
+func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) {
+	// UpsertImage modifies the image, so clone it first
+	img = proto.Clone(img).(*storage.Image)
+	// Save the image if we received an ID from sensor
+	// Otherwise, our inferred ID may not match
+	if err := s.datastore.UpsertImage(ctx, img); err != nil {
+		log.Errorf("error upserting image %q: %v", img.GetName().GetFullName(), err)
+	}
+}
+
 // ScanImage handles an image request from Sensor
 func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
@@ -153,19 +164,24 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 	}
 
+	// If no ID, then don't use caches as they could return stale data
+	fetchOpt := enricher.UseCachesIfPossible
+	if request.GetCachedOnly() {
+		fetchOpt = enricher.NoExternalMetadata
+	} else if request.GetImage().GetId() == "" {
+		fetchOpt = enricher.ForceRefetch
+	}
+
 	img := types.ToImage(request.GetImage())
-	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{}, img); err != nil {
+	if _, err := s.enricher.EnrichImage(enricher.EnrichmentContext{FetchOpt: fetchOpt}, img); err != nil {
 		log.Errorf("error enriching image %q: %v", request.GetImage().GetName().GetFullName(), err)
 		// purposefully, don't return here because we still need to save it into the DB so there is a reference
 		// even if we weren't able to enrich it
 	}
 
-	// Save the image if we received an ID from sensor
-	// Otherwise, our inferred ID may not match
+	// asynchronously upsert images as this rpc should be performant
 	if img.GetId() != "" {
-		if err := s.datastore.UpsertImage(ctx, img); err != nil {
-			return nil, err
-		}
+		go s.saveImage(ctx, img)
 	}
 
 	return &v1.ScanImageInternalResponse{

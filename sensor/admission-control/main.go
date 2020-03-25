@@ -42,14 +42,16 @@ func mainCmd() error {
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, syscall.SIGTERM, syscall.SIGINT)
 
-	mgr := manager.New()
-	if err := mgr.Start(); err != nil {
-		return errors.Wrap(err, "starting admission control manager")
-	}
-
+	// Note that the following call returns immediately (connecting happens in the background), hence this does not
+	// delay readiness of the admission-control service even if sensor is unavailable.
 	sensorConn, err := clientconn.AuthenticatedGRPCConnection(env.SensorEndpoint.Setting(), mtls.SensorSubject)
 	if err != nil {
 		log.Errorf("Could not establish a gRPC connection to Sensor: %v. Some features will not work.", err)
+	}
+
+	mgr := manager.New(sensorConn)
+	if err := mgr.Start(); err != nil {
+		return errors.Wrap(err, "starting admission control manager")
 	}
 
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC()); err != nil {

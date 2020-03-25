@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/image"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
@@ -56,6 +57,7 @@ type Sensor struct {
 
 	configHandler config.Handler
 	detector      detector.Detector
+	imageService  image.Service
 	components    []common.SensorComponent
 	apiServices   []pkgGRPC.APIService
 
@@ -69,7 +71,7 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(configHandler config.Handler, detector detector.Detector, components ...common.SensorComponent) *Sensor {
+func NewSensor(configHandler config.Handler, detector detector.Detector, imageService image.Service, components ...common.SensorComponent) *Sensor {
 	return &Sensor{
 		clusterID:          clusterid.Get(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -77,6 +79,7 @@ func NewSensor(configHandler config.Handler, detector detector.Detector, compone
 
 		configHandler: configHandler,
 		detector:      detector,
+		imageService:  imageService,
 		components:    append(components, detector, configHandler), // Explicitly add the config handler
 
 		stoppedSig: concurrency.NewErrorSignal(),
@@ -146,6 +149,7 @@ func (s *Sensor) Start() {
 		log.Fatalf("Error connecting to central: %s", err)
 	}
 	s.detector.SetClient(s.centralConnection)
+	s.imageService.SetClient(s.centralConnection)
 
 	s.profilingServer = s.startProfilingServer()
 

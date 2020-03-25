@@ -12,7 +12,15 @@ import (
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sizeboundedcache"
+	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
+)
+
+const (
+	kb = 1024
+	mb = 1024 * 1024
 )
 
 var (
@@ -46,6 +54,9 @@ type manager struct {
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.ErrorSignal
 
+	client     sensor.ImageServiceClient
+	imageCache sizeboundedcache.Cache
+
 	settingsStream *concurrency.ValueStream
 
 	settingsC          chan *sensor.AdmissionControlSettings
@@ -54,11 +65,19 @@ type manager struct {
 	statePtr unsafe.Pointer
 }
 
-func newManager() *manager {
+func newManager(conn *grpc.ClientConn) *manager {
+	cache, err := sizeboundedcache.New(100*mb, 50*kb, func(key interface{}, value interface{}) int64 {
+		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
+	})
+	utils.Must(err)
+
 	return &manager{
 		settingsStream: concurrency.NewValueStream(nil),
 		settingsC:      make(chan *sensor.AdmissionControlSettings),
 		stoppedSig:     concurrency.NewErrorSignal(),
+
+		client:     sensor.NewImageServiceClient(conn),
+		imageCache: cache,
 	}
 }
 
@@ -162,6 +181,5 @@ func (m *manager) HandleReview(req *admission.AdmissionRequest) (*admission.Admi
 	if state == nil {
 		return nil, errors.New("admission controller is disabled, not handling request")
 	}
-
 	return m.evaluateAdmissionRequest(state, req)
 }

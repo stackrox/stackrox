@@ -19,6 +19,7 @@ type Cache interface {
 	Add(key, value interface{})
 	Get(key interface{}) (interface{}, bool)
 	Remove(key interface{})
+	RemoveIf(key interface{}, valPred func(interface{}) bool)
 	Stats() (objects, size int64)
 }
 
@@ -117,11 +118,15 @@ func (c *sizeBoundedCache) removeOldestNoLock() bool {
 }
 
 func (c *sizeBoundedCache) Remove(key interface{}) {
+	c.RemoveIf(key, nil)
+}
+
+func (c *sizeBoundedCache) RemoveIf(key interface{}, valPred func(interface{}) bool) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 
 	value, ok := c.get(key)
-	if !ok {
+	if !ok || (valPred != nil && !valPred(value)) {
 		return
 	}
 	c.cache.Remove(key)

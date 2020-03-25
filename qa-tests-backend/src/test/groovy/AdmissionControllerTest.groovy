@@ -6,7 +6,6 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
-import services.FeatureFlagService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -82,11 +81,6 @@ class AdmissionControllerTest extends BaseSpecification {
     def "Verify Admission Controller Config (#desc)"() {
         when:
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
-
-        Assume.assumeFalse(
-                "new admission control service currently does not support inline scans",
-                scan && FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE")
-        )
 
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                                 .setEnabled(true)

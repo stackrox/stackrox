@@ -21,7 +21,7 @@ type Service interface {
 	Output() chan *compliance.ComplianceReturn
 }
 
-// NewService returns the ComplianceServiceServer API for Sensor to use, outputs any recieved ComplianceReturns
+// NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
 // to the input channel.
 func NewService(orchestrator orchestrator.Orchestrator) Service {
 	return &serviceImpl{

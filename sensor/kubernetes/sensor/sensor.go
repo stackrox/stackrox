@@ -1,6 +1,8 @@
 package sensor
 
 import (
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/sensor/common"
@@ -8,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -33,11 +36,13 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 
 	enforcer := enforcer.MustCreate(client.Kubernetes())
 
-	policyDetector := detector.New(enforcer, admCtrlSettingsMgr)
+	imageCache := expiringcache.NewExpiringCache(env.ReprocessInterval.DurationSetting())
+	policyDetector := detector.New(enforcer, admCtrlSettingsMgr, imageCache)
 	listener := listener.New(client, configHandler, policyDetector)
 
 	o := orchestrator.New(client.Kubernetes())
 	complianceService := compliance.NewService(o)
+	imageService := image.NewService(imageCache)
 	complianceCommandHandler := compliance.NewCommandHandler(complianceService)
 
 	processSignals := signalService.New(policyDetector)
@@ -64,6 +69,7 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
+		imageService,
 		components...,
 	)
 
@@ -71,6 +77,7 @@ func CreateSensor(client client.Interface, extraComponents ...common.SensorCompo
 		service.Singleton(),
 		processSignals,
 		complianceService,
+		imageService,
 	}
 
 	if admCtrlSettingsMgr != nil {

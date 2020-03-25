@@ -1,9 +1,11 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
@@ -145,8 +147,37 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		}
 	}
 
-	images := m.getImages(deployment)
+	var fetchImgCtx context.Context
+	if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 && hasModifiedImages(s, deployment, req) {
+		var cancel context.CancelFunc
+		fetchImgCtx, cancel = context.WithTimeout(context.Background(), time.Duration(timeoutSecs)*time.Second)
+		defer cancel()
+	}
+
+	images, resultChan := m.getAvailableImagesAndKickOffScans(fetchImgCtx, s, deployment)
 	alerts, err := s.detector.Detect(detectionCtx, deployment, images)
+
+	if fetchImgCtx != nil {
+		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
+	resultsLoop:
+		for len(alerts) == 0 && err == nil {
+			select {
+			case nextRes, ok := <-resultChan:
+				if !ok {
+					break resultsLoop
+				}
+				if nextRes.err != nil {
+					continue
+				}
+				images[nextRes.idx] = nextRes.img
+			case <-fetchImgCtx.Done():
+				break resultsLoop
+			}
+
+			alerts, err = s.detector.Detect(detectionCtx, deployment, images)
+		}
+	}
+
 	if err != nil {
 		return nil, errors.Wrap(err, "running StackRox detection")
 	}

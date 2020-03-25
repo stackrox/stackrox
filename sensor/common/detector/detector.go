@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
 	options "github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
@@ -35,7 +36,7 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager) Detector {
+func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager, cache expiringcache.Cache) Detector {
 	builder := matcher.NewBuilder(
 		matcher.NewRegistry(
 			nil,
@@ -51,7 +52,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:        newEnricher(),
+		enricher:        newEnricher(cache),
 		deploymentStore: newDeploymentStore(),
 		whitelistEval:   whitelist.NewWhitelistEvaluator(),
 		deduper:         newDeduper(),
