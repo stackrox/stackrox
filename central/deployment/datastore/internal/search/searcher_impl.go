@@ -52,7 +52,15 @@ var (
 			cveMappings.OptionsMap,
 		),
 	).Remove(search.RiskScore)
-	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap, imageOnlyOptionsMap)
+	deploymentOnlyOptionsMap = search.Difference(deploymentMappings.OptionsMap,
+		search.CombineOptionsMaps(
+			imageOnlyOptionsMap,
+			imageComponentEdgeMappings.OptionsMap,
+			componentOptionsMap,
+			componentCVEEdgeMappings.OptionsMap,
+			cveMappings.OptionsMap,
+		),
+	)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
