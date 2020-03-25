@@ -2,8 +2,13 @@ package m32tom33
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
+
+// earliestCVEScanTimes holds the earliest scan time that a CVE was seen. We use this to fill in the CreatedAt times for
+// CVEs when they are pulled out of an image.
+var earliestCVEScanTimes = make(map[string]*types.Timestamp)
 
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image) ImageParts {
@@ -32,18 +37,18 @@ func splitComponents(parts ImageParts) []ComponentParts {
 		var cp ComponentParts
 		cp.component = generateImageComponent(component)
 		cp.edge = generateImageComponentEdge(parts.image, cp.component, component)
-		cp.children = splitCVEs(cp, component)
+		cp.children = splitCVEs(parts, cp, component)
 
 		ret = append(ret, cp)
 	}
 	return ret
 }
 
-func splitCVEs(component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
+func splitCVEs(parts ImageParts, component ComponentParts, embedded *storage.EmbeddedImageScanComponent) []CVEParts {
 	ret := make([]CVEParts, 0, len(embedded.GetVulns()))
 	for _, cve := range embedded.GetVulns() {
 		var cp CVEParts
-		cp.cve = generateCVE(cve)
+		cp.cve = generateCVE(parts.image, cve)
 		cp.edge = generateComponentCVEEdge(component.component, cp.cve, cve)
 
 		ret = append(ret, cp)
@@ -91,7 +96,12 @@ func generateImageComponentEdge(image *storage.Image, converted *storage.ImageCo
 	return ret
 }
 
-func generateCVE(from *storage.EmbeddedVulnerability) *storage.CVE {
+func generateCVE(img *storage.Image, from *storage.EmbeddedVulnerability) *storage.CVE {
+	var earliesScan = earliestCVEScanTimes[from.GetCve()]
+	if earliesScan == nil || earliesScan.Compare(img.GetScan().GetScanTime()) > 0 {
+		earliesScan = img.GetScan().GetScanTime()
+		earliestCVEScanTimes[from.GetCve()] = earliesScan
+	}
 	ret := &storage.CVE{
 		Type:         storage.CVE_IMAGE_CVE,
 		Id:           from.GetCve(),
@@ -100,6 +110,7 @@ func generateCVE(from *storage.EmbeddedVulnerability) *storage.CVE {
 		Link:         from.GetLink(),
 		PublishedOn:  from.GetPublishedOn(),
 		LastModified: from.GetLastModified(),
+		CreatedAt:    earliesScan,
 		CvssV2:       from.GetCvssV2(),
 		CvssV3:       from.GetCvssV3(),
 	}
@@ -120,32 +131,19 @@ func convertImageToListImage(i *storage.Image) *storage.ListImage {
 		Created:     i.GetMetadata().GetV1().GetCreated(),
 		LastUpdated: i.GetLastUpdated(),
 	}
-
-	if i.GetScan() != nil {
+	if i.GetSetComponents() != nil {
 		listImage.SetComponents = &storage.ListImage_Components{
-			Components: int32(len(i.GetScan().GetComponents())),
+			Components: i.GetComponents(),
 		}
-		var numVulns int32
-		var numFixableVulns int32
-		var fixedByProvided bool
-		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int32(len(c.GetVulns()))
-			for _, v := range c.GetVulns() {
-				if v.GetSetFixedBy() != nil {
-					fixedByProvided = true
-					if v.GetFixedBy() != "" {
-						numFixableVulns++
-					}
-				}
-			}
-		}
+	}
+	if i.GetSetCves() != nil {
 		listImage.SetCves = &storage.ListImage_Cves{
-			Cves: numVulns,
+			Cves: i.GetCves(),
 		}
-		if numVulns == 0 || fixedByProvided {
-			listImage.SetFixable = &storage.ListImage_FixableCves{
-				FixableCves: numFixableVulns,
-			}
+	}
+	if i.GetSetFixable() != nil {
+		listImage.SetFixable = &storage.ListImage_FixableCves{
+			FixableCves: i.GetFixableCves(),
 		}
 	}
 	return listImage

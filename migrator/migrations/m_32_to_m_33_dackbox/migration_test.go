@@ -33,7 +33,9 @@ func (suite *DackBoxMigrationTestSuite) TearDownSuite() {
 }
 
 func (suite *DackBoxMigrationTestSuite) TestImages() {
-	ts := timestamp.TimestampNow()
+	ts1 := timestamp.TimestampNow()
+	ts2 := timestamp.TimestampNow()
+	ts2.Seconds = ts2.Seconds + 1
 	deployments := []*storage.Deployment{
 		{
 			ClusterId:   "cid1",
@@ -42,7 +44,7 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			Id:          "did1",
 			Name:        "foo",
 			Type:        "Replicated",
-			Created:     ts,
+			Created:     ts1,
 			Containers: []*storage.Container{
 				{
 					Image: &storage.ContainerImage{
@@ -63,7 +65,7 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			Id:          "did2",
 			Name:        "bar",
 			Type:        "Global",
-			Created:     ts,
+			Created:     ts1,
 		},
 	}
 
@@ -75,11 +77,11 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: ts,
+					Created: ts1,
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime: ts,
+				ScanTime: ts1,
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -139,11 +141,11 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: ts,
+					Created: ts2,
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime: ts,
+				ScanTime: ts2,
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
 						Name:    "comp1",
@@ -206,11 +208,11 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: ts,
+					Created: ts1,
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime: ts,
+				ScanTime: ts1,
 			},
 		},
 		{
@@ -220,11 +222,11 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 			},
 			Metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Created: ts,
+					Created: ts2,
 				},
 			},
 			Scan: &storage.ImageScan{
-				ScanTime: ts,
+				ScanTime: ts2,
 			},
 		},
 	}
@@ -293,20 +295,24 @@ func (suite *DackBoxMigrationTestSuite) TestImages() {
 
 	cves := []*storage.CVE{
 		{
-			Id:   "cve1",
-			Type: storage.CVE_IMAGE_CVE,
+			Id:        "cve1",
+			Type:      storage.CVE_IMAGE_CVE,
+			CreatedAt: ts1,
 		},
 		{
-			Id:   "cve2",
-			Type: storage.CVE_IMAGE_CVE,
+			Id:        "cve2",
+			Type:      storage.CVE_IMAGE_CVE,
+			CreatedAt: ts1,
 		},
 		{
-			Id:   "cve3",
-			Type: storage.CVE_IMAGE_CVE,
+			Id:        "cve3",
+			Type:      storage.CVE_IMAGE_CVE,
+			CreatedAt: ts2,
 		},
 		{
-			Id:   "cve4",
-			Type: storage.CVE_IMAGE_CVE,
+			Id:        "cve4",
+			Type:      storage.CVE_IMAGE_CVE,
+			CreatedAt: ts2,
 		},
 	}
 
