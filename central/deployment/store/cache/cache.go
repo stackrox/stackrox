@@ -43,9 +43,6 @@ func NewCachedStore(store store.Store) store.Store {
 
 // This cached store implementation relies on the usage of the Deployment store so this may not be easily portable
 // to other sections of the code.
-// Assumptions made:
-// - Keyed mutexes are being used, which means that we will not have two concurrent writers to the same key. The keyed mutex
-//   used in the datastore MUST be the same keyed mutex used in this cache to provide consistency
 type cachedStore struct {
 	store store.Store
 	cache sizeboundedcache.Cache
