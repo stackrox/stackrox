@@ -2107,6 +2107,8 @@ jobs:
 
     steps:
       - checkout
+      - check-backend-changes
+
       - check-label-to-skip-tests:
           label: ci-no-api-tests
 
