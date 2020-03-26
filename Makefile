@@ -138,12 +138,12 @@ staticcheck: $(STATICCHECK_BIN)
 	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
 .PHONY: fast-sensor
-fast-sensor:
+fast-sensor: deps
 	@echo "+ $@"
 	$(GOBUILD) sensor/kubernetes
 
 .PHONY: fast-central
-fast-central:
+fast-central: deps
 	@echo "+ $@"
 	$(GOBUILD) central
 

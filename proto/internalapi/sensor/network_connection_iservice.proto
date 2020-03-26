@@ -5,7 +5,6 @@ option cc_enable_arenas = true;
 
 import "internalapi/sensor/collector.proto";
 import "internalapi/sensor/network_connection_info.proto";
-import "api/v1/empty.proto";
 
 package sensor;
 
