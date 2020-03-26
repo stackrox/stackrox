@@ -289,6 +289,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
     function processData(data) {
         if (!data || !data.results) return [];
         const results = data.results
+            .filter(result => !!result?.plottedVulns?.basicVulnCounter?.all?.total) // only show entities with CVEs
             .map(result => {
                 const entityId = result.id || result.metadata.id;
                 const vulnCount = result?.plottedVulns?.basicVulnCounter?.all?.total;
