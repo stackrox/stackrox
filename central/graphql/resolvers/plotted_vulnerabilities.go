@@ -66,6 +66,10 @@ func (pvr *PlottedVulnerabilitiesResolver) Vulns(ctx context.Context, args Pagin
 		return nil, err
 	}
 
+	if len(pvr.all) == 0 {
+		return nil, nil
+	}
+
 	pagination := q.GetPagination()
 	q = search.NewQueryBuilder().AddDocIDs(pvr.all...).ProtoQuery()
 	q.Pagination = pagination
