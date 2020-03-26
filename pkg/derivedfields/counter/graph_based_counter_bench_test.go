@@ -144,6 +144,8 @@ func genSubGraph(t require.TestingT, dacky *dackbox.DackBox, from []byte, prefix
 
 func addLink(t require.TestingT, dacky *dackbox.DackBox, from []byte, to []byte) {
 	view := dacky.NewTransaction()
+	defer view.Discard()
+
 	err := view.Graph().AddRefs(from, to)
 	require.NoError(t, err, "addRef should have succeeded")
 	err = view.Commit()

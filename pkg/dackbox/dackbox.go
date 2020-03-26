@@ -176,7 +176,9 @@ var onLoadForEachOptions = badgerhelper.ForEachOptions{
 
 func loadGraphIntoMem(db *badger.DB, graphPrefix []byte) (*graph.Graph, error) {
 	initial := graph.NewGraph()
-	err := badgerhelper.BucketForEach(db.NewTransaction(false), graphPrefix, onLoadForEachOptions, func(k, v []byte) error {
+	txn := db.NewTransaction(false)
+	defer txn.Discard()
+	err := badgerhelper.BucketForEach(txn, graphPrefix, onLoadForEachOptions, func(k, v []byte) error {
 		sk, err := sortedkeys.Unmarshal(v)
 		if err != nil {
 			return err

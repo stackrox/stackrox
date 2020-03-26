@@ -166,11 +166,11 @@ func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	keyTxn := b.dacky.NewReadOnlyTransaction()
+	defer keyTxn.Discard()
 	keys, err := gatherKeysForImage(keyTxn, id)
 	if err != nil {
 		return err
 	}
-	keyTxn.Discard()
 
 	// Lock the set of keys we want to update
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys.allKeys...), func() error {
