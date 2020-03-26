@@ -41,6 +41,10 @@ retag_with_rhel stackrox/main "$RELEASE_TAG"
 # Monitoring images
 retag_without_rhel stackrox/monitoring "$RELEASE_TAG"
 
+# Docs image
+DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
+retag_without_rhel stackrox/docs "$DOCS_PRERELEASE_TAG"
+
 # Collector images
 COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
 retag_with_rhel "stackrox/collector" "$COLLECTOR_TAG"

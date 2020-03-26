@@ -3090,6 +3090,22 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - run:
+          name: Retag docs image with release-version tag in Docker Hub
+          command: |
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+
+            DOCS_TAG=$(make --quiet docs-tag)
+            MAIN_TAG=$(make --quiet tag)
+
+            # The docs image uses the same tag as main for releases,
+            # but is built in github.com/stackrox/docs with different tags.
+            # This step places it in Docker Hub with the release tag
+            # for convenience before running the stackrox.io push.
+            docker pull docker.io/stackrox/docs:$DOCS_TAG | cat
+            docker tag  docker.io/stackrox/docs:$DOCS_TAG docker.io/stackrox/docs:$MAIN_TAG
+            docker push docker.io/stackrox/docs:$MAIN_TAG | cat
+
+      - run:
           name: Push image into stackrox.io
           command: |
             docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
@@ -3102,6 +3118,11 @@ jobs:
             docker pull docker.io/stackrox/main:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/main:$MAIN_TAG stackrox.io/main:$MAIN_TAG
             docker push        stackrox.io/main:$MAIN_TAG | cat
+
+            # The docs image uses the same tag as main for releases.
+            docker pull docker.io/stackrox/docs:$MAIN_TAG | cat
+            docker tag  docker.io/stackrox/docs:$MAIN_TAG stackrox.io/docs:$MAIN_TAG
+            docker push        stackrox.io/docs:$MAIN_TAG | cat
 
             docker pull docker.io/stackrox/monitoring:$MAIN_TAG | cat
             docker tag  docker.io/stackrox/monitoring:$MAIN_TAG stackrox.io/monitoring:$MAIN_TAG
@@ -3194,6 +3215,7 @@ jobs:
             gcloud auth list
             TAG="$(make --quiet tag)"
             gsutil cp image/rhel/bundle.tar.gz "gs://dsop-artifacts.stackrox.io/main-rhel/${TAG}/"
+
       - run:
           name: Publish Helm charts to public github repository stackrox/helm-charts
           command: |

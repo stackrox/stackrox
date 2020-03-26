@@ -55,6 +55,7 @@ FAIL_SCRIPT=false
 RELEASE_TAG=$(git describe --tags)
 COLLECTOR_TAG=$(cat "$DIR/../../COLLECTOR_VERSION")
 SCANNER_TAG=$(cat "$DIR/../../SCANNER_VERSION")
+DOCS_PRERELEASE_TAG=$(cat "$DIR/../../DOCS_VERSION")
 
 # check main images
 compare_fixable_vulns "main" "$RELEASE_TAG"
@@ -62,6 +63,9 @@ compare_fixable_vulns "main-rhel" "$RELEASE_TAG"
 
 # check monitoring image - skip for now because we don't really care :(
 # compare_fixable_vulns "monitoring" "$RELEASE_TAG"
+
+# check docs image - using the pre-release tag (not the release tag)
+compare_fixable_vulns "docs" "$DOCS_PRERELEASE_TAG"
 
 # check collector images
 compare_fixable_vulns "collector" "$COLLECTOR_TAG"

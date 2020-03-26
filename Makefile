@@ -474,7 +474,11 @@ docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 docker-build-data-image:
 	test -f $(CURDIR)/image/keys/data-key
 	test -f $(CURDIR)/image/keys/data-iv
-	docker build -t stackrox-data:$(TAG) image/ --file image/stackrox-data.Dockerfile $(ALPINE_MIRROR_BUILD_ARG)
+	docker build -t stackrox-data:$(TAG) \
+		--build-arg DOCS_BUNDLE_VERSION=$(shell cat DOCS_VERSION) \
+		$(ALPINE_MIRROR_BUILD_ARG) \
+		image/ \
+		--file image/stackrox-data.Dockerfile
 
 .PHONY: docker-build-deployer-image
 docker-build-deployer-image:
@@ -579,6 +583,10 @@ ossls-notice: download-deps
 .PHONY: collector-tag
 collector-tag:
 	@cat COLLECTOR_VERSION
+
+.PHONY: docs-tag
+docs-tag:
+	@cat DOCS_VERSION
 
 .PHONY: scanner-tag
 scanner-tag:
