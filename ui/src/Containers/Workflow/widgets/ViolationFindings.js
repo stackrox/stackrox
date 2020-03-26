@@ -65,7 +65,7 @@ const ViolationFindings = ({ data, message }) => {
                     <div className="sx-2 sy-1 bg-base-100 rounded shadow">
                         <AnalystTags
                             type={ANALYST_NOTES_TYPES.VIOLATION}
-                            id={policyViolation.id}
+                            resourceId={policyViolation.id}
                             className="h-full"
                         />
                     </div>

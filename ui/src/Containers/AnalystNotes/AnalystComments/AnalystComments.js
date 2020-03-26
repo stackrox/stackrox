@@ -46,7 +46,7 @@ const AnalystComments = ({ className, type, variables }) => {
         return (
             <Message
                 type="error"
-                message="There was an issue retrieving and/or modifying comments for this violation. Please try to view this page again in a little while"
+                message="There was an issue retrieving and/or modifying comments. Please try to view this page again in a little while"
             />
         );
 

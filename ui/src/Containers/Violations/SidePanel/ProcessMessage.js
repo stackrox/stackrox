@@ -6,6 +6,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { knownBackendFlags } from 'utils/featureFlags';
 import FeatureEnabled from 'Containers/FeatureEnabled';
 import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
+import ProcessTags from 'Containers/AnalystNotes/ProcessTags';
 
 function KeyValue({ label, value }) {
     return (
@@ -50,7 +51,15 @@ function ProcessMessage({ process }) {
             </div>
             {ancestors}
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                <div className="p-4">
+                <div className="pt-4 px-4">
+                    <ProcessTags
+                        deploymentID={deploymentId}
+                        containerName={containerName}
+                        execFilePath={execFilePath}
+                        args={args}
+                    />
+                </div>
+                <div className="py-4 px-4">
                     <ProcessComments
                         deploymentID={deploymentId}
                         containerName={containerName}

@@ -129,6 +129,20 @@ export const REMOVE_PROCESS_COMMENT = gql`
     }
 `;
 
+/**
+ * @typedef {Object} Result
+ * @property {string} GET_COMMENTS - The GraphQL query used to fetch comments
+ * @property {string} ADD_COMMENT - The GraphQL query used to add a comment
+ * @property {string} UPDATE_COMMENT - The GraphQL query used to update a comment
+ * @property {string} REMOVE_COMMENT - The GraphQL query used to remove a comment
+ */
+
+/**
+ * Returns the queries used for fetching, adding, updating, and removing comments
+ * based on the type
+ * @param {string} type - The tags type (ie. VIOLATION and PROCESS)
+ * @returns {Result} - returns an object with queries
+ */
 export const getQueriesByType = type => {
     if (type === ANALYST_NOTES_TYPES.VIOLATION) {
         return {
