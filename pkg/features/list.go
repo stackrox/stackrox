@@ -38,11 +38,11 @@ var (
 	ImageLabelPolicy = registerFeature("Enable the Required Image Label Policy", "ROX_REQUIRED_IMAGE_LABEL_POLICY", true)
 
 	// AdmissionControlService enables running admission control as a separate microservice.
-	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", false)
+	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", true)
 
 	// PodDeploymentSeparation enables support for tracking pods and deployments separately
 	PodDeploymentSeparation = registerFeature("Separate Pods and Deployments", "ROX_POD_DEPLOY_SEPARATE", false)
 
 	// AdmissionControlEnforceOnUpdate enables support for having the admission controller enforce on updates.
-	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", false)
+	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", true)
 )

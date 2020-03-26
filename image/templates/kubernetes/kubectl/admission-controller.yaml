@@ -220,6 +220,7 @@ spec:
   selector:
     app: admission-control
   type: ClusterIP
+  sessionAffinity: None
 ---
 {{- end }}
 apiVersion: admissionregistration.k8s.io/v1beta1
