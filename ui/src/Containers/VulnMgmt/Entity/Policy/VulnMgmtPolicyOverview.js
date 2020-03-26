@@ -149,11 +149,11 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         },
         {
             key: 'Last violated',
-            value: format(latestViolation, dateTimeFormat)
+            value: latestViolation ? format(latestViolation, dateTimeFormat) : '-'
         },
         {
             key: 'Last updated',
-            value: format(lastUpdated, dateTimeFormat)
+            value: lastUpdated ? format(lastUpdated, dateTimeFormat) : '-'
         },
         {
             key: 'Enforcement',
