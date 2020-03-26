@@ -14,7 +14,7 @@ function fn() {
 }
 
 export const basicRowActionButton = () => (
-    <RowActionButton text="Suppress CVE" onClick={fn} icon={<Trash2 className="my-1 h-4 w-4" />} />
+    <RowActionButton text="Snooze CVE" onClick={fn} icon={<Trash2 className="my-1 h-4 w-4" />} />
 );
 
 export const customRowActionButton = () => (
@@ -34,7 +34,7 @@ export const multipleRowActionButtons = () => (
             icon={<Trash2 className="my-1 h-4 w-4" />}
         />
         <RowActionButton
-            text="Suppress CVE"
+            text="Snooze CVE"
             onClick={fn}
             border="border-l-2 border-base-400"
             icon={<Trash2 className="my-1 h-4 w-4" />}

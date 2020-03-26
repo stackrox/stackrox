@@ -284,12 +284,12 @@ const VulnMgmtCves = ({
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
                 const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
 
-                const actionVerb = suppressionState ? 'suppressed' : 'unsuppressed';
+                const actionVerb = suppressionState ? 'snoozed' : 'unsnoozed';
                 addToast(`Successfully ${actionVerb} ${cveIdsToToggle.length} ${pluralizedCVEs}`);
                 setTimeout(removeToast, 2000);
             })
             .catch(evt => {
-                const actionVerb = suppressionState ? 'suppress' : 'unsuppress';
+                const actionVerb = suppressionState ? 'snooze' : 'unsnooze';
                 addToast(`Could not ${actionVerb} all of the selected CVEs: ${evt.message}`);
                 setTimeout(removeToast, 2000);
             });
@@ -323,7 +323,7 @@ const VulnMgmtCves = ({
                 icon={<Icon.Plus className="my-1 h-4 w-4" />}
             />
             <RowActionButton
-                text={`${viewingSuppressed ? 'Unsuppress CVE' : 'Suppress CVE'}`}
+                text={`${viewingSuppressed ? 'Unsnooze CVE' : 'Snooze CVE'}`}
                 border="border-l-2 border-base-400"
                 onClick={toggleCveSuppression(id)}
                 date-testid="row-action-toggle-suppression"
@@ -338,8 +338,8 @@ const VulnMgmtCves = ({
         </div>
     );
 
-    const toggleButtonText = viewingSuppressed ? 'Unsuppress' : 'Suppress';
-    const viewButtonText = viewingSuppressed ? 'View Unsuppressed' : 'View Suppressed';
+    const toggleButtonText = viewingSuppressed ? 'Unsnooze' : 'Snooze';
+    const viewButtonText = viewingSuppressed ? 'View Unsnoozed' : 'View Snoozed';
 
     const tableHeaderComponents = (
         <React.Fragment>
