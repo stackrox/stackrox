@@ -2104,6 +2104,7 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
+      - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
 
     steps:
       - checkout
@@ -2303,6 +2304,7 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
+      - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
 
     steps:
       - checkout
@@ -2452,6 +2454,7 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_SENSOR_DETECTION: true
       - ROX_POD_DEPLOY_SEPARATE: true
+      - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
 
     steps:
