@@ -1,11 +1,6 @@
 SHELL=/bin/bash
 ROX_PROJECT=apollo
-
-# These flags apply to all tests. The `-gcflags` argument is necessary to disable a new Go 1.14 runtime pointer check
-# instrumentation, since not all our dependencies correctly disable instrumentation for methods using unsafe pointer
-# arithmetics.
-TESTFLAGS=-race -p 4 -gcflags=all=-d=checkptr=0
-
+TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
@@ -389,7 +384,7 @@ test-prep:
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
 	 set -o pipefail ; \
-	 CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test $(TESTFLAGS) -cover -coverprofile test-output/coverage.out -v \
+	 CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test -p 4 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
 		| tee test-output/test.log
 

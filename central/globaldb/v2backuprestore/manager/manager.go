@@ -6,6 +6,7 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/sync"
-	"golang.org/x/sys/unix"
 )
 
 const (
@@ -93,14 +93,8 @@ func analyzeManifest(manifest *v1.DBExportManifest, format *formats.ExportFormat
 }
 
 func (m *manager) checkDiskSpace(requiredBytes int64) error {
-	var stat unix.Statfs_t
-	err := unix.Statfs(m.outputRoot, &stat)
-	retries := 0
-	for err == unix.EINTR && retries < 3 {
-		retries++
-		err = unix.Statfs(m.outputRoot, &stat)
-	}
-	if err != nil {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(m.outputRoot, &stat); err != nil {
 		log.Warnf("Could not determine free disk space of volume containing %s: %v. Assuming free space is sufficient for %d bytes.", m.outputRoot, err, requiredBytes)
 		return nil
 	}

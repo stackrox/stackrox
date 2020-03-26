@@ -3,12 +3,10 @@
 
 package sync
 
-import (
-	"golang.org/x/sys/unix"
-)
+import "syscall"
 
 func kill() {
-	if err := unix.Kill(unix.Getpid(), unix.SIGABRT); err != nil {
+	if err := syscall.Kill(syscall.Getpid(), syscall.SIGABRT); err != nil {
 		panic(err)
 	}
 }
