@@ -19,7 +19,8 @@ const CommentThread = ({
     onRemove,
     defaultLimit,
     defaultOpen,
-    isLoading
+    isLoading,
+    isDisabled
 }) => {
     const [newComment, createComment] = useState(null);
     const [limit, setLimit] = useState(defaultLimit);
@@ -60,7 +61,12 @@ const CommentThread = ({
                 <div className="p-3">
                     {sortedComments.slice(0, limit).map((comment, i) => (
                         <div key={comment.id} className={i === 0 ? 'mt-0' : 'mt-3'}>
-                            <Comment comment={comment} onSave={onSave} onRemove={onRemove} />
+                            <Comment
+                                comment={comment}
+                                onSave={onSave}
+                                onRemove={onRemove}
+                                isDisabled={isDisabled}
+                            />
                         </div>
                     ))}
                     {!!newComment && (
@@ -71,6 +77,7 @@ const CommentThread = ({
                                 onClose={onClose}
                                 onRemove={onRemove}
                                 defaultEdit
+                                isDisabled={isDisabled}
                             />
                         </div>
                     )}
@@ -80,6 +87,7 @@ const CommentThread = ({
                                 className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-full rounded-sm text-sm text-success-900 uppercase"
                                 text="Load More Comments"
                                 onClick={showMoreComments}
+                                disabled={isDisabled}
                             />
                         </div>
                     )}
@@ -100,7 +108,7 @@ const CommentThread = ({
                     className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-sm text-sm text-success-900 uppercase"
                     text="New"
                     icon={<PlusCircle className="text-primary-800 h-4 w-4 mr-1" />}
-                    disabled={!!newComment}
+                    disabled={!!newComment || isDisabled}
                     onClick={addNewComment}
                 />
             }
@@ -133,7 +141,8 @@ CommentThread.propTypes = {
     defaultLimit: PropTypes.number,
     defaultOpen: PropTypes.bool,
     className: PropTypes.string,
-    isLoading: PropTypes.bool
+    isLoading: PropTypes.bool,
+    isDisabled: PropTypes.bool
 };
 
 CommentThread.defaultProps = {
@@ -141,7 +150,8 @@ CommentThread.defaultProps = {
     defaultLimit: 5,
     defaultOpen: false,
     className: 'border border-base-400',
-    isLoading: false
+    isLoading: false,
+    isDisabled: false
 };
 
 export default CommentThread;

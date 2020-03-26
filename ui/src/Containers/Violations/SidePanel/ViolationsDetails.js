@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { knownBackendFlags } from 'utils/featureFlags';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import FeatureEnabled from 'Containers/FeatureEnabled';
-import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
+import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 import DeploytimeMessages from './DeploytimeMessages';
 import RuntimeMessages from './RuntimeMessages';
@@ -17,7 +17,7 @@ function ViolationsDetails({ violationId, violations, processViolation }) {
                     <AnalystTags type={ANALYST_NOTES_TYPES.VIOLATION} id={violationId} />
                 </div>
                 <div className="mb-4">
-                    <AnalystComments type={ANALYST_NOTES_TYPES.VIOLATION} id={violationId} />
+                    <ViolationComments resourceId={violationId} />
                 </div>
             </FeatureEnabled>
             <RuntimeMessages processViolation={processViolation} />

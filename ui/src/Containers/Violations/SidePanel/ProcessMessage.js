@@ -3,6 +3,9 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { knownBackendFlags } from 'utils/featureFlags';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
 
 function KeyValue({ label, value }) {
     return (
@@ -18,6 +21,7 @@ KeyValue.propTypes = {
 };
 
 function ProcessMessage({ process }) {
+    const { deploymentId, containerName } = process;
     const { time, args, execFilePath, containerId, lineage, uid } = process.signal;
     const processTime = new Date(time);
     const timeFormat = format(processTime, dateTimeFormat);
@@ -45,6 +49,16 @@ function ProcessMessage({ process }) {
                 <KeyValue label="Arguments:" value={args} />
             </div>
             {ancestors}
+            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
+                <div className="p-4">
+                    <ProcessComments
+                        deploymentID={deploymentId}
+                        containerName={containerName}
+                        execFilePath={execFilePath}
+                        args={args}
+                    />
+                </div>
+            </FeatureEnabled>
         </div>
     );
 }
@@ -52,6 +66,8 @@ function ProcessMessage({ process }) {
 ProcessMessage.propTypes = {
     process: PropTypes.shape({
         id: PropTypes.string.isRequired,
+        deploymentId: PropTypes.string.isRequired,
+        containerName: PropTypes.string.isRequired,
         signal: PropTypes.shape({
             time: PropTypes.string.isRequired,
             args: PropTypes.string.isRequired,

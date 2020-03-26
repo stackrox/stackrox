@@ -8,7 +8,7 @@ import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import FeatureEnabled from 'Containers/FeatureEnabled';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import AnalystComments from 'Containers/AnalystNotes/AnalystComments';
+import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 
 const processData = data => {
@@ -70,11 +70,7 @@ const ViolationFindings = ({ data, message }) => {
                         />
                     </div>
                     <div className="sx-1 sy-2 bg-base-100 rounded shadow">
-                        <AnalystComments
-                            type={ANALYST_NOTES_TYPES.VIOLATION}
-                            id={policyViolation.id}
-                            className="h-full"
-                        />
+                        <ViolationComments resourceId={policyViolation.id} />
                     </div>
                 </FeatureEnabled>
             </div>

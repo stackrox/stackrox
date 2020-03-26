@@ -5,31 +5,38 @@ import { format } from 'date-fns';
 import { Edit, Trash2, XCircle } from 'react-feather';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-
 import CustomDialogue from 'Components/CustomDialogue';
+import Button from 'Components/Button';
 
 const regexURL = /(https?: \/\/[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/[a-zA-Z0-9]+\.[^\s]{2,}|[a-zA-Z0-9]+\.[^\s]{2,})/g;
 
-const ActionButtons = ({ isEditing, isModifiable, onEdit, onRemove, onClose }) => {
+const ActionButtons = ({ isEditing, isModifiable, onEdit, onRemove, onClose, isDisabled }) => {
     if (isEditing) {
         return (
-            <div>
-                <XCircle
-                    className="h-4 w-4 ml-2 text-success-800 cursor-pointer hover:text-success-500"
-                    onClick={onClose}
-                />
-            </div>
+            <Button
+                onClick={onClose}
+                icon={
+                    <XCircle className="h-4 w-4 ml-2 text-success-800 cursor-pointer hover:text-success-500" />
+                }
+                disabled={isDisabled}
+            />
         );
     }
     return (
         <div className={`flex ${!isModifiable && 'invisible'}`}>
-            <Edit
-                className="h-4 w-4 mx-2 text-primary-800 cursor-pointer hover:text-primary-500"
+            <Button
                 onClick={onEdit}
+                icon={
+                    <Edit className="h-4 w-4 mx-2 text-primary-800 cursor-pointer hover:text-primary-500" />
+                }
+                disabled={isDisabled}
             />
-            <Trash2
-                className="h-4 w-4 text-primary-800 cursor-pointer hover:text-primary-500"
+            <Button
                 onClick={onRemove}
+                icon={
+                    <Trash2 className="h-4 w-4 text-primary-800 cursor-pointer hover:text-primary-500" />
+                }
+                disabled={isDisabled}
             />
         </div>
     );
@@ -97,7 +104,7 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
     );
 };
 
-const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit }) => {
+const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit, isDisabled }) => {
     const [isEditing, setEdit] = useState(defaultEdit);
     const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
@@ -152,6 +159,7 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit }) => {
                     onEdit={onEdit}
                     onRemove={onRemoveHandler}
                     onClose={onCloseHandler}
+                    isDisabled={isDisabled}
                 />
             </div>
             <div className="text-base-500 text-xs mt-1">
@@ -193,12 +201,14 @@ Comment.propTypes = {
     onRemove: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
     onClose: PropTypes.func,
-    defaultEdit: PropTypes.bool
+    defaultEdit: PropTypes.bool,
+    isDisabled: PropTypes.bool
 };
 
 Comment.defaultProps = {
     defaultEdit: false,
-    onClose: () => {}
+    onClose: () => {},
+    isDisabled: false
 };
 
 export default Comment;
