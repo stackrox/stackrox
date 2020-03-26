@@ -120,6 +120,50 @@ describe('WorkflowState', () => {
         });
     });
 
+    describe('getSingleAncestorOfType', () => {
+        it('finds an ancestor entity type in the state stack when present', () => {
+            // arrange
+            const workflowState = new WorkflowState(useCase, [
+                new WorkflowEntity(entityTypes.CLUSTER),
+                new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
+                new WorkflowEntity(entityTypes.POLICY),
+                new WorkflowEntity(entityTypes.POLICY, entityId3)
+            ]);
+
+            // act
+            const hasDeploymentAncestor = workflowState.getSingleAncestorOfType(
+                entityTypes.DEPLOYMENT
+            );
+
+            // assert
+            expect(hasDeploymentAncestor).toEqual(
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2)
+            );
+        });
+
+        it('does not find an ancestor entity type in the state stack when not present', () => {
+            // arrange
+            const workflowState = new WorkflowState(useCase, [
+                new WorkflowEntity(entityTypes.CLUSTER),
+                new WorkflowEntity(entityTypes.CLUSTER, entityId1),
+                new WorkflowEntity(entityTypes.DEPLOYMENT),
+                new WorkflowEntity(entityTypes.DEPLOYMENT, entityId2),
+                new WorkflowEntity(entityTypes.POLICY),
+                new WorkflowEntity(entityTypes.POLICY, entityId3)
+            ]);
+
+            // act
+            const hasDeploymentAncestor = workflowState.getSingleAncestorOfType(
+                entityTypes.NAMESPACE
+            );
+
+            // assert
+            expect(hasDeploymentAncestor).toBe(null);
+        });
+    });
+
     it('pushes a list onto the stack related to current workflow state', () => {
         // dashboard
         const workflowState = new WorkflowState(useCase, []);

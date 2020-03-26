@@ -166,13 +166,10 @@ export class WorkflowState {
         return currentEntity.t;
     }
 
-    // Returns ID of the current entity (top of stack)
-    getCurrentEntityId() {
-        const currentEntity = this.getCurrentEntity();
+    getSingleAncestorOfType(entityType) {
+        const ancestor = this.stateStack.find(level => level.t === entityType && level.i);
 
-        if (!currentEntity) return null;
-
-        return currentEntity.i;
+        return ancestor ? new WorkflowEntity(ancestor.entityType, ancestor.entityId) : null;
     }
 
     // Returns base (first) entity of stack

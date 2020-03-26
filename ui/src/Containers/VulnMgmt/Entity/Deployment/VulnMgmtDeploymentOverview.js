@@ -91,19 +91,15 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };
 
-    // the parent entity is needed for cases where the deployment single is a child
-    //   from a click on a Failing Policies table row
-    const parentEntity = workflowState.pop();
+    // need to know if this deployment is scoped to a policy higher up in the hierarchy
+    const policyAncestor = workflowState.getSingleAncestorOfType(entityTypes.POLICY);
 
     let deploymentFindingsContent = null;
-    if (
-        entityContext[entityTypes.POLICY] ||
-        parentEntity.getCurrentEntityType() === entityTypes.POLICY
-    ) {
+    if (policyAncestor) {
         deploymentFindingsContent = (
             <ViolationsAcrossThisDeployment
                 deploymentID={id}
-                policyID={entityContext[entityTypes.POLICY] || parentEntity.getCurrentEntityId()}
+                policyID={entityContext[entityTypes.POLICY] || policyAncestor.entityId}
                 message="This deployment has not failed on this policy"
             />
         );
