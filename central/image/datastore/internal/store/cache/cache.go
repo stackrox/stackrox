@@ -176,7 +176,7 @@ func (c *cachedStore) updateStats() {
 }
 
 func (c *cachedStore) AckKeysIndexed(keys ...string) error {
-	return c.store.AckKeysIndexed()
+	return c.store.AckKeysIndexed(keys...)
 }
 
 func (c *cachedStore) GetKeysToIndex() ([]string, error) {

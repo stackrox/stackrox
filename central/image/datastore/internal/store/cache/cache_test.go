@@ -58,4 +58,8 @@ func TestImageCache(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, img)
+
+	// Test acknowledgements
+	baseStore.EXPECT().AckKeysIndexed(img1.GetId(), img2.GetId()).Return(nil)
+	assert.NoError(t, cacheStore.AckKeysIndexed(img1.GetId(), img2.GetId()))
 }

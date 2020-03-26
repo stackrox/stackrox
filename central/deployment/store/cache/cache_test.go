@@ -58,4 +58,8 @@ func TestDeploymentCache(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, img)
+
+	// Test acknowledgements
+	baseStore.EXPECT().AckKeysIndexed(dep1.GetId(), dep2.GetId()).Return(nil)
+	assert.NoError(t, cacheStore.AckKeysIndexed(dep1.GetId(), dep2.GetId()))
 }
