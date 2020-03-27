@@ -13,7 +13,7 @@ const CustomDialogue = props => (
             </div>
         )}
         {props.isLoading ? (
-            <div className="flex">
+            <div className="flex p-4">
                 <Loader size={14} color="currentColor" />
                 {props.loadingText && <div className="ml-4">{props.loadingText}</div>}
             </div>
@@ -47,7 +47,7 @@ CustomDialogue.propTypes = {
     title: PropTypes.string.isRequired,
     children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]),
     className: PropTypes.string,
-    text: PropTypes.string.isRequired,
+    text: PropTypes.string,
     onCancel: PropTypes.func,
     cancelText: PropTypes.string,
     onConfirm: PropTypes.func,
@@ -66,7 +66,8 @@ CustomDialogue.defaultProps = {
     confirmText: 'Confirm',
     confirmDisabled: false,
     isLoading: false,
-    loadingText: 'null'
+    loadingText: null,
+    text: null
 };
 
 export default CustomDialogue;

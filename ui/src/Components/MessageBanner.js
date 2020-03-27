@@ -6,7 +6,7 @@ const className = 'w-full flex items-center justify-center leading-normal p-3';
 const messageClasses = {
     warn: `${className} bg-warning-300 text-warning-800`,
     error: `${className} bg-alert-300 text-alert-800`,
-    info: `${className} bg-info-300 text-info-800`
+    info: `${className} bg-tertiary-300 text-tertiary-800`
 };
 
 function MessageBanner({ component, message, type, showCancel, onCancel }) {

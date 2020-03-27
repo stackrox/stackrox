@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, useMutation } from 'react-apollo';
 import difference from 'lodash/difference';
+import pluralize from 'pluralize';
 
 import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
@@ -46,6 +47,8 @@ const AnalystTags = ({ className, type, variables }) => {
 
     const tags = getTagsDataByType(type, data);
 
+    const title = `${tags.length} ${analystNotesLabels[type]} ${pluralize('Tag', tags.length)}`;
+
     function onChange(updatedTags) {
         const removedTags = difference(tags, updatedTags);
         const addedTags = difference(updatedTags, tags);
@@ -62,7 +65,7 @@ const AnalystTags = ({ className, type, variables }) => {
     return (
         <Tags
             className={className}
-            label={analystNotesLabels[type]}
+            title={title}
             tags={tags}
             onChange={onChange}
             isLoading={isLoading}

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import pluralize from 'pluralize';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import { Creatable } from 'Components/ReactSelect';
@@ -12,7 +11,7 @@ function noOptionsMessage() {
 
 const Tags = ({
     className,
-    label,
+    title,
     tags,
     onChange,
     isDisabled,
@@ -20,7 +19,6 @@ const Tags = ({
     isCollapsible,
     isLoading
 }) => {
-    const { length } = tags;
     const options = tags.map(tag => ({ label: tag, value: tag }));
 
     let content = <Loader />;
@@ -30,7 +28,7 @@ const Tags = ({
                 id="tags"
                 name="tags"
                 options={options}
-                placeholder={`No ${label} tags were created.`}
+                placeholder="No tags created yet. Create new tags."
                 onChange={onChange}
                 className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
                 value={tags}
@@ -41,10 +39,13 @@ const Tags = ({
         );
     }
 
+    // if no title is present, just show the input for tags
+    if (!title) return content;
+
     return (
         <CollapsibleCard
             cardClassName={className}
-            title={`${length} ${label} ${pluralize('Tag', length)}`}
+            title={title}
             open={defaultOpen}
             isCollapsible={isCollapsible}
         >
@@ -54,7 +55,7 @@ const Tags = ({
 };
 
 Tags.propTypes = {
-    label: PropTypes.string.isRequired,
+    title: PropTypes.string,
     tags: PropTypes.arrayOf(PropTypes.string),
     onChange: PropTypes.func.isRequired,
     defaultOpen: PropTypes.bool,
@@ -65,6 +66,7 @@ Tags.propTypes = {
 };
 
 Tags.defaultProps = {
+    title: null,
     tags: [],
     defaultOpen: false,
     isCollapsible: true,

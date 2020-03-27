@@ -21,7 +21,9 @@ function RuntimeMessages({ processViolation }) {
     const firstOccurrenceTimestamp = Math.min(...timestamps);
     const lastOccurrenceTimestamp = Math.max(...timestamps);
 
-    const processesList = processes.map(process => <ProcessMessage process={process} />);
+    const processesList = processes.map(process => (
+        <ProcessMessage key={process.id} process={process} />
+    ));
 
     return (
         <div className="mb-4" key={message} data-testid="runtime-processes">

@@ -4,12 +4,11 @@ import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { knownBackendFlags } from 'utils/featureFlags';
-import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import FeatureEnabled from 'Containers/FeatureEnabled';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
-import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
+import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
 
 const processData = data => {
     if (!data.violations || !data.violations.length) return null;
@@ -63,11 +62,7 @@ const ViolationFindings = ({ data, message }) => {
                 </Widget>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
                     <div className="sx-2 sy-1 bg-base-100 rounded shadow">
-                        <AnalystTags
-                            type={ANALYST_NOTES_TYPES.VIOLATION}
-                            resourceId={policyViolation.id}
-                            className="h-full"
-                        />
+                        <ViolationTags resourceId={policyViolation.id} className="h-full" />
                     </div>
                     <div className="sx-1 sy-2 bg-base-100 rounded shadow">
                         <ViolationComments resourceId={policyViolation.id} />
