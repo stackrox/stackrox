@@ -203,6 +203,22 @@ spec:
         - name: config-store
           emptyDir: {}
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admission-control-no-ingress
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+spec:
+  ingress: []
+  podSelector:
+    matchLabels:
+      app: admission-control
+  policyTypes:
+    - Ingress
+---
 apiVersion: v1
 kind: Service
 metadata:
