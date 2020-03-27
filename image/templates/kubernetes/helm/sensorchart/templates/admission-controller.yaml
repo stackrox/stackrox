@@ -75,6 +75,15 @@
                       operator: In
                       values:
                         - "true"
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 60
+                podAffinityTerm:
+                  namespaces: ["stackrox"]
+                  topologyKey: "kubernetes.io/hostname"
+                  labelSelector:
+                    matchLabels:
+                      app: admission-control
         securityContext:
           runAsUser: 4000
           fsGroup: 4000
@@ -155,12 +164,15 @@ metadata:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
 spec:
-  ingress: []
   podSelector:
     matchLabels:
       app: admission-control
-  policyTypes:
-    - Ingress
+    ingress:
+      - ports:
+          - protocol: TCP
+            port: 8443
+    policyTypes:
+      - Ingress
 ---
 {{ end }}
 
