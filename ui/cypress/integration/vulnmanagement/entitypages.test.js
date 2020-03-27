@@ -16,7 +16,7 @@ describe('Entities single views', () => {
         // arrange
         cy.visit(url.list.clusters);
 
-        cy.get(selectors.tableRows, { timeout: 2000 })
+        cy.get(selectors.tableRows, { timeout: 4000 })
             .find(selectors.fixableCvesLink)
             .eq(0)
             .click({ force: true });
@@ -28,6 +28,7 @@ describe('Entities single views', () => {
             .find(selectors.tileLinkSuperText)
             .invoke('text')
             .then(numDeployments => {
+                cy.log('numDeployments', numDeployments);
                 cy.get(selectors.deploymentTileLink)
                     // force: true option needed because this open issue for cypress
                     //   https://github.com/cypress-io/cypress/issues/4856

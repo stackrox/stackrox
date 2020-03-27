@@ -6,6 +6,7 @@ const entityNameKeyMap = {
     [entityTypes.SERVICE_ACCOUNT]: data => resolvePath(data, 'serviceAccount.name'),
     [entityTypes.SECRET]: data => resolvePath(data, 'secret.name'),
     [entityTypes.CLUSTER]: data => resolvePath(data, 'cluster.name'),
+    [entityTypes.COMPONENT]: data => resolvePath(data, 'component.name'),
     [entityTypes.CVE]: data => resolvePath(data, 'vulnerability.cve'),
     [entityTypes.DEPLOYMENT]: data => resolvePath(data, 'deployment.name'),
     [entityTypes.NAMESPACE]: data => resolvePath(data, 'namespace.metadata.name'),
