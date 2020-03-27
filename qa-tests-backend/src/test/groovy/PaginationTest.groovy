@@ -133,7 +133,7 @@ class PaginationTest extends BaseSpecification {
         "Set pagination limit to 3"
         SearchServiceOuterClass.RawQuery query = SearchServiceOuterClass.RawQuery.newBuilder()
                 .setPagination(PaginationOuterClass.Pagination.newBuilder().setLimit(3).setOffset(0))
-                .setQuery("Image:busybox+Image Tag:!latest")
+                .setQuery("Image:busybox+Image Tag:1.25,1.26,1.27,1.28,1.29,1.30")
                 .build()
         def images = ImageService.getImages(query)
 
@@ -145,7 +145,7 @@ class PaginationTest extends BaseSpecification {
         "Set limit to 10 with offset to 5 on a total count of 10"
         def query2 = SearchServiceOuterClass.RawQuery.newBuilder()
                 .setPagination(PaginationOuterClass.Pagination.newBuilder().setLimit(6).setOffset(3))
-                .setQuery("Image:busybox+Image Tag:!latest")
+                .setQuery("Image:busybox+Image Tag:1.25,1.26,1.27,1.28,1.29,1.30")
                 .build()
         def images2 = ImageService.getImages(query2)
 
@@ -160,7 +160,7 @@ class PaginationTest extends BaseSpecification {
                 .setSortOption(PaginationOuterClass.SortOption.newBuilder()
                 .setField("Image")
                 .setReversed(false)))
-                .setQuery("Image:busybox+Image Tag:!latest")
+                .setQuery("Image:busybox+Image Tag:1.25,1.26,1.27,1.28,1.29,1.30")
                 .build()
         def images3 = ImageService.getImages(query3)*.name
         def query4 = SearchServiceOuterClass.RawQuery.newBuilder()
@@ -168,7 +168,7 @@ class PaginationTest extends BaseSpecification {
                 .setSortOption(PaginationOuterClass.SortOption.newBuilder()
                 .setField("Image")
                 .setReversed(true)))
-                .setQuery("Image:busybox+Image Tag:!latest")
+                .setQuery("Image:busybox+Image Tag:1.25,1.26,1.27,1.28,1.29,1.30")
                 .build()
         def images4 = ImageService.getImages(query4)*.name
 
