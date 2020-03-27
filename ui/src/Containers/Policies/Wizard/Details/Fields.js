@@ -26,7 +26,7 @@ class Fields extends Component {
 
         return (
             <div className="px-3 pt-5">
-                <div className="bg-base-100 shadow">
+                <div className="bg-base-100 shadow" data-test-id="policy-details">
                     <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal">
                         Policy Details
                     </div>

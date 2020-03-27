@@ -54,6 +54,8 @@ export const selectors = {
         }
     },
     policyDetailsPanel: {
+        detailsSection: '[data-test-id="policy-details"]',
+        criteriaSection: '[data-test-id="policy-criteria"]',
         idValueDiv: 'div.text-base-600:contains("ID:") + div',
         enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },

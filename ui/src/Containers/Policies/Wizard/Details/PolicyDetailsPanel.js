@@ -5,9 +5,8 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import Panel from 'Components/Panel';
-import Fields from 'Containers/Policies/Wizard/Details/Fields';
-import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
-import DetailsButtons from 'Containers/Policies/Wizard/Details/DetailsButtons';
+import DetailsButtons from './DetailsButtons';
+import PolicyDetails from './PolicyDetails';
 
 function PolicyDetailsPanel({ header, wizardPolicy, onClose }) {
     if (!wizardPolicy) return null;
@@ -20,12 +19,7 @@ function PolicyDetailsPanel({ header, wizardPolicy, onClose }) {
             id="side-panel"
             className="w-1/2"
         >
-            <div className="w-full h-full">
-                <div className="flex flex-col w-full overflow-auto pb-5">
-                    <Fields policy={wizardPolicy} />
-                    <ConfigurationFields policy={wizardPolicy} />
-                </div>
-            </div>
+            <PolicyDetails policy={wizardPolicy} />
         </Panel>
     );
 }

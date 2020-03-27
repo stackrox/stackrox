@@ -2,6 +2,7 @@ import {
     url as violationsUrl,
     selectors as ViolationsPageSelectors
 } from '../constants/ViolationsPage';
+import { selectors as PoliciesPageSelectors } from '../constants/PoliciesPage';
 import * as api from '../constants/apiEndpoints';
 import selectors from '../constants/SearchPage';
 import withAuth from '../helpers/basicAuth';
@@ -215,6 +216,18 @@ describe('Violations page', () => {
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
             .click();
         cy.get(ViolationsPageSelectors.securityBestPractices).should('not.have.text', 'Commands');
+    });
+
+    it('should have policy information in the Policy Details tab', () => {
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.panels)
+            .eq(1)
+            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(3))
+            .click();
+        cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection).should('exist');
+        cy.get(PoliciesPageSelectors.policyDetailsPanel.idValueDiv).should('exist');
     });
 
     it('should close side panel after resolving violation', () => {
