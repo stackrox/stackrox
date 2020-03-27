@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -17,69 +18,13 @@ func init() {
 		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),
 		schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!"),
 		schema.AddQuery("searchAutocomplete(categories: [SearchCategory!], query: String!): [String!]!"),
-		schema.AddInput("SortOption", []string{"field: String", "reversed: Boolean"}),
-		schema.AddInput("Pagination", []string{"offset: Int", "limit: Int", "sortOption: SortOption"}),
 	)
-}
-
-type sortOption struct {
-	Field    *string
-	Reversed *bool
-}
-
-func (s *sortOption) AsV1SortOption() *v1.SortOption {
-	if s == nil {
-		return nil
-	}
-	return &v1.SortOption{
-		Field: func() string {
-			if s.Field == nil {
-				return ""
-			}
-			return *s.Field
-		}(),
-		Reversed: func() bool {
-			if s.Reversed == nil {
-				return false
-			}
-			return *s.Reversed
-		}(),
-	}
-}
-
-// Pagination struct contains limit, offset and sort options
-type Pagination struct {
-	Offset     *int32
-	Limit      *int32
-	SortOption *sortOption
-}
-
-// AsV1Pagination returns a proto Pagination struct
-func (r *Pagination) AsV1Pagination() *v1.Pagination {
-	if r == nil {
-		return nil
-	}
-	return &v1.Pagination{
-		Offset: func() int32 {
-			if r.Offset == nil || *r.Offset < 0 {
-				return 0
-			}
-			return *r.Offset
-		}(),
-		Limit: func() int32 {
-			if r.Limit == nil || *r.Limit < 0 {
-				return 0
-			}
-			return *r.Limit
-		}(),
-		SortOption: r.SortOption.AsV1SortOption(),
-	}
 }
 
 // PaginatedQuery represents a query with pagination info
 type PaginatedQuery struct {
 	Query      *string
-	Pagination *Pagination
+	Pagination *inputtypes.Pagination
 }
 
 // AsV1QueryOrEmpty returns a proto query or empty proto query if pagination query is empty

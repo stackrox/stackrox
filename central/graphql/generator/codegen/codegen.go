@@ -11,6 +11,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var timestampType = reflect.TypeOf((*types.Timestamp)(nil))
@@ -25,9 +26,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/generator"
-{{- range $i, $_ := .Imports }}{{if $i}}
+{{- range $i, $_ := .Imports }}
 	"{{$i}}"
-{{- end}}{{end}} // end range imports
+{{- end}} // end range imports
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -37,7 +38,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- if isEnum $td.Data.Type }}
 	generator.RegisterProtoEnum(builder, reflect.TypeOf({{ importedName $td.Data.Type }}(0)))
 {{- else }}
+{{- if $td.Data.IsInputType }}
+	utils.Must(builder.AddInput("{{ $td.Data.Name }}", []string{
+{{- else }}
 	utils.Must(builder.AddType("{{ $td.Data.Name }}", []string{
+{{- end }}
 {{- range $td.Data.FieldData }}{{ if schemaType . }}
 		"{{ lower .Name}}: {{ schemaType .}}",
 {{- end }}{{ end }}
@@ -73,7 +78,7 @@ func to{{plural .Data.Name}}(values *[]string) []{{importedName .Data.Type}} {
 	}
 	return output
 }
-{{else}}
+{{else if not $td.Data.IsInputType }}
 type {{lower .Data.Name}}Resolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -252,11 +257,7 @@ func listField(td schemaEntry, field fieldData) bool {
 
 // GenerateResolvers produces go code for resolvers for all the types found by the typewalk.
 func GenerateResolvers(parameters generator.TypeWalkParameters, writer io.Writer) {
-	data := typeWalk(
-		parameters.IncludedTypes,
-		parameters.SkipResolvers,
-		parameters.SkipFields,
-	)
+	typeData := typeWalk(parameters)
 	rootTemplate := template.New("codegen")
 	rootTemplate.Funcs(template.FuncMap{
 		"importedName": importedName,
@@ -280,14 +281,20 @@ func GenerateResolvers(parameters generator.TypeWalkParameters, writer io.Writer
 			panic(fmt.Sprintf("Template %q: %s", name, err))
 		}
 	}
-	imports := make(map[string]bool)
-	for _, td := range data {
-		imports[td.Package] = true
+	imports := set.NewStringSet()
+	for _, td := range typeData {
+		// Input types are not directly referenced in the generated Go code.
+		if td.IsInputType {
+			continue
+		}
+		if td.Package != "" {
+			imports.Add(td.Package)
+		}
 	}
-	entries := makeSchemaEntries(data, nil)
+	entries := makeSchemaEntries(typeData)
 	err := rootTemplate.Execute(writer, struct {
 		Entries []schemaEntry
-		Imports map[string]bool
+		Imports map[string]struct{}
 	}{entries, imports})
 	if err != nil {
 		panic(err)

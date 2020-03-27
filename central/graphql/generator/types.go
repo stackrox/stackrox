@@ -11,6 +11,8 @@ type TypeAndField struct {
 // TypeWalkParameters tells generator how to walk types
 type TypeWalkParameters struct {
 	IncludedTypes []reflect.Type
+	// InputTypes are types that are graphQL input types. (See https://graphql.org/graphql-js/mutations-and-input-types/)
+	InputTypes    []reflect.Type
 	SkipResolvers []reflect.Type
 	SkipFields    []TypeAndField
 }

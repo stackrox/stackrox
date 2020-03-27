@@ -681,6 +681,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("PagerDuty", []string{
 		"apiKey: String!",
 	}))
+	utils.Must(builder.AddInput("Pagination", []string{
+		"limit: Int",
+		"offset: Int",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionPolicy", []string{
 		"permissionLevel: PermissionLevel!",
@@ -785,6 +789,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"groups: [ProcessGroup]!",
 		"name: String!",
 		"timesExecuted: Int!",
+	}))
+	utils.Must(builder.AddInput("ProcessNoteKey", []string{
+		"args: String!",
+		"containerName: String!",
+		"deploymentID: String!",
+		"execFilePath: String!",
 	}))
 	utils.Must(builder.AddType("ProcessPolicy", []string{
 		"ancestor: String!",
@@ -934,6 +944,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"secrets: [String!]!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
+	utils.Must(builder.AddInput("SortOption", []string{
+		"field: String",
+		"reversed: Boolean",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",

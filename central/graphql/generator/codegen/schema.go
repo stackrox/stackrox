@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 type schemaEntry struct {
-	Data           typeData
-	ListData       map[string]reflect.Type
-	ExtraResolvers []string
+	Data     typeData
+	ListData map[string]reflect.Type
 }
 
 func isListType(p reflect.Type) bool {
@@ -23,8 +23,8 @@ func isListType(p reflect.Type) bool {
 	return isProto(p) && len(name) > 4 && name[0:4] == "List"
 }
 
-func makeSchemaEntries(data []typeData, extraResolvers map[string][]string) []schemaEntry {
-	output := make([]schemaEntry, 0)
+func makeSchemaEntries(data []typeData) []schemaEntry {
+	var output []schemaEntry
 	listRef := make(map[string]map[string]reflect.Type)
 	for _, td := range data {
 		if isListType(td.Type) {
@@ -37,15 +37,27 @@ func makeSchemaEntries(data []typeData, extraResolvers map[string][]string) []sc
 	}
 
 	for _, td := range data {
-		if (td.Type == nil || isProto(td.Type) || isEnum(td.Type)) && !isListType(td.Type) {
-			listRef := listRef[td.Name]
-			se := schemaEntry{
-				Data:           td,
-				ListData:       listRef,
-				ExtraResolvers: extraResolvers[td.Name],
-			}
-			output = append(output, se)
+		// Skip unexported types.
+		if name := td.Type.Name(); len(name) > 0 && unicode.IsLower(rune(name[0])) {
+			continue
 		}
+
+		// Skip scalars and maps -- except for enums.
+		if !isEnum(td.Type) {
+			if kind := td.Type.Kind(); kind <= reflect.Complex128 || kind == reflect.Map {
+				continue
+			}
+		}
+
+		// Skip list types.
+		if isListType(td.Type) {
+			continue
+		}
+
+		output = append(output, schemaEntry{
+			Data:     td,
+			ListData: listRef[td.Name],
+		})
 	}
 	return output
 }
@@ -54,7 +66,7 @@ func schemaType(fd fieldData) string {
 	if strings.HasPrefix(fd.Name, "XXX_") {
 		return ""
 	}
-	if fd.Name == "Id" && fd.Type.Kind() == reflect.String {
+	if strings.ToLower(fd.Name) == "id" && fd.Type.Kind() == reflect.String {
 		return "ID!"
 	}
 	return schemaExpand(fd.Type)

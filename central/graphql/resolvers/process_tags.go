@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -14,29 +13,21 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("processTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!): [String!]!"),
-		schema.AddMutation("addProcessTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, tags: [String!]!): Boolean!"),
-		schema.AddMutation("removeProcessTags(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, tags: [String!]!): Boolean!"),
+		schema.AddQuery("processTags(key: ProcessNoteKey!): [String!]!"),
+		schema.AddMutation("addProcessTags(key: ProcessNoteKey!, tags: [String!]!): Boolean!"),
+		schema.AddMutation("removeProcessTags(key: ProcessNoteKey!, tags: [String!]!): Boolean!"),
 	)
 }
 
 // ProcessTags retrieves process tags.
 func (resolver *Resolver) ProcessTags(ctx context.Context, args struct {
-	DeploymentID  graphql.ID
-	ContainerName string
-	ExecFilePath  string
-	Args          string
+	Key analystnotes.ProcessNoteKey
 }) ([]string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessTags")
 	if err := writeIndicators(ctx); err != nil {
 		return nil, err
 	}
-	tags, err := resolver.DeploymentDataStore.GetTagsForProcessKey(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	})
+	tags, err := resolver.DeploymentDataStore.GetTagsForProcessKey(ctx, &args.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -45,22 +36,14 @@ func (resolver *Resolver) ProcessTags(ctx context.Context, args struct {
 
 // AddProcessTags adds process tags.
 func (resolver *Resolver) AddProcessTags(ctx context.Context, args struct {
-	DeploymentID  graphql.ID
-	ContainerName string
-	ExecFilePath  string
-	Args          string
-	Tags          []string
+	Key  analystnotes.ProcessNoteKey
+	Tags []string
 }) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "AddProcessTags")
 	if err := writeIndicators(ctx); err != nil {
 		return false, err
 	}
-	err := resolver.DeploymentDataStore.AddTagsToProcessKey(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	}, args.Tags)
+	err := resolver.DeploymentDataStore.AddTagsToProcessKey(ctx, &args.Key, args.Tags)
 	if err != nil {
 		return false, err
 	}
@@ -69,22 +52,14 @@ func (resolver *Resolver) AddProcessTags(ctx context.Context, args struct {
 
 // RemoveProcessTags removes process tags.
 func (resolver *Resolver) RemoveProcessTags(ctx context.Context, args struct {
-	DeploymentID  graphql.ID
-	ContainerName string
-	ExecFilePath  string
-	Args          string
-	Tags          []string
+	Key  analystnotes.ProcessNoteKey
+	Tags []string
 }) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "RemoveProcessTags")
 	if err := writeIndicators(ctx); err != nil {
 		return false, err
 	}
-	err := resolver.DeploymentDataStore.RemoveTagsFromProcessKey(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	}, args.Tags)
+	err := resolver.DeploymentDataStore.RemoveTagsFromProcessKey(ctx, &args.Key, args.Tags)
 	if err != nil {
 		return false, err
 	}

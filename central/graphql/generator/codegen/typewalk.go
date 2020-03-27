@@ -24,16 +24,17 @@ type unionData struct {
 }
 
 type typeData struct {
-	Name      string
-	Package   string
-	Type      reflect.Type
-	FieldData []fieldData
-	UnionData []unionData
+	Name        string
+	Package     string
+	Type        reflect.Type
+	FieldData   []fieldData
+	UnionData   []unionData
+	IsInputType bool
 }
 
 type walkState struct {
 	typeData  map[reflect.Type]typeData
-	typeQueue []reflect.Type
+	typeQueue []typeDescriptor
 
 	skipResolvers []reflect.Type
 	skipFields    []generator2.TypeAndField
@@ -65,7 +66,7 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 			if msgType == nil {
 				continue
 			}
-			ctx.typeQueue = append(ctx.typeQueue, msgType)
+			ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: msgType})
 			union.Entries = append(union.Entries, fieldData{
 				Name: generator.CamelCase(field.GetName()),
 				Type: msgType,
@@ -81,31 +82,40 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 	return
 }
 
-func (ctx *walkState) walkType(p reflect.Type) {
+type typeDescriptor struct {
+	ty          reflect.Type
+	isInputType bool
+}
+
+func (ctx *walkState) walkType(typeDesc typeDescriptor) {
 	var unions []unionData
-	if p.Kind() == reflect.Slice {
-		p = p.Elem()
+	ty := typeDesc.ty
+	if ty.Kind() == reflect.Slice {
+		ty = ty.Elem()
 	}
-	if p != nil && p.Implements(messageType) {
-		unions = ctx.walkUnions(p)
+	if ty.Implements(messageType) {
+		unions = ctx.walkUnions(ty)
 	}
-	for p.Kind() == reflect.Ptr {
-		p = p.Elem()
+	for ty.Kind() == reflect.Ptr {
+		ty = ty.Elem()
 	}
-	if _, ok := ctx.typeData[p]; ok {
+	if _, ok := ctx.typeData[ty]; ok {
 		return
 	}
-	td := typeData{Name: p.Name(), Package: p.PkgPath(), Type: p, UnionData: unions}
-	if p.Kind() == reflect.Struct {
-		for i := 0; i < p.NumField(); i++ {
-			ctx.walkField(&td, p, p.Field(i))
+	td := typeData{Name: ty.Name(), Package: ty.PkgPath(), Type: ty, UnionData: unions}
+	if typeDesc.isInputType {
+		td.IsInputType = true
+	}
+	if ty.Kind() == reflect.Struct {
+		for i := 0; i < ty.NumField(); i++ {
+			ctx.walkField(&td, ty, ty.Field(i))
 		}
 		sort.Slice(td.FieldData, func(i, j int) bool {
 			return td.FieldData[i].Name < td.FieldData[j].Name
 		})
 	}
-	if !rejectedType(p, ctx.skipResolvers) {
-		ctx.typeData[p] = td
+	if !rejectedType(ty, ctx.skipResolvers) {
+		ctx.typeData[ty] = td
 	}
 }
 
@@ -116,7 +126,7 @@ func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructF
 	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}
-	ctx.typeQueue = append(ctx.typeQueue, sf.Type)
+	ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: sf.Type})
 	if !rejectedField(p, sf, ctx.skipFields) {
 		td.FieldData = append(td.FieldData, fieldData{
 			Name: sf.Name,
@@ -143,13 +153,18 @@ func rejectedField(parentType reflect.Type, field reflect.StructField, blacklist
 	return false
 }
 
-func typeWalk(initial, skipResolvers []reflect.Type, skipFields []generator2.TypeAndField) []typeData {
+func typeWalk(parameters generator2.TypeWalkParameters) []typeData {
 	ctx := walkState{
 		typeData:      make(map[reflect.Type]typeData),
-		skipResolvers: skipResolvers,
-		skipFields:    skipFields,
+		skipResolvers: parameters.SkipResolvers,
+		skipFields:    parameters.SkipFields,
 	}
-	ctx.typeQueue = append(ctx.typeQueue, initial...)
+	for _, ty := range parameters.IncludedTypes {
+		ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: ty})
+	}
+	for _, ty := range parameters.InputTypes {
+		ctx.typeQueue = append(ctx.typeQueue, typeDescriptor{ty: ty, isInputType: true})
+	}
 	for len(ctx.typeQueue) > 0 {
 		car, cdr := ctx.typeQueue[0], ctx.typeQueue[1:]
 		ctx.typeQueue = cdr

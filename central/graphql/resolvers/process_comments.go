@@ -15,39 +15,27 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddQuery("processComments(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!): [Comment!]!"),
-		schema.AddMutation("addProcessComment(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, commentMessage: String!): String!"),
-		schema.AddMutation("updateProcessComment(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, commentId: ID!, commentMessage: String!): Boolean!"),
-		schema.AddMutation("removeProcessComment(deploymentID: ID!, containerName: String!, execFilePath: String!, args: String!, commentId: ID!): Boolean!"),
+		schema.AddQuery("processComments(key: ProcessNoteKey!): [Comment!]!"),
+		schema.AddMutation("addProcessComment(key: ProcessNoteKey!, commentMessage: String!): String!"),
+		schema.AddMutation("updateProcessComment(key: ProcessNoteKey!, commentId: ID!, commentMessage: String!): Boolean!"),
+		schema.AddMutation("removeProcessComment(key: ProcessNoteKey!, commentId: ID!): Boolean!"),
 	)
 }
 
 // ProcessComments returns a list of comments for a process.
 func (resolver *Resolver) ProcessComments(ctx context.Context, args struct {
-	DeploymentID  graphql.ID
-	ContainerName string
-	ExecFilePath  string
-	Args          string
+	Key analystnotes.ProcessNoteKey
 }) ([]*commentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessComments")
 	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapComments(
-		resolver.ProcessIndicatorStore.GetCommentsForProcess(ctx, &analystnotes.ProcessNoteKey{
-			DeploymentID:  string(args.DeploymentID),
-			ContainerName: args.ContainerName,
-			ExecFilePath:  args.ExecFilePath,
-			Args:          args.Args,
-		}))
+	return resolver.wrapComments(resolver.ProcessIndicatorStore.GetCommentsForProcess(ctx, &args.Key))
 }
 
 // AddProcessComment adds a process comment.
 func (resolver *Resolver) AddProcessComment(ctx context.Context, args struct {
-	DeploymentID   graphql.ID
-	ContainerName  string
-	ExecFilePath   string
-	Args           string
+	Key            analystnotes.ProcessNoteKey
 	CommentMessage string
 }) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "AddProcessComment")
@@ -58,12 +46,7 @@ func (resolver *Resolver) AddProcessComment(ctx context.Context, args struct {
 	comment := &storage.Comment{
 		CommentMessage: args.CommentMessage,
 	}
-	commentID, err := resolver.ProcessIndicatorStore.AddProcessComment(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	}, comment)
+	commentID, err := resolver.ProcessIndicatorStore.AddProcessComment(ctx, &args.Key, comment)
 	if err != nil {
 		return "", err
 	}
@@ -72,10 +55,7 @@ func (resolver *Resolver) AddProcessComment(ctx context.Context, args struct {
 
 // UpdateProcessComment updates a process comment.
 func (resolver *Resolver) UpdateProcessComment(ctx context.Context, args struct {
-	DeploymentID   graphql.ID
-	ContainerName  string
-	ExecFilePath   string
-	Args           string
+	Key            analystnotes.ProcessNoteKey
 	CommentID      graphql.ID
 	CommentMessage string
 }) (bool, error) {
@@ -88,12 +68,7 @@ func (resolver *Resolver) UpdateProcessComment(ctx context.Context, args struct 
 		CommentMessage: args.CommentMessage,
 	}
 
-	err := resolver.ProcessIndicatorStore.UpdateProcessComment(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	}, request)
+	err := resolver.ProcessIndicatorStore.UpdateProcessComment(ctx, &args.Key, request)
 	if err != nil {
 		return false, err
 	}
@@ -103,23 +78,15 @@ func (resolver *Resolver) UpdateProcessComment(ctx context.Context, args struct 
 
 // RemoveProcessComment removes a process comment.
 func (resolver *Resolver) RemoveProcessComment(ctx context.Context, args struct {
-	DeploymentID  graphql.ID
-	ContainerName string
-	ExecFilePath  string
-	Args          string
-	CommentID     graphql.ID
+	Key       analystnotes.ProcessNoteKey
+	CommentID graphql.ID
 }) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "RemoveProcessComment")
 	if err := writeIndicators(ctx); err != nil {
 		return false, err
 	}
 
-	err := resolver.ProcessIndicatorStore.RemoveProcessComment(ctx, &analystnotes.ProcessNoteKey{
-		DeploymentID:  string(args.DeploymentID),
-		ContainerName: args.ContainerName,
-		ExecFilePath:  args.ExecFilePath,
-		Args:          args.Args,
-	}, string(args.CommentID))
+	err := resolver.ProcessIndicatorStore.RemoveProcessComment(ctx, &args.Key, string(args.CommentID))
 	if err != nil {
 		return false, err
 	}

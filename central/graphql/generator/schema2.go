@@ -155,6 +155,7 @@ func (s *schemaBuilderImpl) AddInput(name string, fields []string) error {
 	}
 	return nil
 }
+
 func (s *schemaBuilderImpl) AddEnumType(name string, values []string) error {
 	if _, ok := s.entries[name]; ok {
 		return fmt.Errorf("already type registered with name %q", name)
