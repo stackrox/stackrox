@@ -135,6 +135,19 @@ func BoolUnion(slice1, slice2 []bool) []bool {
 	return newSlice
 }
 
+// BoolEqual checks if the two given slices are equal.
+func BoolEqual(a, b []bool) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -263,6 +276,19 @@ func ByteUnion(slice1, slice2 []byte) []byte {
 	}
 
 	return newSlice
+}
+
+// ByteEqual checks if the two given slices are equal.
+func ByteEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
@@ -395,6 +421,19 @@ func Complex128Union(slice1, slice2 []complex128) []complex128 {
 	return newSlice
 }
 
+// Complex128Equal checks if the two given slices are equal.
+func Complex128Equal(a, b []complex128) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -523,6 +562,19 @@ func Complex64Union(slice1, slice2 []complex64) []complex64 {
 	}
 
 	return newSlice
+}
+
+// Complex64Equal checks if the two given slices are equal.
+func Complex64Equal(a, b []complex64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
@@ -655,6 +707,19 @@ func ErrorUnion(slice1, slice2 []error) []error {
 	return newSlice
 }
 
+// ErrorEqual checks if the two given slices are equal.
+func ErrorEqual(a, b []error) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -783,6 +848,19 @@ func Float32Union(slice1, slice2 []float32) []float32 {
 	}
 
 	return newSlice
+}
+
+// Float32Equal checks if the two given slices are equal.
+func Float32Equal(a, b []float32) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
@@ -915,6 +993,19 @@ func Float64Union(slice1, slice2 []float64) []float64 {
 	return newSlice
 }
 
+// Float64Equal checks if the two given slices are equal.
+func Float64Equal(a, b []float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -1043,6 +1134,19 @@ func IntUnion(slice1, slice2 []int) []int {
 	}
 
 	return newSlice
+}
+
+// IntEqual checks if the two given slices are equal.
+func IntEqual(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
@@ -1175,6 +1279,19 @@ func Int16Union(slice1, slice2 []int16) []int16 {
 	return newSlice
 }
 
+// Int16Equal checks if the two given slices are equal.
+func Int16Equal(a, b []int16) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -1303,6 +1420,19 @@ func Int32Union(slice1, slice2 []int32) []int32 {
 	}
 
 	return newSlice
+}
+
+// Int32Equal checks if the two given slices are equal.
+func Int32Equal(a, b []int32) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
@@ -1435,6 +1565,19 @@ func Int64Union(slice1, slice2 []int64) []int64 {
 	return newSlice
 }
 
+// Int64Equal checks if the two given slices are equal.
+func Int64Equal(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -1563,6 +1706,19 @@ func Int8Union(slice1, slice2 []int8) []int8 {
 	}
 
 	return newSlice
+}
+
+// Int8Equal checks if the two given slices are equal.
+func Int8Equal(a, b []int8) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
@@ -1695,6 +1851,19 @@ func RuneUnion(slice1, slice2 []rune) []rune {
 	return newSlice
 }
 
+// RuneEqual checks if the two given slices are equal.
+func RuneEqual(a, b []rune) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -1823,6 +1992,19 @@ func StringUnion(slice1, slice2 []string) []string {
 	}
 
 	return newSlice
+}
+
+// StringEqual checks if the two given slices are equal.
+func StringEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
@@ -1955,6 +2137,19 @@ func UintUnion(slice1, slice2 []uint) []uint {
 	return newSlice
 }
 
+// UintEqual checks if the two given slices are equal.
+func UintEqual(a, b []uint) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -2083,6 +2278,19 @@ func Uint16Union(slice1, slice2 []uint16) []uint16 {
 	}
 
 	return newSlice
+}
+
+// Uint16Equal checks if the two given slices are equal.
+func Uint16Equal(a, b []uint16) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
@@ -2215,6 +2423,19 @@ func Uint32Union(slice1, slice2 []uint32) []uint32 {
 	return newSlice
 }
 
+// Uint32Equal checks if the two given slices are equal.
+func Uint32Equal(a, b []uint32) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -2343,6 +2564,19 @@ func Uint64Union(slice1, slice2 []uint64) []uint64 {
 	}
 
 	return newSlice
+}
+
+// Uint64Equal checks if the two given slices are equal.
+func Uint64Equal(a, b []uint64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
@@ -2475,6 +2709,19 @@ func Uint8Union(slice1, slice2 []uint8) []uint8 {
 	return newSlice
 }
 
+// Uint8Equal checks if the two given slices are equal.
+func Uint8Equal(a, b []uint8) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -2603,4 +2850,17 @@ func UintptrUnion(slice1, slice2 []uintptr) []uintptr {
 	}
 
 	return newSlice
+}
+
+// UintptrEqual checks if the two given slices are equal.
+func UintptrEqual(a, b []uintptr) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
 }

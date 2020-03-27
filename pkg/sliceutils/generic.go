@@ -137,4 +137,17 @@ func ElemTypeUnion(slice1, slice2 []ElemType) []ElemType {
 	return newSlice
 }
 
+// ElemTypeEqual checks if the two given slices are equal.
+func ElemTypeEqual(a, b []ElemType) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, aElem := range a {
+		if aElem != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"

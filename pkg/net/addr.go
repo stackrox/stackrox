@@ -25,6 +25,10 @@ var (
 		netutil.MustParseCIDR("10.0.0.0/8"),
 		netutil.MustParseCIDR("172.16.0.0/12"),
 		netutil.MustParseCIDR("192.168.0.0/16"),
+
+		// Other reserved ranges
+		netutil.MustParseCIDR("100.64.0.0/10"),
+		netutil.MustParseCIDR("169.254.0.0/16"),
 	}
 
 	ipV6PrivateNetworks = []*net.IPNet{
@@ -35,6 +39,10 @@ var (
 		netutil.MustParseCIDR("::ffff:10.0.0.0/104"),
 		netutil.MustParseCIDR("::ffff:172.16.0.0/108"),
 		netutil.MustParseCIDR("::ffff:192.168.0.0/112"),
+
+		// Other reserved IPv4 ranges
+		netutil.MustParseCIDR("::ffff:100.64.0.0/106"),
+		netutil.MustParseCIDR("::ffff:169.254.0.0/112"),
 	}
 
 	ipV4MappedIPv6Loopback = netutil.MustParseCIDR("::ffff:127.0.0.1/104")

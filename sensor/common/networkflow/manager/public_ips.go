@@ -2,11 +2,13 @@ package manager
 
 import (
 	"encoding/binary"
+	"sort"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
@@ -28,6 +30,7 @@ type publicIPsManager struct {
 	publicIPDeletions  map[net.IPAddress]time.Time
 
 	publicIPListProtoStream *concurrency.ValueStream
+	lastSentList            *sensor.IPAddressList
 }
 
 func newPublicIPsManager() *publicIPsManager {
@@ -100,10 +103,44 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 		}
 	}
 
+	normalizeIPsList(publicIPsList)
+
+	if m.lastSentList != nil && ipsListsEqual(publicIPsList, m.lastSentList) {
+		return
+	}
+
 	m.publicIPListProtoStream.Push(publicIPsList)
+	m.lastSentList = publicIPsList
 	m.publicIPsUpdateSig.Reset()
 }
 
 func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
 	return m.publicIPListProtoStream
+}
+
+type sortableIPv6Slice []uint64
+
+func (s sortableIPv6Slice) Len() int {
+	return len(s) / 2
+}
+
+func (s sortableIPv6Slice) Less(i, j int) bool {
+	if s[2*i] != s[2*j] {
+		return s[2*i] < s[2*j]
+	}
+	return s[2*i+1] < s[2*j+1]
+}
+
+func (s sortableIPv6Slice) Swap(i, j int) {
+	s[2*i], s[2*j] = s[2*j], s[2*i]
+	s[2*i+1], s[2*j+1] = s[2*j+1], s[2*i+1]
+}
+
+func normalizeIPsList(listProto *sensor.IPAddressList) {
+	sliceutils.Uint32Sort(listProto.Ipv4Addresses)
+	sort.Sort(sortableIPv6Slice(listProto.Ipv6Addresses))
+}
+
+func ipsListsEqual(a, b *sensor.IPAddressList) bool {
+	return sliceutils.Uint32Equal(a.GetIpv4Addresses(), b.GetIpv4Addresses()) && sliceutils.Uint64Equal(a.GetIpv6Addresses(), b.GetIpv6Addresses())
 }
