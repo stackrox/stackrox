@@ -13,18 +13,8 @@ export const GET_ALERT_TAGS = gql`
 `;
 
 export const GET_PROCESS_TAGS = gql`
-    query getProcessTags(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-    ) {
-        processTags(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-        )
+    query getProcessTags($key: ProcessNoteKey!) {
+        processTags(key: $key)
     }
 `;
 
@@ -35,20 +25,8 @@ export const ADD_ALERT_TAGS = gql`
 `;
 
 export const ADD_PROCESS_TAGS = gql`
-    mutation addProcessTags(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-        $tags: [String!]!
-    ) {
-        addProcessTags(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-            tags: $tags
-        )
+    mutation addProcessTags($key: ProcessNoteKey!, $tags: [String!]!) {
+        addProcessTags(key: $key, tags: $tags)
     }
 `;
 
@@ -59,20 +37,8 @@ export const REMOVE_ALERT_TAGS = gql`
 `;
 
 export const REMOVE_PROCESS_TAGS = gql`
-    mutation removeProcessTags(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-        $tags: [String!]!
-    ) {
-        removeProcessTags(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-            tags: $tags
-        )
+    mutation removeProcessTags($key: ProcessNoteKey!, $tags: [String!]!) {
+        removeProcessTags(key: $key, tags: $tags)
     }
 `;
 

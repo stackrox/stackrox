@@ -23,18 +23,8 @@ export const GET_ALERT_COMMENTS = gql`
 `;
 
 export const GET_PROCESS_COMMENTS = gql`
-    query getProcessComments(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-    ) {
-        comments: processComments(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-        ) {
+    query getProcessComments($key: ProcessNoteKey!) {
+        comments: processComments(key: $key) {
             resourceType
             resourceId
             user {
@@ -58,20 +48,8 @@ export const ADD_ALERT_COMMENT = gql`
 `;
 
 export const ADD_PROCESS_COMMENT = gql`
-    mutation addProcessComment(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-        $commentMessage: String!
-    ) {
-        addProcessComment(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-            commentMessage: $commentMessage
-        )
+    mutation addProcessComment($key: ProcessNoteKey!, $commentMessage: String!) {
+        addProcessComment(key: $key, commentMessage: $commentMessage)
     }
 `;
 
@@ -87,21 +65,11 @@ export const UPDATE_ALERT_COMMENT = gql`
 
 export const UPDATE_PROCESS_COMMENT = gql`
     mutation updateProcessComment(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
+        $key: ProcessNoteKey!
         $commentId: ID!
         $commentMessage: String!
     ) {
-        updateProcessComment(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-            commentId: $commentId
-            commentMessage: $commentMessage
-        )
+        updateProcessComment(key: $key, commentId: $commentId, commentMessage: $commentMessage)
     }
 `;
 
@@ -112,20 +80,8 @@ export const REMOVE_ALERT_COMMENT = gql`
 `;
 
 export const REMOVE_PROCESS_COMMENT = gql`
-    mutation removeProcessComment(
-        $deploymentID: ID!
-        $containerName: String!
-        $execFilePath: String!
-        $args: String!
-        $commentId: ID!
-    ) {
-        removeProcessComment(
-            deploymentID: $deploymentID
-            containerName: $containerName
-            execFilePath: $execFilePath
-            args: $args
-            commentId: $commentId
-        )
+    mutation removeProcessComment($key: ProcessNoteKey!, $commentId: ID!) {
+        removeProcessComment(key: $key, commentId: $commentId)
     }
 `;
 
