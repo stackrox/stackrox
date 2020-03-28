@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/utils"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (

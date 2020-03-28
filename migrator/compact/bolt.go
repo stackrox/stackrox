@@ -3,8 +3,8 @@ package compact
 import (
 	"time"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/log"
-	bolt "go.etcd.io/bbolt"
 )
 
 const txMaxSize = 20 * 1024 * 1024

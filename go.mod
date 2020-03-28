@@ -26,6 +26,7 @@ require (
 	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
+	github.com/etcd-io/bbolt v1.3.3
 	github.com/facebookincubator/nvdtools v0.1.4-0.20191024132624-1cb041402875
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
@@ -74,13 +75,12 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.11.1
-	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de
 	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
-	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5
+	golang.org/x/sys v0.0.0-20191127021746-63cb32ae39b2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d
 	google.golang.org/api v0.11.0

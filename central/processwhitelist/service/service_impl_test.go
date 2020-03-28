@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
@@ -25,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 var (

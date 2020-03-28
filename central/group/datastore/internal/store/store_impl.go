@@ -3,10 +3,10 @@ package store
 import (
 	"fmt"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	serializePkg "github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/generated/storage"
-	bolt "go.etcd.io/bbolt"
 )
 
 // We use custom serialization for speed since this store will need to be 'Walked'

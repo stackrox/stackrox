@@ -2,10 +2,10 @@ package m0tom1
 
 import (
 	"github.com/dgraph-io/badger"
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	"go.etcd.io/bbolt"
 )
 
 var (

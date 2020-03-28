@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 const (

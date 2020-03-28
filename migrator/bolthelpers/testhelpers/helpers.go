@@ -3,10 +3,10 @@ package testhelpers
 import (
 	"testing"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stretchr/testify/assert"
-	bolt "go.etcd.io/bbolt"
 )
 
 // MustGetObject populates the given object from the DB into the passed (allocated message).

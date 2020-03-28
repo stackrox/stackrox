@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/utils"
-	bolt "go.etcd.io/bbolt"
 )
 
 const (

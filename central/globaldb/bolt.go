@@ -1,9 +1,9 @@
 package globaldb
 
 import (
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/sync"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (

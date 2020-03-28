@@ -2,8 +2,8 @@ package types
 
 import (
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	bolt "go.etcd.io/bbolt"
 )
 
 // A Migration represents a migration.

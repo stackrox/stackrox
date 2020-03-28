@@ -3,13 +3,13 @@ package manager
 import (
 	"context"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	licenseManager "github.com/stackrox/rox/central/license/manager"
 	"github.com/stackrox/rox/central/telemetry/gatherers"
 	"github.com/stackrox/rox/central/telemetry/manager/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"go.etcd.io/bbolt"
 )
 
 // Manager manages telemetry configuration, collection, and sending.

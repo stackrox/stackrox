@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/dgraph-io/badger"
-	"go.etcd.io/bbolt"
+	"github.com/etcd-io/bbolt"
 )
 
 // TearDownDB tears down an instance of BoltDB used in tests.

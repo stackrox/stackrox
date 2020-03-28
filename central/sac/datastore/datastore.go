@@ -3,10 +3,10 @@ package datastore
 import (
 	"context"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/sac/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"go.etcd.io/bbolt"
 )
 
 // DataStore exposes the functions that exposed and modify auth plugin configs in the system.

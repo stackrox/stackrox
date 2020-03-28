@@ -3,13 +3,13 @@ package m3to4
 import (
 	"testing"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers/testhelpers"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestMigration3To4(t *testing.T) {

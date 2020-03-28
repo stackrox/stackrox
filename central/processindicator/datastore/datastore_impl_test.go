@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/analystnotes"
@@ -35,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestIndicatorDatastore(t *testing.T) {

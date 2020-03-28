@@ -1,8 +1,8 @@
 package store
 
 import (
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	bolt "go.etcd.io/bbolt"
 )
 
 var logsBucket = []byte("logs")

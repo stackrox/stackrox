@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
-	bolt "go.etcd.io/bbolt"
 )
 
 type undoStore struct {

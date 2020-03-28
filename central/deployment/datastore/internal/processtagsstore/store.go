@@ -1,9 +1,9 @@
 package processtagsstore
 
 import (
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"go.etcd.io/bbolt"
 )
 
 var (

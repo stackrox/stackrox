@@ -3,11 +3,11 @@ package commentsstore
 import (
 	"strconv"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	bolt "go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

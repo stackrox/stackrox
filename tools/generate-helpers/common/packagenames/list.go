@@ -3,7 +3,7 @@ package packagenames
 // This block enumerates well-known package names.
 const (
 	GogoProto = "github.com/gogo/protobuf/proto"
-	BBolt     = "go.etcd.io/bbolt"
+	BBolt     = "github.com/etcd-io/bbolt"
 	Bleve     = "github.com/blevesearch/bleve"
 )
 

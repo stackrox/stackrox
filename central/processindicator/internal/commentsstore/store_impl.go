@@ -1,6 +1,7 @@
 package commentsstore
 
 import (
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -8,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/binenc"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

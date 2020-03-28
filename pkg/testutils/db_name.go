@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/require"
-	"go.etcd.io/bbolt"
 )
 
 // Suite abstracts a testify Suite.

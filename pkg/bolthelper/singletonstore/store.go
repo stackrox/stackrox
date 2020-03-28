@@ -1,9 +1,9 @@
 package singletonstore
 
 import (
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"go.etcd.io/bbolt"
 )
 
 // SingletonStore is a store that stores exactly one value.

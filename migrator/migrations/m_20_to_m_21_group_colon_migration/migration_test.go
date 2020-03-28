@@ -3,11 +3,11 @@ package m20to21
 import (
 	"testing"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.etcd.io/bbolt"
 )
 
 func TestMigration(t *testing.T) {

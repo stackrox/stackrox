@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
-	bolt "go.etcd.io/bbolt"
 )
 
 // Run runs the migrator.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"go.etcd.io/bbolt"
 )
 
 const (

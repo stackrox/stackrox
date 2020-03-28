@@ -3,9 +3,9 @@
 package store
 
 import (
+	bbolt "github.com/etcd-io/bbolt"
 	storage "github.com/stackrox/rox/generated/storage"
 	storecache "github.com/stackrox/rox/pkg/storecache"
-	bbolt "go.etcd.io/bbolt"
 )
 
 type Store interface {

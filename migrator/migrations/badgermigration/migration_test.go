@@ -6,10 +6,10 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/dgraph-io/badger/skl"
+	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 var (

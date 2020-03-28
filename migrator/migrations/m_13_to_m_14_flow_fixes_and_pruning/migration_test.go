@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	uuid "github.com/satori/go.uuid"
@@ -14,7 +15,6 @@ import (
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 func flow(srcID, dstID string, dstPort uint32, l4Proto storage.L4Protocol) *storage.NetworkFlow {

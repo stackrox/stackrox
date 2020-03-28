@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	bolt "github.com/etcd-io/bbolt"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	utils "github.com/stackrox/rox/pkg/net"
-	bolt "go.etcd.io/bbolt"
 	"google.golang.org/grpc"
 )
 

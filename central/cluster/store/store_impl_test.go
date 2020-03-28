@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
+	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestClusterStore(t *testing.T) {

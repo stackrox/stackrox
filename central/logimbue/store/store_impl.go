@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"time"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	ops "github.com/stackrox/rox/pkg/metrics"
-	bolt "go.etcd.io/bbolt"
 )
 
 type storeImpl struct {

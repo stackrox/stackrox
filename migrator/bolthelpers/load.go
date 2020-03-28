@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
-	bolt "go.etcd.io/bbolt"
 )
 
 const (

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	bolt "go.etcd.io/bbolt"
 )
 
 const gatherFrequency = 1 * time.Minute

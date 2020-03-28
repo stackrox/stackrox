@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/central/globaldb/dackbox"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/odirect"
 	"github.com/stackrox/rox/pkg/utils"
-	bolt "go.etcd.io/bbolt"
 )
 
 const (

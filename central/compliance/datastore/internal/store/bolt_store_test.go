@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/types"
 	dsTypes "github.com/stackrox/rox/central/compliance/datastore/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	"go.etcd.io/bbolt"
 )
 
 type boltStoreTestSuite struct {

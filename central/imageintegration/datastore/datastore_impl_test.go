@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -13,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func TestImageIntegrationDataStore(t *testing.T) {

@@ -1,10 +1,10 @@
 package store
 
 import (
+	bolt "github.com/etcd-io/bbolt"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	bolt "go.etcd.io/bbolt"
 )
 
 var (

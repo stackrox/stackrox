@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
-	bolt "go.etcd.io/bbolt"
 )
 
 func getKey(deploymentSeed, containerSeed int) *analystnotes.ProcessNoteKey {

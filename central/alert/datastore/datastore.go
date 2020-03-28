@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
+	bolt "github.com/etcd-io/bbolt"
 	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
@@ -15,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	bolt "go.etcd.io/bbolt"
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.

@@ -3,10 +3,10 @@ package singletonstore
 import (
 	"fmt"
 
+	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"go.etcd.io/bbolt"
 )
 
 var (
