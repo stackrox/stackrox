@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
+import ProcessKeyProps from './processKeyProps';
 
 const ProcessTags = ({ deploymentID, containerName, execFilePath, args }) => {
     const variables = { key: { deploymentID, containerName, execFilePath, args } };
@@ -10,10 +10,7 @@ const ProcessTags = ({ deploymentID, containerName, execFilePath, args }) => {
 };
 
 ProcessTags.propTypes = {
-    deploymentID: PropTypes.string.isRequired,
-    containerName: PropTypes.string.isRequired,
-    execFilePath: PropTypes.string.isRequired,
-    args: PropTypes.string.isRequired
+    ...ProcessKeyProps
 };
 
 export default ProcessTags;
