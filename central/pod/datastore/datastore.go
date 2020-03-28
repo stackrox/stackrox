@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
 	badgerStore "github.com/stackrox/rox/central/pod/store/badger"
+	"github.com/stackrox/rox/central/pod/store/cache"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,7 +33,7 @@ type DataStore interface {
 
 // New creates a pod datastore based on BadgerDB
 func New(db *badger.DB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
-	store := badgerStore.New(db)
+	store := cache.NewCachedStore(badgerStore.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)

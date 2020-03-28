@@ -12,7 +12,6 @@ func GetPod() *storage.Pod {
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
-		Active:       true,
 		Instances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{

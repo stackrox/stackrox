@@ -2,8 +2,10 @@ package datastore
 
 import (
 	"context"
+	"sort"
 	"testing"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
@@ -120,30 +122,64 @@ func (suite *PodDataStoreTestSuite) TestCountPods() {
 	suite.Equal(numPods, 2)
 }
 
-func (suite *PodDataStoreTestSuite) TestUpsertPod() {
+func (suite *PodDataStoreTestSuite) TestUpsertPodNew() {
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(nil)
 	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), expectedPod).Return(nil)
 	suite.NoError(suite.datastore.UpsertPod(ctx, expectedPod))
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, errors.New("error"))
+	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
+
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "error")
 
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(nil, false, nil)
 	suite.storage.EXPECT().UpsertPod(expectedPod).Return(nil)
 	suite.indexer.EXPECT().AddPod(expectedPod).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(expectedPod.GetId()).Return(nil)
 	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), expectedPod).Return(errors.New("error"))
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod))
+}
+
+func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
+	oldPod := fixtures.GetPod()
+	oldPod.Instances[0] = &storage.ContainerInstance{
+		InstanceId:      expectedPod.Instances[0].InstanceId,
+		ContainingPodId: expectedPod.Instances[0].ContainingPodId,
+		ContainerName:   expectedPod.Instances[0].ContainerName,
+		Started:         expectedPod.Instances[0].Started,
+		ImageDigest:     "sha256:092834092384093285190",
+		FromRestart:     true,
+	}
+	oldPod.Instances = append(oldPod.Instances, &storage.ContainerInstance{
+		InstanceId: &storage.ContainerInstanceID{
+			Id: "newcontainerid",
+		},
+	})
+	merged := proto.Clone(oldPod).(*storage.Pod)
+	merged.Instances[0] = expectedPod.Instances[0]
+	sort.SliceStable(merged.Instances, func(i, j int) bool { return merged.Instances[i].Started.Compare(merged.Instances[j].Started) <= 0 })
+	suite.storage.EXPECT().GetPod(expectedPod.GetId()).Return(oldPod, true, nil)
+	suite.storage.EXPECT().UpsertPod(merged).Return(nil)
+	suite.indexer.EXPECT().AddPod(merged).Return(nil)
+	suite.storage.EXPECT().AckKeysIndexed(merged.GetId()).Return(nil)
+	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), merged).Return(nil)
+	suite.NoError(suite.datastore.UpsertPod(ctx, expectedPod))
 }
 
 func (suite *PodDataStoreTestSuite) TestRemovePod() {

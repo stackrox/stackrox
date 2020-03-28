@@ -91,12 +91,13 @@ message Volume {
 message Pod {
     // Pod UID
     string id                            = 1;
-    string name                          = 7;
-    string deployment_id                 = 2 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
-    string namespace                     = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id                    = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    bool active                          = 5;
+    string name                          = 2;
+    string deployment_id                 = 3 [(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
+    string namespace                     = 4 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id                    = 5 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
     repeated ContainerInstance instances = 6;
+    // Time the first known container started
+    google.protobuf.Timestamp started    = 7;
 }
 
 // ContainerInstanceID allows to uniquely identify a container within a cluster.
@@ -127,6 +128,12 @@ message ContainerInstance {
 
     // The reason for the container's termination, if it finished.
     string termination_reason          = 9;
+
+    // True if this container instance was created due to a restart.
+    // Since RestartCount from Kubernetes is subject to garbage collection,
+    // the best way to determine the number of instance restarts is to
+    // track the instances created due to a restart.
+    bool from_restart                  = 10;
 }
 
 message ContainerInstanceID {

@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -24,6 +25,7 @@ import (
 
 const (
 	podBatchSize = 1000
+	resourceType = "Pod"
 )
 
 var (
@@ -152,7 +154,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*storage.Pod, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Pod", "SearchRawPods")
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchRawPods")
 
 	return ds.podSearcher.SearchRawPods(ctx, q)
 }
@@ -195,7 +197,7 @@ func (ds *datastoreImpl) CountPods(ctx context.Context) (int, error) {
 
 // UpsertPod inserts a pod into podStore
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Pod", "UpsertPod")
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "UpsertPod")
 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -206,6 +208,21 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
+		oldPod, found, err := ds.podStore.GetPod(pod.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
+		}
+		if found {
+			mergeContainerInstances(pod, oldPod.GetInstances())
+		}
+
+		if len(pod.Instances) > 0 {
+			sort.SliceStable(pod.Instances, func(i, j int) bool {
+				return pod.Instances[i].Started.Compare(pod.Instances[j].Started) <= 0
+			})
+			pod.Started = pod.Instances[0].Started
+		}
+
 		if err := ds.podStore.UpsertPod(pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
@@ -233,9 +250,29 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	return ds.indicators.RemoveProcessIndicatorsOfStaleContainersByPod(deleteIndicatorsCtx, pod)
 }
 
+// mergeContainerInstances merges container instances into pod.Instances.
+// If pod.Instances already contains an instance in oldInstances, it is ignored.
+func mergeContainerInstances(pod *storage.Pod, oldInstances []*storage.ContainerInstance) {
+	instanceByID := make(map[string]*storage.ContainerInstance)
+	for _, instance := range oldInstances {
+		instanceByID[instance.GetInstanceId().GetId()] = instance
+	}
+
+	for _, instance := range pod.Instances {
+		if oldInstance := instanceByID[instance.GetInstanceId().GetId()]; oldInstance != nil {
+			// Remove instances that already exist in pod.Instances
+			delete(instanceByID, instance.GetInstanceId().GetId())
+		}
+	}
+	for _, instance := range instanceByID {
+		// Append old instances that are not in pod.Instances
+		pod.Instances = append(pod.Instances, instance)
+	}
+}
+
 // RemovePod removes a pod from the podStore
 func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Pod", "RemovePod")
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "RemovePod")
 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err

@@ -182,11 +182,7 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 }
 
 func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) error {
-	idsToDelete := make([]string, 0, len(results))
-	for _, r := range results {
-		idsToDelete = append(idsToDelete, r.ID)
-	}
-	return ds.removeIndicators(idsToDelete)
+	return ds.removeIndicators(pkgSearch.ResultsToIDs(results))
 }
 
 func (ds *datastoreImpl) removeIndicators(ids []string) error {

@@ -22,8 +22,8 @@ var (
 type deploymentTombstone struct{}
 
 func sizeFunc(k, v interface{}) int64 {
-	if img, ok := v.(*storage.Deployment); ok {
-		return int64(len(k.(string)) + img.Size())
+	if dep, ok := v.(*storage.Deployment); ok {
+		return int64(len(k.(string)) + dep.Size())
 	}
 	return int64(len(k.(string)))
 }

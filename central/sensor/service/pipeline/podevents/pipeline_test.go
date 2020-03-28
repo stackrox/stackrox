@@ -51,8 +51,7 @@ func newSensorEvent(active bool, action central.ResourceAction) *central.SensorE
 	return &central.SensorEvent{
 		Resource: &central.SensorEvent_Pod{
 			Pod: &storage.Pod{
-				Id:     "id1",
-				Active: active,
+				Id: "id1",
 			},
 		},
 		Action: action,

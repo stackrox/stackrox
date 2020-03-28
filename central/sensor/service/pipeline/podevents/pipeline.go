@@ -65,32 +65,14 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(ctx, pod)
 	default:
-		return s.runGeneralPipeline(ctx, event.GetAction(), pod)
+		// Create and Update events solely trigger an upsert.
+		return s.pods.UpsertPod(ctx, pod)
 	}
 }
 
-func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, _ central.ResourceAction, pod *storage.Pod) error {
-	if err := s.pods.UpsertPod(ctx, pod); err != nil {
-		return err
-	}
-
-	log.Debugf("Upserted Pod: %+v", pod)
-
-	return nil
-}
-
-// Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runRemovePipeline(ctx context.Context, pod *storage.Pod) error {
 	// Remove the pod from persistence.
-	if err := s.pods.RemovePod(ctx, pod.GetId()); err != nil {
-		return err
-	}
-
-	log.Debugf("Removed Pod: %+v", pod)
-
-	// TODO: Add to PodHistory. Perhaps add that functionality to lifecycle manager.
-
-	return nil
+	return s.pods.RemovePod(ctx, pod.GetId())
 }
 
 func (s *pipelineImpl) OnFinish(_ string) {}

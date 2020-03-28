@@ -193,18 +193,14 @@ func (d *deploymentHandler) maybeProcessPodEvent(pod *v1.Pod, oldObj interface{}
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
 func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
-	// TODO: This is called after some prior work potentially changes the action.
-	// If this pod were also the top-level deployment, then if it's status is SUCCEEDED or FAILED, then we set the
-	// action to REMOVE_RESOURCE before this point. See if this matters...
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		// Only the ID and Active fields are necessary for remove events.
+		// Only the ID field is necessary for remove events.
 		return &central.SensorEvent{
 			Id:     string(pod.GetUID()),
 			Action: action,
 			Resource: &central.SensorEvent_Pod{
 				Pod: &storage.Pod{
-					Id:     string(pod.GetUID()),
-					Active: false,
+					Id: string(pod.GetUID()),
 				},
 			},
 		}
@@ -216,7 +212,6 @@ func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, a
 		DeploymentId: wrap.GetId(),
 		ClusterId:    wrap.GetClusterId(),
 		Namespace:    wrap.GetNamespace(),
-		Active:       true,
 	}
 	for i, instance := range containerInstances(pod) {
 		// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
