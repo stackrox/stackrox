@@ -2376,7 +2376,6 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-qa-tests:
@@ -2428,7 +2427,6 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-qa-tests:
@@ -2453,7 +2451,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_SENSOR_DETECTION: true
-      - ROX_POD_DEPLOY_SEPARATE: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
 
@@ -2763,7 +2760,6 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
-      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-openshift-tests:
@@ -2781,7 +2777,6 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
-      - ROX_POD_DEPLOY_SEPARATE: true
 
     steps:
       - run-openshift-tests:
