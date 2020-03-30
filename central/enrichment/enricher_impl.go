@@ -30,7 +30,7 @@ func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployme
 		var imgToProcess *storage.Image
 		if ctx.FetchOnlyIfMetadataEmpty() && c.GetImage().GetId() != "" {
 			var img *storage.Image
-			img, _, err = e.images.GetImage(getImageContext, c.GetImage().GetId())
+			img, _, err = e.images.GetImage(getImageContext, c.GetImage().GetId(), false)
 			if err != nil {
 				return
 			}

@@ -82,17 +82,10 @@ func (ds *searcherImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*st
 	if err != nil {
 		return nil, err
 	}
-	var images []*storage.Image
-	for _, result := range results {
-		image, exists, err := ds.storage.GetImage(result.ID)
-		if err != nil {
-			return nil, err
-		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		images = append(images, image)
+
+	images, _, err := ds.storage.GetImagesBatch(search.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
 	}
 	return images, nil
 }

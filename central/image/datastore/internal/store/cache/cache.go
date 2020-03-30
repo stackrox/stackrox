@@ -5,14 +5,16 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	maxCachedImageSize = 50 * 1024 * 1024         // if it's larger than 50KB then we aren't going to cache it
-	maxCacheSize       = 200 * 1024 * 1024 * 1024 // 200 MB
+	maxCachedImageSize = 200 * size.KB // if it's larger than 200KB then we aren't going to cache it
+	maxCacheSize       = 200 * size.MB // 200 MB
 )
 
 var (
@@ -47,15 +49,28 @@ func NewCachedStore(store store.Store) store.Store {
 }
 
 func (c *cachedStore) ListImage(sha string) (*storage.ListImage, bool, error) {
-	img, exists, err := c.GetImage(sha)
-	if err != nil || !exists {
+	img, hadEntry, err := c.getCachedImage(sha)
+	if err != nil {
 		return nil, false, err
 	}
-	return types.ConvertImageToListImage(img), true, nil
+	if hadEntry {
+		if img == nil {
+			return nil, false, nil
+		}
+		return types.ConvertImageToListImage(img), true, nil
+	}
+	return c.store.ListImage(sha)
 }
 
 func (c *cachedStore) GetImages() ([]*storage.Image, error) {
-	return c.store.GetImages()
+	images, err := c.store.GetImages()
+	if err != nil {
+		return nil, err
+	}
+	for _, image := range images {
+		c.testAndSetCacheEntry(image)
+	}
+	return images, nil
 }
 
 func (c *cachedStore) CountImages() (int, error) {
@@ -73,34 +88,33 @@ func (c *cachedStore) getCachedImage(sha string) (*storage.Image, bool, error) {
 	return proto.Clone(entry.(*storage.Image)).(*storage.Image), true, nil
 }
 
-func (c *cachedStore) testAndSetCacheEntry(sha string, img *storage.Image) {
-	c.cache.TestAndSet(sha, img, func(_ interface{}, exists bool) bool {
+func (c *cachedStore) testAndSetCacheEntry(image *storage.Image) {
+	cachedImage := imageUtils.StripCVEDescriptions(image)
+	c.cache.TestAndSet(image.GetId(), cachedImage, func(_ interface{}, exists bool) bool {
 		return !exists
 	})
 	c.updateStats()
 }
 
-func (c *cachedStore) GetImage(sha string) (*storage.Image, bool, error) {
-	img, entryExists, err := c.getCachedImage(sha)
-	if err != nil {
-		return nil, false, err
-	}
-	if entryExists {
-		imageStoreCacheHits.Inc()
-		// Entry is a tombstone entry, return that the image doesn't exist
-		if img == nil {
-			return nil, false, nil
+func (c *cachedStore) GetImage(sha string, withCVESummaries bool) (*storage.Image, bool, error) {
+	if !withCVESummaries {
+		img, entryExists, err := c.getCachedImage(sha)
+		if err != nil {
+			return nil, false, err
 		}
-		return img, true, nil
+		if entryExists {
+			imageStoreCacheHits.Inc()
+			return img, img != nil, nil
+		}
 	}
 
 	imageStoreCacheMisses.Inc()
-	image, exists, err := c.store.GetImage(sha)
+	image, exists, err := c.store.GetImage(sha, withCVESummaries)
 	if err != nil || !exists {
 		return nil, exists, err
 	}
 
-	c.testAndSetCacheEntry(sha, image)
+	c.testAndSetCacheEntry(image)
 	return image, true, nil
 }
 
@@ -124,7 +138,7 @@ func (c *cachedStore) GetImagesBatch(shas []string) ([]*storage.Image, []int, er
 		}
 		imageStoreCacheMisses.Inc()
 
-		img, exists, err := c.store.GetImage(sha)
+		img, exists, err := c.store.GetImage(sha, false)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -134,7 +148,7 @@ func (c *cachedStore) GetImagesBatch(shas []string) ([]*storage.Image, []int, er
 		}
 
 		// Add th image to the cache
-		c.testAndSetCacheEntry(sha, img)
+		c.testAndSetCacheEntry(img)
 		images = append(images, img)
 	}
 	return images, missingIndices, nil
@@ -155,7 +169,7 @@ func (c *cachedStore) Upsert(image *storage.Image) error {
 	if err := c.store.Upsert(image); err != nil {
 		return err
 	}
-	c.cache.Add(image.GetId(), image)
+	c.cache.Add(image.GetId(), imageUtils.StripCVEDescriptions(image))
 	return nil
 }
 

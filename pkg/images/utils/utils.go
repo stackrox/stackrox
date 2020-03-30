@@ -192,10 +192,15 @@ func GetImageID(img *storage.Image) string {
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs
 func StripCVEDescriptions(img *storage.Image) *storage.Image {
 	newImage := proto.Clone(img).(*storage.Image)
-	for _, component := range newImage.GetScan().GetComponents() {
+	StripCVEDescriptionsNoClone(newImage)
+	return newImage
+}
+
+// StripCVEDescriptionsNoClone takes in an image object and modifies it to remove the vulnerability summaries
+func StripCVEDescriptionsNoClone(img *storage.Image) {
+	for _, component := range img.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.Summary = ""
 		}
 	}
-	return newImage
 }

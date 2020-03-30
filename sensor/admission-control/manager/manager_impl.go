@@ -13,15 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1beta1"
-)
-
-const (
-	kb = 1024
-	mb = 1024 * 1024
 )
 
 var (
@@ -67,7 +63,7 @@ type manager struct {
 }
 
 func newManager(conn *grpc.ClientConn) *manager {
-	cache, err := sizeboundedcache.New(100*mb, 50*kb, func(key interface{}, value interface{}) int64 {
+	cache, err := sizeboundedcache.New(200*size.MB, 2*size.MB, func(key interface{}, value interface{}) int64 {
 		return int64(len(key.(string)) + value.(imageCacheEntry).Size())
 	})
 	utils.Must(err)

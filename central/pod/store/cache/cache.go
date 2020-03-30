@@ -5,13 +5,14 @@ import (
 	"github.com/stackrox/rox/central/pod/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	maxCachedPodSize = 5 * 1024         // if it's larger than 5KB then we aren't going to cache it
-	maxCacheSize     = 20 * 1024 * 1024 // 20 MB
+	maxCachedPodSize = 5 * size.KB // if it's larger than 5KB, then we aren't going to cache it
+	maxCacheSize     = 20 * size.MB
 )
 
 var (

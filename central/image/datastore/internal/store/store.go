@@ -11,7 +11,7 @@ type Store interface {
 
 	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)
-	GetImage(sha string) (*storage.Image, bool, error)
+	GetImage(sha string, withCVESummaries bool) (*storage.Image, bool, error)
 	GetImagesBatch(shas []string) ([]*storage.Image, []int, error)
 
 	Exists(id string) (bool, error)

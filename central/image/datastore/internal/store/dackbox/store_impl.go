@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/edges"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -108,7 +109,7 @@ func (b *storeImpl) CountImages() (int, error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
+func (b *storeImpl) GetImage(id string, withCVESummaries bool) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	branch := b.dacky.NewReadOnlyTransaction()
@@ -118,7 +119,9 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 	if err != nil {
 		return nil, false, err
 	}
-
+	if !withCVESummaries {
+		utils.StripCVEDescriptionsNoClone(image)
+	}
 	return image, image != nil, err
 }
 

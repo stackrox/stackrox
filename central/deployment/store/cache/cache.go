@@ -6,13 +6,14 @@ import (
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/sizeboundedcache"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
-	maxCachedDeploymentSize = 50 * 1024 * 1024         // if it's larger than 50KB then we aren't going to cache it
-	maxCacheSize            = 200 * 1024 * 1024 * 1024 // 200 MB
+	maxCachedDeploymentSize = 50 * size.KB  // if it's larger than 50KB then we aren't going to cache it
+	maxCacheSize            = 200 * size.MB // 200 MB
 )
 
 var (
@@ -67,11 +68,17 @@ func (c *cachedStore) getCachedDeployment(id string) (*storage.Deployment, bool,
 }
 
 func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
-	deployment, exists, err := c.GetDeployment(id)
-	if err != nil || !exists {
+	deployment, hadEntry, err := c.getCachedDeployment(id)
+	if err != nil {
 		return nil, false, err
 	}
-	return types.ConvertDeploymentToDeploymentList(deployment), true, nil
+	if hadEntry {
+		if deployment == nil {
+			return nil, false, nil
+		}
+		return types.ConvertDeploymentToDeploymentList(deployment), true, nil
+	}
+	return c.store.ListDeployment(id)
 }
 
 func (c *cachedStore) ListDeployments() ([]*storage.ListDeployment, error) {
@@ -79,15 +86,36 @@ func (c *cachedStore) ListDeployments() ([]*storage.ListDeployment, error) {
 }
 
 func (c *cachedStore) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
-	deployments, missing, err := c.GetDeploymentsWithIDs(ids...)
-	if err != nil {
-		return nil, nil, err
+	var deployments []*storage.ListDeployment
+	var missingIndices []int
+	for i, id := range ids {
+		fullDeployment, hadEntry, err := c.getCachedDeployment(id)
+		if err != nil {
+			return nil, nil, err
+		}
+		if hadEntry {
+			deploymentStoreCacheHits.Inc()
+			// Tombstone entry existed
+			if fullDeployment == nil {
+				missingIndices = append(missingIndices, i)
+			} else {
+				deployments = append(deployments, types.ConvertDeploymentToDeploymentList(fullDeployment))
+			}
+			continue
+		}
+		deploymentStoreCacheMisses.Inc()
+
+		listDeployment, exists, err := c.store.ListDeployment(id)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !exists {
+			missingIndices = append(missingIndices, i)
+			continue
+		}
+		deployments = append(deployments, listDeployment)
 	}
-	listDeployments := make([]*storage.ListDeployment, 0, len(deployments))
-	for _, d := range deployments {
-		listDeployments = append(listDeployments, types.ConvertDeploymentToDeploymentList(d))
-	}
-	return listDeployments, missing, nil
+	return deployments, missingIndices, nil
 }
 
 func (c *cachedStore) GetDeployment(id string) (*storage.Deployment, bool, error) {

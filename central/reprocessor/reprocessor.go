@@ -214,7 +214,7 @@ func (l *loopImpl) reprocessImage(id string, sema *semaphore.Weighted, wg *sync.
 	defer sema.Release(1)
 	defer wg.Done()
 
-	image, exists, err := l.images.GetImage(getAndWriteImagesContext, id)
+	image, exists, err := l.images.GetImage(getAndWriteImagesContext, id, false)
 	if err != nil {
 		log.Errorf("error fetching image %q from the database: %v", id, err)
 		return

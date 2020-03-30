@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	generic "github.com/stackrox/rox/pkg/badgerhelper/crud"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -111,7 +112,7 @@ func (b *storeImpl) CountImages() (int, error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
+func (b *storeImpl) GetImage(id string, withCVESummaries bool) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	digestID := types.NewDigest(id).Digest()
@@ -122,6 +123,9 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 		return
 	}
 	image = msg.(*storage.Image)
+	if !withCVESummaries {
+		utils.StripCVEDescriptionsNoClone(image)
+	}
 	return
 }
 

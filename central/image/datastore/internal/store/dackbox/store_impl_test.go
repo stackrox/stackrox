@@ -129,7 +129,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetId())
+		got, exists, err := suite.store.GetImage(d.GetId(), true)
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)
@@ -158,7 +158,7 @@ func (suite *ImageStoreTestSuite) TestImages() {
 	}
 
 	for _, d := range images {
-		got, exists, err := suite.store.GetImage(d.GetId())
+		got, exists, err := suite.store.GetImage(d.GetId(), true)
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(d, got)

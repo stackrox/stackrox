@@ -88,7 +88,7 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 		Id: "sha1",
 	}
 
-	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1", true).Return((*storage.Image)(nil), false, nil)
 
 	suite.mockStore.EXPECT().Upsert(image).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
@@ -110,7 +110,7 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 		Metadata: &storage.ImageMetadata{},
 	}
 
-	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1", true).Return((*storage.Image)(nil), false, nil)
 	suite.mockStore.EXPECT().Upsert(upsertedImage).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 	suite.mockStore.EXPECT().AckKeysIndexed(upsertedImage.GetId()).Return(nil)
@@ -176,7 +176,7 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithScanStats() {
 		},
 	}
 
-	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1", true).Return((*storage.Image)(nil), false, nil)
 	suite.mockStore.EXPECT().Upsert(upsertedImage).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 	suite.mockStore.EXPECT().AckKeysIndexed(upsertedImage.GetId()).Return(nil)
@@ -323,11 +323,11 @@ func (suite *ImageReindexSuite) TestInitializeRanker() {
 	}
 
 	suite.mockSearcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
-	suite.mockStore.EXPECT().GetImage(images[0].Id).Return(images[0], true, nil)
-	suite.mockStore.EXPECT().GetImage(images[1].Id).Return(images[1], true, nil)
-	suite.mockStore.EXPECT().GetImage(images[2].Id).Return(images[2], true, nil)
-	suite.mockStore.EXPECT().GetImage(images[3].Id).Return(nil, false, nil)
-	suite.mockStore.EXPECT().GetImage(images[4].Id).Return(nil, false, errors.New("fake error"))
+	suite.mockStore.EXPECT().GetImage(images[0].Id, false).Return(images[0], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[1].Id, false).Return(images[1], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[2].Id, false).Return(images[2], true, nil)
+	suite.mockStore.EXPECT().GetImage(images[3].Id, false).Return(nil, false, nil)
+	suite.mockStore.EXPECT().GetImage(images[4].Id, false).Return(nil, false, errors.New("fake error"))
 	ds.initializeRankers()
 
 	suite.Equal(int64(1), suite.imageRanker.GetRankForID("2"))

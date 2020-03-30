@@ -86,9 +86,9 @@ func (mr *MockDataStoreMockRecorder) Exists(arg0, arg1 interface{}) *gomock.Call
 }
 
 // GetImage mocks base method
-func (m *MockDataStore) GetImage(arg0 context.Context, arg1 string) (*storage.Image, bool, error) {
+func (m *MockDataStore) GetImage(arg0 context.Context, arg1 string, arg2 bool) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImage", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetImage", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -96,9 +96,9 @@ func (m *MockDataStore) GetImage(arg0 context.Context, arg1 string) (*storage.Im
 }
 
 // GetImage indicates an expected call of GetImage
-func (mr *MockDataStoreMockRecorder) GetImage(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetImage(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockDataStore)(nil).GetImage), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockDataStore)(nil).GetImage), arg0, arg1, arg2)
 }
 
 // GetImagesBatch mocks base method

@@ -83,7 +83,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 	}
 	request.Id = types.NewDigest(request.Id).Digest()
 
-	image, exists, err := s.datastore.GetImage(ctx, request.GetId())
+	image, exists, err := s.datastore.GetImage(ctx, request.GetId(), true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -152,7 +152,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the
 	// images
 	if request.GetImage().GetId() != "" {
-		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId())
+		img, exists, err := s.datastore.GetImage(ctx, request.GetImage().GetId(), false)
 		if err != nil {
 			return nil, err
 		}

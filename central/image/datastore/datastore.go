@@ -37,7 +37,7 @@ type DataStore interface {
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.Image, error)
 
 	CountImages(ctx context.Context) (int, error)
-	GetImage(ctx context.Context, sha string) (*storage.Image, bool, error)
+	GetImage(ctx context.Context, sha string, withCVESummaries bool) (*storage.Image, bool, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
