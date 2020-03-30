@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // VersionInfo contains the main and collector version
@@ -41,28 +43,31 @@ func mainCmd(args []string) error {
 		return errors.Wrapf(err, "directory %s expected to exist, but doesn't", tmpDir)
 	}
 
-	tmpl := template.Must(template.New("").Delims("!!", "!!").
-		ParseFiles(fmt.Sprintf("%s/templates/sensor.yaml", dir),
-			fmt.Sprintf("%s/Chart.yaml", dir)))
+	chartYaml := fmt.Sprintf("%s/Chart.yaml", dir)
+	sensorYaml := fmt.Sprintf("%s/templates/sensor.yaml", dir)
+	admissionControllerYaml := fmt.Sprintf("%s/templates/admission-controller.yaml", dir)
 
-	chartOutputFile, err := os.Create(fmt.Sprintf("%s/Chart.yaml", tmpDir))
+	tmpl := template.Must(template.New("").Delims("!!", "!!").
+		ParseFiles(chartYaml, sensorYaml, admissionControllerYaml))
+
+	err = utils.Should(renderTemplate(chartYaml, tmpl, version, tmpDir),
+		renderTemplate(sensorYaml, tmpl, version, fmt.Sprintf("%s/templates", tmpDir)),
+		renderTemplate(admissionControllerYaml, tmpl, version, fmt.Sprintf("%s/templates", tmpDir)))
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func renderTemplate(path string, tmpl *template.Template, version VersionInfo, destDir string) error {
+	chartOutputFile, err := os.Create(fmt.Sprintf("%s/%s", destDir, filepath.Base(path)))
 	if err != nil {
 		return err
 	}
 	defer closeFile(chartOutputFile)
 
-	err = tmpl.ExecuteTemplate(chartOutputFile, "Chart.yaml", version)
-	if err != nil {
-		return err
-	}
-
-	sensorOutputFile, err := os.Create(fmt.Sprintf("%s/templates/sensor.yaml", tmpDir))
-	if err != nil {
-		return err
-	}
-	defer closeFile(sensorOutputFile)
-
-	err = tmpl.ExecuteTemplate(sensorOutputFile, "sensor.yaml", version)
+	err = tmpl.ExecuteTemplate(chartOutputFile, filepath.Base(path), version)
 	if err != nil {
 		return err
 	}

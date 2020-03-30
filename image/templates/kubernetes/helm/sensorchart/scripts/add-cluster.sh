@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 if [ "$#" -ne 1 ]; then
     echo "error: central endpoint not specified, use -e with ./setup.sh"
     exit 1
@@ -74,7 +76,7 @@ fi
   certsZipFile="${DIR}/certs-${cluster_name}.zip"
 
  # add cluster, get certs bundle
-  curl --insecure -sSKOJ -H "${auth_header}" -H "Accept-Encoding: zip" -H "Content-Type: application/json" \
+  curl --insecure --fail --show-error -sKOJ -H "${auth_header}" -H "Accept-Encoding: zip" -H "Content-Type: application/json" \
   -X POST --data "${cluster}" -o "${certsZipFile}" "https://${endpoint}/api/helm/cluster/add"
 
   if [ ! -f "${certsZipFile}" ]; then
@@ -82,7 +84,7 @@ fi
     exit 1
   fi
 
-  tar -C "${SECRETS_DIR}" -xf "${certsZipFile}"
+  unzip "${certsZipFile}" -d "${SECRETS_DIR}"
 
   #clean up
   rm -f "${certsZipFile}"

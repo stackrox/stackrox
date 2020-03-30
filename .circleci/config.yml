@@ -888,6 +888,10 @@ commands:
         type: boolean
         default: false
 
+      sensor-deploy-flavor:
+        type: string
+        default: kubectl
+
     steps:
       - checkout
       - check-backend-changes
@@ -912,6 +916,8 @@ commands:
       - *setupDefaultTLSCerts
 
       - deploy-stackrox:
+          sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
+
           post-central-deploy-steps:
             - *setupClientTLSCerts
             - setup-egress-proxies
@@ -1119,6 +1125,9 @@ commands:
       use-main-rhel:
         type: boolean
         default: false
+      sensor-deploy-flavor:
+        type: string
+        default: kubectl
 
     steps:
       - checkout
@@ -1195,6 +1204,7 @@ commands:
 
       - deploy-stackrox:
           orchestrator-flavor: openshift
+          sensor-deploy-flavor:  << parameters.sensor-deploy-flavor >>
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -1263,6 +1273,9 @@ commands:
 
   deploy-stackrox:
     parameters:
+      sensor-deploy-flavor:
+        type: string
+        default: kubectl
       orchestrator-flavor:
         type: string
         default: k8s
@@ -1277,6 +1290,8 @@ commands:
         default: []
 
     steps:
+      - *setupHelm
+
       - run:
           name: Deploy central to remote cluster
           command: |
@@ -1302,27 +1317,51 @@ commands:
       - run:
           name: Deploy Sensor
           command: |
-            <<# parameters.require-cluster-admin >>
-            kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
-            <</ parameters.require-cluster-admin >>
+            if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
+              echo "Deploying sensor using kubectl ... "
+              <<# parameters.require-cluster-admin >>
+              kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
+              <</ parameters.require-cluster-admin >>
 
-            deploy/<< parameters.orchestrator-flavor >>/sensor.sh
-            <<# parameters.require-cluster-admin >>
-            kubectl delete clusterrolebinding temporary-admin
-            <</ parameters.require-cluster-admin >>
-
+              deploy/<< parameters.orchestrator-flavor >>/sensor.sh
+              <<# parameters.require-cluster-admin >>
+              kubectl delete clusterrolebinding temporary-admin
+              <</ parameters.require-cluster-admin >>
+            else
+              echo "Deploying sensor using helm ... "
+              rox_auth_token="$(
+              curl -sk -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/apitokens/generate" \
+                -X POST \
+                -d '{"name": "helm", "role": "Sensor Creator"}' \
+                | jq -r '.token // ""')"
+              export ROX_API_TOKEN=${rox_auth_token}
+              MAIN_TAG=$(make --quiet tag)
+              BASE_DIR="/go/src/github.com/stackrox/rox"
+              RENDERED_CHART_DIR="/tmp/${MAIN_TAG}"
+              make render-helm-yamls
+              # Copy values.yaml into generated tmp dir, run setup.sh and helm install
+              cd ${RENDERED_CHART_DIR}
+              cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
+              ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
+              helm install --namespace stackrox --name sensor .
+              rm -rf "${RENDERED_CHART_DIR}"
+            fi
       - run:
           name: Validate Sensor bundle (upgrader)
           command: |
-            kubectl proxy --port 28001 &
-            proxy_pid=$!
-            sleep 5
-            KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
-              bin/linux/upgrader \
-                -kube-config kubectl \
-                -local-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy \
-                -workflow validate-bundle
-            kill "$proxy_pid"
+            if [[ "<< parameters.sensor-deploy-flavor >>" == "kubectl" ]]; then
+              kubectl proxy --port 28001 &
+              proxy_pid=$!
+              sleep 5
+              KUBECONFIG="$(pwd)/scripts/ci/kube-api-proxy/config.yml" \
+                bin/linux/upgrader \
+                  -kube-config kubectl \
+                  -local-bundle deploy/<< parameters.orchestrator-flavor >>/sensor-deploy \
+                  -workflow validate-bundle
+              kill "$proxy_pid"
+            else
+              echo "Skipping for helm sensor deploy...  "
+            fi
 
       - *waitForSensorK8s
 
@@ -2380,6 +2419,7 @@ jobs:
     steps:
       - run-qa-tests:
           cluster-id: api-e2e-tests
+          sensor-deploy-flavor: helm
           determine-whether-to-run:
             - check-label-to-skip-tests:
                 label: ci-no-qa-tests
@@ -2407,6 +2447,7 @@ jobs:
           flavor: lite
           version: 0.6.2
           use-main-rhel: true
+          sensor-deploy-flavor: helm
 
   gke-rhel-api-e2e-tests:
     executor: custom
@@ -2431,6 +2472,7 @@ jobs:
     steps:
       - run-qa-tests:
           cluster-id: rhel-api-e2e-tests
+          sensor-deploy-flavor: helm
           determine-whether-to-run:
             - check-master-or-tag-or-label:
                 label: ci-rhel-tests

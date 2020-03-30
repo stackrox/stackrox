@@ -1,159 +1,212 @@
-{{ if eq .Values.config.admissionControl.createService true}}
-  apiVersion: v1
-  kind: ServiceAccount
-  metadata:
+{{ if .Values.config.admissionControl.createService }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admission-control
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+imagePullSecrets:
+  - name: stackrox
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: watch-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+rules:
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: stackrox-admission-control
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'secret'
+    - 'downwardAPI'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 4000
+        max: 4000
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox-admission-control-psp
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+rules:
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - stackrox-admission-control
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stackrox-admission-control-psp
+  namespace: stackrox
+  labels:
+    auto-upgrade.stackrox.io/component: "sensor"
+    app.kubernetes.io/name: stackrox
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stackrox-admission-control-psp
+subjects:
+  - kind: ServiceAccount
     name: admission-control
     namespace: stackrox
-    labels:
-      app.kubernetes.io/name: stackrox
-      auto-upgrade.stackrox.io/component: "sensor"
-  imagePullSecrets:
-    - name: stackrox
 ---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admission-control-watch-config
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: stackrox
+roleRef:
   kind: Role
-  apiVersion: rbac.authorization.k8s.io/v1
-  metadata:
-    name: watch-config
-    namespace: stackrox
-    labels:
-      app.kubernetes.io/name: stackrox
-      auto-upgrade.stackrox.io/component: "sensor"
-  rules:
-    - apiGroups: ['']
-      resources: ['configmaps']
-      verbs: ['get', 'list', 'watch']
+  name: watch-config
+  apiGroup: rbac.authorization.k8s.io
 ---
-  kind: RoleBinding
-  apiVersion: rbac.authorization.k8s.io/v1
-  metadata:
-    name: admission-control-watch-config
-    namespace: stackrox
-    labels:
-      app.kubernetes.io/name: stackrox
-      auto-upgrade.stackrox.io/component: "sensor"
-  subjects:
-    - kind: ServiceAccount
-      name: admission-control
-      namespace: stackrox
-  roleRef:
-    kind: Role
-    name: watch-config
-    apiGroup: rbac.authorization.k8s.io
----
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: admission-control
-    namespace: stackrox
-    labels:
-      app.kubernetes.io/name: stackrox
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    app: admission-control
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 3
+  minReadySeconds: 0
+  selector:
+    matchLabels:
       app: admission-control
-      auto-upgrade.stackrox.io/component: "sensor"
-    annotations:
-      owner: stackrox
-      email: support@stackrox.com
-  spec:
-    replicas: 3
-    minReadySeconds: 0
-    selector:
-      matchLabels:
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
         app: admission-control
-    template:
-      metadata:
-        namespace: stackrox
-        labels:
-          app: admission-control
-      spec:
-        # Attempt to schedule these on master nodes
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 50
-                preference:
-                  matchExpressions:
-                    - key: node-role.kubernetes.io/master
-                      operator: In
-                      values:
-                        - "true"
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 60
-                podAffinityTerm:
-                  namespaces: ["stackrox"]
-                  topologyKey: "kubernetes.io/hostname"
-                  labelSelector:
-                    matchLabels:
-                      app: admission-control
-        securityContext:
+    spec:
+      # Attempt to schedule these on master nodes
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node-role.kubernetes.io/master
+                    operator: In
+                    values:
+                      - "true"
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 60
+              podAffinityTerm:
+                namespaces: ["stackrox"]
+                topologyKey: "kubernetes.io/hostname"
+                labelSelector:
+                  matchLabels:
+                    app: admission-control
+      securityContext:
           runAsUser: 4000
           fsGroup: 4000
-        serviceAccount: admission-control
-        containers:
-          - image: {{.Values.image.main}}
+      serviceAccount: admission-control
+      containers:
+        - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry .Values.image.repository.main }}
+          name: admission-control
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /ready
+              port: 8443
+          ports:
+            - containerPort: 8443
+              name: webhook
+          command:
+            - admission-control
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "50m"
+            limits:
+              memory: "500Mi"
+              cpu: "500m"
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          env:
+          - name: ROX_SENSOR_ENDPOINT
+            value: {{.Values.endpoint.advertised}}
+          volumeMounts:
+            - name: config
+              mountPath: /run/config/stackrox.io/admission-control/config/
+              readOnly: true
+            - name: config-store
+              mountPath: /var/lib/stackrox/admission-control/
+            - name: certs
+              mountPath: /run/secrets/stackrox.io/certs/
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            items:
+              - key: admission-control-cert.pem
+                path: cert.pem
+              - key: admission-control-key.pem
+                path: key.pem
+              - key: ca.pem
+                path: ca.pem
+        - name: config
+          configMap:
             name: admission-control
-            readinessProbe:
-              httpGet:
-                scheme: HTTPS
-                path: /ready
-                port: 8443
-            ports:
-              - containerPort: 8443
-                name: webhook
-            command:
-              - admission-control
-            resources:
-              requests:
-                memory: "100Mi"
-                cpu: "50m"
-              limits:
-                memory: "500Mi"
-                cpu: "500m"
-            securityContext:
-              runAsNonRoot: true
-              readOnlyRootFilesystem: true
-            env:
-            - name: ROX_SENSOR_ENDPOINT
-              value: {{.Values.endpoint.advertised}}
-            volumeMounts:
-              - name: config
-                mountPath: /run/config/stackrox.io/admission-control/config/
-                readOnly: true
-              - name: certs
-                mountPath: /run/secrets/stackrox.io/certs/
-                readOnly: true
-        volumes:
-          - name: certs
-            secret:
-              secretName: admission-control-tls
-              items:
-                - key: admission-control-cert.pem
-                  path: cert.pem
-                - key: admission-control-key.pem
-                  path: key.pem
-                - key: ca.pem
-                  path: ca.pem
-          - name: config
-            configMap:
-              name: admission-control
-              optional: true
----
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: admission-control
-    namespace: stackrox
-    labels:
-      app.kubernetes.io/name: stackrox
-      auto-upgrade.stackrox.io/component: "sensor"
-  spec:
-    ports:
-      - name: https
-        port: 443
-        targetPort: webhook
-        protocol: TCP
-    selector:
-      app: admission-control
-    type: ClusterIP
+            optional: true
+        - name: config-store
+          emptyDir: {}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -167,15 +220,32 @@ spec:
   podSelector:
     matchLabels:
       app: admission-control
-    ingress:
-      - ports:
-          - protocol: TCP
-            port: 8443
-    policyTypes:
-      - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8443
+  policyTypes:
+    - Ingress
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-control
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+    auto-upgrade.stackrox.io/component: "sensor"
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: webhook
+      protocol: TCP
+  selector:
+    app: admission-control
+  type: ClusterIP
 ---
 {{ end }}
-
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -184,41 +254,41 @@ metadata:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
 webhooks:
-  - name: policyeval.stackrox.io
-    rules:
-      - apiGroups:
-          - '*'
-        apiVersions:
-          - '*'
-        operations:
-          - CREATE
-        {{ if .Values.config.admissionControl.listenOnUpdates }}
-          - UPDATE
-        {{ end }}
-        resources:
-          - pods
-          - deployments
-          - replicasets
-          - replicationcontrollers
-          - statefulsets
-          - daemonsets
-    namespaceSelector:
-      matchExpressions:
-        - key: namespace.metadata.stackrox.io/name
-          operator: NotIn
-          values:
-            - stackrox
-            - kube-system
-            - kube-public
-    failurePolicy: Ignore
-    clientConfig:
-      caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
-      service:
-        namespace: stackrox
-  {{ if .Values.config.admissionControl.createService }}
-        name: admission-control
-        path: /validate
-  {{ else }}
-        name: sensor-webhook
-        path: /admissioncontroller
-  {{ end }}
+- name: policyeval.stackrox.io
+  rules:
+    - apiGroups:
+        - '*'
+      apiVersions:
+        - '*'
+      operations:
+        - CREATE
+      {{ if .Values.config.admissionControl.listenOnUpdates }}
+        - UPDATE
+      {{ end }}
+      resources:
+        - pods
+        - deployments
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+        - daemonsets
+  namespaceSelector:
+    matchExpressions:
+      - key: namespace.metadata.stackrox.io/name
+        operator: NotIn
+        values:
+          - stackrox
+          - kube-system
+          - kube-public
+  failurePolicy: Ignore
+  clientConfig:
+    caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
+    service:
+      namespace: stackrox
+{{ if .Values.config.admissionControl.createService }}
+      name: admission-control
+      path: /validate
+{{ else }}
+      name: sensor-webhook
+      path: /admissioncontroller
+{{ end }}

@@ -239,7 +239,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-{{ - end }}
+{{ end }}
       - command:
         - stackrox/compliance
         env:

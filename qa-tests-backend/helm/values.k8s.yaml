@@ -1,0 +1,27 @@
+cluster:
+  name: remote
+  type: KUBERNETES_CLUSTER
+
+endpoint:
+  central: central.stackrox:443
+  advertised: sensor.stackrox:443
+
+image:
+  repository:
+    main: stackrox/main
+    collector: stackrox/collector
+  registry: docker.io
+
+config:
+  collectionMethod: EBPF
+  admissionControl:
+    createService: true
+    listenOnUpdates: true
+    enableService: false
+    enforceOnUpdates: false
+    scanInline: false
+    disableBypass: false
+    timeout: 3
+  registryOverride:
+  disableTaintTolerations: false
+  createUpgraderServiceAccount: true
