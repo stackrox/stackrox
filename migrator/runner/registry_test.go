@@ -8,10 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	// lowestMigrationNumber is the lowest migration number that currently exists
+	// we will periodically bump this number and delete outdated migrations once enough releases
+	// have passed and we are sure customers are not on those releases
+	lowestMigrationNumber = 16
+)
+
 func TestValidityOfRegistry(t *testing.T) {
 	a := assert.New(t)
 
-	for i := 0; i < pkgMigrations.CurrentDBVersionSeqNum; i++ {
+	for i := 0; i < lowestMigrationNumber; i++ {
+		_, exists := migrations.Get(i)
+		a.False(exists)
+	}
+
+	for i := lowestMigrationNumber; i < pkgMigrations.CurrentDBVersionSeqNum; i++ {
 		migration, exists := migrations.Get(i)
 		a.Equal(i, migration.StartingSeqNum)
 		a.Equal(i+1, int(migration.VersionAfter.GetSeqNum()))
