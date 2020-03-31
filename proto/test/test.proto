@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option go_package = "test";
+option java_package = "io.stackrox.proto.test";
+
+import "google/protobuf/timestamp.proto";
+import "protobuf/gogoproto/gogo.proto";
+import "google/protobuf/any.proto";
+
+package test;
+
+message TestCloneSubMessage {
+    int32 int32   = 1;
+    string string = 2;
+}
+
+message TestClone {
+    enum CloneEnum {
+        UNSET = 0;
+        Val1  = 1;
+        Val2  = 2;
+    }
+
+    repeated int32                   int_slice    = 1;
+    repeated string                  string_slice = 2;
+    repeated TestCloneSubMessage     sub_messages = 3;
+    map<string, TestCloneSubMessage> message_map  = 4;
+    map<string, string>              string_map   = 5;
+    repeated CloneEnum               enum_slice   = 6;
+    google.protobuf.Timestamp        ts           = 7;
+
+    oneof primitive {
+        int32               int32   = 8;
+        string              string  = 9;
+        TestCloneSubMessage msg     = 10;
+    }
+    google.protobuf.Any any         = 11;
+
+    map<string, bytes> bytes_map    = 12;
+    repeated bytes     bytes_slice  = 13;
+    bytes              bytes        = 14;
+}

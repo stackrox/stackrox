@@ -44,12 +44,14 @@ PROTOC_INCLUDES := $(PROTOC_TMP)/include/google
 
 PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
 
+GOGO_PROTOBUF_COMMIT := "11f2f5c3ef5249ea0717c6a27ad20b05bd972488"
+
 $(PROTOC_GEN_GO_BIN):
 	@echo "+ $@"
 	@rm -rf $(GOPATH)/src/github.com/gogo/protobuf
 	mkdir -p $(GOPATH)/src/github.com/gogo
 	git clone https://github.com/connorgorman/protobuf.git $(GOPATH)/src/github.com/gogo/protobuf
-	cd $(GOPATH)/src/github.com/gogo/protobuf && git reset --hard a81e5c3a5053f77bc517be4fb2824a1fb62fa37c && cd -
+	cd $(GOPATH)/src/github.com/gogo/protobuf && git reset --hard $(GOGO_PROTOBUF_COMMIT) && cd -
 	GO111MODULE=off go install github.com/gogo/protobuf/protoc-gen-gofast/...
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types

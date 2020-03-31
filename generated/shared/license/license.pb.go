@@ -85,6 +85,22 @@ func (m *License) GetRestrictions() *License_Restrictions {
 	return nil
 }
 
+func (m *License) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *License) Clone() *License {
+	if m == nil {
+		return nil
+	}
+	cloned := new(License)
+	*cloned = *m
+
+	cloned.Metadata = m.Metadata.Clone()
+	cloned.SupportContact = m.SupportContact.Clone()
+	cloned.Restrictions = m.Restrictions.Clone()
+	return cloned
+}
+
 type License_Contact struct {
 	Phone                string   `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
 	Email                string   `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
@@ -154,6 +170,19 @@ func (m *License_Contact) GetName() string {
 		return m.Name
 	}
 	return ""
+}
+
+func (m *License_Contact) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *License_Contact) Clone() *License_Contact {
+	if m == nil {
+		return nil
+	}
+	cloned := new(License_Contact)
+	*cloned = *m
+
+	return cloned
 }
 
 type License_Metadata struct {
@@ -233,6 +262,20 @@ func (m *License_Metadata) GetLicensedForName() string {
 		return m.LicensedForName
 	}
 	return ""
+}
+
+func (m *License_Metadata) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *License_Metadata) Clone() *License_Metadata {
+	if m == nil {
+		return nil
+	}
+	cloned := new(License_Metadata)
+	*cloned = *m
+
+	cloned.IssueDate = m.IssueDate.Clone()
+	return cloned
 }
 
 type License_Restrictions struct {
@@ -362,6 +405,29 @@ func (m *License_Restrictions) GetNoDeploymentEnvironmentRestriction() bool {
 		return m.NoDeploymentEnvironmentRestriction
 	}
 	return false
+}
+
+func (m *License_Restrictions) MessageClone() proto.Message {
+	return m.Clone()
+}
+func (m *License_Restrictions) Clone() *License_Restrictions {
+	if m == nil {
+		return nil
+	}
+	cloned := new(License_Restrictions)
+	*cloned = *m
+
+	cloned.NotValidBefore = m.NotValidBefore.Clone()
+	cloned.NotValidAfter = m.NotValidAfter.Clone()
+	if m.BuildFlavors != nil {
+		cloned.BuildFlavors = make([]string, len(m.BuildFlavors))
+		copy(cloned.BuildFlavors, m.BuildFlavors)
+	}
+	if m.DeploymentEnvironments != nil {
+		cloned.DeploymentEnvironments = make([]string, len(m.DeploymentEnvironments))
+		copy(cloned.DeploymentEnvironments, m.DeploymentEnvironments)
+	}
+	return cloned
 }
 
 func init() {
