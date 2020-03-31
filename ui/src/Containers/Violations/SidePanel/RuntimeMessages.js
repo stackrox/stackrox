@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import ProcessesCollapsibleCard from 'Containers/Violations/ProcessesCollapsibleCard';
@@ -8,6 +8,14 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import ProcessMessage from './ProcessMessage';
 
 function RuntimeMessages({ processViolation }) {
+    const [selectedProcessId, selectProcessId] = useState(false);
+
+    function onSelectProcessIdHandler(id) {
+        // if the same process id is already selected, remove it
+        const result = selectedProcessId && selectedProcessId === id ? null : id;
+        selectProcessId(result);
+    }
+
     if (processViolation === null) {
         return null;
     }
@@ -21,9 +29,17 @@ function RuntimeMessages({ processViolation }) {
     const firstOccurrenceTimestamp = Math.min(...timestamps);
     const lastOccurrenceTimestamp = Math.max(...timestamps);
 
-    const processesList = processes.map(process => (
-        <ProcessMessage key={process.id} process={process} />
-    ));
+    const processesList = processes.map(process => {
+        const { id } = process;
+        return (
+            <ProcessMessage
+                key={id}
+                process={process}
+                areAnalystNotesVisible={selectedProcessId === id}
+                selectProcessId={onSelectProcessIdHandler}
+            />
+        );
+    });
 
     return (
         <div className="mb-4" key={message} data-testid="runtime-processes">

@@ -4,11 +4,14 @@ import { useQuery, useMutation } from 'react-apollo';
 import difference from 'lodash/difference';
 import pluralize from 'pluralize';
 
+import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
 import Tags from 'Components/Tags';
 import Message from 'Components/Message';
 import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
+import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
+import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
 const AnalystTags = ({ className, type, variables }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
@@ -18,10 +21,14 @@ const AnalystTags = ({ className, type, variables }) => {
     });
 
     // resolves once the modification + refetching happens
-    const refetchAndWait = {
-        refetchQueries: () => [{ query: GET_TAGS, variables }],
-        awaitRefetchQueries: true
-    };
+    const refetchAndWait = getRefetchQueriesByCondition([
+        { query: GET_TAGS, variables, exclude: false },
+        {
+            query: GET_PROCESS_COMMENTS_TAGS_COUNT,
+            variables,
+            exclude: type !== ANALYST_NOTES_TYPES.PROCESS
+        }
+    ]);
 
     const [addTags, { loading: isWaitingToAddTags, error: errorOnAddTags }] = useMutation(
         ADD_TAGS,

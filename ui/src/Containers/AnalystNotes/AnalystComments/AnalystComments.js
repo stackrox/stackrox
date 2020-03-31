@@ -2,11 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, useMutation } from 'react-apollo';
 
+import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
 import Message from 'Components/Message';
 import CommentThread from 'Components/CommentThread';
 import { getQueriesByType } from './analystCommentsQueries';
+import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
+import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
 // the prop "variables" is an object with the necessary variables for querying the comments APIs
 const AnalystComments = ({ className, type, variables }) => {
@@ -17,10 +20,14 @@ const AnalystComments = ({ className, type, variables }) => {
     });
 
     // resolves once the modification + refetching happens
-    const refetchAndWait = {
-        refetchQueries: () => [{ query: GET_COMMENTS, variables }],
-        awaitRefetchQueries: true
-    };
+    const refetchAndWait = getRefetchQueriesByCondition([
+        { query: GET_COMMENTS, variables, exclude: false },
+        {
+            query: GET_PROCESS_COMMENTS_TAGS_COUNT,
+            variables,
+            exclude: type !== ANALYST_NOTES_TYPES.PROCESS
+        }
+    ]);
 
     const [addComment, { loading: isWaitingToAddComment, error: errorOnAddComment }] = useMutation(
         ADD_COMMENT,
