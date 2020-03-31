@@ -15,6 +15,9 @@ spec:
       - podSelector:
           matchLabels:
             service: collector
+      - podSelector:
+          matchLabels:
+            app: admission-control
     ports:
     - port: 8443
       protocol: TCP
