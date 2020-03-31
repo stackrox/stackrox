@@ -2,6 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
+import Loader from 'Components/Loader';
+
 function Message(props) {
     const messageClasses = {
         warn:
@@ -11,21 +13,25 @@ function Message(props) {
         info:
             'info-message p-4 rounded-sm text-success-800 items-center border border-success-700 bg-success-200 leading-normal flex-shrink-0 w-full',
         guidance:
-            'guidance-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full'
+            'guidance-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full',
+        loading:
+            'loading-message p-4 rounded-sm text-primary-800 items-center border border-primary-700 bg-primary-200 leading-normal flex-shrink-0 w-full'
     };
 
     const borderColor = {
         warn: 'border-warning-300',
         error: 'border-alert-300',
         info: 'border-info-300',
-        guidance: 'border-primary-300'
+        guidance: 'border-primary-300',
+        loading: 'border-primary-300'
     };
 
     const icons = {
         warn: <Icon.AlertTriangle className="h-6 w-6" strokeWidth="2px" />,
         error: <Icon.AlertTriangle className="h-6 w-6" strokeWidth="2px" />,
         info: <Icon.Check className="h-6 w-6" strokeWidth="2px" />,
-        guidance: <Icon.Info className="h-6 w-6" strokeWidth="2px" />
+        guidance: <Icon.Info className="h-6 w-6" strokeWidth="2px" />,
+        loading: <Loader message={null} />
     };
 
     return (
@@ -46,7 +52,7 @@ function Message(props) {
 
 Message.propTypes = {
     message: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(['warn', 'error', 'info', 'guidance'])
+    type: PropTypes.oneOf(['warn', 'error', 'info', 'guidance', 'loading'])
 };
 
 Message.defaultProps = {

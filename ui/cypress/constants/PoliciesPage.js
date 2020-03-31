@@ -48,6 +48,7 @@ export const selectors = {
         valueContainer: 'div:contains("Categories") + div.flex .react-select__value-container'
     },
     policyPreview: {
+        loading: '[data-test-id="dry-run-loading"]',
         message: '.warn-message',
         alertPreview: {
             table: '.alert-preview table'

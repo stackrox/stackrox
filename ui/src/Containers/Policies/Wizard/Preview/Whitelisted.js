@@ -16,7 +16,7 @@ class Whitelisted extends Component {
     };
 
     render() {
-        if (!this.props.dryrun.excluded) return '';
+        if (!this.props.dryrun || !this.props.dryrun.excluded) return '';
         const title = 'Whitelisted Deployments';
         const columns = [
             {

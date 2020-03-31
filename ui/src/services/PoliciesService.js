@@ -129,6 +129,26 @@ export function getDryRun(policy) {
 }
 
 /**
+ * Starts a dry run for a given policy.
+ *
+ * @param {!object} policy
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function startDryRun(policy) {
+    return axios.post(`${baseUrl}/submitdryrunjob`, policy);
+}
+
+/**
+ * Gets a dry run for a given policy.
+ *
+ * @param {!object} policy
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function checkDryRun(jobId) {
+    return axios.get(`${baseUrl}/dryrunjob/${jobId}`);
+}
+
+/**
  * Updates policy with a given ID to add deployment into the whitelisted entries.
  *
  * @param {!string} policyId

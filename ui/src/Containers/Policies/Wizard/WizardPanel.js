@@ -51,13 +51,14 @@ Panel.propTypes = {
         name: PropTypes.string
     }),
     wizardStage: PropTypes.string.isRequired,
-    initialValues: PropTypes.shape({}).isRequired,
+    initialValues: PropTypes.shape({}),
     fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     onClose: PropTypes.func.isRequired
 };
 
 Panel.defaultProps = {
-    wizardPolicy: null
+    wizardPolicy: null,
+    initialValues: null
 };
 
 const mapStateToProps = createStructuredSelector({

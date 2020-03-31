@@ -7,6 +7,7 @@ import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 export const types = {
     SET_WIZARD_STAGE: 'policies/SET_WIZARD_STAGE',
     SET_WIZARD_POLICY: 'policies/SET_WIZARD_POLICY',
+    SET_WIZARD_DRY_RUN_JOB_ID: 'policies/SET_WIZARD_DRY_RUN_JOB_ID',
     SET_WIZARD_DRY_RUN: 'policies/SET_WIZARD_DRY_RUN',
     SET_WIZARD_POLICY_DISABLED: 'policies/SET_WIZARD_POLICY_DISABLED'
 };
@@ -17,6 +18,7 @@ export const types = {
 export const actions = {
     setWizardStage: stage => ({ type: types.SET_WIZARD_STAGE, stage }),
     setWizardPolicy: policy => ({ type: types.SET_WIZARD_POLICY, policy }),
+    setWizardDryRunJobId: jobId => ({ type: types.SET_WIZARD_DRY_RUN_JOB_ID, jobId }),
     setWizardDryRun: dryRun => ({ type: types.SET_WIZARD_DRY_RUN, dryRun }),
     setWizardPolicyDisabled: disabled => ({ type: types.SET_WIZARD_POLICY_DISABLED, disabled })
 };
@@ -58,9 +60,12 @@ const wizardPolicy = (state = { isNew: false, policy: null }, action) => {
     return state;
 };
 
-const wizardDryRun = (state = null, action) => {
+const wizardDryRun = (state = { jobId: null, dryRun: null }, action) => {
+    if (action.type === types.SET_WIZARD_DRY_RUN_JOB_ID) {
+        return { jobId: action.jobId };
+    }
     if (action.type === types.SET_WIZARD_DRY_RUN) {
-        return action.dryRun;
+        return { dryRun: action.dryRun };
     }
     return state;
 };

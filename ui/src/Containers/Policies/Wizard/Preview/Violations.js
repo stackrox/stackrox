@@ -17,7 +17,7 @@ class Violations extends Component {
     };
 
     render() {
-        if (!this.props.dryrun.alerts) return '';
+        if (!this.props.dryrun || !this.props.dryrun.alerts) return '';
         const title = 'Violations Preview';
         const columns = [
             {
