@@ -2,7 +2,6 @@ package m32tom33
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -14,11 +13,11 @@ var (
 	migration = types.Migration{
 		StartingSeqNum: 32,
 		VersionAfter:   storage.Version{SeqNum: 33},
-		Run: func(_ *bolt.DB, db *badger.DB) error {
+		Run: func(databases *types.Databases) error {
 			if !features.Dackbox.Enabled() {
 				return errors.New("migrating to dackbox on a build where it is not enabled")
 			}
-			err := migrateDeploymentsAndImages(db)
+			err := migrateDeploymentsAndImages(databases.BadgerDB)
 			if err != nil {
 				return errors.Wrap(err, "updating images and deployments to dackbox")
 			}

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	migratorTypes "github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -181,7 +182,7 @@ func (suite *MigrationTestSuite) TestProcessWhitelistPruning() {
 		suite.mustInsertProcessWhitelist(pw)
 	}
 
-	suite.NoError(migration.Run(suite.boltdb, suite.badgerdb))
+	suite.NoError(migration.Run(&migratorTypes.Databases{BoltDB: suite.boltdb, BadgerDB: suite.badgerdb}))
 
 	newProcessWhitelist := make([]*storage.ProcessWhitelist, 0, len(oldPWLs))
 	newPWBucket := bolthelpers.TopLevelRef(suite.boltdb, whitelistBucket)

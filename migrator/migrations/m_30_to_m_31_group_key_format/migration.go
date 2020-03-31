@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +25,9 @@ var (
 	}
 )
 
-func updateGroupKeyFormat(boltDB *bolt.DB, _ *badger.DB) error {
+func updateGroupKeyFormat(databases *types.Databases) error {
+	boltDB := databases.BoltDB
+
 	return boltDB.Update(func(tx *bolt.Tx) error {
 		oldBucket := tx.Bucket(legacyGroupsBucketName)
 		if oldBucket == nil {

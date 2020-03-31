@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func TestMigration(t *testing.T) {
 		return nil
 	}))
 
-	assert.NoError(t, migration.Run(db, nil))
+	assert.NoError(t, migration.Run(&types.Databases{BoltDB: db}))
 
 	newContents := make(map[string]string)
 	oldBucketExists := false

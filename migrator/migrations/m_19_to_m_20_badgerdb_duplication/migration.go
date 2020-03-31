@@ -1,8 +1,6 @@
 package m19to20
 
 import (
-	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/migrations/badgermigration"
@@ -12,8 +10,8 @@ import (
 var migration = types.Migration{
 	StartingSeqNum: 19,
 	VersionAfter:   storage.Version{SeqNum: 20},
-	Run: func(db *bolt.DB, badgerDB *badger.DB) error {
-		return badgermigration.RewriteData(db, badgerDB)
+	Run: func(databases *types.Databases) error {
+		return badgermigration.RewriteData(databases.BoltDB, databases.BadgerDB)
 	},
 }
 

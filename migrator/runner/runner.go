@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
+	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
 
@@ -37,7 +38,10 @@ func runMigrations(boltDB *bolt.DB, badgerDB *badger.DB, startingSeqNum int) err
 		if !ok {
 			return fmt.Errorf("no migration found starting at %d", startingSeqNum)
 		}
-		err := migration.Run(boltDB, badgerDB)
+		err := migration.Run(&types.Databases{
+			BoltDB:   boltDB,
+			BadgerDB: badgerDB,
+		})
 		if err != nil {
 			return errors.Wrapf(err, "error running migration starting at %d", startingSeqNum)
 		}

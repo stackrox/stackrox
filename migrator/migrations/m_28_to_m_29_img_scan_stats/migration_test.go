@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -105,7 +106,7 @@ func TestMigration(t *testing.T) {
 	err = fillImages(badgerDB, []*storage.Image{cases[0].image, cases[1].image})
 	require.NoError(t, err)
 
-	require.NoError(t, rewriteImagesWithCorrectScanStats(db, badgerDB))
+	require.NoError(t, rewriteImagesWithCorrectScanStats(&types.Databases{BoltDB: db, BadgerDB: badgerDB}))
 
 	for _, c := range cases {
 		validateMigration(t, badgerDB, c.image, c.expectedCVEs, c.expectedFixableCVEs)

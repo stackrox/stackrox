@@ -10,6 +10,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -90,7 +91,7 @@ func TestMigration(t *testing.T) {
 	// 1 key for process indicator and 1 key for unique indicator
 	assert.Equal(t, numIndicators*2, numKeys)
 
-	require.NoError(t, removeUniqueProcessPrefix(nil, db))
+	require.NoError(t, removeUniqueProcessPrefix(&types.Databases{BadgerDB: db}))
 
 	numKeys, err = getKeyCount(db)
 	require.NoError(t, err)

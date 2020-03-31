@@ -30,7 +30,10 @@ var (
 	}
 )
 
-func pruneOrphanedProcessWhitelists(boltDB *bolt.DB, badgerDB *badger.DB) error {
+func pruneOrphanedProcessWhitelists(databases *types.Databases) error {
+	boltDB := databases.BoltDB
+	badgerDB := databases.BadgerDB
+
 	deploymentSet := make(map[string]struct{})
 	err := badgerDB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)

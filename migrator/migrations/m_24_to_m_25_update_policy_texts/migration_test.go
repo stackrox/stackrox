@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -175,7 +176,7 @@ func (suite *MigrationTestSuite) TestUpdatePolicyTexts() {
 		suite.mustInsertPolicy(p)
 	}
 
-	suite.NoError(migration.Run(suite.db, nil))
+	suite.NoError(migration.Run(&types.Databases{BoltDB: suite.db}))
 
 	actualPolicies := make([]*storage.Policy, 0, len(oldPolicies))
 	policyBucket := bolthelpers.TopLevelRef(suite.db, policyBucketName)

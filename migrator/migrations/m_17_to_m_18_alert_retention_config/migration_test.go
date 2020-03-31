@@ -7,6 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -65,7 +66,7 @@ func (suite *migrationTestSuite) TestConfigMigration() {
 		},
 	}
 	suite.NoError(insertThing(ref, "\x00", config))
-	suite.NoError(migration.Run(suite.db, nil))
+	suite.NoError(migration.Run(&types.Databases{BoltDB: suite.db}))
 	suite.NoError(ref.View(func(b *bolt.Bucket) error {
 		return b.ForEach(func(k, v []byte) error {
 			suite.Equal(k, []byte("\x00"))

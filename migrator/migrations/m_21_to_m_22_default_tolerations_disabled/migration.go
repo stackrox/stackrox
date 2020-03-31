@@ -1,7 +1,6 @@
 package m21tom22
 
 import (
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,8 +13,8 @@ var clustersBucket = []byte("clusters")
 var migration = types.Migration{
 	StartingSeqNum: 21,
 	VersionAfter:   storage.Version{SeqNum: 22},
-	Run: func(db *bolt.DB, _ *badger.DB) error {
-		return rewrite(db)
+	Run: func(databases *types.Databases) error {
+		return rewrite(databases.BoltDB)
 	},
 }
 

@@ -2,7 +2,6 @@ package m28to29
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +19,9 @@ var (
 	}
 )
 
-func rewriteImagesWithCorrectScanStats(_ *bolt.DB, badgerDB *badger.DB) error {
+func rewriteImagesWithCorrectScanStats(databases *types.Databases) error {
+	badgerDB := databases.BadgerDB
+
 	return badgerDB.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()

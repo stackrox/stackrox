@@ -1,7 +1,6 @@
 package m22to23
 
 import (
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -16,7 +15,9 @@ var migration = types.Migration{
 	Run:            deleteUnsupportedComplianceStandards,
 }
 
-func deleteUnsupportedComplianceStandards(db *bolt.DB, _ *badger.DB) error {
+func deleteUnsupportedComplianceStandards(databases *types.Databases) error {
+	db := databases.BoltDB
+
 	err := db.Update(func(tx *bolt.Tx) error {
 		complianceResultsBucket := tx.Bucket(complianceResultsBucketName)
 		if complianceResultsBucket == nil {

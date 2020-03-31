@@ -1,7 +1,6 @@
 package m24to25
 
 import (
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -131,8 +130,8 @@ var (
 	migration = types.Migration{
 		StartingSeqNum: 24,
 		VersionAfter:   storage.Version{SeqNum: 25},
-		Run: func(db *bolt.DB, _ *badger.DB) error {
-			err := updatePolicyTexts(db)
+		Run: func(databases *types.Databases) error {
+			err := updatePolicyTexts(databases.BoltDB)
 			if err != nil {
 				return errors.Wrap(err, "updating policy texts")
 			}

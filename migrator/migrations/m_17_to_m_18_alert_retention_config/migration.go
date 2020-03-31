@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,7 +27,9 @@ var (
 	configKey    = []byte{0}
 )
 
-func updateAlertRetentionConfig(boltDB *bolt.DB, badgerDB *badger.DB) error {
+func updateAlertRetentionConfig(databases *types.Databases) error {
+	boltDB := databases.BoltDB
+
 	exists, err := bolthelpers.BucketExists(boltDB, configBucket)
 	if err != nil || !exists {
 		return err

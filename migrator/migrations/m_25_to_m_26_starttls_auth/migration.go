@@ -1,7 +1,6 @@
 package m25tom26
 
 import (
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,8 +12,8 @@ var (
 	migration = types.Migration{
 		StartingSeqNum: 25,
 		VersionAfter:   storage.Version{SeqNum: 26},
-		Run: func(db *bolt.DB, _ *badger.DB) error {
-			return migrateEmail(db)
+		Run: func(databases *types.Databases) error {
+			return migrateEmail(databases.BoltDB)
 		},
 	}
 

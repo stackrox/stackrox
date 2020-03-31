@@ -31,13 +31,13 @@ type namespaceKey struct {
 	clusterID, namespace string
 }
 
-func updateAlertDeploymentWithNamespaceID(boltDB *bolt.DB, badgerDB *badger.DB) error {
-	namespaceKeyMap, err := getNamespaceKeyMappings(boltDB)
+func updateAlertDeploymentWithNamespaceID(databases *types.Databases) error {
+	namespaceKeyMap, err := getNamespaceKeyMappings(databases.BoltDB)
 	if err != nil {
 		return err
 	}
 
-	return updateAlertDeployments(badgerDB, namespaceKeyMap)
+	return updateAlertDeployments(databases.BadgerDB, namespaceKeyMap)
 }
 
 func getNamespaceKeyMappings(boltDB *bolt.DB) (map[namespaceKey]string, error) {

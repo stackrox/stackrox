@@ -2,7 +2,6 @@ package m31to32
 
 import (
 	"github.com/dgraph-io/badger"
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
@@ -44,7 +43,9 @@ func removePrefix(db *badger.DB, prefix []byte) error {
 	return removeBatch.Flush()
 }
 
-func removeUniqueProcessPrefix(_ *bolt.DB, badgerDB *badger.DB) error {
+func removeUniqueProcessPrefix(databases *types.Databases) error {
+	badgerDB := databases.BadgerDB
+
 	if err := removePrefix(badgerDB, uniqueProcessBucket); err != nil {
 		return err
 	}

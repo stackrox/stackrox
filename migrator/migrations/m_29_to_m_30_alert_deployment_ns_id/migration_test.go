@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,7 +69,7 @@ func TestMigration(t *testing.T) {
 	err = fillAlerts(badgerDB, []*storage.Alert{cases[0].alert, cases[1].alert})
 	require.NoError(t, err)
 
-	require.NoError(t, updateAlertDeploymentWithNamespaceID(db, badgerDB))
+	require.NoError(t, updateAlertDeploymentWithNamespaceID(&types.Databases{BoltDB: db, BadgerDB: badgerDB}))
 
 	for _, c := range cases {
 		validateMigration(t, badgerDB, c.alert, c.expectedNamespaceID)

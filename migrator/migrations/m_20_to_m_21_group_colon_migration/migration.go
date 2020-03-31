@@ -3,7 +3,6 @@ package m20to21
 import (
 	"bytes"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -15,8 +14,8 @@ var groupsBucket = []byte("groups")
 var migration = types.Migration{
 	StartingSeqNum: 20,
 	VersionAfter:   storage.Version{SeqNum: 21},
-	Run: func(db *bolt.DB, badgerDB *badger.DB) error {
-		return rewrite(db)
+	Run: func(databases *types.Databases) error {
+		return rewrite(databases.BoltDB)
 	},
 }
 

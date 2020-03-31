@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,7 +47,7 @@ func TestMigration(t *testing.T) {
 		fillResultsData(t, db, c.runResults)
 	}
 
-	require.NoError(t, deleteUnsupportedComplianceStandards(db, nil))
+	require.NoError(t, deleteUnsupportedComplianceStandards(&types.Databases{BoltDB: db}))
 
 	for _, c := range cases {
 		validateMigration(t, db, c.runResults, c.deleted)

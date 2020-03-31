@@ -1,7 +1,6 @@
 package m16tom17
 
 import (
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -25,7 +24,9 @@ func init() {
 	migrations.MustRegisterMigration(migration)
 }
 
-func updateAllImages(db *bolt.DB, _ *badger.DB) error {
+func updateAllImages(databases *types.Databases) error {
+	db := databases.BoltDB
+
 	imagesBucket := bolthelpers.TopLevelRef(db, imagesBucketName)
 
 	err := imagesBucket.Update(func(b *bolt.Bucket) error {
