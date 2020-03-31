@@ -1,5 +1,7 @@
+import queryString from 'qs';
 import { saveFile } from 'services/DownloadService';
-import entityTypes from 'constants/entityTypes';
+import { cveSortFields } from 'constants/sortFields';
+import queryService from 'modules/queryService';
 import axios from './instance';
 
 const baseUrl = '/v1/cves';
@@ -16,14 +18,27 @@ export function updateCveSuppressedState(cveIdsToToggle, suppressed = false) {
     return axios.patch(`${baseUrl}/suppress`, { ids: cveIdsToToggle, suppressed });
 }
 
-export function getCvesInCsvFormat(fileName, searchParamsList) {
-    const searchString = searchParamsList
-        .map(item => {
-            return `${item.key}=${item.value}`;
-        })
-        .join('&');
+export function getCvesInCsvFormat(
+    fileName,
+    query,
+    sortOption = { field: cveSortFields.CVSS_SCORE, reversed: true },
+    page = 0,
+    pageSize = 0
+) {
+    const offset = page * pageSize;
+    const params = queryString.stringify(
+        {
+            query,
+            pagination: {
+                offset,
+                limit: pageSize,
+                sortOption
+            }
+        },
+        { arrayFormat: 'repeat', allowDots: true }
+    );
 
-    const url = searchString ? `${csvUrl}?${searchString}` : csvUrl;
+    const url = params ? `${csvUrl}?${params}` : csvUrl;
 
     return saveFile({
         method: 'get',
@@ -33,47 +48,19 @@ export function getCvesInCsvFormat(fileName, searchParamsList) {
     });
 }
 
-const searchFields = {
-    [entityTypes.CLUSTER]: 'Cluster+ID',
-    [entityTypes.COMPONENT]: 'Component+ID',
-    [entityTypes.DEPLOYMENT]: 'Deployment+ID',
-    [entityTypes.NAMESPACE]: 'Namespace+ID',
-    [entityTypes.IMAGE]: 'Image+Sha'
-};
-
 export function exportCvesAsCsv(fileName, workflowState) {
-    const searchParamsList = [];
-    const pageStack = workflowState.getPageStack();
-    const ultimateEntity = workflowState.getSkimmedStack();
-    const lastItemList = ultimateEntity.getPageStack();
+    const fullEntityContext = workflowState.getEntityContext();
+    const lastEntityCtx = Object.keys(fullEntityContext).reduce((acc, key) => {
+        return { ...{ [key]: fullEntityContext[key] } };
+    }, {});
 
-    if (pageStack.length > 1 && pageStack[pageStack.length - 1].t === entityTypes.CVE) {
-        // state is on the CVE tab of an entity, so get the parent entity to pass to the CSV endpoint
-        const parentEntity = pageStack[pageStack.length - 2];
-        const searchEntity = parentEntity.t;
-        const id = parentEntity.i;
-        if (id) {
-            searchParamsList.push({ key: searchFields[searchEntity], value: id });
-        }
-    } else if (lastItemList[0].t !== entityTypes.CVE) {
-        // state is entity sidepanel's CVE list, so get the parent of that CVE list
-        const sidebarEntity = lastItemList[0];
-        const searchEntity = sidebarEntity.t;
-        const id = sidebarEntity.i;
-        if (id) {
-            searchParamsList.push({ key: searchFields[searchEntity], value: id });
-        }
-    }
-    // if neither of those cases is true, we are on the main CVE list page, and no entity param is needed
+    const query = queryService.objectToWhereClause({
+        ...workflowState.getCurrentSearchState(),
+        ...queryService.entityContextToQueryObject(lastEntityCtx)
+    });
 
-    // add Fixable search param, if present
-    const searchParams = workflowState.getCurrentSearchState();
-    const fixableFlag = Object.keys(searchParams).find(
-        key => key.includes('Fix') || key.includes('fix')
-    );
-    if (fixableFlag) {
-        searchParamsList.push({ key: 'Fixable', value: true });
-    }
+    let sortOption = workflowState.getCurrentSortState()[0];
+    sortOption = sortOption && { field: sortOption.id, reversed: sortOption.desc };
 
-    return getCvesInCsvFormat(fileName, searchParamsList);
+    return getCvesInCsvFormat(fileName, query, sortOption);
 }

@@ -1,14 +1,12 @@
-package handler
+package csv
 
 import (
 	"context"
 	"encoding/csv"
 	"fmt"
 	"net/http"
-	"net/url"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -28,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	deploymentMappings "github.com/stackrox/rox/pkg/search/options/deployments"
 	imageMappings "github.com/stackrox/rox/pkg/search/options/images"
+	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -155,36 +154,27 @@ func fromTS(timestamp *graphql.Time) string {
 	return timestamp.Time.Format(time.RFC1123)
 }
 
-func buildQueryFromParams(values url.Values) string {
-	var pairs []string
-	for k, v := range values {
-		vs := strings.Join(v, ",")
-		pair := strings.Join([]string{k, vs}, ":")
-		pairs = append(pairs, pair)
-	}
-	return strings.Join(pairs, "+")
-}
-
-// CSVHandler is an HTTP handler that outputs CSV exports of CVE data for Vuln Mgmt
-func CSVHandler() http.HandlerFunc {
+// CVECSVHandler is an HTTP handler that outputs CSV exports of CVE data for Vuln Mgmt
+func CVECSVHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := loaders.WithLoaderContext(r.Context())
 
-		queryString := buildQueryFromParams(r.URL.Query())
-		rawQuery := resolvers.RawQuery{Query: &queryString}
-		q, err := rawQuery.AsV1QueryOrEmpty()
+		query, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
 			writeErr(w, http.StatusBadRequest, err)
 			return
 		}
 
 		resolver := resolvers.New()
-		vulnResolvers, err := getVulns(ctx, resolver, q)
+		vulnResolvers, err := getVulns(ctx, resolver, query)
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err)
 			log.Errorf("unable to get vulnerabilities for csv export: %v", err)
 			return
 		}
+
+		queryString := r.URL.Query().Get("query")
+		rawQuery := resolvers.RawQuery{Query: &queryString}
 
 		var output csvResults
 		output.header = []string{"CVE", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"}
