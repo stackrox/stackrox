@@ -94,7 +94,7 @@ function validateCVETileLinksInSidePanel(parentUrl) {
             // not reusing a predefined selector below, because we had made this function so DRY,
             //   we created a false positive that was labyrinthine to track down
             //   see: https://engblog.nextdoor.com/how-to-dry-up-your-tests-without-making-mummies-of-them-7de79a8e3df1
-            cy.get('[data-test-id="CVE-tile-link"]:contains("CVES")')
+            cy.get('[data-test-id="CVE-tile-link"]:contains("CVE")')
                 .find(vulnManagementSelectors.tileLinkValue)
                 .contains('CVE');
             cy.get(vulnManagementSelectors.tileLinkText).contains(cveCount);
