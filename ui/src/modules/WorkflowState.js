@@ -408,12 +408,12 @@ export class WorkflowState {
     }
 
     /**
-     * tests if the next the last position on the state stack is a single of a given entity type
+     * tests if the next to the last position on the state stack is a list of a given entity type
      *   (the part of the leaf entity)
      *
      * @param   {string}  entityType  the entityType constant to check
      *
-     * @return  {boolean}              true if the preceding entity type is a single of the given entity type, false otherwise
+     * @return  {boolean}              true if the preceding entity type is a list of the given entity type, false otherwise
      */
     isPreceding(entityType) {
         return (
@@ -421,6 +421,40 @@ export class WorkflowState {
             this.stateStack.length > 1 &&
             this.stateStack[this.stateStack.length - 2].t === entityType &&
             !!this.stateStack[this.stateStack.length - 2].i
+        );
+    }
+
+    /**
+     * tests if the next to the last position on the state stack is a single of a given entity type
+     *   (the part of the leaf entity)
+     *
+     * @param   {string}  entityType  the entityType constant to check
+     *
+     * @return  {boolean}              true if the preceding entity type is a single of the given entity type, false otherwise
+     */
+    isPrecedingSingle(entityType) {
+        return (
+            this.stateStack &&
+            this.stateStack.length > 1 &&
+            this.stateStack[this.stateStack.length - 2].t === entityType &&
+            this.stateStack[this.stateStack.length - 2].i
+        );
+    }
+
+    /**
+     * tests if the last position is single of a given entity type
+     *   (the part of the leaf entity)
+     *
+     * @param   {string}  entityType  the entityType constant to check
+     *
+     * @return  {boolean}              true if last state is a single of the given entity type, false otherwise
+     */
+    isCurrentSingle(entityType) {
+        return (
+            this.stateStack &&
+            this.stateStack.length > 1 &&
+            this.stateStack[this.stateStack.length - 1].t === entityType &&
+            this.stateStack[this.stateStack.length - 1].i
         );
     }
 }

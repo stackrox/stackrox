@@ -32,6 +32,8 @@ import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveBulkActionDialogue from './CveBulkActionDialogue';
 
+import { getFilteredCVEColumns } from './ListCVEs.utils';
+
 export const defaultCveSort = [
     {
         id: cveSortFields.CVSS_SCORE,
@@ -63,8 +65,8 @@ export function getCveTableColumns(workflowState) {
         },
         {
             Header: `Fixable`,
-            headerClassName: `w-20 text-center ${nonSortableHeaderClassName}`,
-            className: `w-20 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
                 const fixableFlag = original.isFixable ? (
@@ -78,6 +80,15 @@ export function getCveTableColumns(workflowState) {
             accessor: 'isFixable',
             sortField: cveSortFields.FIXABLE,
             sortable: false
+        },
+        {
+            Header: `Fixed in`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 word-break-all ${defaultColumnClassName}`,
+            Cell: ({ original }) => original.fixedByVersion || '-',
+            id: cveSortFields.FIXEDIN,
+            accessor: 'fixedByVersion',
+            sortField: cveSortFields.FIXEDIN
         },
         {
             Header: `CVSS Score`,
@@ -200,7 +211,9 @@ export function getCveTableColumns(workflowState) {
         }
     ];
 
-    return removeEntityContextColumns(tableColumns, workflowState);
+    const cveColumnsBasedOnContext = getFilteredCVEColumns(tableColumns, workflowState);
+
+    return removeEntityContextColumns(cveColumnsBasedOnContext, workflowState);
 }
 
 export function renderCveDescription(row) {
