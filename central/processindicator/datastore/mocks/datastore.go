@@ -217,6 +217,21 @@ func (mr *MockDataStoreMockRecorder) GetCommentsForProcess(ctx, processKey inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsForProcess), ctx, processKey)
 }
 
+// GetCommentsCountForProcess mocks base method
+func (m *MockDataStore) GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommentsCountForProcess", ctx, processKey)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommentsCountForProcess indicates an expected call of GetCommentsCountForProcess
+func (mr *MockDataStoreMockRecorder) GetCommentsCountForProcess(ctx, processKey interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsCountForProcess", reflect.TypeOf((*MockDataStore)(nil).GetCommentsCountForProcess), ctx, processKey)
+}
+
 // RemoveProcessComment mocks base method
 func (m *MockDataStore) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {
 	m.ctrl.T.Helper()

@@ -141,7 +141,7 @@ func (s *storeImpl) UpdateProcessComment(key *analystnotes.ProcessNoteKey, comme
 	return nil
 }
 
-func (s *storeImpl) GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
+func (s *storeImpl) GetComments(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	var comments []*storage.Comment
 	err := s.bucketRef.View(func(b *bbolt.Bucket) error {
 		processSubBucket := getProcessSubBucket(b, key)
@@ -162,6 +162,23 @@ func (s *storeImpl) GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) (
 		return nil, err
 	}
 	return comments, nil
+}
+
+func (s *storeImpl) GetCommentsCount(key *analystnotes.ProcessNoteKey) (int, error) {
+	var count int
+	err := s.bucketRef.View(func(b *bbolt.Bucket) error {
+		processSubBucket := getProcessSubBucket(b, key)
+		// No comments.
+		if processSubBucket == nil {
+			return nil
+		}
+		count = processSubBucket.Stats().KeyN
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (s *storeImpl) GetComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error) {

@@ -34,6 +34,7 @@ type DataStore interface {
 	AddProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) (string, error)
 	UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error
 	GetCommentsForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) ([]*storage.Comment, error)
+	GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error)
 	RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error
 
 	WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error

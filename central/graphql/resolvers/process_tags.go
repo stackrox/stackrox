@@ -14,6 +14,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("processTags(key: ProcessNoteKey!): [String!]!"),
+		schema.AddQuery("processTagsCount(key: ProcessNoteKey!): Int!"),
 		schema.AddMutation("addProcessTags(key: ProcessNoteKey!, tags: [String!]!): Boolean!"),
 		schema.AddMutation("removeProcessTags(key: ProcessNoteKey!, tags: [String!]!): Boolean!"),
 	)
@@ -32,6 +33,21 @@ func (resolver *Resolver) ProcessTags(ctx context.Context, args struct {
 		return nil, err
 	}
 	return tags, nil
+}
+
+// ProcessTagsCount counts process tags.
+func (resolver *Resolver) ProcessTagsCount(ctx context.Context, args struct {
+	Key analystnotes.ProcessNoteKey
+}) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessTagsCount")
+	if err := writeIndicators(ctx); err != nil {
+		return 0, err
+	}
+	tags, err := resolver.DeploymentDataStore.GetTagsForProcessKey(ctx, &args.Key)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(tags)), nil
 }
 
 // AddProcessTags adds process tags.

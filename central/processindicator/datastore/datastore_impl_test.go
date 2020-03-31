@@ -182,6 +182,15 @@ func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *s
 	return
 }
 
+func (suite *IndicatorDataStoreTestSuite) mustGetCommentsAndValidateCount(ctx context.Context, key *analystnotes.ProcessNoteKey) []*storage.Comment {
+	comments, err := suite.datastore.GetCommentsForProcess(ctx, key)
+	suite.Require().NoError(err)
+	count, err := suite.datastore.GetCommentsCountForProcess(ctx, key)
+	suite.Require().NoError(err)
+	suite.Len(comments, count)
+	return comments
+}
+
 func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.setupDataStoreNoPruning()
 
@@ -198,12 +207,10 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.NoError(err)
 	suite.NotEmpty(id)
 
-	gotComments, err := suite.datastore.GetCommentsForProcess(suite.hasNoneCtx, key)
-	suite.NoError(err)
+	gotComments := suite.mustGetCommentsAndValidateCount(suite.hasNoneCtx, key)
 	suite.Empty(gotComments)
 
-	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
-	suite.NoError(err)
+	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
 	suite.Len(gotComments, 1)
 	suite.Equal(id, gotComments[0].GetCommentId())
 	suite.Equal("blah", gotComments[0].GetCommentMessage())
@@ -213,8 +220,7 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 
 	suite.NoError(suite.datastore.UpdateProcessComment(suite.hasWriteCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 
-	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
-	suite.NoError(err)
+	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
 	suite.Len(gotComments, 1)
 	suite.Equal(id, gotComments[0].GetCommentId())
 	suite.Equal("blah2", gotComments[0].GetCommentMessage())
@@ -223,8 +229,7 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, key, id))
 	suite.NoError(suite.datastore.RemoveProcessComment(suite.hasWriteCtx, key, id))
 
-	gotComments, err = suite.datastore.GetCommentsForProcess(suite.hasReadCtx, key)
-	suite.NoError(err)
+	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
 	suite.Empty(gotComments)
 }
 

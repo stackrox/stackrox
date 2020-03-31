@@ -78,19 +78,34 @@ func (mr *MockStoreMockRecorder) GetComment(key, commentID interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComment", reflect.TypeOf((*MockStore)(nil).GetComment), key, commentID)
 }
 
-// GetCommentsForProcessKey mocks base method
-func (m *MockStore) GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
+// GetComments mocks base method
+func (m *MockStore) GetComments(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCommentsForProcessKey", key)
+	ret := m.ctrl.Call(m, "GetComments", key)
 	ret0, _ := ret[0].([]*storage.Comment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCommentsForProcessKey indicates an expected call of GetCommentsForProcessKey
-func (mr *MockStoreMockRecorder) GetCommentsForProcessKey(key interface{}) *gomock.Call {
+// GetComments indicates an expected call of GetComments
+func (mr *MockStoreMockRecorder) GetComments(key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsForProcessKey", reflect.TypeOf((*MockStore)(nil).GetCommentsForProcessKey), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComments", reflect.TypeOf((*MockStore)(nil).GetComments), key)
+}
+
+// GetCommentsCount mocks base method
+func (m *MockStore) GetCommentsCount(key *analystnotes.ProcessNoteKey) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommentsCount", key)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCommentsCount indicates an expected call of GetCommentsCount
+func (mr *MockStoreMockRecorder) GetCommentsCount(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommentsCount", reflect.TypeOf((*MockStore)(nil).GetCommentsCount), key)
 }
 
 // RemoveProcessComment mocks base method

@@ -16,6 +16,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("processComments(key: ProcessNoteKey!): [Comment!]!"),
+		schema.AddQuery("processCommentsCount(key: ProcessNoteKey!): Int!"),
 		schema.AddMutation("addProcessComment(key: ProcessNoteKey!, commentMessage: String!): String!"),
 		schema.AddMutation("updateProcessComment(key: ProcessNoteKey!, commentId: ID!, commentMessage: String!): Boolean!"),
 		schema.AddMutation("removeProcessComment(key: ProcessNoteKey!, commentId: ID!): Boolean!"),
@@ -31,6 +32,21 @@ func (resolver *Resolver) ProcessComments(ctx context.Context, args struct {
 		return nil, err
 	}
 	return resolver.wrapComments(resolver.ProcessIndicatorStore.GetCommentsForProcess(ctx, &args.Key))
+}
+
+// ProcessCommentsCount returns the count of comments for a process key.
+func (resolver *Resolver) ProcessCommentsCount(ctx context.Context, args struct {
+	Key analystnotes.ProcessNoteKey
+}) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessCommentsCount")
+	if err := readIndicators(ctx); err != nil {
+		return 0, err
+	}
+	count, err := resolver.ProcessIndicatorStore.GetCommentsCountForProcess(ctx, &args.Key)
+	if err != nil {
+		return 0, err
+	}
+	return int32(count), nil
 }
 
 // AddProcessComment adds a process comment.

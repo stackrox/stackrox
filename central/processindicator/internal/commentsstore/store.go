@@ -18,7 +18,8 @@ type Store interface {
 	UpdateProcessComment(key *analystnotes.ProcessNoteKey, comment *storage.Comment) error
 
 	GetComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error)
-	GetCommentsForProcessKey(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error)
+	GetComments(key *analystnotes.ProcessNoteKey) ([]*storage.Comment, error)
+	GetCommentsCount(key *analystnotes.ProcessNoteKey) (int, error)
 
 	RemoveProcessComment(key *analystnotes.ProcessNoteKey, commentID string) error
 	RemoveAllProcessComments(key *analystnotes.ProcessNoteKey) error

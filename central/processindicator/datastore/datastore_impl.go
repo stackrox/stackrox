@@ -95,7 +95,15 @@ func (ds *datastoreImpl) GetCommentsForProcess(ctx context.Context, processKey *
 		return nil, err
 	}
 
-	return ds.commentsStorage.GetCommentsForProcessKey(processKey)
+	return ds.commentsStorage.GetComments(processKey)
+}
+
+func (ds *datastoreImpl) GetCommentsCountForProcess(ctx context.Context, processKey *analystnotes.ProcessNoteKey) (int, error) {
+	if ok, err := indicatorSAC.ReadAllowed(ctx); err != nil || !ok {
+		return 0, err
+	}
+
+	return ds.commentsStorage.GetCommentsCount(processKey)
 }
 
 func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, commentID string) error {

@@ -48,11 +48,17 @@ func (suite *StoreTestSuite) TearDownTest() {
 }
 
 func (suite *StoreTestSuite) mustGetComments(deploymentSeed, containerSeed int) []*storage.Comment {
-	comments, err := suite.store.GetCommentsForProcessKey(getKey(deploymentSeed, containerSeed))
+	key := getKey(deploymentSeed, containerSeed)
+	comments, err := suite.store.GetComments(key)
 	suite.Require().NoError(err)
 	sort.Slice(comments, func(i, j int) bool {
 		return comments[i].GetCommentMessage() < comments[j].GetCommentMessage()
 	})
+
+	// Validate the count every time
+	count, err := suite.store.GetCommentsCount(key)
+	suite.Require().NoError(err)
+	suite.Equal(len(comments), count)
 	return comments
 }
 
