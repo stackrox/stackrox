@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 if [ "$#" -ne 1 ]; then
     echo "error: central endpoint not specified, use -e with ./setup.sh"
     exit 1
