@@ -34,7 +34,7 @@ func (dc *deleterImpl) DeleteIn(key []byte, dackTxn *dackbox.Transaction) error 
 	if err := dackTxn.Graph().DeleteRefsTo(key); err != nil {
 		return err
 	}
-	if err := dackTxn.BadgerTxn().Delete(key); err != nil {
+	if err := dackTxn.Delete(key); err != nil {
 		return err
 	}
 	// Delete the partial objects. This needs to come after the shared check so that we can clean objects up in line.

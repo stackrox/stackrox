@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
@@ -33,7 +32,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (*StoreImpl, err
 
 // CountDeployments returns the number of deployments in badger.
 func (b *StoreImpl) CountDeployments() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -48,13 +47,13 @@ func (b *StoreImpl) CountDeployments() (int, error) {
 
 // GetDeploymentIDs returns the keys of all deployments stored in badger.
 func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
 
 	var ids []string
-	err := badgerhelper.BucketKeyForEach(txn.BadgerTxn(), deploymentDackBox.Bucket, badgerhelper.ForEachOptions{StripKeyPrefix: true}, func(k []byte) error {
+	err := txn.BucketKeyForEach(deploymentDackBox.Bucket, true, func(k []byte) error {
 		ids = append(ids, string(k))
 		return nil
 	})
@@ -63,7 +62,7 @@ func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
 
 // ListDeployment returns ListDeployment with given id.
 func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeployment, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -78,7 +77,7 @@ func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeploymen
 
 // ListDeploymentsWithIDs returns list deployments with the given ids.
 func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -105,7 +104,7 @@ func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 
 // ListDeployments returns all list deployments regardless of request
 func (b *StoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -124,7 +123,7 @@ func (b *StoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 
 // GetDeployments returns all deployments regardless of request.
 func (b *StoreImpl) GetDeployments() ([]*storage.Deployment, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -143,7 +142,7 @@ func (b *StoreImpl) GetDeployments() ([]*storage.Deployment, error) {
 
 // GetDeployment returns deployment with given id.
 func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -158,7 +157,7 @@ func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, ex
 
 // GetDeploymentsWithIDs returns deployments with the given ids.
 func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
 	txn := b.dacky.NewReadOnlyTransaction()
 	defer txn.Discard()
@@ -185,7 +184,7 @@ func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment,
 
 // UpsertDeployment updates a deployment to badger.
 func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Deployment")
 
 	var imageKeys [][]byte
 	for _, container := range deployment.GetContainers() {
@@ -243,7 +242,7 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 
 // RemoveDeployment deletes an deployment and it's list object counter-part.
 func (b *StoreImpl) RemoveDeployment(id string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Deployment")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	allKeys := b.collectDeploymentKeys(id)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(allKeys...), func() error {

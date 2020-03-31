@@ -1,14 +1,14 @@
 package graph
 
 import (
-	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // NewPersistor returns a new instance of a Persistor, which can be used to apply modifications to the persisted graph.
-func NewPersistor(prefix []byte, txn *badger.Txn) *Persistor {
+func NewPersistor(prefix []byte, txn transactions.DBTransaction) *Persistor {
 	return &Persistor{
 		prefix: prefix,
 		txn:    txn,
@@ -18,7 +18,7 @@ func NewPersistor(prefix []byte, txn *badger.Txn) *Persistor {
 // Persistor is an applyableGraph implementation that persists what is applied to it.
 type Persistor struct {
 	prefix []byte
-	txn    *badger.Txn
+	txn    transactions.DBTransaction
 	errors errorhelpers.ErrorList
 }
 

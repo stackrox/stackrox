@@ -46,7 +46,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ClusterCVEEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -60,7 +60,7 @@ func (b *storeImpl) Count() (int, error) {
 }
 
 func (b *storeImpl) GetAll() ([]*storage.ClusterCVEEdge, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ClusterCVEEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -78,7 +78,7 @@ func (b *storeImpl) GetAll() ([]*storage.ClusterCVEEdge, error) {
 }
 
 func (b *storeImpl) Get(id string) (edges *storage.ClusterCVEEdge, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ClusterCVEEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -92,7 +92,7 @@ func (b *storeImpl) Get(id string) (edges *storage.ClusterCVEEdge, exists bool, 
 }
 
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ClusterCVEEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -120,7 +120,7 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ClusterCVEEdge, []int, er
 }
 
 func (b *storeImpl) Upsert(edges ...*storage.ClusterCVEEdge) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ClusterCVEEdge")
 
 	for batch := 0; batch < len(edges); batch += batchSize {
 		dackTxn := b.dacky.NewTransaction()
@@ -141,7 +141,7 @@ func (b *storeImpl) Upsert(edges ...*storage.ClusterCVEEdge) error {
 }
 
 func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ClusterCVEEdge")
 
 	for batch := 0; batch < len(ids); batch += batchSize {
 		dackTxn := b.dacky.NewTransaction()

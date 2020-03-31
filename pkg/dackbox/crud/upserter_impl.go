@@ -42,7 +42,7 @@ func (uc *upserterImpl) UpsertIn(parentKey []byte, msg proto.Message, dackTxn *d
 	if err != nil {
 		return err
 	}
-	err = dackTxn.BadgerTxn().Set(key, toWrite)
+	err = dackTxn.Set(key, toWrite)
 	if err != nil {
 		return err
 	}

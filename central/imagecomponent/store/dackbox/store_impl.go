@@ -42,7 +42,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 func (b *storeImpl) GetAll() ([]*storage.ImageComponent, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image Component")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -60,7 +60,7 @@ func (b *storeImpl) GetAll() ([]*storage.ImageComponent, error) {
 }
 
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image Component")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -75,7 +75,7 @@ func (b *storeImpl) Count() (int, error) {
 
 // GetImage returns image with given id.
 func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image Component")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -90,7 +90,7 @@ func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, 
 
 // GetImagesBatch returns image with given sha.
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponent, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image Component")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -118,7 +118,7 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponent, []int, er
 }
 
 func (b *storeImpl) Upsert(components ...*storage.ImageComponent) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.UpsertAll, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.UpsertAll, "Image Component")
 
 	keysToUpsert := make([][]byte, 0, len(components))
 	for _, component := range components {
@@ -160,7 +160,7 @@ func (b *storeImpl) upsertNoBatch(components ...*storage.ImageComponent) error {
 }
 
 func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "Image Component")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "Image Component")
 
 	keysToUpsert := make([][]byte, 0, len(ids))
 	for _, id := range ids {

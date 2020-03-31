@@ -3,23 +3,23 @@ package dackbox
 import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dackbox/transactions"
+	badgerTxns "github.com/stackrox/rox/pkg/dackbox/transactions/badger"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// NewDackBox returns a new DackBox object using the given DB and prefix for storing data and ids.
-func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
-	initial, err := loadGraphIntoMem(db, graphPrefix)
+func newDackBox(dbFactory transactions.DBTransactionFactory, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
+	initial, err := loadGraphIntoMem(dbFactory, graphPrefix)
 	if err != nil {
 		return nil, err
 	}
 	ret := &DackBox{
 		history:     graph.NewHistory(initial),
-		db:          db,
+		db:          dbFactory,
 		toIndex:     toIndex,
 		graphPrefix: graphPrefix,
 		dirtyPrefix: dirtyPrefix,
@@ -28,12 +28,17 @@ func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirty
 	return ret, nil
 }
 
+// NewDackBox returns a new DackBox object using the given DB and prefix for storing data and ids.
+func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
+	return newDackBox(badgerTxns.NewBadgerWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
+}
+
 // DackBox is the StackRox DB layer. It provides transactions consisting of both a KV layer, and an ID->[]ID map layer.
 type DackBox struct {
 	lock sync.RWMutex
 
 	history graph.History
-	db      *badger.DB
+	db      transactions.DBTransactionFactory
 	toIndex queue.AcceptsKeyValue
 
 	graphPrefix []byte
@@ -51,14 +56,14 @@ func (rc *DackBox) NewTransaction() *Transaction {
 	modification := graph.NewModifiedGraph(graph.NewGraph())
 	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
 	return &Transaction{
-		ts:           ts,
-		txn:          txn,
-		graph:        remote,
-		modification: modification,
-		dirtyPrefix:  rc.dirtyPrefix,
-		dirtyMap:     make(map[string]proto.Message),
-		discard:      rc.discard,
-		commit:       rc.commit,
+		ts:            ts,
+		DBTransaction: txn,
+		graph:         remote,
+		modification:  modification,
+		dirtyPrefix:   rc.dirtyPrefix,
+		dirtyMap:      make(map[string]proto.Message),
+		discard:       rc.discard,
+		commit:        rc.commit,
 	}
 }
 
@@ -72,12 +77,12 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 	modification := graph.NewModifiedGraph(graph.NewGraph())
 	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
 	return &Transaction{
-		ts:           ts,
-		txn:          txn,
-		graph:        remote,
-		modification: modification,
-		discard:      rc.discard,
-		commit:       rc.commit,
+		ts:            ts,
+		DBTransaction: txn,
+		graph:         remote,
+		modification:  modification,
+		discard:       rc.discard,
+		commit:        rc.commit,
 	}
 }
 
@@ -98,14 +103,15 @@ func (rc *DackBox) AckIndexed(keys ...[]byte) error {
 	if len(keys) == 0 {
 		return nil
 	}
-	return rc.db.Update(func(txn *badger.Txn) error {
-		for _, key := range keys {
-			if err := txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
-				return err
-			}
+
+	txn := rc.db.NewTransaction(true)
+	defer txn.Discard()
+	for _, key := range keys {
+		if err := txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return txn.Commit()
 }
 
 func (rc *DackBox) readerAt(at uint64) graph.RemoteReadable {
@@ -117,7 +123,7 @@ func (rc *DackBox) readerAt(at uint64) graph.RemoteReadable {
 	}
 }
 
-func (rc *DackBox) discard(openedAt uint64, txn *badger.Txn) {
+func (rc *DackBox) discard(openedAt uint64, txn transactions.DBTransaction) {
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 
@@ -130,7 +136,7 @@ func (rc *DackBox) discard(openedAt uint64, txn *badger.Txn) {
 	}
 }
 
-func (rc *DackBox) commit(openedAt uint64, txn *badger.Txn, modification graph.Modification, dirtyMap map[string]proto.Message) error {
+func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyMap map[string]proto.Message) error {
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 
@@ -167,19 +173,13 @@ func (rc *DackBox) commit(openedAt uint64, txn *badger.Txn, modification graph.M
 // Initialization.
 //////////////////
 
-var onLoadForEachOptions = badgerhelper.ForEachOptions{
-	IteratorOptions: &badger.IteratorOptions{
-		PrefetchValues: true,
-		PrefetchSize:   4,
-	},
-	StripKeyPrefix: true,
-}
-
-func loadGraphIntoMem(db *badger.DB, graphPrefix []byte) (*graph.Graph, error) {
+func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix []byte) (*graph.Graph, error) {
 	initial := graph.NewGraph()
-	txn := db.NewTransaction(false)
+
+	txn := dbFactory.NewTransaction(false)
 	defer txn.Discard()
-	err := badgerhelper.BucketForEach(txn, graphPrefix, onLoadForEachOptions, func(k, v []byte) error {
+
+	err := txn.BucketForEach(graphPrefix, true, func(k, v []byte) error {
 		sk, err := sortedkeys.Unmarshal(v)
 		if err != nil {
 			return err

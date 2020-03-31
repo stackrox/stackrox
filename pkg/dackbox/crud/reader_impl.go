@@ -1,9 +1,7 @@
 package crud
 
 import (
-	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
 )
 
@@ -15,31 +13,19 @@ type readerImpl struct {
 
 // ExistsIn returns whether a data for a given key exists in a given transaction.
 func (rc *readerImpl) ExistsIn(key []byte, dackTxn *dackbox.Transaction) (bool, error) {
-	_, err := dackTxn.BadgerTxn().Get(key)
-	if err == badger.ErrKeyNotFound {
-		return false, nil
-	} else if err != nil {
-		return false, err
-	}
-	return true, nil
+	_, exists, err := dackTxn.Get(key)
+	return exists, err
 }
 
 // CountIn returns the number of objects in the transaction with the given prefix.
 func (rc *readerImpl) CountIn(prefix []byte, dackTxn *dackbox.Transaction) (int, error) {
-	return badgerhelper.BucketKeyCount(dackTxn.BadgerTxn(), prefix)
-}
-
-var foreachOptions = badgerhelper.ForEachOptions{
-	IteratorOptions: &badger.IteratorOptions{
-		PrefetchValues: true,
-		PrefetchSize:   4,
-	},
+	return dackTxn.BucketKeyCount(prefix)
 }
 
 // ReadAllIn returns all objects with the given prefix in the given transaction.
 func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]proto.Message, error) {
 	var ret []proto.Message
-	err := badgerhelper.BucketForEach(dackTxn.BadgerTxn(), prefix, foreachOptions, func(k, v []byte) error {
+	err := dackTxn.BucketForEach(prefix, false, func(k, v []byte) error {
 		// Read in the base data to the result.
 		msg := rc.allocFunc()
 		err := proto.Unmarshal(v, msg)
@@ -58,16 +44,10 @@ func (rc *readerImpl) ReadAllIn(prefix []byte, dackTxn *dackbox.Transaction) ([]
 	return ret, err
 }
 
-var keysForeachOptions = badgerhelper.ForEachOptions{
-	IteratorOptions: &badger.IteratorOptions{
-		PrefetchValues: false,
-	},
-}
-
 // ReadAllIn returns all objects with the given prefix in the given transaction.
 func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([][]byte, error) {
 	var ret [][]byte
-	err := badgerhelper.BucketKeyForEach(dackTxn.BadgerTxn(), prefix, keysForeachOptions, func(k []byte) error {
+	err := dackTxn.BucketKeyForEach(prefix, false, func(k []byte) error {
 		ret = append(ret, append([]byte{}, k...))
 		return nil
 	})
@@ -77,17 +57,16 @@ func (rc *readerImpl) ReadKeysIn(prefix []byte, dackTxn *dackbox.Transaction) ([
 // ReadIn returns the object saved under the given key in the given transaction.
 func (rc *readerImpl) ReadIn(key []byte, dackTxn *dackbox.Transaction) (proto.Message, error) {
 	// Read the top level object from the DB.
-	item, err := dackTxn.BadgerTxn().Get(key)
-	if err != badger.ErrKeyNotFound && err != nil {
+	value, exists, err := dackTxn.Get(key)
+	if err != nil {
 		return nil, err
-	} else if err == badger.ErrKeyNotFound {
+	}
+	if !exists {
 		return nil, nil
 	}
 
 	result := rc.allocFunc()
-	if err = item.Value(func(val []byte) error {
-		return proto.Unmarshal(val, result)
-	}); err != nil {
+	if err := proto.Unmarshal(value, result); err != nil {
 		return nil, err
 	}
 	return rc.readInPartials(key, result, dackTxn)

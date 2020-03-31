@@ -35,6 +35,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	dackboxOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "dackbox_op_duration",
+		Help:      "Time taken to perform a dackbox operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Operation", "Type"})
+
 	graphQLOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -127,6 +136,11 @@ func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 // SetBadgerOperationDurationTime times how long a particular bolt operation took on a particular resource
 func SetBadgerOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	badgerOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
+}
+
+// SetDackboxOperationDurationTime times how long a particular dackbox operation took on a particular resource
+func SetDackboxOperationDurationTime(start time.Time, op metrics.Op, t string) {
+	dackboxOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // SetGraphQLOperationDurationTime times how long a particular graphql API took on a particular resource

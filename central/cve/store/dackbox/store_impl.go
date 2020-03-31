@@ -46,7 +46,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "CVE")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -60,7 +60,7 @@ func (b *storeImpl) Count() (int, error) {
 }
 
 func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "CVE")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -78,7 +78,7 @@ func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
 }
 
 func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "CVE")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -92,7 +92,7 @@ func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 }
 
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -120,7 +120,7 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
 }
 
 func (b *storeImpl) Upsert(cves ...*storage.CVE) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(cves))
 	for _, vuln := range cves {
@@ -162,7 +162,7 @@ func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
 }
 
 func (b *storeImpl) UpsertClusterCVEs(parts ...converter.ClusterCVEParts) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "CVE")
 
 	keysToUpdate := gatherKeysForCVEParts(parts...)
 	lockedKeySet := concurrency.DiscreteKeySet(keysToUpdate...)
@@ -207,7 +207,7 @@ func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts)
 }
 
 func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "CVE")
 
 	keysToUpsert := make([][]byte, 0, len(ids))
 	for _, id := range ids {

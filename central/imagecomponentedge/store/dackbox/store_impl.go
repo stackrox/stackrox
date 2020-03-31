@@ -46,7 +46,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 }
 
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -60,7 +60,7 @@ func (b *storeImpl) Count() (int, error) {
 }
 
 func (b *storeImpl) GetAll() ([]*storage.ImageComponentEdge, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ImageComponentEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -78,7 +78,7 @@ func (b *storeImpl) GetAll() ([]*storage.ImageComponentEdge, error) {
 }
 
 func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -92,7 +92,7 @@ func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool
 }
 
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponentEdge, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
 
 	dackTxn := b.dacky.NewReadOnlyTransaction()
 	defer dackTxn.Discard()
@@ -120,7 +120,7 @@ func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponentEdge, []int
 }
 
 func (b *storeImpl) Upsert(cves ...*storage.ImageComponentEdge) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ImageComponentEdge")
 
 	for batch := 0; batch < len(cves); batch += batchSize {
 		dackTxn := b.dacky.NewTransaction()
@@ -141,7 +141,7 @@ func (b *storeImpl) Upsert(cves ...*storage.ImageComponentEdge) error {
 }
 
 func (b *storeImpl) Delete(ids ...string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponentEdge")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponentEdge")
 
 	for batch := 0; batch < len(ids); batch += batchSize {
 		dackTxn := b.dacky.NewTransaction()

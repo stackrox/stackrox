@@ -128,13 +128,11 @@ func readNeedsReindex(dacky *dackbox.DackBox, reindexBucket, bucket []byte) (boo
 	defer txn.Discard()
 
 	// If the key is missing from the reindexing bucket, it means we need to do a full re-index.
-	_, err := txn.BadgerTxn().Get(dbhelper.GetBucketKey(reindexBucket, bucket))
-	if err == badger.ErrKeyNotFound {
-		return true, nil
-	} else if err != nil {
+	_, exists, err := txn.Get(dbhelper.GetBucketKey(reindexBucket, bucket))
+	if err != nil {
 		return true, err
 	}
-	return false, nil
+	return !exists, nil
 }
 
 func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, needsReindex bool, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
@@ -187,7 +185,7 @@ func setDoesNotNeedReindex(dacky *dackbox.DackBox, reindexBucket, bucket, reInde
 	txn := dacky.NewTransaction()
 	defer txn.Discard()
 
-	if err := txn.BadgerTxn().Set(dbhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
+	if err := txn.Set(dbhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
 		return err
 	}
 	return txn.Commit()
