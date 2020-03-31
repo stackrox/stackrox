@@ -3,8 +3,8 @@ package dackbox
 import (
 	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var emptyByte = []byte{0}
@@ -43,7 +43,7 @@ func (dbt *Transaction) Graph() *graph.RemoteGraph {
 
 // MarkDirty adds the input key to the dirty set, and adds he key and value to the queue for indexing.
 func (dbt *Transaction) MarkDirty(key []byte, msg proto.Message) error {
-	if err := dbt.txn.Set(badgerhelper.GetBucketKey(dbt.dirtyPrefix, key), emptyByte); err != nil {
+	if err := dbt.txn.Set(dbhelper.GetBucketKey(dbt.dirtyPrefix, key), emptyByte); err != nil {
 		return err
 	}
 	dbt.dirtyMap[string(key)] = msg

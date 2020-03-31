@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -141,7 +142,7 @@ func (s *flowStoreImpl) RemoveMatchingFlows(keyMatchFn func(props *storage.Netwo
 	err := s.db.View(func(tx *badger.Txn) error {
 		return badgerhelper.ForEachOverKeySet(tx, s.keyPrefix, badgerhelper.ForEachOptions{IteratorOptions: &badger.IteratorOptions{PrefetchValues: false}},
 			func(k []byte) error {
-				strippedKey := badgerhelper.StripPrefix(s.keyPrefix, k)
+				strippedKey := dbhelper.StripPrefix(s.keyPrefix, k)
 				if bytes.Equal(strippedKey, updatedTSKey) {
 					return nil
 				}

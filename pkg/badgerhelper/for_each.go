@@ -1,7 +1,7 @@
 package badgerhelper
 
 import (
-	"bytes"
+	"github.com/stackrox/rox/pkg/dbhelper"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
@@ -43,7 +43,7 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 		item := it.Item()
 		k := item.Key()
 		if opts.StripKeyPrefix {
-			k = StripPrefix(keyPrefix, k)
+			k = dbhelper.StripPrefix(keyPrefix, k)
 		}
 
 		if err := do(k, item); err != nil {
@@ -53,38 +53,16 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 	return nil
 }
 
-// StripBucket removes a bucket prefix and the separator from the val
-func StripBucket(prefix []byte, val []byte) []byte {
-	bucket := GetBucketKey(prefix, nil)
-	return StripPrefix(bucket, val)
-}
-
-// StripPrefix removes a prefix from the val
-func StripPrefix(prefix []byte, val []byte) []byte {
-	if len(val) >= len(prefix) {
-		return val[len(prefix):]
-	}
-	return val
-}
-
-// HasPrefix returns if the given key has the given prefix.
-func HasPrefix(prefix []byte, val []byte) bool {
-	if len(val) < len(prefix)+len(separator) {
-		return false
-	}
-	return bytes.Equal(prefix, val[:len(prefix)]) && bytes.Equal(separator, val[len(prefix):len(prefix)+len(separator)])
-}
-
 // BucketForEach ensures that the prefix iterated over has the bucket prefix
 func BucketForEach(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k, v []byte) error) error {
-	keyPrefix = append(keyPrefix, separator...)
-	return ForEachWithPrefix(txn, keyPrefix, opts, do)
+	bucketPrefix := dbhelper.AppendSeparator(keyPrefix)
+	return ForEachWithPrefix(txn, bucketPrefix, opts, do)
 }
 
 // BucketKeyForEach ensures that the keys iterated over has the bucket prefix
 func BucketKeyForEach(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k []byte) error) error {
-	keyPrefix = append(keyPrefix, separator...)
-	return ForEachOverKeySet(txn, keyPrefix, opts, do)
+	bucketPrefix := dbhelper.AppendSeparator(keyPrefix)
+	return ForEachOverKeySet(txn, bucketPrefix, opts, do)
 }
 
 // ForEachWithPrefix invokes a callback for all key/value pairs with the given prefix.

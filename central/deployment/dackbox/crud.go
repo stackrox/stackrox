@@ -4,8 +4,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (
@@ -16,10 +16,10 @@ var (
 	ListBucket = []byte("deployments_list")
 
 	// BucketHandler is the bucket's handler.
-	BucketHandler = &badgerhelper.BucketHandler{BucketPrefix: Bucket}
+	BucketHandler = &dbhelper.BucketHandler{BucketPrefix: Bucket}
 
 	// ListBucketHandler is the list bucket's handler.
-	ListBucketHandler = &badgerhelper.BucketHandler{BucketPrefix: ListBucket}
+	ListBucketHandler = &dbhelper.BucketHandler{BucketPrefix: ListBucket}
 
 	// Reader reads storage.Deployments directly from the store.
 	Reader = crud.NewReader(
@@ -67,11 +67,11 @@ func init() {
 // KeyFunc returns the key for a deployment.
 func KeyFunc(msg proto.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
-	return badgerhelper.GetBucketKey(Bucket, unPrefixed)
+	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // ListKeyFunc returns the key for a list deployment.
 func ListKeyFunc(msg proto.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
-	return badgerhelper.GetBucketKey(ListBucket, unPrefixed)
+	return dbhelper.GetBucketKey(ListBucket, unPrefixed)
 }

@@ -2,8 +2,8 @@ package graph
 
 import (
 	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
@@ -45,5 +45,5 @@ func (prv *Persistor) deleteTo(to []byte) {
 }
 
 func (prv *Persistor) prefixKey(key []byte) []byte {
-	return badgerhelper.GetBucketKey(prv.prefix, key)
+	return dbhelper.GetBucketKey(prv.prefix, key)
 }

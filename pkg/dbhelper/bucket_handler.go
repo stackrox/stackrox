@@ -1,4 +1,4 @@
-package badgerhelper
+package dbhelper
 
 // BucketHandler provides a few helper functions per-bucket prefix.
 type BucketHandler struct {

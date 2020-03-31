@@ -6,9 +6,9 @@ import (
 	"encoding/base64"
 	"sort"
 
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/keys"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -43,14 +43,14 @@ func MapEachToOne(fn OneToOne) ManyToMany {
 // AddPrefix adds the given bucket prefix to the keys before output.
 func AddPrefix(prefix []byte) OneToOne {
 	return func(ctx context.Context, key []byte) []byte {
-		return badgerhelper.GetBucketKey(prefix, key)
+		return dbhelper.GetBucketKey(prefix, key)
 	}
 }
 
 // StripPrefix removes the input bucket prefix from the keys before output.
 func StripPrefix(prefix []byte) OneToOne {
 	return func(ctx context.Context, key []byte) []byte {
-		return badgerhelper.StripBucket(prefix, key)
+		return dbhelper.StripBucket(prefix, key)
 	}
 }
 
@@ -193,7 +193,7 @@ func Filtered(pred Predicate) ManyToMany {
 // HasPrefix filters out items that do not have the matching bucket prefix.
 func HasPrefix(prefix []byte) ManyToMany {
 	return Filtered(func(key []byte) bool {
-		return badgerhelper.HasPrefix(prefix, key)
+		return dbhelper.HasPrefix(prefix, key)
 	})
 }
 

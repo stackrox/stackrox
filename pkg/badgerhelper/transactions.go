@@ -2,6 +2,7 @@ package badgerhelper
 
 import (
 	"github.com/dgraph-io/badger"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (
@@ -33,7 +34,7 @@ type TxWrapper interface {
 // AddKeysToIndex adds the keys not yet indexed to the DB
 func (b *TxnHelper) AddKeysToIndex(tx TxWrapper, keys ...[]byte) error {
 	for _, k := range keys {
-		if err := tx.Set(GetBucketKey(b.prefix, k), []byte{0}); err != nil {
+		if err := tx.Set(dbhelper.GetBucketKey(b.prefix, k), []byte{0}); err != nil {
 			return err
 		}
 	}
@@ -55,7 +56,7 @@ func (b *TxnHelper) AckKeysIndexed(keys ...string) error {
 	defer batch.Cancel()
 
 	for _, k := range keys {
-		if err := batch.Delete(GetBucketKey(b.prefix, []byte(k))); err != nil {
+		if err := batch.Delete(dbhelper.GetBucketKey(b.prefix, []byte(k))); err != nil {
 			return err
 		}
 	}

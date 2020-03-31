@@ -3,10 +3,10 @@ package counter
 import (
 	"context"
 
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -32,7 +32,7 @@ func (c *graphBasedDerivedFieldCounterImpl) Count(ctx context.Context, keys ...s
 	// prefix the initial set of keys, since they will be prefixed in the graph.
 	currentIDs := make([][]byte, 0, len(keys))
 	for _, key := range keys {
-		currentIDs = append(currentIDs, badgerhelper.GetBucketKey(c.prefixPath[0], []byte(key)))
+		currentIDs = append(currentIDs, dbhelper.GetBucketKey(c.prefixPath[0], []byte(key)))
 	}
 
 	idGraph := c.graphProvider.NewGraphView()
@@ -108,7 +108,7 @@ func dfs(ctx context.Context, currentID []byte, cache map[string]int32, seenIDs 
 func filterByPrefix(prefix []byte, input sortedkeys.SortedKeys) sortedkeys.SortedKeys {
 	filteredKeys := input[:0]
 	for _, key := range input {
-		if badgerhelper.HasPrefix(prefix, key) {
+		if dbhelper.HasPrefix(prefix, key) {
 			filteredKeys = append(filteredKeys, key)
 		}
 	}
@@ -117,5 +117,5 @@ func filterByPrefix(prefix []byte, input sortedkeys.SortedKeys) sortedkeys.Sorte
 
 // GetIDForKey returns id for a prefixed key
 func GetIDForKey(prefix, key []byte) string {
-	return string(badgerhelper.StripBucket(prefix, key))
+	return string(dbhelper.StripBucket(prefix, key))
 }

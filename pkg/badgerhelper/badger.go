@@ -1,7 +1,6 @@
 package badgerhelper
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,8 +9,8 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -20,8 +19,6 @@ const (
 )
 
 var (
-	separator = []byte("\x00")
-
 	// DefaultBadgerPath is the default path for the DB. Exported for metrics
 	DefaultBadgerPath = filepath.Join(migrations.DBMountPath, BadgerDBDirName)
 )
@@ -71,16 +68,7 @@ func NewTemp(name string) (*badger.DB, string, error) {
 
 // BucketKeyCount returns the number of objects in a "Bucket"
 func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) (int, error) {
-	return Count(txn, GetBucketKey(keyPrefix, nil))
-}
-
-// GetPrefix returns the first prefix found on the input key, and it's remainder afterwards.
-func GetPrefix(key []byte) (prefix []byte) {
-	idx := bytes.Index(key, separator)
-	if idx == -1 {
-		return nil
-	}
-	return sliceutils.ByteClone(key[:idx])
+	return Count(txn, dbhelper.GetBucketKey(keyPrefix, nil))
 }
 
 // Count gets the number of keys with a specific prefix
@@ -108,13 +96,4 @@ func CountWithBytes(txn *badger.Txn, keyPrefix []byte) (int, int, error) {
 		return nil
 	})
 	return count, int(size), err
-}
-
-// GetBucketKey returns a key which combines the prefix and the id with a separator
-func GetBucketKey(prefix []byte, id []byte) []byte {
-	result := make([]byte, 0, len(prefix)+len(separator)+len(id))
-	result = append(result, prefix...)
-	result = append(result, separator...)
-	result = append(result, id...)
-	return result
 }

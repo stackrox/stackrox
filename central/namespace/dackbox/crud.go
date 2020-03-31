@@ -1,7 +1,7 @@
 package dackbox
 
 import (
-	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (
@@ -11,7 +11,7 @@ var (
 	Bucket = []byte("namespaces")
 
 	// BucketHandler is the bucket's handler.
-	BucketHandler = &badgerhelper.BucketHandler{BucketPrefix: Bucket}
+	BucketHandler = &dbhelper.BucketHandler{BucketPrefix: Bucket}
 	// SACBucketHandler is the SAC bucket's handler.
-	SACBucketHandler = &badgerhelper.BucketHandler{BucketPrefix: SACBucket}
+	SACBucketHandler = &dbhelper.BucketHandler{BucketPrefix: SACBucket}
 )

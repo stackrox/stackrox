@@ -4,8 +4,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 	Bucket = []byte("comp_to_vuln")
 
 	// BucketHandler is the bucket's handler.
-	BucketHandler = &badgerhelper.BucketHandler{BucketPrefix: Bucket}
+	BucketHandler = &dbhelper.BucketHandler{BucketPrefix: Bucket}
 
 	// Reader reads storage.CVEs directly from the store.
 	Reader = crud.NewReader(
@@ -40,7 +40,7 @@ func init() {
 // KeyFunc returns the key for a ComponentCVEEdge.
 func KeyFunc(msg proto.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
-	return badgerhelper.GetBucketKey(Bucket, unPrefixed)
+	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // Alloc allocates a ComponentCVEEdge.

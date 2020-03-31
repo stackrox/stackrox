@@ -8,9 +8,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	searchMocks "github.com/stackrox/rox/pkg/search/blevesearch/mocks"
@@ -33,15 +33,15 @@ var (
 	id8 = []byte("id8")
 	id9 = []byte("id9")
 
-	prefixedID1 = badgerhelper.GetBucketKey(prefix1, id1)
-	prefixedID2 = badgerhelper.GetBucketKey(prefix1, id2)
-	prefixedID3 = badgerhelper.GetBucketKey(prefix2, id3)
-	prefixedID4 = badgerhelper.GetBucketKey(prefix2, id4)
-	prefixedID9 = badgerhelper.GetBucketKey(prefix2, id9)
-	prefixedID5 = badgerhelper.GetBucketKey(prefix3, id5)
-	prefixedID6 = badgerhelper.GetBucketKey(prefix3, id6)
-	prefixedID7 = badgerhelper.GetBucketKey(prefix4, id7)
-	prefixedID8 = badgerhelper.GetBucketKey(prefix4, id8)
+	prefixedID1 = dbhelper.GetBucketKey(prefix1, id1)
+	prefixedID2 = dbhelper.GetBucketKey(prefix1, id2)
+	prefixedID3 = dbhelper.GetBucketKey(prefix2, id3)
+	prefixedID4 = dbhelper.GetBucketKey(prefix2, id4)
+	prefixedID9 = dbhelper.GetBucketKey(prefix2, id9)
+	prefixedID5 = dbhelper.GetBucketKey(prefix3, id5)
+	prefixedID6 = dbhelper.GetBucketKey(prefix3, id6)
+	prefixedID7 = dbhelper.GetBucketKey(prefix4, id7)
+	prefixedID8 = dbhelper.GetBucketKey(prefix4, id8)
 
 	// id1 -> id9
 	//      \ id3 -> id5 (namespace) -> id7, id8 (cluster)

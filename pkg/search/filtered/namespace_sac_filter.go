@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
@@ -33,7 +33,7 @@ func (f *namespaceFilterImpl) Apply(ctx context.Context, from ...string) ([]stri
 	errorList := errorhelpers.NewErrorList("errors during SAC filtering")
 	filtered := make([]string, 0, len(from))
 	for _, id := range from {
-		prefixedID := badgerhelper.GetBucketKey(f.clusterPath[0], []byte(id))
+		prefixedID := dbhelper.GetBucketKey(f.clusterPath[0], []byte(id))
 		namespacesToClusters := f.collectNamespaceScopes(ctx, idGraph, f.clusterPath[1:], prefixedID)
 		ok, err := scopeChecker.AnyAllowed(ctx, convertToNamespaceScopes(namespacesToClusters))
 		if err != nil {
@@ -53,7 +53,7 @@ func (f *namespaceFilterImpl) collectNamespaceScopes(ctx context.Context, idGrap
 	// If this is the namespace index, set the namespace values in the map, and collect all clusters it matches for return.
 	if len(f.clusterPath)-len(path) == f.namespaceIndex {
 		for _, parentID := range parents {
-			namespace := string(badgerhelper.StripBucket(path[0], parentID))
+			namespace := string(dbhelper.StripBucket(path[0], parentID))
 			ret[namespace] = f.collectClusterScopes(ctx, idGraph, path[1:], parentID)
 		}
 		return ret
@@ -71,7 +71,7 @@ func (f *namespaceFilterImpl) collectClusterScopes(ctx context.Context, idGraph 
 	// If this is the cluster index, add it to the set, and return.
 	if len(path) == 1 {
 		for _, parentID := range parents {
-			ret.Add(string(badgerhelper.StripBucket(path[0], parentID)))
+			ret.Add(string(dbhelper.StripBucket(path[0], parentID)))
 		}
 		return ret
 	}

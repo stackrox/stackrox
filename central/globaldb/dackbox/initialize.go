@@ -19,12 +19,12 @@ import (
 	imagecomponentEdgeDackBox "github.com/stackrox/rox/central/imagecomponentedge/dackbox"
 	imagecomponentEdgeIndex "github.com/stackrox/rox/central/imagecomponentedge/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -86,7 +86,7 @@ var (
 func RemoveReindexBucket(db *badger.DB) error {
 	return db.Update(func(txn *badger.Txn) error {
 		for _, initialized := range initializedBuckets {
-			if err := txn.Delete(badgerhelper.GetBucketKey(ReindexIfMissingBucket, initialized.bucket)); err != nil {
+			if err := txn.Delete(dbhelper.GetBucketKey(ReindexIfMissingBucket, initialized.bucket)); err != nil {
 				return err
 			}
 		}
@@ -128,7 +128,7 @@ func readNeedsReindex(dacky *dackbox.DackBox, reindexBucket, bucket []byte) (boo
 	defer txn.Discard()
 
 	// If the key is missing from the reindexing bucket, it means we need to do a full re-index.
-	_, err := txn.BadgerTxn().Get(badgerhelper.GetBucketKey(reindexBucket, bucket))
+	_, err := txn.BadgerTxn().Get(dbhelper.GetBucketKey(reindexBucket, bucket))
 	if err == badger.ErrKeyNotFound {
 		return true, nil
 	} else if err != nil {
@@ -157,7 +157,7 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 			return err
 		}
 	} else {
-		keys, err = reader.ReadKeysIn(badgerhelper.GetBucketKey(dirtyBucket, bucket), txn)
+		keys, err = reader.ReadKeysIn(dbhelper.GetBucketKey(dirtyBucket, bucket), txn)
 		if err != nil {
 			return err
 		}
@@ -170,8 +170,8 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 
 	// Push them into the indexing queue.
 	for _, key := range keys {
-		if badgerhelper.HasPrefix(dirtyBucket, key) {
-			key = badgerhelper.StripBucket(dirtyBucket, key)
+		if dbhelper.HasPrefix(dirtyBucket, key) {
+			key = dbhelper.StripBucket(dirtyBucket, key)
 		}
 		msg, err := reader.ReadIn(key, txn)
 		if err != nil {
@@ -187,7 +187,7 @@ func setDoesNotNeedReindex(dacky *dackbox.DackBox, reindexBucket, bucket, reInde
 	txn := dacky.NewTransaction()
 	defer txn.Discard()
 
-	if err := txn.BadgerTxn().Set(badgerhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
+	if err := txn.BadgerTxn().Set(dbhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
 		return err
 	}
 	return txn.Commit()

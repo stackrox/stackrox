@@ -7,10 +7,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stretchr/testify/suite"
@@ -31,14 +31,14 @@ var (
 	id7  = []byte("id7")
 	id11 = []byte("id11")
 
-	prefixedID1  = badgerhelper.GetBucketKey(prefix1, id1)
-	prefixedID2  = badgerhelper.GetBucketKey(prefix2, id2)
-	prefixedID3  = badgerhelper.GetBucketKey(prefix2, id3)
-	prefixedID4  = badgerhelper.GetBucketKey(prefix3, id4)
-	prefixedID5  = badgerhelper.GetBucketKey(prefix3, id5)
-	prefixedID6  = badgerhelper.GetBucketKey(clusterPrefix, id6)
-	prefixedID7  = badgerhelper.GetBucketKey(clusterPrefix, id7)
-	prefixedID11 = badgerhelper.GetBucketKey(prefix1, id11)
+	prefixedID1  = dbhelper.GetBucketKey(prefix1, id1)
+	prefixedID2  = dbhelper.GetBucketKey(prefix2, id2)
+	prefixedID3  = dbhelper.GetBucketKey(prefix2, id3)
+	prefixedID4  = dbhelper.GetBucketKey(prefix3, id4)
+	prefixedID5  = dbhelper.GetBucketKey(prefix3, id5)
+	prefixedID6  = dbhelper.GetBucketKey(clusterPrefix, id6)
+	prefixedID7  = dbhelper.GetBucketKey(clusterPrefix, id7)
+	prefixedID11 = dbhelper.GetBucketKey(prefix1, id11)
 
 	// Fake hierarchy for test, use prefixed values since that is what will be stored in the graph.
 	fromID1  = [][]byte{prefixedID2, prefixedID3}
@@ -187,7 +187,7 @@ id11 -> id2 ->id4
 func (s *derivedFieldCounterTestSuite) TestCounterForwardOneToMany() {
 	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
 	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return([][]byte{prefixedID5, badgerhelper.GetBucketKey(prefix3, id6)})
+	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return([][]byte{prefixedID5, dbhelper.GetBucketKey(prefix3, id6)})
 	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID11).Return(fromID11)
 
 	graphProvider := fakeGraphProvider{mg: s.mockRGraph}

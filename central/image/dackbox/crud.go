@@ -4,8 +4,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/crud"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 var (
@@ -15,10 +15,10 @@ var (
 	ListBucket = []byte("images_list")
 
 	// BucketHandler is the bucket's handler.
-	BucketHandler = &badgerhelper.BucketHandler{BucketPrefix: Bucket}
+	BucketHandler = &dbhelper.BucketHandler{BucketPrefix: Bucket}
 
 	// ListBucketHandler is the list bucket's handler.
-	ListBucketHandler = &badgerhelper.BucketHandler{BucketPrefix: ListBucket}
+	ListBucketHandler = &dbhelper.BucketHandler{BucketPrefix: ListBucket}
 
 	// Reader reads images.
 	Reader = crud.NewReader(
@@ -56,13 +56,13 @@ func init() {
 // KeyFunc returns the key for an image object
 func KeyFunc(msg proto.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
-	return badgerhelper.GetBucketKey(Bucket, unPrefixed)
+	return dbhelper.GetBucketKey(Bucket, unPrefixed)
 }
 
 // ListKeyFunc returns the key for a list image.
 func ListKeyFunc(msg proto.Message) []byte {
 	unPrefixed := []byte(msg.(interface{ GetId() string }).GetId())
-	return badgerhelper.GetBucketKey(ListBucket, unPrefixed)
+	return dbhelper.GetBucketKey(ListBucket, unPrefixed)
 }
 
 func alloc() proto.Message {

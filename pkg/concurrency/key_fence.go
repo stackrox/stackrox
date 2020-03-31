@@ -3,9 +3,9 @@ package concurrency
 import (
 	"bytes"
 
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -175,7 +175,7 @@ func (pkr *prefixKeySetImpl) Collides(in KeySet) bool {
 		return bytes.HasPrefix(pkr.prefix, prefixSet.prefix) || bytes.HasPrefix(prefixSet.prefix, pkr.prefix)
 	} else if discrete, isDiscrete := in.(*discreteKeySetImpl); isDiscrete {
 		for _, key := range discrete.sorted {
-			if badgerhelper.HasPrefix(pkr.prefix, key) {
+			if dbhelper.HasPrefix(pkr.prefix, key) {
 				return true
 			}
 		}

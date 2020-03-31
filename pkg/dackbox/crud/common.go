@@ -2,7 +2,7 @@ package crud
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 // ProtoAllocFunction allocates a proto object that we can deserialize data into.
@@ -14,7 +14,7 @@ type ProtoKeyFunction func(proto.Message) []byte
 // PrefixKey prefixes the key returned from the input ProtoKeyFunction.
 func PrefixKey(prefix []byte, function ProtoKeyFunction) ProtoKeyFunction {
 	return func(msg proto.Message) []byte {
-		return badgerhelper.GetBucketKey(prefix, function(msg))
+		return dbhelper.GetBucketKey(prefix, function(msg))
 	}
 }
 
@@ -30,6 +30,6 @@ type KeyMatchFunction func([]byte) bool
 // HasPrefix has a KeyMatchFunction that matches a key based on whether or not it has a prefix.
 func HasPrefix(prefix []byte) KeyMatchFunction {
 	return func(key []byte) bool {
-		return badgerhelper.HasPrefix(prefix, key)
+		return dbhelper.HasPrefix(prefix, key)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 // Write/Read up to 100 items per transaction.
@@ -39,7 +40,7 @@ func (b *legacyCrudImpl) Exists(id string) (bool, error) {
 	branch := b.duckBox.NewReadOnlyTransaction()
 	defer branch.Discard()
 
-	exists, err := b.reader.ExistsIn(badgerhelper.GetBucketKey(b.prefix, []byte(id)), branch)
+	exists, err := b.reader.ExistsIn(dbhelper.GetBucketKey(b.prefix, []byte(id)), branch)
 	if err != nil {
 		return false, err
 	}
@@ -52,7 +53,7 @@ func (b *legacyCrudImpl) Read(id string) (proto.Message, bool, error) {
 	branch := b.duckBox.NewReadOnlyTransaction()
 	defer branch.Discard()
 
-	msg, err := b.reader.ReadIn(badgerhelper.GetBucketKey(b.prefix, []byte(id)), branch)
+	msg, err := b.reader.ReadIn(dbhelper.GetBucketKey(b.prefix, []byte(id)), branch)
 	if err != nil {
 		return nil, false, err
 	}
@@ -65,7 +66,7 @@ func (b *legacyCrudImpl) ReadPartial(id string) (proto.Message, bool, error) {
 	branch := b.duckBox.NewReadOnlyTransaction()
 	defer branch.Discard()
 
-	msg, err := b.listReader.ReadIn(badgerhelper.GetBucketKey(b.listPrefix, []byte(id)), branch)
+	msg, err := b.listReader.ReadIn(dbhelper.GetBucketKey(b.listPrefix, []byte(id)), branch)
 	if err != nil {
 		return nil, false, err
 	}
@@ -81,7 +82,7 @@ func (b *legacyCrudImpl) ReadBatch(ids []string) ([]proto.Message, []int, error)
 		defer branch.Discard()
 
 		for idx := batch; idx < len(ids) && idx-batch < batchSize; idx++ {
-			msg, err := b.reader.ReadIn(badgerhelper.GetBucketKey(b.prefix, []byte(ids[idx])), branch)
+			msg, err := b.reader.ReadIn(dbhelper.GetBucketKey(b.prefix, []byte(ids[idx])), branch)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -108,7 +109,7 @@ func (b *legacyCrudImpl) ReadBatchPartial(ids []string) ([]proto.Message, []int,
 		defer branch.Discard()
 
 		for idx := batch; idx < len(ids) && idx-batch < batchSize; idx++ {
-			msg, err := b.listReader.ReadIn(badgerhelper.GetBucketKey(b.listPrefix, []byte(ids[idx])), branch)
+			msg, err := b.listReader.ReadIn(dbhelper.GetBucketKey(b.listPrefix, []byte(ids[idx])), branch)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -192,7 +193,7 @@ func (b *legacyCrudImpl) Delete(id string) error {
 	branch := b.duckBox.NewTransaction()
 	defer branch.Discard()
 
-	err := b.deleter.DeleteIn(badgerhelper.GetBucketKey(b.prefix, []byte(id)), branch)
+	err := b.deleter.DeleteIn(dbhelper.GetBucketKey(b.prefix, []byte(id)), branch)
 	if err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func (b *legacyCrudImpl) DeleteBatch(ids []string) error {
 		defer branch.Discard()
 
 		for idx := batch; idx < len(ids) && idx-batch < batchSize; idx++ {
-			err := b.deleter.DeleteIn(badgerhelper.GetBucketKey(b.prefix, []byte(ids[idx])), branch)
+			err := b.deleter.DeleteIn(dbhelper.GetBucketKey(b.prefix, []byte(ids[idx])), branch)
 			if err != nil {
 				return err
 			}

@@ -9,6 +9,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -120,7 +121,7 @@ func generateGraph(t require.TestingT, dacky *dackbox.DackBox, prefixPath [][]by
 	for i := 0; i < numFroms; i++ {
 		from := uuid.NewV4().String()
 		froms = append(froms, from)
-		genSubGraph(t, dacky, badgerhelper.GetBucketKey(prefixPath[0], []byte(from)), prefixPath, 0, edgeFactor)
+		genSubGraph(t, dacky, dbhelper.GetBucketKey(prefixPath[0], []byte(from)), prefixPath, 0, edgeFactor)
 	}
 	return froms
 }
@@ -132,7 +133,7 @@ func genSubGraph(t require.TestingT, dacky *dackbox.DackBox, from []byte, prefix
 
 	tos := make([][]byte, 0, edgeFactor)
 	for edge := 0; edge < edgeFactor; edge++ {
-		to := badgerhelper.GetBucketKey(prefixPath[level+1], []byte(uuid.NewV4().String()))
+		to := dbhelper.GetBucketKey(prefixPath[level+1], []byte(uuid.NewV4().String()))
 		tos = append(tos, to)
 		addLink(t, dacky, from, to)
 	}

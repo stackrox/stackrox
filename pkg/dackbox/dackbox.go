@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -99,7 +100,7 @@ func (rc *DackBox) AckIndexed(keys ...[]byte) error {
 	}
 	return rc.db.Update(func(txn *badger.Txn) error {
 		for _, key := range keys {
-			if err := txn.Delete(badgerhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
+			if err := txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
 				return err
 			}
 		}

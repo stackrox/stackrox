@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/assert"
 	"github.com/stackrox/rox/pkg/badgerhelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -41,16 +42,16 @@ func (c *crudImpl) Count() (int, error) {
 }
 
 func (c *crudImpl) getKey(id string) []byte {
-	return badgerhelper.GetBucketKey(c.prefix, []byte(id))
+	return dbhelper.GetBucketKey(c.prefix, []byte(id))
 }
 
 func (c *crudImpl) getPartialKey(id string) []byte {
-	return badgerhelper.GetBucketKey(c.partialPrefix, []byte(id))
+	return dbhelper.GetBucketKey(c.partialPrefix, []byte(id))
 }
 
 func read(tx *badger.Txn, prefix []byte, deserializer Deserializer, id string) (proto.Message, error) {
 	var msg proto.Message
-	key := badgerhelper.GetBucketKey(prefix, []byte(id))
+	key := dbhelper.GetBucketKey(prefix, []byte(id))
 
 	item, err := tx.Get(key)
 	if err != nil {
@@ -93,7 +94,7 @@ func (c *crudImpl) ReadPartial(id string) (proto.Message, bool, error) {
 
 func (c *crudImpl) Exists(id string) (exists bool, err error) {
 	err = c.db.View(func(tx *badger.Txn) error {
-		key := badgerhelper.GetBucketKey(c.prefix, []byte(id))
+		key := dbhelper.GetBucketKey(c.prefix, []byte(id))
 		_, err := tx.Get(key)
 		if err == nil {
 			exists = true
@@ -189,7 +190,7 @@ func (c *crudImpl) resolveMsgBytes(msg proto.Message) ([]byte, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	key := badgerhelper.GetBucketKey(c.prefix, c.keyFunc(msg))
+	key := dbhelper.GetBucketKey(c.prefix, c.keyFunc(msg))
 	if len(bytes) == 0 {
 		assert.Panicf("key %q has value of len 0", key)
 	}
@@ -334,8 +335,8 @@ func (c *crudImpl) DeleteBatch(ids []string) error {
 	keys := make([][]byte, 0, len(ids))
 	partialKeys := make([][]byte, 0, len(ids))
 	for _, i := range ids {
-		keys = append(keys, badgerhelper.GetBucketKey(c.prefix, []byte(i)))
-		partialKeys = append(partialKeys, badgerhelper.GetBucketKey(c.partialPrefix, []byte(i)))
+		keys = append(keys, dbhelper.GetBucketKey(c.prefix, []byte(i)))
+		partialKeys = append(partialKeys, dbhelper.GetBucketKey(c.partialPrefix, []byte(i)))
 	}
 
 	batch := c.db.NewWriteBatch()
