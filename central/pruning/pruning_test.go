@@ -431,9 +431,9 @@ func TestImagePruning(t *testing.T) {
 			indexQ.PushSignal(&indexingDone)
 			indexingDone.Wait()
 
-			if c.sepEnabled {
+			if !c.sepEnabled {
 				envIsolator := testutils.NewEnvIsolator(t)
-				envIsolator.Setenv(features.PodDeploymentSeparation.EnvVar(), "true")
+				envIsolator.Setenv(features.PodDeploymentSeparation.EnvVar(), "false")
 				defer envIsolator.RestoreAll()
 			}
 

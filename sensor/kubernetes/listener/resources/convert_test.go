@@ -560,15 +560,6 @@ func TestConvert(t *testing.T) {
 							MemoryMbRequest: 1024.00,
 							MemoryMbLimit:   2048.00,
 						},
-						Instances: []*storage.ContainerInstance{
-							{
-								InstanceId: &storage.ContainerInstanceID{
-									Node: "mynode",
-								},
-								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
-								ImageDigest:     "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							},
-						},
 						Ports: []*storage.PortConfig{
 							{
 								Name:          "api",
@@ -634,17 +625,6 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Resources: &storage.Resources{},
-						Instances: []*storage.ContainerInstance{
-							{
-								InstanceId: &storage.ContainerInstanceID{
-									ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
-									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
-									Node:             "mynode",
-								},
-								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
-								ImageDigest:     "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							},
-						},
 					},
 				},
 			},

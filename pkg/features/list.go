@@ -37,7 +37,7 @@ var (
 	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", true)
 
 	// PodDeploymentSeparation enables support for tracking pods and deployments separately
-	PodDeploymentSeparation = registerFeature("Separate Pods and Deployments", "ROX_POD_DEPLOY_SEPARATE", false)
+	PodDeploymentSeparation = registerFeature("Separate Pods and Deployments", "ROX_POD_DEPLOY_SEPARATE", true)
 
 	// AdmissionControlEnforceOnUpdate enables support for having the admission controller enforce on updates.
 	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", true)
