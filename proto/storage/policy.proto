@@ -34,6 +34,29 @@ message Policy {
     string SORT_name                               = 16 [(gogoproto.moretags) = "search:\"SORT_Policy,hidden,analyzer=keyword\""];
     string SORT_lifecycleStage                     = 17 [(gogoproto.moretags) = "search:\"SORT_Lifecycle Stage,hidden\""];
     bool   SORT_enforcement                        = 18 [(gogoproto.moretags) = "search:\"SORT_Enforcement,hidden\""];
+    string policy_version                          = 19;
+    repeated PolicySection policy_sections         = 20;
+}
+
+message PolicySection {
+    string section_name = 1;
+    repeated PolicyGroup policy_groups = 3;
+}
+
+message PolicyGroup {
+    string field_name                = 1;
+    BooleanOperator boolean_operator = 2;
+    bool negate                      = 3;
+    repeated PolicyValue values      = 4;
+}
+
+message PolicyValue {
+    string value = 1;
+}
+
+enum BooleanOperator {
+    AND = 0;
+    OR  = 1;
 }
 
 message PolicyList {

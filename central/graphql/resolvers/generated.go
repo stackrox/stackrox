@@ -71,6 +71,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
 		"sourceId: String!",
@@ -701,6 +702,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lifecycleStages: [LifecycleStage!]!",
 		"name: String!",
 		"notifiers: [String!]!",
+		"policySections: [PolicySection]!",
+		"policyVersion: String!",
 		"rationale: String!",
 		"remediation: String!",
 		"sORTEnforcement: Boolean!",
@@ -737,12 +740,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"user: String!",
 		"volumePolicy: VolumePolicy",
 	}))
+	utils.Must(builder.AddType("PolicyGroup", []string{
+		"booleanOperator: BooleanOperator!",
+		"fieldName: String!",
+		"negate: Boolean!",
+		"values: [PolicyValue]!",
+	}))
 	utils.Must(builder.AddType("PolicyRule", []string{
 		"apiGroups: [String!]!",
 		"nonResourceUrls: [String!]!",
 		"resourceNames: [String!]!",
 		"resources: [String!]!",
 		"verbs: [String!]!",
+	}))
+	utils.Must(builder.AddType("PolicySection", []string{
+		"policyGroups: [PolicyGroup]!",
+		"sectionName: String!",
+	}))
+	utils.Must(builder.AddType("PolicyValue", []string{
+		"value: String!",
 	}))
 	utils.Must(builder.AddType("PortConfig", []string{
 		"containerPort: Int!",
@@ -1495,6 +1511,24 @@ func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProv
 func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Context) string {
 	value := resolver.data.GetSubscriptionId()
 	return value
+}
+
+func toBooleanOperator(value *string) storage.BooleanOperator {
+	if value != nil {
+		return storage.BooleanOperator(storage.BooleanOperator_value[*value])
+	}
+	return storage.BooleanOperator(0)
+}
+
+func toBooleanOperators(values *[]string) []storage.BooleanOperator {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.BooleanOperator, len(*values))
+	for i, v := range *values {
+		output[i] = toBooleanOperator(&v)
+	}
+	return output
 }
 
 type cSCCResolver struct {
@@ -6364,6 +6398,16 @@ func (resolver *policyResolver) Notifiers(ctx context.Context) []string {
 	return value
 }
 
+func (resolver *policyResolver) PolicySections(ctx context.Context) ([]*policySectionResolver, error) {
+	value := resolver.data.GetPolicySections()
+	return resolver.root.wrapPolicySections(value, nil)
+}
+
+func (resolver *policyResolver) PolicyVersion(ctx context.Context) string {
+	value := resolver.data.GetPolicyVersion()
+	return value
+}
+
 func (resolver *policyResolver) Rationale(ctx context.Context) string {
 	value := resolver.data.GetRationale()
 	return value
@@ -6553,6 +6597,50 @@ func (resolver *policyFieldsResolver) VolumePolicy(ctx context.Context) (*volume
 	return resolver.root.wrapVolumePolicy(value, true, nil)
 }
 
+type policyGroupResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.PolicyGroup
+}
+
+func (resolver *Resolver) wrapPolicyGroup(value *storage.PolicyGroup, ok bool, err error) (*policyGroupResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &policyGroupResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPolicyGroups(values []*storage.PolicyGroup, err error) ([]*policyGroupResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*policyGroupResolver, len(values))
+	for i, v := range values {
+		output[i] = &policyGroupResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *policyGroupResolver) BooleanOperator(ctx context.Context) string {
+	value := resolver.data.GetBooleanOperator()
+	return value.String()
+}
+
+func (resolver *policyGroupResolver) FieldName(ctx context.Context) string {
+	value := resolver.data.GetFieldName()
+	return value
+}
+
+func (resolver *policyGroupResolver) Negate(ctx context.Context) bool {
+	value := resolver.data.GetNegate()
+	return value
+}
+
+func (resolver *policyGroupResolver) Values(ctx context.Context) ([]*policyValueResolver, error) {
+	value := resolver.data.GetValues()
+	return resolver.root.wrapPolicyValues(value, nil)
+}
+
 type policyRuleResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -6599,6 +6687,69 @@ func (resolver *policyRuleResolver) Resources(ctx context.Context) []string {
 
 func (resolver *policyRuleResolver) Verbs(ctx context.Context) []string {
 	value := resolver.data.GetVerbs()
+	return value
+}
+
+type policySectionResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.PolicySection
+}
+
+func (resolver *Resolver) wrapPolicySection(value *storage.PolicySection, ok bool, err error) (*policySectionResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &policySectionResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPolicySections(values []*storage.PolicySection, err error) ([]*policySectionResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*policySectionResolver, len(values))
+	for i, v := range values {
+		output[i] = &policySectionResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *policySectionResolver) PolicyGroups(ctx context.Context) ([]*policyGroupResolver, error) {
+	value := resolver.data.GetPolicyGroups()
+	return resolver.root.wrapPolicyGroups(value, nil)
+}
+
+func (resolver *policySectionResolver) SectionName(ctx context.Context) string {
+	value := resolver.data.GetSectionName()
+	return value
+}
+
+type policyValueResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.PolicyValue
+}
+
+func (resolver *Resolver) wrapPolicyValue(value *storage.PolicyValue, ok bool, err error) (*policyValueResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &policyValueResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPolicyValues(values []*storage.PolicyValue, err error) ([]*policyValueResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*policyValueResolver, len(values))
+	for i, v := range values {
+		output[i] = &policyValueResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *policyValueResolver) Value(ctx context.Context) string {
+	value := resolver.data.GetValue()
 	return value
 }
 

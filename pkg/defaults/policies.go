@@ -49,6 +49,9 @@ func Policies() (policies []*storage.Policy, err error) {
 		if !features.ImageLabelPolicy.Enabled() && p.GetId() == "d3e480c1-c6de-4cd2-9006-9a3eb3ad36b6" {
 			continue
 		}
+		if !features.BooleanPolicyLogic.Enabled() && p.GetPolicyVersion() != "" {
+			continue
+		}
 
 		policies = append(policies, p)
 	}

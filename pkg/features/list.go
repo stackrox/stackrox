@@ -47,4 +47,7 @@ var (
 
 	// RocksDB enables using RocksDB as a databases instead of BadgerDB
 	RocksDB = registerFeature("Use RocksDB instead of BadgerDB", "ROX_ROCKSDB", false)
+
+	// BooleanPolicyLogic enables support for an extended policy logic
+	BooleanPolicyLogic = registerFeature("Enable Boolean Policy Logic", "ROX_BOOLEAN_POLICY_LOGIC", false)
 )
