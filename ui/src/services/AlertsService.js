@@ -82,7 +82,7 @@ export function fetchAlertCount(options) {
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchAlert(id) {
-    if (!id) throw new Error('Image ID must be specified');
+    if (!id) throw new Error('Alert ID must be specified');
     return axios.get(`${baseUrl}/${id}`).then(response => response.data);
 }
 

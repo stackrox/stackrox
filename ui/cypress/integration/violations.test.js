@@ -187,6 +187,19 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.whitelistDeploymentRow).should('not.exist');
     });
 
+    it('should have enforcement information in the Enforcement tab', () => {
+        mockGetAlert();
+        cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
+        cy.wait('@alertById');
+        cy.get(ViolationsPageSelectors.panels)
+            .eq(1)
+            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
+            .click();
+        cy.get(ViolationsPageSelectors.sidePanel.enforcementDetailMessage).should(message => {
+            expect(message).to.contain('Kill Pod');
+        });
+    });
+
     it('should have deployment information in the Deployment Details tab', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();

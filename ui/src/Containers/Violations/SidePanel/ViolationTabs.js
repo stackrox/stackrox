@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-import { Details as EnforcementDetails } from 'Containers/Violations/Enforcement/Details';
+import EnforcementDetails from 'Containers/Violations/Enforcement/Details';
 import DeploymentDetails from '../../Risk/DeploymentDetails';
 import ViolationsDetails from './ViolationsDetails';
 import PolicyDetails from '../../Policies/Wizard/Details/PolicyDetails';
@@ -29,7 +29,7 @@ function ViolationTabs({ alert }) {
             </TabContent>
             <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
-                    <EnforcementDetails listAlert={alert} />
+                    <EnforcementDetails alert={alert} />
                 </div>
             </TabContent>
             <TabContent extraClasses="bg-base-0">
@@ -56,4 +56,4 @@ ViolationTabs.propTypes = {
     }).isRequired
 };
 
-export default ViolationTabs;
+export default React.memo(ViolationTabs);

@@ -7,10 +7,7 @@
         "rationale": "iptables is a deprecated way of managing network state in containers",
         "remediation": "Check for any processes that may be modifying iptables rules. Check for open ports that may be allowing code injection to modify iptables rules",
         "disabled": false,
-        "categories": [
-            "Network Configuration Change",
-            "Reconnaissance"
-        ],
+        "categories": ["Network Configuration Change", "Reconnaissance"],
         "scope": [],
         "enforcement_actions": ["UNSET_ENFORCEMENT"],
         "notifiers": [],
@@ -58,6 +55,7 @@
         "severity": "HIGH_SEVERITY",
         "enforcement": "UNSET_ENFORCEMENT"
     },
+    "lifecycleStage": "RUNTIME",
     "deployment": {
         "id": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
         "name": "ip-masq-agent",
@@ -124,9 +122,7 @@
                             "node": "gke-setup-devd8560-default-pool-2e3081b0-zrlr"
                         },
                         "containingPodId": "ip-masq-agent-4c5fg.kube-system@73505a2b-c28c-11e8-b8c4-42010a8a0fe9",
-                        "containerIps": [
-                            "10.1.160.4"
-                        ]
+                        "containerIps": ["10.1.160.4"]
                     },
                     {
                         "instanceId": {
@@ -135,9 +131,7 @@
                             "node": "gke-setup-devd8560-default-pool-2e3081b0-zghf"
                         },
                         "containingPodId": "ip-masq-agent-hhxjp.kube-system@71d090da-c28c-11e8-b8c4-42010a8a0fe9",
-                        "containerIps": [
-                            "10.1.160.5"
-                        ]
+                        "containerIps": ["10.1.160.5"]
                     },
                     {
                         "instanceId": {
@@ -146,9 +140,7 @@
                             "node": "gke-setup-devd8560-default-pool-2e3081b0-bm5g"
                         },
                         "containingPodId": "ip-masq-agent-pqcnb.kube-system@72351972-c28c-11e8-b8c4-42010a8a0fe9",
-                        "containerIps": [
-                            "10.1.160.6"
-                        ]
+                        "containerIps": ["10.1.160.6"]
                     },
                     {
                         "instanceId": {
@@ -157,9 +149,7 @@
                             "node": "gke-setup-devd8560-default-pool-2e3081b0-w3t6"
                         },
                         "containingPodId": "ip-masq-agent-887fr.kube-system@7162afe6-c28c-11e8-b8c4-42010a8a0fe9",
-                        "containerIps": [
-                            "10.1.160.2"
-                        ]
+                        "containerIps": ["10.1.160.2"]
                     },
                     {
                         "instanceId": {
@@ -168,9 +158,7 @@
                             "node": "gke-setup-devd8560-default-pool-2e3081b0-pc8t"
                         },
                         "containingPodId": "ip-masq-agent-67mnx.kube-system@7268d9ef-c28c-11e8-b8c4-42010a8a0fe9",
-                        "containerIps": [
-                            "10.1.160.3"
-                        ]
+                        "containerIps": ["10.1.160.3"]
                     }
                 ]
             }
@@ -524,9 +512,14 @@
                     "pid": 6974,
                     "uid": 4294967295,
                     "gid": 4294967295
-                }
+                },
+                "podId": "ip-masq-agent-1234"
             }
         ]
+    },
+    "enforcement": {
+        "action": "SCALE_TO_ZERO_ENFORCEMENT",
+        "message": "Deployment nginx2 scaled to 0 replicas in response to policy violation"
     },
     "enforcement_actions": null,
     "time": "2018-05-21T18:06:04.385651124Z",
