@@ -2,16 +2,17 @@ import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.ImageOuterClass
 import org.junit.experimental.categories.Category
+import services.ImageIntegrationService
 import spock.lang.Unroll
 
 class ImageScanningTest extends BaseSpecification {
 
     def setupSpec() {
-        Services.addStackroxScannerIntegration()
+        ImageIntegrationService.addStackroxScannerIntegration()
     }
 
     def cleanupSpec() {
-        Services.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
     }
 
     @Unroll

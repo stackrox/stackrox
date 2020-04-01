@@ -7,6 +7,7 @@ import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.FeatureFlagService
+import services.ImageIntegrationService
 import spock.lang.Shared
 import spock.lang.Unroll
 import util.Env
@@ -54,7 +55,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
-        gcrId = Services.addGcrRegistryAndScanner()
+        gcrId = ImageIntegrationService.addGcrRegistry()
         assert gcrId != null
     }
 
@@ -74,7 +75,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 CVSS,
                 cvssEnforcements
         )
-        assert Services.deleteGcrRegistryAndScanner(gcrId)
+        assert ImageIntegrationService.deleteImageIntegration(gcrId)
     }
 
     @Unroll

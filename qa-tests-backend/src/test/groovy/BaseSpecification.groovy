@@ -11,6 +11,7 @@ import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
+import services.ImageIntegrationService
 import services.RoleService
 import services.SACService
 import spock.lang.Shared
@@ -128,8 +129,9 @@ class BaseSpecification extends Specification {
         globalSetup()
 
         try {
-            dtrId = Services.addDockerTrustedRegistry()
-            stackroxScannerIntegrationDidPreExist = Services.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+            dtrId = ImageIntegrationService.addDockerTrustedRegistry()
+            stackroxScannerIntegrationDidPreExist =
+                    ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
         } catch (Exception e) {
             println "Error setting up orchestrator: ${e.message}"
@@ -169,9 +171,9 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         try {
-            Services.deleteImageIntegration(dtrId)
+            ImageIntegrationService.deleteImageIntegration(dtrId)
             if (stackroxScannerIntegrationDidPreExist) {
-                Services.addStackroxScannerIntegration()
+                ImageIntegrationService.addStackroxScannerIntegration()
             }
             orchestrator.cleanup()
         } catch (Exception e) {

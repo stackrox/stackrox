@@ -1,12 +1,10 @@
 import io.stackrox.proto.api.v1.DeploymentServiceOuterClass
-import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.DeploymentOuterClass.Pod
-import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import io.stackrox.proto.storage.NotifierOuterClass.Email
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
@@ -20,7 +18,6 @@ import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.PodServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
-import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceGrpc
@@ -29,7 +26,6 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
-import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
@@ -51,10 +47,6 @@ class Services extends BaseService {
 
     static getImageClient() {
         return ImageServiceGrpc.newBlockingStub(getChannel())
-    }
-
-    static getIntegrationClient() {
-        return ImageIntegrationServiceGrpc.newBlockingStub(getChannel())
     }
 
     static getDetectionClient() {
@@ -183,115 +175,6 @@ class Services extends BaseService {
 
     static getViolationsByDeploymentID(String deploymentID, String policyName, int timeoutSeconds) {
         return getViolationsHelper("Deployment Id:${deploymentID}+Policy:${policyName}", policyName, timeoutSeconds)
-    }
-
-    static createImageIntegration(ImageIntegration integration) {
-        Timer t = new Timer(15, 3)
-        while (t.IsValid()) {
-            try {
-                ImageIntegration createdIntegration = getIntegrationClient().postImageIntegration(integration)
-                return createdIntegration.getId()
-            } catch (Exception e) {
-                println "Unable to create image integration ${integration.name}: ${e.message}"
-            }
-        }
-        println ("Unable to create image integration")
-        return ""
-    }
-
-    static final private String AUTO_REGISTERED_SCANNER_INTEGRATION = "Stackrox Scanner"
-
-    // For now, we delete the auto registered StackRox Scanner integration
-    // since the QA tests are not stable when we run with them.
-    // This function returns whether or not the integration was deleted.
-    static boolean deleteAutoRegisteredStackRoxScannerIntegrationIfExists() {
-        try {
-            // The Stackrox Scanner integration is auto-added by the product,
-            // so we first check whether it already exists.
-            def scannerIntegrations = getIntegrationClient().getImageIntegrations(
-                ImageIntegrationServiceOuterClass.GetImageIntegrationsRequest.
-                    newBuilder().
-                    setName(AUTO_REGISTERED_SCANNER_INTEGRATION).
-                    build()
-            )
-            if (scannerIntegrations.getIntegrationsCount() > 1) {
-                throw new RuntimeException("UNEXPECTED: Got more than one scanner integration: ${scannerIntegrations}")
-            }
-            if (scannerIntegrations.getIntegrationsCount() == 0) {
-                return false
-            }
-            def id = scannerIntegrations.getIntegrations(0).id
-            // Delete
-            getIntegrationClient().deleteImageIntegration(ResourceByID.newBuilder().setId(id).build())
-            return true
-        } catch (Exception e) {
-            println "Unable to delete existing Stackrox scanner integration: ${e.message}"
-        }
-    }
-
-    // This function adds the Stackrox scanner integration.
-    // Currently, we do this if it was deleted by the test on setup,
-    // so that the test leaves things in the same state after cleanup.
-    static String addStackroxScannerIntegration() {
-        try {
-            def integration = getIntegrationClient().postImageIntegration(ImageIntegration.newBuilder().
-                setName(AUTO_REGISTERED_SCANNER_INTEGRATION).
-                setType("clairify").
-                addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER).
-                setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder().
-                    setEndpoint("https://scanner.stackrox:8080").
-                    build()
-                ).
-                build()
-            )
-            return integration.id
-        } catch (Exception e) {
-            println "Unable to ensure scanner integrations: ${e.message}"
-        }
-    }
-
-    static String addDockerTrustedRegistry(boolean includeScanner = true) {
-        ImageIntegration.Builder builder = ImageIntegration.newBuilder()
-                .setName("dtr")
-                .setType("dtr")
-                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                .setDtr(ImageIntegrationOuterClass.DTRConfig.newBuilder()
-                        .setEndpoint("https://apollo-dtr.rox.systems/")
-                        .setUsername("qa")
-                        .setPassword("W3g9xOPKyLTkBBMj")
-                        .setInsecure(false)
-                        .build()
-                )
-        if (includeScanner) {
-            builder.addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-        }
-        return createImageIntegration(builder.build())
-    }
-
-    static deleteImageIntegration(String integrationId) {
-        try {
-            getIntegrationClient().deleteImageIntegration(
-                    ResourceByID.newBuilder()
-                            .setId(integrationId)
-                            .build()
-            )
-        } catch (Exception e) {
-            println "Failed to delete integration: ${e.toString()}"
-            return false
-        }
-        try {
-            ImageIntegration integration = getIntegrationClient().getImageIntegration(
-                    ResourceByID.newBuilder().setId(integrationId).build()
-            )
-            while (integration) {
-                integration = getIntegrationClient().getImageIntegration(
-                        ResourceByID.newBuilder().setId(integrationId).build()
-                )
-                sleep 2000
-            }
-        } catch (Exception e) {
-            return e.toString().contains("NOT_FOUND")
-        }
     }
 
     static scanImage(String image) {
@@ -575,54 +458,6 @@ class Services extends BaseService {
                     NotifierServiceOuterClass.DeleteNotifierRequest.newBuilder()
                             .setId(id)
                             .setForce(true)
-                            .build()
-            )
-        } catch (Exception e) {
-            println e.toString()
-        }
-    }
-
-    static String addAzureACRRegistry() {
-        String azurePassword = System.getenv("AZURE_REGISTRY_PASSWORD")
-
-        ImageIntegration integration =  ImageIntegration.newBuilder()
-                .setName("azure")
-                .setType("azure")
-                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                .setDocker(
-                ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                        .setEndpoint("stackroxacr.azurecr.io")
-                        .setUsername("3e30919c-a552-4b1f-a67a-c68f8b32dad8")
-                        .setPassword(azurePassword)
-                        .build()
-        ).build()
-        return createImageIntegration(integration)
-    }
-
-    static String addGcrRegistryAndScanner() {
-        String serviceAccount = System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
-
-        ImageIntegration integration = ImageIntegration.newBuilder()
-                .setName("gcr")
-                .setType("google")
-                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-                .setGoogle(
-                ImageIntegrationOuterClass.GoogleConfig.newBuilder()
-                        .setEndpoint("us.gcr.io")
-                        .setProject("stackrox-ci")
-                        .setServiceAccount(serviceAccount)
-                        .build()
-        ).build()
-
-        return createImageIntegration(integration)
-    }
-
-    static deleteGcrRegistryAndScanner(String gcrId) {
-        try {
-            getIntegrationClient().deleteImageIntegration(
-                    ResourceByID.newBuilder()
-                            .setId(gcrId)
                             .build()
             )
         } catch (Exception e) {

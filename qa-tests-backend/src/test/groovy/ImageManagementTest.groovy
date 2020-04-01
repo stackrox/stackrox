@@ -1,6 +1,7 @@
 import groups.BAT
 import groups.Integration
 import org.junit.experimental.categories.Category
+import services.ImageIntegrationService
 import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
@@ -14,19 +15,19 @@ class ImageManagementTest extends BaseSpecification {
     private static final boolean CHECK_AZURE = false
 
     def setupSpec() {
-        gcrId = Services.addGcrRegistryAndScanner()
+        gcrId = ImageIntegrationService.addGcrRegistry()
         assert gcrId != null
 
         if (CHECK_AZURE) {
-            azureId = Services.addAzureACRRegistry()
+            azureId = ImageIntegrationService.addAzureRegistry()
             assert azureId != null
         }
     }
 
     def cleanupSpec() {
-        assert Services.deleteGcrRegistryAndScanner(gcrId)
+        assert ImageIntegrationService.deleteImageIntegration(gcrId)
         if (CHECK_AZURE) {
-            assert Services.deleteImageIntegration(azureId)
+            assert ImageIntegrationService.deleteImageIntegration(azureId)
         }
     }
 

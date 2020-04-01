@@ -6,6 +6,7 @@ import services.ImageService
 import spock.lang.Shared
 import services.AlertService
 import services.FeatureFlagService
+import services.ImageIntegrationService
 import common.Constants
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
@@ -80,7 +81,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
-        gcrId = Services.addGcrRegistryAndScanner()
+        gcrId = ImageIntegrationService.addGcrRegistry()
         assert gcrId != null
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -94,7 +95,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
-        assert Services.deleteGcrRegistryAndScanner(gcrId)
+        assert ImageIntegrationService.deleteImageIntegration(gcrId)
     }
 
     @Unroll

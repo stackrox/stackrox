@@ -1,4 +1,5 @@
 import static Services.waitForViolation
+
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
@@ -10,6 +11,7 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.AlertService
 import services.CreatePolicyService
+import services.ImageIntegrationService
 import services.ProcessWhitelistService
 import services.ClusterService
 import spock.lang.Shared
@@ -31,12 +33,12 @@ class Enforcement extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
-        gcrId = Services.addGcrRegistryAndScanner()
+        gcrId = ImageIntegrationService.addGcrRegistry()
         assert gcrId != null
     }
 
     def cleanupSpec() {
-        assert Services.deleteGcrRegistryAndScanner(gcrId)
+        assert ImageIntegrationService.deleteImageIntegration(gcrId)
     }
 
     @Category([BAT, Integration, PolicyEnforcement])

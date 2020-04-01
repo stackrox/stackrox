@@ -25,6 +25,7 @@ import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
 import services.CreatePolicyService
+import services.ImageIntegrationService
 import services.NetworkPolicyService
 import services.ImageService
 import services.ProcessService
@@ -64,10 +65,10 @@ class ComplianceTest extends BaseSpecification {
         assert clusterId
 
         // Clear image cache and add gcr/remove dtr scanners
-        Services.deleteImageIntegration(dtrId)
+        ImageIntegrationService.deleteImageIntegration(dtrId)
         ImageService.clearImageCaches()
-        dtrId = Services.addDockerTrustedRegistry(false)
-        gcrId = Services.addGcrRegistryAndScanner()
+        dtrId = ImageIntegrationService.addDockerTrustedRegistry(false)
+        gcrId = ImageIntegrationService.addGcrRegistry()
 
         // Get compliance metadata
         standardsByName = ComplianceService.getComplianceStandards().collectEntries {
@@ -86,10 +87,10 @@ class ComplianceTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        Services.deleteImageIntegration(gcrId)
-        Services.deleteImageIntegration(dtrId)
+        ImageIntegrationService.deleteImageIntegration(gcrId)
+        ImageIntegrationService.deleteImageIntegration(dtrId)
         ImageService.clearImageCaches()
-        dtrId = Services.addDockerTrustedRegistry()
+        dtrId = ImageIntegrationService.addDockerTrustedRegistry()
 
         // Wait for compliance daemonset to be deleted
         Map<String, String> complianceLabels = new HashMap<>()
@@ -558,7 +559,7 @@ class ComplianceTest extends BaseSpecification {
 
         given:
         "remove image integrations"
-        def gcrRemoved = Services.deleteImageIntegration(gcrId)
+        def gcrRemoved = ImageIntegrationService.deleteImageIntegration(gcrId)
 
         and:
         "add notifier integration"
@@ -600,7 +601,7 @@ class ComplianceTest extends BaseSpecification {
         cleanup:
         "re-add image integrations"
         if (gcrRemoved) {
-            gcrId = Services.addGcrRegistryAndScanner()
+            gcrId = ImageIntegrationService.addGcrRegistry()
         }
         if (slackNotiferId) {
             Services.deleteNotifier(slackNotiferId)
