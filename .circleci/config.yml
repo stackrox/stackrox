@@ -1928,6 +1928,9 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
+
       - provision-gke-cluster:
           cluster-id: upgrade-test
 
@@ -2514,6 +2517,9 @@ jobs:
     steps:
       - checkout
       - check-backend-changes
+      - check-label-to-skip-tests:
+          label: ci-no-upgrade-tests
+
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -3411,6 +3417,21 @@ jobs:
           command: |
             git push origin "$NIGHTLY_TAG"
 
+  collect-test-jobs-stats:
+    executor: custom
+    resource_class: small
+    steps:
+      - checkout
+      - setup-gcp
+
+      - run:
+          name: Wait for all other workflow jobs to finish
+          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/wait-for-jobs-completion.sh
+
+      - run:
+          name: Collect and send test jobs stats
+          command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/collect-tests-stats.sh "stackrox-ci" "ci_metrics.rox_jobs_stats"
+
 
 workflows:
   version: 2
@@ -3580,6 +3601,12 @@ workflows:
               ignore: /.*/
             tags:
               only: /.*/
+
+      - collect-test-jobs-stats:
+          context: docker-io-pull
+          filters:
+            branches:
+              only: master
 
   update_dev_license:
     triggers:
