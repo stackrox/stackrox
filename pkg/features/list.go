@@ -1,10 +1,6 @@
 package features
 
 var (
-	// ConfigMgmtUI enables the config management UI.
-	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	ConfigMgmtUI = registerFeature("Enable Config Mgmt UI", "ROX_CONFIG_MGMT_UI", true)
-
 	// VulnMgmtUI enables the vulnerability management UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	VulnMgmtUI = registerFeature("Enable Vulnerability Management UI", "ROX_VULN_MGMT_UI", true)
@@ -48,4 +44,7 @@ var (
 
 	// DryRunPolicyJobMechanism enables submitting dry run of a policy as a job, and querying the status using job id.
 	DryRunPolicyJobMechanism = registerFeature("Dry run policy job mechanism", "ROX_DRY_RUN_JOB", false)
+
+	// RocksDB enables using RocksDB as a databases instead of BadgerDB
+	RocksDB = registerFeature("Use RocksDB instead of BadgerDB", "ROX_ROCKSDB", false)
 )
