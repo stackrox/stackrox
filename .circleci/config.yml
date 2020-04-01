@@ -1556,7 +1556,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1621,7 +1621,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1657,7 +1657,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1694,7 +1694,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1759,7 +1759,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1809,7 +1809,7 @@ jobs:
   build-deployer:
     executor: custom
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -1935,7 +1935,7 @@ jobs:
     executor: custom
     resource_class: large
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - EKS_AUTOMATION_VERSION: 0.0.1
     steps:
       - checkout
@@ -2055,7 +2055,7 @@ jobs:
   provision-kops-api-e2e-tests:
     machine: true
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -2932,7 +2932,7 @@ jobs:
   kops-api-e2e-tests:
     executor: custom
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.6
+      - KOPS_AUTOMATION_VERSION: 0.2.7
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
