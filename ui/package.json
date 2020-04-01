@@ -84,7 +84,8 @@
         "styled-components": "^4.4.0",
         "tippy.js": "^5.2.1",
         "typeface-open-sans": "^0.0.54",
-        "typeface-open-sans-condensed": "^0.0.72"
+        "typeface-open-sans-condensed": "^0.0.72",
+        "yup": "^0.28.3"
     },
     "scripts": {
         "start": "yarn tailwind && HTTPS=true react-scripts start",

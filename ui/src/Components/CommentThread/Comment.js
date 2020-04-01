@@ -3,12 +3,12 @@ import { Formik } from 'formik';
 import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 import { Edit, Trash2, XCircle } from 'react-feather';
+import { object, string } from 'yup';
 
+import { httpURLPattern, isValidURL } from 'utils/urlUtils';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import CustomDialogue from 'Components/CustomDialogue';
 import Button from 'Components/Button';
-
-const regexURL = /(https?: \/\/[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/[a-zA-Z0-9]+\.[^\s]{2,}|[a-zA-Z0-9]+\.[^\s]{2,})/g;
 
 const ActionButtons = ({ isEditing, isModifiable, onEdit, onRemove, onClose, isDisabled }) => {
     if (isEditing) {
@@ -44,9 +44,9 @@ const ActionButtons = ({ isEditing, isModifiable, onEdit, onRemove, onClose, isD
 
 const Message = ({ message }) => {
     // split the message by URLs
-    return message.split(regexURL).map(str => {
+    return message.split(httpURLPattern).map(str => {
         // create links for each URL string
-        if (str.match(regexURL)) {
+        if (isValidURL(str)) {
             return (
                 // https://mathiasbynens.github.io/rel-noopener/ explains why we add the rel="noopener noreferrer" attribute
                 <a
@@ -55,6 +55,7 @@ const Message = ({ message }) => {
                     rel="noopener noreferrer"
                     key={str}
                     className="text-primary-700"
+                    data-testid="comment-link"
                 >
                     {str}
                 </a>
@@ -65,19 +66,20 @@ const Message = ({ message }) => {
 };
 
 const CommentForm = ({ initialFormValues, onSubmit }) => {
-    // @TODO: Consider using "yup" for validatiion
-    function validate(values) {
-        const errors = {};
-        if (!values.message) {
-            errors.message = 'This field is required';
-        }
-        return errors;
-    }
     return (
-        <Formik initialValues={initialFormValues} validate={validate} onSubmit={onSubmit}>
+        <Formik
+            initialValues={initialFormValues}
+            validationSchema={object().shape({
+                message: string()
+                    .trim()
+                    .required('This field is required')
+            })}
+            onSubmit={onSubmit}
+        >
             {({ values, errors, handleChange, handleBlur, handleSubmit }) => (
                 <form onSubmit={handleSubmit}>
                     <textarea
+                        data-testid="comment-textarea"
                         className="form-textarea text-base border border-base-400 leading-normal p-1 w-full"
                         name="message"
                         rows="5"
@@ -190,13 +192,13 @@ Comment.propTypes = {
         id: PropTypes.string,
         message: PropTypes.string,
         user: PropTypes.shape({
-            id: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired,
-            email: PropTypes.string.isRequired
+            id: PropTypes.string,
+            name: PropTypes.string,
+            email: PropTypes.string
         }),
         createdTime: PropTypes.string,
         updatedTime: PropTypes.string,
-        isModifiable: PropTypes.bool.isRequired
+        isModifiable: PropTypes.bool
     }).isRequired,
     onRemove: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
