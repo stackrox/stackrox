@@ -190,10 +190,6 @@ func getTag(imageStr string) (string, error) {
 
 func injectImageTags(c *Config) error {
 	var err error
-	c.K8sConfig.ScannerImageTag, err = getTag(c.K8sConfig.ScannerImage)
-	if err != nil {
-		return err
-	}
 	c.K8sConfig.MainImageTag, err = getTag(c.K8sConfig.MainImage)
 	if err != nil {
 		return err

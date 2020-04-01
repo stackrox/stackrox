@@ -146,8 +146,7 @@ type K8sConfig struct {
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.
-	MainImageTag    string
-	ScannerImageTag string
+	MainImageTag string
 
 	DeploymentFormat v1.DeploymentFormat
 	LoadBalancerType v1.LoadBalancerType

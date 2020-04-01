@@ -37,7 +37,6 @@ func (*openshift) Render(cluster *storage.Cluster, _ []byte, opts RenderOptions)
 		"kubernetes/kubectl/upgrader-serviceaccount.yaml",
 		"openshift/kubectl/delete-sensor.sh",
 		"openshift/kubectl/sensor.sh",
-		"openshift/kubectl/sensor-image-setup.sh",
 		"openshift/kubectl/sensor-scc.yaml",
 	)
 
