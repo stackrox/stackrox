@@ -198,6 +198,9 @@ describe('Violations page', () => {
         cy.get(ViolationsPageSelectors.sidePanel.enforcementDetailMessage).should(message => {
             expect(message).to.contain('Kill Pod');
         });
+        cy.get(ViolationsPageSelectors.sidePanel.enforcementExplanationMessage).should(message => {
+            expect(message).to.contain('Runtime data was evaluated against this StackRox policy');
+        });
     });
 
     it('should have deployment information in the Deployment Details tab', () => {

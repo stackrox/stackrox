@@ -11,7 +11,8 @@ export const selectors = {
         header: '[data-test-id="panel-header"]',
         tabs: 'button[data-test-id="tab"]',
         getTabByIndex: index => `button[data-test-id="tab"]:nth(${index})`,
-        enforcementDetailMessage: '[data-test-id="enforcement-detail-message"]'
+        enforcementDetailMessage: '[data-test-id="enforcement-detail-message"]',
+        enforcementExplanationMessage: '[data-test-id="enforcement-explanation-message"]'
     },
     clusterTableHeader: '.rt-thead > .rt-tr > div:contains("Cluster")',
     viewDeploymentsButton: 'button:contains("View Deployments")',
