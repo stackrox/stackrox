@@ -6,7 +6,7 @@ export const licenses = [
     {
         license: {
             supportContact: {
-                phone: '1 (650) 489-6769',
+                phone: '1 (650) 385-8329',
                 email: 'support@stackrox.com',
                 url: '',
                 name: ''

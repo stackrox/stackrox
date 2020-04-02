@@ -51,8 +51,8 @@ const common = Object.freeze({
     },
     stackroxSupport: {
         phoneNumber: {
-            withSpaces: '1 (650) 489-6769',
-            withDashes: '1-650-489-6769'
+            withSpaces: '1 (650) 385-8329',
+            withDashes: '1-650-385-8329'
         },
         email: 'support@stackrox.com'
     },
