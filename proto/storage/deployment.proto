@@ -45,7 +45,7 @@ message Deployment {
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
     float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
 
-    repeated string tags                       = 30 [(gogoproto.moretags) = "search:\"Tag,store\""];
+    repeated string process_tags               = 30 [(gogoproto.moretags) = "search:\"Process Tag,store\""];
 }
 
 message ContainerImage {

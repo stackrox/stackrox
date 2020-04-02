@@ -92,6 +92,7 @@ var (
 	PortProtocol                  = newFieldLabel("Port Protocol")
 	Priority                      = newFieldLabel("Priority")
 	Privileged                    = newFieldLabel("Privileged")
+	ProcessTag                    = newFieldLabel("Process Tag")
 	ReadOnlyRootFilesystem        = newFieldLabel("Read Only Root Filesystem")
 	SecretID                      = newFieldLabel("Secret ID")
 	SecretName                    = newFieldLabel("Secret")

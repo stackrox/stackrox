@@ -263,7 +263,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 			existingDeployment, _, err := ds.deploymentStore.GetDeployment(deployment.GetId())
 			// Best-effort, don't bother checking the error.
 			if err == nil && existingDeployment != nil {
-				deployment.Tags = existingDeployment.GetTags()
+				deployment.ProcessTags = existingDeployment.GetProcessTags()
 			}
 		}
 		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
@@ -528,10 +528,10 @@ func (ds *datastoreImpl) AddTagsToProcessKey(ctx context.Context, key *analystno
 	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
 	// It's possible to comment on tags for deployments that no longer exist.
 	if err == nil && deployment != nil {
-		existingTags := deployment.GetTags()
+		existingTags := deployment.GetProcessTags()
 		unionTags := sliceutils.StringUnion(existingTags, tags)
 		sort.Strings(unionTags)
-		deployment.Tags = unionTags
+		deployment.ProcessTags = unionTags
 		if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
 			return err
 		}

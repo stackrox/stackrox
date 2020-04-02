@@ -407,12 +407,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
+		"processTags: [String!]!",
 		"replicas: Int!",
 		"riskScore: Float!",
 		"serviceAccount: String!",
 		"serviceAccountPermissionLevel: PermissionLevel!",
 		"stateTimestamp: Int!",
-		"tags: [String!]!",
 		"tolerations: [Toleration]!",
 		"type: String!",
 	}))
@@ -4147,6 +4147,12 @@ func (resolver *deploymentResolver) Priority(ctx context.Context) int32 {
 	return int32(value)
 }
 
+func (resolver *deploymentResolver) ProcessTags(ctx context.Context) []string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetProcessTags()
+	return value
+}
+
 func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetReplicas()
@@ -4175,12 +4181,6 @@ func (resolver *deploymentResolver) StateTimestamp(ctx context.Context) int32 {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetStateTimestamp()
 	return int32(value)
-}
-
-func (resolver *deploymentResolver) Tags(ctx context.Context) []string {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetTags()
-	return value
 }
 
 func (resolver *deploymentResolver) Tolerations(ctx context.Context) ([]*tolerationResolver, error) {

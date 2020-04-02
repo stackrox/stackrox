@@ -75,8 +75,8 @@ func (suite *DeploymentDataStoreTestSuite) TestTags() {
 	suite.storage.EXPECT().GetDeployment("blah").Return(nil, false, nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("blah"), []string{"new", "tag"}))
 
-	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", Tags: []string{"existing", "tag"}}, true, nil)
-	suite.storage.EXPECT().UpsertDeployment(&storage.Deployment{Id: "exists", Tags: []string{"existing", "new", "tag"}, Priority: 1}).Return(nil)
+	suite.storage.EXPECT().GetDeployment("exists").Return(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "tag"}}, true, nil)
+	suite.storage.EXPECT().UpsertDeployment(&storage.Deployment{Id: "exists", ProcessTags: []string{"existing", "new", "tag"}, Priority: 1}).Return(nil)
 	suite.NoError(datastore.AddTagsToProcessKey(suite.ctx, getCommentKey("exists"), []string{"new", "tag"}))
 
 	tags, err := datastore.GetTagsForProcessKey(suite.ctx, getCommentKey("exists"))
