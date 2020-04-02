@@ -17,7 +17,8 @@ export const GET_ALERT_COMMENTS = gql`
             message: commentMessage
             createdTime: createdAt
             updatedTime: lastModified
-            isModifiable: modifiable
+            isEditable: modifiable
+            isDeletable: deletable
         }
     }
 `;
@@ -36,7 +37,8 @@ export const GET_PROCESS_COMMENTS = gql`
             message: commentMessage
             createdTime: createdAt
             updatedTime: lastModified
-            isModifiable: modifiable
+            isEditable: modifiable
+            isDeletable: deletable
         }
     }
 `;

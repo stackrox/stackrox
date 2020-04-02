@@ -6,7 +6,8 @@ import Button from 'Components/Button';
 
 const CommentActionButtons = ({
     isEditing,
-    isModifiable,
+    isEditable,
+    isDeletable,
     onEdit,
     onRemove,
     onClose,
@@ -24,8 +25,9 @@ const CommentActionButtons = ({
         );
     }
     return (
-        <div className={`flex ${!isModifiable && 'invisible'}`}>
+        <div className="flex">
             <Button
+                className={`${!isEditable && 'invisible'}`}
                 onClick={onEdit}
                 icon={
                     <Edit className="h-4 w-4 mx-2 text-primary-800 cursor-pointer hover:text-primary-500" />
@@ -33,6 +35,7 @@ const CommentActionButtons = ({
                 disabled={isDisabled}
             />
             <Button
+                className={`${!isDeletable && 'invisible'}`}
                 onClick={onRemove}
                 icon={
                     <Trash2 className="h-4 w-4 text-primary-800 cursor-pointer hover:text-primary-500" />
@@ -45,7 +48,8 @@ const CommentActionButtons = ({
 
 CommentActionButtons.propTypes = {
     isEditing: PropTypes.bool,
-    isModifiable: PropTypes.bool,
+    isEditable: PropTypes.bool,
+    isDeletable: PropTypes.bool,
     onEdit: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired,
     onClose: PropTypes.func.isRequired,
@@ -55,7 +59,8 @@ CommentActionButtons.propTypes = {
 CommentActionButtons.defaultProps = {
     isEditing: false,
     isDisabled: false,
-    isModifiable: false
+    isEditable: false,
+    isDeletable: false
 };
 
 export default CommentActionButtons;

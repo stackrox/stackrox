@@ -132,7 +132,8 @@ CommentThread.propTypes = {
             }),
             createdTime: PropTypes.string.isRequired,
             updatedTime: PropTypes.string.isRequired,
-            isModifiable: PropTypes.bool.isRequired
+            isEditable: PropTypes.bool,
+            isDeletable: PropTypes.bool
         })
     ),
     onCreate: PropTypes.func.isRequired,

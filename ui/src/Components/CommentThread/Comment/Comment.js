@@ -12,7 +12,7 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit, isDisabled }
     const [isEditing, setEdit] = useState(defaultEdit);
     const [isDialogueOpen, setIsDialogueOpen] = useState(false);
 
-    const { id, user, createdTime, updatedTime, message, isModifiable } = comment;
+    const { id, user, createdTime, updatedTime, message, isDeletable, isEditable } = comment;
 
     const isCommentUpdated = updatedTime && createdTime !== updatedTime;
 
@@ -59,7 +59,8 @@ const Comment = ({ comment, onRemove, onSave, onClose, defaultEdit, isDisabled }
                 <div className="text-primary-800 flex flex-1">{textHeader}</div>
                 <CommentActionButtons
                     isEditing={isEditing}
-                    isModifiable={isModifiable}
+                    isEditable={isEditable}
+                    isDeletable={isDeletable}
                     onEdit={onEdit}
                     onRemove={onRemoveHandler}
                     onClose={onCloseHandler}
@@ -100,7 +101,8 @@ Comment.propTypes = {
         }),
         createdTime: PropTypes.string,
         updatedTime: PropTypes.string,
-        isModifiable: PropTypes.bool
+        isEditable: PropTypes.bool,
+        isDeletable: PropTypes.bool
     }).isRequired,
     onRemove: PropTypes.func.isRequired,
     onSave: PropTypes.func.isRequired,
