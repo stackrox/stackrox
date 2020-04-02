@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -16,7 +15,7 @@ For this control, StackRox checks that at least one runtime policy is set to not
 )
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -39,5 +38,5 @@ func init() {
 				return
 			}
 			framework.Fail(ctx, "No runtime policies were set to notify a workflow tool")
-		}, features.NistSP800_53)
+		})
 }

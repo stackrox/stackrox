@@ -3,7 +3,6 @@ package checkra5
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -34,7 +33,7 @@ func checkNoUnresolvedAlertsForPolicies(ctx framework.ComplianceContext, policyI
 }
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -45,5 +44,5 @@ func init() {
 			common.CheckAllDeployedImagesHaveMatchingIntegrations(ctx)
 			vulnPolicyIDs := common.CheckAtLeastOnePolicyEnabledReferringToVulns(ctx)
 			checkNoUnresolvedAlertsForPolicies(ctx, vulnPolicyIDs)
-		}, features.NistSP800_53)
+		})
 }

@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -106,7 +105,7 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 }
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -115,5 +114,5 @@ func init() {
 		}, func(ctx framework.ComplianceContext) {
 			common.IsRBACConfiguredCorrectly(ctx)
 			checkNoExtraPrivilegesForUnauthenticated(ctx)
-		}, features.NistSP800_53)
+		})
 }

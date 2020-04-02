@@ -2,7 +2,6 @@ package checkra3
 
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -14,7 +13,7 @@ For this control, StackRox checks that StackRox components are installed in each
 )
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -23,5 +22,5 @@ func init() {
 		},
 		func(ctx framework.ComplianceContext) {
 			framework.Passf(ctx, "StackRox is installed in cluster %q, and provides continuous risk assessment.", ctx.Data().Cluster().GetName())
-		}, features.NistSP800_53)
+		})
 }

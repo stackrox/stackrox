@@ -5,7 +5,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -39,7 +38,7 @@ func checkClusterCheckedInInThePastHour(ctx framework.ComplianceContext) {
 }
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -49,5 +48,5 @@ func init() {
 		func(ctx framework.ComplianceContext) {
 			framework.Pass(ctx, "The StackRox Kubernetes Security Platform is installed, and provides information system monitoring.")
 			checkClusterCheckedInInThePastHour(ctx)
-		}, features.NistSP800_53)
+		})
 }

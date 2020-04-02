@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -64,7 +63,7 @@ func checkAllDefaultRuntimePackageManagementPoliciesEnabled(ctx framework.Compli
 }
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -75,5 +74,5 @@ func init() {
 			checkAtLeastOnePolicyTargetsAnImageRegistry(ctx)
 			common.CheckAllDeployedImagesHaveMatchingIntegrations(ctx)
 			checkAllDefaultRuntimePackageManagementPoliciesEnabled(ctx)
-		}, features.NistSP800_53)
+		})
 }

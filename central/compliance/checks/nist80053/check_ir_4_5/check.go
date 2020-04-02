@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -20,7 +19,7 @@ For this control, ` + common.AnyPolicyInLifecycleStageEnforcedInterpretation(pha
 )
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -29,5 +28,5 @@ func init() {
 		},
 		func(ctx framework.ComplianceContext) {
 			common.CheckAnyPolicyInLifecycleStageEnforced(ctx, phase)
-		}, features.NistSP800_53)
+		})
 }

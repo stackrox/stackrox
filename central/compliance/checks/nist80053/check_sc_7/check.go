@@ -3,7 +3,6 @@ package checksc7
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -13,7 +12,7 @@ const (
 )
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.DeploymentKind,
@@ -22,5 +21,5 @@ func init() {
 		},
 		func(ctx framework.ComplianceContext) {
 			common.CheckNetworkPoliciesByDeployment(ctx)
-		}, features.NistSP800_53)
+		})
 }

@@ -3,7 +3,6 @@ package checksc6
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -16,7 +15,7 @@ For this control, StackRox checks that at least one policy requiring CPU limits 
 )
 
 func init() {
-	framework.MustRegisterNewCheckIfFlagEnabled(
+	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
 			Scope:              framework.ClusterKind,
@@ -42,5 +41,5 @@ func init() {
 				return
 			}
 			framework.Fail(ctx, "At least one policy must be implemented and enforced for CPU resource limits and memory resource limits")
-		}, features.NistSP800_53)
+		})
 }

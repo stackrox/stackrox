@@ -1,9 +1,5 @@
 package metadata
 
-import (
-	"github.com/stackrox/rox/pkg/features"
-)
-
 var nist800_53 = Standard{
 	ID:   "NIST_SP_800_53_Rev_4",
 	Name: "NIST SP 800-53",
@@ -178,7 +174,5 @@ var nist800_53 = Standard{
 }
 
 func init() {
-	if features.NistSP800_53.Enabled() {
-		AllStandards = append(AllStandards, nist800_53)
-	}
+	AllStandards = append(AllStandards, nist800_53)
 }

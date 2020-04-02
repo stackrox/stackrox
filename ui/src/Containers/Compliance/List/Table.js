@@ -21,10 +21,6 @@ import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
-import { createStructuredSelector } from 'reselect';
-import { connect } from 'react-redux';
-import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 function getQuery(entityType) {
     switch (entityType) {
@@ -180,8 +176,7 @@ const ListTable = ({
     query,
     selectedRowId,
     updateSelectedRow,
-    pdfId,
-    featureFlags
+    pdfId
 }) => {
     const [page, setPage] = useState(0);
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
@@ -245,12 +240,7 @@ const ListTable = ({
     if (standardId) {
         tableColumns = getColumnsByStandard(standardId);
     } else {
-        tableColumns = getColumnsByEntity(
-            entityType,
-            isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_NIST_800_53, false)
-                ? []
-                : [standardTypes.NIST_SP_800_53_Rev_4]
-        );
+        tableColumns = getColumnsByEntity(entityType);
     }
 
     let tableData;
@@ -350,8 +340,7 @@ ListTable.propTypes = {
     }),
     selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
-    pdfId: PropTypes.string,
-    featureFlags: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    pdfId: PropTypes.string
 };
 
 ListTable.defaultProps = {
@@ -362,11 +351,4 @@ ListTable.defaultProps = {
     query: null
 };
 
-const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags
-});
-
-export default connect(
-    mapStateToProps,
-    null
-)(ListTable);
+export default ListTable;
