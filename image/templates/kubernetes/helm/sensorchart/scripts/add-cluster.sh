@@ -39,7 +39,7 @@ fi
 
 runtimeSupport=false
 if [ "${config_collectionMethod}" != "" ]; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry}")"
+  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
   [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
   echo "${registry_auth}" > "${SECRETS_DIR}/collector-imagepull-secret"
   runtimeSupport=true

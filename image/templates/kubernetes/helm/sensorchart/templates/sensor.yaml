@@ -59,7 +59,7 @@ spec:
       {{- end}}
       serviceAccount: sensor
       containers:
-      - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry .Values.image.repository.main }}
+      - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
         name: sensor
         readinessProbe:
           httpGet:
@@ -194,7 +194,7 @@ spec:
       containers:
 {{ if ne .Values.config.collectionMethod "NO_COLLECTION"}}
       - name: collector
-        image: {{ printf "%s/%s:!!.CollectorVersion!!-latest" .Values.image.registry .Values.image.repository.collector }}
+        image: {{ printf "%s/%s:!!.CollectorVersion!!-latest" .Values.image.registry.collector .Values.image.repository.collector }}
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
@@ -250,7 +250,7 @@ spec:
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ .Values.endpoint.advertised }}
-        image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry .Values.image.repository.main }}
+        image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
         imagePullPolicy: IfNotPresent
         name: compliance
         resources:

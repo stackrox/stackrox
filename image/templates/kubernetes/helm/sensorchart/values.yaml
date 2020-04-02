@@ -8,9 +8,11 @@ endpoint:
 
 image:
   repository:
-    main: stackrox/main
-    collector: stackrox/collector
-  registry: stackrox.io
+    main: main
+    collector: collector
+  registry:
+    main: stackrox.io
+    collector: collector.stackrox.io
 
 config:
   collectionMethod: EBPF

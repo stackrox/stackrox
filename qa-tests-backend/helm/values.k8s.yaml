@@ -10,7 +10,9 @@ image:
   repository:
     main: stackrox/main
     collector: stackrox/collector
-  registry: docker.io
+  registry:
+    main: docker.io
+    collector: docker.io
 
 config:
   collectionMethod: EBPF

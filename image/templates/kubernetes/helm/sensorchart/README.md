@@ -114,9 +114,10 @@ and their default values.
 |`cluster.type`| Either Kubernetes (`KUBERNETES_CLUSTER`) or OpenShift (`OPENSHIFT_CLUSTER`) cluster. |`KUBERNETES_CLUSTER` |
 |`endpoint.central`| Address of the Central endpoint including port number.|`central.stackrox:443` |
 |`endpoint.advertised`| Address of the Sensor endpoint including port number.|`sensor.stackrox:443` |
-|`image.repository.main`|Repository from which to download the main image. |`stackrox/main` |
-|`image.repository.collector`|Repository from which to download the collector image.  |`stackrox/collector` |
-|`image.registry`| Address of the registry you are using.|`stackrox.io` |
+|`image.repository.main`|Repository from which to download the main image. |`main` |
+|`image.repository.collector`|Repository from which to download the collector image.  |`collector` |
+|`image.registry.main`| Address of the registry you are using for main image.|`stackrox.io` |
+|`image.registry.collector`| Address of the registry you are using for collector image.|`collector.stackrox.io` |
 |`config.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`EBPF` |
 |`config.admissionControl.createService`|This setting controls whether Kubernetes is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests. |`false` |
 |`config.admissionControl.listenOnUpdates`|When you keep it as `false`, the StackRox Kubernetes Security Platform creates the `ValidatingWebhookConfiguration` in a way that causes the Kubernetes API server not to send object update events. Since the volume of object updates is usually higher than the object creates, leaving this as `false` limits the load on the admission control service and decreases the chances of a malfunctioning admission control service.|`false` |
