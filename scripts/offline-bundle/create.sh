@@ -63,7 +63,7 @@ main() {
 
     # The docs image (only advertised offline) uses the release tag (same as Main).
     local docs_tag=${main_tag}
-    save_with_rhel "stackrox.io" "docs" "${docs_tag}" "image-bundle"
+    save "stackrox.io" "docs" "${docs_tag}" "image-bundle"
 
     # Collector uses the version contained in the COLLECTOR_VERSION file.
     local collector_tag="$(cat COLLECTOR_VERSION)"
