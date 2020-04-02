@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
+	"github.com/stackrox/rox/central/risk/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -43,7 +44,7 @@ func (suite *RiskDataStoreTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
-	suite.storage, _ = store.New(db)
+	suite.storage, _ = bolt.New(db)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = search.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)

@@ -39,7 +39,7 @@ func (s *searcherImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	risks, _, err := s.storage.GetRisks(ids)
+	risks, _, err := s.storage.GetMany(ids)
 	if err != nil {
 		return nil, err
 	}

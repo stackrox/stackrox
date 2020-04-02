@@ -29,7 +29,11 @@ type datastoreImpl struct {
 
 func (d *datastoreImpl) buildIndex() error {
 	log.Info("[STARTUP] Indexing risk")
-	risks, err := d.storage.ListRisks()
+	var risks []*storage.Risk
+	err := d.storage.Walk(func(risk *storage.Risk) error {
+		risks = append(risks, risk)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -103,7 +107,7 @@ func (d *datastoreImpl) UpsertRisk(ctx context.Context, risk *storage.Risk) erro
 	}
 
 	risk.Id = id
-	if err := d.storage.UpsertRisk(risk); err != nil {
+	if err := d.storage.Upsert(risk); err != nil {
 		return err
 	}
 	upsertRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId(), risk.GetScore())
@@ -127,7 +131,7 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 		return err
 	}
 
-	if err := d.storage.DeleteRisk(id); err != nil {
+	if err := d.storage.Delete(id); err != nil {
 		return err
 	}
 	removeRankerRecord(d.getRanker(risk.GetSubject().GetType()), risk.GetSubject().GetId())
@@ -135,7 +139,7 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 }
 
 func (d *datastoreImpl) getRisk(id string) (*storage.Risk, bool, error) {
-	risk, err := d.storage.GetRisk(id)
+	risk, err := d.storage.Get(id)
 	if err != nil {
 		return nil, false, err
 	}

@@ -27,7 +27,6 @@ type DataStore interface {
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
 func New(store store.Store, indexer index.Indexer, searcher search.Searcher) (DataStore, error) {
-
 	d := &datastoreImpl{
 		storage:  store,
 		indexer:  indexer,
