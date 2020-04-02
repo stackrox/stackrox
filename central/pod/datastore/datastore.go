@@ -24,7 +24,6 @@ type DataStore interface {
 
 	GetPod(ctx context.Context, id string) (*storage.Pod, bool, error)
 	GetPods(ctx context.Context, ids []string) ([]*storage.Pod, error)
-	CountPods(ctx context.Context) (int, error)
 
 	UpsertPod(ctx context.Context, pod *storage.Pod) error
 

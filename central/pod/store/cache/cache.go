@@ -66,7 +66,7 @@ func (c *cachedStore) getCachedPod(id string) (*storage.Pod, bool, error) {
 	return proto.Clone(entry.(*storage.Pod)).(*storage.Pod), true, nil
 }
 
-func (c *cachedStore) GetPod(id string) (*storage.Pod, bool, error) {
+func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
 	pod, entryExists, err := c.getCachedPod(id)
 	if err != nil {
 		return nil, false, err
@@ -78,7 +78,7 @@ func (c *cachedStore) GetPod(id string) (*storage.Pod, bool, error) {
 	}
 
 	podStoreCacheMisses.Inc()
-	pod, exists, err := c.store.GetPod(id)
+	pod, exists, err := c.store.Get(id)
 	if err != nil || !exists {
 		return nil, exists, err
 	}
@@ -87,11 +87,7 @@ func (c *cachedStore) GetPod(id string) (*storage.Pod, bool, error) {
 	return pod, true, nil
 }
 
-func (c *cachedStore) GetPods() ([]*storage.Pod, error) {
-	return c.store.GetPods()
-}
-
-func (c *cachedStore) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, error) {
+func (c *cachedStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	var pods []*storage.Pod
 	var missingIndices []int
 	for i, id := range ids {
@@ -111,7 +107,7 @@ func (c *cachedStore) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, erro
 		}
 		podStoreCacheMisses.Inc()
 
-		pod, exists, err := c.store.GetPod(id)
+		pod, exists, err := c.store.Get(id)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -127,12 +123,8 @@ func (c *cachedStore) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, erro
 	return pods, missingIndices, nil
 }
 
-func (c *cachedStore) CountPods() (int, error) {
-	return c.store.CountPods()
-}
-
-func (c *cachedStore) UpsertPod(pod *storage.Pod) error {
-	if err := c.store.UpsertPod(pod); err != nil {
+func (c *cachedStore) Upsert(pod *storage.Pod) error {
+	if err := c.store.Upsert(pod); err != nil {
 		return err
 	}
 
@@ -141,8 +133,8 @@ func (c *cachedStore) UpsertPod(pod *storage.Pod) error {
 	return nil
 }
 
-func (c *cachedStore) RemovePod(id string) error {
-	if err := c.store.RemovePod(id); err != nil {
+func (c *cachedStore) Delete(id string) error {
+	if err := c.store.Delete(id); err != nil {
 		return err
 	}
 	c.cache.Add(id, &podTombstone{})
@@ -164,6 +156,6 @@ func (c *cachedStore) GetKeysToIndex() ([]string, error) {
 	return c.store.GetKeysToIndex()
 }
 
-func (c *cachedStore) GetPodIDs() ([]string, error) {
-	return c.store.GetPodIDs()
+func (c *cachedStore) GetKeys() ([]string, error) {
+	return c.store.GetKeys()
 }

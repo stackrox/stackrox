@@ -22,16 +22,16 @@ func BenchmarkAddPod(b *testing.B) {
 	store := getPodStore(b)
 	pod := fixtures.GetPod()
 	for i := 0; i < b.N; i++ {
-		require.NoError(b, store.UpsertPod(pod))
+		require.NoError(b, store.Upsert(pod))
 	}
 }
 
 func BenchmarkGetPod(b *testing.B) {
 	store := getPodStore(b)
 	pod := fixtures.GetPod()
-	require.NoError(b, store.UpsertPod(pod))
+	require.NoError(b, store.Upsert(pod))
 	for i := 0; i < b.N; i++ {
-		_, exists, err := store.GetPod(pod.GetId())
+		_, exists, err := store.Get(pod.GetId())
 		require.True(b, exists)
 		require.NoError(b, err)
 	}

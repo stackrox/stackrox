@@ -22,33 +22,33 @@ func TestPodCache(t *testing.T) {
 
 	// Call Get and return pod1 as if it already exists in the store
 	// This should fill the cache
-	baseStore.EXPECT().GetPod(pod1.GetId()).Return(pod1, true, nil)
-	pod, exists, err := cacheStore.GetPod(pod1.GetId())
+	baseStore.EXPECT().Get(pod1.GetId()).Return(pod1, true, nil)
+	pod, exists, err := cacheStore.Get(pod1.GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, pod1, pod)
 
-	baseStore.EXPECT().UpsertPod(pod1).Return(nil)
-	assert.NoError(t, cacheStore.UpsertPod(pod1))
-	baseStore.EXPECT().UpsertPod(pod2).Return(nil)
-	assert.NoError(t, cacheStore.UpsertPod(pod2))
+	baseStore.EXPECT().Upsert(pod1).Return(nil)
+	assert.NoError(t, cacheStore.Upsert(pod1))
+	baseStore.EXPECT().Upsert(pod2).Return(nil)
+	assert.NoError(t, cacheStore.Upsert(pod2))
 
 	// Don't expect this to hit the underlying store
-	pod, exists, err = cacheStore.GetPod(pod1.GetId())
+	pod, exists, err = cacheStore.Get(pod1.GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, pod1, pod)
 
-	pod, exists, err = cacheStore.GetPod(pod2.GetId())
+	pod, exists, err = cacheStore.Get(pod2.GetId())
 	assert.NoError(t, err)
 	assert.True(t, exists)
 	assert.Equal(t, pod2, pod)
 
-	baseStore.EXPECT().RemovePod(pod1.GetId()).Return(nil)
-	assert.NoError(t, cacheStore.RemovePod(pod1.GetId()))
+	baseStore.EXPECT().Delete(pod1.GetId()).Return(nil)
+	assert.NoError(t, cacheStore.Delete(pod1.GetId()))
 
 	// Expect the cache to be hit with a tombstone and the DB will not be hit
-	pod, exists, err = cacheStore.GetPod(pod1.GetId())
+	pod, exists, err = cacheStore.Get(pod1.GetId())
 	assert.NoError(t, err)
 	assert.False(t, exists)
 	assert.Nil(t, pod)

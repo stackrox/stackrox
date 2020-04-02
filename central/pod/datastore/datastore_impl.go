@@ -83,7 +83,7 @@ func (ds *datastoreImpl) buildIndex() error {
 
 	podBatcher := batcher.New(len(podsToIndex), podBatchSize)
 	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, missingIndices, err := ds.podStore.GetPodsWithIDs(podsToIndex[start:end]...)
+		pods, missingIndices, err := ds.podStore.GetMany(podsToIndex[start:end])
 		if err != nil {
 			return err
 		}
@@ -114,14 +114,14 @@ func (ds *datastoreImpl) buildIndex() error {
 func (ds *datastoreImpl) fullReindex() error {
 	log.Info("[STARTUP] Reindexing all pods")
 
-	podIDs, err := ds.podStore.GetPodIDs()
+	podIDs, err := ds.podStore.GetKeys()
 	if err != nil {
 		return err
 	}
 	log.Infof("[STARTUP] Found %d pods to index", len(podIDs))
 	podBatcher := batcher.New(len(podIDs), podBatchSize)
 	for start, end, valid := podBatcher.Next(); valid; start, end, valid = podBatcher.Next() {
-		pods, _, err := ds.podStore.GetPodsWithIDs(podIDs[start:end]...)
+		pods, _, err := ds.podStore.GetMany(podIDs[start:end])
 		if err != nil {
 			return err
 		}
@@ -160,7 +160,7 @@ func (ds *datastoreImpl) SearchRawPods(ctx context.Context, q *v1.Query) ([]*sto
 }
 
 func (ds *datastoreImpl) GetPod(ctx context.Context, id string) (*storage.Pod, bool, error) {
-	pod, found, err := ds.podStore.GetPod(id)
+	pod, found, err := ds.podStore.Get(id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -178,26 +178,16 @@ func (ds *datastoreImpl) GetPods(ctx context.Context, ids []string) ([]*storage.
 		return nil, sac.ErrPermissionDenied
 	}
 
-	pods, _, err := ds.podStore.GetPodsWithIDs(ids...)
+	pods, _, err := ds.podStore.GetMany(ids)
 	if err != nil {
 		return nil, err
 	}
 	return pods, nil
 }
 
-func (ds *datastoreImpl) CountPods(ctx context.Context) (int, error) {
-	if ok, err := podsSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	} else if !ok {
-		return 0, sac.ErrPermissionDenied
-	}
-
-	return ds.podStore.CountPods()
-}
-
-// UpsertPod inserts a pod into podStore
+// Upsert inserts a pod into podStore
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "UpsertPod")
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")
 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -208,7 +198,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	ds.processFilter.UpdateByPod(pod)
 
 	err := ds.keyedMutex.DoStatusWithLock(pod.GetId(), func() error {
-		oldPod, found, err := ds.podStore.GetPod(pod.GetId())
+		oldPod, found, err := ds.podStore.Get(pod.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
 		}
@@ -223,7 +213,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 			pod.Started = pod.Instances[0].Started
 		}
 
-		if err := ds.podStore.UpsertPod(pod); err != nil {
+		if err := ds.podStore.Upsert(pod); err != nil {
 			return errors.Wrapf(err, "inserting pod %q to store", pod.GetName())
 		}
 		if err := ds.podIndexer.AddPod(pod); err != nil {
@@ -270,9 +260,9 @@ func mergeContainerInstances(pod *storage.Pod, oldInstances []*storage.Container
 	}
 }
 
-// RemovePod removes a pod from the podStore
+// Delete removes a pod from the podStore
 func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "RemovePod")
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Delete")
 
 	if ok, err := podsSAC.WriteAllowed(ctx); err != nil {
 		return err
@@ -280,14 +270,14 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 		return sac.ErrPermissionDenied
 	}
 
-	pod, found, err := ds.podStore.GetPod(id)
+	pod, found, err := ds.podStore.Get(id)
 	if err != nil || !found {
 		return err
 	}
 	ds.processFilter.DeleteByPod(pod)
 
 	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
-		if err := ds.podStore.RemovePod(id); err != nil {
+		if err := ds.podStore.Delete(id); err != nil {
 			return err
 		}
 		if err := ds.podIndexer.DeletePod(id); err != nil {

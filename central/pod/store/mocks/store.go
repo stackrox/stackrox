@@ -33,98 +33,79 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetPod mocks base method
-func (m *MockStore) GetPod(id string) (*storage.Pod, bool, error) {
+// GetKeys mocks base method
+func (m *MockStore) GetKeys() ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPod", id)
+	ret := m.ctrl.Call(m, "GetKeys")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetKeys indicates an expected call of GetKeys
+func (mr *MockStoreMockRecorder) GetKeys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockStore)(nil).GetKeys))
+}
+
+// Get mocks base method
+func (m *MockStore) Get(id string) (*storage.Pod, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
 	ret0, _ := ret[0].(*storage.Pod)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetPod indicates an expected call of GetPod
-func (mr *MockStoreMockRecorder) GetPod(id interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPod", reflect.TypeOf((*MockStore)(nil).GetPod), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// GetPods mocks base method
-func (m *MockStore) GetPods() ([]*storage.Pod, error) {
+// GetMany mocks base method
+func (m *MockStore) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPods")
-	ret0, _ := ret[0].([]*storage.Pod)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPods indicates an expected call of GetPods
-func (mr *MockStoreMockRecorder) GetPods() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPods", reflect.TypeOf((*MockStore)(nil).GetPods))
-}
-
-// GetPodsWithIDs mocks base method
-func (m *MockStore) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetPodsWithIDs", varargs...)
+	ret := m.ctrl.Call(m, "GetMany", ids)
 	ret0, _ := ret[0].([]*storage.Pod)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetPodsWithIDs indicates an expected call of GetPodsWithIDs
-func (mr *MockStoreMockRecorder) GetPodsWithIDs(ids ...interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany
+func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodsWithIDs", reflect.TypeOf((*MockStore)(nil).GetPodsWithIDs), ids...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
 }
 
-// CountPods mocks base method
-func (m *MockStore) CountPods() (int, error) {
+// Upsert mocks base method
+func (m *MockStore) Upsert(pod *storage.Pod) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountPods")
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountPods indicates an expected call of CountPods
-func (mr *MockStoreMockRecorder) CountPods() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountPods", reflect.TypeOf((*MockStore)(nil).CountPods))
-}
-
-// UpsertPod mocks base method
-func (m *MockStore) UpsertPod(pod *storage.Pod) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertPod", pod)
+	ret := m.ctrl.Call(m, "Upsert", pod)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertPod indicates an expected call of UpsertPod
-func (mr *MockStoreMockRecorder) UpsertPod(pod interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert
+func (mr *MockStoreMockRecorder) Upsert(pod interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertPod", reflect.TypeOf((*MockStore)(nil).UpsertPod), pod)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), pod)
 }
 
-// RemovePod mocks base method
-func (m *MockStore) RemovePod(id string) error {
+// Delete mocks base method
+func (m *MockStore) Delete(id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemovePod", id)
+	ret := m.ctrl.Call(m, "Delete", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemovePod indicates an expected call of RemovePod
-func (mr *MockStoreMockRecorder) RemovePod(id interface{}) *gomock.Call {
+// Delete indicates an expected call of Delete
+func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePod", reflect.TypeOf((*MockStore)(nil).RemovePod), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
 }
 
 // AckKeysIndexed mocks base method
@@ -158,19 +139,4 @@ func (m *MockStore) GetKeysToIndex() ([]string, error) {
 func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
-}
-
-// GetPodIDs mocks base method
-func (m *MockStore) GetPodIDs() ([]string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPodIDs")
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPodIDs indicates an expected call of GetPodIDs
-func (mr *MockStoreMockRecorder) GetPodIDs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodIDs", reflect.TypeOf((*MockStore)(nil).GetPodIDs))
 }

@@ -97,21 +97,6 @@ func (mr *MockDataStoreMockRecorder) GetPods(ctx, ids interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPods", reflect.TypeOf((*MockDataStore)(nil).GetPods), ctx, ids)
 }
 
-// CountPods mocks base method
-func (m *MockDataStore) CountPods(ctx context.Context) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountPods", ctx)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountPods indicates an expected call of CountPods
-func (mr *MockDataStoreMockRecorder) CountPods(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountPods", reflect.TypeOf((*MockDataStore)(nil).CountPods), ctx)
-}
-
 // UpsertPod mocks base method
 func (m *MockDataStore) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	m.ctrl.T.Helper()

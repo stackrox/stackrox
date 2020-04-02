@@ -41,16 +41,11 @@ func (suite *PodStoreTestSuite) TearDownSuite() {
 
 func (suite *PodStoreTestSuite) verifyPodsAre(store store.Store, pods ...*storage.Pod) {
 	for _, p := range pods {
-		got, exists, err := store.GetPod(p.GetId())
+		got, exists, err := store.Get(p.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(p, got)
 	}
-
-	// Test Count
-	count, err := store.CountPods()
-	suite.NoError(err)
-	suite.Equal(len(pods), count)
 }
 
 func (suite *PodStoreTestSuite) TestPods() {
@@ -77,7 +72,7 @@ func (suite *PodStoreTestSuite) TestPods() {
 
 	// Test Upsert
 	for _, d := range pods {
-		suite.NoError(suite.store.UpsertPod(d))
+		suite.NoError(suite.store.Upsert(d))
 	}
 
 	suite.verifyPodsAre(suite.store, pods...)
@@ -89,7 +84,7 @@ func (suite *PodStoreTestSuite) TestPods() {
 
 	// Test Remove
 	for _, d := range pods {
-		suite.NoError(suite.store.RemovePod(d.GetId()))
+		suite.NoError(suite.store.Delete(d.GetId()))
 	}
 
 	suite.verifyPodsAre(suite.store)

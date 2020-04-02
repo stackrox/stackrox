@@ -53,8 +53,8 @@ func (b *storeImpl) msgsToPods(msgs []proto.Message) []*storage.Pod {
 	return pods
 }
 
-// GetPod returns pod with given id.
-func (b *storeImpl) GetPod(id string) (pod *storage.Pod, exists bool, err error) {
+// Get returns pod with given id.
+func (b *storeImpl) Get(id string) (pod *storage.Pod, exists bool, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, objType)
 
 	var msg proto.Message
@@ -66,18 +66,7 @@ func (b *storeImpl) GetPod(id string) (pod *storage.Pod, exists bool, err error)
 	return
 }
 
-// GetPods retrieves pods matching the request from badger
-func (b *storeImpl) GetPods() ([]*storage.Pod, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, objType)
-
-	msgs, err := b.podCRUD.ReadAll()
-	if err != nil {
-		return nil, err
-	}
-	return b.msgsToPods(msgs), nil
-}
-
-func (b *storeImpl) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, error) {
+func (b *storeImpl) GetMany(ids []string) ([]*storage.Pod, []int, error) {
 	if len(ids) == 0 {
 		return nil, nil, nil
 	}
@@ -91,20 +80,14 @@ func (b *storeImpl) GetPodsWithIDs(ids ...string) ([]*storage.Pod, []int, error)
 	return b.msgsToPods(msgs), indices, nil
 }
 
-// CountPods returns the number of pods.
-func (b *storeImpl) CountPods() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, objType)
-	return b.podCRUD.Count()
-}
-
-// UpsertPod adds a pod to badger, or updates it if it exists already.
-func (b *storeImpl) UpsertPod(pod *storage.Pod) error {
+// Upsert adds a pod to badger, or updates it if it exists already.
+func (b *storeImpl) Upsert(pod *storage.Pod) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, objType)
 	return b.podCRUD.Upsert(pod)
 }
 
-// RemovePod removes a pod
-func (b *storeImpl) RemovePod(id string) error {
+// Delete removes a pod
+func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, objType)
 	return b.podCRUD.Delete(id)
 }
@@ -120,7 +103,7 @@ func (b *storeImpl) GetKeysToIndex() ([]string, error) {
 }
 
 // GetPodIDs returns the ID for each Pod in the store.
-func (b *storeImpl) GetPodIDs() ([]string, error) {
+func (b *storeImpl) GetKeys() ([]string, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, objType+"ID")
 	return b.podCRUD.GetKeys()
 }
