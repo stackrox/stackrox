@@ -27,6 +27,7 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 			Namespace:   alert.GetDeployment().GetNamespace(),
 			Inactive:    alert.GetDeployment().GetInactive(),
 		},
+		Tags: alert.GetTags(),
 	}
 	if alert.GetState() == storage.ViolationState_ACTIVE {
 		addEnforcementCount(alert, listAlert)

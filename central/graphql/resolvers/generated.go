@@ -1255,8 +1255,10 @@ func (resolver *alertResolver) State(ctx context.Context) string {
 }
 
 func (resolver *alertResolver) Tags(ctx context.Context) []string {
-	resolver.ensureData(ctx)
 	value := resolver.data.GetTags()
+	if resolver.data == nil {
+		value = resolver.list.GetTags()
+	}
 	return value
 }
 
