@@ -146,7 +146,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		return ScanNotDone, nil
 	}
 
-	if ctx.FetchOnlyIfMetadataEmpty() && image.GetScan() != nil {
+	if ctx.FetchOnlyIfScanEmpty() && image.GetScan() != nil {
 		return ScanNotDone, nil
 	}
 

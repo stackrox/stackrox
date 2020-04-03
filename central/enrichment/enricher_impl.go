@@ -28,7 +28,7 @@ type enricherImpl struct {
 func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (images []*storage.Image, updatedIndices []int, pendingEnrichment bool, err error) {
 	for i, c := range deployment.GetContainers() {
 		var imgToProcess *storage.Image
-		if ctx.FetchOnlyIfMetadataEmpty() && c.GetImage().GetId() != "" {
+		if (ctx.FetchOnlyIfMetadataEmpty() || ctx.FetchOnlyIfScanEmpty()) && c.GetImage().GetId() != "" {
 			var img *storage.Image
 			img, _, err = e.images.GetImage(getImageContext, c.GetImage().GetId())
 			if err != nil {

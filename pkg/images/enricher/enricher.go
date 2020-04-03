@@ -46,6 +46,11 @@ func (e EnrichmentContext) FetchOnlyIfMetadataEmpty() bool {
 	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch
 }
 
+// FetchOnlyIfScanEmpty will use the scan that exists in the image unless the fetch opts prohibit it
+func (e EnrichmentContext) FetchOnlyIfScanEmpty() bool {
+	return e.FetchOpt != IgnoreExistingImages && e.FetchOpt != ForceRefetch && e.FetchOpt != ForceRefetchScansOnly
+}
+
 // EnrichmentResult denotes possible return values of the EnrichImage function.
 type EnrichmentResult struct {
 	// ImageUpdated returns whether or not the image was updated, either with metadata or with a scan.
