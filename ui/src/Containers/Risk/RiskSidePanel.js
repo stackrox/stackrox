@@ -49,7 +49,7 @@ function RiskSidePanel({ selectedDeploymentId, setSelectedDeploymentId }) {
     return (
         <Panel
             header={!selectedDeployment ? 'Unknown Deployment' : selectedDeployment.deployment.name}
-            className="bg-primary-200 w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative"
+            className="bg-primary-200 w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative z-0 bg-base-100"
             onClose={unselectDeployment}
         >
             <RiskSidePanelContent

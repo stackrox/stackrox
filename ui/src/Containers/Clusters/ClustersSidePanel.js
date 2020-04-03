@@ -218,7 +218,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
             header={selectedClusterName}
             headerComponents={showPanelButtons ? panelButtons : <div />}
             bodyClassName="pt-4"
-            className="w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative"
+            className="w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative z-0 bg-base-100"
             onClose={unselectCluster}
         >
             {!!messageState && (
