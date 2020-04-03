@@ -5,7 +5,12 @@ import * as Icon from 'react-feather';
 import Modal from 'Components/Modal';
 
 const CustomDialogue = props => (
-    <Modal isOpen onRequestClose={props.onCancel} className={props.className}>
+    <Modal
+        isOpen
+        onRequestClose={props.onCancel}
+        // "ignore-react-onclickoutside" will prevent the workflow side panel from closing due to interactions with this element that lives outside it's scope
+        className={`ignore-react-onclickoutside ${props.className}`}
+    >
         {props.title && (
             <div className="flex items-center w-full p-3 bg-primary-700 text-xl uppercase text-base-100 uppercase">
                 <div className="flex flex-1">{props.title}</div>

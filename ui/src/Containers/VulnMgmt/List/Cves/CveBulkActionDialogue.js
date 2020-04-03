@@ -185,7 +185,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
     return (
         <CustomDialogue
-            className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2 ignore-react-onclickoutside"
+            className="max-w-3/4 md:max-w-2/3 lg:max-w-1/2"
             title="Add To Policy"
             text=""
             onConfirm={allowedCves.length > 0 ? addToPolicy : null}
