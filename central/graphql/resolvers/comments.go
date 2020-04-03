@@ -6,21 +6,15 @@ import (
 
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	deleteNonOwnedCommentsAuthorizer = user.With(permissions.Modify(resources.AllComments))
 )
 
 func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddExtraResolver("Comment", `modifiable: Boolean!`),
+		schema.AddExtraResolver("Comment", `deletable: Boolean!`),
 	)
 }
 
@@ -28,7 +22,12 @@ func init() {
 func (resolver *commentResolver) Modifiable(ctx context.Context) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Modifiable")
 
-	// TODO: update this after the access control changes go in.
-	curUser := analystnotes.UserFromContext(ctx)
-	return curUser.GetId() == resolver.data.GetUser().GetId() || deleteNonOwnedCommentsAuthorizer.Authorized(ctx, "graphql") == nil, nil
+	return analystnotes.CommentIsModifiable(ctx, resolver.data), nil
+}
+
+// Deletable represents whether the current user can delete the comment.
+func (resolver *commentResolver) Deletable(ctx context.Context) (bool, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deletable")
+
+	return analystnotes.CommentIsDeletable(ctx, resolver.data), nil
 }

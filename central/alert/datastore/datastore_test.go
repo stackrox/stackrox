@@ -13,13 +13,17 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -301,6 +305,44 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
 
 	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
 	s.NoError(err)
+}
+
+func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID, roleName string) context.Context {
+	identity := mocks.NewMockIdentity(s.mockCtrl)
+	identity.EXPECT().UID().AnyTimes().Return(userID)
+	identity.EXPECT().FullName().AnyTimes().Return(userID)
+	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
+	identity.EXPECT().User().AnyTimes().Return(nil)
+	identity.EXPECT().Role().AnyTimes().Return(role.DefaultRolesByName[roleName])
+
+	return authn.ContextWithIdentity(ctx, identity, s.T())
+}
+
+func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
+	fakeAlert := alerttest.NewFakeAlert()
+	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil).AnyTimes()
+	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(
+		&storage.Comment{User: &storage.Comment_User{Id: "1"}}, nil,
+	).AnyTimes()
+
+	uid1Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "1", role.None)
+	uid2Ctx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", role.None)
+	uid2ButAdminCtx := s.ctxWithUIDAndRole(s.hasWriteCtx, "2", role.Admin)
+
+	fakeComment := alerttest.NewFakeAlertComment()
+	s.commentsStorage.EXPECT().UpdateAlertComment(testutils.PredMatcher("check comment", func(comment *storage.Comment) bool {
+		return comment.GetCommentMessage() == alerttest.FakeAlertCommentMessage && comment.GetUser().GetId() == "1"
+	})).Return(nil)
+	s.NoError(s.dataStore.UpdateAlertComment(uid1Ctx, fakeComment))
+	s.Error(s.dataStore.UpdateAlertComment(uid2Ctx, fakeComment))
+	// Admin cannot update other people's comments.
+	s.Error(s.dataStore.UpdateAlertComment(uid2ButAdminCtx, fakeComment))
+
+	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Times(2).Return(nil)
+	s.Error(s.dataStore.RemoveAlertComment(uid2Ctx, alerttest.FakeAlertID, alerttest.FakeCommentID))
+	s.NoError(s.dataStore.RemoveAlertComment(uid1Ctx, alerttest.FakeAlertID, alerttest.FakeCommentID))
+	// Admin can delete other people's comments.
+	s.NoError(s.dataStore.RemoveAlertComment(uid2ButAdminCtx, alerttest.FakeAlertID, alerttest.FakeCommentID))
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {

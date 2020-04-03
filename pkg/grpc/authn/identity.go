@@ -22,3 +22,5 @@ type Identity interface {
 	Expiry() time.Time
 	ExternalAuthProvider() authproviders.Provider
 }
+
+//go:generate mockgen-wrapper

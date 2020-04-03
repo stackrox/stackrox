@@ -18,27 +18,22 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/grpc/authn"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	alertSAC                         = sac.ForResource(resources.Alert)
-	deleteNonOwnedCommentsAuthorizer = user.With(permissions.Modify(resources.AllComments))
+	alertSAC = sac.ForResource(resources.Alert)
 )
 
 const (
@@ -278,14 +273,18 @@ func (ds *datastoreImpl) UpdateAlertComment(ctx context.Context, request *storag
 		return errors.New("permission denied")
 	}
 
-	request.User = analystnotes.UserFromContext(ctx)
-	comment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
+	user := analystnotes.UserFromContext(ctx)
+	existingComment, err := ds.commentsStorage.GetComment(request.GetResourceId(), request.GetCommentId())
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")
 	}
-	if comment.GetUser().GetId() != request.GetUser().GetId() {
-		return errors.Errorf("the current user cannot update the comment with id: %q for alert %q", request.GetCommentId(), request.GetResourceId())
+	if existingComment == nil {
+		return errors.Errorf("cannot update comment %q for alert %q: it does not exist", request.GetCommentId(), request.GetResourceId())
 	}
+	if !analystnotes.CommentIsModifiableUser(user, existingComment) {
+		return errors.New("user cannot modify comment: permission denied")
+	}
+	request.User = user
 	return ds.commentsStorage.UpdateAlertComment(request)
 }
 
@@ -299,16 +298,19 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commen
 		return errors.New("permission denied")
 	}
 
-	user := getCurrUser(ctx)
-	comment, err := ds.commentsStorage.GetComment(alertID, commentID)
+	existingComment, err := ds.commentsStorage.GetComment(alertID, commentID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get the alert comment")
 	}
-	if comment.GetUser().GetId() == user.GetId() || deleteNonOwnedCommentsAuthorizer.Authorized(ctx, "") == nil {
-		return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
-
+	if existingComment == nil {
+		// Comment has already been deleted, all good
+		return nil
 	}
-	return errors.Errorf("the current user cannot remove the comment with id: %q for alert %q", commentID, alertID)
+	if !analystnotes.CommentIsDeletable(ctx, existingComment) {
+		return errors.New("user cannot delete comment: permission denied")
+	}
+
+	return ds.commentsStorage.RemoveAlertComment(alertID, commentID)
 }
 
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
@@ -362,21 +364,6 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 	}
 
 	return nil
-}
-
-func getCurrUser(ctx context.Context) *storage.Comment_User {
-	var curUser *storage.Comment_User
-	identity := authn.IdentityFromContext(ctx)
-	if identity != nil {
-		curUser = &storage.Comment_User{
-			Id:   identity.UID(),
-			Name: stringutils.FirstNonEmpty(identity.FullName(), identity.FriendlyName()),
-		}
-		if user := identity.User(); user != nil {
-			curUser.Email = user.Username
-		}
-	}
-	return curUser
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {

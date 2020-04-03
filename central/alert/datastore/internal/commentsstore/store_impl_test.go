@@ -122,6 +122,10 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	suite.NoError(err)
 	suite.validateCommentsEqual(comment1, gotComment, justBeforeAdd, justAfterAdd, justBeforeAdd, justAfterAdd)
 
+	gotComment, err = suite.store.GetComment(alertID, "NONEXISTING")
+	suite.NoError(err)
+	suite.Nil(gotComment)
+
 	// Test updateComment for comment1
 	updatedComment := &storage.Comment{
 		ResourceId:     alertID,

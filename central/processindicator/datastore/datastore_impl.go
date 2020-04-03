@@ -32,8 +32,6 @@ const (
 
 var (
 	indicatorSAC = sac.ForResource(resources.Indicator)
-
-	errCommentDoesntExist = errors.New("comment doesn't exist")
 )
 
 type datastoreImpl struct {
@@ -62,19 +60,12 @@ func (ds *datastoreImpl) AddProcessComment(ctx context.Context, processKey *anal
 	return ds.commentsStorage.AddProcessComment(processKey, comment)
 }
 
-func (ds *datastoreImpl) checkUserCanModifyComment(user *storage.Comment_User, key *analystnotes.ProcessNoteKey, commentID string) error {
-	// TODO: check access control with new ProcessComment permissions
+func (ds *datastoreImpl) getExistingComment(key *analystnotes.ProcessNoteKey, commentID string) (*storage.Comment, error) {
 	existingComment, err := ds.commentsStorage.GetComment(key, commentID)
 	if err != nil {
-		return errors.Wrap(err, "retrieving existing comment")
+		return nil, errors.Wrap(err, "retrieving existing comment")
 	}
-	if existingComment == nil {
-		return errCommentDoesntExist
-	}
-	if user.GetId() != existingComment.GetUser().GetId() {
-		return errors.Errorf("user cannot modify/delete comment %q", commentID)
-	}
-	return nil
+	return existingComment, nil
 }
 
 func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *analystnotes.ProcessNoteKey, comment *storage.Comment) error {
@@ -83,10 +74,19 @@ func (ds *datastoreImpl) UpdateProcessComment(ctx context.Context, processKey *a
 	} else if !ok {
 		return sac.ErrPermissionDenied
 	}
-	comment.User = analystnotes.UserFromContext(ctx)
-	if err := ds.checkUserCanModifyComment(comment.GetUser(), processKey, comment.GetCommentId()); err != nil {
+	user := analystnotes.UserFromContext(ctx)
+
+	existingComment, err := ds.getExistingComment(processKey, comment.GetCommentId())
+	if err != nil {
 		return err
 	}
+	if existingComment == nil {
+		return errors.Errorf("cannot update comment %v: no existing comment found", comment.GetCommentId())
+	}
+	if !analystnotes.CommentIsModifiableUser(user, existingComment) {
+		return errors.New("user cannot modify this comment: permission denied")
+	}
+	comment.User = user
 	return ds.commentsStorage.UpdateProcessComment(processKey, comment)
 }
 
@@ -112,12 +112,19 @@ func (ds *datastoreImpl) RemoveProcessComment(ctx context.Context, processKey *a
 	} else if !ok {
 		return sac.ErrPermissionDenied
 	}
-	if err := ds.checkUserCanModifyComment(analystnotes.UserFromContext(ctx), processKey, commentID); err != nil {
-		// comment not existing is okay for remove
-		if err == errCommentDoesntExist {
-			return nil
-		}
+
+	existingComment, err := ds.getExistingComment(processKey, commentID)
+	if err != nil {
 		return err
+	}
+
+	// Comment not existing is okay for remove
+	if existingComment == nil {
+		return nil
+	}
+
+	if !analystnotes.CommentIsDeletable(ctx, existingComment) {
+		return errors.New("user cannot delete this comment: permission denied")
 	}
 	return ds.commentsStorage.RemoveProcessComment(processKey, commentID)
 }

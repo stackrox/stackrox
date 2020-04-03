@@ -35,7 +35,7 @@ func (b *storeImpl) GetCommentsForAlert(alertID string) ([]*storage.Comment, err
 }
 
 func (b *storeImpl) GetComment(alertID string, commentID string) (*storage.Comment, error) {
-	var comment storage.Comment
+	var comment *storage.Comment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(alertCommentsBucket)
 		alertIDBucket := bucket.Bucket([]byte(alertID))
@@ -44,9 +44,10 @@ func (b *storeImpl) GetComment(alertID string, commentID string) (*storage.Comme
 		}
 		bytes := alertIDBucket.Get([]byte(commentID))
 		if bytes == nil {
-			return errors.Errorf("couldn't get nonexistent comment with id : %q", commentID)
+			return nil
 		}
-		if err := proto.Unmarshal(bytes, &comment); err != nil {
+		comment = new(storage.Comment)
+		if err := proto.Unmarshal(bytes, comment); err != nil {
 			return errors.Wrapf(err, "unmarshalling comment with id: %q", commentID)
 		}
 		return nil
@@ -54,7 +55,7 @@ func (b *storeImpl) GetComment(alertID string, commentID string) (*storage.Comme
 	if err != nil {
 		return nil, err
 	}
-	return &comment, nil
+	return comment, nil
 }
 
 // addStandardFields populates the fields in the comment that the store is responsible for populating.

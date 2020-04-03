@@ -25,11 +25,14 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
 	storeMocks "github.com/stackrox/rox/central/processindicator/store/mocks"
+	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -191,11 +194,26 @@ func (suite *IndicatorDataStoreTestSuite) mustGetCommentsAndValidateCount(ctx co
 	return comments
 }
 
+func (suite *IndicatorDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID, roleName string) context.Context {
+	identity := mocks.NewMockIdentity(suite.mockCtrl)
+	identity.EXPECT().UID().AnyTimes().Return(userID)
+	identity.EXPECT().FullName().AnyTimes().Return(userID)
+	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
+	identity.EXPECT().User().AnyTimes().Return(nil)
+	identity.EXPECT().Role().AnyTimes().Return(role.DefaultRolesByName[roleName])
+
+	return authn.ContextWithIdentity(ctx, identity, suite.T())
+}
+
 func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.setupDataStoreNoPruning()
 
+	uid1Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "1", role.None)
+	uid2Ctx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", role.None)
+	uid2ButAdminCtx := suite.ctxWithUIDAndRole(suite.hasWriteCtx, "2", role.Admin)
+
 	indicators, _ := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(suite.hasWriteCtx, indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(uid1Ctx, indicators...))
 
 	key := analystnotes.ProcessToKey(indicators[0])
 
@@ -203,7 +221,7 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.Error(err)
 	_, err = suite.datastore.AddProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.Error(err)
-	id, err := suite.datastore.AddProcessComment(suite.hasWriteCtx, key, &storage.Comment{CommentMessage: "blah"})
+	id, err := suite.datastore.AddProcessComment(uid1Ctx, key, &storage.Comment{CommentMessage: "blah"})
 	suite.NoError(err)
 	suite.NotEmpty(id)
 
@@ -214,11 +232,15 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 	suite.Len(gotComments, 1)
 	suite.Equal(id, gotComments[0].GetCommentId())
 	suite.Equal("blah", gotComments[0].GetCommentMessage())
+	suite.Equal("1", gotComments[0].GetUser().GetId())
 
 	suite.Error(suite.datastore.UpdateProcessComment(suite.hasNoneCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 	suite.Error(suite.datastore.UpdateProcessComment(suite.hasReadCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.Error(suite.datastore.UpdateProcessComment(uid2Ctx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	// Admin cannot edit other people's comments.
+	suite.Error(suite.datastore.UpdateProcessComment(uid2ButAdminCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 
-	suite.NoError(suite.datastore.UpdateProcessComment(suite.hasWriteCtx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
+	suite.NoError(suite.datastore.UpdateProcessComment(uid1Ctx, key, &storage.Comment{CommentId: id, CommentMessage: "blah2"}))
 
 	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
 	suite.Len(gotComments, 1)
@@ -227,7 +249,24 @@ func (suite *IndicatorDataStoreTestSuite) TestComments() {
 
 	suite.Error(suite.datastore.RemoveProcessComment(suite.hasNoneCtx, key, id))
 	suite.Error(suite.datastore.RemoveProcessComment(suite.hasReadCtx, key, id))
-	suite.NoError(suite.datastore.RemoveProcessComment(suite.hasWriteCtx, key, id))
+	suite.Error(suite.datastore.RemoveProcessComment(uid2Ctx, key, id))
+
+	suite.NoError(suite.datastore.RemoveProcessComment(uid1Ctx, key, id))
+	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
+	suite.Empty(gotComments)
+
+	comment2ID, err := suite.datastore.AddProcessComment(uid1Ctx, key, &storage.Comment{CommentMessage: "blah3"})
+	suite.NoError(err)
+	suite.NotEmpty(comment2ID)
+	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
+	suite.Len(gotComments, 1)
+	suite.Equal(comment2ID, gotComments[0].GetCommentId())
+	suite.Equal("blah3", gotComments[0].GetCommentMessage())
+	suite.Equal("1", gotComments[0].GetUser().GetId())
+	suite.Error(suite.datastore.RemoveProcessComment(uid2Ctx, key, comment2ID))
+
+	// Admin can delete other people's comments.
+	suite.NoError(suite.datastore.RemoveProcessComment(uid2ButAdminCtx, key, comment2ID))
 
 	gotComments = suite.mustGetCommentsAndValidateCount(suite.hasReadCtx, key)
 	suite.Empty(gotComments)
