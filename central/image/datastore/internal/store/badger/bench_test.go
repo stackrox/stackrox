@@ -37,7 +37,7 @@ func BenchmarkGetImage(b *testing.B) {
 	image := fixtures.GetImage()
 	require.NoError(b, store.Upsert(image))
 	for i := 0; i < b.N; i++ {
-		_, exists, err := store.GetImage(image.GetId(), true)
+		_, exists, err := store.GetImage(image.GetId())
 		require.True(b, exists)
 		require.NoError(b, err)
 	}

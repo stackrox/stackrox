@@ -270,6 +270,21 @@ describe('Entities single views', () => {
             });
     });
 
+    it('should show a CVE description in overview when coming from cve list', () => {
+        cy.visit(url.list.cves);
+
+        cy.get(selectors.tableRows, { timeout: 5000 })
+            .eq(1)
+            .click();
+        cy.get(selectors.entityOverview)
+            .find(selectors.cveDescription)
+            .invoke('text')
+            .then(value => {
+                expect(value.length).to.be.greaterThan(2);
+                expect(value).not.to.include('No description available');
+            });
+    });
+
     it('should not filter cluster entity page regardless of entity context', () => {
         cy.visit(url.list.namespaces);
 

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"testing"
 	"time"
@@ -151,19 +152,27 @@ func waitForTermination(t *testing.T, deploymentName string) {
 }
 
 func setupNginxLatestTagDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `run`, nginxDeploymentName, `--image=nginx`)
+	setupDeployment(t, "nginx", nginxDeploymentName)
+}
+
+func setupDeployment(t *testing.T, image, deploymentName string) {
+	cmd := exec.Command(`kubectl`, `run`, deploymentName, fmt.Sprintf("--image=%s", image))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	waitForDeployment(t, nginxDeploymentName)
+	waitForDeployment(t, deploymentName)
+}
+
+func teardownDeployment(t *testing.T, deploymentName string) {
+	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	waitForTermination(t, deploymentName)
 }
 
 func teardownNginxLatestTagDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, nginxDeploymentName, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForTermination(t, nginxDeploymentName)
+	teardownDeployment(t, nginxDeploymentName)
 }
 
 func createK8sClient(t *testing.T) kubernetes.Interface {

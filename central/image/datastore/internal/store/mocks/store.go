@@ -80,9 +80,9 @@ func (mr *MockStoreMockRecorder) CountImages() *gomock.Call {
 }
 
 // GetImage mocks base method
-func (m *MockStore) GetImage(sha string, withCVESummaries bool) (*storage.Image, bool, error) {
+func (m *MockStore) GetImage(sha string) (*storage.Image, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetImage", sha, withCVESummaries)
+	ret := m.ctrl.Call(m, "GetImage", sha)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -90,9 +90,9 @@ func (m *MockStore) GetImage(sha string, withCVESummaries bool) (*storage.Image,
 }
 
 // GetImage indicates an expected call of GetImage
-func (mr *MockStoreMockRecorder) GetImage(sha, withCVESummaries interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetImage(sha interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockStore)(nil).GetImage), sha, withCVESummaries)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImage", reflect.TypeOf((*MockStore)(nil).GetImage), sha)
 }
 
 // GetImagesBatch mocks base method

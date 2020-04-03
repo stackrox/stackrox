@@ -33,7 +33,16 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             if (columnValue !== 'no components' && columnValue.includes('component'))
                 allChecksForEntities(url.list.cves, 'component');
         });
-        //  TBD to be fixed after back end sorting is fixed
-        //  validateSortForCVE(selectors.cvesCvssScoreCol);
+
+        // special check for CVE list only, for description in 2nd line of row
+        cy.get(selectors.cveDescription, { timeout: 6000 })
+            .eq(0)
+            .invoke('text')
+            .then(value => {
+                expect(value).not.to.include('No description available');
+            });
     });
+
+    // TODO to be fixed after back end sorting is fixed
+    // validateSortForCVE(selectors.cvesCvssScoreCol);
 });

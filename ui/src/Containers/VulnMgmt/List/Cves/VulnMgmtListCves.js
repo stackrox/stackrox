@@ -219,8 +219,11 @@ export function getCveTableColumns(workflowState) {
 export function renderCveDescription(row) {
     const { original } = row;
     return (
-        <div className="pointer-events-none bottom-0 absolute px-2 pb-3 pt-1 text-base-500 flex h-12 items-center">
-            <div className="line-clamp leading-normal">
+        <div
+            className="pointer-events-none bottom-0 absolute px-2 pb-3 pt-1 text-base-500 flex h-12 items-center"
+            data-testid="subcomponent-row"
+        >
+            <div className="line-clamp leading-normal" data-testid="cve-description">
                 {original.summary || 'No description available.'}
             </div>
         </div>

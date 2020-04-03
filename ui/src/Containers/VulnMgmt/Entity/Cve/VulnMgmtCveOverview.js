@@ -109,7 +109,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const newEntityContext = { ...entityContext, [entityTypes.CVE]: cve };
 
     return (
-        <div className="flex h-full">
+        <div className="flex h-full" data-testid="entity-overview">
             <div className="flex flex-col flex-grow min-w-0">
                 <CollapsibleSection title="CVE Summary">
                     <div className="mx-4 grid-dense grid-auto-fit grid grid-gap-6 xxxl:grid-gap-8 grid-columns-1 lg:grid-columns-2 xl:grid-columns-3 mb-4">
@@ -154,7 +154,12 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="p-4 pb-12 leading-loose">{summary}</div>
+                                <div
+                                    className="p-4 pb-12 leading-loose"
+                                    data-testid="cve-description"
+                                >
+                                    {summary || 'No description available.'}
+                                </div>
                             </div>
                         </Widget>
                         <Metadata

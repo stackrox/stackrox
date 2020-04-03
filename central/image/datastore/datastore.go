@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
-	"github.com/stackrox/rox/central/image/datastore/internal/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -37,7 +36,7 @@ type DataStore interface {
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.Image, error)
 
 	CountImages(ctx context.Context) (int, error)
-	GetImage(ctx context.Context, sha string, withCVESummaries bool) (*storage.Image, bool, error)
+	GetImage(ctx context.Context, sha string) (*storage.Image, bool, error)
 	GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error)
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
@@ -51,7 +50,6 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 	var searcher search.Searcher
 	indexer := imageIndexer.New(bleveIndex)
 
-	storage = cache.NewCachedStore(storage)
 	if features.Dackbox.Enabled() {
 		searcher = search.New(storage,
 			dacky,

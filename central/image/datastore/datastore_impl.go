@@ -162,8 +162,8 @@ func (ds *datastoreImpl) canReadImage(ctx context.Context, sha string) (bool, er
 }
 
 // GetImage delegates to the underlying store.
-func (ds *datastoreImpl) GetImage(ctx context.Context, sha string, withCVESummaries bool) (*storage.Image, bool, error) {
-	img, found, err := ds.storage.GetImage(sha, withCVESummaries)
+func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
+	img, found, err := ds.storage.GetImage(sha)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -216,7 +216,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	ds.keyedMutex.Lock(image.GetId())
 	defer ds.keyedMutex.Unlock(image.GetId())
 
-	oldImage, exists, err := ds.storage.GetImage(image.GetId(), false)
+	oldImage, exists, err := ds.storage.GetImage(image.GetId())
 	if err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ func (ds *datastoreImpl) initializeRankers() {
 	}
 
 	for _, id := range pkgSearch.ResultsToIDs(results) {
-		image, found, err := ds.storage.GetImage(id, false)
+		image, found, err := ds.storage.GetImage(id)
 		if err != nil {
 			log.Error(err)
 			continue

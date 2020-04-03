@@ -185,7 +185,8 @@ function validateFixableTabLinksInEntityPage(parentUrl) {
     });
 }
 
-export const =  validateSortForCVE = selector => {
+// uncomment this function when we uncomment this part of the test in ui/cypress/integration/vulnmanagement/cvesListPages.test.js
+export const validateSortForCVE = selector => {
     let current;
     let prev;
     let sortOrderStatus = false;
@@ -199,7 +200,7 @@ export const =  validateSortForCVE = selector => {
             prev = current;
         }
     });
-}
+};
 */
 
 export const allChecksForEntities = (parentUrl, entity) => {
