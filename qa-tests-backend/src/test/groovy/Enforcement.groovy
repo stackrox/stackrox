@@ -786,4 +786,56 @@ class Enforcement extends BaseSpecification {
         orchestrator.deleteDeployment(d)
     }
 
+    @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Scale-down Enforcement Ignored due to Bypass Annotation - Integration"() {
+        // This test verifies enforcement is skipped by triggering a policy violation on a policy
+        // that is configured for scale-down enforcement with a deployment that carries a bypass
+        // annotation.
+
+        given:
+        "Add scale-down enforcement to an existing policy"
+        def startEnforcements = Services.updatePolicyEnforcement(
+                CONTAINER_PORT_22_POLICY,
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
+        )
+
+        when:
+        "Create Deployment to test scale-down enforcement"
+        Deployment d = new Deployment()
+                .setName("scale-down-enforcement-bypass")
+                .setImage("busybox")
+                .addPort(22)
+                .addLabel("app", "scale-down-enforcement-bypass")
+                .setCommand(["sleep", "600"])
+                .addAnnotation("admission.stackrox.io/break-glass", "yay")
+                .setSkipReplicaWait(false)
+        orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d)
+
+        then:
+        "get violation details"
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                CONTAINER_PORT_22_POLICY,
+                30
+        ) as List<AlertOuterClass.ListAlert>
+        assert violations != null && violations?.size() > 0
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
+        assert alert != null
+        assert alert?.enforcement?.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+
+        and:
+        "check deployment did not actually get scaled down"
+        def t = new Timer(15, 1)
+        while (t.IsValid()) {
+            def replicaCount = orchestrator.getDeploymentReplicaCount(d)
+            assert replicaCount > 0
+        }
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
+        orchestrator.deleteDeployment(d)
+    }
+
 }

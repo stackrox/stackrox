@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 )
@@ -66,6 +67,10 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 	}
 	for _, a := range alertResults.GetAlerts() {
 		if a.GetEnforcement().GetAction() == storage.EnforcementAction_UNSET_ENFORCEMENT {
+			continue
+		}
+		// Do not enforce if there is a bypass annotation specified
+		if !enforcers.ShouldEnforce(a.GetDeployment().GetAnnotations()) {
 			continue
 		}
 		switch stage {
