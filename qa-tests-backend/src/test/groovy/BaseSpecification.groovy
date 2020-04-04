@@ -14,15 +14,18 @@ import services.BaseService
 import services.ImageIntegrationService
 import services.RoleService
 import services.SACService
+import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Specification
 import testrailintegration.TestRailconfig
 import util.Env
+import util.Helpers
 
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 @Slf4j
+@Retry(condition = { Helpers.determineRetry() })
 class BaseSpecification extends Specification {
 
     static final String RUN_ID
@@ -192,5 +195,7 @@ class BaseSpecification extends Specification {
         disableAuthzPlugin()
     }
 
-    def cleanup() { }
+    def cleanup() {
+        Helpers.resetRetryAttempts()
+    }
 }
