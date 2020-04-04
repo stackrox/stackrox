@@ -2,18 +2,32 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"text/template"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 // VersionInfo contains the main and collector version
 type VersionInfo struct {
 	MainVersion      string
 	CollectorVersion string
+}
+
+type envVars struct {
+	Env []envVar `yaml:"envVars,omitempty"`
+}
+
+type envVar struct {
+	Name  string `yaml:"name,omitempty"`
+	Value string `yaml:"value,omitempty"`
 }
 
 func main() {
@@ -41,6 +55,23 @@ func mainCmd(args []string) error {
 
 	if err != nil {
 		return errors.Wrapf(err, "directory %s expected to exist, but doesn't", tmpDir)
+	}
+
+	if devbuild.IsEnabled() {
+		ev := envVars{}
+		for _, feature := range features.Flags {
+			ev.Env = append(ev.Env, envVar{feature.EnvVar(), strconv.FormatBool(feature.Enabled())})
+		}
+
+		yamlBytes, err := yaml.Marshal(ev)
+		if err != nil {
+			return errors.Wrap(err, "feature flags cannot be processed")
+		}
+
+		err = ioutil.WriteFile(fmt.Sprintf("%s/feature-flag-values.yaml", tmpDir), yamlBytes, 0644)
+		if err != nil {
+			return errors.Wrap(err, "feature flags cannot be processed")
+		}
 	}
 
 	chartYaml := fmt.Sprintf("%s/Chart.yaml", dir)

@@ -181,6 +181,10 @@ spec:
           env:
           - name: ROX_SENSOR_ENDPOINT
             value: {{.Values.endpoint.advertised}}
+          {{ range .Values.envVars -}}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{ end }}
           volumeMounts:
             - name: config
               mountPath: /run/config/stackrox.io/admission-control/config/

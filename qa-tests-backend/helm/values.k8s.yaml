@@ -27,3 +27,4 @@ config:
   registryOverride:
   disableTaintTolerations: false
   createUpgraderServiceAccount: true
+

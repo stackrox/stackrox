@@ -1343,7 +1343,7 @@ commands:
               cd ${RENDERED_CHART_DIR}
               cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
               ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
-              helm install --namespace stackrox --name sensor .
+              helm install --namespace stackrox -f values.yaml -f feature-flag-values.yaml --name sensor .
               rm -rf "${RENDERED_CHART_DIR}"
             fi
       - run:
