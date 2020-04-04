@@ -1,0 +1,90 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should show a container restart event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-event-marker"
+      transform="translate(NaN, -5)"
+    >
+      <polygon
+        data-testid="restart-event"
+        fill="var(--caution-600)"
+        points="0,10 5,0 10,10"
+        stroke="var(--caution-600)"
+      />
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a container termination event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-event-marker"
+      transform="translate(NaN, -5)"
+    >
+      <polygon
+        data-testid="termination-event"
+        fill="var(--caution-600)"
+        points="0,0 5,10 10,0"
+        stroke="var(--caution-600)"
+      />
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a policy violation event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-event-marker"
+      transform="translate(NaN, -5)"
+    >
+      <rect
+        data-testid="policy-violation-event"
+        fill="var(--primary-600)"
+        height="10"
+        rx="3"
+        width="10"
+      />
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a process activity event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-event-marker"
+      transform="translate(NaN, -5)"
+    >
+      <polygon
+        data-testid="process-activity-event"
+        fill="var(--alert-600)"
+        points="5,0 0,5 5,10 10,5"
+        stroke="var(--alert-600)"
+      />
+    </g>
+  </svg>
+</DocumentFragment>
+`;

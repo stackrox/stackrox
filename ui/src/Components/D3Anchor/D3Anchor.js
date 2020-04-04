@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { select } from 'd3-selection';
 
 // This will be a reusable Component that we can use to render the container for D3 elements
@@ -20,6 +21,19 @@ const D3Anchor = ({ dataTestId, translateX, translateY, onUpdate, children }) =>
             {children}
         </g>
     );
+};
+
+D3Anchor.propTypes = {
+    dataTestId: PropTypes.string.isRequired,
+    translateX: PropTypes.number,
+    translateY: PropTypes.number,
+    onUpdate: PropTypes.func.isRequired,
+    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired
+};
+
+D3Anchor.defaultProps = {
+    translateX: 0,
+    translateY: 0
 };
 
 export default D3Anchor;
