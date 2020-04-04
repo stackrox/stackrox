@@ -1131,7 +1131,6 @@ h6 {
     @apply bg-base-200;
 }
 
-
 /* React-vis */
 @import '../node_modules/react-vis/dist/style.css';
 
@@ -1443,4 +1442,21 @@ h6 {
     -webkit-box-orient: initial;
     overflow: initial;
     padding-bottom: 0; /* necessary to fix bug where descenders are cut off */
+}
+
+.drag-grip {
+    width: 18px;
+    height: 40px;
+    overflow: hidden;
+    line-height: 4px;
+    padding: 2px 0px 0px 2px;
+    cursor: move;
+    margin-right: 0.3em;
+    font-size: 10px;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    color: var(--base-800);
+}
+.drag-grip::after {
+    content: '... ... ... ... ... ... ...';
 }
