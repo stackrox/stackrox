@@ -9,11 +9,12 @@ import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
 import Tags from 'Components/Tags';
 import Message from 'Components/Message';
+import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
 import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
-const AnalystTags = ({ className, type, variables }) => {
+const AnalystTags = ({ className, type, variables, autoComplete, autoCompleteVariables }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_TAGS, {
@@ -22,11 +23,15 @@ const AnalystTags = ({ className, type, variables }) => {
 
     // resolves once the modification + refetching happens
     const refetchAndWait = getRefetchQueriesByCondition([
-        { query: GET_TAGS, variables, exclude: false },
+        { query: GET_TAGS, variables },
         {
             query: GET_PROCESS_COMMENTS_TAGS_COUNT,
             variables,
             exclude: type !== ANALYST_NOTES_TYPES.PROCESS
+        },
+        {
+            query: SEARCH_AUTOCOMPLETE_QUERY,
+            variables: autoCompleteVariables
         }
     ]);
 
@@ -78,6 +83,7 @@ const AnalystTags = ({ className, type, variables }) => {
             isLoading={isLoading}
             isDisabled={isDisabled}
             defaultOpen
+            autoComplete={autoComplete}
         />
     );
 };
@@ -85,11 +91,14 @@ const AnalystTags = ({ className, type, variables }) => {
 AnalystTags.propTypes = {
     type: PropTypes.string.isRequired,
     className: PropTypes.string,
-    variables: PropTypes.shape({}).isRequired
+    variables: PropTypes.shape({}).isRequired,
+    autoComplete: PropTypes.arrayOf(PropTypes.string),
+    autoCompleteVariables: PropTypes.shape({}).isRequired
 };
 
 AnalystTags.defaultProps = {
-    className: 'border border-base-400'
+    className: 'border border-base-400',
+    autoComplete: []
 };
 
 export default React.memo(AnalystTags);

@@ -5,10 +5,6 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 import { Creatable } from 'Components/ReactSelect';
 import Loader from 'Components/Loader';
 
-function noOptionsMessage() {
-    return null;
-}
-
 const Tags = ({
     className,
     title,
@@ -17,9 +13,10 @@ const Tags = ({
     isDisabled,
     defaultOpen,
     isCollapsible,
-    isLoading
+    isLoading,
+    autoComplete
 }) => {
-    const options = tags.map(tag => ({ label: tag, value: tag }));
+    const options = autoComplete.map(option => ({ label: option, value: option }));
 
     let content = <Loader />;
     if (!isLoading) {
@@ -34,7 +31,6 @@ const Tags = ({
                 value={tags}
                 isDisabled={isDisabled}
                 isMulti
-                noOptionsMessage={noOptionsMessage}
             />
         );
     }
@@ -62,7 +58,8 @@ Tags.propTypes = {
     isCollapsible: PropTypes.bool,
     className: PropTypes.string,
     isLoading: PropTypes.bool,
-    isDisabled: PropTypes.bool
+    isDisabled: PropTypes.bool,
+    autoComplete: PropTypes.arrayOf(PropTypes.string)
 };
 
 Tags.defaultProps = {
@@ -72,7 +69,8 @@ Tags.defaultProps = {
     isCollapsible: true,
     className: 'border border-base-400',
     isLoading: false,
-    isDisabled: false
+    isDisabled: false,
+    autoComplete: []
 };
 
 export default Tags;
