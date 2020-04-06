@@ -53,7 +53,7 @@ func (suite *PodStoreTestSuite) TestPods() {
 		{
 			Id:           "fooID",
 			DeploymentId: "deployID",
-			Instances: []*storage.ContainerInstance{
+			LiveInstances: []*storage.ContainerInstance{
 				{
 					ContainerName: "fooContainer",
 				},
@@ -62,7 +62,7 @@ func (suite *PodStoreTestSuite) TestPods() {
 		{
 			Id:           "barID",
 			DeploymentId: "deployID",
-			Instances: []*storage.ContainerInstance{
+			LiveInstances: []*storage.ContainerInstance{
 				{
 					ContainerName: "barContainer",
 				},

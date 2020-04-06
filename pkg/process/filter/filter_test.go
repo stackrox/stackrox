@@ -162,7 +162,7 @@ func TestPodUpdate(t *testing.T) {
 
 	// The container id has changed so the container reference should be removed, but the deployment reference should remain
 	filter.Add(pi)
-	pod.Instances[0].InstanceId.Id = "newcontainerid"
+	pod.LiveInstances[0].InstanceId.Id = "newcontainerid"
 	filter.UpdateByPod(pod)
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)

@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"context"
-	"sort"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
@@ -24,8 +24,9 @@ import (
 )
 
 const (
-	podBatchSize = 1000
-	resourceType = "Pod"
+	podBatchSize              = 1000
+	resourceType              = "Pod"
+	maxNumberOfDeadContainers = 10
 )
 
 var (
@@ -185,7 +186,7 @@ func (ds *datastoreImpl) GetPods(ctx context.Context, ids []string) ([]*storage.
 	return pods, nil
 }
 
-// Upsert inserts a pod into podStore
+// UpsertPod inserts a pod into podStore
 func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Upsert")
 
@@ -203,14 +204,18 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
 		}
 		if found {
-			mergeContainerInstances(pod, oldPod.GetInstances())
-		}
-
-		if len(pod.Instances) > 0 {
-			sort.SliceStable(pod.Instances, func(i, j int) bool {
-				return pod.Instances[i].Started.Compare(pod.Instances[j].Started) <= 0
-			})
-			pod.Started = pod.Instances[0].Started
+			pod.Started = oldPod.Started
+			mergeContainerInstances(pod, oldPod)
+		} else {
+			// Need to compute the start time because we don't already know it.
+			var earliest *types.Timestamp
+			for _, instance := range pod.GetLiveInstances() {
+				startTime := instance.GetStarted()
+				if earliest == nil || earliest.Compare(startTime) > 0 {
+					earliest = startTime
+				}
+			}
+			pod.Started = earliest
 		}
 
 		if err := ds.podStore.Upsert(pod); err != nil {
@@ -240,27 +245,43 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 	return ds.indicators.RemoveProcessIndicatorsOfStaleContainersByPod(deleteIndicatorsCtx, pod)
 }
 
-// mergeContainerInstances merges container instances into pod.Instances.
-// If pod.Instances already contains an instance in oldInstances, it is ignored.
-func mergeContainerInstances(pod *storage.Pod, oldInstances []*storage.ContainerInstance) {
-	instanceByID := make(map[string]*storage.ContainerInstance)
-	for _, instance := range oldInstances {
-		instanceByID[instance.GetInstanceId().GetId()] = instance
-	}
+// mergeContainerInstances merges container instances from oldPod into newPod.
+func mergeContainerInstances(newPod *storage.Pod, oldPod *storage.Pod) {
+	newPod.TerminatedInstances = oldPod.TerminatedInstances
 
-	for _, instance := range pod.Instances {
-		if oldInstance := instanceByID[instance.GetInstanceId().GetId()]; oldInstance != nil {
-			// Remove instances that already exist in pod.Instances
-			delete(instanceByID, instance.GetInstanceId().GetId())
+	idxByContainerName := make(map[string]int)
+	for i, instanceList := range newPod.GetTerminatedInstances() {
+		if len(instanceList.GetInstances()) > 0 {
+			idxByContainerName[instanceList.GetInstances()[0].GetContainerName()] = i
 		}
 	}
-	for _, instance := range instanceByID {
-		// Append old instances that are not in pod.Instances
-		pod.Instances = append(pod.Instances, instance)
+
+	endIdx := 0
+	for _, instance := range newPod.GetLiveInstances() {
+		if instance.GetFinished() == nil {
+			newPod.LiveInstances[endIdx] = instance
+			endIdx++
+		} else {
+			// Container Instance has terminated. Move it into the proper dead instances list.
+			if idx, exists := idxByContainerName[instance.GetContainerName()]; exists {
+				deadInstancesList := newPod.GetTerminatedInstances()[idx]
+				var startIdx int
+				if len(deadInstancesList.Instances) == maxNumberOfDeadContainers {
+					// Remove the oldest entry.
+					startIdx = 1
+				}
+				deadInstancesList.Instances = append(deadInstancesList.Instances[startIdx:], instance)
+			} else {
+				newPod.TerminatedInstances = append(newPod.TerminatedInstances, &storage.Pod_ContainerInstanceList{
+					Instances: []*storage.ContainerInstance{instance},
+				})
+			}
+		}
 	}
+	newPod.LiveInstances = newPod.LiveInstances[:endIdx]
 }
 
-// Delete removes a pod from the podStore
+// RemovePod removes a pod from the podStore
 func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Delete")
 

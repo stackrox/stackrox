@@ -372,7 +372,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containingPodId: String!",
 		"exitCode: Int!",
 		"finished: Time",
-		"fromRestart: Boolean!",
 		"imageDigest: String!",
 		"instanceId: ContainerInstanceID",
 		"started: Time",
@@ -3867,11 +3866,6 @@ func (resolver *containerInstanceResolver) ExitCode(ctx context.Context) int32 {
 func (resolver *containerInstanceResolver) Finished(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinished()
 	return timestamp(value)
-}
-
-func (resolver *containerInstanceResolver) FromRestart(ctx context.Context) bool {
-	value := resolver.data.GetFromRestart()
-	return value
 }
 
 func (resolver *containerInstanceResolver) ImageDigest(ctx context.Context) string {

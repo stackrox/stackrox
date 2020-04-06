@@ -159,7 +159,7 @@ func (f *filterImpl) UpdateByPod(pod *storage.Pod) {
 	defer f.rootLock.Unlock()
 
 	liveContainerSet := set.NewStringSet()
-	for _, instance := range pod.GetInstances() {
+	for _, instance := range pod.GetLiveInstances() {
 		liveContainerSet.Add(containerid.ShortContainerIDFromInstance(instance))
 	}
 
@@ -194,7 +194,7 @@ func (f *filterImpl) DeleteByPod(pod *storage.Pod) {
 	defer f.rootLock.Unlock()
 
 	containerSet := set.NewStringSet()
-	for _, instance := range pod.GetInstances() {
+	for _, instance := range pod.GetLiveInstances() {
 		containerSet.Add(containerid.ShortContainerIDFromInstance(instance))
 	}
 

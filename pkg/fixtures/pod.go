@@ -12,29 +12,101 @@ func GetPod() *storage.Pod {
 		DeploymentId: GetDeployment().GetId(),
 		ClusterId:    "prod cluster",
 		Namespace:    "stackrox",
-		Instances: []*storage.ContainerInstance{
+		Started: &types.Timestamp{
+			Seconds: 0,
+		},
+		LiveInstances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{
 					Id: "containerid",
 				},
-				ImageDigest: "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+				ContainerName: "containername",
+				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 				Started: &types.Timestamp{
 					Seconds: 2,
 				},
 			},
 			{
 				InstanceId: &storage.ContainerInstanceID{
-					Id: "containeridinit",
+					Id: "othercontainerid",
 				},
-				ImageDigest: "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+				ContainerName: "othercontainername",
+				ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
 				Started: &types.Timestamp{
-					Seconds: 0,
+					Seconds: 3,
 				},
-				Finished: &types.Timestamp{
-					Seconds: 1,
+			},
+		},
+		TerminatedInstances: []*storage.Pod_ContainerInstanceList{
+			{
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "containeridfirst",
+						},
+						ContainerName: "containername",
+						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started: &types.Timestamp{
+							Seconds: 0,
+						},
+						Finished: &types.Timestamp{
+							Seconds: 1,
+						},
+					},
 				},
-				ExitCode:          0,
-				TerminationReason: "Completed",
+			},
+			{
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "othercontainerid",
+						},
+						ContainerName: "othercontainername",
+						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started: &types.Timestamp{
+							Seconds: 1,
+						},
+						Finished: &types.Timestamp{
+							Seconds: 2,
+						},
+					},
+				},
+			},
+			{
+				Instances: []*storage.ContainerInstance{
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "containeridinitfirst",
+						},
+						ContainerName: "containerinitname",
+						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started: &types.Timestamp{
+							Seconds: 0,
+						},
+						Finished: &types.Timestamp{
+							Seconds: 1,
+						},
+						ExitCode:          137,
+						TerminationReason: "Error",
+					},
+					{
+						InstanceId: &storage.ContainerInstanceID{
+							Id: "containeridinitsecond",
+						},
+						ContainerName: "containerinitname",
+						ImageDigest:   "sha256:035e674c761c8a9bffe25a4f7c552e617869d1c1bfb2f84074c3ee63f3018da4",
+						Started: &types.Timestamp{
+							Seconds: 1,
+							Nanos:   200,
+						},
+						Finished: &types.Timestamp{
+							Seconds: 1,
+							Nanos:   800,
+						},
+						ExitCode:          0,
+						TerminationReason: "Completed",
+					},
+				},
 			},
 		},
 	}

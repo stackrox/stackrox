@@ -96,7 +96,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 
 	if features.PodDeploymentSeparation.Enabled() {
 		m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
-			for _, inst := range p.GetInstances() {
+			for _, inst := range p.GetLiveInstances() {
 				id := containerid.ShortContainerIDFromInstance(inst)
 				if id == "" {
 					continue

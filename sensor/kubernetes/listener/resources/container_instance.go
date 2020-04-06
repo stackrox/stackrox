@@ -34,9 +34,6 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 		}
 		if features.PodDeploymentSeparation.Enabled() {
 			result[i].ContainerName = c.Name
-			if c.LastTerminationState.Terminated != nil {
-				result[i].FromRestart = true
-			}
 
 			// Track terminated containers.
 			if terminated := c.State.Terminated; terminated != nil {

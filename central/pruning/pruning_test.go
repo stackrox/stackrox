@@ -122,15 +122,19 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 }
 
 func newPod(imageIDs ...string) *storage.Pod {
-	var instances []*storage.ContainerInstance
-	for _, id := range imageIDs {
-		instances = append(instances, &storage.ContainerInstance{
-			ImageDigest: types.NewDigest(id).Digest(),
-		})
+	instanceLists := make([]*storage.Pod_ContainerInstanceList, len(imageIDs))
+	for i, id := range imageIDs {
+		instanceLists[i] = &storage.Pod_ContainerInstanceList{
+			Instances: []*storage.ContainerInstance{
+				{
+					ImageDigest: types.NewDigest(id).Digest(),
+				},
+			},
+		}
 	}
 	return &storage.Pod{
-		Id:        "id",
-		Instances: instances,
+		Id:                  "id",
+		TerminatedInstances: instanceLists,
 	}
 }
 

@@ -2,10 +2,9 @@ package datastore
 
 import (
 	"context"
-	"sort"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
@@ -150,29 +149,68 @@ func (suite *PodDataStoreTestSuite) TestUpsertPodNew() {
 }
 
 func (suite *PodDataStoreTestSuite) TestUpsertPodExists() {
-	oldPod := fixtures.GetPod()
-	oldPod.Instances[0] = &storage.ContainerInstance{
-		InstanceId:      expectedPod.Instances[0].InstanceId,
-		ContainingPodId: expectedPod.Instances[0].ContainingPodId,
-		ContainerName:   expectedPod.Instances[0].ContainerName,
-		Started:         expectedPod.Instances[0].Started,
-		ImageDigest:     "sha256:092834092384093285190",
-		FromRestart:     true,
+	// Renaming to make things clear
+	oldPod := expectedPod
+
+	pod := fixtures.GetPod()
+	pod.TerminatedInstances = make([]*storage.Pod_ContainerInstanceList, 0)
+	// Update one instance.
+	pod.LiveInstances[0] = &storage.ContainerInstance{
+		InstanceId:    pod.LiveInstances[0].InstanceId,
+		ContainerName: pod.LiveInstances[0].ContainerName,
+		ImageDigest:   "sha256:3984274924983274198",
 	}
-	oldPod.Instances = append(oldPod.Instances, &storage.ContainerInstance{
-		InstanceId: &storage.ContainerInstanceID{
-			Id: "newcontainerid",
+	// Terminate the other instance.
+	terminatedInst0 := &storage.ContainerInstance{
+		InstanceId:    pod.LiveInstances[1].InstanceId,
+		ContainerName: pod.LiveInstances[1].ContainerName,
+		Finished: &types.Timestamp{
+			Seconds: 10,
 		},
+		ExitCode:          0,
+		TerminationReason: "Completed",
+	}
+	pod.LiveInstances[1] = terminatedInst0
+	// Add a new terminated instance.
+	terminatedInst1 := &storage.ContainerInstance{
+		InstanceId: &storage.ContainerInstanceID{
+			Id: "newdeadcontainerid",
+		},
+		ContainerName: "newdeadcontainername",
+		Finished: &types.Timestamp{
+			Seconds: 9,
+		},
+		ExitCode:          137,
+		TerminationReason: "Error",
+	}
+	pod.LiveInstances = append(pod.LiveInstances, terminatedInst1)
+	// Add a new live instance.
+	liveInst := &storage.ContainerInstance{
+		InstanceId: &storage.ContainerInstanceID{
+			Id: "newlivecontainerid",
+		},
+		ContainerName: "newlivecontainername",
+		Started: &types.Timestamp{
+			Seconds: 8,
+		},
+	}
+	pod.LiveInstances = append(pod.LiveInstances, liveInst)
+
+	// merged should have all the previously dead instances plus the two new ones
+	// as well as the new live instances.
+	// This is the pod we expect to actually upsert to the DB.
+	merged := fixtures.GetPod()
+	merged.LiveInstances = []*storage.ContainerInstance{pod.LiveInstances[0], pod.LiveInstances[3]}
+	merged.TerminatedInstances[1].Instances = append(merged.TerminatedInstances[1].Instances, terminatedInst0)
+	merged.TerminatedInstances = append(merged.TerminatedInstances, &storage.Pod_ContainerInstanceList{
+		Instances: []*storage.ContainerInstance{terminatedInst1},
 	})
-	merged := proto.Clone(oldPod).(*storage.Pod)
-	merged.Instances[0] = expectedPod.Instances[0]
-	sort.SliceStable(merged.Instances, func(i, j int) bool { return merged.Instances[i].Started.Compare(merged.Instances[j].Started) <= 0 })
-	suite.storage.EXPECT().Get(expectedPod.GetId()).Return(oldPod, true, nil)
+	suite.storage.EXPECT().Get(pod.GetId()).Return(oldPod, true, nil)
 	suite.storage.EXPECT().Upsert(merged).Return(nil)
 	suite.indexer.EXPECT().AddPod(merged).Return(nil)
 	suite.storage.EXPECT().AckKeysIndexed(merged.GetId()).Return(nil)
 	suite.processStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), merged).Return(nil)
-	suite.NoError(suite.datastore.UpsertPod(ctx, expectedPod))
+	suite.NoError(suite.datastore.UpsertPod(ctx, pod))
 }
 
 func (suite *PodDataStoreTestSuite) TestRemovePod() {

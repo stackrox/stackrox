@@ -213,16 +213,22 @@ func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, a
 		ClusterId:    wrap.GetClusterId(),
 		Namespace:    wrap.GetNamespace(),
 	}
+
 	for i, instance := range containerInstances(pod) {
+		// TODO: Is this needed for pods...?
 		// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
 		// The deployment will still be managing the pods, but we want to take the new pod(s) as the source of truth
 		if i >= len(wrap.GetContainers()) {
 			break
 		}
-		p.Instances = append(p.Instances, instance)
+
+		// Assume we only receive one status per live container, so we can blindly append.
+		p.LiveInstances = append(p.LiveInstances, instance)
 	}
 	// Create a stable ordering
-	sort.SliceStable(p.Instances, func(i, j int) bool { return p.Instances[i].InstanceId.Id < p.Instances[j].InstanceId.Id })
+	sort.SliceStable(p.LiveInstances, func(i, j int) bool {
+		return p.LiveInstances[i].InstanceId.Id < p.LiveInstances[j].InstanceId.Id
+	})
 
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		d.podStore.removePod(p)

@@ -478,9 +478,10 @@ func containerIds(deployment *storage.Deployment) (ids []string) {
 	return
 }
 
+// containerIdsByPod only returns live container instances.
 func containerIdsByPod(pod *storage.Pod) []string {
 	var ids []string
-	for _, instance := range pod.GetInstances() {
+	for _, instance := range pod.GetLiveInstances() {
 		containerID := containerid.ShortContainerIDFromInstance(instance)
 		if containerID != "" {
 			ids = append(ids, containerID)

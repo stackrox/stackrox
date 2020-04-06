@@ -60,7 +60,7 @@ func (ps *podStore) getContainersForDeployment(ns, deploymentID string) set.Stri
 
 	containerIDs := set.NewStringSet()
 	for _, pod := range ps.pods[ns][deploymentID] {
-		for _, inst := range pod.GetInstances() {
+		for _, inst := range pod.GetLiveInstances() {
 			containerIDs.Add(inst.GetInstanceId().GetId())
 		}
 	}

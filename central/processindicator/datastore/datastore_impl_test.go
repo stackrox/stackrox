@@ -476,7 +476,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerByPodID
 
 	pod1 := &storage.Pod{
 		Id: "p1",
-		Instances: []*storage.ContainerInstance{
+		LiveInstances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{
 					Id: "p1_c2",
@@ -490,7 +490,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerByPodID
 
 	pod2 := &storage.Pod{
 		Id: "p2",
-		Instances: []*storage.ContainerInstance{
+		LiveInstances: []*storage.ContainerInstance{
 			{
 				InstanceId: &storage.ContainerInstanceID{
 					Id: "p2_c2",
