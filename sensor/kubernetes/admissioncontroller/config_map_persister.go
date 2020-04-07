@@ -116,13 +116,14 @@ func (p *configMapPersister) applyCurrentConfigMap() error {
 	return nil
 }
 
-func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
-	settings, _ := p.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
-	if settings == nil {
+func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigMap, error) {
+	clusterConfig := settings.GetClusterConfig()
+	enforcedDeployTimePolicies := settings.GetEnforcedDeployTimePolicies()
+	if settings == nil || clusterConfig == nil || enforcedDeployTimePolicies == nil {
 		return nil, nil
 	}
 
-	configBytes, err := proto.Marshal(settings.GetClusterConfig())
+	configBytes, err := proto.Marshal(clusterConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +132,7 @@ func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
 		return nil, err
 	}
 
-	policiesBytes, err := proto.Marshal(settings.GetEnforcedDeployTimePolicies())
+	policiesBytes, err := proto.Marshal(enforcedDeployTimePolicies)
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding policies")
 	}
@@ -160,4 +161,9 @@ func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
 			admissioncontrol.PoliciesGZDataKey: policiesBytesGZ,
 		},
 	}, nil
+}
+
+func (p *configMapPersister) createCurrentConfigMap() (*v1.ConfigMap, error) {
+	settings, _ := p.settingsStreamIt.Value().(*sensor.AdmissionControlSettings)
+	return settingsToConfigMap(settings)
 }
