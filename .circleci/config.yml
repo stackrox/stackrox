@@ -762,6 +762,15 @@ commands:
             cci-export NUM_NODES "$NUM_NODES"
             echo "Number of nodes for cluster is $NUM_NODES"
 
+            GKE_RELEASE_CHANNEL="stable"
+            if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
+              GKE_RELEASE_CHANNEL="rapid"
+            elif .circleci/pr_has_label.sh ci-gke-release-channel-regular; then
+              GKE_RELEASE_CHANNEL="regular"
+            fi
+            cci-export GKE_RELEASE_CHANNEL "$GKE_RELEASE_CHANNEL"
+            echo "Using gke release channel: $GKE_RELEASE_CHANNEL"
+
       - create-gke:
           wait: false
 

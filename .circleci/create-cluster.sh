@@ -13,6 +13,7 @@ create-cluster() {
   NUM_NODES="${NUM_NODES:-3}"
   GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU}"
   POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
+  GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
 
   # this function does not work in strict -e mode
   set +euo pipefail
@@ -39,6 +40,8 @@ create-cluster() {
           --services-ipv4-cidr=/24 \
           --enable-ip-alias \
           --enable-network-policy \
+          --enable-autorepair \
+          --release-channel "${GKE_RELEASE_CHANNEL}" \
           --image-type ${GCP_IMAGE_TYPE} \
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
           --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
