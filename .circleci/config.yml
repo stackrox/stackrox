@@ -2588,6 +2588,11 @@ jobs:
             ]'
             kubectl -n stackrox patch networkpolicy/allow-ext-to-central --type json -p "$network_policy_patch"
 
+            service_patch='[
+              {"op": "replace", "path": "/spec/ports/0/targetPort", "value": 8443}
+            ]'
+            kubectl -n stackrox patch service/central --type json -p "$service_patch"
+
             if [[ "${LOAD_BALANCER}" == "lb" ]]; then
               lb_patch='[
                 {"op": "replace", "path": "/spec/ports/0/targetPort", "value": "api"}
@@ -2668,6 +2673,32 @@ jobs:
           target-dir: upgrade-test
 
       - *updateTestRail
+
+      - run:
+          name: Fetch bundle for the "remote" cluster in the DB
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote
+            [[ -d sensor-remote ]]
+
+            ## Edit the main image and collector image in the YAMLs to be the latest ones.
+            ## Note that we do NOT want to patch the cluster object directly since we want to ensure
+            ## that an unpatched cluster object works.
+            main_image="${MAIN_IMAGE_REPO:-docker.io/stackrox/main}:$(make --quiet tag)"
+            sed -i 's@docker.io/stackrox/main.*@'"${main_image}"'@g' ./sensor-remote/sensor.yaml
+            collector_image="${COLLECTOR_IMAGE_REPO:-docker.io/stackrox/collector}:$(cat COLLECTOR_VERSION)-latest"
+            sed -i 's@docker.io/stackrox/collector.*@'"${collector_image}"'@g' ./sensor-remote/sensor.yaml
+
+      - run:
+          name: Install the sensor
+          command: ./sensor-remote/sensor.sh
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Delete the sensor
+          command: |
+            ./sensor-remote/delete-sensor.sh
+            rm -rf sensor-remote
 
       - run:
           name: Create a "sensor-remote-new" cluster
