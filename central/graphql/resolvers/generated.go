@@ -685,6 +685,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddInput("Pagination", []string{
 		"limit: Int",
 		"offset: Int",
+		"sortOption: SortOption",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
 	utils.Must(builder.AddType("PermissionPolicy", []string{

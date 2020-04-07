@@ -105,10 +105,11 @@ func schemaExpand(p reflect.Type) string {
 		if p == timestampType {
 			return "Time"
 		}
-		if isProto(p) {
-			return p.Elem().Name()
+		elem := p.Elem()
+		if elem.Kind() == reflect.Struct {
+			return elem.Name()
 		}
-		inner := schemaExpand(p.Elem())
+		inner := schemaExpand(elem)
 		if inner == "" {
 			return ""
 		}
