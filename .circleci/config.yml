@@ -1423,7 +1423,7 @@ commands:
           name: Copy gradle test result files
           command: |
             mkdir -p qa-tests-backend/gradle-results
-            mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >>
+            mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >> || true
           when: always
 
 jobs:
