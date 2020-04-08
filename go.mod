@@ -90,6 +90,7 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v2 v2.2.4
+	gotest.tools v2.2.0+incompatible
 	honnef.co/go/tools v0.0.1-2019.2.3
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb

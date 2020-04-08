@@ -24,6 +24,15 @@ message DryRunResponse {
     repeated Excluded excluded     = 2;
 }
 
+message JobId {
+    string job_id = 1;
+}
+
+message DryRunJobStatusResponse {
+    bool pending = 1;
+    DryRunResponse result = 2;
+}
+
 message PolicyCategoriesResponse {
     repeated string categories = 1;
 }
@@ -122,6 +131,19 @@ service PolicyService {
         option (google.api.http) = {
             post: "/v1/policies/dryrun"
             body: "*"
+        };
+    }
+
+    rpc SubmitDryRunPolicyJob (storage.Policy) returns (JobId) {
+        option (google.api.http) = {
+            post: "/v1/policies/dryrunjob"
+            body: "*"
+        };
+    }
+
+    rpc QueryDryRunJobStatus (JobId) returns (DryRunJobStatusResponse) {
+        option (google.api.http) = {
+            get: "/v1/policies/dryrunjob/{job_id}"
         };
     }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/backgroundtasks"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
@@ -41,6 +42,8 @@ func New(policies datastore.DataStore,
 	metadataCache expiringcache.Cache,
 	scanCache expiringcache.Cache,
 	connectionManager connection.Manager) Service {
+	backgroundTaskManager := backgroundtasks.NewManager()
+	backgroundTaskManager.Start()
 	return &serviceImpl{
 		policies:          policies,
 		clusters:          clusters,
@@ -57,6 +60,7 @@ func New(policies datastore.DataStore,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
 
-		validator: newPolicyValidator(notifiers, clusters, deploymentMatcherBuilder, imageMatcherBuilder),
+		validator:              newPolicyValidator(notifiers, clusters, deploymentMatcherBuilder, imageMatcherBuilder),
+		dryRunPolicyJobManager: backgroundTaskManager,
 	}
 }

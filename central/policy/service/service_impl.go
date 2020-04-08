@@ -21,9 +21,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/backgroundtasks"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -34,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,6 +53,7 @@ var (
 			"/v1.PolicyService/ListPolicies",
 			"/v1.PolicyService/ReassessPolicies",
 			"/v1.PolicyService/GetPolicyCategories",
+			"/v1.PolicyService/QueryDryRunJobStatus",
 		},
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyService/PostPolicy",
@@ -55,6 +61,7 @@ var (
 			"/v1.PolicyService/PatchPolicy",
 			"/v1.PolicyService/DeletePolicy",
 			"/v1.PolicyService/DryRunPolicy",
+			"/v1.PolicyService/SubmitDryRunPolicyJob",
 			"/v1.PolicyService/RenamePolicyCategory",
 			"/v1.PolicyService/DeletePolicyCategory",
 			"/v1.PolicyService/EnableDisablePolicyNotification",
@@ -64,6 +71,8 @@ var (
 
 const (
 	uncategorizedCategory = `Uncategorized`
+	dryRunParallelism     = 8
+	identityUIDKey        = "identityUID"
 )
 
 var (
@@ -89,6 +98,8 @@ type serviceImpl struct {
 	scanCache         expiringcache.Cache
 
 	validator *policyValidator
+
+	dryRunPolicyJobManager backgroundtasks.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -270,8 +281,62 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 	return &v1.Empty{}, nil
 }
 
-// DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
-func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error) {
+func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storage.Policy) (*v1.JobId, error) {
+	if err := s.validator.validate(ctx, request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	t := func(c concurrency.ErrorWaitable, res *backgroundtasks.ExecutionResult) error {
+		resp, err := s.predicateBasedDryRunPolicy(ctx, c, request)
+		if err != nil {
+			return err
+		}
+
+		res.Result = resp
+		return nil
+	}
+
+	metadata := map[string]interface{}{identityUIDKey: authn.IdentityFromContext(ctx).UID()}
+	id, err := s.dryRunPolicyJobManager.AddTask(metadata, t)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to add dry-run job: %v", err)
+	}
+
+	return &v1.JobId{
+		JobId: id,
+	}, nil
+}
+
+func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId) (*v1.DryRunJobStatusResponse, error) {
+	metadata, res, completed, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	identityUID, ok := metadata[identityUIDKey].(string)
+	if !ok {
+		return nil, status.Error(codes.Internal, "Invalid job.")
+	}
+
+	if identityUID != authn.IdentityFromContext(ctx).UID() {
+		return nil, status.Error(codes.PermissionDenied, "Unauthorized access.")
+	}
+
+	resp := &v1.DryRunJobStatusResponse{
+		Pending: !completed,
+	}
+
+	if completed {
+		resp.Result, _ = res.(*v1.DryRunResponse)
+		if resp.Result == nil {
+			return nil, status.Error(codes.Internal, "Invalid response.")
+		}
+	}
+
+	return resp, nil
+}
+
+func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
 	if err := s.validator.validate(ctx, request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -281,6 +346,108 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	if request.GetFields().GetWhitelistEnabled() {
 		return &resp, nil
 	}
+
+	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
+	}
+
+	compiledPolicy, err := detection.NewCompiledPolicy(request, searchBasedMatcher)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid policy: %v", err)
+	}
+
+	deploymentIds, err := s.deployments.GetDeploymentIDs()
+	if err != nil {
+		return nil, err
+	}
+
+	pChan := make(chan struct{}, dryRunParallelism)
+	alertChan := make(chan *v1.DryRunResponse_Alert)
+	var wg sync.WaitGroup
+	go func() {
+		for {
+			select {
+			case alert, ok := <-alertChan:
+				// channel is closed
+				if !ok {
+					return
+				}
+				resp.Alerts = append(resp.Alerts, alert)
+			case <-cancelCtx.Done():
+				// context canceled or expired
+				return
+			}
+		}
+	}()
+
+	for _, id := range deploymentIds {
+		if err := cancelCtx.Err(); err != nil {
+			return nil, err
+		}
+
+		pChan <- struct{}{}
+		wg.Add(1)
+		go func(depId string) {
+			defer func() {
+				wg.Done()
+				<-pChan
+			}()
+
+			deployment, exists, err := s.deployments.GetDeployment(ctx, depId)
+			if !exists || err != nil {
+				return
+			}
+
+			images, err := s.deployments.GetImagesForDeployment(ctx, deployment)
+			if err != nil {
+				return
+			}
+
+			violations, err := searchBasedMatcher.MatchOne(ctx, deployment, images, nil)
+			if err != nil {
+				log.Errorf("failed policy matching: %s", err.Error())
+				return
+			}
+
+			if !compiledPolicy.AppliesTo(deployment) {
+				return
+			}
+
+			// Collect the violation messages as strings for the output.
+			convertedViolations := make([]string, 0, len(violations.AlertViolations))
+			for _, violation := range violations.AlertViolations {
+				convertedViolations = append(convertedViolations, violation.GetMessage())
+			}
+			if violations.ProcessViolation != nil {
+				convertedViolations = append(convertedViolations, violations.ProcessViolation.GetMessage())
+			}
+
+			alertChan <- &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations}
+		}(id)
+	}
+
+	wg.Wait()
+	close(alertChan)
+	return &resp, nil
+}
+
+// DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
+func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error) {
+	if features.DryRunPolicyJobMechanism.Enabled() {
+		return s.predicateBasedDryRunPolicy(ctx, ctx, request)
+	}
+
+	if err := s.validator.validate(ctx, request); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	var resp v1.DryRunResponse
+	// Dry runs do not apply to policies with whitelists because they are evaluated through the process indicator pipeline
+	if request.GetFields().GetWhitelistEnabled() {
+		return &resp, nil
+	}
+
 	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
