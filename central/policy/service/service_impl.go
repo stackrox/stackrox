@@ -62,6 +62,7 @@ var (
 			"/v1.PolicyService/DeletePolicy",
 			"/v1.PolicyService/DryRunPolicy",
 			"/v1.PolicyService/SubmitDryRunPolicyJob",
+			"/v1.PolicyService/CancelDryRunJob",
 			"/v1.PolicyService/RenamePolicyCategory",
 			"/v1.PolicyService/DeletePolicyCategory",
 			"/v1.PolicyService/EnableDisablePolicyNotification",
@@ -313,13 +314,8 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	identityUID, ok := metadata[identityUIDKey].(string)
-	if !ok {
-		return nil, status.Error(codes.Internal, "Invalid job.")
-	}
-
-	if identityUID != authn.IdentityFromContext(ctx).UID() {
-		return nil, status.Error(codes.PermissionDenied, "Unauthorized access.")
+	if err := checkIdentityFromMetadata(ctx, metadata); err != nil {
+		return nil, err
 	}
 
 	resp := &v1.DryRunJobStatusResponse{
@@ -334,6 +330,23 @@ func (s *serviceImpl) QueryDryRunJobStatus(ctx context.Context, jobid *v1.JobId)
 	}
 
 	return resp, nil
+}
+
+func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1.Empty, error) {
+	metadata, _, _, err := s.dryRunPolicyJobManager.GetTaskStatusAndMetadata(jobid.JobId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err := checkIdentityFromMetadata(ctx, metadata); err != nil {
+		return nil, err
+	}
+
+	if err := s.dryRunPolicyJobManager.CancelTask(jobid.JobId); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
@@ -684,6 +697,19 @@ func (s *serviceImpl) disablePolicyNotification(ctx context.Context, policyID st
 	err = errorList.ToError()
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
+}
+
+func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interface{}) error {
+	identityUID, ok := metadata[identityUIDKey].(string)
+	if !ok {
+		return status.Error(codes.Internal, "Invalid job.")
+	}
+
+	if identityUID != authn.IdentityFromContext(ctx).UID() {
+		return status.Error(codes.PermissionDenied, "Unauthorized access.")
 	}
 
 	return nil

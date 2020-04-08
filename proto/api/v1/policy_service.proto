@@ -147,6 +147,12 @@ service PolicyService {
         };
     }
 
+    rpc CancelDryRunJob (JobId) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/policies/dryrunjob/{job_id}"
+        };
+    }
+
     // GetPolicyCategories returns the policy categories.
     rpc GetPolicyCategories (Empty) returns (PolicyCategoriesResponse) {
         option (google.api.http) = {
