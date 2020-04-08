@@ -101,7 +101,7 @@ const SidePanel = ({
                         ? 'bg-side-panel-wave border-base-100'
                         : 'bg-primary-200 border-primary-400'
                 }`}
-                bodyClassName={isList || isDarkMode ? 'bg-base-0' : ''}
+                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
                 headerTextComponent={
                     <BreadCrumbs
                         className="font-700 leading-normal text-base-600 tracking-wide truncate"

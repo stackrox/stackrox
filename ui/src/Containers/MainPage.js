@@ -185,7 +185,7 @@ class MainPage extends Component {
                     <LicenseReminder />
                     <div className="navigation-gradient" />
                     {this.renderVersionOutOfDate()}
-                    <header className="flex z-20">
+                    <header className="flex z-20 ignore-react-onclickoutside">
                         <TopNavigation />
                     </header>
                     <section className="flex flex-1 flex-row">

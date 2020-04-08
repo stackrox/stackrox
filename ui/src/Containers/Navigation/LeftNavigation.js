@@ -131,7 +131,7 @@ const LeftNavigation = ({ location, metadata }) => {
     return (
         <>
             <div
-                className={`flex flex-col justify-between flex-none overflow-auto z-60 ${darkModeClasses}`}
+                className={`flex flex-col justify-between flex-none overflow-auto z-60 ignore-react-onclickoutside ${darkModeClasses}`}
             >
                 <nav className="left-navigation">
                     <LeftSideNavLinks renderLink={renderLink} />

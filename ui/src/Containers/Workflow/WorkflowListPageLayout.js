@@ -69,7 +69,11 @@ const WorkflowListPageLayout = ({ location }) => {
     return (
         <workflowStateContext.Provider value={pageState}>
             <div className="flex flex-col relative min-h-full">
-                <PageHeader header={header} subHeader="Entity List" classes="pr-0">
+                <PageHeader
+                    header={header}
+                    subHeader="Entity List"
+                    classes="pr-0 ignore-react-onclickoutside"
+                >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pr-2">
                             <ExportButton

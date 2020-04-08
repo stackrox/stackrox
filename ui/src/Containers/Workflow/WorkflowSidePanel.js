@@ -15,9 +15,6 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
     const pageStack = workflowState.getPageStack();
     const breadCrumbEntities = workflowState.stateStack.slice(pageStack.length);
 
-    const firstItem = workflowState.getBaseEntity();
-    const isList = firstItem.entityType && !firstItem.entityId;
-
     function onClose() {
         const url = workflowState.removeSidePanelParams().toUrl();
         history.push(url);
@@ -58,7 +55,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
                                 ? 'bg-side-panel-wave border-base-100'
                                 : 'bg-primary-200 border-primary-400'
                         }`}
-                        bodyClassName={isList || isDarkMode ? 'bg-base-0' : ''}
+                        bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
                         headerTextComponent={
                             <EntityBreadCrumbs workflowEntities={breadCrumbEntities} />
                         }

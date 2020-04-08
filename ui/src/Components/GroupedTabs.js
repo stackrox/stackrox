@@ -79,7 +79,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         <div className="relative">
             <ul
                 data-test-id="grouped-tabs"
-                className={` flex border-b border-base-400 px-4 uppercase text-sm ${
+                className={` flex border-b border-base-400 px-4 uppercase text-sm ignore-react-onclickoutside ${
                     !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
                 }`}
             >
