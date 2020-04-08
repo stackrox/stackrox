@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -66,15 +65,9 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	}
 
 	store := storeMap.Get((*central.SensorEvent_ServiceAccount)(nil))
-	idsToDelete := search.ResultsToIDSet(results).Difference(store.GetSet()).AsSlice()
-	if len(idsToDelete) > 0 {
-		log.Infof("Deleting service accounts %+v as a part of reconciliation", idsToDelete)
-	}
-	errList := errorhelpers.NewErrorList("Service Account reconciliation")
-	for _, id := range idsToDelete {
-		errList.AddError(s.runRemovePipeline(ctx, central.ResourceAction_REMOVE_RESOURCE, &storage.ServiceAccount{Id: id}))
-	}
-	return errList.ToError()
+	return reconciliation.Perform(store, search.ResultsToIDSet(results), "service accounts", func(id string) error {
+		return s.runRemovePipeline(ctx, &storage.ServiceAccount{Id: id})
+	})
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -91,21 +84,21 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.runRemovePipeline(ctx, event.GetAction(), sa)
+		return s.runRemovePipeline(ctx, sa)
 	default:
 		return s.runGeneralPipeline(ctx, event.GetAction(), sa)
 	}
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.ResourceAction, event *storage.ServiceAccount) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, event *storage.ServiceAccount) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
 	}
 
 	// Add/Update/Remove the deployment from persistence depending on the event action.
-	if err := s.persistServiceAccount(ctx, action, event); err != nil {
+	if err := s.persistServiceAccount(ctx, central.ResourceAction_REMOVE_RESOURCE, event); err != nil {
 		return err
 	}
 

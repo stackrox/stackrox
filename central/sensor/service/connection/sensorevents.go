@@ -60,15 +60,15 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			if err := s.pipeline.Reconcile(ctx, s.reconciliationMap); err != nil {
 				log.Errorf("error reconciling state: %v", err)
 			}
-			for _, s := range s.reconciliationMap.All() {
-				s.Close()
-			}
+			s.reconciliationMap.Close()
 			return
 		case *central.SensorEvent_ReprocessDeployment:
 			typ = deploymentQueueKey
 		default:
 			typ = reflectutils.Type(evt.Event.Resource)
-			s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
+			if !s.reconciliationMap.IsClosed() {
+				s.reconciliationMap.Add(evt.Event.Resource, evt.Event.Id)
+			}
 		}
 	default:
 		utils.Should(errors.New("handler only supports events"))
