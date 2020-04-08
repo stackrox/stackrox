@@ -61,7 +61,10 @@ func TestAddMatching(t *testing.T) {
 
 func TestStringSet(t *testing.T) {
 	elements := []string{"a", "bcd"}
-	set := NewStringSet(elements...)
+	set := NewStringSet(elements[0])
+	assertSetContainsExactly(t, set, elements[0])
+	assert.Equal(t, elements[0], set.GetArbitraryElem())
+	set.AddAll(elements[1:]...)
 	assertSetContainsExactly(t, set, elements...)
 
 	assert.True(t, set.Add("foo"))
@@ -78,6 +81,7 @@ func TestStringSet(t *testing.T) {
 
 	emptyFS := NewStringSet()
 	assertSetContainsExactly(t, emptyFS)
+	assert.Equal(t, "", emptyFS.GetArbitraryElem())
 }
 
 func TestUnion(t *testing.T) {

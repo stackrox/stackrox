@@ -215,6 +215,18 @@ func (k SensorCapabilitySet) AsSlice() []SensorCapability {
 	return elems
 }
 
+// GetArbitraryElem returns an arbitrary element from the set.
+// This can be useful if, for example, you know the set has exactly one
+// element, and you want to pull it out.
+// If the set is empty, the zero value is returned.
+func (k SensorCapabilitySet) GetArbitraryElem() (arbitraryElem SensorCapability) {
+	for elem := range k {
+		arbitraryElem = elem
+		break
+	}
+	return arbitraryElem
+}
+
 // AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
 func (k SensorCapabilitySet) AsSortedSlice(less func(i, j SensorCapability) bool) []SensorCapability {
 	slice := k.AsSlice()

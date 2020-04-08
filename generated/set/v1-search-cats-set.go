@@ -217,6 +217,18 @@ func (k V1SearchCategorySet) AsSlice() []v1.SearchCategory {
 	return elems
 }
 
+// GetArbitraryElem returns an arbitrary element from the set.
+// This can be useful if, for example, you know the set has exactly one
+// element, and you want to pull it out.
+// If the set is empty, the zero value is returned.
+func (k V1SearchCategorySet) GetArbitraryElem() (arbitraryElem v1.SearchCategory) {
+	for elem := range k {
+		arbitraryElem = elem
+		break
+	}
+	return arbitraryElem
+}
+
 // AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
 func (k V1SearchCategorySet) AsSortedSlice(less func(i, j v1.SearchCategory) bool) []v1.SearchCategory {
 	slice := k.AsSlice()
