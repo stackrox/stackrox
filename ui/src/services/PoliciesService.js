@@ -135,7 +135,7 @@ export function getDryRun(policy) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function startDryRun(policy) {
-    return axios.post(`${baseUrl}/submitdryrunjob`, policy);
+    return axios.post(`${baseUrl}/dryrunjob`, policy);
 }
 
 /**
