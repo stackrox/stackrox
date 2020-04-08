@@ -55,15 +55,6 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 	sif.Start(stopSignal.Done())
 	resyncingSif.Start(stopSignal.Done())
 
-	// Run the namespace and rbac object informers first since other handlers rely on their outputs.
-	informersToSync := []cache.SharedInformer{namespaceInformer, secretInformer,
-		saInformer, roleInformer, clusterRoleInformer, roleBindingInformer, clusterRoleBindingInformer}
-	syncFuncs := make([]cache.InformerSynced, len(informersToSync))
-	for i, informer := range informersToSync {
-		syncFuncs[i] = informer.HasSynced
-	}
-	cache.WaitForCacheSync(stopSignal.Done(), syncFuncs...)
-
 	if !concurrency.WaitInContext(prePodWaitGroup, stopSignal) {
 		return
 	}
