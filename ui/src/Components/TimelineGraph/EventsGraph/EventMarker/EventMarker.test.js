@@ -9,6 +9,7 @@ test('should show a policy violation event marker', async () => {
             <EventMarker
                 name="eventName"
                 type="PolicyViolationEvent"
+                timestamp="2020-04-20T20:20:20.358227916Z"
                 differenceInHours={1}
                 translateX={0}
                 translateY={0}
@@ -28,6 +29,7 @@ test('should show a process activity event marker', async () => {
             <EventMarker
                 name="eventName"
                 type="ProcessActivityEvent"
+                timestamp="2020-04-20T20:20:20.358227916Z"
                 differenceInHours={1}
                 translateX={0}
                 translateY={0}
@@ -47,6 +49,7 @@ test('should show a container restart event marker', async () => {
             <EventMarker
                 name="eventName"
                 type="ContainerRestartEvent"
+                timestamp="2020-04-20T20:20:20.358227916Z"
                 differenceInHours={1}
                 translateX={0}
                 translateY={0}
@@ -66,6 +69,7 @@ test('should show a container termination event marker', async () => {
             <EventMarker
                 name="eventName"
                 type="ContainerTerminationEvent"
+                timestamp="2020-04-20T20:20:20.358227916Z"
                 differenceInHours={1}
                 translateX={0}
                 translateY={0}

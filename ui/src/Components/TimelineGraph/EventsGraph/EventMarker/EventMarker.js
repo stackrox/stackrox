@@ -11,7 +11,9 @@ import ProcessActivityEvent from './ProcessActivityEvent';
 import TerminationEvent from './TerminationEvent';
 
 const EventMarker = ({
+    name,
     type,
+    timestamp,
     differenceInHours,
     translateX,
     translateY,
@@ -41,10 +43,18 @@ const EventMarker = ({
             translateY={translateY}
             onUpdate={onUpdate}
         >
-            {type === eventTypes.POLICY_VIOLATION && <PolicyViolationEvent width={size} />}
-            {type === eventTypes.PROCESS_ACTIVITY && <ProcessActivityEvent width={size} />}
-            {type === eventTypes.RESTART && <RestartEvent width={size} />}
-            {type === eventTypes.TERMINATION && <TerminationEvent width={size} />}
+            {type === eventTypes.POLICY_VIOLATION && (
+                <PolicyViolationEvent name={name} type={type} timestamp={timestamp} width={size} />
+            )}
+            {type === eventTypes.PROCESS_ACTIVITY && (
+                <ProcessActivityEvent name={name} type={type} timestamp={timestamp} width={size} />
+            )}
+            {type === eventTypes.RESTART && (
+                <RestartEvent name={name} type={type} timestamp={timestamp} width={size} />
+            )}
+            {type === eventTypes.TERMINATION && (
+                <TerminationEvent name={name} type={type} timestamp={timestamp} width={size} />
+            )}
         </D3Anchor>
     );
 };

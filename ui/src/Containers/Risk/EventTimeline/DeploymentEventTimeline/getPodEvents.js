@@ -25,6 +25,7 @@ const getPodEvents = (pods, selectedEventType) => {
                 id: processId,
                 type,
                 differenceInHours: getDifferenceInHours(timestamp, startTime),
+                timestamp,
                 edges
             })),
         hasChildren: numContainers > 0

@@ -9,7 +9,7 @@ const DetailedTooltipOverlay = ({ className, title, subtitle, body, footer }) =>
     return (
         <TooltipOverlay className={`min-w-32 ${className}`}>
             <div className="text-left flex flex-col border-b border-primary-400 mb-1 leading-loose">
-                <h2>{title}</h2>
+                <h2 className="font-700">{title}</h2>
                 {subtitle && <span>{subtitle}</span>}
             </div>
             <div className="text-left pt-2">{body}</div>
