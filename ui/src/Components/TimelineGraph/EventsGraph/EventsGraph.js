@@ -2,6 +2,9 @@ import React from 'react';
 
 import EventsRow from './EventsRow';
 
+const MAX_ROW_HEIGHT = 48;
+const MIN_ROW_HEIGHT = 0;
+
 const EventsGraph = ({
     data,
     translateX,
@@ -12,7 +15,10 @@ const EventsGraph = ({
     width,
     numRows
 }) => {
-    const rowHeight = Math.max(0, Math.floor(height / numRows) - 1);
+    const rowHeight = Math.min(
+        Math.max(MIN_ROW_HEIGHT, Math.floor(height / numRows) - 1),
+        MAX_ROW_HEIGHT
+    );
     return (
         <g
             data-testid="timeline-events-graph"

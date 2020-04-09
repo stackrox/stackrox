@@ -10,7 +10,7 @@ const NameListItem = ({ id, type, name, subText, hasChildren, onClick }) => {
         onClick(type, id);
     }
     return (
-        <li className="flex flex-col justify-center leading-normal relative h-12 border-t border-base-300">
+        <li className="flex flex-col justify-center leading-normal relative h-12 border-b border-base-300">
             <HeaderWithSubText header={name} subText={subText} />
             {hasChildren && (
                 <Button

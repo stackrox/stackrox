@@ -21,8 +21,8 @@ const TimelineGraph = ({ data, goToNextView, currentPage, totalSize, pageSize, o
         hasChildren
     }));
     return (
-        <div className="flex flex-1 flex-col" data-testid="timeline-graph">
-            <div className="flex w-full">
+        <div className="flex flex-1 flex-col h-full" data-testid="timeline-graph">
+            <div className="flex h-full w-full">
                 <div className="w-1/4 border-r border-base-300">
                     <NameList names={names} onClick={goToNextView} />
                 </div>
