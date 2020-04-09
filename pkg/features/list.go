@@ -47,4 +47,7 @@ var (
 
 	// BooleanPolicyLogic enables support for an extended policy logic
 	BooleanPolicyLogic = registerFeature("Enable Boolean Policy Logic", "ROX_BOOLEAN_POLICY_LOGIC", false)
+
+	// PolicyImportExport feature flag enables policy import and export
+	PolicyImportExport = registerFeature("Enable Import/Export for Analyst Workflow", "ROX_POLICY_IMPORT_EXPORT", false)
 )

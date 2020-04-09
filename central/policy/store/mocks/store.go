@@ -50,19 +50,40 @@ func (mr *MockStoreMockRecorder) GetPolicy(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockStore)(nil).GetPolicy), id)
 }
 
-// GetPolicies mocks base method
-func (m *MockStore) GetPolicies() ([]*storage.Policy, error) {
+// GetAllPolicies mocks base method
+func (m *MockStore) GetAllPolicies() ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPolicies")
+	ret := m.ctrl.Call(m, "GetAllPolicies")
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPolicies indicates an expected call of GetPolicies
-func (mr *MockStoreMockRecorder) GetPolicies() *gomock.Call {
+// GetAllPolicies indicates an expected call of GetAllPolicies
+func (mr *MockStoreMockRecorder) GetAllPolicies() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockStore)(nil).GetPolicies))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicies", reflect.TypeOf((*MockStore)(nil).GetAllPolicies))
+}
+
+// GetPolicies mocks base method
+func (m *MockStore) GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetPolicies", varargs...)
+	ret0, _ := ret[0].([]*storage.Policy)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].([]error)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GetPolicies indicates an expected call of GetPolicies
+func (mr *MockStoreMockRecorder) GetPolicies(ids ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockStore)(nil).GetPolicies), ids...)
 }
 
 // AddPolicy mocks base method

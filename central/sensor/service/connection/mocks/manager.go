@@ -126,19 +126,19 @@ func (m *MockPolicyManager) EXPECT() *MockPolicyManagerMockRecorder {
 	return m.recorder
 }
 
-// GetPolicies mocks base method
-func (m *MockPolicyManager) GetPolicies(ctx context.Context) ([]*storage.Policy, error) {
+// GetAllPolicies mocks base method
+func (m *MockPolicyManager) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPolicies", ctx)
+	ret := m.ctrl.Call(m, "GetAllPolicies", ctx)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPolicies indicates an expected call of GetPolicies
-func (mr *MockPolicyManagerMockRecorder) GetPolicies(ctx interface{}) *gomock.Call {
+// GetAllPolicies indicates an expected call of GetAllPolicies
+func (mr *MockPolicyManagerMockRecorder) GetAllPolicies(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockPolicyManager)(nil).GetPolicies), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicies", reflect.TypeOf((*MockPolicyManager)(nil).GetAllPolicies), ctx)
 }
 
 // MockWhitelistManager is a mock of WhitelistManager interface

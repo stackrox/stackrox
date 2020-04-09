@@ -39,6 +39,7 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,6 +55,7 @@ var (
 			"/v1.PolicyService/ReassessPolicies",
 			"/v1.PolicyService/GetPolicyCategories",
 			"/v1.PolicyService/QueryDryRunJobStatus",
+			"/v1.PolicyService/ExportPolicies",
 		},
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyService/PostPolicy",
@@ -157,7 +159,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
 	resp := new(v1.ListPoliciesResponse)
 	if request.GetQuery() == "" {
-		policies, err := s.policies.GetPolicies(ctx)
+		policies, err := s.policies.GetAllPolicies(ctx)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -558,7 +560,7 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 }
 
 func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set.StringSet, err error) {
-	policies, err := s.policies.GetPolicies(ctx)
+	policies, err := s.policies.GetAllPolicies(ctx)
 	if err != nil {
 		return
 	}
@@ -653,7 +655,7 @@ func (s *serviceImpl) enablePolicyNotification(ctx context.Context, policyID str
 }
 
 func (s *serviceImpl) syncPoliciesWithSensors() error {
-	policies, err := s.policies.GetPolicies(policySyncReadCtx)
+	policies, err := s.policies.GetAllPolicies(policySyncReadCtx)
 	if err != nil {
 		return errors.Wrap(err, "error reading policies from store")
 	}
@@ -713,4 +715,35 @@ func checkIdentityFromMetadata(ctx context.Context, metadata map[string]interfac
 	}
 
 	return nil
+}
+
+func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error) {
+	if !features.PolicyImportExport.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+
+	// missingIndices and policyErrors should not overlap
+	policyList, missingIndices, policyErrors, err := s.policies.GetPolicies(ctx, request.PolicyIds)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if len(policyErrors) > 0 {
+		errDetails := &v1.ExportPoliciesErrorList{}
+		for i, missingIndex := range missingIndices {
+			errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+				PolicyId: request.PolicyIds[missingIndex],
+				Error: &v1.PolicyError{
+					Error: policyErrors[i].Error(),
+				},
+			})
+		}
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
+		if err != nil {
+			return nil, utils.Should(status.Errorf(codes.Internal, "unexpected error creating status proto: %v", err))
+		}
+		return nil, statusMsg.Err()
+	}
+	return &storage.ExportPoliciesResponse{
+		Policies: policyList,
+	}, nil
 }

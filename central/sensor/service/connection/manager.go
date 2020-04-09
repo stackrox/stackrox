@@ -20,7 +20,7 @@ type ClusterManager interface {
 
 // PolicyManager implements an interface to retrieve policies
 type PolicyManager interface {
-	GetPolicies(ctx context.Context) ([]*storage.Policy, error)
+	GetAllPolicies(ctx context.Context) ([]*storage.Policy, error)
 }
 
 // WhitelistManager implements an interface to retrieve whitelists

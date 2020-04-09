@@ -259,3 +259,9 @@ message Whitelist {
 
     google.protobuf.Timestamp expiration = 6;
 }
+
+// ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
+// We do backwards-compatibility checks on objects in the storge folder and those checks should be applied to this object
+message ExportPoliciesResponse {
+    repeated storage.Policy policies = 1;
+}

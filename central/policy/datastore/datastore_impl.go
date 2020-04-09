@@ -56,12 +56,25 @@ func (ds *datastoreImpl) GetPolicy(ctx context.Context, id string) (*storage.Pol
 	return policy, true, nil
 }
 
-func (ds *datastoreImpl) GetPolicies(ctx context.Context) ([]*storage.Policy, error) {
+func (ds *datastoreImpl) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error) {
+	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
+		return nil, nil, nil, err
+	}
+
+	policies, missingIndices, policyErrors, err := ds.storage.GetPolicies(ids...)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return policies, missingIndices, policyErrors, nil
+}
+
+func (ds *datastoreImpl) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
 		return nil, err
 	}
 
-	policies, err := ds.storage.GetPolicies()
+	policies, err := ds.storage.GetAllPolicies()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +88,7 @@ func (ds *datastoreImpl) GetPolicyByName(ctx context.Context, name string) (poli
 		return nil, false, err
 	}
 
-	policies, err := ds.GetPolicies(ctx)
+	policies, err := ds.GetAllPolicies(ctx)
 	if err != nil {
 		return nil, false, err
 	}

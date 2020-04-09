@@ -31,7 +31,7 @@ type searcherImpl struct {
 }
 
 func (ds *searcherImpl) buildIndex() error {
-	policies, err := ds.storage.GetPolicies()
+	policies, err := ds.storage.GetAllPolicies()
 	if err != nil {
 		return err
 	}

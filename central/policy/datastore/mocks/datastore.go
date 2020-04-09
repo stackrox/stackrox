@@ -97,19 +97,36 @@ func (mr *MockDataStoreMockRecorder) GetPolicy(ctx, id interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicy), ctx, id)
 }
 
-// GetPolicies mocks base method
-func (m *MockDataStore) GetPolicies(ctx context.Context) ([]*storage.Policy, error) {
+// GetAllPolicies mocks base method
+func (m *MockDataStore) GetAllPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPolicies", ctx)
+	ret := m.ctrl.Call(m, "GetAllPolicies", ctx)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPolicies indicates an expected call of GetPolicies
-func (mr *MockDataStoreMockRecorder) GetPolicies(ctx interface{}) *gomock.Call {
+// GetAllPolicies indicates an expected call of GetAllPolicies
+func (mr *MockDataStoreMockRecorder) GetAllPolicies(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockDataStore)(nil).GetPolicies), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPolicies", reflect.TypeOf((*MockDataStore)(nil).GetAllPolicies), ctx)
+}
+
+// GetPolicies mocks base method
+func (m *MockDataStore) GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPolicies", ctx, ids)
+	ret0, _ := ret[0].([]*storage.Policy)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].([]error)
+	ret3, _ := ret[3].(error)
+	return ret0, ret1, ret2, ret3
+}
+
+// GetPolicies indicates an expected call of GetPolicies
+func (mr *MockDataStoreMockRecorder) GetPolicies(ctx, ids interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockDataStore)(nil).GetPolicies), ctx, ids)
 }
 
 // GetPolicyByName mocks base method

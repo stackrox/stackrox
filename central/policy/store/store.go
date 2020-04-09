@@ -23,7 +23,8 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	GetPolicy(id string) (*storage.Policy, bool, error)
-	GetPolicies() ([]*storage.Policy, error)
+	GetAllPolicies() ([]*storage.Policy, error)
+	GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error)
 	AddPolicy(*storage.Policy) (string, error)
 	UpdatePolicy(*storage.Policy) error
 	RemovePolicy(id string) error
@@ -52,7 +53,7 @@ func newWithoutDefaults(db *bolt.DB) Store {
 func addDefaults(store Store) {
 	policyIDSet := set.NewStringSet()
 	policyNameSet := set.NewStringSet()
-	if policies, err := store.GetPolicies(); err != nil {
+	if policies, err := store.GetAllPolicies(); err != nil {
 		panic(err)
 	} else if len(policies) > 0 {
 		for _, p := range policies {

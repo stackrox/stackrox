@@ -215,7 +215,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	r.networkGraph = f.networkGraphEvaluator.GetGraph(clusterID, deployments, networkPolicies)
 
-	policies, err := f.policyStore.GetPolicies(ctx)
+	policies, err := f.policyStore.GetAllPolicies(ctx)
 	if err != nil {
 		return err
 	}

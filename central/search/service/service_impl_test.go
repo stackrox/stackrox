@@ -223,7 +223,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 
 	// Create Policy Searcher
 	policyStore := policyStoreMocks.NewMockStore(mockCtrl)
-	policyStore.EXPECT().GetPolicies()
+	policyStore.EXPECT().GetAllPolicies()
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 	policyIndexer := policyIndex.New(idx)

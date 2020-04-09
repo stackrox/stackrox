@@ -191,7 +191,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 }
 
 func (c *sensorConnection) getPolicySyncMsg(ctx context.Context) (*central.MsgToSensor, error) {
-	policies, err := c.policyMgr.GetPolicies(ctx)
+	policies, err := c.policyMgr.GetAllPolicies(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting policies for initial sync")
 	}

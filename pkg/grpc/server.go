@@ -212,6 +212,17 @@ func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())))
 }
 
+func allowPrettyQueryParameter(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// checking Values as map[string][]string also catches ?pretty and ?pretty=
+		// r.URL.Query().Get("pretty") would not.
+		if _, ok := r.URL.Query()["pretty"]; ok {
+			r.Header.Set("Accept", "application/json+pretty")
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
 func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	contextUpdaters := []contextutil.ContextUpdater{authn.ContextUpdater(a.config.IdentityExtractors...)}
 	contextUpdaters = append(contextUpdaters, a.config.PreAuthContextEnrichers...)
@@ -250,7 +261,15 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 
 	gwMux := runtime.NewServeMux(
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{EmitDefaults: true}),
-		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD))
+		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
+		runtime.WithMarshalerOption(
+			"application/json+pretty",
+			&runtime.JSONPb{
+				Indent:       "  ",
+				EmitDefaults: true,
+			},
+		),
+	)
 	if localConn != nil {
 		for _, service := range a.apiServices {
 			if err := service.RegisterServiceHandler(context.Background(), gwMux, localConn); err != nil {
@@ -258,7 +277,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			}
 		}
 	}
-	mux.Handle("/v1/", gziphandler.GzipHandler(gwMux))
+	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
 	return mux
 }
 

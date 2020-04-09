@@ -21,7 +21,8 @@ type DataStore interface {
 	SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error)
 
 	GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error)
-	GetPolicies(ctx context.Context) ([]*storage.Policy, error)
+	GetAllPolicies(ctx context.Context) ([]*storage.Policy, error)
+	GetPolicies(ctx context.Context, ids []string) ([]*storage.Policy, []int, []error, error)
 	GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error)
 
 	AddPolicy(context.Context, *storage.Policy) (string, error)

@@ -2156,6 +2156,7 @@ jobs:
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
+      - ROX_POLICY_IMPORT_EXPORT: true
 
     steps:
       - checkout
@@ -2361,6 +2362,7 @@ jobs:
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
+      - ROX_POLICY_IMPORT_EXPORT: true
 
     steps:
       - checkout

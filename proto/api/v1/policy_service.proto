@@ -63,6 +63,23 @@ message PatchPolicyRequest {
     }
 }
 
+message ExportPoliciesRequest {
+    repeated string policy_ids = 1;
+}
+
+message PolicyError {
+    string error = 1;
+}
+
+message ExportPolicyError {
+    string      policy_id = 1;
+    PolicyError error     = 2;
+}
+
+message ExportPoliciesErrorList {
+    repeated ExportPolicyError errors = 1;
+}
+
 // PolicyService APIs can be used to manage policies.
 service PolicyService {
 
@@ -172,6 +189,14 @@ service PolicyService {
     rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policyCategories/{category}"
+        };
+    }
+
+    // ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
+    rpc ExportPolicies (ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
+        option (google.api.http) = {
+            post: "/v1/policies/export"
+            body: "*"
         };
     }
 }

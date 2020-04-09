@@ -54,7 +54,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 	}
 
 	// Get all policies
-	retrievedPolicies, err := suite.store.GetPolicies()
+	retrievedPolicies, err := suite.store.GetAllPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -64,7 +64,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 		p.Name = p.Name + " "
 		suite.NoError(suite.store.UpdatePolicy(p))
 	}
-	retrievedPolicies, err = suite.store.GetPolicies()
+	retrievedPolicies, err = suite.store.GetAllPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -73,7 +73,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 		p.Name = strings.TrimSpace(p.Name)
 		suite.NoError(suite.store.UpdatePolicy(p))
 	}
-	retrievedPolicies, err = suite.store.GetPolicies()
+	retrievedPolicies, err = suite.store.GetAllPolicies()
 	suite.Nil(err)
 	suite.ElementsMatch(policies, retrievedPolicies)
 
@@ -81,7 +81,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 		suite.NoError(suite.store.RemovePolicy(p.GetId()))
 	}
 
-	retrievedPolicies, err = suite.store.GetPolicies()
+	retrievedPolicies, err = suite.store.GetAllPolicies()
 	suite.NoError(err)
 	suite.Empty(retrievedPolicies)
 }

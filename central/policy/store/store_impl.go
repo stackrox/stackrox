@@ -50,8 +50,8 @@ func (b *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, e
 	return
 }
 
-// GetPolicies retrieves policies matching the request from bolt
-func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
+// GetAllPolicies retrieves policies matching the request from bolt
+func (b *storeImpl) GetAllPolicies() ([]*storage.Policy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	err := b.View(func(tx *bolt.Tx) error {
@@ -66,6 +66,34 @@ func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
 		})
 	})
 	return policies, err
+}
+
+func (b *storeImpl) GetPolicies(ids ...string) ([]*storage.Policy, []int, []error, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
+	var policies []*storage.Policy
+	var missingIndices []int
+	var errorList []error
+	err := b.View(func(tx *bolt.Tx) error {
+		for i, id := range ids {
+			policy := new(storage.Policy)
+			b := tx.Bucket(policyBucket)
+			val := b.Get([]byte(id))
+			if val == nil {
+				missingIndices = append(missingIndices, i)
+				errorList = append(errorList, errors.New("not found"))
+				continue
+			}
+			if err := proto.Unmarshal(val, policy); err != nil {
+				missingIndices = append(missingIndices, i)
+				errorList = append(errorList, err)
+				continue
+			}
+			policies = append(policies, policy)
+		}
+		return nil
+	})
+
+	return policies, missingIndices, errorList, err
 }
 
 // AddPolicy adds a policy to bolt
