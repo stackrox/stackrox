@@ -10,3 +10,4 @@ package groups
 @interface Upgrade { }
 @interface SensorBounce { }
 @interface GraphQL { }
+@interface Notifiers { }

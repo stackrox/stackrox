@@ -2,11 +2,7 @@ import io.stackrox.proto.api.v1.DeploymentServiceOuterClass
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
-import io.stackrox.proto.api.v1.NotifierServiceOuterClass
-import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.DeploymentOuterClass.Pod
-import io.stackrox.proto.storage.NotifierOuterClass.Notifier
-import io.stackrox.proto.storage.NotifierOuterClass.Email
 import io.stackrox.proto.storage.DeploymentOuterClass.ContainerImage
 import io.stackrox.proto.storage.RiskOuterClass
 import objects.NetworkPolicy
@@ -18,7 +14,6 @@ import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.PodServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
-import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
@@ -27,7 +22,6 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
 import io.stackrox.proto.storage.ImageOuterClass
-import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
@@ -36,7 +30,6 @@ import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
 import services.ImageService
 import services.NetworkPolicyService
-import util.Env
 import util.Timer
 
 class Services extends BaseService {
@@ -67,10 +60,6 @@ class Services extends BaseService {
 
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
-    }
-
-    static getNotifierClient() {
-        return NotifierServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -313,158 +302,6 @@ class Services extends BaseService {
         return policyMeta.getEnforcementActionsList()
     }
 
-    /**
-     * This function add a notifier for Splunk.
-     *
-     * @param legacy Does this integration provide the full URL path or just the base
-     * @param name Splunk Integration name
-     */
-    static addSplunkNotifier(boolean legacy, String name)  throws Exception {
-        String splunkIntegration = "splunk-Integration"
-        String prePackagedToken = "00000000-0000-0000-0000-000000000000"
-        try {
-            return getNotifierClient().postNotifier(
-                   Notifier.newBuilder()
-                       .setType("splunk")
-                       .setName(name)
-                       .setLabelKey(splunkIntegration)
-                       .setLabelDefault(splunkIntegration)
-                       .setEnabled(true)
-                       .setUiEndpoint( "https://" +
-                                   Env.mustGetHostname() + ":" +
-                                   Env.mustGetPort())
-
-                       .setSplunk(
-                               NotifierOuterClass.Splunk.newBuilder()
-                                       .setHttpToken(prePackagedToken)
-                                       .setInsecure(true)
-                                       .setHttpEndpoint(String.format("https://splunk-collector.qa:8088%s",
-                                       legacy ? "/services/collector/event" : ""))
-                                               .build()
-                       ).build()
-            )
-        } catch (Exception e) {
-            println("Integration with splunk failed or already existed. Please check the logs")
-            throw e
-        }
-    }
-
-    static addSlackNotifier(String name) {
-        return evaluateWithRetry(3, 10) {
-            return getNotifierClient().postNotifier(
-                    NotifierOuterClass.Notifier.newBuilder()
-                            .setType("slack")
-                            .setName(name)
-                            .setLabelKey("#slack-test")
-                            .setLabelDefault(
-                                "https://hooks.slack.com/services/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"
-                            )
-                            .setEnabled(true)
-                            .setUiEndpoint("https://" +
-                                    Env.mustGetHostname() + ":" +
-                                    Env.mustGetPort())
-                    .build()
-            )
-        }
-    }
-
-    static addTeamsNotifier(String name) {
-        return evaluateWithRetry(3, 10) {
-            return getNotifierClient().postNotifier(
-                    NotifierOuterClass.Notifier.newBuilder()
-                            .setType("teams")
-                            .setName(name)
-                            .setLabelKey("#teams-test")
-                            .setLabelDefault(
-                                    "https://outlook.office.com/webhook/8a021ef7-9845-449a-a0c0-7bf85eab3955@" +
-                                            "6aec22ae-2b26-45bd-b17f-d60e89828e89/IncomingWebhook/9bb3b3574ea2" +
-                                            "4655b6482116848bf175/6de97827-1fef-4f8c-a8ab-edac7629df89"
-                            )
-                            .setEnabled(true)
-                            .setUiEndpoint("https://" +
-                                    Env.mustGetHostname() + ":" +
-                                    Env.mustGetPort())
-                            .build()
-            )
-        }
-    }
-
-    static addJiraNotifier(String name) {
-        return evaluateWithRetry(3, 10) {
-            return getNotifierClient().postNotifier(
-                    NotifierOuterClass.Notifier.newBuilder()
-                            .setType("jira")
-                            .setName(name)
-                            .setLabelKey("AJIT")
-                            .setLabelDefault("AJIT")
-                            .setEnabled(true)
-                            .setUiEndpoint("https://" +
-                                    Env.mustGetHostname() + ":" +
-                                    Env.mustGetPort())
-                            .setJira(NotifierOuterClass.Jira.newBuilder()
-                                    .setUsername("k+automation@stackrox.com")
-                                    .setPassword("xvOOtL7nCOANMbD7ed0522B5")
-                                    .setUrl("https://stack-rox.atlassian.net")
-                                    .setIssueType("Task")
-                            )
-                            .build()
-            )
-        }
-    }
-
-    static addEmailNotifier(String name, disableTLS = false, startTLS = Email.AuthMethod.DISABLED,
-                            Integer port = null) {
-        return evaluateWithRetry(3, 10) {
-            Notifier.Builder builder =
-                    Notifier.newBuilder()
-                            .setEmail(Email.newBuilder())
-            builder
-                    .setType("email")
-                    .setName(name)
-                    .setLabelKey("mailgun")
-                    .setLabelDefault("to@example.com")
-                    .setEnabled(true)
-                    .setUiEndpoint("https://" +
-                            Env.mustGetHostname() + ":" +
-                            Env.mustGetPort())
-                    .setEmail(builder.getEmailBuilder()
-                            .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
-                            .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
-                            .setSender("from@example.com")
-                            .setFrom("stackrox")
-                            .setDisableTLS(disableTLS)
-                            .setStartTLSAuthMethod(startTLS)
-                    )
-            port == null ?
-                    builder.getEmailBuilder().setServer("smtp.mailgun.org") :
-                    builder.getEmailBuilder().setServer("smtp.mailgun.org:" + port)
-            return getNotifierClient().postNotifier(builder.build())
-        }
-    }
-
-    static testNotifier(NotifierOuterClass.Notifier notifier) {
-        try {
-            getNotifierClient().testNotifier(notifier)
-            return true
-        } catch (Exception e) {
-            println e.toString()
-            return false
-        }
-    }
-
-    static deleteNotifier(String id) {
-        try {
-            getNotifierClient().deleteNotifier(
-                    NotifierServiceOuterClass.DeleteNotifierRequest.newBuilder()
-                            .setId(id)
-                            .setForce(true)
-                            .build()
-            )
-        } catch (Exception e) {
-            println e.toString()
-        }
-    }
-
     static boolean roxDetectedDeployment(String deploymentID, String name) {
         try {
             def deployment = getDeploymentClient().
@@ -531,40 +368,6 @@ class Services extends BaseService {
         }
         println "SR did not detect the image ${imageName} in ${t.SecondsSince()} seconds"
         return false
-    }
-
-    static Notifier getWebhookIntegrationConfiguration(Boolean enableTLS, String caCert,
-                                                       Boolean skipTLSVerification, Boolean auditLoggingEnabled)  {
-        NotifierOuterClass.GenericOrBuilder genericBuilder =  NotifierOuterClass.Generic.newBuilder()
-                .setEndpoint("http://webhookserver.stackrox:8080")
-                .setCaCert(caCert)
-                .setSkipTLSVerify(skipTLSVerification)
-                .setAuditLoggingEnabled(auditLoggingEnabled)
-                .setUsername("admin")
-                .setPassword("admin")
-                .addHeaders(
-                    Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
-                )
-                .addExtraFields(Common.KeyValuePair.newBuilder().setKey("fieldkey").setValue("fieldvalue").build())
-        if (enableTLS) {
-            genericBuilder.setEndpoint("https://webhookserver.stackrox:8443")
-        }
-
-        return Notifier.newBuilder()
-            .setName("generic")
-            .setType("generic")
-            .setGeneric(genericBuilder.build())
-            .setUiEndpoint("localhost:8000")
-        .build()
-    }
-
-    static addNotifier(Notifier notifier) {
-        try {
-            return getNotifierClient().postNotifier(notifier).getId()
-        } catch (Exception e) {
-            println e.toString()
-            return ""
-        }
     }
 
     static cleanupNetworkPolicies(List<NetworkPolicy> policies) {

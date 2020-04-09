@@ -19,6 +19,7 @@ import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Service
+import objects.SlackNotifier
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
@@ -563,11 +564,12 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "add notifier integration"
-        def slackNotiferId = Services.addSlackNotifier("Slack Notifier").id
+        SlackNotifier notifier = new SlackNotifier()
+        notifier.createNotifier()
         def originalUbuntuPackageManagementPolicy = Services.getPolicyByName("Ubuntu Package Manager Execution")
         assert originalUbuntuPackageManagementPolicy
         def updatedPolicy = PolicyOuterClass.Policy.newBuilder(originalUbuntuPackageManagementPolicy).
-            addNotifiers(slackNotiferId).build()
+            addNotifiers(notifier.id).build()
         Services.updatePolicy(updatedPolicy)
 
         when:
@@ -603,9 +605,7 @@ class ComplianceTest extends BaseSpecification {
         if (gcrRemoved) {
             gcrId = ImageIntegrationService.addGcrRegistry()
         }
-        if (slackNotiferId) {
-            Services.deleteNotifier(slackNotiferId)
-        }
+        notifier.deleteNotifier()
         Services.updatePolicy(originalUbuntuPackageManagementPolicy)
     }
 

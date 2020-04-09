@@ -98,6 +98,8 @@ dependencies {
     //jsoup for testrailupdater
     compile group: 'org.jsoup', name: 'jsoup', version: '1.12.1'
 
+    //JavaMail for mail verifications
+    compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.0'
 }
 
 

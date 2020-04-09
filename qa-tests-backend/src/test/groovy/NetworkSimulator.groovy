@@ -4,6 +4,7 @@ import groups.NetworkPolicySimulation
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import objects.SlackNotifier
 import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import services.NetworkPolicyService
@@ -11,7 +12,6 @@ import spock.lang.Unroll
 import util.NetworkGraphUtil
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
-import io.stackrox.proto.storage.NotifierOuterClass
 
 class NetworkSimulator extends BaseSpecification {
 
@@ -584,77 +584,12 @@ class NetworkSimulator extends BaseSpecification {
                 orchestrator.getAllDeploymentTypesCount(Constants.ORCHESTRATOR_NAMESPACE) - 1       | _
     }
 
-    @Unroll
-    @Category([NetworkPolicySimulation])
-    def "Verify Network Simulator Notifications: #notifierTypes"() {
-        when:
-        "create notifier"
-        def notifiers = []
-        for (String notifierType : notifierTypes) {
-            NotifierOuterClass.Notifier notifier
-            switch (notifierType) {
-                case "SLACK":
-                    notifier = Services.addSlackNotifier("Slack Test")
-                    break
-
-                case "JIRA":
-                    notifier = Services.addJiraNotifier("Jira Test")
-                    break
-
-                case "EMAIL":
-                    notifier = Services.addEmailNotifier("Email Test")
-                    break
-
-                case "TEAMS":
-                    notifier = Services.addTeamsNotifier("Teams Test")
-                    break
-            }
-            notifiers.add(notifier)
-        }
-        assert notifiers.size() > 0
-
-        and:
-        "generate a network policy yaml"
-        NetworkPolicy policy = new NetworkPolicy("test-yaml")
-                .setNamespace("qa")
-                .addPodSelector(["app":WEBDEPLOYMENT])
-                .addPolicyType(NetworkPolicyTypes.INGRESS)
-
-        then:
-        "send simulation notification"
-        withRetry(3, 10) {
-            assert NetworkPolicyService.sendSimulationNotification(
-                    notifiers*.id,
-                    orchestrator.generateYaml(policy)
-            )
-        }
-
-        cleanup:
-        "delete notifiers"
-        for (NotifierOuterClass.Notifier notifier : notifiers) {
-            if (notifier != null) {
-                Services.deleteNotifier(notifier.id)
-            }
-        }
-
-        where:
-        "notifier types"
-
-        notifierTypes     | _
-        ["SLACK"]         | _
-        ["EMAIL"]         | _
-        ["JIRA"]          | _
-        ["TEAMS"]         | _
-
-        // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
-        ["SLACK", "EMAIL", "TEAMS"] | _
-    }
-
     @Category([NetworkPolicySimulation])
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
-        NotifierOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
+        SlackNotifier notifier = new SlackNotifier()
+        notifier.createNotifier()
 
         and:
         "create Netowrk Policy yaml"
@@ -680,9 +615,7 @@ class NetworkSimulator extends BaseSpecification {
 
         cleanup:
         "remove notifier"
-        if (notifier != null) {
-            Services.deleteNotifier(notifier.id)
-        }
+        notifier.deleteNotifier()
     }
 
     @Category([NetworkPolicySimulation])

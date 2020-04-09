@@ -1,25 +1,39 @@
-import groovy.json.JsonSlurper
+import groups.Notifiers
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import groups.BAT
 import groups.Integration
 import io.stackrox.proto.storage.ScopeOuterClass
+import objects.EmailNotifier
+import objects.GenericNotifier
+import objects.JiraNotifier
+import objects.NetworkPolicy
+import objects.NetworkPolicyTypes
+import objects.Notifier
+import objects.PagerDutyNotifier
+import objects.SlackNotifier
+import objects.SplunkNotifier
+import objects.TeamsNotifier
 import org.junit.experimental.categories.Category
-import services.AlertService
 import services.CreatePolicyService
-import services.NotifierService
+import services.NetworkPolicyService
 import spock.lang.Unroll
 import objects.Deployment
 import objects.Service
-import util.SplunkUtil
 import util.Env
 import org.junit.Assume
 import orchestratormanager.OrchestratorTypes
 import common.Constants
 
 class IntegrationsTest extends BaseSpecification {
+    static final private String NOTIFIERDEPLOYMENT = "netpol-notification-test-deployment"
 
-    static final private String BUSYBOX = "genericbusybox"
+    static final private List<Deployment> DEPLOYMENTS = [
+            new Deployment()
+                    .setName(NOTIFIERDEPLOYMENT)
+                    .setImage("nginx")
+                    .addLabel("app", NOTIFIERDEPLOYMENT),
+    ]
 
     private static final CA_CERT = '''-----BEGIN CERTIFICATE-----
 MIIDgDCCAmgCCQDYOU2KIlcBQjANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMC
@@ -43,31 +57,29 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 /jvC1xBvPVtJFbYeBVysQCrRk+f/NyyUejQv+OCJ+B1KtJh4
 -----END CERTIFICATE-----'''
 
+    def setupSpec() {
+        orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        DEPLOYMENTS.each { Services.waitForDeployment(it) }
+    }
+
+    def cleanupSpec() {
+        DEPLOYMENTS.each { orchestrator.deleteDeployment(it) }
+    }
+
     @Unroll
     @Category([BAT])
-    def "Verify Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
+    def "Verify create Email Integration (port #port, disable TLS=#disableTLS, startTLS=#startTLS)"() {
         given:
         "a configuration that is expected to work"
-        NotifierOuterClass.Notifier notifier = Services.addEmailNotifier(
-                "mailgun",
-                disableTLS,
-                startTLS,
-                port
-        )
+        EmailNotifier notifier = new EmailNotifier("Email Test", disableTLS, startTLS, port)
 
         when:
         "the integration is tested"
-        Boolean response = Services.testNotifier(notifier)
+        Boolean response = notifier.testNotifier()
 
         then:
         "the API should return an empty message or an error, depending on the config"
         assert response == shouldSucceed
-
-        cleanup:
-        "remove notifier"
-        if (notifier != null) {
-            Services.deleteNotifier(notifier.id)
-        }
 
         where:
         "data"
@@ -101,6 +113,38 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
         // Cannot add port 25 tests since GCP blocks outgoing
         // connections to port 25
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify create Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
+        when:
+        "the integration is tested"
+        GenericNotifier notifier = new GenericNotifier(
+                "Generic Test",
+                enableTLS,
+                caCert,
+                skipTLSVerification,
+                auditLoggingEnabled
+        )
+
+        then :
+        "the API should return an empty message or an error, depending on the config"
+        assert shouldSucceed == notifier.testNotifier()
+
+        where:
+        "data"
+
+        enableTLS | caCert | skipTLSVerification | auditLoggingEnabled | shouldSucceed | tlsOptsDesc
+
+        false | ""         | false               | false | true | "no TLS"
+        true  | ""         | true                | false | true | "TLS, no verify"
+        true  | CA_CERT    | false               | false | true | "TLS, verify custom CA"
+        true  | ""         | false               | false | false | "TLS, verify system CA"
+        false | ""         | false               | true | true | "no TLS"
+        true  | ""         | true                | true | true | "TLS, no verify"
+        true  | CA_CERT    | false               | true | true | "TLS, verify custom CA"
+        true  | ""         | false               | true | false | "TLS, verify system CA"
     }
 
     @Unroll
@@ -148,7 +192,8 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
         when:
         "call the grpc API for the splunk integration."
-        NotifierOuterClass.Notifier notifier = Services.addSplunkNotifier(legacy, "Splunk-integration")
+        SplunkNotifier notifier = new SplunkNotifier(legacy, httpsSvc.loadBalancerIP)
+        notifier.createNotifier()
 
         and:
         "Edit the policy with the latest keyword."
@@ -174,27 +219,12 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         orchestrator.createDeployment(nginxdeployment)
         assert Services.waitForViolation(nginxName, policy.name, 60)
 
-        and:
-        "API call get info from Splunk."
-        println("Load Balancer ip is ${ httpsSvc.loadBalancerIP }")
-        def response = SplunkUtil.waitForSplunkAlerts(httpsSvc.loadBalancerIP, 60)
-
         then:
         "Verify the messages are seen in the json"
-
-        assert response.get("offset") == 0
-        assert response.get("preview") == false
-        assert response.get("namespace") == nginxdeployment.namespace
-        assert response.get("name") == nginxName
-        assert response.get("type") == "Deployment"
-        assert response.get("clusterName") == "remote"
-        assert response.get("policy") == policy.name
-        assert response.get("sourcetype") == "_json"
-        assert response.get("source") == "stackrox"
+        notifier.validateViolationNotification(policy.build(), nginxdeployment)
 
         cleanup:
         "remove Deployment and services"
-
         if (deployment != null) {
             orchestrator.deleteDeployment(deployment)
             orchestrator.deleteDeployment(nginxdeployment)
@@ -206,192 +236,137 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         if (policy != null) {
             CreatePolicyService.deletePolicy(policyId)
         }
-        if (notifier != null) {
-            NotifierService.deleteNotifier(notifier.getId())
-        }
+        notifier.deleteNotifier()
 
         where:
         "Data inputs are"
         legacy << [false, true]
     }
 
-    @Category(Integration)
-    def "Verify PagerDuty Integration"() {
+    @Unroll
+    @Category([BAT, Notifiers])
+    def "Verify Network Simulator Notifications: #type"() {
         when:
-        "Add PagerDuty integration and test it"
-        NotifierOuterClass.Notifier notifier = NotifierService.addPagerDutyNotifier("pdTest")
-        Boolean response = NotifierService.testNotifier(notifier)
-        assert response
+        "create notifier"
+        for (Notifier notifier : notifierTypes) {
+            notifier.createNotifier()
+        }
 
         and:
-        "Get current the incidents' number from the PagerDuty"
-        int preNum = NotifierService.getFirstPagerDutyIncident().incidents[0].incident_number
-
-        and:
-        "Binding the notifier with the policy"
-        def policy = Services.getPolicyByName("Latest tag")
-        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifier.getId()).build()
-        Services.updatePolicy(updatedPolicy)
-
-        and:
-        "Create a new deployment to trigger the policy"
-        Deployment  deployment =
-                new Deployment()
-                        .setName ("pgtest")
-                        .setImage ("nginx:latest")
-                        .addPort (22)
-                        .addLabel ("app", "test")
-        orchestrator.createDeployment(deployment)
-        assert Services.waitForViolation("pgtest", "Latest tag", 30)
-        and:
-        "Get current the first incident from the PagerDuty"
-        def firIncident = NotifierService.waitForPagerDutyUpdate(preNum)
+        "generate a network policy yaml"
+        NetworkPolicy policy = new NetworkPolicy("test-yaml")
+                .setNamespace("qa")
+                .addPodSelector(["app":NOTIFIERDEPLOYMENT])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
 
         then:
-        "Verify a new incident is triggered and it contains the latest tag alert information"
-        assert firIncident != null
-        assert firIncident.incidents[0].description.contains("Alert on deployments with images using tag 'latest'")
+        "send simulation notification"
+        withRetry(3, 10) {
+            assert NetworkPolicyService.sendSimulationNotification(
+                    notifierTypes*.getId(),
+                    orchestrator.generateYaml(policy)
+            )
+        }
+
+        and:
+        "validate notification"
+        for (Notifier notifier : notifierTypes) {
+            notifier.validateNetpolNotification(orchestrator.generateYaml(policy))
+        }
 
         cleanup:
-        "remove Deployment and service"
-        if (deployment != null) {
-            orchestrator.deleteDeployment(deployment)
+        "delete notifiers"
+        for (Notifier notifier : notifierTypes) {
+            notifier.deleteNotifier()
         }
-        if (notifier != null) {
-            NotifierService.deleteNotifier(notifier.getId())
-        }
+
+        where:
+        "notifier types"
+
+        type                    | notifierTypes
+        "SLACK"                 | [new SlackNotifier()]
+        "EMAIL"                 | [new EmailNotifier()]
+        "JIRA"                  | [new JiraNotifier()]
+        "TEAMS"                 | [new TeamsNotifier()]
+        "GENERIC"               | [new GenericNotifier()]
+
+        // Adding a SLACK, TEAMS, EMAIL notifier test so we still verify multiple notifiers
+        "SLACK, EMAIL, TEAMS"   | [new SlackNotifier(), new EmailNotifier(), new TeamsNotifier()]
     }
 
     @Unroll
-    @Category(BAT)
-    def "Verify Generic Integration Test Endpoint (#tlsOptsDesc, audit=#auditLoggingEnabled)"() {
+    @Category([BAT, Notifiers])
+    def "Verify Policy Violation Notifications: #type"() {
         when:
-        "the integration is tested"
+        "Create notificaiton(s)"
+        for (Notifier notifier : notifierTypes) {
+            notifier.createNotifier()
+        }
 
-        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
-                enableTLS, caCert, skipTLSVerification, auditLoggingEnabled)
+        and:
+        "Create policy scoped to test deployment with notification enabled"
+        PolicyOuterClass.Policy.Builder policy =
+                PolicyOuterClass.Policy.newBuilder(Services.getPolicyByName("Latest tag"))
+        policy.setId("")
+                .setName("Policy Notifier Test Policy")
+                .addScope(ScopeOuterClass.Scope.newBuilder()
+                        .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
+                                .setKey("app")
+                                .setValue(deployment.name)
+                        )
+                )
+        for (Notifier notifier : notifierTypes) {
+            policy.addNotifiers(notifier.getId())
+        }
+        String policyId = CreatePolicyService.createNewPolicy(policy.build())
+        assert policyId
 
-        then :
-        "the API should return an empty message or an error, depending on the config"
-        assert shouldSucceed == Services.testNotifier(notifier)
+        and:
+        "create deployment to generate policy violation notification"
+        orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
+        assert Services.waitForViolation(deployment.name, policy.name)
+
+        then:
+        "Validate Notification details"
+        for (Notifier notifier : notifierTypes) {
+            notifier.validateViolationNotification(policy.build(), deployment)
+        }
+
+        cleanup:
+        "delete deployment, policy, and notifiers"
+        if (deployment.deploymentUid != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
+        if (policyId != null) {
+            CreatePolicyService.deletePolicy(policyId)
+        }
+        for (Notifier notifier : notifierTypes) {
+            notifier.deleteNotifier()
+        }
 
         where:
-        "data"
+        "data inputs are:"
 
-        enableTLS | caCert | skipTLSVerification | auditLoggingEnabled | shouldSucceed | tlsOptsDesc
+        type        | notifierTypes       |
+                deployment
 
-        false | ""         | false               | false | true | "no TLS"
-        true  | ""         | true                | false | true | "TLS, no verify"
-        true  | CA_CERT    | false               | false | true | "TLS, verify custom CA"
-        true  | ""         | false               | false | false | "TLS, verify system CA"
-        false | ""         | false               | true | true | "no TLS"
-        true  | ""         | true                | true | true | "TLS, no verify"
-        true  | CA_CERT    | false               | true | true | "TLS, verify custom CA"
-        true  | ""         | false               | true | false | "TLS, verify system CA"
-    }
-
-    @Category(BAT)
-    def "Verify Generic Integration Values With Audit Off"() {
-        when:
-        "the integration is created"
-        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
-                false, "", false, false)
-        String notifierId = Services.addNotifier(notifier)
-
-        def policy = Services.getPolicyByName("Latest tag")
-        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifierId).build()
-        Services.updatePolicy(updatedPolicy)
-
-        // Allow the policy to propagate to Sensor which will mark the emitted alert with the notifier
-        sleep 10000
-
-        Deployment  deployment =
+        "EMAIL"     | [new EmailNotifier()]       |
                 new Deployment()
-                        .setName(BUSYBOX)
-                        .setImage("busybox")
-                        .setCommand(["sleep", "8000"])
+                        .setName("policy-violation-email-notification")
+                        .addLabel("app", "policy-violation-email-notification")
+                        .setImage("nginx:latest")
 
-        orchestrator.createDeployment(deployment)
-
-        then:
-        "We should check to make sure we got a value"
-        // Verify that the violation has shown up and that it has the correct notifier
-        def violations = Services.getViolationsWithTimeout(BUSYBOX, "Latest tag", 30)
-        assert violations.size() == 1
-        def violation = AlertService.getViolation(violations[0].getId())
-        assert violation.getPolicy().getNotifiersList().contains(notifierId)
-
-        def get = new URL("http://localhost:8080").openConnection()
-        def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(get.getInputStream().getText())
-        def generic = object[-1]
-
-        assert generic["headers"]["Headerkey"] == ["headervalue"]
-        assert generic["headers"]["Content-Type"] == ["application/json"]
-        assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
-        assert generic["data"]["fieldkey"] == "fieldvalue"
-        assert generic["data"]["alert"]["policy"]["name"] == "Latest tag"
-        assert generic["data"]["alert"]["deployment"]["name"] == BUSYBOX
-
-        cleanup:
-        if (notifier != null) {
-            Services.deleteNotifier(notifierId)
-        }
-        if (deployment != null) {
-            orchestrator.deleteDeployment(deployment)
-        }
-    }
-
-    @Category(BAT)
-    def "Verify Generic Integration Values With Audit On"() {
-        when:
-        "the integration is created"
-        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
-                false, "", false, true)
-        String notifierId = Services.addNotifier(notifier)
-
-        def policy = Services.getPolicyByName("Latest tag")
-        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifierId).build()
-        Services.updatePolicy(updatedPolicy)
-
-        Deployment  deployment =
+        "PAGERDUTY" | [new PagerDutyNotifier()]   |
                 new Deployment()
-                        .setName(BUSYBOX)
-                        .setImage("busybox")
-                        .setCommand(["sleep", "8000"])
+                        .setName("policy-violation-pagerduty-notification")
+                        .addLabel("app", "policy-violation-pagerduty-notification")
+                        .setImage("nginx:latest")
 
-        orchestrator.createDeployment(deployment)
-
-        then:
-        "We should check to make sure we got a value"
-        assert Services.waitForViolation(BUSYBOX, "Latest tag", 30)
-
-        def get = new URL("http://localhost:8080").openConnection()
-        def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(get.getInputStream().getText())
-
-        for (def generic : object) {
-            if (generic["data"]["audit"] == null) {
-                continue
-            }
-            if (generic["data"]["audit"]["policy"] == null) {
-                continue
-            }
-
-            assert generic["headers"]["Headerkey"] == ["headervalue"]
-            assert generic["headers"]["Content-Type"] == ["application/json"]
-            assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
-            assert generic["data"]["fieldkey"] == "fieldvalue"
-            assert generic["data"]["audit"]["policy"]["name"] == "Latest tag"
-            assert generic["data"]["audit"]["deployment"]["name"] == BUSYBOX
-        }
-
-        cleanup:
-        if (notifier != null) {
-            Services.deleteNotifier(notifierId)
-        }
-        if (deployment != null) {
-            orchestrator.deleteDeployment(deployment)
-        }
+        "GENERIC"   | [new GenericNotifier()]     |
+                new Deployment()
+                        .setName("policy-violation-generic-notification")
+                        .addLabel("app", "policy-violation-generic-notification")
+                        .setImage("nginx:latest")
     }
 }

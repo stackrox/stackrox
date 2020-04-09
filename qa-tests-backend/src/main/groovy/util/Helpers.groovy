@@ -36,4 +36,12 @@ class Helpers {
     static void resetRetryAttempts() {
         retryAttempt = 0
     }
+
+    static boolean containsNoWhitespace(Object ignored, String baseString, String subString) {
+        return baseString.replaceAll("\\s", "").contains(subString.replaceAll("\\s", ""))
+    }
+
+    static String getStackRoxEndpoint(Object ignored) {
+        return "https://" + Env.mustGetHostname() + ":" + Env.mustGetPort()
+    }
 }

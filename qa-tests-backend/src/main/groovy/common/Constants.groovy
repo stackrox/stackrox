@@ -5,6 +5,9 @@ class Constants {
     static final SCHEDULES_SUPPORTED = false
     static final CHECK_CVES_IN_COMPLIANCE = false
     static final RUN_FLAKEY_TESTS = false
+    static final EMAIL_NOTIFER_FROM = "stackrox"
+    static final EMAIL_NOTIFER_SENDER = "${UUID.randomUUID()}@stackrox.com"
+    static final EMAIL_NOTIFER_FULL_FROM = "${EMAIL_NOTIFER_FROM} <${EMAIL_NOTIFER_SENDER}>"
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",
