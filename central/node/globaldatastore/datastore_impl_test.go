@@ -2,12 +2,14 @@ package globaldatastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/node/datastore"
+	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/node/globalstore/mocks"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
@@ -16,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -201,4 +204,77 @@ func (s *testSuite) TestGetClusterNodeStore_Write_PermissionDenied() {
 	_, err := s.globalDataStore.GetClusterNodeStore(s.ctx, "cluster-2-read-access", true)
 
 	s.Error(err)
+}
+
+func TestLiveGlobalDatastore(t *testing.T) {
+	suite.Run(t, new(liveTestSuite))
+}
+
+type liveTestSuite struct {
+	suite.Suite
+
+	globalDataStore GlobalDataStore
+	ctx             context.Context
+}
+
+func (s *liveTestSuite) SetupTest() {
+	bleveIndex, err := globalindex.MemOnlyIndex()
+	s.NoError(err)
+
+	store := globalstore.NewGlobalStore(testutils.DBForT(s.T()))
+	indexer := index.New(bleveIndex)
+
+	s.globalDataStore, err = New(store, indexer)
+	s.NoError(err)
+	s.ctx = sac.WithAllAccess(context.Background())
+}
+
+func (s *liveTestSuite) addCluster(id string, numNodes int) {
+	ns, err := s.globalDataStore.GetClusterNodeStore(s.ctx, id, true)
+	s.NoError(err)
+
+	for i := 0; i < numNodes; i++ {
+		err = ns.UpsertNode(&storage.Node{
+			Id:        fmt.Sprintf("%s-node%d", id, i),
+			ClusterId: id,
+		})
+		s.NoError(err)
+	}
+}
+
+func (s *liveTestSuite) TestRemoveClusterNodeStores() {
+	s.addCluster("cluster1", 3)
+
+	count, err := s.globalDataStore.CountAllNodes(s.ctx)
+	s.NoError(err)
+	s.Equal(3, count)
+
+	results, err := s.globalDataStore.Search(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 3)
+
+	s.NoError(s.globalDataStore.RemoveClusterNodeStores(s.ctx, "cluster1"))
+	count, err = s.globalDataStore.CountAllNodes(s.ctx)
+	s.NoError(err)
+	s.Equal(0, count)
+
+	results, err = s.globalDataStore.Search(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 0)
+
+	s.addCluster("cluster1", 3)
+	s.addCluster("cluster2", 3)
+	s.addCluster("cluster3", 3)
+
+	// Test multi delete
+	err = s.globalDataStore.RemoveClusterNodeStores(s.ctx, "cluster1", "cluster2")
+	s.NoError(err)
+
+	count, err = s.globalDataStore.CountAllNodes(s.ctx)
+	s.NoError(err)
+	s.Equal(3, count)
+
+	results, err = s.globalDataStore.Search(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 3)
 }

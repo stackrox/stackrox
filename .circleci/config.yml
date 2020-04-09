@@ -2335,8 +2335,13 @@ jobs:
       - *backupDB
       - *storeDBBackupArtifact
       - *verifyNoStackRoxRestarts
-      - *storeK8sLogs
 
+      - run:
+          name: Destructive API tests
+          command: |
+            make -C tests destructive-tests
+
+      - *storeK8sLogs
       - teardown-gke
 
   gke-ui-e2e-tests:

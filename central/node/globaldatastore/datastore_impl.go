@@ -12,11 +12,14 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	nodesSAC             = sac.ForResource(resources.Node)
 	nodesSACSearchHelper = nodesSAC.MustCreateSearchHelper(mappings.OptionsMap)
 )
@@ -119,7 +122,20 @@ func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterID
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-	return s.globalStore.RemoveClusterNodeStores(clusterIDs...)
+
+	if err := s.globalStore.RemoveClusterNodeStores(clusterIDs...); err != nil {
+		return errors.Wrap(err, "removing cluster node stores")
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterIDs...).ProtoQuery()
+	results, err := s.indexer.Search(q)
+	if err != nil {
+		return errors.Wrap(err, "searching for nodes")
+	}
+	if err := s.indexer.DeleteNodes(search.ResultsToIDs(results)); err != nil {
+		return errors.Wrap(err, "deleting nodes from indexer")
+	}
+	return nil
 }
 
 func (s *globalDataStore) CountAllNodes(ctx context.Context) (int, error) {
