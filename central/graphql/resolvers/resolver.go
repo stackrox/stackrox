@@ -31,6 +31,7 @@ import (
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
+	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -60,6 +61,7 @@ type Resolver struct {
 	ComponentCVEEdgeDataStore   componentCVEEdgeDataStore.DataStore
 	CVEDataStore                cveDataStore.DataStore
 	DeploymentDataStore         deploymentDatastore.DataStore
+	PodDataStore                podDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
 	ImageComponentDataStore     imageComponentDataStore.DataStore
 	ImageComponentEdgeDataStore imageComponentEdgeDataStore.DataStore
@@ -97,6 +99,7 @@ func New() *Resolver {
 		ComponentCVEEdgeDataStore:   componentCVEEdgeDataStore.Singleton(),
 		CVEDataStore:                cveDataStore.Singleton(),
 		DeploymentDataStore:         deploymentDatastore.Singleton(),
+		PodDataStore:                podDatastore.Singleton(),
 		ImageDataStore:              imageDatastore.Singleton(),
 		ImageComponentDataStore:     imageComponentDataStore.Singleton(),
 		ImageComponentEdgeDataStore: imageComponentEdgeDataStore.Singleton(),

@@ -26,4 +26,5 @@ const (
 	Subjects
 	Tokens
 	Violations
+	Pods
 )

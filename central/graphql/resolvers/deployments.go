@@ -21,41 +21,42 @@ import (
 )
 
 func init() {
+	const resolverName = "Deployment"
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("deployment(id: ID): Deployment"),
 		schema.AddQuery("deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddQuery("deploymentCount(query: String): Int!"),
-		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
-		schema.AddExtraResolver("Deployment", `namespaceObject: Namespace`),
-		schema.AddExtraResolver("Deployment", `serviceAccountObject: ServiceAccount`),
-		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
-		schema.AddExtraResolver("Deployment", `deployAlerts(query: String, pagination: Pagination): [Alert!]!`),
-		schema.AddExtraResolver("Deployment", `deployAlertCount(query: String): Int!`),
-		schema.AddExtraResolver("Deployment", "latestViolation(query: String): Time"),
-		schema.AddExtraResolver("Deployment", "policies(query: String, pagination: Pagination): [Policy!]!"),
-		schema.AddExtraResolver("Deployment", "policyCount(query: String): Int!"),
-		schema.AddExtraResolver("Deployment", `failingPolicies(query: String, pagination: Pagination): [Policy!]!`),
-		schema.AddExtraResolver("Deployment", `failingPolicyCount(query: String): Int!`),
-		schema.AddExtraResolver("Deployment", `failingPolicyCounter(query: String): PolicyCounter`),
-		schema.AddExtraResolver("Deployment", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Deployment", "serviceAccountID: String!"),
-		schema.AddExtraResolver("Deployment", `images(query: String, pagination: Pagination): [Image!]!`),
-		schema.AddExtraResolver("Deployment", `imageCount(query: String): Int!`),
-		schema.AddExtraResolver("Deployment", `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
-		schema.AddExtraResolver("Deployment", `componentCount(query: String): Int!`),
-		schema.AddExtraResolver("Deployment", `vulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
-		schema.AddExtraResolver("Deployment", `vulnCount(query: String): Int!`),
-		schema.AddExtraResolver("Deployment", `vulnCounter(query: String): VulnerabilityCounter!`),
-		schema.AddExtraResolver("Deployment", "secrets(query: String, pagination: Pagination): [Secret!]!"),
-		schema.AddExtraResolver("Deployment", "secretCount(query: String): Int!"),
-		schema.AddExtraResolver("Deployment", "policyStatus(query: String) : String!"),
-		schema.AddExtraResolver("Deployment", `unusedVarSink(query: String): Int`),
-		schema.AddExtraResolver("Deployment", "processActivityCount: Int!"),
-		schema.AddExtraResolver("Deployment", "podCount: Int!"),
-		schema.AddExtraResolver("Deployment", "containerRestartCount: Int!"),
-		schema.AddExtraResolver("Deployment", "containerTerminationCount: Int!"),
-		schema.AddExtraResolver("Deployment", "plottedVulns(query: String): PlottedVulnerabilities!"),
+		schema.AddExtraResolver(resolverName, `cluster: Cluster`),
+		schema.AddExtraResolver(resolverName, `namespaceObject: Namespace`),
+		schema.AddExtraResolver(resolverName, `serviceAccountObject: ServiceAccount`),
+		schema.AddExtraResolver(resolverName, `groupedProcesses: [ProcessNameGroup!]!`),
+		schema.AddExtraResolver(resolverName, `deployAlerts(query: String, pagination: Pagination): [Alert!]!`),
+		schema.AddExtraResolver(resolverName, `deployAlertCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, "latestViolation(query: String): Time"),
+		schema.AddExtraResolver(resolverName, "policies(query: String, pagination: Pagination): [Policy!]!"),
+		schema.AddExtraResolver(resolverName, "policyCount(query: String): Int!"),
+		schema.AddExtraResolver(resolverName, `failingPolicies(query: String, pagination: Pagination): [Policy!]!`),
+		schema.AddExtraResolver(resolverName, `failingPolicyCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, `failingPolicyCounter(query: String): PolicyCounter`),
+		schema.AddExtraResolver(resolverName, "complianceResults(query: String): [ControlResult!]!"),
+		schema.AddExtraResolver(resolverName, "serviceAccountID: String!"),
+		schema.AddExtraResolver(resolverName, `images(query: String, pagination: Pagination): [Image!]!`),
+		schema.AddExtraResolver(resolverName, `imageCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, `components(query: String, pagination: Pagination): [EmbeddedImageScanComponent!]!`),
+		schema.AddExtraResolver(resolverName, `componentCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, `vulns(query: String, pagination: Pagination): [EmbeddedVulnerability!]!`),
+		schema.AddExtraResolver(resolverName, `vulnCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, `vulnCounter(query: String): VulnerabilityCounter!`),
+		schema.AddExtraResolver(resolverName, "secrets(query: String, pagination: Pagination): [Secret!]!"),
+		schema.AddExtraResolver(resolverName, "secretCount(query: String): Int!"),
+		schema.AddExtraResolver(resolverName, "policyStatus(query: String) : String!"),
+		schema.AddExtraResolver(resolverName, `unusedVarSink(query: String): Int`),
+		schema.AddExtraResolver(resolverName, "processActivityCount: Int!"),
+		schema.AddExtraResolver(resolverName, "podCount: Int!"),
+		schema.AddExtraResolver(resolverName, "containerRestartCount: Int!"),
+		schema.AddExtraResolver(resolverName, "containerTerminationCount: Int!"),
+		schema.AddExtraResolver(resolverName, "plottedVulns(query: String): PlottedVulnerabilities!"),
 	)
 }
 
@@ -589,40 +590,62 @@ func (resolver *deploymentResolver) PolicyStatus(ctx context.Context, args RawQu
 	return "pass", nil
 }
 
-// ProcessActivityCount returns the number of tracked processes of both dead and live containers.
-// For solely live containers, see GroupedProcesses
+// ProcessActivityCount returns the number of tracked processes.
 func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ProcessActivityCount")
 
 	if err := readIndicators(ctx); err != nil {
 		return 0, err
 	}
-	// TODO: Retrieve the number of processes from both dead and live containers.
-	return 10, nil
+	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
+	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(indicators)), nil
 }
 
-// PodCount returns the number of pods (active and inactive) deployed for this deployment.
-func (resolver *deploymentResolver) PodCount(_ context.Context) (int32, error) {
+// PodCount returns the number of pods currently active for this deployment.
+func (resolver *deploymentResolver) PodCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "PodCount")
 
-	// TODO: Retrieve the number of pods (both active and inactive)
-	return 10, nil
+	query := resolver.getDeploymentRawQuery()
+	return resolver.root.PodCount(ctx, RawQuery{Query: &query})
 }
 
 // ContainerRestartCount returns the number of container restarts for this deployment.
-func (resolver *deploymentResolver) ContainerRestartCount(_ context.Context) (int32, error) {
+func (resolver *deploymentResolver) ContainerRestartCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ContainerRestartCount")
 
-	// TODO: Retrieve the number of restarted containers.
-	return 10, nil
+	query := resolver.getDeploymentRawQuery()
+	pods, err := resolver.root.Pods(ctx, PaginatedQuery{Query: &query})
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for _, pod := range pods {
+		count += len(pod.ContainerRestartEvents())
+	}
+	return int32(count), nil
 }
 
 // ContainerTerminationCount returns the number of terminated containers for this deployment.
-func (resolver *deploymentResolver) ContainerTerminationCount(_ context.Context) (int32, error) {
+func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Context) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ContainerTerminationCount")
 
-	// TODO: Retrieve the number of terminated containers.
-	return 10, nil
+	query := resolver.getDeploymentRawQuery()
+	pods, err := resolver.root.Pods(ctx, PaginatedQuery{Query: &query})
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for _, pod := range pods {
+		count += len(pod.ContainerTerminationEvents())
+	}
+
+	return int32(count), nil
 }
 
 func (resolver *deploymentResolver) hasImages() bool {

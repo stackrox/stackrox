@@ -11,30 +11,31 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddInterfaceType("DeploymentEvent", []string{
-			"id: ID!",
+			"id: String!",
 			"name: String!",
 			"timestamp: Time",
 		}),
 		schema.AddType("ContainerTerminationEvent", []string{
-			"id: ID!",
+			"id: String!",
 			"name: String!",
 			"timestamp: Time",
 			"exitCode: Int!",
 			"reason: String!",
 		}, "DeploymentEvent"),
 		schema.AddType("ContainerRestartEvent", []string{
-			"id: ID!",
+			"id: String!",
 			"name: String!",
 			"timestamp: Time",
 		}, "DeploymentEvent"),
 		schema.AddType("ProcessActivityEvent", []string{
-			"id: ID!",
+			"id: String!",
 			"name: String!",
 			"timestamp: Time",
 			"uid: Int!",
+			"parentUid: Int!",
 		}, "DeploymentEvent"),
 		schema.AddType("PolicyViolationEvent", []string{
-			"id: ID!",
+			"id: String!",
 			"name: String!",
 			"timestamp: Time",
 		}, "DeploymentEvent"),
@@ -43,7 +44,7 @@ func init() {
 
 // DeploymentEvent is the parent interface for events.
 type DeploymentEvent interface {
-	ID() graphql.ID
+	ID() string
 	Name() string
 	Timestamp() *graphql.Time
 }
@@ -79,7 +80,7 @@ func (resolver *DeploymentEventResolver) ToPolicyViolationEvent() (*PolicyViolat
 
 // ContainerTerminationEventResolver represents a container termination (failure or graceful) event.
 type ContainerTerminationEventResolver struct {
-	id        graphql.ID
+	id        string
 	name      string
 	timestamp time.Time
 	exitCode  int32
@@ -87,7 +88,7 @@ type ContainerTerminationEventResolver struct {
 }
 
 // ID returns the event's ID.
-func (resolver *ContainerTerminationEventResolver) ID() graphql.ID {
+func (resolver *ContainerTerminationEventResolver) ID() string {
 	return resolver.id
 }
 
@@ -113,13 +114,13 @@ func (resolver *ContainerTerminationEventResolver) Reason() string {
 
 // ContainerRestartEventResolver represents a container restart event.
 type ContainerRestartEventResolver struct {
-	id        graphql.ID
+	id        string
 	name      string
 	timestamp time.Time
 }
 
 // ID returns the event's ID.
-func (resolver *ContainerRestartEventResolver) ID() graphql.ID {
+func (resolver *ContainerRestartEventResolver) ID() string {
 	return resolver.id
 }
 
@@ -135,14 +136,15 @@ func (resolver *ContainerRestartEventResolver) Timestamp() *graphql.Time {
 
 // ProcessActivityEventResolver represents a process start event.
 type ProcessActivityEventResolver struct {
-	id        graphql.ID
+	id        string
 	name      string
 	timestamp time.Time
-	uid       uint32
+	uid       int32
+	parentUID int32
 }
 
 // ID returns the event's ID.
-func (resolver *ProcessActivityEventResolver) ID() graphql.ID {
+func (resolver *ProcessActivityEventResolver) ID() string {
 	return resolver.id
 }
 
@@ -158,18 +160,23 @@ func (resolver *ProcessActivityEventResolver) Timestamp() *graphql.Time {
 
 // UID returns the process's UID.
 func (resolver *ProcessActivityEventResolver) UID() int32 {
-	return int32(resolver.uid)
+	return resolver.uid
+}
+
+// ParentUID returns the process's parent's UID.
+func (resolver *ProcessActivityEventResolver) ParentUID() int32 {
+	return resolver.parentUID
 }
 
 // PolicyViolationEventResolver represents a policy violation event.
 type PolicyViolationEventResolver struct {
-	id        graphql.ID
+	id        string
 	name      string
 	timestamp time.Time
 }
 
 // ID returns the event's ID.
-func (resolver *PolicyViolationEventResolver) ID() graphql.ID {
+func (resolver *PolicyViolationEventResolver) ID() string {
 	return resolver.id
 }
 

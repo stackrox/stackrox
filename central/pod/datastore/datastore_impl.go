@@ -206,8 +206,10 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 		if found {
 			pod.Started = oldPod.Started
 			mergeContainerInstances(pod, oldPod)
-		} else {
-			// Need to compute the start time because we don't already know it.
+		}
+
+		// Need to compute the start time if we don't already know it.
+		if pod.Started == nil {
 			var earliest *types.Timestamp
 			for _, instance := range pod.GetLiveInstances() {
 				startTime := instance.GetStarted()

@@ -27,6 +27,7 @@ var (
 			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
+			reflect.TypeOf((*storage.Pod)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ImageComponent)(nil)),

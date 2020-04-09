@@ -117,7 +117,9 @@ var (
 	Tag            = newFieldLabel("Tag")
 
 	// Pod Search fields
-	PodUID = newFieldLabel("Pod UID")
+	PodID   = newFieldLabel("Pod ID")  // Used externally. Same as PodUID
+	PodUID  = newFieldLabel("Pod UID") // Used internally. Same as PodID
+	PodName = newFieldLabel("Pod Name")
 
 	// ProcessIndicator Search fields
 	ProcessID         = newFieldLabel("Process ID")

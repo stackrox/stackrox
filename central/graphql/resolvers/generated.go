@@ -691,6 +691,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("PermissionPolicy", []string{
 		"permissionLevel: PermissionLevel!",
 	}))
+	utils.Must(builder.AddType("Pod", []string{
+		"clusterId: String!",
+		"deploymentId: String!",
+		"id: ID!",
+		"liveInstances: [ContainerInstance]!",
+		"name: String!",
+		"namespace: String!",
+		"started: Time",
+		"terminatedInstances: [Pod_ContainerInstanceList]!",
+	}))
+	utils.Must(builder.AddType("Pod_ContainerInstanceList", []string{
+		"instances: [ContainerInstance]!",
+	}))
 	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
 		"description: String!",
@@ -6319,6 +6332,99 @@ func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPol
 func (resolver *permissionPolicyResolver) PermissionLevel(ctx context.Context) string {
 	value := resolver.data.GetPermissionLevel()
 	return value.String()
+}
+
+type podResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Pod
+}
+
+func (resolver *Resolver) wrapPod(value *storage.Pod, ok bool, err error) (*podResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &podResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPods(values []*storage.Pod, err error) ([]*podResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*podResolver, len(values))
+	for i, v := range values {
+		output[i] = &podResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *podResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *podResolver) DeploymentId(ctx context.Context) string {
+	value := resolver.data.GetDeploymentId()
+	return value
+}
+
+func (resolver *podResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *podResolver) LiveInstances(ctx context.Context) ([]*containerInstanceResolver, error) {
+	value := resolver.data.GetLiveInstances()
+	return resolver.root.wrapContainerInstances(value, nil)
+}
+
+func (resolver *podResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *podResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *podResolver) Started(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetStarted()
+	return timestamp(value)
+}
+
+func (resolver *podResolver) TerminatedInstances(ctx context.Context) ([]*pod_ContainerInstanceListResolver, error) {
+	value := resolver.data.GetTerminatedInstances()
+	return resolver.root.wrapPod_ContainerInstanceLists(value, nil)
+}
+
+type pod_ContainerInstanceListResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Pod_ContainerInstanceList
+}
+
+func (resolver *Resolver) wrapPod_ContainerInstanceList(value *storage.Pod_ContainerInstanceList, ok bool, err error) (*pod_ContainerInstanceListResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &pod_ContainerInstanceListResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapPod_ContainerInstanceLists(values []*storage.Pod_ContainerInstanceList, err error) ([]*pod_ContainerInstanceListResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*pod_ContainerInstanceListResolver, len(values))
+	for i, v := range values {
+		output[i] = &pod_ContainerInstanceListResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *pod_ContainerInstanceListResolver) Instances(ctx context.Context) ([]*containerInstanceResolver, error) {
+	value := resolver.data.GetInstances()
+	return resolver.root.wrapContainerInstances(value, nil)
 }
 
 type policyResolver struct {
