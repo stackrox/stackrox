@@ -11,7 +11,7 @@ function SectionHeaderInput({ header }) {
     }
 
     return (
-        <div className="flex flex-1 justify-between">
+        <div className="flex flex-1 justify-between items-center">
             {!isEditing && (
                 <>
                     <span className="p-2 text-base-600 font-700">{header}</span>

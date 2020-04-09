@@ -1456,7 +1456,7 @@ h6 {
     height: 40px;
     overflow: hidden;
     line-height: 4px;
-    padding: 2px 0px 0px 2px;
+    padding-top: 2px;
     cursor: move;
     margin-right: 0.3em;
     font-size: 10px;

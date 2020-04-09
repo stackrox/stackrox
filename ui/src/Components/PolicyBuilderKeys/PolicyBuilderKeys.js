@@ -5,7 +5,10 @@ import PolicyBuilderKey from 'Components/PolicyBuilderKey';
 
 function PolicyBuilderKeys({ keys, className }) {
     return (
-        <div className={`flex flex-col ${className}`}>
+        <div className={`flex flex-col px-3 pt-3 bg-primary-300 ${className}`}>
+            <div className="-ml-6 -mr-3 bg-primary-500 mb-2 p-2 rounded-bl rounded-tl text-base-100">
+                Drag out a policy field
+            </div>
             {keys.map(key => {
                 return (
                     <PolicyBuilderKey

@@ -1,4 +1,4 @@
 export default {
-    AND: 'and',
-    OR: 'or'
+    AND: 'AND',
+    OR: 'OR'
 };

@@ -5,9 +5,11 @@ import BOOLEAN_LOGIC_VALUES from 'constants/booleanLogicValues';
 
 function AndOrOperator({ onToggle, value }) {
     return (
-        <button type="button" onClick={onToggle} disabled={!onToggle} className="uppercase">
-            — {value} —
-        </button>
+        <div className="flex justify-center py-2">
+            <button type="button" onClick={onToggle} disabled={!onToggle} className="uppercase">
+                — {value} —
+            </button>
+        </div>
     );
 }
 
