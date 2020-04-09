@@ -48,11 +48,6 @@ export const navLinks = [
         renderIcon: () => <Icon.ShieldOff className={iconClassName} />
     },
     {
-        text: 'Images',
-        to: '/main/images',
-        renderIcon: () => <Icon.FileMinus className={iconClassName} />
-    },
-    {
         text: 'Platform Configuration',
         to: '',
         renderIcon: () => <Icon.Settings className={iconClassName} />,

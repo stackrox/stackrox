@@ -15,7 +15,6 @@ import {
     integrationsPath,
     policiesPath,
     riskPath,
-    imagesPath,
     apidocsPath,
     accessControlPath,
     licensePath,
@@ -52,7 +51,6 @@ const AsyncIntegrationsPage = asyncComponent(() =>
 );
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
-const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
@@ -125,7 +123,6 @@ class MainPage extends Component {
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
-                    <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <ProtectedRoute

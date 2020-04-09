@@ -71,7 +71,7 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.cancelButton).click();
     });
 
-    it('should navigate from Risk Page to Images Page', () => {
+    it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
         mockGetDeployment();
         cy.get(RiskPageSelectors.table.row.firstRow).click({ force: true });
         cy.wait('@firstDeployment');
@@ -80,7 +80,7 @@ describe('Risk page', () => {
         cy.get(RiskPageSelectors.imageLink)
             .first()
             .click({ force: true });
-        cy.url().should('contain', '/main/images');
+        cy.url().should('contain', '/main/vulnerability-management/image');
     });
 
     it('should close the side panel on search filter', () => {

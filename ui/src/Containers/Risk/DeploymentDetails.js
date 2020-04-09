@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 import dateFns from 'date-fns';
+import { vulnManagementPath } from 'routePaths';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
 import KeyValuePairs from 'Components/KeyValuePairs';
@@ -100,7 +101,7 @@ class DeploymentDetails extends Component {
                 <div className="font-700 inline">Image Name: </div>
                 <Link
                     className="font-600 text-primary-600 hover:text-primary-800 leading-normal word-break"
-                    to={`/main/images/${image.id}`}
+                    to={`${vulnManagementPath}/image/${image.id}`}
                 >
                     {image.name.fullName}
                 </Link>
