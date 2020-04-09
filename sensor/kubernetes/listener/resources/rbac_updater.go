@@ -305,7 +305,7 @@ func toRoleEvent(role *storage.K8SRole, action central.ResourceAction) *central.
 		Id:     role.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Role{
-			Role: role,
+			Role: proto.Clone(role).(*storage.K8SRole),
 		},
 	}
 }

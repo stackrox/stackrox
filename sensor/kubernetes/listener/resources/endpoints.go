@@ -165,7 +165,7 @@ func getAllServiceIPs(svc *v1.Service) (serviceIPs []net.IPAddress) {
 	return
 }
 
-func (m *endpointManager) addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.IPAddress, nodeIPs []net.IPAddress, port v1.ServicePort, data *clusterentities.EntityData) {
+func addEndpointDataForServicePort(deployment *deploymentWrap, serviceIPs []net.IPAddress, nodeIPs []net.IPAddress, port v1.ServicePort, data *clusterentities.EntityData) {
 	l4Proto := convertL4Proto(port.Protocol)
 
 	targetInfo := clusterentities.EndpointTargetInfo{
@@ -200,7 +200,7 @@ func (m *endpointManager) addEndpointDataForService(deployment *deploymentWrap, 
 
 	serviceIPs := getAllServiceIPs(svc.Service)
 	for _, port := range svc.Spec.Ports {
-		m.addEndpointDataForServicePort(deployment, serviceIPs, allNodeIPs, port, data)
+		addEndpointDataForServicePort(deployment, serviceIPs, allNodeIPs, port, data)
 	}
 }
 
@@ -230,7 +230,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 	}
 
 	updates := make(map[string]*clusterentities.EntityData)
-	for _, svc := range m.serviceStore.nodePortServices {
+	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			update, ok := updates[deployment.GetId()]
 			if !ok {
@@ -239,7 +239,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 			}
 			for _, port := range svc.Spec.Ports {
 				if port.NodePort != 0 {
-					m.addEndpointDataForServicePort(deployment, nil, node.addresses, port, update)
+					addEndpointDataForServicePort(deployment, nil, node.addresses, port, update)
 				}
 			}
 		}
@@ -251,7 +251,7 @@ func (m *endpointManager) OnNodeCreate(node *nodeWrap) {
 func (m *endpointManager) OnNodeUpdateOrRemove() {
 	affectedDeployments := make(map[*deploymentWrap]struct{})
 
-	for _, svc := range m.serviceStore.nodePortServices {
+	for _, svc := range m.serviceStore.NodePortServicesSnapshot() {
 		for _, deployment := range m.deploymentStore.getMatchingDeployments(svc.Namespace, svc.selector) {
 			affectedDeployments[deployment] = struct{}{}
 		}

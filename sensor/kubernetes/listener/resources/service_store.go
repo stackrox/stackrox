@@ -39,6 +39,18 @@ func (ss *serviceStore) addOrUpdateService(svc *serviceWrap) {
 	}
 }
 
+// NodePortServicesSnapshot returns a snapshot of the service wraps
+func (ss *serviceStore) NodePortServicesSnapshot() []*serviceWrap {
+	ss.serviceLock.RLock()
+	defer ss.serviceLock.RUnlock()
+
+	wraps := make([]*serviceWrap, 0, len(ss.nodePortServices))
+	for _, wrap := range ss.nodePortServices {
+		wraps = append(wraps, wrap)
+	}
+	return wraps
+}
+
 func (ss *serviceStore) removeService(svc *v1.Service) {
 	ss.serviceLock.Lock()
 	defer ss.serviceLock.Unlock()

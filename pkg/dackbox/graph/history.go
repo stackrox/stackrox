@@ -1,5 +1,7 @@
 package graph
 
+import "github.com/stackrox/rox/pkg/sync"
+
 // History watches a graph's updates over time when they are applied through the tracker.
 // You can 'Watch' the graphs state at points in time
 type History interface {
@@ -22,15 +24,21 @@ type historyTrackerImpl struct {
 	updates   *queue
 	master    *Graph
 	masterRef int32
+
+	lock sync.RWMutex
 }
 
 // Hold drops an anchor at the current time-step so that the state of the graph at that time-step can be viewed.
 // Returns the time-step.
 func (v *historyTrackerImpl) Hold() uint64 {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	if v.updates.back != nil {
 		v.updates.back.refCount++
 		return v.updates.back.timeStep
 	}
+
 	v.masterRef++
 	return 0
 }
@@ -38,6 +46,9 @@ func (v *historyTrackerImpl) Hold() uint64 {
 // View returns a view of the graph at a given time-step.
 // That time-step must be 'watched' in order to be viewed.
 func (v *historyTrackerImpl) View(at uint64) RGraph {
+	v.lock.RLock()
+	defer v.lock.RUnlock()
+
 	if at == 0 {
 		return v.master
 	}
@@ -47,6 +58,9 @@ func (v *historyTrackerImpl) View(at uint64) RGraph {
 // Release removes the anchor added when Watch was called.
 // This removed the ability to call View a the given time-step, and allows the history to be condensed into the master Graph.
 func (v *historyTrackerImpl) Release(at uint64) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	if at == 0 && v.masterRef > 0 {
 		v.masterRef--
 	} else {
@@ -62,6 +76,9 @@ func (v *historyTrackerImpl) Release(at uint64) {
 // Apply adds a change to the history of the graph at the current time-step.
 // Takes ownership of the input 'diff', and returns the time-step it was added at.
 func (v *historyTrackerImpl) Apply(diff Modification) {
+	v.lock.Lock()
+	defer v.lock.Unlock()
+
 	v.updates.push(diff)
 }
 

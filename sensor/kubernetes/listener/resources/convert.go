@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -58,6 +60,8 @@ type deploymentWrap struct {
 	portConfigs      map[portRef]*storage.PortConfig
 	pods             []*v1.Pod
 	podSelector      labels.Selector
+
+	mutex sync.RWMutex
 }
 
 // This checks if a reflect value is a Zero value, which means the field did not exist
@@ -275,6 +279,9 @@ func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 
 // Deprecated: Once Pods and Deployments are separated, there will no longer be a need for this.
 func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	for _, p := range pods {
 		for i, instance := range containerInstances(p) {
 			// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
@@ -292,6 +299,9 @@ func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
 }
 
 func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	// All containers have a container status
 	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
 	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
@@ -376,6 +386,9 @@ func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
 }
 
 func (w *deploymentWrap) populatePorts() {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	w.portConfigs = make(map[portRef]*storage.PortConfig)
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
@@ -388,11 +401,14 @@ func (w *deploymentWrap) populatePorts() {
 }
 
 func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorEvent {
+	w.mutex.RLock()
+	defer w.mutex.RUnlock()
+
 	return &central.SensorEvent{
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.Deployment,
+			Deployment: protoutils.CloneStorageDeployment(w.Deployment),
 		},
 	}
 }
@@ -408,18 +424,21 @@ func filterHostExposure(exposureInfos []*storage.PortConfig_ExposureInfo) (filte
 	return
 }
 
-func (w *deploymentWrap) resetPortExposure() {
+func (w *deploymentWrap) resetPortExposureNoLock() {
 	for _, portCfg := range w.portConfigs {
 		portCfg.ExposureInfos, portCfg.Exposure = filterHostExposure(portCfg.ExposureInfos)
 	}
 }
 
 func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
-	w.resetPortExposure()
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	w.resetPortExposureNoLock()
 
 	svcs := store.getMatchingServices(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
-		w.updatePortExposure(svc)
+		w.updatePortExposureUncheckedNoLock(svc)
 	}
 }
 
@@ -428,6 +447,12 @@ func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
 		return
 	}
 
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+	w.updatePortExposureUncheckedNoLock(svc)
+}
+
+func (w *deploymentWrap) updatePortExposureUncheckedNoLock(svc *serviceWrap) {
 	for ref, exposureInfo := range svc.exposure() {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {

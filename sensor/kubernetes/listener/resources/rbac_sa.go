@@ -12,8 +12,8 @@ func (rs *rbacUpdaterImpl) assignPermissionLevelToDeployment(wrap *deploymentWra
 		Namespace: wrap.GetNamespace(),
 	}
 
-	rs.lock.RLock()
-	defer rs.lock.RUnlock()
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
 	wrap.ServiceAccountPermissionLevel = rs.bucketEvaluator.getBucketNoLock(subject)
 }
 
