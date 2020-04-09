@@ -645,8 +645,8 @@ github.com/stackrox/bleve v0.0.0-20200303185535-b6fb59df2573/go.mod h1:iEpZccUqB
 github.com/stackrox/clairify v0.0.0-20190226172255-52856608eab5/go.mod h1:WEQ9k54XQ6lpPUwqpIuLYjZN6P28o56QIxp6K5PWP30=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e h1:tehRH8Wf03sV5pnp17+WNNHzkUgX30p2bxMOv9hFHb8=
 github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e/go.mod h1:j8TgcsyLxEaGufGNdkDQg6YG7ySHVNUlOnxI/akj1iY=
-github.com/stackrox/docker-registry-client v0.0.0-20181115184320-3d98b2b79d1b h1:P3L3ctjRizvKMGwFGen5CTxwMO8TQHuPuoBaCLz8JC4=
-github.com/stackrox/docker-registry-client v0.0.0-20181115184320-3d98b2b79d1b/go.mod h1:ftVRYPg9kyRYpu5y5rE+8c8P6KtAitUy57PlHhMraL8=
+github.com/stackrox/docker-registry-client v0.0.0-20200409184839-c0893dd603f8 h1:/rysDOstPZO+5r55k4Gxlm/cHzgbdLTbSGLRUiAlcb0=
+github.com/stackrox/docker-registry-client v0.0.0-20200409184839-c0893dd603f8/go.mod h1:ftVRYPg9kyRYpu5y5rE+8c8P6KtAitUy57PlHhMraL8=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca h1:teIgFfrO9MJjja7m3vCWjXeFfYh90/yOLhRNW1BoIfM=
 github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca/go.mod h1:4DO5Bk5QEsgH2AyJowQ/hP+RzfAb9JanP6W3USogT9E=
 github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9 h1:IXESjfBZNfZjU+VuVdxLZvkeiMPlodw94++hjOLORis=
