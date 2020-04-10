@@ -108,8 +108,8 @@ github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5/go.mod h1:/iP1
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e h1:ZtyhUG4s94BMUCdgvRZySr/AXYL5CDcjxhIV/83xJog=
 github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e/go.mod h1:yMWuSON2oQp+43nFtAV/uvKQIFpSPerB57DCt9t8sSA=
-github.com/connorgorman/protobuf v1.2.2-0.20200331195227-11f2f5c3ef52 h1:2HKqx1ytX7vHskuj78QZYCNmL6zWoNDJeVdmVnkw9v0=
-github.com/connorgorman/protobuf v1.2.2-0.20200331195227-11f2f5c3ef52/go.mod h1:IM6KDdGJXA/hVoKrpDslREWDi75ZUQxR60o4icSO2NM=
+github.com/connorgorman/protobuf v1.2.2-0.20200410185319-4bae465769b2 h1:vRVjATDc5fe/wV7zQJuOQ67qgHFVz0Mtaq7Nn9/0GII=
+github.com/connorgorman/protobuf v1.2.2-0.20200410185319-4bae465769b2/go.mod h1:IM6KDdGJXA/hVoKrpDslREWDi75ZUQxR60o4icSO2NM=
 github.com/containerd/cgroups v0.0.0-20190919134610-bf292b21730f/go.mod h1:OApqhQ4XNSNC13gXIwDjhOQxjWa/NxkwZXJ1EvqT0ko=
 github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1/go.mod h1:Tj/on1eG8kiEhd0+fhSDzsPAFESxzBBvdyEgyryXffw=
 github.com/containerd/containerd v1.2.10/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=

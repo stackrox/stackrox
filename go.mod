@@ -110,7 +110,7 @@ replace (
 	github.com/facebookincubator/nvdtools => github.com/stackrox/nvdtools v0.0.0-20191120225537-fe4e9a7e467f
 	github.com/fullsailor/pkcs7 => github.com/misberner/pkcs7 v0.0.0-20190417093538-a48bf0f78dea
 	github.com/go-resty/resty => gopkg.in/resty.v1 v1.11.0
-	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20200331195227-11f2f5c3ef52
+	github.com/gogo/protobuf => github.com/connorgorman/protobuf v1.2.2-0.20200410185319-4bae465769b2
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.0.0-20200409184839-c0893dd603f8
 	github.com/mattn/goveralls => github.com/viswajithiii/goveralls v0.0.3-0.20190917224517-4dd02c532775
 	github.com/nilslice/protolock => github.com/viswajithiii/protolock v0.10.1-0.20190117180626-43bb8a9ba4e8
