@@ -2230,7 +2230,7 @@ jobs:
       - run:
           name: API tests
           command: |
-            ./tests/yamls/roxctl_verification.sh
+            CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh
             make -C tests
 
       - run:
