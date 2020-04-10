@@ -17,13 +17,10 @@ type handlerImpl struct {
 
 // ServeHTTP adds or retrieves logs from the backend
 func (l handlerImpl) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	// If we panic unpacking the contents, we want to return an HTTP error for a bad request.
-	defer recoverFromBuffPanic(resp)
-
 	if req.Method == http.MethodPost {
 		l.post(resp, req)
 	} else if req.Method == http.MethodGet {
-		l.get(resp, req)
+		l.get(resp)
 	} else {
 		resp.WriteHeader(http.StatusMethodNotAllowed)
 	}
@@ -32,7 +29,13 @@ func (l handlerImpl) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 // Post handles accepting new logs from the frontend.
 func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 	// If we panic unpacking the contents, we want to return an HTTP error for a bad request.
-	defer recoverFromBuffPanic(resp)
+	panicked := true
+	defer func() {
+		if r := recover(); r != nil || panicked {
+			log.Error(r)
+			resp.WriteHeader(http.StatusBadRequest)
+		}
+	}()
 
 	// This will panic if the body is too large, hence the above panic handler.
 	buff := new(bytes.Buffer)
@@ -44,6 +47,7 @@ func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 	if closeErr != nil {
 		log.Error(closeErr)
 	}
+	panicked = false // from here on, any panic is no longer due to the request body
 	if readErr != nil || closeErr != nil {
 		resp.WriteHeader(http.StatusInternalServerError)
 		return
@@ -57,7 +61,7 @@ func (l handlerImpl) post(resp http.ResponseWriter, req *http.Request) {
 }
 
 // Get returns all logs currently stored as a zip file.
-func (l handlerImpl) get(resp http.ResponseWriter, req *http.Request) {
+func (l handlerImpl) get(resp http.ResponseWriter) {
 	// Load the logs from the db.
 	logs, err := l.storage.GetLogs()
 	if err != nil {
@@ -127,13 +131,6 @@ func (l handlerImpl) get(resp http.ResponseWriter, req *http.Request) {
 
 	resp.Header().Add("Content-Disposition", `attachment; filename="logs.zip"`)
 	_, _ = resp.Write(compressor.Bytes())
-}
-
-func recoverFromBuffPanic(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		log.Error(r)
-		w.WriteHeader(http.StatusBadRequest)
-	}
 }
 
 // Compressor provides the interface for constructing a compressed view of the logs and supplying the bytes

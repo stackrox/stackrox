@@ -57,13 +57,15 @@ func (c lazyCall) call() (vals []reflect.Value, err error) {
 		return nil, fmt.Errorf("invalid number of arguments: need at most %d, got %d", maxArgs, len(argVals))
 	}
 
+	panicked := true
 	defer func() {
-		if r := recover(); r != nil {
+		if r := recover(); r != nil || panicked {
 			err = fmt.Errorf("PANIC executing lazy call: %v", r)
 		}
 	}()
 
 	vals = fn.Call(argVals)
+	panicked = false
 	return
 }
 

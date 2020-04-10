@@ -25,8 +25,9 @@ func DefaultIteratorOptions() *badger.IteratorOptions {
 
 // ForEachItemWithPrefix invokes a callbacks for all key/item pairs with the given prefix.
 func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k []byte, item *badger.Item) error) error {
+	panicked := true
 	defer func() {
-		if r := recover(); r != nil {
+		if r := recover(); r != nil || panicked {
 			utils.Should(errors.Errorf("panic in iteration: %+v", r))
 		}
 	}()
@@ -50,6 +51,7 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 			return err
 		}
 	}
+	panicked = false
 	return nil
 }
 

@@ -2,16 +2,34 @@ package utils
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/logging"
 )
+
+const (
+	hardPanicDelay = 5 * time.Second
+)
+
+// hardPanic is like panic, but on debug builds additionally ensures that the panic will cause a crash with a full
+// goroutine dump, independently of any recovery handlers.
+func hardPanic(v interface{}) {
+	if !buildinfo.ReleaseBuild {
+		trace := debug.GetLazyStacktrace(2)
+		time.AfterFunc(hardPanicDelay, func() {
+			panic(fmt.Sprintf("Re-triggering panic %v as unrecoverable. Original stacktrace:\n%s", v, trace))
+		})
+	}
+	panic(v)
+}
 
 // Must panics if any of the given errors is non-nil, and does nothing otherwise.
 func Must(errs ...error) {
 	for _, err := range errs {
 		if err != nil {
-			panic(fmt.Sprintf("%+v", err))
+			hardPanic(fmt.Sprintf("%+v", err))
 		}
 	}
 }
@@ -25,7 +43,7 @@ func Should(errs ...error) error {
 			if buildinfo.ReleaseBuild {
 				logging.Errorf("Unexpected Error: %+v", err)
 			} else {
-				panic(err)
+				hardPanic(err)
 			}
 			return err
 		}

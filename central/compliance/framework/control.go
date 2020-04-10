@@ -6,11 +6,12 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/devbuild"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // Abort aborts the current compliance check, optionally setting an error.
 func Abort(ctx ComplianceContext, err error) {
-	panic(err)
+	halt(err)
 }
 
 // RunForTarget runs the given check function for the given compliance target.
@@ -64,18 +65,27 @@ func ForEachDeployment(ctx ComplianceContext, checkFn func(ComplianceContext, *s
 }
 
 // finalize catches any panic that occurred when running a compliance check, and propagates it, if needed.
-func finalize(ctx ComplianceContext) {
+func finalize(ctx ComplianceContext, panicked *bool) {
 	var err error
-	if action := recover(); action != nil {
-		log.Infof("finalize: %+v", action)
+	if action := recover(); action != nil || *panicked {
+		log.Debugf("finalize: %+v", action)
 		if devbuild.IsEnabled() {
 			debug.PrintStack()
 		}
+
+		halted := false
 		switch a := action.(type) {
+		case haltSignal:
+			err = a.err
+			halted = true
 		case error:
 			err = a
 		default:
 			err = fmt.Errorf("caught panic: %+v", a)
+		}
+
+		if !halted {
+			utils.Should(err)
 		}
 	}
 
@@ -84,6 +94,8 @@ func finalize(ctx ComplianceContext) {
 
 // doRun runs a compliance check, handling any panics that might arise.
 func doRun(ctx ComplianceContext, check CheckFunc) {
-	defer finalize(ctx)
+	panicked := true
+	defer finalize(ctx, &panicked)
 	check(ctx)
+	panicked = false
 }

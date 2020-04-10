@@ -39,13 +39,15 @@ func (t *taskWrapper) execute(ctx context.Context) (res *ExecutionResult, err er
 		return
 	}
 
+	panicked := true
 	defer func() {
-		if p := recover(); p != nil {
+		if p := recover(); p != nil || panicked {
 			err = fmt.Errorf("Panic during execution of task: %v", p)
 		}
 	}()
 
 	err = t.exec(ctx, res)
+	panicked = false
 	return
 }
 

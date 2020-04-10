@@ -83,7 +83,7 @@ func (c *baseContext) RecordEvidence(status Status, evidence string) {
 
 func (c *baseContext) Abort(err error) {
 	c.checkErr()
-	panic(err)
+	halt(err)
 }
 
 func (c *baseContext) ForObject(target ComplianceTarget) ComplianceContext {
@@ -99,7 +99,7 @@ func (c *baseContext) ForObject(target ComplianceTarget) ComplianceContext {
 
 func (c *baseContext) checkErr() {
 	if err, ok := c.stopSig.Error(); ok {
-		panic(errors.Wrap(err, "compliance run was aborted"))
+		halt(errors.Wrap(err, "compliance run was aborted"))
 	}
 }
 
