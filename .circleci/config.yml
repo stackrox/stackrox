@@ -528,11 +528,14 @@ commands:
                     echo "Running tests because this is a tagged build"
                     halt=0
                   elif [[ -n "<< parameters.label >>" ]]; then
-                    .circleci/pr_has_label.sh "<< parameters.label >>"
-                    if [[ $? -eq 0 ]]; then
-                      echo "Running tests because the label << parameters.label >> has been set"
-                      halt=0
-                    fi
+                    # Split on commas
+                    IFS=', ' ;for label in `echo "<< parameters.label >>"`; do
+                      .circleci/pr_has_label.sh "${label}"
+                      if [[ $? -eq 0 ]]; then
+                        echo "Running tests because the label << parameters.label >> has been set"
+                        halt=0
+                      fi
+                    done
                   fi
 
                   if [[ "${halt}" -eq 1 ]]; then
@@ -1686,12 +1689,7 @@ jobs:
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
-            - bin/linux/central
-            - bin/linux/migrator
-            - bin/linux/kubernetes
-            - bin/linux/admission-control
-            - bin/linux/upgrader
-            - bin/linux/collection
+            - bin/linux
             - image/docs # This will go into the image as generated docs.
             - image/keys
             - deps # Used to speed up k8s-tests
@@ -1797,6 +1795,18 @@ jobs:
             make ossls-notice
 
       - run:
+          name: If nightly build OR ci-race-tests is set, overwrite all non-race binaries with the ones built with race
+          command: |
+            if [[ "${CIRCLE_TAG}" =~ ^nightly ]] || .circleci/pr_has_label.sh ci-race-tests; then
+              # build race images and then overwrite
+              RACE=true make main-build
+              for file in bin/linux/*-race; do
+                overwrite="${file%-race}"
+                cp "${file}" "${overwrite}"
+              done
+            fi
+
+      - run:
           name: Build main image for RHEL
           command: make docker-build-main-image-rhel
 
@@ -1892,7 +1902,7 @@ jobs:
       - checkout
       - check-backend-changes
       - check-master-or-tag-or-label:
-          label: ci-rhel-tests
+          label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
 
@@ -1911,7 +1921,7 @@ jobs:
       - checkout
       - check-backend-changes
       - check-master-or-tag-or-label:
-          label: ci-rhel-tests
+          label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
 
@@ -2458,7 +2468,7 @@ jobs:
       - checkout
       - check-backend-changes
       - check-master-or-tag-or-label:
-          label: ci-rhel-tests
+          label: ci-rhel-tests,ci-race-tests
           run-on-master: false
           run-on-tags: true
       - run-openshift-tests:
@@ -2491,10 +2501,10 @@ jobs:
     steps:
       - run-qa-tests:
           cluster-id: rhel-api-e2e-tests
-          sensor-deploy-flavor: helm
+          # sensor-deploy-flavor: helm TODO(ROX-4606)
           determine-whether-to-run:
             - check-master-or-tag-or-label:
-                label: ci-rhel-tests
+                label: ci-rhel-tests,ci-race-tests
                 run-on-master: false
                 run-on-tags: true
           use-main-rhel: true
