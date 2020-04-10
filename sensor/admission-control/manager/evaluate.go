@@ -136,6 +136,8 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		return pass(req.UID), nil // we only enforce on top-level objects
 	}
 
+	deployment.ClusterId = getClusterID()
+
 	log.Debugf("Evaluating policies on %+v", deployment)
 
 	// Check if the deployment has a bypass annotation

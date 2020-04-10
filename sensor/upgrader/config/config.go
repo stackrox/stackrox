@@ -4,10 +4,11 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/sensor/clusterid"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
@@ -56,7 +57,7 @@ func Create() (*UpgraderConfig, error) {
 	}
 
 	// clusterID is optional and only required when fetching the bundle, not when used in standalone mode
-	clusterID, _ := clusterid.ParseClusterIDFromServiceCert()
+	clusterID, _ := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 
 	cfg := &UpgraderConfig{
 		ClusterID:       clusterID,
