@@ -1,34 +1,32 @@
-import { differenceInHours, format } from 'date-fns';
+import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { eventTypes, graphTypes } from 'constants/timelineTypes';
+import { graphTypes } from 'constants/timelineTypes';
+import getDifferenceInHours from '../eventTimelineUtils/getDifferenceInHours';
+import filterByEventType from '../eventTimelineUtils/filterByEventType';
 
-const filterByEventType = selectedEventType => event => {
-    if (selectedEventType === eventTypes.ALL) return true;
-    return event.type === selectedEventType;
-};
-
-export const getPod = ({ id, name, inactive, startTime }) => {
+export const getPod = ({ id, name, startTime }) => {
     return {
         type: graphTypes.POD,
         id,
         name,
-        subText: inactive ? 'Inactive' : format(startTime, dateTimeFormat)
+        subText: startTime ? format(startTime, dateTimeFormat) : 'N/A'
     };
 };
 
 export const getContainerEvents = (containers, selectedEventType) => {
-    const containersWithEvents = containers.map(({ id, name, inactive, startTime, events }) => ({
+    const containersWithEvents = containers.map(({ id, name, startTime, events }) => ({
         type: graphTypes.CONTAINER,
         id,
         name,
-        subText: inactive ? 'Inactive' : format(startTime, dateTimeFormat),
+        subText: startTime ? format(startTime, dateTimeFormat) : 'N/A',
         events: events
             .filter(filterByEventType(selectedEventType))
-            .map(({ processId, timestamp, edges, type }) => ({
+            .map(({ id: processId, timestamp, edges, type }) => ({
                 id: processId,
                 type,
-                differenceInHours: differenceInHours(timestamp, startTime),
+                differenceInHours: getDifferenceInHours(timestamp, startTime),
+                timestamp,
                 edges
             })),
         hasChildren: false

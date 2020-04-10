@@ -1,7 +1,7 @@
 import gql from 'graphql-tag';
 
-export const OVERVIEW_FRAGMENT = gql`
-    fragment overviewFields on Deployment {
+export const DEPLOYMENT_OVERVIEW_FRAGMENT = gql`
+    fragment deploymentOverviewFields on Deployment {
         numPolicyViolations: failingPolicyCount
         numProcessActivities: processActivityCount
         numRestarts: containerRestartCount
@@ -10,13 +10,25 @@ export const OVERVIEW_FRAGMENT = gql`
     }
 `;
 
+export const POD_FRAGMENT = gql`
+    fragment podFields on Pod {
+        id
+        name
+        startTime: started
+        liveInstances {
+            finished
+            started
+        }
+    }
+`;
+
 export const GET_EVENT_TIMELINE_OVERVIEW = gql`
     query getEventTimelineOverview($deploymentId: ID!) {
         deployment(id: $deploymentId) {
-            ...overviewFields
+            ...deploymentOverviewFields
         }
     }
-    ${OVERVIEW_FRAGMENT}
+    ${DEPLOYMENT_OVERVIEW_FRAGMENT}
 `;
 
 export const GET_DEPLOYMENT_EVENT_TIMELINE = gql`
@@ -26,13 +38,10 @@ export const GET_DEPLOYMENT_EVENT_TIMELINE = gql`
         $pagination: Pagination
     ) {
         deployment(id: $deploymentId) {
-            ...overviewFields
+            ...deploymentOverviewFields
         }
         pods(query: $podsQuery, pagination: $pagination) {
-            id
-            name
-            startTime
-            inactive
+            ...podFields
             events {
                 type: __typename
                 ... on PolicyViolationEvent {
@@ -61,5 +70,48 @@ export const GET_DEPLOYMENT_EVENT_TIMELINE = gql`
             }
         }
     }
-    ${OVERVIEW_FRAGMENT}
+    ${DEPLOYMENT_OVERVIEW_FRAGMENT}
+    ${POD_FRAGMENT}
+`;
+
+export const GET_POD_EVENT_TIMELINE = gql`
+    query getPodEventTimeline($podId: ID!, $containersQuery: String) {
+        pod(id: $podId) {
+            ...podFields
+        }
+        containers: containerInstances(query: $containersQuery) {
+            instanceId {
+                id
+            }
+            name: containerName
+            startTime: started
+            events {
+                type: __typename
+                ... on PolicyViolationEvent {
+                    id
+                    name
+                    timestamp
+                }
+                ... on ProcessActivityEvent {
+                    id
+                    name
+                    timestamp
+                    uid
+                }
+                ... on ContainerRestartEvent {
+                    id
+                    name
+                    timestamp
+                }
+                ... on ContainerTerminationEvent {
+                    id
+                    name
+                    timestamp
+                    exitCode
+                    reason
+                }
+            }
+        }
+    }
+    ${POD_FRAGMENT}
 `;

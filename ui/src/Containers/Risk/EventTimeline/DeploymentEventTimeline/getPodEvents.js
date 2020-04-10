@@ -1,20 +1,12 @@
-import { format, differenceInMilliseconds, parse } from 'date-fns';
+import { format } from 'date-fns';
 
 import { timelineStartTimeFormat } from 'constants/dateTimeFormat';
-import { eventTypes, graphTypes } from 'constants/timelineTypes';
-
-const filterByEventType = selectedEventType => event => {
-    if (selectedEventType === eventTypes.ALL) return true;
-    return event.type === selectedEventType;
-};
-
-// assumes both date's are in the ISO 8601 format (2011-08-12T20:17:46.384Z)
-function getDifferenceInHours(dateLeft, dateRight) {
-    return differenceInMilliseconds(parse(dateLeft), parse(dateRight)) / 3600000;
-}
+import { graphTypes } from 'constants/timelineTypes';
+import getDifferenceInHours from '../eventTimelineUtils/getDifferenceInHours';
+import filterByEventType from '../eventTimelineUtils/filterByEventType';
 
 const getPodEvents = (pods, selectedEventType) => {
-    const podsWithEvents = pods.map(({ id, name, inactive, startTime, events, numContainers }) => ({
+    const podsWithEvents = pods.map(({ id, name, inactive, startTime, events, liveInstances }) => ({
         type: graphTypes.POD,
         id,
         name,
@@ -28,7 +20,7 @@ const getPodEvents = (pods, selectedEventType) => {
                 timestamp,
                 edges
             })),
-        hasChildren: numContainers > 0
+        hasChildren: liveInstances.length > 0
     }));
     return podsWithEvents;
 };

@@ -8,11 +8,6 @@ import PodEventTimeline from './PodEventTimeline';
 
 const PAGE_SIZE = 10;
 
-const defaultSort = {
-    id: 'name',
-    desc: false
-};
-
 const EventTimelineComponentMap = {
     [rootTypes.DEPLOYMENT]: DeploymentEventTimeline,
     [rootTypes.POD]: PodEventTimeline
@@ -75,7 +70,6 @@ const EventTimeline = ({ deploymentId }) => {
             currentPage={currentPage}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
-            sort={defaultSort}
         />
     );
 };
