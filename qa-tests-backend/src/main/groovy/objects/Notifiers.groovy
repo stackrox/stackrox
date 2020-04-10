@@ -22,6 +22,7 @@ class Notifier {
     def deleteNotifier() {
         if (notifier?.id) {
             NotifierService.deleteNotifier(notifier.id)
+            notifier = NotifierOuterClass.Notifier.newBuilder(notifier).setId("").build()
         }
     }
 
@@ -43,24 +44,33 @@ class Notifier {
 }
 
 class EmailNotifier extends Notifier {
-    private final MailService mail = new MailService()
+    private final MailService mail =
+            new MailService("imap.gmail.com", "stackrox.qa@gmail.com", System.getenv("EMAIL_NOTIFIER_PASSWORD"))
 
     EmailNotifier(
             String integrationName = "Email Test",
             disableTLS = false,
             startTLS = NotifierOuterClass.Email.AuthMethod.DISABLED,
             Integer port = null) {
-        mail.login("imap.gmail.com", "stackrox.qa@gmail.com", System.getenv("EMAIL_NOTIFIER_PASSWORD"))
         notifier = NotifierService.getEmailIntegrationConfig(integrationName, disableTLS, startTLS, port)
+    }
+
+    def deleteNotifier() {
+        if (notifier?.id) {
+            NotifierService.deleteNotifier(notifier.id)
+            notifier = NotifierOuterClass.Notifier.newBuilder(notifier).setId("").build()
+        }
+        mail.logout()
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment) {
         String policySeverity = policy.severity.valueDescriptor.toString().split("_")[0].toLowerCase()
+        mail.login()
 
-        Timer t = new Timer(10, 3)
+        Timer t = new Timer(30, 3)
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_FULL_FROM).findAll {
+            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_SENDER).findAll {
                 it.subject.contains(policy.name) &&
                         it.subject.contains(deployment.name) }
         }
@@ -73,20 +83,23 @@ class EmailNotifier extends Notifier {
             containsNoWhitespace(it.content.toString(), "Rationale:-${policy.rationale}") }
         assert notifications.find {
             containsNoWhitespace(it.content.toString(), "Remediation:-${policy.remediation}") }
-        assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
+        // assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
         assert notifications.find { it.content.toString().contains("Name: ${deployment.name}") }
         assert notifications.find { it.content.toString().contains("Namespace: ${deployment.namespace}") }
+        mail.logout()
     }
 
     void validateNetpolNotification(String yaml) {
-        Timer t = new Timer(10, 3)
+        Timer t = new Timer(30, 3)
+        mail.login()
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_FULL_FROM).findAll {
+            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_SENDER).findAll {
                 it.subject.contains("New network policy YAML for cluster") }
         }
         assert notifications.length > 0 // Should be "== 1" - ROX-4542
         assert notifications.find { containsNoWhitespace(it.content.toString(), yaml) }
+        mail.logout()
     }
 }
 
