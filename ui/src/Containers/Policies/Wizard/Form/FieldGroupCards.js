@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
+import React, { Component, memo } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { reduxForm, formValueSelector, change } from 'redux-form';
+import { formValueSelector, change } from 'redux-form';
 import sortBy from 'lodash/sortBy';
 
 import Select from 'Components/ReactSelect';
@@ -10,7 +10,7 @@ import flattenObject from 'utils/flattenObject';
 import removeEmptyFields from 'utils/removeEmptyFields';
 import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 import FormField from 'Components/FormField';
-import Field from 'Containers/Policies/Wizard/Form/Field';
+import FieldValue from 'Containers/Policies/Wizard/Form/FieldValue';
 
 class FieldGroupCards extends Component {
     static propTypes = {
@@ -85,7 +85,7 @@ class FieldGroupCards extends Component {
                             required={field.required}
                             onRemove={removeField}
                         >
-                            <Field field={field} />
+                            <FieldValue field={field} />
                         </FormField>
                     );
                 })}
@@ -127,7 +127,7 @@ class FieldGroupCards extends Component {
         return (
             <div className="header-control float-right">
                 {headerField.label && <span className="pr-1">{headerField.label}</span>}
-                <Field field={headerField} />
+                <FieldValue field={headerField} />
             </div>
         );
     };
@@ -177,7 +177,7 @@ const mapDispatchToProps = dispatch => ({
     change: (field, value) => dispatch(change('policyCreationForm', field, value))
 });
 
-export default reduxForm({ form: 'policyCreationForm' })(
+export default memo(
     connect(
         mapStateToProps,
         mapDispatchToProps

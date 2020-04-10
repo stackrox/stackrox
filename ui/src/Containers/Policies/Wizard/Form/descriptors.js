@@ -22,6 +22,7 @@ const equalityOptions = [
 
 const cpuResource = (label, policy, field) => ({
     label,
+    name: label,
     jsonpath: `fields.${policy}.${field}`,
     type: 'group',
     jsonpaths: [
@@ -39,7 +40,8 @@ const cpuResource = (label, policy, field) => ({
         }
     ],
     required: false,
-    default: false
+    default: false,
+    canNegate: false
 });
 
 const capabilities = [
@@ -85,6 +87,7 @@ const capabilities = [
 
 const memoryResource = (label, policy, field) => ({
     label,
+    name: label,
     jsonpath: `fields.${policy}.${field}`,
     type: 'group',
     jsonpaths: [
@@ -219,46 +222,61 @@ const policyDetailsFormDescriptor = [
 const policyConfigurationDescriptor = [
     {
         label: 'Image Registry',
+        name: 'Image Registry',
         jsonpath: 'fields.imageName.registry',
         type: 'text',
         placeholder: 'docker.io',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
+        // canBooleanLogic:
     },
     {
         label: 'Image Remote',
+        name: 'Image Remote',
         jsonpath: 'fields.imageName.remote',
         type: 'text',
         placeholder: 'library/nginx',
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Image Tag',
+        name: 'Image Tag',
         jsonpath: 'fields.imageName.tag',
         type: 'text',
         placeholder: 'latest',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Days since image was created',
+        // does not map to options -- using short name
+        name: 'Image Age',
         jsonpath: 'fields.imageAgeDays',
         type: 'number',
         placeholder: '1',
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Days since image was last scanned',
+        // does not map to options -- using short name
+        name: 'Image Scan Age',
         jsonpath: 'fields.scanAgeDays',
         type: 'number',
         placeholder: '1',
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Dockerfile Line',
+        // does not map to options -- using field name in doc
+        name: 'Dockerfile Line',
         jsonpath: 'fields.lineRule',
         type: 'group',
         jsonpaths: [
@@ -288,19 +306,24 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Image is NOT Scanned',
+        // using short name
+        name: 'Unscanned Image',
         jsonpath: 'fields.noScanExists',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: true,
-        disabled: true
+        disabled: true,
+        canNegate: false
     },
     {
         label: 'CVSS',
+        name: 'CVSS',
         jsonpath: 'fields.cvss',
         type: 'group',
         jsonpaths: [
@@ -319,26 +342,34 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Fixed By',
+        // does not map to options -- using field name in doc
+        name: 'Fixed By',
         jsonpath: 'fields.fixedBy',
         type: 'text',
         placeholder: '.*',
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'CVE',
+        name: 'CVE',
         jsonpath: 'fields.cve',
         type: 'text',
         placeholder: 'CVE-2017-11882',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Image Component',
+        // does not map to options -- using field name in doc
+        name: 'Image Component',
         jsonpath: 'fields.component',
         type: 'group',
         jsonpaths: [
@@ -354,10 +385,13 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Environment Variable',
+        // does not map to options -- using field name in doc
+        name: 'Environment Variable',
         jsonpath: 'fields.env',
         type: 'group',
         jsonpaths: [
@@ -382,10 +416,13 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Disallowed Annotation',
+        // does not map to options -- using field name in doc
+        name: 'Disallowed Annotation',
         jsonpath: 'fields.disallowedAnnotation',
         type: 'group',
         jsonpaths: [
@@ -401,10 +438,13 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Required Label',
+        // does not map to options -- using field name in doc
+        name: 'Required Label',
         jsonpath: 'fields.requiredLabel',
         type: 'group',
         jsonpaths: [
@@ -420,10 +460,13 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Required Annotation',
+        // does not map to options -- using field name in doc
+        name: 'Required Annotation',
         jsonpath: 'fields.requiredAnnotation',
         type: 'group',
         jsonpaths: [
@@ -439,64 +482,80 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Volume Name',
+        name: 'Volume Name',
         jsonpath: 'fields.volumePolicy.name',
         type: 'text',
         placeholder: 'docker-socket',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Volume Source',
+        name: 'Volume Source',
         jsonpath: 'fields.volumePolicy.source',
         type: 'text',
         placeholder: '/var/run/docker.sock',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Volume Destination',
+        name: 'Volume Destination',
         jsonpath: 'fields.volumePolicy.destination',
         type: 'text',
         placeholder: '/var/run/docker.sock',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Volume Type',
+        name: 'Volume Type',
         jsonpath: 'fields.volumePolicy.type',
         type: 'text',
         placeholder: 'bind, secret',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Writable Volume',
+        // does not map to options -- using field name in doc
+        name: 'Writable Volume',
         jsonpath: 'fields.volumePolicy.readOnly',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: false,
-        reverse: true
+        reverse: true,
+        canNegate: false
     },
     {
         label: 'Protocol',
+        name: 'Exposed Port Protocol',
         jsonpath: 'fields.portPolicy.protocol',
         type: 'text',
         placeholder: 'tcp',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Port',
+        name: 'Exposed Port',
         jsonpath: 'fields.portPolicy.port',
         type: 'number',
         placeholder: '22',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     cpuResource('Container CPU Request', 'containerResourcePolicy', 'cpuResourceRequest'),
     cpuResource('Container CPU Limit', 'containerResourcePolicy', 'cpuResourceLimit'),
@@ -504,72 +563,89 @@ const policyConfigurationDescriptor = [
     memoryResource('Container Memory Limit', 'containerResourcePolicy', 'memoryResourceLimit'),
     {
         label: 'Privileged',
+        name: 'Privileged Container',
         jsonpath: 'fields.privileged',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: true,
-        disabled: true
+        disabled: true,
+        canNegate: false
     },
     {
         label: 'Read-Only Root Filesystem',
+        name: 'Read-Only Root Filesystem',
         jsonpath: 'fields.readOnlyRootFs',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: false,
-        disabled: true
+        disabled: true,
+        canNegate: false
     },
     {
         label: 'Drop Capabilities',
+        name: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
         type: 'multiselect',
         options: [...capabilities],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Add Capabilities',
+        name: 'Add Capabilities',
         jsonpath: 'fields.addCapabilities',
         type: 'multiselect',
         options: [...capabilities],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Process Name',
+        name: 'Process Name',
         jsonpath: 'fields.processPolicy.name',
         type: 'text',
         placeholder: 'apt-get',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Process Ancestor',
+        name: 'Process Ancestor',
         jsonpath: 'fields.processPolicy.ancestor',
         type: 'text',
         placeholder: 'java',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Process Args',
+        name: 'Process Arguments',
         jsonpath: 'fields.processPolicy.args',
         type: 'text',
         placeholder: 'install nmap',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Process UID',
+        name: 'Process UID',
         jsonpath: 'fields.processPolicy.uid',
         type: 'text',
         placeholder: '0',
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Port Exposure',
+        name: 'Port Exposure Method',
         jsonpath: 'fields.portExposurePolicy.exposureLevels',
         type: 'multiselect',
         options: Object.keys(portExposureLabels)
@@ -579,29 +655,35 @@ const policyConfigurationDescriptor = [
                 value: key
             })),
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Writable Host Mount',
+        name: 'Writable Host Mount',
         jsonpath: 'fields.hostMountPolicy.readOnly',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: false,
         reverse: true,
-        disabled: true
+        disabled: true,
+        canNegate: false
     },
     {
         label: 'Whitelists Enabled',
+        name: 'Unexpected Process Executed',
         jsonpath: 'fields.whitelistEnabled',
         type: 'toggle',
         required: false,
         default: false,
         defaultValue: false,
-        reverse: false
+        reverse: false,
+        canNegate: false
     },
     {
         label: 'Minimum RBAC Permissions',
+        name: 'Minimum RBAC Permissions',
         jsonpath: 'fields.permissionPolicy.permissionLevel',
         type: 'select',
         options: Object.keys(rbacPermissionLabels).map(key => ({
@@ -609,10 +691,12 @@ const policyConfigurationDescriptor = [
             value: key
         })),
         required: false,
-        default: false
+        default: false,
+        canNegate: true
     },
     {
         label: 'Required Image Label',
+        name: 'Required Image Label',
         jsonpath: 'fields.requiredImageLabel',
         type: 'group',
         jsonpaths: [
@@ -628,10 +712,12 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     },
     {
         label: 'Disallowed Image Label',
+        name: 'Disallowed Image Label',
         jsonpath: 'fields.disallowedImageLabel',
         type: 'group',
         jsonpaths: [
@@ -647,7 +733,8 @@ const policyConfigurationDescriptor = [
             }
         ],
         required: false,
-        default: false
+        default: false,
+        canNegate: false
     }
 ];
 

@@ -33,7 +33,6 @@ function PolicySections({ fields }) {
                 // we get name and index when iterating through fields in a FieldArray in redux-form
                 // https://redux-form.com/8.2.2/docs/api/fieldarray.md/#iteration
                 const { section_name: sectionName } = fields.get(i);
-
                 return (
                     <FieldArray
                         key={name}
@@ -56,8 +55,6 @@ function PolicySections({ fields }) {
     );
 }
 
-PolicySections.propTypes = {
-    fields: reduxFormPropTypes.isRequired
-};
+PolicySections.propTypes = reduxFormPropTypes;
 
 export default PolicySections;

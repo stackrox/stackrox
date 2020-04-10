@@ -12,6 +12,7 @@ function ToggleSwitch({
     id,
     toggleHandler,
     label,
+    labelClassName,
     enabled,
     extraClassNames,
     flipped,
@@ -24,7 +25,7 @@ function ToggleSwitch({
     };
     return (
         <div className={`toggle-switch-wrapper ${extraClassNames}`}>
-            <label className="text-xs text-grey-dark" htmlFor={id}>
+            <label className={labelClassName} htmlFor={id}>
                 {label}
             </label>
             <div
@@ -51,6 +52,7 @@ ToggleSwitch.propTypes = {
     id: PropTypes.string.isRequired,
     toggleHandler: PropTypes.func.isRequired,
     label: PropTypes.string,
+    labelClassName: PropTypes.string,
     enabled: PropTypes.bool,
     extraClassNames: PropTypes.string,
     flipped: PropTypes.bool,
@@ -60,6 +62,7 @@ ToggleSwitch.propTypes = {
 
 ToggleSwitch.defaultProps = {
     label: '',
+    labelClassName: 'text-xs text-grey-dark',
     enabled: false,
     extraClassNames: '',
     flipped: false,

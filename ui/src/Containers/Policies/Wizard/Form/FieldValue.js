@@ -13,7 +13,7 @@ import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import RestrictToScope from './RestrictToScope';
 import WhitelistScope from './WhitelistScope';
 
-export default function Field({ field }) {
+export default function FieldValue({ field }) {
     if (field === undefined) return null;
     switch (field.type) {
         case 'text':
@@ -72,7 +72,7 @@ export default function Field({ field }) {
                 />
             );
         case 'group':
-            return field.jsonpaths.map(input => <Field key={input.jsonpath} field={input} />);
+            return field.jsonpaths.map(input => <FieldValue key={input.jsonpath} field={input} />);
         case 'scope':
             return (
                 <FieldArray
@@ -90,7 +90,7 @@ export default function Field({ field }) {
     }
 }
 
-Field.propsTypes = {
+FieldValue.propsTypes = {
     field: PropTypes.shape({
         type: PropTypes.string.isRequired
     }).isRequired

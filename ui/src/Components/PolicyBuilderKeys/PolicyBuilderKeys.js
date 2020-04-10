@@ -10,13 +10,7 @@ function PolicyBuilderKeys({ keys, className }) {
                 Drag out a policy field
             </div>
             {keys.map(key => {
-                return (
-                    <PolicyBuilderKey
-                        key={key.jsonpath}
-                        label={key.label}
-                        jsonpath={key.jsonpath}
-                    />
-                );
+                return <PolicyBuilderKey key={key.name} fieldKey={key} />;
             })}
         </div>
     );
