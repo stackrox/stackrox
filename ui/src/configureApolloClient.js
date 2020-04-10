@@ -5,18 +5,27 @@ import {
     IntrospectionFragmentMatcher,
     defaultDataIdFromObject
 } from 'apollo-cache-inmemory';
-import { setContext } from 'apollo-link-context';
-import { getAccessToken } from 'services/AuthService';
+import { buildAxiosFetch } from '@lifeomic/axios-fetch';
+
+import axios from 'services/instance';
 import introspectionQueryResultData from './fragmentTypes.json';
 
-// I was able to get the browser into a state where graphql usage would fail with the error
-// Network error: Failed to execute 'fetch' on 'Window': Request cannot be constructed from a URL that includes credentials: /api/graphql
-// It turns out that axios always canonicalizes relative URLs but apollo doesn't.
-// We never noticed this before because graphql was silently eating errors.
-const uri = `${window.location.protocol}//${window.location.host}/api/graphql`;
-
 const httpLink = createHttpLink({
-    uri
+    uri: '/api/graphql',
+    // redirect requests through already configured Axios instance for:
+    //  - consistency: auth logic (token header, redirects, retries with token refresh) works for GraphQL requests
+    //  - testability: Cypress only supports XHR (not fetch), UI is more testable if we do everything with XHR
+    fetch: buildAxiosFetch(axios, config => {
+        // There is no requirement to pass operation name as a query from the API side.
+        // The primary reasons for doing so:
+        //   - dev-friendliness: easier to distinguish requests in browser dev tools
+        //   - testability: easier to mock and wait for the request in e2e tests
+        const { operationName } = JSON.parse(config.data);
+        return {
+            ...config,
+            url: `${config.url}?opname=${operationName}`
+        };
+    })
 });
 
 const fragmentMatcher = new IntrospectionFragmentMatcher({
@@ -29,21 +38,9 @@ const defaultOptions = {
     }
 };
 
-const authLink = setContext((_, { headers }) => {
-    // get the authentication token from local storage if it exists
-    const token = getAccessToken();
-    // return the headers to the context so httpLink can read them
-    return {
-        headers: {
-            ...headers,
-            authorization: token ? `Bearer ${token}` : ''
-        }
-    };
-});
-
 export default function() {
     return new ApolloClient({
-        link: authLink.concat(httpLink),
+        link: httpLink,
         defaultOptions,
         cache: new InMemoryCache({
             fragmentMatcher,

@@ -1,8 +1,6 @@
 import { url, selectors } from '../../constants/ConfigManagementPage';
+import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
-import mockGraphQL from '../../helpers/mockGraphQL';
-
-import subjects from '../../fixtures/subjects/subjects.json';
 
 const policyViolationsBySeverityLinkShouldMatchList = linkSelector => {
     cy.visit(url.dashboard);
@@ -165,10 +163,15 @@ describe('Config Management Dashboard Page', () => {
         cy.url().should('contain', url.list.subjects);
     });
 
-    // @TODO: Fix this test
-    xit('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
-        mockGraphQL('usersWithClusterAdminRoles', subjects);
+    it('clicking a specific user in the "Users with most Cluster Admin Roles" widget should take you to a single subject page', () => {
+        cy.server();
+        cy.route(
+            'POST',
+            api.graphql('usersWithClusterAdminRoles'),
+            'fixture:subjects/subjects.json'
+        ).as('subjects');
         cy.visit(url.dashboard);
+        cy.wait('@subjects');
         cy.get(selectors.getWidget('Users with most Cluster Admin Roles'))
             .find(selectors.horizontalBars)
             .eq(0)
@@ -185,6 +188,7 @@ describe('Config Management Dashboard Page', () => {
     });
 
     // @TODO Fix the mockGraphQL command, and then mock this test out
+    // @TODO mockGraphQL command is retired, regular Cypress mocking needs to be done here
     xit('clicking the "Policy Violations By Severity" widget\'s "rated as high" link should take you to the policies list and filter by high severity', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.policyViolationsBySeverity.link.ratedAsHigh).click();
@@ -194,6 +198,7 @@ describe('Config Management Dashboard Page', () => {
     });
 
     // @TODO Fix the mockGraphQL command, and then mock this test out
+    // @TODO mockGraphQL command is retired, regular Cypress mocking needs to be done here
     xit('clicking the "Policy Violations By Severity" widget\'s "rated as low" link should take you to the policies list and filter by low severity', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.policyViolationsBySeverity.link.ratedAsLow).click();
@@ -210,6 +215,7 @@ describe('Config Management Dashboard Page', () => {
     });
 
     // @TODO Fix the mockGraphQL command, and then mock this test out
+    // @TODO mockGraphQL command is retired, regular Cypress mocking needs to be done here
     xit('should show the same number of high severity policies in the "Policy Violations By Severity" widget as it does in the Policies list', () => {
         policyViolationsBySeverityLinkShouldMatchList(
             selectors.policyViolationsBySeverity.link.ratedAsHigh

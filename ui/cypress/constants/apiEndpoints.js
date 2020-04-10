@@ -1,3 +1,5 @@
+export const graphql = operationName => `api/graphql?opname=${operationName}`;
+
 export const alerts = {
     countsByCluster: 'v1/alerts/summary/counts?*group_by=CLUSTER*',
     countsByCategory: '/v1/alerts/summary/counts?*group_by=CATEGORY*',
