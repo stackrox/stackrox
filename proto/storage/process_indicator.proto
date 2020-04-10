@@ -50,32 +50,43 @@ message ProcessSignal {
     // We have this here instead of at the top level
     // because we want to have each message to be
     // self contained.
-    string id                      = 1;
+    string id                         = 1;
 
     // ID of container associated with this process
-    string container_id            = 2 [(gogoproto.moretags) = "search:\"Container ID,hidden\""];
+    string container_id               = 2 [(gogoproto.moretags) = "search:\"Container ID,hidden\""];
 
     // Process creation time
-    google.protobuf.Timestamp time = 3;
+    google.protobuf.Timestamp time    = 3;
 
     // Process name
-    string name                    = 4 [(gogoproto.moretags) = "search:\"Process Name\""];
+    string name                       = 4 [(gogoproto.moretags) = "search:\"Process Name\""];
 
     // Process arguments
-    string args                    = 5 [(gogoproto.moretags) = "search:\"Process Arguments\""];
+    string args                       = 5 [(gogoproto.moretags) = "search:\"Process Arguments\""];
 
     // Process executable file path
-    string exec_file_path          = 6 [(gogoproto.moretags) = "search:\"Process Path\""];
+    string exec_file_path             = 6 [(gogoproto.moretags) = "search:\"Process Path\""];
 
     // Host process ID
-    uint32 pid                     = 7;
+    uint32 pid                        = 7;
 
     // Real user ID
-    uint32 uid                     = 8 [(gogoproto.moretags) = "search:\"Process UID\""];
+    uint32 uid                        = 8 [(gogoproto.moretags) = "search:\"Process UID\""];
 
     // Real group ID
-    uint32 gid                     = 9;
+    uint32 gid                        = 9;
 
     // Process Lineage
-    repeated string lineage        = 10 [(gogoproto.moretags) = "search:\"Process Ancestor\""];
+    repeated string lineage           = 10 [(gogoproto.moretags) = "search:\"Process Ancestor\""];
+
+    // Signal origin
+    bool scraped                      = 11;
+
+     // Process LineageInfo
+    repeated LineageInfo lineage_info = 12;
+
+    message LineageInfo {
+        uint32 parent_uid            = 1;
+        string parent_exec_file_path = 2;
+    }
 }

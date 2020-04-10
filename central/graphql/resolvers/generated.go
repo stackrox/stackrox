@@ -839,10 +839,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"gid: Int!",
 		"id: ID!",
 		"lineage: [String!]!",
+		"lineageInfo: [ProcessSignal_LineageInfo]!",
 		"name: String!",
 		"pid: Int!",
+		"scraped: Boolean!",
 		"time: Time",
 		"uid: Int!",
+	}))
+	utils.Must(builder.AddType("ProcessSignal_LineageInfo", []string{
+		"parentExecFilePath: String!",
+		"parentUid: Int!",
 	}))
 	utils.Must(builder.AddType("ProviderMetadata", []string{
 		"region: String!",
@@ -7300,6 +7306,11 @@ func (resolver *processSignalResolver) Lineage(ctx context.Context) []string {
 	return value
 }
 
+func (resolver *processSignalResolver) LineageInfo(ctx context.Context) ([]*processSignal_LineageInfoResolver, error) {
+	value := resolver.data.GetLineageInfo()
+	return resolver.root.wrapProcessSignal_LineageInfos(value, nil)
+}
+
 func (resolver *processSignalResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -7310,6 +7321,11 @@ func (resolver *processSignalResolver) Pid(ctx context.Context) int32 {
 	return int32(value)
 }
 
+func (resolver *processSignalResolver) Scraped(ctx context.Context) bool {
+	value := resolver.data.GetScraped()
+	return value
+}
+
 func (resolver *processSignalResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	return timestamp(value)
@@ -7317,6 +7333,40 @@ func (resolver *processSignalResolver) Time(ctx context.Context) (*graphql.Time,
 
 func (resolver *processSignalResolver) Uid(ctx context.Context) int32 {
 	value := resolver.data.GetUid()
+	return int32(value)
+}
+
+type processSignal_LineageInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ProcessSignal_LineageInfo
+}
+
+func (resolver *Resolver) wrapProcessSignal_LineageInfo(value *storage.ProcessSignal_LineageInfo, ok bool, err error) (*processSignal_LineageInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &processSignal_LineageInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapProcessSignal_LineageInfos(values []*storage.ProcessSignal_LineageInfo, err error) ([]*processSignal_LineageInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*processSignal_LineageInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &processSignal_LineageInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *processSignal_LineageInfoResolver) ParentExecFilePath(ctx context.Context) string {
+	value := resolver.data.GetParentExecFilePath()
+	return value
+}
+
+func (resolver *processSignal_LineageInfoResolver) ParentUid(ctx context.Context) int32 {
+	value := resolver.data.GetParentUid()
 	return int32(value)
 }
 
