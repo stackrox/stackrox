@@ -2,10 +2,8 @@ package framework
 
 import (
 	"fmt"
-	"runtime/debug"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -69,9 +67,6 @@ func finalize(ctx ComplianceContext, panicked *bool) {
 	var err error
 	if action := recover(); action != nil || *panicked {
 		log.Debugf("finalize: %+v", action)
-		if devbuild.IsEnabled() {
-			debug.PrintStack()
-		}
 
 		halted := false
 		switch a := action.(type) {

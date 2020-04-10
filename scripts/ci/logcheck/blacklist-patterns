@@ -1,0 +1,12 @@
+# This file contains patterns that must not be present in log files of any StackRox service, otherwise the
+# test will fail.
+# Patterns are in PCRE regex syntax, one per line.
+# Lines starting with a `#` as well as blank lines are ignored, but a `#` in the middle of a line is matched as-is.
+# If you want to match on a pattern starting with `#`, write `\#`.
+
+unexpected(?! EOF)
+panic
+fatal
+critical
+data race
+should (not|never) happen

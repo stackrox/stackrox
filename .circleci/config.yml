@@ -362,16 +362,6 @@ storeComplianceBenchImages: &storeComplianceBenchImages
     path: monitoring/grafana/captures
     destination: monitoring-images-compliance-bench
 
-verifyNoStackRoxRestarts: &verifyNoStackRoxRestarts
-  run:
-    name: Verify that StackRox services did not restart during the runs
-
-    command: |
-      if [[ $(ls /tmp/k8s-service-logs/stackrox/*-previous.log | wc -l) != 0 ]]; then
-        ls /tmp/k8s-service-logs/stackrox/*-previous.log
-        exit 1
-      fi
-    when: always
 
 storeK8sLogs: &storeK8sLogs
   store_artifacts:
@@ -553,6 +543,27 @@ commands:
       - store_artifacts:
           path: debug-dump
           destination: debug
+
+  check-stackrox-logs:
+    description: Checks StackRox logs to ensure all services operated normally
+    steps:
+      - run:
+          name: Verify that StackRox services did not restart during the runs
+          command: |
+            if [[ $(ls /tmp/k8s-service-logs/stackrox/*-previous.log | wc -l) != 0 ]]; then
+              ls /tmp/k8s-service-logs/stackrox/*-previous.log
+              exit 1
+            fi
+          when: always
+
+      - run:
+          name: Verify that StackRox service logs contain no suspicious entries
+          command: |
+            if ! scripts/ci/logcheck/check.sh /tmp/k8s-service-logs/stackrox/*.log; then
+              echo >&2 "Found at least one suspicious log file entry."
+              exit 1
+            fi
+          when: always
 
   setup-egress-proxies:
     steps:
@@ -991,7 +1002,7 @@ commands:
       - get-and-store-debug-dump
       - *backupDB
       - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
       - *connectToMonitoring
       - *collectMonitoringImages
@@ -1275,7 +1286,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
 
       - destroy-openshift-cluster:
@@ -2345,7 +2356,7 @@ jobs:
       - get-and-store-debug-dump
       - *backupDB
       - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
 
       - run:
           name: Destructive API tests
@@ -2415,7 +2426,7 @@ jobs:
       - get-and-store-debug-dump
       - *backupDB
       - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
 
       - teardown-gke
@@ -2839,7 +2850,7 @@ jobs:
             # 65 min run so that we are confident that the run has completely finished
             ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
       - *storeProfilingResults
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
@@ -2850,7 +2861,7 @@ jobs:
       - *storeComplianceBenchImages
       - *collectK8sLogs
       - get-and-store-debug-dump
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
 
       - teardown-gke
@@ -2975,7 +2986,7 @@ jobs:
       - *collectK8sLogs
       - *backupDB
       - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
 
       - *storeCypressResults
@@ -3083,7 +3094,7 @@ jobs:
       - *collectK8sLogs
       - *backupDB
       - *storeDBBackupArtifact
-      - *verifyNoStackRoxRestarts
+      - check-stackrox-logs
       - *storeK8sLogs
 
       - *storeCypressResults
