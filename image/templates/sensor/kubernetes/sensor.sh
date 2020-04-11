@@ -96,23 +96,18 @@ ${KUBE_COMMAND} delete validatingwebhookconfiguration stackrox --ignore-not-foun
 {{- end}}
 
 echo "Creating secrets for sensor..."
-${KUBE_COMMAND} create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/sensor-tls 'auto-upgrade.stackrox.io/component=sensor'
+${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
 
 echo "Creating secrets for collector..."
-${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
+${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
 
 {{ if .AdmissionControlService }}
-${KUBE_COMMAND} create secret -n "stackrox" generic admission-control-tls --from-file="$DIR/admission-control-cert.pem" --from-file="$DIR/admission-control-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/admission-control-tls 'auto-upgrade.stackrox.io/component=sensor'
+echo "Creating secrets for admission controller..."
+${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
 {{- end }}
 
-if [[ -d "$DIR/additional-cas" ]]; then
-	echo "Creating secret for additional CAs for sensor..."
-	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"
-	${KUBE_COMMAND} -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox  # no auto upgrade
-fi
+echo "Creating secret for additional CAs for sensor..."
+${KUBE_COMMAND} apply -f "$DIR/additional-ca.yaml"
 
 echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"

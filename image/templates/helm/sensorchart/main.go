@@ -47,7 +47,7 @@ func mainCmd(args []string) error {
 
 	version := VersionInfo{
 		MainVersion:      args[0],
-		CollectorVersion: args[1],
+		CollectorVersion: fmt.Sprintf("%s-latest", args[1]),
 	}
 
 	tmpDir := fmt.Sprintf("/tmp/%s", version.MainVersion)

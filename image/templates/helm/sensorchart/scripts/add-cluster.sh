@@ -38,10 +38,21 @@ EOF
 fi
 
 runtimeSupport=false
-if [ "${config_collectionMethod}" != "" ]; then
-  registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
-  [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  echo "${registry_auth}" > "${SECRETS_DIR}/collector-imagepull-secret"
+if [ "${config_collectionMethod}" != "NO_COLLECTION" ]; then
+  if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
+    registry_auth="$("${DIR}/docker-auth.sh" -m k8s "${image_registry_collector}")"
+    [[ -n "${registry_auth}" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
+    ${KUBE_COMMAND} create --namespace "stackrox" -f - <<EOF
+apiVersion: v1
+data:
+  .dockerconfigjson: ${registry_auth}
+kind: Secret
+metadata:
+  name: collector-stackrox
+  namespace: stackrox
+type: kubernetes.io/dockerconfigjson
+EOF
+  fi
   runtimeSupport=true
 fi
 

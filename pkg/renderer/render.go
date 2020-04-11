@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/renderer/utils"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -14,7 +15,7 @@ import (
 func RenderFiles(filenames map[string]string, values interface{}) ([]*zip.File, error) {
 	var files []*zip.File
 	for f, tgtName := range filenames {
-		t, err := image.ReadFileAndTemplate(f, builtinFuncs)
+		t, err := image.ReadFileAndTemplate(f, utils.BuiltinFuncs)
 		if err != nil {
 			return nil, errors.Wrapf(err, "reading template file %s", f)
 		}

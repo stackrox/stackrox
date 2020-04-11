@@ -10,7 +10,10 @@ import (
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/features"
+	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -18,18 +21,35 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
-const templatePath = "templates"
+const (
+	templatePath                      = "templates"
+	sensorChartPrefix                 = "helm/sensorchart/"
+	centralChartPrefix                = "helm/centralchart/"
+	scannerChartPrefix                = "helm/scannerchart/"
+	monitoringChartPrefix             = "helm/monitoringchart/"
+	centralChartWithDiagnosticsPrefix = "helm/centralchart-diagnostics/"
+	chartYamlFile                     = "Chart.yaml"
+	valuesYamlFile                    = "values.yaml"
+)
 
 // These are the go based files from packr
 var (
-	K8sBox       = packr.NewBox("./templates/kubernetes")
-	OpenshiftBox = packr.NewBox("./templates/openshift")
-	AssetBox     = packr.NewBox("./assets")
+	K8sBox   = packr.NewBox("./templates")
+	AssetBox = packr.NewBox("./assets")
 
 	allBoxes = []*packr.Box{
 		&K8sBox,
-		&OpenshiftBox,
 		&AssetBox,
+	}
+
+	k8sScriptsFileMap = map[string]string{
+		"sensor/kubernetes/sensor.sh":        "templates/sensor.sh",
+		"sensor/kubernetes/delete-sensor.sh": "templates/delete-sensor.sh",
+	}
+
+	osScriptsFileMap = map[string]string{
+		"sensor/openshift/sensor.sh":        "templates/sensor.sh",
+		"sensor/openshift/delete-sensor.sh": "templates/delete-sensor.sh",
 	}
 )
 
@@ -65,24 +85,34 @@ func mustGetChart(box packr.Box, overrides map[string]func() io.ReadCloser, pref
 	utils.Must(err)
 	return ch
 }
+func mustGetSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
+	ch, err := getSensorChart(box, values, certs)
+	utils.Must(err)
+	return ch
+}
 
 // GetCentralChart returns the Helm chart for Central
 func GetCentralChart(overrides map[string]func() io.ReadCloser) *chart.Chart {
-	prefixes := []string{"helm/centralchart/"}
+	prefixes := []string{centralChartPrefix}
 	if features.DiagnosticBundle.Enabled() {
-		prefixes = append(prefixes, "helm/centralchart-diagnostics/")
+		prefixes = append(prefixes, centralChartWithDiagnosticsPrefix)
 	}
 	return mustGetChart(K8sBox, overrides, prefixes...)
 }
 
 // GetScannerChart returns the Helm chart for the scanner
 func GetScannerChart() *chart.Chart {
-	return mustGetChart(K8sBox, nil, "helm/scannerchart/")
+	return mustGetChart(K8sBox, nil, scannerChartPrefix)
 }
 
 // GetMonitoringChart returns the Helm chart for Monitoring
 func GetMonitoringChart() *chart.Chart {
-	return mustGetChart(K8sBox, nil, "helm/monitoringchart/")
+	return mustGetChart(K8sBox, nil, monitoringChartPrefix)
+}
+
+// GetSensorChart returns the Helm chart for sensor
+func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.Chart {
+	return mustGetSensorChart(K8sBox, values, certs)
 }
 
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
@@ -105,7 +135,7 @@ func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.R
 			}
 
 			// if chart file, then render the version into it
-			if trimmedPath == "Chart.yaml" {
+			if trimmedPath == chartYamlFile {
 				t, err := template.New("chart").Parse(file.String())
 				if err != nil {
 					return err
@@ -127,5 +157,123 @@ func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.R
 			return nil, err
 		}
 	}
+
 	return chartutil.LoadFiles(chartFiles)
+}
+
+func processSensorChartFile(box packr.Box, path string, file packd.File, chartFiles *[]*chartutil.BufferedFile, values map[string]interface{}) error {
+	if path == "main.go" || path == ".helmignore" ||
+		path == "README.md" ||
+		strings.HasPrefix(path, "scripts") {
+		return nil
+	}
+
+	dataReader := ioutil.NopCloser(file)
+
+	data, err := ioutil.ReadAll(dataReader)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read file %s", path)
+	}
+	// Render the versions into the files that need it
+	if path == chartYamlFile || path == "templates/admission-controller.yaml" ||
+		path == "templates/sensor.yaml" {
+		t, err := template.New(strings.TrimSuffix(path, ".yaml")).
+			Delims("!!", "!!").Parse(file.String())
+		if err != nil {
+			return err
+		}
+
+		data, err = templates.ExecuteToBytes(t, map[string]interface{}{
+			"MainVersion":      values["ImageTag"],
+			"CollectorVersion": values["CollectorImageTag"],
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if path == valuesYamlFile {
+		fileData, err := box.Find("sensor/values.yaml")
+		if err != nil {
+			return err
+		}
+		t, err := template.New("values").Funcs(rendererUtils.BuiltinFuncs).Parse(string(fileData))
+		if err != nil {
+			return err
+		}
+		data, err = templates.ExecuteToBytes(t, values)
+		if err != nil {
+			return err
+		}
+	}
+
+	*chartFiles = append(*chartFiles, &chartutil.BufferedFile{
+		Name: path,
+		Data: data,
+	})
+	return nil
+}
+
+func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.Certs) (*chart.Chart, error) {
+	chartFiles := make([]*chartutil.BufferedFile, 0)
+
+	err := box.WalkPrefix(sensorChartPrefix, func(name string, file packd.File) error {
+		trimmedPath := strings.TrimPrefix(name, sensorChartPrefix)
+		return processSensorChartFile(box, trimmedPath, file, &chartFiles, values)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	for path, data := range certs.Files {
+		chartFiles = append(chartFiles, &chartutil.BufferedFile{
+			Name: path,
+			Data: data,
+		})
+	}
+
+	scriptFiles, err := addScripts(box, values)
+	if err != nil {
+		return nil, err
+	}
+
+	chartFiles = append(chartFiles, scriptFiles...)
+
+	return chartutil.LoadFiles(chartFiles)
+}
+
+func addScripts(box packr.Box, values map[string]interface{}) ([]*chartutil.BufferedFile, error) {
+	if values["ClusterType"] == storage.ClusterType_KUBERNETES_CLUSTER.String() {
+		return scripts(box, values, k8sScriptsFileMap)
+	} else if values["ClusterType"] == storage.ClusterType_OPENSHIFT_CLUSTER.String() {
+		return scripts(box, values, osScriptsFileMap)
+	} else {
+		return nil, errors.Errorf("unable to create sensor bundle, invalid cluster type for cluster %s",
+			values["ClusterName"])
+	}
+}
+
+func scripts(box packr.Box, values map[string]interface{}, filenameMap map[string]string) ([]*chartutil.BufferedFile, error) {
+	var chartFiles []*chartutil.BufferedFile
+	for srcFile, dstFile := range filenameMap {
+		fileData, err := box.Find(srcFile)
+		if err != nil {
+			return nil, err
+		}
+		t, err := template.New("temp").Funcs(rendererUtils.BuiltinFuncs).Parse(string(fileData))
+		if err != nil {
+			return nil, err
+		}
+		data, err := templates.ExecuteToBytes(t, values)
+		if err != nil {
+			return nil, err
+		}
+		chartFiles = append(chartFiles, &chartutil.BufferedFile{
+			Name: dstFile,
+			Data: data,
+		})
+	}
+
+	return chartFiles, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/ghodss/yaml"
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
@@ -50,6 +51,21 @@ func getChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
 		flags |= zip.Sensitive
 	}
 	return zip.NewFile(filepath.Join(prefix, filename), data, flags), true
+}
+
+func getSensorChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
+	dataStr := string(data)
+	if len(strings.TrimSpace(dataStr)) == 0 {
+		return nil, false
+	}
+	var flags zip.FileFlags
+	if filepath.Ext(filename) == ".sh" {
+		flags |= zip.Executable
+	}
+	if strings.HasSuffix(filepath.Base(filename), "-secret.yaml") {
+		flags |= zip.Sensitive
+	}
+	return zip.NewFile(filename, data, flags), true
 }
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
@@ -104,6 +120,7 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 			renderedFiles = append(renderedFiles, file)
 		}
 	}
+
 	// Execute Values template
 	valueFile, ok, err := executeChartFile(prefix, "values.yaml", ch.Values.Raw, c)
 	if err != nil {
@@ -139,5 +156,32 @@ func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*
 		}
 		renderedFiles = append(renderedFiles, currentRenderedFiles...)
 	}
+	return renderedFiles, nil
+}
+
+// RenderSensorHelm renders the sensorchart and returns rendered files
+func RenderSensorHelm(values map[string]interface{}, certs *sensor.Certs) ([]*zip.File, error) {
+	chartPrefixPair := getSensorChart(values, certs)
+	ch := chartPrefixPair.chart
+
+	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	var renderedFiles []*zip.File
+	// For kubectl files, we don't want to have the templates path so we trim it out
+	for k, v := range m {
+		if file, ok := getSensorChartFile(chartPrefixPair.prefix, filepath.Base(k), []byte(v)); ok {
+			renderedFiles = append(renderedFiles, file)
+		}
+	}
+
+	assets, err := LoadAssets(assetFileNameMap)
+	if err != nil {
+		return nil, err
+	}
+	renderedFiles = append(renderedFiles, assets...)
+
 	return renderedFiles, nil
 }

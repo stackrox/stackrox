@@ -10,37 +10,16 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
-	"github.com/stackrox/rox/pkg/zip"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
 	log = logging.LoggerForModule()
-
-	deployers = make(map[storage.ClusterType]Deployer)
 )
-
-// NewDeployer takes in a cluster and returns the cluster implementation
-func NewDeployer(c *storage.Cluster) (Deployer, error) {
-	dep, ok := deployers[c.Type]
-	if !ok {
-		return nil, status.Errorf(codes.Unimplemented, "Cluster type %s is not currently implemented", c.Type.String())
-	}
-	return dep, nil
-}
 
 // RenderOptions are options that control the rendering.
 type RenderOptions struct {
 	CreateUpgraderSA bool
-}
-
-// Deployer is the interface that defines how to get the specific files per orchestrator
-// The first parameter is a wrap around the cluster and the second is the CA
-type Deployer interface {
-	Render(cluster *storage.Cluster, CA []byte, opts RenderOptions) ([]*zip.File, error)
 }
 
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
@@ -67,7 +46,8 @@ func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage
 	return collectorImageName, nil
 }
 
-func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map[string]interface{}, error) {
+// FieldsFromClusterAndRenderOpts gets the template values for values.yaml
+func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map[string]interface{}, error) {
 	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
 	if err != nil {
 		return nil, err
@@ -79,49 +59,43 @@ func fieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		return nil, err
 	}
 
-	mainRegistry, err := urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
-	collectorRegistry, err := urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
-
 	envVars := make(map[string]string)
 	for _, feature := range features.Flags {
 		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
 	}
 
 	fields := map[string]interface{}{
-		"Image":         mainImageName.GetFullName(),
-		"ImageRegistry": mainRegistry,
+		"ClusterName": c.Name,
+		"ClusterType": c.Type.String(),
+
+		"ImageRegistry": mainImageName.GetRegistry(),
 		"ImageRemote":   mainImageName.GetRemote(),
 		"ImageTag":      mainImageName.GetTag(),
 
-		"PublicEndpointEnv": env.CentralEndpoint.EnvVar(),
-		"PublicEndpoint":    c.CentralApiEndpoint,
+		"PublicEndpoint":     c.CentralApiEndpoint,
+		"AdvertisedEndpoint": env.AdvertisedEndpoint.Setting(),
 
-		"ClusterName": c.Name,
+		"CollectorRegistry":    collectorImageName.GetRegistry(),
+		"CollectorImageRemote": collectorImageName.GetRemote(),
+		"CollectorImageTag":    collectorImageName.GetTag(),
+		"CollectionMethod":     c.CollectionMethod.String(),
 
-		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
-		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
+		"TolerationsEnabled": !c.GetTolerationsConfig().GetDisabled(),
+		"CreateUpgraderSA":   opts.CreateUpgraderSA,
 
-		"CollectorRegistry":              collectorRegistry,
-		"CollectorImage":                 collectorImageName.GetFullName(),
-		"CollectorModuleDownloadBaseURL": CollectorModuleDownloadBaseURL.Setting(),
-		"CollectionMethod":               c.CollectionMethod.String(),
+		"EnvVars":             envVars,
+		"AdmissionController": false,
+	}
 
-		"ClusterType": c.Type.String(),
-
-		"TolerationsEnabled":  !c.GetTolerationsConfig().GetDisabled(),
-		"AdmissionController": c.AdmissionController,
-
-		"OfflineMode": env.OfflineModeEnv.Setting(),
-
-		"EnvVars": envVars,
-
-		"CreateUpgraderSA": opts.CreateUpgraderSA,
+	if features.AdmissionControlService.Enabled() && c.AdmissionController {
+		fields["AdmissionController"] = true
+		fields["AdmissionControlListenOnUpdates"] = features.AdmissionControlEnforceOnUpdate.Enabled() &&
+			c.GetAdmissionControllerUpdates()
+		fields["DisableBypass"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass()
+		fields["TimeoutSeconds"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
+		fields["ScanInline"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline()
+		fields["AdmissionControllerEnabled"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled()
+		fields["AdmissionControlEnforceOnUpdates"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 	}
 
 	return fields, nil

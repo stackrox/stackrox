@@ -24,7 +24,7 @@ spec:
       labels:
         app: sensor
     spec:
-      {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
+      {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -53,13 +53,13 @@ spec:
       securityContext:
         runAsUser: 4000
         fsGroup: 4000
-      {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
+      {{if eq .Values.cluster.type "KUBERNETES_CLUSTER" }}
       imagePullSecrets:
         - name: stackrox
       {{- end}}
       serviceAccount: sensor
       containers:
-      - image: {{.Image}}
+      - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
         name: sensor
         readinessProbe:
           httpGet:
@@ -84,18 +84,18 @@ spec:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
-        {{ range $var, $value := .EnvVars -}}
-        - name: {{ $var }}
-          value: {{ jsonquote $value }}
-        {{ end }}
-        - name: {{.PublicEndpointEnv}}
-          value: {{.PublicEndpoint}}
-        - name: {{.AdvertisedEndpointEnv}}
-          value: sensor.stackrox:443
-          {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
-        - name: {{.OpenshiftAPIEnv}}
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{.Values.endpoint.central}}
+        - name: ROX_ADVERTISED_ENDPOINT
+          value: {{.Values.endpoint.advertised}}
+          {{if eq ".Values.cluster.type" "OPENSHIFT_CLUSTER"}}
+        - name: ROX_OPENSHIFT_API
           value: "true"
           {{- end}}
+        {{ range .Values.envVars -}}
+        - name: {{ .name }}
+          value: {{ .value | quote}}
+        {{ end }}
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -190,27 +190,23 @@ spec:
         app: collector
       namespace: stackrox
     spec:
-      {{if .TolerationsEnabled}}
+      {{- if ne .Values.config.disableTaintTolerations true}}
       tolerations:
       - operator: "Exists"
       {{- end}}
       serviceAccount: collector
       containers:
-{{if ne .CollectionMethod "NO_COLLECTION"}}
+{{ if ne .Values.config.collectionMethod "NO_COLLECTION"}}
       - name: collector
-        image: {{.CollectorImage}}
+        image: {{ printf "%s/%s:!!.CollectorVersion!!" .Values.image.registry.collector .Values.image.repository.collector }}
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
         - name: COLLECTION_METHOD
-          value: {{ .CollectionMethod }}
+          value: {{ .Values.config.collectionMethod }}
         - name: GRPC_SERVER
-          value: "sensor.stackrox:443"
-        {{if ne .OfflineMode "true"}}
-        - name: MODULE_DOWNLOAD_BASE_URL
-          value: {{.CollectorModuleDownloadBaseURL}}
-        {{- end}}
+          value: {{ .Values.endpoint.advertised }}
         resources:
           limits:
             cpu: 750m
@@ -247,7 +243,7 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-{{- end}}
+{{ end }}
       - command:
         - stackrox/compliance
         env:
@@ -257,8 +253,8 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         - name: ROX_ADVERTISED_ENDPOINT
-          value: sensor.stackrox:443
-        image: {{.Image}}
+          value: {{ .Values.endpoint.advertised }}
+        image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
         imagePullPolicy: IfNotPresent
         name: compliance
         resources:

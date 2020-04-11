@@ -2,10 +2,6 @@ package clusters
 
 import "github.com/stackrox/rox/pkg/env"
 
-const (
-	dockerAuthAssetFile = "docker-auth.sh"
-)
-
 var (
 	// CollectorModuleDownloadBaseURL is the canonical upstream location for collector modules.
 	CollectorModuleDownloadBaseURL = env.RegisterSetting(

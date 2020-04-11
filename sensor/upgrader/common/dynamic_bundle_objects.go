@@ -38,22 +38,5 @@ var (
 			Optional: true,
 			Files:    []string{"telegraf.conf"},
 		},
-		{
-			Kind:  OpaqueSecret,
-			Name:  "sensor-tls",
-			Files: []string{"sensor-cert.pem", "sensor-key.pem", "ca.pem"},
-		},
-		{
-			Kind:     OpaqueSecret,
-			Name:     "collector-tls",
-			Optional: true,
-			Files:    []string{"collector-cert.pem", "collector-key.pem", "ca.pem"},
-		},
-		{
-			Kind:     OpaqueSecret,
-			Name:     "admission-control-tls",
-			Optional: true,
-			Files:    []string{"admission-control-cert.pem", "admission-control-key.pem", "ca.pem"},
-		},
 	}
 )

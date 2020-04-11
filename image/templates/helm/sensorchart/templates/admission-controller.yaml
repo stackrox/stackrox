@@ -1,4 +1,4 @@
-{{ if .AdmissionControlService }}
+{{ if .Values.config.admissionControl.createService }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -152,11 +152,11 @@ spec:
                   matchLabels:
                     app: admission-control
       securityContext:
-        runAsUser: 4000
-        fsGroup: 4000
+          runAsUser: 4000
+          fsGroup: 4000
       serviceAccount: admission-control
       containers:
-        - image: {{.Image}}
+        - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
           name: admission-control
           readinessProbe:
             httpGet:
@@ -179,12 +179,12 @@ spec:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
           env:
-          {{ range $var, $value := .EnvVars -}}
-          - name: {{ $var }}
-            value: {{ jsonquote $value }}
-          {{ end }}
           - name: ROX_SENSOR_ENDPOINT
-            value: sensor.stackrox:443
+            value: {{.Values.endpoint.advertised}}
+          {{ range .Values.envVars -}}
+          - name: {{ .name }}
+            value: {{ .value | quote }}
+          {{ end }}
           volumeMounts:
             - name: config
               mountPath: /run/config/stackrox.io/admission-control/config/
@@ -207,7 +207,7 @@ spec:
                 path: ca.pem
         - name: config
           configMap:
-            name: {{.AdmissionControlConfigMapName}}
+            name: admission-control
             optional: true
         - name: config-store
           emptyDir: {}
@@ -250,7 +250,6 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
-{{- end }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -259,41 +258,42 @@ metadata:
     app.kubernetes.io/name: stackrox
     auto-upgrade.stackrox.io/component: "sensor"
 webhooks:
-  - name: policyeval.stackrox.io
-    rules:
-      - apiGroups:
-          - '*'
-        apiVersions:
-          - '*'
-        operations:
-          - CREATE
-{{ if .AdmissionControlListenOnUpdates }}
-          - UPDATE
+- name: policyeval.stackrox.io
+  rules:
+    - apiGroups:
+        - '*'
+      apiVersions:
+        - '*'
+      operations:
+        - CREATE
+      {{ if .Values.config.admissionControl.listenOnUpdates }}
+        - UPDATE
+      {{ end }}
+      resources:
+        - pods
+        - deployments
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+        - daemonsets
+  namespaceSelector:
+    matchExpressions:
+      - key: namespace.metadata.stackrox.io/name
+        operator: NotIn
+        values:
+          - stackrox
+          - kube-system
+          - kube-public
+  failurePolicy: Ignore
+  clientConfig:
+    caBundle: {{ .Files.Get "secrets/ca.pem" | b64enc }}
+    service:
+      namespace: stackrox
+  {{ if .Values.config.admissionControl.createService }}
+      name: admission-control
+      path: /validate
+  {{ else }}
+      name: sensor-webhook
+      path: /admissioncontroller
+  {{ end }}
 {{ end }}
-        resources:
-          - pods
-          - deployments
-          - replicasets
-          - replicationcontrollers
-          - statefulsets
-          - daemonsets
-    namespaceSelector:
-      matchExpressions:
-        - key: namespace.metadata.stackrox.io/name
-          operator: NotIn
-          values:
-            - stackrox
-            - kube-system
-            - kube-public
-    failurePolicy: Ignore
-    clientConfig:
-      caBundle: {{.CABundle}}
-      service:
-        namespace: stackrox
-{{ if .AdmissionControlService }}
-        name: admission-control
-        path: /validate
-{{ else }}
-        name: sensor-webhook
-        path: /admissioncontroller
-{{- end }}

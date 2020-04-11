@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -24,8 +25,8 @@ var (
 	assetFileNameMap = NewFileNameMap("docker-auth.sh")
 
 	caSetupScriptsFileNameMap = FileNameMap{
-		"kubernetes/common/ca-setup.sh":  "central/scripts/ca-setup.sh",
-		"kubernetes/common/delete-ca.sh": "central/scripts/delete-ca.sh",
+		"common/ca-setup.sh":  "central/scripts/ca-setup.sh",
+		"common/delete-ca.sh": "central/scripts/delete-ca.sh",
 	}
 )
 
@@ -45,17 +46,21 @@ type chartPrefixPair struct {
 	prefix string
 }
 
-func getScannerChart(c *Config) chartPrefixPair {
+func getScannerChart() chartPrefixPair {
 	return chartPrefixPair{image.GetScannerChart(), "scanner"}
+}
+
+func getSensorChart(values map[string]interface{}, certs *sensor.Certs) chartPrefixPair {
+	return chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
 }
 
 func getChartsToProcess(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) (chartsToProcess []chartPrefixPair) {
 	if mode == scannerOnly {
-		chartsToProcess = []chartPrefixPair{getScannerChart(&c)}
+		chartsToProcess = []chartPrefixPair{getScannerChart()}
 		return
 	}
 
-	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(centralOverrides), "central"}, getScannerChart(&c)}
+	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(centralOverrides), "central"}, getScannerChart()}
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		chartsToProcess = append(chartsToProcess,
 			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},

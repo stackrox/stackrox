@@ -560,7 +560,7 @@ endif
 
 
 .PHONY: render-helm-yamls
-sensorChartDir="image/templates/kubernetes/helm/sensorchart"
+sensorChartDir="image/templates/helm/sensorchart"
 collectorVersion=$(shell cat COLLECTOR_VERSION)
 render-helm-yamls:
 	@rm -rf /tmp/$(TAG)

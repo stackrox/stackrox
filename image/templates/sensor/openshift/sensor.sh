@@ -36,8 +36,7 @@ fi
 ${KUBE_COMMAND} secrets add serviceaccount/sensor secrets/stackrox --for=pull
 
 # Create secrets for sensor
-${KUBE_COMMAND} create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/sensor-tls app.kubernetes.io/name=stackrox 'auto-upgrade.stackrox.io/component=sensor'
+${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
 
 {{if ne .CollectionMethod "NO_COLLECTION"}}
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
@@ -57,18 +56,15 @@ fi
 {{- end}}
 
 echo "Creating secrets for collector..."
-${KUBE_COMMAND} create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
-${KUBE_COMMAND} -n "stackrox" label secret/collector-tls 'auto-upgrade.stackrox.io/component=sensor'
+${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
 
-if [[ -d "$DIR/additional-cas" ]]; then
-	echo "Creating secret for additional CAs for sensor..."
-	${KUBE_COMMAND} -n stackrox create secret generic additional-ca-sensor --from-file="$DIR/additional-cas/"
-	${KUBE_COMMAND} -n stackrox label secret/additional-ca-sensor app.kubernetes.io/name=stackrox  # no auto upgrade
-fi
+echo "Creating secret for additional CAs for sensor..."
+${KUBE_COMMAND} apply -f "$DIR/additional-ca.yaml"
 
+echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 
-{{ if .CreateUpgraderSA}}
+{{  if .CreateUpgraderSA }}
 echo "Creating upgrader service account"
 ${KUBE_COMMAND} apply -f "${DIR}/upgrader-serviceaccount.yaml"
 {{ else }}

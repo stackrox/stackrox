@@ -101,9 +101,7 @@ func getBaseConfig() *storage.Cluster {
 }
 
 func TestImagePaths(t *testing.T) {
-	image := "Image"
 	imageRegistry := "ImageRegistry"
-	collectorImage := "CollectorImage"
 	collectorRegistry := "CollectorRegistry"
 	collectorVersion := version.GetCollectorVersion()
 	if collectorVersion != "" {
@@ -120,32 +118,32 @@ func TestImagePaths(t *testing.T) {
 		{
 			name:                      "defaults",
 			mainImage:                 "stackrox.io/main",
-			expectedMainRegistry:      "https://stackrox.io",
+			expectedMainRegistry:      "stackrox.io",
 			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
-			expectedCollectorRegistry: "https://collector.stackrox.io",
+			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 		{
 			name:                      "airgap with generated collector image",
 			mainImage:                 "some.other.registry/main",
-			expectedMainRegistry:      "https://some.other.registry",
+			expectedMainRegistry:      "some.other.registry",
 			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
-			expectedCollectorRegistry: "https://some.other.registry",
+			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
 			name:                      "airgap with specified collector image",
 			mainImage:                 "some.other.registry/main",
-			expectedMainRegistry:      "https://some.other.registry",
+			expectedMainRegistry:      "some.other.registry",
 			collectorImage:            "some.other.registry/collector",
 			expectedCollectorImage:    fmt.Sprintf("some.other.registry/collector:%s-latest", collectorVersion),
-			expectedCollectorRegistry: "https://some.other.registry",
+			expectedCollectorRegistry: "some.other.registry",
 		},
 		{
 			name:                      "main and collector in different registries (rhel)",
 			mainImage:                 "some.rhel.registry.stackrox/main",
-			expectedMainRegistry:      "https://some.rhel.registry.stackrox",
+			expectedMainRegistry:      "some.rhel.registry.stackrox",
 			collectorImage:            "collector.stackrox.io/collector",
 			expectedCollectorImage:    fmt.Sprintf("collector.stackrox.io/collector:%s-latest", collectorVersion),
-			expectedCollectorRegistry: "https://collector.stackrox.io",
+			expectedCollectorRegistry: "collector.stackrox.io",
 		},
 	}
 
@@ -159,19 +157,10 @@ func TestImagePaths(t *testing.T) {
 				config.CollectorImage = c.collectorImage
 			}
 
-			// Local tests have no tag, tests run by CircleCI have a tag
-			expectedMainImage := c.mainImage
-			if version.GetMainVersion() != "" {
-				expectedMainImage = fmt.Sprintf("%s:%s", expectedMainImage, version.GetMainVersion())
-			}
-			fields, err := fieldsFromClusterAndRenderOpts(config, RenderOptions{})
+			fields, err := FieldsFromClusterAndRenderOpts(config, RenderOptions{})
 			assert.NoError(t, err)
-			assert.Contains(t, fields, image)
-			assert.Equal(t, expectedMainImage, fields[image])
 			assert.Contains(t, fields, imageRegistry)
 			assert.Equal(t, c.expectedMainRegistry, fields[imageRegistry])
-			assert.Contains(t, fields, collectorImage)
-			assert.Equal(t, c.expectedCollectorImage, fields[collectorImage])
 			assert.Contains(t, fields, collectorRegistry)
 			assert.Equal(t, c.expectedCollectorRegistry, fields[collectorRegistry])
 		})

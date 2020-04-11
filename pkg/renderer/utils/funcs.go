@@ -1,4 +1,4 @@
-package renderer
+package utils
 
 import (
 	"encoding/json"
@@ -6,7 +6,8 @@ import (
 )
 
 var (
-	builtinFuncs = template.FuncMap{
+	// BuiltinFuncs are helper functions for templates
+	BuiltinFuncs = template.FuncMap{
 		"jsonquote": jsonQuote,
 	}
 )

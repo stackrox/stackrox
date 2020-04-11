@@ -10,13 +10,17 @@ var (
 	// bundleFileWhitelist is a list of files and directories that are part of the sensor bundle but do not need to be
 	// considered by the upgrader.
 	bundleFileWhitelist = set.NewFrozenStringSet(
-		"ca-setup-sensor.sh",
-		"delete-ca-sensor.sh",
 		"delete-sensor.sh",
 		"docker-auth.sh",
 		"sensor.sh",
-		"sensor-image-setup.sh",
 		"additional-cas/",
+		"ca.pem",
+		"sensor-key.pem",
+		"sensor-cert.pem",
+		"collector-key.pem",
+		"collector-cert.pem",
+		"admission-control-cert.pem",
+		"admission-control-key.pem",
 	)
 )
 

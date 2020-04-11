@@ -15,6 +15,7 @@ import (
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -28,7 +29,7 @@ const (
 	centralCA              = "default-central-ca.crt"
 )
 
-func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, serviceType storage.ServiceType, identityStore siDataStore.DataStore) error {
+func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, serviceType storage.ServiceType, identityStore siDataStore.DataStore, certs *sensor.Certs) error {
 	srvIDAllAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -45,6 +46,8 @@ func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, servi
 		zip.NewFile(fmt.Sprintf("%s-cert.pem", servicePrefix), issuedCert.CertPEM, 0),
 		zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
 	)
+	certs.Files[fmt.Sprintf("secrets/%s-cert.pem", servicePrefix)] = issuedCert.CertPEM
+	certs.Files[fmt.Sprintf("secrets/%s-key.pem", servicePrefix)] = issuedCert.KeyPEM
 	return nil
 }
 
@@ -106,36 +109,38 @@ func getDefaultCertCA() (*zip.File, error) {
 	return nil, nil
 }
 
-// AddCertificatesToZip adds required service certificate and key files to the zip, and returns the CA cert
-func AddCertificatesToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identityStore siDataStore.DataStore) ([]byte, error) {
+// AddCertificatesToZip adds required service certificate and key files to the zip, and returns the cert and key files
+func AddCertificatesToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identityStore siDataStore.DataStore) (sensor.Certs, error) {
+	certs := sensor.Certs{Files: make(map[string][]byte)}
 	ca, err := mtls.CACertPEM()
 	if err != nil {
-		return nil, err
+		return certs, err
 	}
 	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
+	certs.Files["secrets/ca.pem"] = ca
 
 	// Add MTLS files for sensor
-	if err := createIdentity(wrapper, cluster.GetId(), "sensor", storage.ServiceType_SENSOR_SERVICE, identityStore); err != nil {
-		return nil, err
+	if err := createIdentity(wrapper, cluster.GetId(), "sensor", storage.ServiceType_SENSOR_SERVICE, identityStore, &certs); err != nil {
+		return certs, err
 	}
 
 	// Add MTLS files for collector
-	if err := createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE, identityStore); err != nil {
-		return nil, err
+	if err := createIdentity(wrapper, cluster.GetId(), "collector", storage.ServiceType_COLLECTOR_SERVICE, identityStore, &certs); err != nil {
+		return certs, err
 	}
 
 	if features.AdmissionControlService.Enabled() && cluster.GetAdmissionController() {
 		if err := createIdentity(wrapper, cluster.GetId(), "admission-control",
-			storage.ServiceType_ADMISSION_CONTROL_SERVICE, identityStore); err != nil {
-			return nil, err
+			storage.ServiceType_ADMISSION_CONTROL_SERVICE, identityStore, &certs); err != nil {
+			return certs, err
 		}
 	}
 
 	additionalCAFiles, err := getAdditionalCAs()
 	if err != nil {
-		return nil, err
+		return certs, err
 	}
 	wrapper.AddFiles(additionalCAFiles...)
 
-	return ca, nil
+	return certs, nil
 }

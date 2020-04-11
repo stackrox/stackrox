@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 )
@@ -79,13 +80,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deployer, err := clusters.NewDeployer(cluster)
-	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-
-	ca, err := AddCertificatesToZip(wrapper, cluster, z.identityStore)
+	certs, err := AddCertificatesToZip(wrapper, cluster, z.identityStore)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not add all required certificates"))
 	}
@@ -98,7 +93,13 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		createUpgraderSA = *params.CreateUpgraderSA
 	}
 
-	baseFiles, err := deployer.Render(cluster, ca, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
+	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "unable to get required cluster information"))
+		return
+	}
+
+	baseFiles, err := renderer.RenderSensorHelm(fields, &certs)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not render all files"))
 		return
