@@ -11,6 +11,11 @@ import util.SplunkUtil
 import util.Timer
 
 import javax.mail.Message
+import javax.mail.internet.InternetAddress
+import javax.mail.search.AndTerm
+import javax.mail.search.FromTerm
+import javax.mail.search.SearchTerm
+import javax.mail.search.SubjectTerm
 
 class Notifier {
     NotifierOuterClass.Notifier notifier
@@ -70,9 +75,13 @@ class EmailNotifier extends Notifier {
         Timer t = new Timer(30, 3)
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_SENDER).findAll {
-                it.subject.contains(policy.name) &&
-                        it.subject.contains(deployment.name) }
+            println "checking for messages..."
+            SearchTerm term = new AndTerm(
+                    new FromTerm(new InternetAddress(Constants.EMAIL_NOTIFER_SENDER)),
+                    new SubjectTerm(deployment.deploymentUid))
+            notifications = mail.searchMessages(term)
+            println notifications*.subject.toString()
+            println "matching messages: ${notifications.size()}"
         }
         assert notifications.length > 0 // Should be "== 1" - ROX-4542
         assert notifications.find {
@@ -83,7 +92,7 @@ class EmailNotifier extends Notifier {
             containsNoWhitespace(it.content.toString(), "Rationale:-${policy.rationale}") }
         assert notifications.find {
             containsNoWhitespace(it.content.toString(), "Remediation:-${policy.remediation}") }
-        // assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
+        assert notifications.find { it.content.toString().contains("ID: ${deployment.deploymentUid}") }
         assert notifications.find { it.content.toString().contains("Name: ${deployment.name}") }
         assert notifications.find { it.content.toString().contains("Namespace: ${deployment.namespace}") }
         mail.logout()
@@ -94,8 +103,13 @@ class EmailNotifier extends Notifier {
         mail.login()
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
-            notifications = mail.getMessagesFromSender(Constants.EMAIL_NOTIFER_SENDER).findAll {
-                it.subject.contains("New network policy YAML for cluster") }
+            println "checking for messages..."
+            SearchTerm term = new AndTerm(
+                    new FromTerm(new InternetAddress(Constants.EMAIL_NOTIFER_SENDER)),
+                    new SubjectTerm("New network policy YAML for cluster"))
+            notifications = mail.searchMessages(term)
+            println notifications*.subject.toString()
+            println "matching messages: ${notifications.size()}"
         }
         assert notifications.length > 0 // Should be "== 1" - ROX-4542
         assert notifications.find { containsNoWhitespace(it.content.toString(), yaml) }

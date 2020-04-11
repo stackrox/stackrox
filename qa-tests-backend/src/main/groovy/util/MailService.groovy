@@ -8,6 +8,7 @@ import javax.mail.Store
 import javax.mail.URLName
 import javax.mail.internet.InternetAddress
 import javax.mail.search.FromTerm
+import javax.mail.search.SearchTerm
 
 class MailService {
     private Session session
@@ -16,6 +17,7 @@ class MailService {
     private final String host
     private final String username
     private final String password
+    private final URLName url
     private final String protocol = "imaps"
     private final String file = "INBOX"
 
@@ -23,11 +25,10 @@ class MailService {
         this.host = host
         this.username = username
         this.password = password
+        url = new URLName(protocol, host, 993, file, username, password)
     }
 
     void login() throws Exception {
-        URLName url = new URLName(protocol, host, 993, file, username, password)
-
         if (session == null) {
             session = Session.getInstance(new Properties(), null)
         }
@@ -52,20 +53,23 @@ class MailService {
     }
 
     void logout() throws MessagingException {
-        try {
-            folder.close(false)
-            store.close()
-            store = null
-            session = null
-        } catch (IllegalStateException ise) {
-            println "Error on logout - already logged out: ${ise.toString()}"
-        } catch (Exception e) {
-            throw e
+        if (session) {
+            try {
+                folder.close(false)
+                store.close()
+                store = null
+                session = null
+            } catch (IllegalStateException ise) {
+                println "Error on logout - already logged out: ${ise.toString()}"
+            } catch (Exception e) {
+                throw e
+            }
         }
     }
 
     Message[] getMessages() throws Exception {
         try {
+            login() //call login() to refresh inbox contents
             return folder.getMessages()
         } catch (Exception e) {
             println e.toString()
@@ -75,7 +79,18 @@ class MailService {
 
     Message[] getMessagesFromSender(String from) throws Exception {
         try {
+            login() //call login() to refresh inbox contents
             return folder.search(new FromTerm(new InternetAddress(from)))
+        } catch (Exception e) {
+            println e.toString()
+            throw e
+        }
+    }
+
+    Message[] searchMessages(SearchTerm term) throws Exception {
+        try {
+            login() //call login() to refresh inbox contents
+            return folder.search(term)
         } catch (Exception e) {
             println e.toString()
             throw e
