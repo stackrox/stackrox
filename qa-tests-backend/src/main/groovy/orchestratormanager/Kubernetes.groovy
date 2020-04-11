@@ -622,7 +622,7 @@ class Kubernetes implements OrchestratorMain {
             Secret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
             if (secret != null) {
                 println secretName + ": secret created."
-                return
+                return secret
             }
         }
         println "Timed out waiting for secret ${secretName} to be created"
@@ -641,13 +641,46 @@ class Kubernetes implements OrchestratorMain {
                 type: "kubernetes.io/dockerconfigjson",
                 data: data,
                 metadata: new ObjectMeta(
-                        name: name
+                        name: name,
+                        namespace: namespace
                 )
         )
 
         Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
         if (createdSecret != null) {
-            waitForSecretCreation(name, namespace)
+            createdSecret = waitForSecretCreation(name, namespace)
+            return createdSecret.metadata.uid
+        }
+        throw new RuntimeException("Couldn't create secret")
+    }
+
+    String createImagePullSecret(objects.Secret secret)  {
+        if (!secret.username || !secret.password) {
+            throw new RuntimeException("Secret requires a username and password: " +
+                    "username provided: ${secret.username}, " +
+                    "password provided: ${secret.password}")
+        }
+
+        Map<String, String> data = new HashMap<String, String>()
+        String userNameWithPassword = secret.username + ":" + secret.password
+        def b64Password = Base64.getEncoder().encodeToString(userNameWithPassword.getBytes())
+        def dockerConfigJSON =  "{\"auths\":{\"${secret.server}\": {\"auth\": \"" + b64Password + "\"}}}"
+        data.put(".dockerconfigjson", Base64.getEncoder().encodeToString(dockerConfigJSON.getBytes()))
+
+        Secret k8sSecret = new Secret(
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "kubernetes.io/dockerconfigjson",
+                data: data,
+                metadata: new ObjectMeta(
+                        name: secret.name,
+                        namespace: secret.namespace
+                )
+        )
+
+        Secret createdSecret = client.secrets().inNamespace(secret.namespace).createOrReplace(k8sSecret)
+        if (createdSecret != null) {
+            createdSecret = waitForSecretCreation(secret.name, secret.namespace)
             return createdSecret.metadata.uid
         }
         throw new RuntimeException("Couldn't create secret")
@@ -672,7 +705,7 @@ class Kubernetes implements OrchestratorMain {
             try {
                 Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
                 if (createdSecret != null) {
-                    waitForSecretCreation(name, namespace)
+                    createdSecret = waitForSecretCreation(name, namespace)
                     return createdSecret.metadata.uid
                 }
             } catch (Exception e) {

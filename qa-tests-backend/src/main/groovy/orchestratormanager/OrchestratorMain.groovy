@@ -9,6 +9,7 @@ import objects.K8sServiceAccount
 import objects.Namespace
 import objects.NetworkPolicy
 import objects.Node
+import objects.Secret
 import objects.Service
 
 interface OrchestratorMain {
@@ -64,6 +65,7 @@ interface OrchestratorMain {
     //Secrets
     def createSecret(String name, String namespace)
     def createImagePullSecret(String name, String username, String password, String namespace)
+    def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
     def getSecretCount(String ns)
 

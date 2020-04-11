@@ -13,3 +13,4 @@ qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy
 scale/image/fixtures/scrape.json
 scale/mocksensor/image_names.go
 pkg/sliceutils/gen-builtins-generic.go
+qa-tests-backend/test-images/registry-image/tomcat-files/web.xml

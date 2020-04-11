@@ -56,6 +56,20 @@ class ImageIntegrationService extends BaseService {
         }
     }
 
+    static getImageIntegrations() {
+        return getImageIntegrationClient().getImageIntegrations(
+                ImageIntegrationServiceOuterClass.GetImageIntegrationsRequest.newBuilder().build()
+        ).integrationsList
+    }
+
+    static getImageIntegrationByName(String name) {
+        List<ImageIntegrationOuterClass.ImageIntegration> integrations = getImageIntegrations()
+        def integrationId = integrations.find { it.name == name }?.id
+        return integrationId ?
+                getImageIntegrationClient().getImageIntegration(getResourceByID(integrationId)) :
+                null
+    }
+
     /*
         Helper functions to simplify creating known integrations
     */
@@ -94,83 +108,72 @@ class ImageIntegrationService extends BaseService {
     // Currently, we do this if it was deleted by the test on setup,
     // so that the test leaves things in the same state after cleanup.
     static String addStackroxScannerIntegration() {
-        List<ImageIntegrationCategory> categories = [ImageIntegrationCategory.SCANNER]
-        String endpoint = "https://scanner.stackrox:8080"
-        String type = "clairify"
-
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                         .setName(AUTO_REGISTERED_SCANNER_INTEGRATION)
-                        .setType(type)
-                        .addAllCategories(categories)
+                        .setType("clairify")
+                        .addAllCategories([ImageIntegrationCategory.SCANNER])
                         .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
-                                .setEndpoint(endpoint))
+                                .setEndpoint("https://scanner.stackrox:8080"))
                         .build()
 
         return createImageIntegration(integration)
     }
 
     static String addDockerTrustedRegistry(boolean includeScanner = true) {
-        String name = "dtr"
-        String type = "dtr"
-        List<ImageIntegrationCategory> categories = getIntegrationCategories(includeScanner)
-        String username = "qa"
-        String password = System.getenv("DTR_REGISTRY_PASSWORD")
-        String endpoint = "https://apollo-dtr.rox.systems/"
-
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType(type)
-                        .addAllCategories(categories)
+                        .setName("dtr")
+                        .setType("dtr")
+                        .addAllCategories(getIntegrationCategories(includeScanner))
                         .setDtr(ImageIntegrationOuterClass.DTRConfig.newBuilder()
-                                .setUsername(username)
-                                .setPassword(password)
-                                .setEndpoint(endpoint))
+                                .setUsername("qa")
+                                .setPassword(System.getenv("DTR_REGISTRY_PASSWORD"))
+                                .setEndpoint("https://apollo-dtr.rox.systems/"))
                         .build()
 
         return createImageIntegration(integration)
     }
 
     static addAzureRegistry() {
-        String name = "azure"
-        String type = "azure"
-        List<ImageIntegrationCategory> categories = [ImageIntegrationCategory.REGISTRY]
-        String azurePassword = System.getenv("AZURE_REGISTRY_PASSWORD")
-        String azureUsername = "3e30919c-a552-4b1f-a67a-c68f8b32dad8"
-        String azureEndpoint = "stackroxacr.azurecr.io"
-
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType(type)
-                        .addAllCategories(categories)
+                        .setName("azure")
+                        .setType("azure")
+                        .addAllCategories([ImageIntegrationCategory.REGISTRY])
                         .setDocker(ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                                .setUsername(azureUsername)
-                                .setPassword(azurePassword)
-                                .setEndpoint(azureEndpoint))
+                                .setUsername("3e30919c-a552-4b1f-a67a-c68f8b32dad8")
+                                .setPassword(System.getenv("AZURE_REGISTRY_PASSWORD"))
+                                .setEndpoint("stackroxacr.azurecr.io"))
                         .build()
 
         return createImageIntegration(integration)
     }
 
     static String addGcrRegistry(boolean includeScanner = true) {
-        String name = "gcr"
-        String type = "google"
-        List<ImageIntegrationCategory> categories = getIntegrationCategories(includeScanner)
-        String serviceAccount = System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
-        String endpoint = "us.gcr.io"
-        String project = "stackrox-ci"
-
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName(name)
-                        .setType(type)
-                        .addAllCategories(categories)
+                        .setName("gcr")
+                        .setType("google")
+                        .addAllCategories(getIntegrationCategories(includeScanner))
                         .setGoogle(ImageIntegrationOuterClass.GoogleConfig.newBuilder()
-                                .setServiceAccount(serviceAccount)
-                                .setEndpoint(endpoint)
-                                .setProject(project))
+                                .setServiceAccount(System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER"))
+                                .setEndpoint("us.gcr.io")
+                                .setProject("stackrox-ci"))
+                        .build()
+
+        return createImageIntegration(integration)
+    }
+
+    static String addQuayRegistry(boolean includeScanner = true) {
+        ImageIntegrationOuterClass.ImageIntegration integration =
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        .setName("quay")
+                        .setType("quay")
+                        .addAllCategories(getIntegrationCategories(includeScanner))
+                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
+                                .setEndpoint("quay.io")
+                                .setOauthToken(System.getenv("QUAY_BEARER_TOKEN")))
                         .build()
 
         return createImageIntegration(integration)

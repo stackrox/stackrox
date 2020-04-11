@@ -207,6 +207,24 @@ class Services extends BaseService {
         }
     }
 
+    static setPolicyDisabled(String policyName, boolean disabled) {
+        Policy policyMeta = getPolicyByName(policyName)
+
+        if (policyMeta.disabled == disabled) {
+            return false
+        }
+
+        def policyDef = Policy.newBuilder(policyMeta).setDisabled(disabled).build()
+
+        try {
+            getPolicyClient().putPolicy(policyDef)
+            return true
+        } catch (Exception e) {
+            println e.toString()
+            return false
+        }
+    }
+
     static updatePolicyToWhitelistDeployment(String policyName, objects.Deployment deployment) {
         Policy policyMeta = getPolicyByName(policyName)
 

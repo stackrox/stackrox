@@ -2,6 +2,7 @@ package services
 
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.ImageServiceGrpc
+import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 
 class ImageService extends BaseService {
@@ -19,5 +20,16 @@ class ImageService extends BaseService {
 
     static clearImageCaches() {
         getImageClient().invalidateScanAndRegistryCaches()
+    }
+
+    static scanImage(String image) {
+        try {
+            return getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder()
+                    .setImageName(image)
+                    .build())
+        } catch (Exception e) {
+            println "Image failed to scan: ${image} - ${e.toString()}"
+            return ""
+        }
     }
 }
