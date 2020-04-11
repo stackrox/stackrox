@@ -1700,7 +1700,12 @@ jobs:
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
-            - bin/linux
+            - bin/linux/central
+            - bin/linux/migrator
+            - bin/linux/kubernetes
+            - bin/linux/admission-control
+            - bin/linux/upgrader
+            - bin/linux/collection
             - image/docs # This will go into the image as generated docs.
             - image/keys
             - deps # Used to speed up k8s-tests
