@@ -33,23 +33,14 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); !ok || err != nil {
-		return nil, err
-	}
 	return ds.searcher.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); !ok || err != nil {
-		return nil, err
-	}
 	return ds.searcher.SearchImageComponents(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Query) ([]*storage.ImageComponent, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); !ok || err != nil {
-		return nil, err
-	}
 	components, err := ds.searcher.SearchRawImageComponents(ctx, q)
 	if err != nil {
 		return nil, err
@@ -59,10 +50,11 @@ func (ds *datastoreImpl) SearchRawImageComponents(ctx context.Context, q *v1.Que
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	results, err := ds.searcher.Search(ctx, pkgSearch.EmptyQuery())
+	if err != nil {
 		return 0, err
 	}
-	return ds.storage.Count()
+	return len(results), nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
