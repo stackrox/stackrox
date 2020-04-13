@@ -175,7 +175,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	}
 
 	// Allow central and roxctl to import "image" (for fixtures)
-	if validImportRoot == "central" || validImportRoot == "roxctl" || validImportRoot == "pkg" {
+	if validImportRoot == "central" || validImportRoot == "roxctl" || validImportRoot == "pkg" || validImportRoot == "scale" {
 		allowedPackages = append(allowedPackages, "image")
 	}
 

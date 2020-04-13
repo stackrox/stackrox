@@ -362,6 +362,17 @@ storeComplianceBenchImages: &storeComplianceBenchImages
     path: monitoring/grafana/captures
     destination: monitoring-images-compliance-bench
 
+benchmarkDryRunPolicies: &benchmarkDryRunPolicies
+  run:
+    name: Benchmark dry run policies
+
+    command: |
+      ./scripts/ci/bench-and-graph.sh .*DryRunPolicies ./scale/tests
+
+storeDryRunBenchImages: &storeDryRunBenchImages
+  store_artifacts:
+    path: monitoring/grafana/captures
+    destination: monitoring-images-dryrun-bench
 
 storeK8sLogs: &storeK8sLogs
   store_artifacts:
@@ -2864,6 +2875,8 @@ jobs:
       - *storeDashBenchImages
       - *benchmarkCompliance
       - *storeComplianceBenchImages
+      - *benchmarkDryRunPolicies
+      - *storeDryRunBenchImages
       - *collectK8sLogs
       - get-and-store-debug-dump
       - check-stackrox-logs
