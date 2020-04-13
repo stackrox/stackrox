@@ -17,8 +17,8 @@ image:
 config:
   collectionMethod: EBPF
   admissionControl:
-    createService: true
-    listenOnUpdates: true
+    createService: false
+    listenOnUpdates: false
     enableService: false
     enforceOnUpdates: false
     scanInline: false

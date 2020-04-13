@@ -89,8 +89,7 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {
 		fields["AdmissionController"] = true
-		fields["AdmissionControlListenOnUpdates"] = features.AdmissionControlEnforceOnUpdate.Enabled() &&
-			c.GetAdmissionControllerUpdates()
+		fields["AdmissionControlListenOnUpdates"] = features.AdmissionControlEnforceOnUpdate.Enabled() && c.GetAdmissionControllerUpdates()
 		fields["DisableBypass"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass()
 		fields["TimeoutSeconds"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
 		fields["ScanInline"] = c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline()

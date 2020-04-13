@@ -101,7 +101,7 @@ ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
 echo "Creating secrets for collector..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
 
-{{ if .AdmissionControlService }}
+{{ if .AdmissionController }}
 echo "Creating secrets for admission controller..."
 ${KUBE_COMMAND} apply -f "$DIR/admission-controller-secret.yaml"
 {{- end }}
