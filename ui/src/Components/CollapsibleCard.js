@@ -37,7 +37,7 @@ class CollapsibleCard extends Component {
         return (
             <div className={className}>
                 <h1 className="flex flex-1 p-3 pb-2 text-base-600 font-700 text-lg">{title}</h1>
-                {headerComponents && <div>{headerComponents}</div>}
+                {headerComponents && <div className="pointer-events-auto">{headerComponents}</div>}
                 {isCollapsible && <div className="flex px-3">{icons[cardState]}</div>}
             </div>
         );

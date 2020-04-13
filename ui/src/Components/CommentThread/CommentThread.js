@@ -11,7 +11,6 @@ import Loader from 'Components/Loader';
 import Comment from './Comment';
 
 const CommentThread = ({
-    className,
     label,
     comments,
     onCreate,
@@ -20,7 +19,8 @@ const CommentThread = ({
     defaultLimit,
     defaultOpen,
     isLoading,
-    isDisabled
+    isDisabled,
+    isCollapsible
 }) => {
     const [newComment, createComment] = useState(null);
     const [limit, setLimit] = useState(defaultLimit);
@@ -93,7 +93,7 @@ const CommentThread = ({
                     )}
                 </div>
             ) : (
-                <div className="p-4">
+                <div className="flex items-center justify-center p-5">
                     <NoResultsMessage message="No Comments" />
                 </div>
             );
@@ -101,11 +101,11 @@ const CommentThread = ({
 
     return (
         <CollapsibleCard
-            cardClassName={className}
+            cardClassName="border border-base-400 h-full"
             title={`${length} ${label} ${pluralize('Comment', length)}`}
             headerComponents={
                 <Button
-                    className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 rounded-sm text-sm text-success-900 uppercase"
+                    className="bg-primary-200 border border-primary-800 hover:bg-primary-300 p-1 mx-2 rounded-sm text-sm text-success-900 uppercase"
                     text="New"
                     icon={<PlusCircle className="text-primary-800 h-4 w-4 mr-1" />}
                     disabled={!!newComment || isDisabled}
@@ -113,6 +113,7 @@ const CommentThread = ({
                 />
             }
             open={defaultOpen}
+            isCollapsible={isCollapsible}
         >
             {content}
         </CollapsibleCard>
@@ -141,18 +142,18 @@ CommentThread.propTypes = {
     onRemove: PropTypes.func.isRequired,
     defaultLimit: PropTypes.number,
     defaultOpen: PropTypes.bool,
-    className: PropTypes.string,
     isLoading: PropTypes.bool,
-    isDisabled: PropTypes.bool
+    isDisabled: PropTypes.bool,
+    isCollapsible: PropTypes.bool
 };
 
 CommentThread.defaultProps = {
     comments: [],
     defaultLimit: 5,
     defaultOpen: false,
-    className: 'border border-base-400',
     isLoading: false,
-    isDisabled: false
+    isDisabled: false,
+    isCollapsible: true
 };
 
 export default CommentThread;

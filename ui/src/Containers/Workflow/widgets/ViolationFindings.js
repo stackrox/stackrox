@@ -61,11 +61,11 @@ const ViolationFindings = ({ data, message }) => {
                     </ul>
                 </Widget>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="sx-2 sy-1">
-                        <ViolationTags resourceId={policyViolation.id} className="h-full" />
+                    <div className="lg:sx-2 md:sx-1 sy-1">
+                        <ViolationTags resourceId={policyViolation.id} isCollapsible={false} />
                     </div>
-                    <div className="sx-1 sy-2">
-                        <ViolationComments resourceId={policyViolation.id} />
+                    <div className="sx-1 sy-1">
+                        <ViolationComments resourceId={policyViolation.id} isCollapsible={false} />
                     </div>
                 </FeatureEnabled>
             </div>

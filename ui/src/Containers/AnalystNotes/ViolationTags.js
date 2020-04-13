@@ -5,7 +5,7 @@ import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import SearchAutoComplete from 'Containers/Search/SearchAutoComplete';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 
-const ViolationTags = ({ resourceId }) => {
+const ViolationTags = ({ resourceId, isCollapsible }) => {
     const variables = { resourceId };
     const autoCompleteVariables = { categories: ['ALERTS'], query: 'Tag:' };
     return (
@@ -17,6 +17,7 @@ const ViolationTags = ({ resourceId }) => {
                 <AnalystTags
                     type={ANALYST_NOTES_TYPES.VIOLATION}
                     variables={variables}
+                    isCollapsible={isCollapsible}
                     autoComplete={options}
                     autoCompleteVariables={autoCompleteVariables}
                     isLoadingAutoComplete={isLoading}
@@ -27,7 +28,12 @@ const ViolationTags = ({ resourceId }) => {
 };
 
 ViolationTags.propTypes = {
-    resourceId: PropTypes.string.isRequired
+    resourceId: PropTypes.string.isRequired,
+    isCollapsible: PropTypes.string
+};
+
+ViolationTags.defaultProps = {
+    isCollapsible: true
 };
 
 export default ViolationTags;

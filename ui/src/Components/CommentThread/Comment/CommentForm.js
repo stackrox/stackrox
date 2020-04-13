@@ -18,7 +18,7 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
                 <form onSubmit={handleSubmit}>
                     <textarea
                         data-testid="comment-textarea"
-                        className="form-textarea text-base border border-base-400 leading-normal p-1 w-full"
+                        className="form-textarea bg-base-100 text-base border border-base-400 leading-normal p-1 w-full"
                         name="message"
                         rows="5"
                         cols="33"

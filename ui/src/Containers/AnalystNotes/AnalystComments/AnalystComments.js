@@ -12,7 +12,7 @@ import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
 // the prop "variables" is an object with the necessary variables for querying the comments APIs
-const AnalystComments = ({ className, type, variables }) => {
+const AnalystComments = ({ type, variables, isCollapsible }) => {
     const { GET_COMMENTS, ADD_COMMENT, UPDATE_COMMENT, REMOVE_COMMENT } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_COMMENTS, {
@@ -83,7 +83,6 @@ const AnalystComments = ({ className, type, variables }) => {
 
     return (
         <CommentThread
-            className={className}
             label={analystNotesLabels[type]}
             comments={comments}
             onCreate={onCreate}
@@ -91,6 +90,7 @@ const AnalystComments = ({ className, type, variables }) => {
             onRemove={onRemove}
             isLoading={isLoading}
             isDisabled={isDisabled}
+            isCollapsible={isCollapsible}
             defaultOpen
         />
     );
@@ -98,12 +98,12 @@ const AnalystComments = ({ className, type, variables }) => {
 
 AnalystComments.propTypes = {
     type: PropTypes.string.isRequired,
-    className: PropTypes.string,
-    variables: PropTypes.shape({}).isRequired
+    variables: PropTypes.shape({}).isRequired,
+    isCollapsible: PropTypes.bool
 };
 
 AnalystComments.defaultProps = {
-    className: 'border border-base-400'
+    isCollapsible: true
 };
 
 export default React.memo(AnalystComments);

@@ -14,7 +14,7 @@ import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
 import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
-const AnalystTags = ({ className, type, variables, autoComplete, autoCompleteVariables }) => {
+const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, isCollapsible }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_TAGS, {
@@ -76,12 +76,12 @@ const AnalystTags = ({ className, type, variables, autoComplete, autoCompleteVar
 
     return (
         <Tags
-            className={className}
             title={title}
             tags={tags}
             onChange={onChange}
             isLoading={isLoading}
             isDisabled={isDisabled}
+            isCollapsible={isCollapsible}
             defaultOpen
             autoComplete={autoComplete}
         />
@@ -90,15 +90,15 @@ const AnalystTags = ({ className, type, variables, autoComplete, autoCompleteVar
 
 AnalystTags.propTypes = {
     type: PropTypes.string.isRequired,
-    className: PropTypes.string,
     variables: PropTypes.shape({}).isRequired,
     autoComplete: PropTypes.arrayOf(PropTypes.string),
-    autoCompleteVariables: PropTypes.shape({}).isRequired
+    autoCompleteVariables: PropTypes.shape({}).isRequired,
+    isCollapsible: PropTypes.bool
 };
 
 AnalystTags.defaultProps = {
-    className: 'border border-base-400',
-    autoComplete: []
+    autoComplete: [],
+    isCollapsible: true
 };
 
 export default React.memo(AnalystTags);

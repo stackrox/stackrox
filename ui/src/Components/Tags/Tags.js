@@ -6,7 +6,6 @@ import { Creatable } from 'Components/ReactSelect';
 import Loader from 'Components/Loader';
 
 const Tags = ({
-    className,
     title,
     tags,
     onChange,
@@ -40,7 +39,7 @@ const Tags = ({
 
     return (
         <CollapsibleCard
-            cardClassName={className}
+            cardClassName="border border-base-400 h-full"
             title={title}
             open={defaultOpen}
             isCollapsible={isCollapsible}
@@ -56,7 +55,6 @@ Tags.propTypes = {
     onChange: PropTypes.func.isRequired,
     defaultOpen: PropTypes.bool,
     isCollapsible: PropTypes.bool,
-    className: PropTypes.string,
     isLoading: PropTypes.bool,
     isDisabled: PropTypes.bool,
     autoComplete: PropTypes.arrayOf(PropTypes.string)
@@ -67,7 +65,6 @@ Tags.defaultProps = {
     tags: [],
     defaultOpen: false,
     isCollapsible: true,
-    className: 'border border-base-400',
     isLoading: false,
     isDisabled: false,
     autoComplete: []
