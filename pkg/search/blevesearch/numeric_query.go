@@ -132,24 +132,36 @@ func createNumericQuery(field string, prefix string, value *float64) query.Query
 	var min, max *float64
 	var maxInclusive, minInclusive *bool
 
+	// We use delta because of precision difference between float32 and float64.
+	// For example, 4.6 -> 4.599999904632568, 9.8 -> 9.800000190734863
+	delta := float64(0.01)
+
 	switch prefix {
 	case "<=":
 		maxInclusive = boolPtr(true)
-		max = value
+		// adjust to include in cases such as 9.8 -> 9.800000190734863
+		max = adjustValue(value, delta)
 	case "<":
 		maxInclusive = boolPtr(false)
-		max = value
+		// adjust to exclude in cases such as 4.6 -> 4.599999904632568
+		max = adjustValue(value, -delta)
 	case ">=":
 		minInclusive = boolPtr(true)
-		min = value
+		// adjust to include in cases such as 4.6 -> 4.599999904632568
+		min = adjustValue(value, -delta)
 	case ">":
 		minInclusive = boolPtr(false)
-		min = value
+		// adjust to exclude in cases such as 9.8 -> 9.800000190734863
+		min = adjustValue(value, delta)
 	default:
 		minInclusive = boolPtr(true)
 		maxInclusive = boolPtr(true)
-		min = value
-		max = value
+		if value != nil {
+			minVal := float64(*value - delta)
+			maxVal := float64(*value + delta)
+			min = floatPtr(minVal)
+			max = floatPtr(maxVal)
+		}
 	}
 	q := bleve.NewNumericRangeInclusiveQuery(min, max, minInclusive, maxInclusive)
 	q.SetField(field)
@@ -166,4 +178,11 @@ func newNumericQuery(_ v1.SearchCategory, field string, value string, modifiers 
 		return nil, err
 	}
 	return createNumericQuery(field, prefix, valuePtr), nil
+}
+
+func adjustValue(val *float64, delta float64) *float64 {
+	if val == nil {
+		return nil
+	}
+	return floatPtr(*val + delta)
 }
