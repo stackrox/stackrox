@@ -291,3 +291,7 @@ func (c *sensorConnection) ClusterID() string {
 func (c *sensorConnection) HasCapability(capability centralsensor.SensorCapability) bool {
 	return c.capabilities.Contains(capability)
 }
+
+func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, bool) {
+	return c.sensorEventHandler.reconciliationMap.DeletedElementsByType()
+}

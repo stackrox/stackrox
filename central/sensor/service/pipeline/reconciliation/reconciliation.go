@@ -12,7 +12,8 @@ import (
 type Store interface {
 	Add(id string)
 	GetSet() set.StringSet
-	Close()
+	Close(numObjectsDeleted int)
+	GetNumObjectsDeleted() (int, bool)
 }
 
 // NewStore returns a new Store
@@ -24,8 +25,9 @@ func NewStore() Store {
 }
 
 type storeImpl struct {
-	idSet *set.StringSet
-	lock  sync.Mutex
+	numObjectsDeleted int
+	idSet             *set.StringSet
+	lock              sync.Mutex
 }
 
 // Add adds an id if the store has not already been closed
@@ -45,15 +47,30 @@ func (s *storeImpl) GetSet() set.StringSet {
 }
 
 // Close deallocates the internal set
-func (s *storeImpl) Close() {
+func (s *storeImpl) Close(numObjectsDeleted int) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	s.numObjectsDeleted = numObjectsDeleted
 	s.idSet = nil
+}
+
+// GetNumbObjectsDeleted returns the number of objects deleted by the store,
+// and a bool indicating whether the store is closed.
+func (s *storeImpl) GetNumObjectsDeleted() (int, bool) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.idSet != nil {
+		return 0, false
+	}
+	return s.numObjectsDeleted, true
 }
 
 // StoreMap is wrapper around a map of types -> reconciliation stores
 type StoreMap struct {
 	reconciliationMap map[string]Store
+
+	deletedElementsByTypeLock sync.RWMutex
+	deletedElementsByType     map[string]int
 }
 
 // NewStoreMap creates a store map
@@ -99,13 +116,35 @@ func (s *StoreMap) IsClosed() bool {
 	return s.reconciliationMap == nil
 }
 
+// DeletedElementsByType returns the number of elements deleted as part of reconciliation
+// by type. It has a second return param which indicates whether reconciliation has been
+// finished yet.
+func (s *StoreMap) DeletedElementsByType() (map[string]int, bool) {
+	s.deletedElementsByTypeLock.RLock()
+	defer s.deletedElementsByTypeLock.RUnlock()
+	if s.deletedElementsByType == nil {
+		return nil, false
+	}
+	return s.deletedElementsByType, true
+}
+
 // Close closes all of the references stores and the map itself.
 func (s *StoreMap) Close() {
 	if s.reconciliationMap == nil {
 		return
 	}
-	for _, store := range s.reconciliationMap {
-		store.Close()
+	s.deletedElementsByTypeLock.Lock()
+	defer s.deletedElementsByTypeLock.Unlock()
+	s.deletedElementsByType = make(map[string]int, len(s.reconciliationMap))
+	for typ, store := range s.reconciliationMap {
+		numDeleted, storeClosed := store.GetNumObjectsDeleted()
+		if storeClosed {
+			s.deletedElementsByType[typ] = numDeleted
+		} else {
+			// We don't currently close all stores in the pipeline, so do it here.
+			store.Close(0)
+		}
 	}
+	log.Infof("Reconciliation done. Number of objects deleted by type: %v", s.deletedElementsByType)
 	s.reconciliationMap = nil
 }

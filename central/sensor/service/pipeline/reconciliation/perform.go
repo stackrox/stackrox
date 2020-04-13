@@ -15,16 +15,16 @@ var (
 // Perform factors out some of the common reconciliation logic to avoid duplication.
 // It does the reconciliation logic, and closes the passed store at the end.
 func Perform(store Store, existingIDs set.StringSet, resourceType string, removeFunc func(id string) error) error {
-	defer store.Close()
-	idsToDelete := existingIDs.Difference(store.GetSet()).AsSlice()
+	idsToDelete := existingIDs.Difference(store.GetSet())
+	defer store.Close(idsToDelete.Cardinality())
 	if len(idsToDelete) == 0 {
 		return nil
 	}
 
-	log.Infof("Deleting %d %s as a part of reconciliation", len(idsToDelete), resourceType)
+	log.Infof("Deleting %d %s as a part of reconciliation", idsToDelete.Cardinality(), resourceType)
 
 	errList := errorhelpers.NewErrorList(fmt.Sprintf("%s reconciliation", resourceType))
-	for _, id := range idsToDelete {
+	for id := range idsToDelete {
 		errList.AddError(removeFunc(id))
 	}
 	return errList.ToError()

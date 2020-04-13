@@ -1,6 +1,8 @@
 syntax = "proto3";
 
 option go_package = "central";
+option java_package = "io.stackrox.proto.internalapi.central";
+
 
 import weak "google/api/annotations.proto";
 
@@ -36,6 +38,15 @@ message EnvVarsResponse {
     repeated string env_vars = 1;
 }
 
+message  ReconciliationStatsByClusterResponse {
+    message ReconciliationStatsForCluster {
+        string             cluster_id              = 1;
+        bool               reconciliation_done     = 2;
+        map<string, int32> deleted_objects_by_type = 3;
+    }
+    repeated ReconciliationStatsForCluster stats = 1;
+}
+
 message Empty {}
 
 service DevelopmentService {
@@ -55,5 +66,12 @@ service DevelopmentService {
         option (google.api.http) = {
             get: "/v1/internal/dev/envvars"
         };
+    }
+
+    rpc ReconciliationStatsByCluster(Empty) returns (ReconciliationStatsByClusterResponse) {
+        option (google.api.http) = {
+            get: "/v1/internal/dev/reconciliationstats"
+        };
+
     }
 }

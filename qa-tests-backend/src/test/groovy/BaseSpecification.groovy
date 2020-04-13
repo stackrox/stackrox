@@ -137,6 +137,7 @@ class BaseSpecification extends Specification {
                     ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
         } catch (Exception e) {
+            e.printStackTrace()
             println "Error setting up orchestrator: ${e.message}"
             throw e
         }

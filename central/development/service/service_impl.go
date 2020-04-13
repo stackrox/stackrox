@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -26,7 +27,29 @@ var (
 )
 
 type serviceImpl struct {
-	client http.Client
+	sensorConnectionManager connection.Manager
+	client                  http.Client
+}
+
+func (s *serviceImpl) ReconciliationStatsByCluster(context.Context, *central.Empty) (*central.ReconciliationStatsByClusterResponse, error) {
+	var resp central.ReconciliationStatsByClusterResponse
+	connections := s.sensorConnectionManager.GetActiveConnections()
+	for _, conn := range connections {
+		deletionsByTyp, reconciliationDone := conn.ObjectsDeletedByReconciliation()
+		var convertedDeletions map[string]int32
+		if reconciliationDone {
+			convertedDeletions = make(map[string]int32, len(deletionsByTyp))
+			for k, v := range deletionsByTyp {
+				convertedDeletions[k] = int32(v)
+			}
+		}
+		resp.Stats = append(resp.Stats, &central.ReconciliationStatsByClusterResponse_ReconciliationStatsForCluster{
+			ClusterId:            conn.ClusterID(),
+			ReconciliationDone:   reconciliationDone,
+			DeletedObjectsByType: convertedDeletions,
+		})
+	}
+	return &resp, nil
 }
 
 func (s *serviceImpl) URLHasValidCert(ctx context.Context, req *central.URLHasValidCertRequest) (*central.URLHasValidCertResponse, error) {
@@ -75,8 +98,9 @@ func (s *serviceImpl) RandomData(ctx context.Context, req *central.RandomDataReq
 }
 
 // New creates a new Service.
-func New() Service {
+func New(sensorConnectionManager connection.Manager) Service {
 	return &serviceImpl{
+		sensorConnectionManager: sensorConnectionManager,
 		client: http.Client{
 			Timeout:   20 * time.Second,
 			Transport: proxy.RoundTripper(),

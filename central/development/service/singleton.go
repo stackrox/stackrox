@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +13,7 @@ var (
 // Singleton returns the singleton.
 func Singleton() Service {
 	once.Do(func() {
-		singleton = New()
+		singleton = New(connection.ManagerSingleton())
 	})
 	return singleton
 }
