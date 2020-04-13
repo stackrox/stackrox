@@ -1,17 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { violationTagsAutoCompleteVariables } from 'Containers/AnalystNotes/analystNotesUtils/tagsAutoCompleteVariables';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import SearchAutoComplete from 'Containers/Search/SearchAutoComplete';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
 
 const ViolationTags = ({ resourceId, isCollapsible }) => {
     const variables = { resourceId };
-    const autoCompleteVariables = { categories: ['ALERTS'], query: 'Tag:' };
     return (
         <SearchAutoComplete
-            categories={autoCompleteVariables.categories}
-            query={autoCompleteVariables.query}
+            categories={violationTagsAutoCompleteVariables.categories}
+            query={violationTagsAutoCompleteVariables.query}
         >
             {({ isLoading, options }) => (
                 <AnalystTags
@@ -19,7 +19,7 @@ const ViolationTags = ({ resourceId, isCollapsible }) => {
                     variables={variables}
                     isCollapsible={isCollapsible}
                     autoComplete={options}
-                    autoCompleteVariables={autoCompleteVariables}
+                    autoCompleteVariables={violationTagsAutoCompleteVariables}
                     isLoadingAutoComplete={isLoading}
                 />
             )}

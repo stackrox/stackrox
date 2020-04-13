@@ -11,7 +11,7 @@ import Tags from 'Components/Tags';
 import Message from 'Components/Message';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
-import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
+import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
 const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, isCollapsible }) => {

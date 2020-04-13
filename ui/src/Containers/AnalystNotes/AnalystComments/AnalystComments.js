@@ -8,7 +8,7 @@ import analystNotesLabels from 'messages/analystnotes';
 import Message from 'Components/Message';
 import CommentThread from 'Components/CommentThread';
 import { getQueriesByType } from './analystCommentsQueries';
-import getRefetchQueriesByCondition from '../getRefetchQueriesByCondition';
+import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
 // the prop "variables" is an object with the necessary variables for querying the comments APIs
