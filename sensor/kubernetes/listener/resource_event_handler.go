@@ -59,13 +59,12 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 		return
 	}
 
-	// Run the pod informer second since other handlers rely on its output.
-	podWaitGroup := &concurrency.WaitGroup{}
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal, &eventLock)
-	sif.Start(stopSignal.Done())
-	cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced)
-
-	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
+	// Wait for the pod informer to sync before processing other types.
+	// This is required because the PodLister is used to populate the image ids of deployments.
+	// However, do not ACTUALLY handle pod events yet -- those need to wait for deployments to be
+	// synced, since we need to enrich pods with the deployment ids, and for that we need the entire
+	// hierarchy to be populated.
+	if !cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced) {
 		return
 	}
 
@@ -109,8 +108,16 @@ func handleAllEvents(sif, resyncingSif informers.SharedInformerFactory, osf exte
 
 	// WaitForCacheSync synchronization is broken for SharedIndexInformers due to internal addCh/pendingNotifications
 	// copy.  We have implemented our own sync in order to work around this.
-
 	if !concurrency.WaitInContext(wg, stopSignal) {
+		return
+	}
+
+	// Finally, run the pod informer, and process pod events.
+	podWaitGroup := &concurrency.WaitGroup{}
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, podWaitGroup, stopSignal, &eventLock)
+	sif.Start(stopSignal.Done())
+
+	if !concurrency.WaitInContext(podWaitGroup, stopSignal) {
 		return
 	}
 

@@ -36,11 +36,11 @@ func (ps *podStore) addOrUpdatePod(pod *storage.Pod) {
 	dMap[pod.GetId()] = pod
 }
 
-func (ps *podStore) removePod(pod *storage.Pod) {
+func (ps *podStore) removePod(namespace, deploymentID, podID string) {
 	ps.lock.Lock()
 	defer ps.lock.Unlock()
 
-	delete(ps.pods[pod.GetNamespace()][pod.GetDeploymentId()], pod.GetId())
+	delete(ps.pods[namespace][deploymentID], podID)
 }
 
 // forEach takes in a function that will perform some actions for each pod in the given deployment.

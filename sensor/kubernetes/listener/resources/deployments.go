@@ -3,11 +3,13 @@ package resources
 import (
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -96,95 +98,100 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *Deploymen
 }
 
 func (d *deploymentHandler) processWithType(obj, oldObj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	wrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
+	deploymentWrap := newDeploymentEventFromResource(obj, &action, deploymentType, d.podLister, d.namespaceStore, d.hierarchy, d.config.GetConfig().GetRegistryOverride())
+	// Note: deploymentWrap may be nil. Typically, this means that this is not a top-level object that we track --
+	// either it's an object we don't track, or we track its parent.
+	// (For example, we don't track replicasets if they are owned by a deployment.)
+	// We don't immediately return if deploymentWrap == nil though,
+	// because IF the object is a pod, we want to process the pod event.
+	objAsPod, _ := obj.(*v1.Pod)
+
 	var events []*central.SensorEvent
-	if pod, ok := obj.(*v1.Pod); !ok && wrap == nil {
-		// This is not a tracked resource nor a pod.
-		return nil
-	} else if ok {
-		// This is a pod. It may or may not be tracked.
-		if wrap == nil {
-			// This pod is not a top-level object that we track.
-			// Call maybeProcessPodEvent because we may need to update this pod's respective top-level resources.
-			return d.maybeProcessPodEvent(pod, oldObj, action)
+	// If the object is a pod, process the pod event.
+	if features.PodDeploymentSeparation.Enabled() && objAsPod != nil {
+		var owningDeploymentID string
+		uid := string(objAsPod.GetUID())
+		if deploymentWrap != nil {
+			// The pod is a top-level object, so it is its own owner.
+			owningDeploymentID = uid
+		} else {
+			// Fetch the owning deploymentIDs from the hierarchy.
+			owningDeploymentIDs := d.hierarchy.TopLevelParents(uid)
+			switch owningDeploymentIDs.Cardinality() {
+			case 0:
+				// See comment below the if-else about why we don't log on removes.
+				if action != central.ResourceAction_REMOVE_RESOURCE {
+					log.Warnf("Found no owners for pod %s (%s/%s)", uid, objAsPod.Namespace, objAsPod.Name)
+				}
+			case 1:
+				owningDeploymentID = owningDeploymentIDs.GetArbitraryElem()
+			default:
+				log.Warnf("Found multiple owners (%v) for pod %s (%s/%s). Dropping the pod update...",
+					owningDeploymentIDs.AsSlice(), uid, objAsPod.Namespace, objAsPod.Name)
+			}
 		}
-		if features.PodDeploymentSeparation.Enabled() {
-			// This pod is a top-level resource that we track.
-			events = append(events, d.processPodEvent(wrap, pod, action))
+		// On removes, we may not get the owning deployment ID if the deployment was deleted before the pod.
+		// This is okay. We still want to send the remove event anyway.
+		if action == central.ResourceAction_REMOVE_RESOURCE || owningDeploymentID != "" {
+			events = append(events, d.processPodEvent(owningDeploymentID, objAsPod, action))
 		}
 	}
 
-	wrap.ClusterId = clusterid.Get()
-	wrap.updatePortExposureFromStore(d.serviceStore)
-	if action != central.ResourceAction_REMOVE_RESOURCE {
-		d.deploymentStore.addOrUpdateDeployment(wrap)
-		d.endpointManager.OnDeploymentCreateOrUpdate(wrap)
-		if !features.PodDeploymentSeparation.Enabled() {
-			d.processFilter.Update(wrap.GetDeployment())
+	if deploymentWrap == nil {
+		if objAsPod != nil {
+			events = append(events, d.maybeUpdateParentsOfPod(objAsPod, oldObj, action)...)
 		}
-		d.rbac.assignPermissionLevelToDeployment(wrap)
-	} else {
-		d.deploymentStore.removeDeployment(wrap)
-		if features.PodDeploymentSeparation.Enabled() {
-			d.podStore.onDeploymentRemove(wrap)
-		}
-		d.endpointManager.OnDeploymentRemove(wrap)
-		d.processFilter.Delete(wrap.GetId())
+		return events
 	}
-	d.detector.ProcessDeployment(wrap.GetDeployment(), action)
-	events = append(events, wrap.toEvent(action))
+
+	deploymentWrap.ClusterId = clusterid.Get()
+	deploymentWrap.updatePortExposureFromStore(d.serviceStore)
+	if action != central.ResourceAction_REMOVE_RESOURCE {
+		d.deploymentStore.addOrUpdateDeployment(deploymentWrap)
+		d.endpointManager.OnDeploymentCreateOrUpdate(deploymentWrap)
+		if !features.PodDeploymentSeparation.Enabled() {
+			d.processFilter.Update(deploymentWrap.GetDeployment())
+		}
+		d.rbac.assignPermissionLevelToDeployment(deploymentWrap)
+	} else {
+		d.deploymentStore.removeDeployment(deploymentWrap)
+		if features.PodDeploymentSeparation.Enabled() {
+			d.podStore.onDeploymentRemove(deploymentWrap)
+		}
+		d.endpointManager.OnDeploymentRemove(deploymentWrap)
+		d.processFilter.Delete(deploymentWrap.GetId())
+	}
+	d.detector.ProcessDeployment(deploymentWrap.GetDeployment(), action)
+	events = append(events, deploymentWrap.toEvent(action))
 	return events
 }
 
-// maybeProcessPodEvent may return SensorEvents indicating a change in a deployment's state based on updated pod state.
-// If PodDeploymentSeparation is enabled, then it will definitely return at least a SensorEvent indicating
-// a change in the pod's state iff it can associate the pod back to a single top-level resource.
-func (d *deploymentHandler) maybeProcessPodEvent(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
-	// Hierarchy only tracks process a process's parents if they are resources that we track as a Deployment.
-	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
-	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
-	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
-	var events []*central.SensorEvent
-	if features.PodDeploymentSeparation.Enabled() {
-		if action == central.ResourceAction_REMOVE_RESOURCE {
-			// Number of owners does not matter when it's a remove event.
-			// This is necessary to note because if the pod's top-level resource is
-			// deleted before the pod is, then there will be no way to associate the
-			// pod back to its respective owner.
-			events = append(events, d.processPodEvent(nil, pod, action))
-		} else if len(owners) > 1 {
-			var candidates []string
-			for _, candidate := range owners {
-				candidates = append(candidates, candidate.GetId())
-			}
-			log.Errorf("cannot associate the pod %s/%s back to a single deployment wrapper; candidates: %+v", pod.GetNamespace(), pod.GetName(), candidates)
-			return nil
-		} else if len(owners) == 0 {
-			// No need to potentially spam the log upon startup or impending removal.
-			return nil
-		} else {
-			// There is only one owner, and this is not a remove event.
-			events = append(events, d.processPodEvent(owners[0], pod, action))
-		}
-	}
-
+// maybeUpdateParentsOfPod may return SensorEvents indicating a change in a deployment's state based on updated pod state.
+// We do this to ensure that the image IDs in the deployment are updated based on the actual running images in the pod.
+func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interface{}, action central.ResourceAction) []*central.SensorEvent {
 	// We care if the pod is running OR if the pod is being removed as that can impact the top level object
 	if pod.Status.Phase != v1.PodRunning && action != central.ResourceAction_REMOVE_RESOURCE {
-		return events
+		return nil
 	}
 
 	if action != central.ResourceAction_REMOVE_RESOURCE && oldObj != nil {
 		oldPod, ok := oldObj.(*v1.Pod)
 		if !ok {
-			log.Error("previous version of pod is not a pod")
-			return events
+			utils.Should(errors.Errorf("previous version of pod is not a pod (got %T)", oldObj))
+			return nil
 		}
 		// We care when pods are transitioning to running so ensure that the old pod status is not RUNNING
 		// In the cases of CREATES or UPDATES
 		if oldPod.Status.Phase == v1.PodRunning {
-			return events
+			return nil
 		}
 	}
+
+	// Hierarchy only tracks process a process's parents if they are resources that we track as a Deployment.
+	// We also only track top-level objects (ex we track Deployment resources in favor of the underlying ReplicaSet and Pods)
+	// as our version of a Deployment, so the only parents we'd want to potentially process are the top-level ones.
+	owners := d.deploymentStore.getDeploymentsByIDs(pod.Namespace, d.hierarchy.TopLevelParents(string(pod.GetUID())))
+	var events []*central.SensorEvent
 	for _, owner := range owners {
 		events = append(events, d.processWithType(owner.original, nil, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
 	}
@@ -192,50 +199,42 @@ func (d *deploymentHandler) maybeProcessPodEvent(pod *v1.Pod, oldObj interface{}
 }
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
-func (d *deploymentHandler) processPodEvent(wrap *deploymentWrap, pod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
+func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
+		uid := string(k8sPod.GetUID())
+		// If we couldn't find an owning deployment ID, that means the deployment was probably removed,
+		// which means the pod would have been removed from the podStore when the owning deployment was.
+		if owningDeploymentID != "" {
+			d.podStore.removePod(k8sPod.GetNamespace(), owningDeploymentID, uid)
+		}
 		// Only the ID field is necessary for remove events.
 		return &central.SensorEvent{
-			Id:     string(pod.GetUID()),
+			Id:     uid,
 			Action: action,
 			Resource: &central.SensorEvent_Pod{
 				Pod: &storage.Pod{
-					Id: string(pod.GetUID()),
+					Id: uid,
 				},
 			},
 		}
 	}
-
 	p := &storage.Pod{
-		Id:           string(pod.GetUID()),
-		Name:         pod.GetName(),
-		DeploymentId: wrap.GetId(),
-		ClusterId:    wrap.GetClusterId(),
-		Namespace:    wrap.GetNamespace(),
+		Id:           string(k8sPod.GetUID()),
+		Name:         k8sPod.GetName(),
+		DeploymentId: owningDeploymentID,
+		ClusterId:    clusterid.Get(),
+		Namespace:    k8sPod.Namespace,
 	}
 
-	for i, instance := range containerInstances(pod) {
-		// TODO: Is this needed for pods...?
-		// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
-		// The deployment will still be managing the pods, but we want to take the new pod(s) as the source of truth
-		if i >= len(wrap.GetContainers()) {
-			break
-		}
-
-		// Assume we only receive one status per live container, so we can blindly append.
-		p.LiveInstances = append(p.LiveInstances, instance)
-	}
+	// Assume we only receive one status per live container, so we can blindly append.
+	p.LiveInstances = containerInstances(k8sPod)
 	// Create a stable ordering
 	sort.SliceStable(p.LiveInstances, func(i, j int) bool {
 		return p.LiveInstances[i].InstanceId.Id < p.LiveInstances[j].InstanceId.Id
 	})
 
-	if action == central.ResourceAction_REMOVE_RESOURCE {
-		d.podStore.removePod(p)
-	} else {
-		d.podStore.addOrUpdatePod(p)
-		d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
-	}
+	d.podStore.addOrUpdatePod(p)
+	d.processFilter.UpdateByGivenContainers(p.DeploymentId, d.podStore.getContainersForDeployment(p.Namespace, p.DeploymentId))
 
 	log.Debugf("Action: %+v Pod: %+v", action, p)
 
