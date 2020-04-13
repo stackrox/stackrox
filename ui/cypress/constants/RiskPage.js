@@ -10,11 +10,11 @@ export const selectors = {
     risk: 'nav.left-navigation li:contains("Risk") a',
     errMgBox: 'div.error-message',
     panelTabs: {
-        riskIndicators: 'button[data-test-id="tab"]:contains("Risk Indicators")',
-        deploymentDetails: 'button[data-test-id="tab"]:contains("Deployment Details")',
-        processDiscovery: 'button[data-test-id="tab"]:contains("Process Discovery")'
+        riskIndicators: 'button[data-testid="tab"]:contains("Risk Indicators")',
+        deploymentDetails: 'button[data-testid="tab"]:contains("Deployment Details")',
+        processDiscovery: 'button[data-testid="tab"]:contains("Process Discovery")'
     },
-    cancelButton: 'button[data-test-id="cancel"]',
+    cancelButton: 'button[data-testid="cancel"]',
     search: {
         searchModifier: '.react-select__multi-value__label:first',
         searchWord: '.react-select__multi-value__label:eq(1)'
@@ -39,6 +39,6 @@ export const selectors = {
         header: '.Collapsible__trigger',
         body: '.Collapsible__contentInner'
     },
-    suspiciousProcesses: "[data-test-id='suspicious-process']",
-    networkNodeLink: '[data-test-id="network-node-link"]'
+    suspiciousProcesses: "[data-testid='suspicious-process']",
+    networkNodeLink: '[data-testid="network-node-link"]'
 };

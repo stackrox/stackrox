@@ -39,7 +39,7 @@ class CustomPopper extends Component {
                 <Target>
                     <button
                         type="button"
-                        data-test-id="popper-button"
+                        data-testid="popper-button"
                         onClick={this.onClick}
                         className={`${reactOutsideClassName} ${buttonClass} ${
                             disabled ? 'pointer-events-none' : ''

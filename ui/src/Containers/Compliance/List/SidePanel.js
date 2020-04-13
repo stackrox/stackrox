@@ -62,7 +62,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                             >
                                 <div
                                     className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700"
-                                    data-test-id="side-panel-header"
+                                    data-testid="side-panel-header"
                                 >
                                     {linkText}
                                 </div>

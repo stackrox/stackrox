@@ -36,7 +36,7 @@ function Header({ lifecycleStage, enforcementCount }) {
     return (
         <div
             className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal"
-            data-test-id="enforcement-detail-message"
+            data-testid="enforcement-detail-message"
         >
             Enforcement {countMessage}
         </div>

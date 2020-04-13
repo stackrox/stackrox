@@ -10,7 +10,7 @@ const SummaryTileCount = ({ label, value, loading }) => {
         <li
             key={label}
             className="flex flex-col border-r border-base-400 border-dashed px-3 lg:w-24 md:w-20 no-underline py-3 text-base-500 items-center justify-center font-condensed"
-            data-test-id="summary-tile-count"
+            data-testid="summary-tile-count"
         >
             {loading && !value ? (
                 <Loader loading size={12} color="currentColor" />

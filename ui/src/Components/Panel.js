@@ -12,7 +12,7 @@ const Panel = props => (
         className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${
             props.className
         }`}
-        data-test-id={props.id}
+        data-testid={props.id}
     >
         <div className="flex-no-wrap">
             <div className={props.headerClassName}>
@@ -28,7 +28,7 @@ const Panel = props => (
                         className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${
                             props.isUpperCase ? 'uppercase' : 'capitalize'
                         }`}
-                        data-test-id={`${props.id}-header`}
+                        data-testid={`${props.id}-header`}
                     >
                         <Tooltip content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
                             <div className="truncate flex-none">{props.header}</div>

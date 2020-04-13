@@ -32,7 +32,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
 
     return (
         <div
-            data-test-id="pagination-header"
+            data-testid="pagination-header"
             className="flex items-center justify-end text-base-500 font-500"
         >
             <div className="flex items-center pl-5">
@@ -46,7 +46,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
                         max={pageCount}
                         disabled={pageCount === 1}
                         onChange={onChange}
-                        data-test-id="page-number-input"
+                        data-testid="page-number-input"
                     />
                     of {pageCount}
                 </div>
@@ -55,7 +55,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
                     className="flex items-center rounded-full hover:bg-primary-200 hover:text-primary-600 mr-1 p-1"
                     onClick={previousPage}
                     disabled={page <= 0}
-                    data-test-id="prev-page-button"
+                    data-testid="prev-page-button"
                 >
                     <Icon.ChevronLeft className="h-6 w-6" />
                 </button>
@@ -64,7 +64,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
                     className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                     onClick={nextPage}
                     disabled={page === pageCount - 1}
-                    data-test-id="next-page-button"
+                    data-testid="next-page-button"
                 >
                     <Icon.ChevronRight className="h-6 w-6" />
                 </button>

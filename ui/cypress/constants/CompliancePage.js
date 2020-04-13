@@ -24,86 +24,85 @@ export const selectors = {
     export: {
         exportButton: "button:contains('Export')",
         pdfButton: "[data-testid='download-pdf-button']",
-        csvButton: "[data-test-id='download-csv-button']"
+        csvButton: "[data-testid='download-csv-button']"
     },
     dashboard: {
         tileLinks: {
             cluster: {
-                tile: "[data-test-id='tile-link']:contains('cluster')",
+                tile: "[data-testid='tile-link']:contains('cluster')",
                 value:
-                    "[data-test-id='tile-link']:contains('cluster') [data-test-id='tile-link-value']"
+                    "[data-testid='tile-link']:contains('cluster') [data-testid='tile-link-value']"
             },
             namespace: {
-                tile: "[data-test-id='tile-link']:contains('namespace')",
+                tile: "[data-testid='tile-link']:contains('namespace')",
                 value:
-                    "[data-test-id='tile-link']:contains('namespace') [data-test-id='tile-link-value']"
+                    "[data-testid='tile-link']:contains('namespace') [data-testid='tile-link-value']"
             },
             node: {
-                tile: "[data-test-id='tile-link']:contains('node')",
-                value:
-                    "[data-test-id='tile-link']:contains('node') [data-test-id='tile-link-value']"
+                tile: "[data-testid='tile-link']:contains('node')",
+                value: "[data-testid='tile-link']:contains('node') [data-testid='tile-link-value']"
             }
         }
     },
     list: {
-        panels: '[data-test-id="panel"]',
-        sidePanelHeader: '[data-test-id="panel-header"]:last',
-        sidePanelCloseBtn: '[data-test-id="panel"] .close-button',
+        panels: '[data-testid="panel"]',
+        sidePanelHeader: '[data-testid="panel-header"]:last',
+        sidePanelCloseBtn: '[data-testid="panel"] .close-button',
         banner: {
-            content: '[data-test-id="collapsible-banner"]',
-            collapseButton: '[data-test-id="banner-collapse-button"]'
+            content: '[data-testid="collapsible-banner"]',
+            collapseButton: '[data-testid="banner-collapse-button"]'
         },
         table: {
-            header: '[data-test-id="panel-header"]',
+            header: '[data-testid="panel-header"]',
             firstGroup: '.table-group-active:first',
             firstTableGroup: '.rt-table:first',
             firstRow: 'div.rt-tr-group > .rt-tr.-odd:first',
-            firstRowName: 'div.rt-tr-group > .rt-tr.-odd:first [data-test-id="table-row-name"]',
+            firstRowName: 'div.rt-tr-group > .rt-tr.-odd:first [data-testid="table-row-name"]',
             secondRow: 'div.rt-tr-group > .rt-tr.-even:first',
-            secondRowName: 'div.rt-tr-group > .rt-tr.-even:first [data-test-id="table-row-name"]',
+            secondRowName: 'div.rt-tr-group > .rt-tr.-even:first [data-testid="table-row-name"]',
             rows: "table tr:has('td')"
         }
     },
-    widgets: "[data-test-id='widget']",
+    widgets: "[data-testid='widget']",
     widget: {
         controlsInCompliance: {
-            widget: '[data-test-id="compliance-across-entities"]',
+            widget: '[data-testid="compliance-across-entities"]',
             centerLabel:
-                '[data-test-id="compliance-across-entities"] svg .rv-xy-plot__series--label text',
+                '[data-testid="compliance-across-entities"] svg .rv-xy-plot__series--label text',
             passingControls:
-                '[data-test-id="compliance-across-entities"] [data-test-id="passing-controls-value"]',
+                '[data-testid="compliance-across-entities"] [data-testid="passing-controls-value"]',
             failingControls:
-                '[data-test-id="compliance-across-entities"] [data-test-id="failing-controls-value"]',
-            arcs: '[data-test-id="compliance-across-entities"] svg path'
+                '[data-testid="compliance-across-entities"] [data-testid="failing-controls-value"]',
+            arcs: '[data-testid="compliance-across-entities"] svg path'
         },
         passingStandardsAcrossClusters: {
-            widget: '[data-test-id="standards-across-cluster"]',
-            axisLinks: '[data-test-id="standards-across-cluster"] a',
-            barLabels: '[data-test-id="standards-across-cluster"] .rv-xy-plot__series > text'
+            widget: '[data-testid="standards-across-cluster"]',
+            axisLinks: '[data-testid="standards-across-cluster"] a',
+            barLabels: '[data-testid="standards-across-cluster"] .rv-xy-plot__series > text'
         },
         passingStandardsByCluster: {
             NISTBarLinks:
-                '[data-test-id="passing-standards-by-cluster"] g.vertical-cluster-bar-NIST rect'
+                '[data-testid="passing-standards-by-cluster"] g.vertical-cluster-bar-NIST rect'
         },
         passingStandardsAcrossNamespaces: {
-            axisLinks: '[data-test-id="standards-across-namespace"] a'
+            axisLinks: '[data-testid="standards-across-namespace"] a'
         },
         passingStandardsAcrossNodes: {
-            axisLinks: '[data-test-id="standards-across-node"] a'
+            axisLinks: '[data-testid="standards-across-node"] a'
         },
         controlsMostFailed: {
-            widget: '[data-test-id="link-list-widget"]:contains("failed")',
-            listItems: '[data-test-id="link-list-widget"]:contains("failed") a'
+            widget: '[data-testid="link-list-widget"]:contains("failed")',
+            listItems: '[data-testid="link-list-widget"]:contains("failed") a'
         },
         controlDetails: {
-            widget: '[data-test-id="control-details"]',
-            standardName: '[data-test-id="control-details"] [data-test-id="standard-name"]',
-            controlName: '[data-test-id="control-details"] [data-test-id="control-name"]'
+            widget: '[data-testid="control-details"]',
+            standardName: '[data-testid="control-details"] [data-testid="standard-name"]',
+            controlName: '[data-testid="control-details"] [data-testid="control-name"]'
         },
         PCICompliance: {
             controls:
-                '[data-test-id="PCI-compliance"] .widget-detail-bullet span:contains("Controls")'
+                '[data-testid="PCI-compliance"] .widget-detail-bullet span:contains("Controls")'
         },
-        relatedEntities: '[data-test-id="related-resource-list"]'
+        relatedEntities: '[data-testid="related-resource-list"]'
     }
 };

@@ -30,7 +30,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
         <div className="flex items-center h-full hover:bg-base-300">
             <Link
                 to={url}
-                data-test-id="external-link"
+                data-testid="external-link"
                 className={`${
                     !isDarkMode ? 'border-base-100' : 'border-base-400'
                 } border-l h-full p-4`}

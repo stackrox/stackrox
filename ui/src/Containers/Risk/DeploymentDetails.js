@@ -167,7 +167,7 @@ class DeploymentDetails extends Component {
             containers = deployment.containers.map((container, index) => {
                 const data = this.getContainerConfigurations(container);
                 return (
-                    <div key={index} data-test-id="deployment-container-configuration">
+                    <div key={index} data-testid="deployment-container-configuration">
                         {this.renderContainerImage(container.image)}
                         {data && <KeyValuePairs data={data} keyValueMap={containerConfigMap} />}
                         <div className="py-3 border-b border-base-300">

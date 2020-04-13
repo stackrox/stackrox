@@ -1,13 +1,13 @@
 const panel = {
-    panel: '[data-test-id="panel"]',
-    panelHeader: '[data-test-id="panel-header"]',
-    sidePanel: '[data-test-id="side-panel"]',
-    sidePanelHeader: '[data-test-id="side-panel-header"]',
-    editButton: '[data-test-id="edit-button"]',
-    nextButton: '[data-test-id="next-button"]',
-    saveButton: '[data-test-id="save-button"]',
-    form: '[data-test-id="side-panel"] form',
-    closeButton: '[data-test-id="cancel"]'
+    panel: '[data-testid="panel"]',
+    panelHeader: '[data-testid="panel-header"]',
+    sidePanel: '[data-testid="side-panel"]',
+    sidePanelHeader: '[data-testid="side-panel-header"]',
+    editButton: '[data-testid="edit-button"]',
+    nextButton: '[data-testid="next-button"]',
+    saveButton: '[data-testid="save-button"]',
+    form: '[data-testid="side-panel"] form',
+    closeButton: '[data-testid="cancel"]'
 };
 
 export default panel;

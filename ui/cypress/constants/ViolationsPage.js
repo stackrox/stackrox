@@ -6,13 +6,13 @@ export const selectors = {
     firstTableRow: '.rt-tbody :nth-child(1) > .rt-tr',
     firstPanelTableRow: '.rt-tbody > :nth-child(1) > .rt-tr',
     lastTableRow: '.rt-tr:last',
-    panels: '[data-test-id="panel"]',
+    panels: '[data-testid="panel"]',
     sidePanel: {
-        header: '[data-test-id="panel-header"]',
-        tabs: 'button[data-test-id="tab"]',
-        getTabByIndex: index => `button[data-test-id="tab"]:nth(${index})`,
-        enforcementDetailMessage: '[data-test-id="enforcement-detail-message"]',
-        enforcementExplanationMessage: '[data-test-id="enforcement-explanation-message"]'
+        header: '[data-testid="panel-header"]',
+        tabs: 'button[data-testid="tab"]',
+        getTabByIndex: index => `button[data-testid="tab"]:nth(${index})`,
+        enforcementDetailMessage: '[data-testid="enforcement-detail-message"]',
+        enforcementExplanationMessage: '[data-testid="enforcement-explanation-message"]'
     },
     clusterTableHeader: '.rt-thead > .rt-tr > div:contains("Cluster")',
     viewDeploymentsButton: 'button:contains("View Deployments")',
@@ -22,10 +22,10 @@ export const selectors = {
         header: '.Collapsible__trigger',
         body: '.Collapsible__contentInner'
     },
-    securityBestPractices: '[data-test-id="deployment-security-practices"]',
+    securityBestPractices: '[data-testid="deployment-security-practices"]',
     runtimeProcessCards: '[data-testid="runtime-processes"]',
     lifeCycleColumn: '.rt-thead.-header:contains("Lifecycle")',
-    whitelistDeploymentButton: '[data-test-id="whitelist-deployment-button"]',
-    resolveButton: '[data-test-id="resolve-button"]',
+    whitelistDeploymentButton: '[data-testid="whitelist-deployment-button"]',
+    resolveButton: '[data-testid="resolve-button"]',
     whitelistDeploymentRow: '.rt-tr:contains("metadata-proxy-v0.1")'
 };

@@ -39,7 +39,7 @@ class SimulatorButton extends Component {
         return (
             <button
                 type="button"
-                data-test-id={`simulator-button-${this.props.creatingOrSimulating ? 'on' : 'off'}`}
+                data-testid={`simulator-button-${this.props.creatingOrSimulating ? 'on' : 'off'}`}
                 className={`flex items-center flex-shrink-0 border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
                 onClick={this.toggleSimulation}
             >

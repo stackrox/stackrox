@@ -9,7 +9,7 @@ import {
 import { sortVersion } from 'sorters/sorters';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
-const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
+const getNameCell = name => <div data-testid="table-row-name">{name}</div>;
 
 const columnsForStandard = (function getColumnsForStandards() {
     const ret = {};

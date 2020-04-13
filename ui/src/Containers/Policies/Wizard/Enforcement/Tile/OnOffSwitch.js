@@ -23,7 +23,7 @@ class OnOffSwitch extends Component {
         return (
             <div
                 className="flex py-2 w-full justify-center"
-                data-test-id="policy-enforcement-on-off"
+                data-testid="policy-enforcement-on-off"
             >
                 <button
                     type="button"

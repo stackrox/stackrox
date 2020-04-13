@@ -98,7 +98,7 @@ const LeftNavigation = ({ location, metadata }) => {
                 activeClassName={getActiveClassName(navLink)}
                 onClick={showNavigationPanel(navLink)}
                 className={linkClassName}
-                data-test-id={navLink.data || navLink.text}
+                data-testid={navLink.data || navLink.text}
             >
                 <div className="text-center pr-2">{navLink.renderIcon()}</div>
                 <div className={`${isDarkMode ? 'text-base-600' : 'text-base-100'}`}>
@@ -138,7 +138,7 @@ const LeftNavigation = ({ location, metadata }) => {
                 </nav>
                 <div
                     className="flex flex-col h-full justify-end text-center text-xs font-700"
-                    data-test-id="nav-footer"
+                    data-testid="nav-footer"
                 >
                     <ApiDocsNavigation onClick={closePanel()} />
                     <span

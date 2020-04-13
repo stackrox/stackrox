@@ -144,7 +144,7 @@ class FieldGroupCards extends Component {
             const border = this.isHeaderOnlyCard(formFields) ? '' : 'border';
             const leading = headerControl ? 'leading-loose' : 'leading-normal';
             return (
-                <div className="px-3 pt-5" data-test-id={dataTestId} key={fieldGroupName}>
+                <div className="px-3 pt-5" data-testid={dataTestId} key={fieldGroupName}>
                     <div className={`bg-base-100 ${border} border-base-200 shadow`}>
                         <div
                             className={`p-2 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between ${leading}`}

@@ -32,8 +32,8 @@ export const clickOnCountWidget = (entity, type) => {
         .click({ force: true });
 
     if (type === 'side-panel') {
-        cy.get('[data-test-id="side-panel"]')
-            .find('[data-test-id="breadcrumb-link-text"]')
+        cy.get('[data-testid="side-panel"]')
+            .find('[data-testid="breadcrumb-link-text"]')
             .contains(entity);
     }
 
@@ -55,8 +55,8 @@ export const clickOnEntityWidget = (entity, type) => {
             ).click();
             cy.wait(500); // it takes time to load the page
             if (type === 'side-panel') {
-                cy.get('[data-test-id="side-panel"]')
-                    .find('[data-test-id="breadcrumb-link-text"]')
+                cy.get('[data-testid="side-panel"]')
+                    .find('[data-testid="breadcrumb-link-text"]')
                     .contains(value);
             }
         });
@@ -73,8 +73,8 @@ export const clickOnRowEntity = (entity, subEntity, isNotCapitalized) => {
         .eq(0)
         .click({ force: true });
 
-    cy.get('[data-test-id="side-panel"]')
-        .find('[data-test-id="breadcrumb-link-text"]')
+    cy.get('[data-testid="side-panel"]')
+        .find('[data-testid="breadcrumb-link-text"]')
         .contains(subEntity.toLowerCase());
 };
 
@@ -90,8 +90,8 @@ export const clickOnSingleEntity = (entity, subEntity) => {
                 .eq(0)
                 .click({ force: true });
             cy.wait(500); // it takes time to load the page
-            cy.get('[data-test-id="side-panel"]')
-                .find('[data-test-id="breadcrumb-link-text"]')
+            cy.get('[data-testid="side-panel"]')
+                .find('[data-testid="breadcrumb-link-text"]')
                 .contains(value);
         });
 };
@@ -109,7 +109,7 @@ export const hasRelatedEntityFor = entity => {
 };
 
 const entityCountMatchesTableRows = (listEntity, context) => {
-    const contextSelector = `[data-test-id="${context === 'Page' ? 'panel' : 'side-panel'}"]`;
+    const contextSelector = `[data-testid="${context === 'Page' ? 'panel' : 'side-panel'}"]`;
     cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
         .find(configManagementSelectors.countWidgetValue)
         .invoke('text')
@@ -121,7 +121,7 @@ const entityCountMatchesTableRows = (listEntity, context) => {
                 .click();
             cy.wait(2000);
             cy.get(`${contextSelector} .rt-tr-group`);
-            cy.get(`${contextSelector} [data-test-id="panel-header"]`)
+            cy.get(`${contextSelector} [data-testid="panel-header"]`)
                 .invoke('text')
                 .then(panelHeaderText => {
                     expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(count, 10));
@@ -146,7 +146,7 @@ export const entityListCountMatchesTableLinkCount = entities => {
             cy.get(configManagementSelectors.tableLinks)
                 .contains(entities)
                 .click();
-            cy.get('[data-test-id="side-panel"] [data-test-id="panel-header"]')
+            cy.get('[data-testid="side-panel"] [data-testid="panel-header"]')
                 .invoke('text')
                 .then(panelHeaderText => {
                     expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numEntities, 10));

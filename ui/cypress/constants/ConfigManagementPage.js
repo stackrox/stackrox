@@ -36,35 +36,35 @@ export const controlStatus = {
 };
 
 export const dashboardSelectors = {
-    widgets: "[data-test-id='widget']",
-    tileLinks: "[data-test-id='tile-link']",
-    tileLinkValue: "[data-test-id='tile-link-value']",
+    widgets: "[data-testid='widget']",
+    tileLinks: "[data-testid='tile-link']",
+    tileLinkValue: "[data-testid='tile-link-value']",
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     rbacVisibilityDropdown: 'button:contains("RBAC")',
     getMenuListItem: name => {
-        return `[data-test-id="menu-list"] [data-test-id="${name}"]`;
+        return `[data-testid="menu-list"] [data-testid="${name}"]`;
     },
     getWidget: title => {
-        return `[data-test-id="widget"]:contains('${title}')`;
+        return `[data-testid="widget"]:contains('${title}')`;
     },
     viewAllButton: 'button:contains("View All")',
     viewStandardButton: 'button:contains("View Standard")',
     policyViolationsBySeverity: {
         link: {
             ratedAsHigh:
-                '[data-test-id="widget"]:contains("Policy Violations by Severity") a:contains("rated as high")',
+                '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("rated as high")',
             ratedAsLow:
-                '[data-test-id="widget"]:contains("Policy Violations by Severity") a:contains("rated as low")',
+                '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("rated as low")',
             policiesWithoutViolations:
-                '[data-test-id="widget"]:contains("Policy Violations by Severity") a:contains("policies")'
+                '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("policies")'
         }
     },
     cisStandardsAcrossClusters: {
-        widget: '[data-test-id="compliance-by-controls"]',
+        widget: '[data-testid="compliance-by-controls"]',
         select: {
-            input: '[data-test-id="compliance-by-controls"] .react-select__control',
-            value: '[data-test-id="compliance-by-controls"] .react-select__single-value',
-            options: '[data-test-id="compliance-by-controls"] .react-select__option'
+            input: '[data-testid="compliance-by-controls"] .react-select__control',
+            value: '[data-testid="compliance-by-controls"] .react-select__single-value',
+            options: '[data-testid="compliance-by-controls"] .react-select__option'
         },
         passingControlsLink: 'a[title*="Controls Passing"]',
         failingControlsLinks: 'a[title*="Controls Failing"]'
@@ -77,23 +77,23 @@ export const listSelectors = {
     tableRows: '.rt-tr-group > .rt-tr',
     tableCells: '.rt-td',
     tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
-    tablePanelHeader: '[data-test-id="panel"] [data-test-id="panel-header"]',
-    tableNextPage: '[data-test-id="next-page-button"]',
-    sidePanel: '[data-test-id="side-panel"]'
+    tablePanelHeader: '[data-testid="panel"] [data-testid="panel-header"]',
+    tableNextPage: '[data-testid="next-page-button"]',
+    sidePanel: '[data-testid="side-panel"]'
 };
 
 export const entitySelectors = {
-    metadataWidget: '[data-test-id="widget"]:contains("Metadata")',
-    externalLink: '[data-test-id="side-panel"] [data-test-id="external-link"]',
-    countWidgets: '[data-test-id="related-entity-list-count"]',
-    countWidgetTitle: '[data-test-id="related-entity-list-count-title"]',
-    countWidgetValue: '[data-test-id="related-entity-list-count-value"]',
-    relatedEntityWidgets: '[data-test-id="related-entity"]',
-    relatedEntityWidgetTitle: '[data-test-id="related-entity-title"]',
-    relatedEntityWidgetValue: '[data-test-id="related-entity-value"]',
-    groupedTabs: '[data-test-id="grouped-tab"] [data-test-id="tab"]',
-    failingNodes: '[data-test-id="widget"] .rt-tr-group > .rt-tr',
-    deploymentsWithFailedPolicies: '[data-test-id="deployments-with-failed-policies"]'
+    metadataWidget: '[data-testid="widget"]:contains("Metadata")',
+    externalLink: '[data-testid="side-panel"] [data-testid="external-link"]',
+    countWidgets: '[data-testid="related-entity-list-count"]',
+    countWidgetTitle: '[data-testid="related-entity-list-count-title"]',
+    countWidgetValue: '[data-testid="related-entity-list-count-value"]',
+    relatedEntityWidgets: '[data-testid="related-entity"]',
+    relatedEntityWidgetTitle: '[data-testid="related-entity-title"]',
+    relatedEntityWidgetValue: '[data-testid="related-entity-value"]',
+    groupedTabs: '[data-testid="grouped-tab"] [data-testid="tab"]',
+    failingNodes: '[data-testid="widget"] .rt-tr-group > .rt-tr',
+    deploymentsWithFailedPolicies: '[data-testid="deployments-with-failed-policies"]'
 };
 
 export const selectors = {

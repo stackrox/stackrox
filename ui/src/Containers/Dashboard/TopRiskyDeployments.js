@@ -53,7 +53,7 @@ const TopRiskyDeployments = ({ deployments }) => {
     return (
         <div
             className="flex flex-col bg-base-100 rounded shadow h-full"
-            data-test-id="top-risky-deployments"
+            data-testid="top-risky-deployments"
         >
             <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-300 border-b">
                 <Icon.File className="h-4 w-4 m-3" />

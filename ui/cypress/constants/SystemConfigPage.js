@@ -2,55 +2,55 @@ export const systemConfigUrl = '/main/systemconfig';
 
 const selectors = {
     navLinks: {
-        config: '[data-test-id="configure"]',
-        subnavMenu: '[data-test-id="configure-subnav"]',
-        systemConfig: '[data-test-id="system-config"]',
-        topNav: '[data-test-id="top-nav-btns"] button',
-        logout: '[data-test-id="Logout"]'
+        config: '[data-testid="configure"]',
+        subnavMenu: '[data-testid="configure-subnav"]',
+        systemConfig: '[data-testid="system-config"]',
+        topNav: '[data-testid="top-nav-btns"] button',
+        logout: '[data-testid="Logout"]'
     },
     pageHeader: {
-        editButton: '[data-test-id="edit-btn"]',
-        cancelButton: '[data-test-id="cancel-btn"]',
-        saveButton: '[data-test-id="save-btn"]'
+        editButton: '[data-testid="edit-btn"]',
+        cancelButton: '[data-testid="cancel-btn"]',
+        saveButton: '[data-testid="save-btn"]'
     },
     header: {
-        widget: '[data-test-id="header-config"]',
-        state: '[data-test-id="header-state"]',
+        widget: '[data-testid="header-config"]',
+        state: '[data-testid="header-state"]',
         config: {
-            toggle: '[data-test-id="header-config"] .form-switch',
-            textInput: '[data-test-id="header-config"] textarea',
-            colorPickerBtn: '[data-test-id="header-config"] [data-test-id="color-picker"]',
-            colorInput: '[data-test-id="header-config"] .chrome-picker input',
+            toggle: '[data-testid="header-config"] .form-switch',
+            textInput: '[data-testid="header-config"] textarea',
+            colorPickerBtn: '[data-testid="header-config"] [data-testid="color-picker"]',
+            colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
-                input: '[data-test-id="header-config"] .react-select__input input',
-                options: '[data-test-id="header-config"] .react-select__option'
+                input: '[data-testid="header-config"] .react-select__input input',
+                options: '[data-testid="header-config"] .react-select__option'
             }
         },
-        banner: '[data-test-id="header-banner"]'
+        banner: '[data-testid="header-banner"]'
     },
     footer: {
-        widget: '[data-test-id="footer-config"]',
-        state: '[data-test-id="footer-state"]',
+        widget: '[data-testid="footer-config"]',
+        state: '[data-testid="footer-state"]',
         config: {
-            toggle: '[data-test-id="footer-config"] .form-switch',
-            textInput: '[data-test-id="footer-config"] textarea',
-            colorPickerBtn: '[data-test-id="footer-config"] [data-test-id="color-picker"]',
-            colorInput: '[data-test-id="footer-config"] .chrome-picker input',
+            toggle: '[data-testid="footer-config"] .form-switch',
+            textInput: '[data-testid="footer-config"] textarea',
+            colorPickerBtn: '[data-testid="footer-config"] [data-testid="color-picker"]',
+            colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
-                input: '[data-test-id="footer-config"] .react-select__input input',
-                options: '[data-test-id="footer-config"] .react-select__option'
+                input: '[data-testid="footer-config"] .react-select__input input',
+                options: '[data-testid="footer-config"] .react-select__option'
             }
         },
-        banner: '[data-test-id="footer-banner"]'
+        banner: '[data-testid="footer-banner"]'
     },
     loginNotice: {
-        widget: '[data-test-id="login-notice-config"]',
-        state: '[data-test-id="login-notice-state"]',
+        widget: '[data-testid="login-notice-config"]',
+        state: '[data-testid="login-notice-state"]',
         config: {
-            toggle: '[data-test-id="login-notice-config"] .form-switch',
-            textInput: '[data-test-id="login-notice-config"] textarea'
+            toggle: '[data-testid="login-notice-config"] .form-switch',
+            textInput: '[data-testid="login-notice-config"] textarea'
         },
-        banner: '[data-test-id="login-notice"]'
+        banner: '[data-testid="login-notice"]'
     }
 };
 

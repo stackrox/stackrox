@@ -56,7 +56,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             Cluster Name{' '}
                             <span
                                 aria-label="Required"
-                                data-test-id="required"
+                                data-testid="required"
                                 className="text-alert-500 ml-1"
                             >
                                 *
@@ -78,7 +78,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             Cluster Type{' '}
                             <span
                                 aria-label="Required"
-                                data-test-id="required"
+                                data-testid="required"
                                 className="text-alert-500 ml-1"
                             >
                                 *
@@ -102,7 +102,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             Main Image Repository{' '}
                             <span
                                 aria-label="Required"
-                                data-test-id="required"
+                                data-testid="required"
                                 className="text-alert-500 ml-1"
                             >
                                 *
@@ -126,7 +126,7 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             Central API Endpoint (include port){' '}
                             <span
                                 aria-label="Required"
-                                data-test-id="required"
+                                data-testid="required"
                                 className="text-alert-500 ml-1"
                             >
                                 *

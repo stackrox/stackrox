@@ -39,7 +39,7 @@ const APITokenForm = ({ roles }) => {
     const roleOptions = roles.map(({ name }) => ({ label: name, value: name }));
 
     return (
-        <form className="p-4 w-full mb-8" data-test-id="api-token-form">
+        <form className="p-4 w-full mb-8" data-testid="api-token-form">
             <Fields roleOptions={roleOptions} />
         </form>
     );

@@ -23,7 +23,7 @@ const TableHeader = props => {
     let component = (
         <div
             className="overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 uppercase"
-            data-test-id="filtered-header"
+            data-testid="filtered-header"
         >
             <Tooltip content={<TooltipOverlay>{headerText}</TooltipOverlay>}>
                 <div className="truncate flex-none">{headerText}</div>

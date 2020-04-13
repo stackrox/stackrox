@@ -46,7 +46,7 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
             className={`top-navigation flex flex-1 justify-between relative bg-header ${
                 !isDarkMode ? 'bg-base-200' : 'bg-base-100'
             }`}
-            data-test-id="top-nav-bar"
+            data-testid="top-nav-bar"
         >
             <div className="flex w-full">
                 <div
@@ -59,7 +59,7 @@ const TopNavigation = ({ logout, shouldHaveReadPermission }) => {
                 </div>
                 <SummaryCounts />
             </div>
-            <div className="flex" data-test-id="top-nav-btns">
+            <div className="flex" data-testid="top-nav-btns">
                 <GlobalSearchButton
                     topNavBtnTextClass={topNavBtnTextClass}
                     topNavBtnSvgClass={topNavBtnSvgClass}

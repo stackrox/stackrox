@@ -32,11 +32,11 @@ const ControlDetails = ({ standardId, control, description, className }) => (
             <div className="flex flex-col justify-center px-3">
                 <div className="pb-2">
                     <span className="font-700 pr-1">Standard:</span>
-                    <span data-test-id="standard-name">{standardLabels[standardId]}</span>
+                    <span data-testid="standard-name">{standardLabels[standardId]}</span>
                 </div>
                 <div>
                     <span className="font-700 pr-1">Control:</span>
-                    <span data-test-id="control-name">{control}</span>
+                    <span data-testid="control-name">{control}</span>
                 </div>
             </div>
         </div>

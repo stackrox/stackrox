@@ -15,11 +15,11 @@ const PageHeader = ({ header, subHeader, classes, bgStyle, children }) => {
                 !isDarkMode ? 'bg-base-100' : 'bg-base-0'
             }`}
             style={bgStyle}
-            data-test-id="page-header"
+            data-testid="page-header"
         >
             <div className="min-w-max pr-4 self-center">
                 <h1
-                    data-test-id="header-text"
+                    data-testid="header-text"
                     className="uppercase text-lg tracking-widest font-700 pt-1"
                 >
                     {header}

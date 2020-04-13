@@ -52,7 +52,7 @@ const DashboardCompliance = ({ match, location }) => {
                     <Link
                         className="text-sm text-primary-700 hover:text-primary-800 tracking-wide underline w-43 text-left"
                         to={standard.link}
-                        data-test-id={standard.name}
+                        data-testid={standard.name}
                     >
                         {standard.name}
                     </Link>

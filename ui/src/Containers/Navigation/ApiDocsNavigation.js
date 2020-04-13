@@ -24,7 +24,7 @@ const menuLinkClassName =
 
 const ApiDocsMenu = () => (
     <ul
-        data-test-id="api-docs-menu"
+        data-testid="api-docs-menu"
         className="uppercase bg-base-100 border-2 border-base-400 shadow-lg rounded text-center text-base-100"
     >
         <li>
@@ -72,7 +72,7 @@ const ApiDocsNavigation = ({ onClick }) => {
             <Target>
                 <button
                     type="button"
-                    data-test-id="api-docs"
+                    data-testid="api-docs"
                     className={`${linkClassName} border-t`}
                     onClick={onButtonClick}
                 >

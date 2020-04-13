@@ -89,11 +89,11 @@ describe('Policies Flow', () => {
     it('should sort table alphabetically', () => {
         cy.visit(url);
         cy.get(selectors.table.column.name).click();
-        cy.get(`${selectors.table.row.firstRow} [data-test-id="policy-name"]`).contains(
+        cy.get(`${selectors.table.row.firstRow} [data-testid="policy-name"]`).contains(
             '30-Day Scan Age'
         );
         cy.get(selectors.table.column.name).click();
-        cy.get(`${selectors.table.row.firstRow} [data-test-id="policy-name"]`).contains(
+        cy.get(`${selectors.table.row.firstRow} [data-testid="policy-name"]`).contains(
             'Wget in Image'
         );
     });

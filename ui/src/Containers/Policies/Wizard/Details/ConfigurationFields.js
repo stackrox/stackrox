@@ -26,7 +26,7 @@ class ConfigurationFields extends Component {
 
         return (
             <div className="px-3 pt-5">
-                <div className="bg-base-100 shadow" data-test-id="policy-criteria">
+                <div className="bg-base-100 shadow" data-testid="policy-criteria">
                     <div className="p-3 border-b border-base-300 text-base-600 font-700 text-lg">
                         {policyConfiguration.header}
                     </div>
@@ -36,7 +36,7 @@ class ConfigurationFields extends Component {
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(this.props.policy.fields[key]);
                             return (
-                                <div className="pb-4" key={key} data-test-id={key}>
+                                <div className="pb-4" key={key} data-testid={key}>
                                     <div className="text-base-600 font-700">{label}:</div>
                                     <div className="flex pt-1 leading-normal">{value}</div>
                                 </div>

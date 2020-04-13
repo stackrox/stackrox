@@ -73,13 +73,13 @@ function Widget({
     return (
         <div
             className={`widget flex flex-col shadow rounded relative rounded bg-base-100 ${className}`}
-            data-test-id={id}
+            data-testid={id}
         >
             <div className="border-b border-base-300">
                 <div className="flex flex-auto min-h-10 word-break">
                     <div
                         className="flex flex-auto text-sm text-base-600 uppercase items-center tracking-wide px-2 leading-normal font-700"
-                        data-test-id="widget-header"
+                        data-testid="widget-header"
                     >
                         <div className="w-full">{headerContent}</div>
                         {pagerControls ? pagerControls.arrows : null}

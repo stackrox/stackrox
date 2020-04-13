@@ -42,7 +42,7 @@ function ProcessesDiscoveryCardHeader({
     return (
         <div
             className={`${titleClassName} ${backgroundClass}`}
-            data-test-id={suspicious ? 'suspicious-process' : 'process'}
+            data-testid={suspicious ? 'suspicious-process' : 'process'}
         >
             <div className={`p-3 ${textClass} flex flex-col`}>
                 <h1 className="text-lg font-700">{trimmedName}</h1>

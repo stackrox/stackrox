@@ -141,7 +141,7 @@ class VerticalClusterBar extends Component {
         const { hintInfo } = this.state;
 
         return (
-            <div {...containerProps} data-test-id={id}>
+            <div {...containerProps} data-testid={id}>
                 <div className="flex flex-col h-full">
                     <FlexibleXYPlot {...plotProps}>
                         <VerticalGridLines

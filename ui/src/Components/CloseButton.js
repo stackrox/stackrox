@@ -11,7 +11,7 @@ const CloseButton = ({ className, iconColor, onClose }) => (
                 type="button"
                 className={`flex p-3 text-center text-sm items-center ${iconColor}`}
                 onClick={onClose}
-                data-test-id="cancel"
+                data-testid="cancel"
                 id="panel-close-button"
             >
                 <Icon.X className="h-7 w-7" height={null} width={null} />

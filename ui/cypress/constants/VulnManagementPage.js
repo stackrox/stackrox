@@ -21,7 +21,7 @@ export const url = {
 };
 
 export const vmHomePageSelectors = {
-    vmDBPageTileLink: '[data-test-id="Vulnerability Management"]'
+    vmDBPageTileLink: '[data-testid="Vulnerability Management"]'
 };
 export const listSelectors = {
     riskScoreCol: '.rt-table > .rt-tbody > div > div > div:nth-child(10)',
@@ -37,31 +37,31 @@ export const listSelectors = {
     numCVEColLink: '.rt-tr > .rt-td',
     cveDescription: '[data-testid="cve-description"]',
     statusChips: '[data-testid="label-chip"]',
-    deploymentCountLink: '[data-test-id="deploymentCountLink"]',
-    policyCountLink: '[data-test-id="policyCountLink"]',
-    imageCountLink: '[data-test-id="imageCountLink"]',
-    componentCountLink: '[data-test-id="componentCountLink"]'
+    deploymentCountLink: '[data-testid="deploymentCountLink"]',
+    policyCountLink: '[data-testid="policyCountLink"]',
+    imageCountLink: '[data-testid="imageCountLink"]',
+    componentCountLink: '[data-testid="componentCountLink"]'
 };
 
 export const sidePanelListEntityPageSelectors = {
     entityRowHeader:
-        '[data-test-id="side-panel"] > .h-full > .flex > .flex-no-wrap > .flex > [data-test-id="panel-header"]',
-    sidePanelTableBodyRows: '[data-test-id="side-panel"] .rt-tbody .rt-tr',
-    parentEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > a',
-    childEntityInfoHeader: '[data-test-id="breadcrumb-link-text"] > span',
+        '[data-testid="side-panel"] > .h-full > .flex > .flex-no-wrap > .flex > [data-testid="panel-header"]',
+    sidePanelTableBodyRows: '[data-testid="side-panel"] .rt-tbody .rt-tr',
+    parentEntityInfoHeader: '[data-testid="breadcrumb-link-text"] > a',
+    childEntityInfoHeader: '[data-testid="breadcrumb-link-text"] > span',
     entityOverview: '[data-testid="entity-overview"]',
     metadataClusterValue: '[data-testid="Cluster-value"]',
-    tileLinkText: '[data-test-id="tileLinkSuperText"]',
-    tileLinkValue: '[data-test-id="tile-link-value"]',
-    imageTileLink: '[data-test-id="IMAGE-tile-link"]',
-    namespaceTileLink: '[data-test-id="NAMESPACE-tile-link"]',
-    componentTileLink: '[data-test-id="COMPONENT-tile-link"]',
-    deploymentTileLink: "[data-test-id='DEPLOYMENT-tile-link']",
-    policyTileLink: "[data-test-id='POLICY-tile-link']",
-    cveTileLink: '[data-test-id="CVE-tile-link"]',
-    tabButton: '[data-test-id="tab"]',
+    tileLinkText: '[data-testid="tileLinkSuperText"]',
+    tileLinkValue: '[data-testid="tile-link-value"]',
+    imageTileLink: '[data-testid="IMAGE-tile-link"]',
+    namespaceTileLink: '[data-testid="NAMESPACE-tile-link"]',
+    componentTileLink: '[data-testid="COMPONENT-tile-link"]',
+    deploymentTileLink: "[data-testid='DEPLOYMENT-tile-link']",
+    policyTileLink: "[data-testid='POLICY-tile-link']",
+    cveTileLink: '[data-testid="CVE-tile-link"]',
+    tabButton: '[data-testid="tab"]',
     getSidePanelTabHeader: title => {
-        return `[data-test-id="widget-header"] > .w-full:contains('${title}')`;
+        return `[data-testid="widget-header"] > .w-full:contains('${title}')`;
     },
     emptyFindingsSection: '[data-testid="results-message"]',
     deploymentCountText: '.rt-td [data-testid="deploymentCountText"]',
@@ -72,22 +72,22 @@ export const dashboardSelectors = {
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     topRiskyItems: {
         select: {
-            input: '[data-test-id="widget"] .react-select__control',
-            value: '[data-test-id="widget"] .react-select__single-value',
-            options: '[data-test-id="widget"] .react-select__option'
+            input: '[data-testid="widget"] .react-select__control',
+            value: '[data-testid="widget"] .react-select__single-value',
+            options: '[data-testid="widget"] .react-select__option'
         }
     },
     getMenuListItem: name => {
-        return `[data-test-id="menu-list"] [data-test-id="${name}"]`;
+        return `[data-testid="menu-list"] [data-testid="${name}"]`;
     },
     getWidget: title => {
-        return `[data-test-id="widget"]:contains('${title}')`;
+        return `[data-testid="widget"]:contains('${title}')`;
     },
     getTileLink: title => {
-        return `[data-test-id="tile-link"]:contains('${title}')`;
+        return `[data-testid="tile-link"]:contains('${title}')`;
     },
     getAllClickableTileLinks: title => {
-        return `[data-test-id="tile-link-value"]:contains('${title}')`;
+        return `[data-testid="tile-link-value"]:contains('${title}')`;
     },
     widgetBody: '[data-testid="widget-body"]',
     viewAllButton: 'button:contains("View All")',
@@ -96,36 +96,36 @@ export const dashboardSelectors = {
         '#capture-dashboard > div > div > div > .h-full > div > div > svg > g > text:nth-child(20)',
     topMostRowFVP:
         '#capture-dashboard > div > div:nth-child(3) > div > .h-full > div > div > svg > g > text:nth-child(2)',
-    entityPageHeader: '[data-test-id="header-text"]',
+    entityPageHeader: '[data-testid="header-text"]',
     topMostRowRDV:
         '#capture-dashboard > div > div:nth-child(4) > div > .h-full > div > ul > li:nth-child(1) > a > span',
     topMostRowMSPV:
         '#capture-dashboard > div > div:nth-child(6) > div > .h-full > div > ul > li:nth-child(1) > a > span',
-    tabLinks: '[data-test-id="tab"]',
+    tabLinks: '[data-testid="tab"]',
     allTileLinks: '#capture-widgets > div > .h-full > div > ul > li',
-    tabHeader: '[data-test-id="panel-header"]'
+    tabHeader: '[data-testid="panel-header"]'
 };
 
 const linkSelectors = {
     allCvesLink: '[data-testid="allCvesLink"]',
     fixableCvesLink: '[data-testid="fixableCvesLink"]',
-    tileLinks: "[data-test-id='tile-link']",
-    tileLinkValue: "[data-test-id='tile-link-value']",
-    tileLinkSuperText: '[data-test-id="tileLinkSuperText"]'
+    tileLinks: "[data-testid='tile-link']",
+    tileLinkValue: "[data-testid='tile-link-value']",
+    tileLinkSuperText: '[data-testid="tileLinkSuperText"]'
 };
 
 const sidepanelSelectors = {
     backButton: '[data-testid="sidepanelBackButton"]',
     entityIcon: '[data-testid="entity-icon"]',
-    sidePanelExpandButton: '[data-test-id = "external-link"]',
+    sidePanelExpandButton: '[data-testid = "external-link"]',
     getSidePanelTabLink: title => {
-        return `[data-test-id="tab"]:contains('${title}')`;
+        return `[data-testid="tab"]:contains('${title}')`;
     }
 };
 
 const policySidePanelSelectors = {
     policyEditButton: '[data-testid="button-link"]',
-    policyEditPageHeader: '[data-test-id="side-panel-header"]'
+    policyEditPageHeader: '[data-testid="side-panel-header"]'
 };
 
 export const selectors = {

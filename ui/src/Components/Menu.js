@@ -39,7 +39,7 @@ const Menu = ({
                             to={link}
                             className={`${optionsClass} ${optionClassName} no-underline text-base-600`}
                             key={label}
-                            data-test-id={label}
+                            data-testid={label}
                         >
                             {icon}
                             {label && <span className="pl-2">{label}</span>}
@@ -53,7 +53,7 @@ const Menu = ({
                         className={`${optionsClass} ${optionClassName}`}
                         onClick={onClick}
                         key={label}
-                        data-test-id={label}
+                        data-testid={label}
                     >
                         {icon}
                         {label && <span className="pl-2">{label}</span>}
@@ -90,7 +90,7 @@ const Menu = ({
             {isMenuOpen && (
                 <div
                     className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-50 min-w-32 bg-base-100 shadow ${menuClassName}`}
-                    data-test-id="menu-list"
+                    data-testid="menu-list"
                 >
                     {grouped ? renderGroupedOptions(options) : renderOptions(options)}
                 </div>

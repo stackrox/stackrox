@@ -14,7 +14,7 @@ const TileContent = ({
     return (
         <div className={`flex flex-col text-center justify-around ${textColorClass} ${className}`}>
             {superText !== null && (
-                <div className="text-3xl tracking-widest pb-1" data-test-id="tileLinkSuperText">
+                <div className="text-3xl tracking-widest pb-1" data-testid="tileLinkSuperText">
                     {superText}
                 </div>
             )}
@@ -22,7 +22,7 @@ const TileContent = ({
             <div
                 className={`flex ${!textWrap &&
                     'whitespace-no-wrap'} items-center font-600 font-condensed uppercase justify-center`}
-                data-test-id="tile-link-value"
+                data-testid="tile-link-value"
             >
                 {text}
             </div>

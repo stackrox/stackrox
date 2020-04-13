@@ -13,7 +13,7 @@ const Link = ({ url, text, component, pdf, className, dataTestId }) => {
             to={url}
             className={`underline h-full text-left items-center flex text-base-700 hover:text-primary-700 ${className}`}
             onClick={onClick}
-            data-test-id={dataTestId}
+            data-testid={dataTestId}
         >
             {component || text}
         </RouterLink>

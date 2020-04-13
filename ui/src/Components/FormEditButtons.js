@@ -16,7 +16,7 @@ function FormEditButtons({ formName, isEditing, setIsEditing }) {
                     className="btn btn-base mr-2"
                     type="button"
                     onClick={setEditingFalse}
-                    data-test-id="cancel-btn"
+                    data-testid="cancel-btn"
                 >
                     Cancel
                 </button>
@@ -26,7 +26,7 @@ function FormEditButtons({ formName, isEditing, setIsEditing }) {
     }
     return (
         <button
-            data-test-id="edit-btn"
+            data-testid="edit-btn"
             className="btn btn-base"
             type="button"
             onClick={setEditingTrue}

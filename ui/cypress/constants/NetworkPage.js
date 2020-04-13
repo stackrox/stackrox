@@ -4,15 +4,15 @@ export const selectors = {
     network: 'nav.left-navigation li:contains("Network") a',
     simulatorSuccessMessage: 'div:contains("Policies processed")',
     panels: {
-        creatorPanel: '[data-test-id="network-creator-panel"]',
+        creatorPanel: '[data-testid="network-creator-panel"]',
         simulatorPanel: '[data-testid="network-simulator-panel"]',
-        uploadPanel: '[data-test-id="upload-yaml-panel"]',
-        detailsPanel: '[data-test-id="network-details-panel"]'
+        uploadPanel: '[data-testid="upload-yaml-panel"]',
+        detailsPanel: '[data-testid="network-details-panel"]'
     },
     legend: {
-        deployments: '[data-test-id="deployment-legend"] div',
-        namespaces: '[data-test-id="namespace-legend"] div',
-        connections: '[data-test-id="connection-legend"] div'
+        deployments: '[data-testid="deployment-legend"] div',
+        namespaces: '[data-testid="namespace-legend"] div',
+        connections: '[data-testid="connection-legend"] div'
     },
     namespaces: {
         all: 'g.container > rect',
@@ -29,9 +29,9 @@ export const selectors = {
         services: '.link.service'
     },
     buttons: {
-        viewActiveYamlButton: '[data-test-id="view-active-yaml-button"]',
-        simulatorButtonOn: '[data-test-id="simulator-button-on"]',
-        simulatorButtonOff: '[data-test-id="simulator-button-off"]',
+        viewActiveYamlButton: '[data-testid="view-active-yaml-button"]',
+        simulatorButtonOn: '[data-testid="simulator-button-on"]',
+        simulatorButtonOff: '[data-testid="simulator-button-off"]',
         generateNetworkPolicies: 'button:contains("Generate and simulate network policies")'
     }
 };

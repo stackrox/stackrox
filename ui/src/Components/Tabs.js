@@ -87,7 +87,7 @@ class Tabs extends Component {
                     }`}
                     key={`${header.text}`}
                     onClick={this.tabClickHandler(header, i)}
-                    data-test-id="tab"
+                    data-testid="tab"
                 >
                     {header.text}
                 </button>

@@ -58,7 +58,7 @@ function validateWithAParentSelector(
                 .eq(rowIndex)
                 .click();
             cy.url().should('contain', urlToVerify);
-            cy.get('[data-test-id="header-text"]').should('have.text', rowText);
+            cy.get('[data-testid="header-text"]').should('have.text', rowText);
             validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
             validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
             for (let i = 0; i < tileLinksList.length; i += 1) {
@@ -93,7 +93,7 @@ function validateWithActualSelector(
                     .trimRight();
             cy.get(topRowSelector).click();
             cy.url().should('contain', urlToVerify);
-            cy.get('[data-test-id="header-text"]').should('have.text', rowText);
+            cy.get('[data-testid="header-text"]').should('have.text', rowText);
             validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
             validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
             for (let i = 0; i < tileLinksList.length; i += 1) {

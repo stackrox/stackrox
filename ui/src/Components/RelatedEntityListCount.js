@@ -32,12 +32,12 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
             disabled={value === 0}
             className="h-full w-full no-underline text-primary-700 hover:bg-primary-100 bg-counts-widget"
             onClick={onClick}
-            data-test-id="related-entity-list-count-value"
+            data-testid="related-entity-list-count-value"
         >
             {content}
         </button>
     );
-    const titleComponents = <div data-test-id="related-entity-list-count-title">{name}</div>;
+    const titleComponents = <div data-testid="related-entity-list-count-title">{name}</div>;
     return (
         <Widget
             id="related-entity-list-count"

@@ -129,7 +129,7 @@ class ExportButton extends Component {
                             />
                             {this.isCsvSupported() && (
                                 <Button
-                                    data-test-id="download-csv-button"
+                                    data-testid="download-csv-button"
                                     className={btnClassName}
                                     type="button"
                                     onClick={this.downloadCsv}

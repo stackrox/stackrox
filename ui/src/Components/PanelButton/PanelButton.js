@@ -28,7 +28,6 @@ const PanelButton = ({
                 onClick={onClick}
                 disabled={disabled}
                 data-testid={dataTestId}
-                data-test-id={`${text.toLowerCase()}-button`}
             >
                 {icon && <span className="flex items-center">{icon}</span>}
                 {children && (

@@ -34,7 +34,7 @@ describe('Entities single views', () => {
                     //   https://github.com/cypress-io/cypress/issues/4856
                     .click({ force: true });
 
-                cy.get(`[data-test-id="side-panel"] [data-test-id="panel-header"]`)
+                cy.get(`[data-testid="side-panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then(panelHeaderText => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(

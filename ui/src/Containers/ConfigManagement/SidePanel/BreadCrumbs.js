@@ -81,7 +81,7 @@ const BreadCrumbLinks = props => {
         if (!state) return null;
         return (
             <div key={`${state.name}--${state.type}`} className={`flex ${maxWidthClass} truncate`}>
-                <span className="flex flex-col max-w-full" data-test-id="breadcrumb-link-text">
+                <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
                     {content}
                     <span className="capitalize italic font-600">{state.type.toLowerCase()}</span>
                 </span>

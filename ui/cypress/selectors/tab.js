@@ -1,6 +1,6 @@
 const tab = {
-    tabs: '[data-test-id="tab"]',
-    activeTab: '[data-test-id="tab"].active'
+    tabs: '[data-testid="tab"]',
+    activeTab: '[data-testid="tab"].active'
 };
 
 export default tab;

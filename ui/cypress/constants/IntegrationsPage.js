@@ -23,14 +23,14 @@ export const selectors = {
         confirm: 'button:contains("Confirm")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
-        closePanel: 'button[data-test-id="cancel"]'
+        closePanel: 'button[data-testid="cancel"]'
     },
     apiTokenForm: {
-        nameInput: 'form[data-test-id="api-token-form"] input[name="name"]',
-        roleSelect: 'form[data-test-id="api-token-form"] .react-select__control'
+        nameInput: 'form[data-testid="api-token-form"] input[name="name"]',
+        roleSelect: 'form[data-testid="api-token-form"] .react-select__control'
     },
     apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
-    apiTokenDetailsDiv: 'div[data-test-id="api-token-details"]',
+    apiTokenDetailsDiv: 'div[data-testid="api-token-details"]',
     clusterForm: {
         nameInput: 'form[data-testid="cluster-form"] input[name="name"]',
         imageInput: 'form[data-testid="cluster-form"] input[name="mainImage"]',
@@ -41,7 +41,7 @@ export const selectors = {
         typesSelect: 'form .react-select__control',
         endpointInput: "form input[name='docker.endpoint']"
     },
-    labeledValue: '[data-test-id="labeled-value"]',
+    labeledValue: '[data-testid="labeled-value"]',
     plugins: '.mb-6:first div[role="button"]',
     dialog: '.dialog',
     checkboxes: 'input'

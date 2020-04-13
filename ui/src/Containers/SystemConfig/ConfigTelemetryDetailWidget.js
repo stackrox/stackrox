@@ -5,7 +5,7 @@ import CollapsibleText from 'Components/CollapsibleText';
 
 const ConfigTelemetryDetailWidget = ({ config, editable }) => {
     return (
-        <div className="px-3 w-full h-full" data-test-id="view-telemetry-config">
+        <div className="px-3 w-full h-full" data-testid="view-telemetry-config">
             <aside className="bg-base-100 border-base-200 shadow h-full">
                 <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                     Online Telemetry Data Collection {getTextOrToggle(config, editable)}
@@ -51,9 +51,7 @@ function getTextOrToggle(config, editable) {
         return <ReduxToggleField name="telemetryConfig.enabled" />;
     }
     return (
-        <div data-test-id="telemetry-state">
-            {config && config.enabled ? 'enabled' : 'disabled'}
-        </div>
+        <div data-testid="telemetry-state">{config && config.enabled ? 'enabled' : 'disabled'}</div>
     );
 }
 

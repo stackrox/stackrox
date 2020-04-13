@@ -13,8 +13,8 @@ import ProcessDetails from './Process/Details';
 
 const riskErrMsg = `Risk not found. Risk for selected deployment may not have been processed.`;
 const deploymentErrMsg = `Deployment not found. The selected deployment may have been removed.`;
-const processErrMsg = `No processes discovered. The selected deployment may not have running pods, 
-    or the StackRox collector may not be running in your cluster. 
+const processErrMsg = `No processes discovered. The selected deployment may not have running pods,
+    or the StackRox collector may not be running in your cluster.
     It is recommended to check the logs for more information.`;
 
 const RiskSidePanelErrorContent = ({ message }) => {
@@ -46,7 +46,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                     <Link
                         className="btn btn-base h-10 no-underline mt-4 ml-3 mr-3"
                         to={`/main/network/${selectedDeployment.id}`}
-                        data-test-id="network-node-link"
+                        data-testid="network-node-link"
                     >
                         View Deployment in Network Graph
                     </Link>

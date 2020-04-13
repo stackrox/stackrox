@@ -25,7 +25,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
     const isRuntimeAlert = violation && violation.lifecycleStage === 'RUNTIME';
     return (
         <div
-            data-test-id="alerts-hover-actions"
+            data-testid="alerts-hover-actions"
             className="flex border-2 border-r-2 border-base-400 bg-base-100 shadow"
         >
             {isRuntimeAlert && (
@@ -39,7 +39,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     >
                         <button
                             type="button"
-                            data-test-id="resolve-button"
+                            data-testid="resolve-button"
                             className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
                             onClick={resolveAlertAction(true)}
                         >
@@ -49,7 +49,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     <Tooltip content={<TooltipOverlay>Mark as resolved</TooltipOverlay>}>
                         <button
                             type="button"
-                            data-test-id="resolve-button"
+                            data-testid="resolve-button"
                             className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 border-l-2 border-base-400"
                             onClick={resolveAlertAction(false)}
                         >
@@ -63,7 +63,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                 overlayClassName="pointer-events-none text-center"
             >
                 <button
-                    data-test-id="whitelist-deployment-button"
+                    data-testid="whitelist-deployment-button"
                     type="button"
                     className={`p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 ${
                         isRuntimeAlert ? 'border-l-2 border-base-400' : ''

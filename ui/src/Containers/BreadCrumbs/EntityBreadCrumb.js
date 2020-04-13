@@ -12,7 +12,7 @@ const EntityBreadCrumb = ({ workflowEntity, url }) => {
     const { entityName } = useEntityName(entityType, entityId, !entityId);
     const title = entityName || pluralize(typeLabel);
     return (
-        <span className="flex flex-col max-w-full" data-test-id="breadcrumb-link-text">
+        <span className="flex flex-col max-w-full" data-testid="breadcrumb-link-text">
             {url ? (
                 <Link
                     className="text-primary-700 underline uppercase truncate"

@@ -16,7 +16,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                 </button>
             </div>
             <div className="bg-primary-100">
-                <div className="flex border-b border-base-400" data-test-id="deployment-legend">
+                <div className="flex border-b border-base-400" data-testid="deployment-legend">
                     <LegendTile name="deployment" tooltip="Deployment" type="font" />
                     <LegendTile
                         name="deployment-allowed-connections"
@@ -36,7 +36,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         />
                     )}
                 </div>
-                <div className="flex border-b border-base-400" data-test-id="namespace-legend">
+                <div className="flex border-b border-base-400" data-testid="namespace-legend">
                     <LegendTile name="namespace" tooltip="Namespace" type="svg" />
                     <LegendTile
                         name="namespace-allowed-connection"
@@ -56,7 +56,7 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                         />
                     )}
                 </div>
-                <div className="flex border-b border-base-400" data-test-id="connection-legend">
+                <div className="flex border-b border-base-400" data-testid="connection-legend">
                     <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
                     <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
                     {featureFlags.SHOW_DISALLOWED_CONNECTIONS && (
@@ -110,7 +110,7 @@ const Legend = () => {
 
     return (
         <div
-            data-test-id="legend"
+            data-testid="legend"
             className="env-graph-legend absolute bottom-0 left-0 mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
         >
             {renderLegendButton()}

@@ -125,7 +125,7 @@ class TableContents extends Component {
                             className={`h-2 w-2 rounded-lg absolute ${
                                 !original.disabled ? 'bg-success-500' : 'bg-base-300'
                             }`}
-                            data-test-id="enable-disable-icon"
+                            data-testid="enable-disable-icon"
                         />
                         <div
                             className={`pl-4 ${
@@ -144,7 +144,7 @@ class TableContents extends Component {
                                 hidden={original.notifiers.length !== 0}
                             />
                         </div>
-                        <div className="pl-4" data-test-id="policy-name">
+                        <div className="pl-4" data-testid="policy-name">
                             {original.name}
                         </div>
                     </div>
@@ -192,7 +192,7 @@ class TableContents extends Component {
         const id = this.props.selectedPolicyId;
         return (
             <div
-                data-test-id="policies-table-container"
+                data-testid="policies-table-container"
                 className={`w-full
                     ${
                         this.props.wizardOpen && this.props.wizardStage !== wizardStages.details

@@ -41,42 +41,42 @@ class MultiGaugeDetailSection extends Component {
         return (
             <div key={`${d.title}-${d.arc}`}>
                 <div
-                    data-test-id="gauge-detail-bullet"
+                    data-testid="gauge-detail-bullet"
                     className={`widget-detail-bullet ${passingSelected ? '' : 'text-base-500'}`}
                 >
                     <button
-                        data-test-id="passing-controls"
+                        data-testid="passing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-success-700 underline cursor-pointer ${passingClassName}`}
                         onClick={this.onClick(d, 'passing', idx)}
                     >
-                        <span data-test-id="passing-controls-value">{passingValue} </span>
+                        <span data-testid="passing-controls-value">{passingValue} </span>
                         passing controls
                     </button>
                 </div>
                 <div
                     key={d.title}
-                    data-test-id="gauge-detail-bullet"
+                    data-testid="gauge-detail-bullet"
                     className={`widget-detail-bullet ${failingSelected ? '' : 'text-base-500'}`}
                 >
                     <button
-                        data-test-id="failing-controls"
+                        data-testid="failing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-alert-700 underline cursor-pointer ${failingClassName}`}
                         onClick={this.onClick(d, 'failing', idx)}
                     >
-                        <span data-test-id="failing-controls-value">{failingValue} </span>
+                        <span data-testid="failing-controls-value">{failingValue} </span>
                         failing controls
                     </button>
                 </div>
                 {skipped > 0 && (
-                    <div data-test-id="gauge-detail-bullet" className="widget-detail-bullet">
+                    <div data-testid="gauge-detail-bullet" className="widget-detail-bullet">
                         <button
-                            data-test-id="skipped-controls"
+                            data-testid="skipped-controls"
                             type="button"
                             className="text-base-600 font-600 pointer-events-none"
                         >
-                            <span data-test-id="skipped-controls-value">{skipped} </span>
+                            <span data-testid="skipped-controls-value">{skipped} </span>
                             skipped controls
                         </button>
                     </div>

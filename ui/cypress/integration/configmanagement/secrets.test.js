@@ -22,12 +22,12 @@ describe('Config Management Entities (Secrets)', () => {
     it('should render the deployments link and open the side panel when a row is clicked', () => {
         cy.visit(url.list.secrets);
         cy.get(configManagementSelectors.tableRows)
-            .find(`${configManagementSelectors.tableCells} a[data-test-id='deployment']`)
+            .find(`${configManagementSelectors.tableCells} a[data-testid='deployment']`)
             .eq(0)
             .click({ force: true })
             .invoke('text')
             .then(expectedText => {
-                cy.get('[data-test-id="side-panel"] [data-test-id="panel-header"]').contains(
+                cy.get('[data-testid="side-panel"] [data-testid="panel-header"]').contains(
                     expectedText.toLowerCase()
                 );
             });

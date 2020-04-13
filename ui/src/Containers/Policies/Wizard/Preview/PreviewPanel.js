@@ -13,7 +13,7 @@ import Whitelisted from './Whitelisted';
 import PreviewButtons from './PreviewButtons';
 
 const DryRunInProgressMessage = () => (
-    <div className="flex items-center justify-center h-full" data-test-id="dry-run-loading">
+    <div className="flex items-center justify-center h-full" data-testid="dry-run-loading">
         <div className="flex uppercase">
             <Message message="Dry run in progress..." type="loading" />
         </div>

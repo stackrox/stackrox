@@ -122,7 +122,7 @@ class LoginPage extends Component {
                         type="button"
                         className={`flex p-1 text-center text-sm items-center p-2 ${color} hover:bg-${fg} hover:text-${bg} border-l border-${fg}`}
                         onClick={this.dismissAuthError}
-                        data-test-id="dismiss"
+                        data-testid="dismiss"
                     >
                         <Icon.X className="h-4" />
                     </button>

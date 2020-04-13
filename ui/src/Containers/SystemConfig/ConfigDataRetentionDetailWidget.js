@@ -33,7 +33,7 @@ const DataRetentionDetailWidget = ({ config }) => {
     const alertConfig = privateConfig.alertConfig || {};
 
     return (
-        <div className="bg-base-100 border-base-200 shadow" data-test-id="login-notice-config">
+        <div className="bg-base-100 border-base-200 shadow" data-testid="login-notice-config">
             <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                 Data Retention Configuration{' '}
             </div>

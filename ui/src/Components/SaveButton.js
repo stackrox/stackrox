@@ -13,7 +13,7 @@ const SaveButton = ({ dispatch, formName, className, isPristineForm }) => (
         type="button"
         disabled={isPristineForm}
         onClick={onClickHandler(dispatch, formName)}
-        data-test-id="save-btn"
+        data-testid="save-btn"
     >
         Save
     </button>

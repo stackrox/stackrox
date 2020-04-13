@@ -14,7 +14,7 @@ const AppBanner = ({ type, enabled, text, color, size, backgroundColor }) => {
         <div
             className={`${sizeClassMap[size]} px-2 py-1 whitespace-pre text-center`}
             style={{ color, backgroundColor }}
-            data-test-id={`${type}-banner`}
+            data-testid={`${type}-banner`}
         >
             {text}
         </div>

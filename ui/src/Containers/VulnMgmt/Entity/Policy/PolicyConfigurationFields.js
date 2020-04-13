@@ -16,7 +16,7 @@ const PolicyConfigurationFields = ({ fields, ...rest }) => {
         const { label } = fieldsMap[key];
         const value = fieldsMap[key].formatValue(paredFields[key]);
         return (
-            <li className="border-b border-base-300 py-2" key={key} data-test-id={key}>
+            <li className="border-b border-base-300 py-2" key={key} data-testid={key}>
                 <div className="text-base-600 font-700">{label}:</div>
                 <div className="flex pt-1 leading-normal">{value}</div>
             </li>

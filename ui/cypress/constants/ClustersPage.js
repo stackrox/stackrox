@@ -3,7 +3,7 @@ export const clustersUrl = '/main/clusters';
 export const selectors = {
     configure: 'nav.left-navigation li:contains("Platform Configuration") a',
     navLink: '.navigation-panel li:contains("Clusters") a',
-    header: '[data-test-id="header-text"]',
+    header: '[data-testid="header-text"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")'
@@ -19,7 +19,7 @@ export const selectors = {
         confirmDelete: '.dialog button:contains("Delete")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
-        closePanel: 'button[data-test-id="cancel"]'
+        closePanel: 'button[data-testid="cancel"]'
     },
     clusterForm: {
         nameInput: 'form[data-testid="cluster-form"] input[name="name"]',

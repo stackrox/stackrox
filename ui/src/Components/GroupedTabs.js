@@ -9,7 +9,7 @@ const Tab = ({ text, index, active, to }) => (
             active ? 'bg-base-100 text-primary-700' : ''
         } ${index !== 0 ? 'border-l border-base-400' : ''}`}
     >
-        <Link to={to} data-test-id="tab" className={`w-full no-underline ${active && 'active'}`}>
+        <Link to={to} data-testid="tab" className={`w-full no-underline ${active && 'active'}`}>
             <div
                 className={`${
                     active ? 'text-primary-700' : 'text-base-500 hover:text-base-600'
@@ -42,7 +42,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
             const showGroupTab = idx !== 0 && grouppedTabs.length !== 1;
             return (
                 <li
-                    data-test-id="grouped-tab"
+                    data-testid="grouped-tab"
                     className={`
                         ${!isDarkMode ? 'bg-primary-100' : 'bg-base-0'} ${
                         idx !== 0 ? 'ml-4' : ''
@@ -78,7 +78,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
     return (
         <div className="relative">
             <ul
-                data-test-id="grouped-tabs"
+                data-testid="grouped-tabs"
                 className={` flex border-b border-base-400 px-4 uppercase text-sm ignore-react-onclickoutside ${
                     !isDarkMode ? 'bg-primary-100' : 'bg-base-0'
                 }`}

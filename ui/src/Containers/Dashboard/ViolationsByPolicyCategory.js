@@ -29,7 +29,7 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
             <div
                 className="p-3 w-full lg:w-1/2 xl:w-1/3"
                 key={policyType.group}
-                data-test-id="policy-category-violation"
+                data-testid="policy-category-violation"
             >
                 <div className="bg-base-100 rounded-sm shadow h-full rounded">
                     <h2 className="flex items-center text-lg text-base font-sans text-base-600 tracking-wide border-base-300 border-b">

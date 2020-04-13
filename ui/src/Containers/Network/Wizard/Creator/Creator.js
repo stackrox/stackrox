@@ -19,7 +19,7 @@ const Creator = ({ onClose, wizardOpen, wizardStage }) => {
 
     const header = 'SELECT AN OPTION';
     return (
-        <div data-test-id="network-creator-panel" className="h-full w-full shadow-md bg-base-200">
+        <div data-testid="network-creator-panel" className="h-full w-full shadow-md bg-base-200">
             <Panel header={header} onClose={onClose} headerComponents={<ViewActive />}>
                 <div className="flex h-full w-full flex-col p-4 pb-0">
                     <Generate />

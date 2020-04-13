@@ -17,7 +17,7 @@ const TableCellLink = ({ url, text, component, pdf, extraClasses, dataTestId }) 
             to={url}
             className={`underline h-full text-left items-center flex text-base-700 hover:text-primary-700 ${extraClasses}`}
             onClick={onClick}
-            data-test-id={dataTestId}
+            data-testid={dataTestId}
         >
             {component || text}
         </Link>

@@ -68,7 +68,7 @@ class NavigationPanel extends Component {
                         to={navLink.to}
                         onClick={this.props.onClose(true, 'configure')}
                         className="block no-underline text-base-100 px-1 font-700 border-b py-5 border-primary-900 pl-2 pr-2 hover:bg-base-700"
-                        data-test-id={navLink.data || navLink.text}
+                        data-testid={navLink.data || navLink.text}
                     >
                         {navLink.text}
                     </Link>
@@ -81,7 +81,7 @@ class NavigationPanel extends Component {
         return (
             <div
                 className="navigation-panel w-full flex theme-light"
-                data-test-id="configure-subnav"
+                data-testid="configure-subnav"
             >
                 {this.panels[this.props.panelType]()}
                 <button

@@ -2,7 +2,8 @@
   "parser": "babel-eslint",
   "extends": [
     "airbnb",
-    "prettier"
+    "prettier",
+    "plugin:testing-library/react"
   ],
   "plugins": [
     "prettier",
@@ -10,32 +11,47 @@
     "react-hooks"
   ],
   "rules": {
-    "prettier/prettier": ["error", {
-      "printWidth": 100,
-      "singleQuote": true,
-      "tabWidth": 4
-    }],
-
+    "prettier/prettier": [
+      "error",
+      {
+        "printWidth": 100,
+        "singleQuote": true,
+        "tabWidth": 4
+      }
+    ],
     // DEPRECATED in favor of label-has-associated-control
     // https://github.com/evcohen/eslint-plugin-jsx-a11y/blob/master/docs/rules/label-has-for.md#rule-details
-    "jsx-a11y/label-has-for": [ 0 ],
-
+    "jsx-a11y/label-has-for": [
+      0
+    ],
     "mocha/no-exclusive-tests": "error",
-
-    "import/no-extraneous-dependencies": [ "error", {
-      "devDependencies": [
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": [
           "**/*.test.js",
           "cypress/**",
           "src/setupTests.js",
           "src/setupProxy.js",
           "tailwind.config.js",
           "postcss.config.js"
-      ],
-      "optionalDependencies": false
-    }],
-
+        ],
+        "optionalDependencies": false
+      }
+    ],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "react/prop-types": [2, { "skipUndeclared": true }]
+    "react/prop-types": [
+      2,
+      {
+        "skipUndeclared": true
+      }
+    ],
+    "testing-library/consistent-data-testid": [
+      2,
+      {
+        "testIdPattern": "^[A-Za-z]+[\\w\\-\\.]*$"
+      }
+    ]
   }
 }

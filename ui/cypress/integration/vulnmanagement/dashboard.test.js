@@ -49,7 +49,7 @@ describe('Vuln Management Dashboard Page', () => {
                 cy.get(selectors.tileLinks)
                     .eq(0)
                     .click();
-                cy.get(`[data-test-id="panel"] [data-test-id="panel-header"]`)
+                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then(panelHeaderText => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
@@ -68,7 +68,7 @@ describe('Vuln Management Dashboard Page', () => {
                 cy.get(selectors.tileLinks)
                     .eq(1)
                     .click();
-                cy.get(`[data-test-id="panel"] [data-test-id="panel-header"]`)
+                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
                     .then(panelHeaderText => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numCves, 10));

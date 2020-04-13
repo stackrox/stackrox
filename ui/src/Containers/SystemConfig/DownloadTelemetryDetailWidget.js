@@ -21,7 +21,7 @@ const DownloadTelemetryDetailWidget = () => {
     );
 
     return (
-        <div className="px-3 w-full h-full" data-test-id="download-telemetry">
+        <div className="px-3 w-full h-full" data-testid="download-telemetry">
             <div className="bg-base-100 border-base-200 shadow h-full">
                 <h2 className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                     Diagnostic Data{' '}
