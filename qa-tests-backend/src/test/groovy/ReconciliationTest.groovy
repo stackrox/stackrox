@@ -27,11 +27,18 @@ class ReconciliationTest extends BaseSpecification {
         "*central.SensorEvent_Node": 0,
     ]
 
-    // MAX_ALLOWED_DELETIONS is the max number of deletions allowed for a resource.
+    // DEFAULT_MAX_ALLOWED_DELETIONS is the default max number of deletions allowed for a resource.
     // It aims to detect overly aggressive reconciliation.
-    private static final Integer MAX_ALLOWED_DELETIONS = 3
+    private static final Integer DEFAULT_MAX_ALLOWED_DELETIONS = 3
 
-    private void verifyReconciliationStats(boolean verifyMin) {
+    // MAX_ALLOWED_DELETIONS_BY_KEY is the max number of deletions allowed per resource.
+    // It aims to detect overly aggressive reconciliation.
+    private static final Map<String, Integer> MAX_ALLOWED_DELETIONS_BY_KEY = [
+        // We create and delete an entire namespace, so we may see a lot of secrets being deleted, esp in OpenShift.
+        "*central.SensorEvent_Secret": 5,
+    ]
+
+    private static void verifyReconciliationStats(boolean verifyMin) {
         // Cannot verify this on a release build, since the API is not exposed.
         if (MetadataService.isReleaseBuild()) {
             return
@@ -50,7 +57,9 @@ class ReconciliationTest extends BaseSpecification {
                 assert entry.getValue() >= expectedMinDeletions: "Number of deletions too low for " +
                     "object type ${entry.getKey()} (got ${entry.getValue()})"
             }
-            assert entry.getValue() <= MAX_ALLOWED_DELETIONS : "Overly aggressive reconciliation for " +
+            def maxAllowedDeletions = MAX_ALLOWED_DELETIONS_BY_KEY.getOrDefault(
+                entry.getKey(), DEFAULT_MAX_ALLOWED_DELETIONS)
+            assert entry.getValue() <= maxAllowedDeletions: "Overly aggressive reconciliation for " +
                 "object type ${entry.getKey()} (got ${entry.getValue()})"
         }
     }
