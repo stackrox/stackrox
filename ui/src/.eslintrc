@@ -95,6 +95,13 @@
         "react/destructuring-assignment": [
             "off"
         ],
+        // forbid 'data-test-id' in preference of 'data-testid' 
+        "react/forbid-dom-props": [
+            "error",
+            {
+              "forbid": ["data-test-id"] 
+            }
+        ],
         // TODO-ivan: rules below are to be removed after fixing all violations in the code
         "react/no-array-index-key": "warn"
     },
