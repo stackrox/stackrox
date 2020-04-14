@@ -1,4 +1,7 @@
 import static Services.waitForViolation
+
+import services.ImageService
+import util.Timer
 import objects.K8sPolicyRule
 import objects.K8sRole
 import objects.K8sRoleBinding
@@ -37,6 +40,8 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
     static final private String DEPLOYMENT_RBAC = "deployment-rbac"
     static final private String SERVICE_ACCOUNT_NAME = "policy-config-sa"
+    static final private String BUSYBOX_LATEST_WITH_DIGEST_NAME = "busybox-1-31-with-tag-and-digest"
+    static final private String BUSYBOX_LATEST_NAME = "busybox-latest"
     private static final String CLUSTER_ROLE_NAME = "policy-config-role"
 
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
@@ -100,6 +105,17 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setImage("nginx:1.15.4-alpine")
                     .setSkipReplicaWait(true),
     ]
+
+    static final private Deployment BUSYBOX_WITH_DIGEST = new Deployment()
+            .setName(BUSYBOX_LATEST_WITH_DIGEST_NAME)
+            .setImage("busybox:1.31@sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+            .setCommand(["sleep", "60000"])
+
+    static final private Deployment BUSYBOX_LATEST = new Deployment()
+            .setName(BUSYBOX_LATEST_NAME)
+            .setImage("busybox:latest@sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+            .setCommand(["sleep", "60000"])
+
     static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
             .setType(Service.Type.NODEPORT)
 
@@ -123,6 +139,36 @@ class PolicyConfigurationTest extends BaseSpecification {
         orchestrator.deleteClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
         orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
         orchestrator.deleteServiceAccount(NEW_SA)
+    }
+
+    @Category(BAT)
+    def "Verify name violations with same ID as existing image are still triggered"() {
+        given:
+        "Create a busybox deployment has same ID as latest"
+        orchestrator.createDeployment(BUSYBOX_WITH_DIGEST)
+
+        when:
+        Timer t = new Timer(60, 1)
+        def image
+        while (image == null && t.IsValid()) {
+            image = ImageService.getImage("sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+        }
+        assert image != null
+
+        and:
+        "Run busybox latest with same digest as previous image"
+        orchestrator.createDeployment(BUSYBOX_LATEST)
+
+        then:
+        "Ensure that the latest tag violation shows up"
+        def hasViolation = waitForViolation(BUSYBOX_LATEST_NAME, "Latest Tag")
+        println "Has violation ${hasViolation}"
+        assert hasViolation
+
+        cleanup:
+        "Remove the deployments"
+        orchestrator.deleteDeployment(BUSYBOX_WITH_DIGEST)
+        orchestrator.deleteDeployment(BUSYBOX_LATEST)
     }
 
     @Category(BAT)
