@@ -806,6 +806,7 @@ commands:
             mkdir -p "$CONFIG_DIR"
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
+            cp .circleci/gke-refresh-token-forever.sh "${CONFIG_DIR}/refresh-token-forever.sh"
 
       - build-liveness-check
 
@@ -857,14 +858,18 @@ commands:
           name: Restore config for << parameters.cluster-id >> cluster
           command: |
             CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
-            CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
+            export CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
             [[ -n "$CLUSTER_NAME" ]]
-            ZONE="$(cat "${CONFIG_DIR}/zone")"
+            export ZONE="$(cat "${CONFIG_DIR}/zone")"
             [[ -n "$ZONE" ]]
             gcloud config set compute/zone "$ZONE"
             cmd=(gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME")
             "${cmd[@]}"
             echo "Restored config for cluster ${CLUSTER_NAME}"
+            if [[ -x "${CONFIG_DIR}/refresh-token-forever.sh" ]]; then
+              echo "Running refresh token script in the background."
+              nohup "${CONFIG_DIR}/refresh-token-forever.sh" &
+            fi
             cci-export CLUSTER_NAME "$CLUSTER_NAME"
             echo
             echo "Run the following command to attach to the cluster:"
