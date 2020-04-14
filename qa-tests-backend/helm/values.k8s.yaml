@@ -19,8 +19,8 @@ config:
   admissionControl:
     createService: true
     listenOnUpdates: true
-    enableService: true
-    enforceOnUpdates: true
+    enableService: false
+    enforceOnUpdates: false
     scanInline: false
     disableBypass: false
     timeout: 3
