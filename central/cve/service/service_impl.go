@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -29,6 +30,7 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.Modify(permissions.WithLegacyAuthForSAC(resources.Image, true))): {
 			"/v1.CVEService/SuppressCVEs",
+			"/v1.CVEService/UnsuppressCVEs",
 		},
 	})
 )
@@ -55,33 +57,37 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// SuppressCVE patches a current cve in the system.
+// SuppressCVE suppresses cves for specific duration or indefinitely.
 func (s *serviceImpl) SuppressCVEs(ctx context.Context, request *v1.SuppressCVERequest) (*v1.Empty, error) {
-	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddDocIDs(request.GetIds()...).ProtoQuery())
-	if err != nil {
+	activation := types.TimestampNow()
+	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if len(result) < len(request.GetIds()) {
-		missingIds := set.NewStringSet(request.GetIds()...).Difference(search.ResultsToIDSet(result))
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", ")))
-	}
-
-	if request.GetSetSuppressed() == nil {
-		return nil, nil
-	}
-
-	if request.GetSuppressed() {
-		err = s.cves.Suppress(ctx, request.GetIds()...)
-	} else {
-		err = s.cves.Unsuppress(ctx, request.GetIds()...)
-	}
-	if err != nil {
+	if err := s.cves.Suppress(ctx, activation, request.GetDuration(), request.GetIds()...); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.waitForCVEToBeIndexed(ctx)
-	if err != nil {
+	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	s.reprocessDeployments()
+
+	return &v1.Empty{}, nil
+}
+
+// UnsuppressCVE unsuppresses given cves indefinitely.
+func (s *serviceImpl) UnsuppressCVEs(ctx context.Context, request *v1.UnsuppressCVERequest) (*v1.Empty, error) {
+	if err := s.validateCVEsExist(ctx, request.GetIds()...); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err := s.cves.Unsuppress(ctx, request.GetIds()...); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err := s.waitForCVEToBeIndexed(ctx); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -104,4 +110,17 @@ func (s *serviceImpl) waitForCVEToBeIndexed(ctx context.Context) error {
 
 func (s *serviceImpl) reprocessDeployments() {
 	s.reprocessor.ShortCircuit()
+}
+
+func (s *serviceImpl) validateCVEsExist(ctx context.Context, ids ...string) error {
+	result, err := s.cves.Search(ctx, search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery())
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	if len(result) < len(ids) {
+		missingIds := set.NewStringSet(ids...).Difference(search.ResultsToIDSet(result))
+		return status.Error(codes.NotFound, fmt.Sprintf("Following CVEs not found: %s", strings.Join(missingIds.AsSlice(), ", ")))
+	}
+	return nil
 }

@@ -41,6 +41,9 @@ func init() {
 			"lastModified: Time",
 			"impactScore: Float!",
 			"vulnerabilityType: String!",
+			"suppressed: Boolean!",
+			"suppressActivation: Time",
+			"suppressExpiry: Time",
 		}),
 		schema.AddQuery("vulnerability(id: ID): EmbeddedVulnerability"),
 		schema.AddQuery("vulnerabilities(query: String, pagination: Pagination): [EmbeddedVulnerability!]!"),
@@ -83,6 +86,10 @@ type VulnerabilityResolver interface {
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	UnusedVarSink(ctx context.Context, args RawQuery) *int32
+
+	Suppressed(ctx context.Context) bool
+	SuppressActivation(ctx context.Context) (*graphql.Time, error)
+	SuppressExpiry(ctx context.Context) (*graphql.Time, error)
 }
 
 // Vulnerability resolves a single vulnerability based on an id (the CVE value).

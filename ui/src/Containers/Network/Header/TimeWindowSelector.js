@@ -6,7 +6,7 @@ import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as pageActions } from 'reducers/network/page';
 
-import timeWindows from 'constants/timeWindows';
+import { timeWindows } from 'constants/timeWindows';
 
 const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
     function selectTimeWindow(event) {

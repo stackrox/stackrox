@@ -8,14 +8,24 @@ const baseUrl = '/v1/cves';
 const csvUrl = '/api/vm/export/csv';
 
 /**
- * Send request to suppress / unsuppress CVE with a given ID.
+ * Send request to suppress CVEs with a given IDs.
  *
  * @param {!string} CVE unique identifier
- * @param {!boolean} true if CVE should be suppressed, false for unsuppress
+ * @param {!string} CVE suppress duration, if 0 then CVEs are suppressed indefinitely
  * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
  */
-export function updateCveSuppressedState(cveIdsToToggle, suppressed = false) {
-    return axios.patch(`${baseUrl}/suppress`, { ids: cveIdsToToggle, suppressed });
+export function suppressVulns(cveIds, duration = 0) {
+    return axios.patch(`${baseUrl}/suppress`, { ids: cveIds, duration });
+}
+
+/**
+ * Send request to unsuppress CVEs with a given IDs.
+ *
+ * @param {!string} CVE unique identifier
+ * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
+ */
+export function unsuppressVulns(cveIds) {
+    return axios.patch(`${baseUrl}/unsuppress`, { ids: cveIds });
 }
 
 export function getCvesInCsvFormat(

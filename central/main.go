@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	cveService "github.com/stackrox/rox/central/cve/service"
+	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -292,6 +293,7 @@ func (defaultFactory) StartServices() {
 		log.Panicf("could not start compliance manager: %v", err)
 	}
 	reprocessor.Singleton().Start()
+	suppress.Singleton().Start()
 	pruning.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -670,6 +672,8 @@ func waitForTerminationSignal() {
 	log.Infof("Caught %s signal", sig)
 	reprocessor.Singleton().Stop()
 	log.Info("Stopped reprocessor loop")
+	suppress.Singleton().Stop()
+	log.Info("Stopped cve unsuppress loop")
 	pruning.Singleton().Stop()
 	log.Info("Stopped garbage collector")
 	globaldb.Close()

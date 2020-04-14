@@ -5,6 +5,9 @@ All notable changes to this project that require documentation updates will be d
 - All `/v1/` API endpoints now support pretty-printing.  Make requests with the `?pretty` path parameter to receive pretty-printed json responses.
 - UI: added "Deployment Name" property in side panel for Deployment Details on Violations and Risk pages.
 - UI: In the Risk view, the URL now includes any search filters applied. You can now share the link and see the same filtered view.
+- `SuppressCVEs(/v1/cves/suppress)` endpoint now only supports cve suppression/snoozing. 
+- `SuppressCVEs(/v1/cves/suppress)` endpoint now supports cve suppression/snoozing for specific duration. 
+- Added `UnsuppressCVEs(/v1/cves/unsuppress)` endpoint to support cve un-suppression/un-snoozing.
 
 ## [41.0]
 ### Changed

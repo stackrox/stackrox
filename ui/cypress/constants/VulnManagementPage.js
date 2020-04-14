@@ -29,6 +29,7 @@ export const listSelectors = {
     cvesCvssScoreCol: '.rt-table > .rt-tbody > div > .rt-tr.-odd > div:nth-child(4) > div > span',
     tableRows: '.rt-tr',
     tableBodyRows: '.rt-tbody .rt-tr',
+    tableRowCheckbox: '[data-testid="checkbox-table-row-selector"]',
     tableColumn: '.rt-th.leading-normal > div',
     tableBodyColumn: '.rt-tr-group:nth-child(1) > .rt-tr > .rt-td',
     tableColumnLinks: '.rt-tr-group:nth-child(1)> .rt-tr > .rt-td > a',
@@ -40,7 +41,12 @@ export const listSelectors = {
     deploymentCountLink: '[data-testid="deploymentCountLink"]',
     policyCountLink: '[data-testid="policyCountLink"]',
     imageCountLink: '[data-testid="imageCountLink"]',
-    componentCountLink: '[data-testid="componentCountLink"]'
+    componentCountLink: '[data-testid="componentCountLink"]',
+    cveSuppressPanelButton: '[data-testid="panel-button-suppress-selected-cves"]',
+    cveUnsuppressPanelButton: '[data-testid="panel-button-unsuppress-selected-cves"]',
+    suppressOneHourOption: '[data-testid="1 Hour"]',
+    suppressToggleViewPanelButton: '[data-testid="panel-button-toggle-suppressed-cves-view"]',
+    cveUnsuppressRowButton: '[data-testid="row-action-unsuppress"]'
 };
 
 export const sidePanelListEntityPageSelectors = {

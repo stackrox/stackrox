@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/cve/search"
@@ -24,7 +25,7 @@ type DataStore interface {
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.CVE, error)
 
-	Suppress(ctx context.Context, ids ...string) error
+	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
 	Unsuppress(ctx context.Context, ids ...string) error
 
 	Upsert(ctx context.Context, cves ...*storage.CVE) error

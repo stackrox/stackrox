@@ -221,15 +221,17 @@ func ProtoCVEsToEmbeddedCVEs(protoCVEs []*storage.CVE) ([]*storage.EmbeddedVulne
 // It converts all the fields except except Fixed By which gets set depending on the CVE
 func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
-		Cve:          protoCVE.GetId(),
-		Cvss:         protoCVE.GetCvss(),
-		Summary:      protoCVE.GetSummary(),
-		Link:         protoCVE.GetLink(),
-		CvssV2:       protoCVE.GetCvssV2(),
-		CvssV3:       protoCVE.GetCvssV3(),
-		PublishedOn:  protoCVE.GetPublishedOn(),
-		LastModified: protoCVE.GetLastModified(),
-		Suppressed:   protoCVE.GetSuppressed(),
+		Cve:                protoCVE.GetId(),
+		Cvss:               protoCVE.GetCvss(),
+		Summary:            protoCVE.GetSummary(),
+		Link:               protoCVE.GetLink(),
+		CvssV2:             protoCVE.GetCvssV2(),
+		CvssV3:             protoCVE.GetCvssV3(),
+		PublishedOn:        protoCVE.GetPublishedOn(),
+		LastModified:       protoCVE.GetLastModified(),
+		Suppressed:         protoCVE.GetSuppressed(),
+		SuppressActivation: protoCVE.GetSuppressActivation(),
+		SuppressExpiry:     protoCVE.GetSuppressExpiry(),
 	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
@@ -256,16 +258,18 @@ func protoToEmbeddedVulnType(protoCVEType storage.CVE_CVEType) storage.EmbeddedV
 // EmbeddedCVEToProtoCVE converts *storage.EmbeddedVulnerability object to *storage.CVE object
 func EmbeddedCVEToProtoCVE(from *storage.EmbeddedVulnerability) *storage.CVE {
 	ret := &storage.CVE{
-		Type:         embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
-		Id:           from.GetCve(),
-		Cvss:         from.GetCvss(),
-		Summary:      from.GetSummary(),
-		Link:         from.GetLink(),
-		PublishedOn:  from.GetPublishedOn(),
-		LastModified: from.GetLastModified(),
-		CvssV2:       from.GetCvssV2(),
-		CvssV3:       from.GetCvssV3(),
-		Suppressed:   from.GetSuppressed(),
+		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
+		Id:                 from.GetCve(),
+		Cvss:               from.GetCvss(),
+		Summary:            from.GetSummary(),
+		Link:               from.GetLink(),
+		PublishedOn:        from.GetPublishedOn(),
+		LastModified:       from.GetLastModified(),
+		CvssV2:             from.GetCvssV2(),
+		CvssV3:             from.GetCvssV3(),
+		Suppressed:         from.GetSuppressed(),
+		SuppressActivation: from.GetSuppressActivation(),
+		SuppressExpiry:     from.GetSuppressExpiry(),
 	}
 	if ret.CvssV3 != nil {
 		ret.ScoreVersion = storage.CVE_V3

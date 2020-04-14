@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
@@ -107,6 +108,8 @@ func (ds *datastoreImpl) Upsert(ctx context.Context, cves ...*storage.CVE) error
 	for newIndex := 0; newIndex < len(cves) && currentIndex < len(currentCVEs); newIndex++ {
 		if currentCVEs[currentIndex].GetId() == cves[newIndex].GetId() {
 			cves[newIndex].Suppressed = currentCVEs[currentIndex].Suppressed
+			cves[newIndex].SuppressActivation = currentCVEs[currentIndex].SuppressActivation
+			cves[newIndex].SuppressExpiry = currentCVEs[currentIndex].SuppressExpiry
 			currentIndex++
 		}
 	}
@@ -139,6 +142,8 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 	for newIndex := 0; newIndex < len(parts) && currentIndex < len(currentCVEs); newIndex++ {
 		if currentCVEs[currentIndex].GetId() == parts[newIndex].CVE.GetId() {
 			parts[newIndex].CVE.Suppressed = currentCVEs[currentIndex].Suppressed
+			parts[newIndex].CVE.SuppressActivation = currentCVEs[currentIndex].SuppressActivation
+			parts[newIndex].CVE.SuppressExpiry = currentCVEs[currentIndex].SuppressExpiry
 			currentIndex++
 		}
 	}
@@ -147,11 +152,16 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 	return ds.storage.UpsertClusterCVEs(parts...)
 }
 
-func (ds *datastoreImpl) Suppress(ctx context.Context, ids ...string) error {
+func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
+	}
+
+	expiry, err := getSuppressExpiry(start, duration)
+	if err != nil {
+		return err
 	}
 
 	cves, _, err := ds.storage.GetBatch(ids)
@@ -161,6 +171,8 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, ids ...string) error {
 
 	for _, cve := range cves {
 		cve.Suppressed = true
+		cve.SuppressActivation = start
+		cve.SuppressExpiry = expiry
 	}
 	return ds.storage.Upsert(cves...)
 }
@@ -179,6 +191,8 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
 
 	for _, cve := range cves {
 		cve.Suppressed = false
+		cve.SuppressActivation = nil
+		cve.SuppressExpiry = nil
 	}
 	return ds.storage.Upsert(cves...)
 }
@@ -191,4 +205,12 @@ func (ds *datastoreImpl) Delete(ctx context.Context, ids ...string) error {
 	}
 
 	return ds.storage.Delete(ids...)
+}
+
+func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types.Timestamp, error) {
+	d, err := types.DurationFromProto(duration)
+	if err != nil || d == 0 {
+		return nil, err
+	}
+	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
 }

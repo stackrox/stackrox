@@ -6,6 +6,7 @@ package mocks
 
 import (
 	context "context"
+	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
 	converter "github.com/stackrox/rox/central/cve/converter"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -163,10 +164,10 @@ func (mr *MockDataStoreMockRecorder) SearchRawCVEs(arg0, arg1 interface{}) *gomo
 }
 
 // Suppress mocks base method
-func (m *MockDataStore) Suppress(arg0 context.Context, arg1 ...string) error {
+func (m *MockDataStore) Suppress(arg0 context.Context, arg1 *types.Timestamp, arg2 *types.Duration, arg3 ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
+	varargs := []interface{}{arg0, arg1, arg2}
+	for _, a := range arg3 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Suppress", varargs...)
@@ -175,9 +176,9 @@ func (m *MockDataStore) Suppress(arg0 context.Context, arg1 ...string) error {
 }
 
 // Suppress indicates an expected call of Suppress
-func (mr *MockDataStoreMockRecorder) Suppress(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Suppress(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0}, arg1...)
+	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Suppress", reflect.TypeOf((*MockDataStore)(nil).Suppress), varargs...)
 }
 

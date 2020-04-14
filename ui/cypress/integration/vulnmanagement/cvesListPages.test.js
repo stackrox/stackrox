@@ -43,6 +43,60 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             });
     });
 
+    it('should suppress CVE', () => {
+        cy.visit(url.list.cves);
+        cy.get(selectors.cveSuppressPanelButton).should('be.disabled');
+
+        // Obtain the CVE to verify in suppressed view
+        cy.get(selectors.tableBodyRows)
+            .first()
+            .find(`.rt-td`)
+            .eq(2)
+            .then(value => {
+                const cve = value.text();
+
+                cy.get(selectors.tableBodyRows)
+                    .first()
+                    .get(selectors.tableRowCheckbox)
+                    .check({ force: true });
+                cy.get(selectors.cveSuppressPanelButton)
+                    .click()
+                    .get(selectors.suppressOneHourOption)
+                    .click({ force: true });
+
+                // toggle to suppressed view
+                cy.get(selectors.suppressToggleViewPanelButton).click({ force: true });
+
+                // Verify that the suppressed CVE shows up in the table
+                cy.get(selectors.tableBodyRows, { timeout: 4500 }).contains(cve);
+            });
+    });
+
+    it('should unsuppress suppressed CVE', () => {
+        cy.visit(`${url.list.cves}?s[CVE%20Snoozed]=true`);
+        cy.get(selectors.cveUnsuppressPanelButton).should('be.disabled');
+
+        // Obtain the CVE to verify in unsuppressed view
+        cy.get(selectors.tableBodyRows)
+            .first()
+            .find(`.rt-td`)
+            .eq(2)
+            .then(value => {
+                const cve = value.text();
+
+                cy.get(selectors.tableBodyRows)
+                    .first()
+                    .find(selectors.cveUnsuppressRowButton)
+                    .click({ force: true });
+
+                // toggle to unsuppressed view
+                cy.get(selectors.suppressToggleViewPanelButton).click();
+
+                // Verify that the unsuppressed CVE shows up in the table
+                cy.get(selectors.tableBodyRows, { timeout: 4500 }).contains(cve);
+            });
+    });
+
     // TODO to be fixed after back end sorting is fixed
     // validateSortForCVE(selectors.cvesCvssScoreCol);
 });

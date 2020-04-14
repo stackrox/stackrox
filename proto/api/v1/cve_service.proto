@@ -4,15 +4,19 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
 import "api/v1/empty.proto";
 
 package v1;
 
 message SuppressCVERequest {
-    repeated string ids         = 1;
-    oneof set_suppressed {
-        bool        suppressed  = 2;
-    }
+    repeated string             ids         = 1;
+    reserved 2;
+    google.protobuf.Duration    duration    = 3;
+}
+
+message UnsuppressCVERequest {
+    repeated string             ids         = 1;
 }
 
 // CVEService APIs can be used to manage cves.
@@ -21,6 +25,13 @@ service CVEService {
     rpc SuppressCVEs (SuppressCVERequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/cves/suppress"
+            body: "*"
+        };
+    }
+    // UnsuppressCVE unsuppresse    s cves.
+    rpc UnsuppressCVEs (UnsuppressCVERequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/cves/unsuppress"
             body: "*"
         };
     }

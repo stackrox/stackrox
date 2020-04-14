@@ -35,6 +35,7 @@ var (
 	CVEPublishedOn               = newFieldLabel("CVE Published On")
 	CVECreatedTime               = newFieldLabel("CVE Created Time")
 	CVESuppressed                = newFieldLabel("CVE Snoozed")
+	CVESuppressExpiry            = newFieldLabel("CVE Snooze Expiry")
 	CVSS                         = newFieldLabel("CVSS")
 	Component                    = newFieldLabel("Component")
 	ComponentID                  = newFieldLabel("Component ID")

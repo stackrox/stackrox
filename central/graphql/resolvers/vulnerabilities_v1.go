@@ -259,6 +259,21 @@ type EmbeddedVulnerabilityResolver struct {
 	data        *storage.EmbeddedVulnerability
 }
 
+// Suppressed returns whether CVE is suppressed (UI term: Snooze) or not
+func (evr *EmbeddedVulnerabilityResolver) Suppressed(ctx context.Context) bool {
+	return evr.data.GetSuppressed()
+}
+
+// SuppressActivation returns the time when the CVE was suppressed
+func (evr *EmbeddedVulnerabilityResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(evr.data.GetSuppressActivation())
+}
+
+// SuppressExpiry returns the time when the CVE suppression expires
+func (evr *EmbeddedVulnerabilityResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
+	return timestamp(evr.data.GetSuppressExpiry())
+}
+
 // Vectors returns either the CVSSV2 or CVSSV3 data.
 func (evr *EmbeddedVulnerabilityResolver) Vectors() *EmbeddedVulnerabilityVectorsResolver {
 	if val := evr.data.GetCvssV3(); val != nil {

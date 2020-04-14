@@ -263,6 +263,8 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 		currCVE := currCVEMsg.(*storage.CVE)
 		parts.cve.Suppressed = currCVE.GetSuppressed()
 		parts.cve.CreatedAt = currCVE.GetCreatedAt()
+		parts.cve.SuppressActivation = currCVE.GetSuppressActivation()
+		parts.cve.SuppressExpiry = currCVE.GetSuppressExpiry()
 	} else {
 		parts.cve.CreatedAt = iTime
 	}

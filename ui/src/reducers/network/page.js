@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
 
-import timeWindows from 'constants/timeWindows';
+import { timeWindows } from 'constants/timeWindows';
 
 // Action types
 

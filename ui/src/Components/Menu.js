@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 
+import Tooltip from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
+
 const optionsClass =
     'flex items-center relative text-left px-2 py-3 text-sm border-b border-base-400 hover:bg-base-200 capitalize';
 
@@ -12,7 +15,9 @@ const Menu = ({
     className,
     options,
     disabled,
-    grouped
+    grouped,
+    tooltip,
+    dataTestId
 }) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
@@ -24,7 +29,8 @@ const Menu = ({
         setMenuState(true);
         document.addEventListener('click', hideMenu);
     };
-    const onClickHandler = () => () => {
+    const onClickHandler = () => e => {
+        e.stopPropagation();
         if (!isMenuOpen) showMenu();
         else hideMenu();
     };
@@ -76,26 +82,30 @@ const Menu = ({
         });
     }
 
+    const tooltipClassName = !tooltip || disabled ? 'visible xl:invisible' : '';
+
     return (
-        <div className={`${className} inline-block relative z-50`}>
-            <button
-                className={`flex h-full w-full ${buttonClass}`}
-                type="button"
-                onClick={onClickHandler()}
-                disabled={disabled}
-                data-testid="menu-button"
-            >
-                {buttonContent}
-            </button>
-            {isMenuOpen && (
-                <div
-                    className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-50 min-w-32 bg-base-100 shadow ${menuClassName}`}
-                    data-testid="menu-list"
+        <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>} className={tooltipClassName}>
+            <div className={`${className} inline-block relative z-50`}>
+                <button
+                    className={`flex h-full w-full ${buttonClass}`}
+                    type="button"
+                    onClick={onClickHandler()}
+                    disabled={disabled}
+                    data-testid={dataTestId}
                 >
-                    {grouped ? renderGroupedOptions(options) : renderOptions(options)}
-                </div>
-            )}
-        </div>
+                    {buttonContent}
+                </button>
+                {isMenuOpen && (
+                    <div
+                        className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-50 min-w-32 bg-base-100 shadow ${menuClassName}`}
+                        data-testid="menu-list"
+                    >
+                        {grouped ? renderGroupedOptions(options) : renderOptions(options)}
+                    </div>
+                )}
+            </div>
+        </Tooltip>
     );
 };
 
@@ -117,7 +127,9 @@ Menu.propTypes = {
         PropTypes.shape({})
     ]).isRequired,
     disabled: PropTypes.bool,
-    grouped: PropTypes.bool
+    grouped: PropTypes.bool,
+    tooltip: PropTypes.string,
+    dataTestId: PropTypes.string
 };
 
 Menu.defaultProps = {
@@ -125,7 +137,9 @@ Menu.defaultProps = {
     disabled: false,
     menuClassName: '',
     className: '',
-    grouped: false
+    grouped: false,
+    tooltip: '',
+    dataTestId: 'menu-button'
 };
 
 export default Menu;

@@ -89,6 +89,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"references: [CVE_Reference]!",
 		"scoreVersion: CVE_ScoreVersion!",
 		"summary: String!",
+		"suppressActivation: Time",
+		"suppressExpiry: Time",
 		"suppressed: Boolean!",
 		"type: CVE_CVEType!",
 	}))
@@ -1668,6 +1670,16 @@ func (resolver *cVEResolver) ScoreVersion(ctx context.Context) string {
 func (resolver *cVEResolver) Summary(ctx context.Context) string {
 	value := resolver.data.GetSummary()
 	return value
+}
+
+func (resolver *cVEResolver) SuppressActivation(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSuppressActivation()
+	return timestamp(value)
+}
+
+func (resolver *cVEResolver) SuppressExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSuppressExpiry()
+	return timestamp(value)
 }
 
 func (resolver *cVEResolver) Suppressed(ctx context.Context) bool {

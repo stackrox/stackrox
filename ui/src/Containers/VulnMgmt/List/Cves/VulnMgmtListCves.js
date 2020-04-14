@@ -12,8 +12,10 @@ import {
     defaultColumnClassName
 } from 'Components/Table';
 import RowActionButton from 'Components/RowActionButton';
+import RowActionMenu from 'Components/RowActionMenu';
 import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
+import Menu from 'Components/Menu';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
@@ -24,10 +26,11 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import queryService from 'modules/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { actions as notificationActions } from 'reducers/notifications';
-import { updateCveSuppressedState } from 'services/VulnerabilitiesService';
+import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
+import { snoozeDurations, durations } from 'constants/timeWindows';
 import { VULN_CVE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 
 import CveBulkActionDialogue from './CveBulkActionDialogue';
@@ -157,7 +160,7 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => (
+        Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.IMAGE}
                     count={original.imageCount}
@@ -176,7 +179,7 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => (
+        Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.COMPONENT}
                     count={original.componentCount}
@@ -284,13 +287,11 @@ const VulnMgmtCves = ({
         }
     };
 
-    const toggleCveSuppression = cveId => e => {
+    const suppressCves = (cveId, duration) => e => {
         e.stopPropagation();
 
         const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
-
-        const suppressionState = !viewingSuppressed;
-        updateCveSuppressedState(cveIdsToToggle, suppressionState)
+        suppressVulns(cveIdsToToggle, duration)
             .then(() => {
                 setSelectedCveIds([]);
 
@@ -300,16 +301,38 @@ const VulnMgmtCves = ({
                 // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
                 const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
 
-                const actionVerb = suppressionState ? 'snoozed' : 'unsnoozed';
-                addToast(`Successfully ${actionVerb} ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                addToast(`Successfully snoozed ${cveIdsToToggle.length} ${pluralizedCVEs}`);
                 setTimeout(removeToast, 2000);
             })
             .catch(evt => {
-                const actionVerb = suppressionState ? 'snooze' : 'unsnooze';
-                addToast(`Could not ${actionVerb} all of the selected CVEs: ${evt.message}`);
+                addToast(`Could not snooze all of the selected CVEs: ${evt.message}`);
                 setTimeout(removeToast, 2000);
             });
     };
+
+    const unsuppressCves = cveId => e => {
+        e.stopPropagation();
+
+        const cveIdsToToggle = cveId ? [cveId] : selectedCveIds;
+        unsuppressVulns(cveIdsToToggle, false)
+            .then(() => {
+                setSelectedCveIds([]);
+
+                // changing this param value on the query vars, to force the query to refetch
+                setRefreshTrigger(Math.random());
+
+                // can't use pluralize() because of this bug: https://github.com/blakeembrey/pluralize/issues/127
+                const pluralizedCVEs = cveIdsToToggle.length === 1 ? 'CVE' : 'CVEs';
+
+                addToast(`Successfully unsnoozed ${cveIdsToToggle.length} ${pluralizedCVEs}`);
+                setTimeout(removeToast, 2000);
+            })
+            .catch(evt => {
+                addToast(`Could not unsnooze all of the selected CVEs: ${evt.message}`);
+                setTimeout(removeToast, 2000);
+            });
+    };
+
     const toggleSuppressedView = () => {
         const currentSearchState = workflowState.getCurrentSearchState();
 
@@ -329,6 +352,18 @@ const VulnMgmtCves = ({
         setBulkActionCveIds([]);
         setSelectedCveIds(idsToStaySelected);
     }
+    const snoozeMenuButtonContent = (
+        <div className="flex items-center justify-around w-full text-left px-2">
+            <Icon.BellOff className="h-4 w-4" />
+            <span className="ml-2 items-center hidden xl:flex">Snooze</span>
+        </div>
+    );
+
+    const snoozeOptions = cveId => {
+        return Object.keys(snoozeDurations).map(d => {
+            return { label: snoozeDurations[d], onClick: suppressCves(cveId, durations[d]) };
+        });
+    };
 
     const renderRowActionButtons = ({ id }) => (
         <div className="flex border-2 border-r-2 border-base-400 bg-base-100">
@@ -338,23 +373,29 @@ const VulnMgmtCves = ({
                 date-testid="row-action-add-to-policy"
                 icon={<Icon.Plus className="my-1 h-4 w-4" />}
             />
-            <RowActionButton
-                text={`${viewingSuppressed ? 'Unsnooze CVE' : 'Snooze CVE'}`}
-                border="border-l-2 border-base-400"
-                onClick={toggleCveSuppression(id)}
-                date-testid="row-action-toggle-suppression"
-                icon={
-                    viewingSuppressed ? (
-                        <Icon.Bell className="my-1 h-4 w-4" />
-                    ) : (
-                        <Icon.BellOff className="my-1 h-4 w-4" />
-                    )
-                }
-            />
+            {!viewingSuppressed && (
+                <RowActionMenu
+                    className="h-full min-w-30"
+                    border="border-l-2 border-base-400"
+                    icon={<Icon.BellOff className="h-4 w-4" />}
+                    options={snoozeOptions(id)}
+                    text="Snooze CVE"
+                    dataTestId="row-action-suppress"
+                />
+            )}
+            {viewingSuppressed && (
+                <RowActionButton
+                    text="Unsnooze CVE"
+                    border="border-l-2 border-base-400"
+                    onClick={unsuppressCves(id)}
+                    date-testid="row-action-unsuppress"
+                    icon={<Icon.Bell className="my-1 h-4 w-4" />}
+                    dataTestId="row-action-unsuppress"
+                />
+            )}
         </div>
     );
 
-    const toggleButtonText = viewingSuppressed ? 'Unsnooze' : 'Snooze';
     const viewButtonText = viewingSuppressed ? 'View Unsnoozed' : 'View Snoozed';
 
     const tableHeaderComponents = (
@@ -369,22 +410,32 @@ const VulnMgmtCves = ({
             >
                 Add to Policy
             </PanelButton>
-            <PanelButton
-                icon={
-                    viewingSuppressed ? (
-                        <Icon.Bell className="h-4 w-4" />
-                    ) : (
-                        <Icon.BellOff className="h-4 w-4" />
-                    )
-                }
-                className="btn-icon btn-tertiary ml-2"
-                onClick={toggleCveSuppression()}
-                disabled={selectedCveIds.length === 0}
-                tooltip={`${toggleButtonText} Selected CVEs`}
-                dataTestId="panel-button-toggle-suppress-selected-cves"
-            >
-                {toggleButtonText}
-            </PanelButton>
+            {!viewingSuppressed && (
+                <Menu
+                    className="h-full min-w-30 ml-2"
+                    menuClassName="bg-base-100 min-w-28"
+                    buttonClass="btn-icon btn-tertiary"
+                    buttonContent={snoozeMenuButtonContent}
+                    options={snoozeOptions()}
+                    disabled={selectedCveIds.length === 0}
+                    tooltip="Snooze Selected CVEs"
+                    dataTestId="panel-button-suppress-selected-cves"
+                />
+            )}
+
+            {viewingSuppressed && (
+                <PanelButton
+                    icon={<Icon.Bell className="h-4 w-4" />}
+                    className="btn-icon btn-tertiary ml-2"
+                    onClick={unsuppressCves()}
+                    disabled={selectedCveIds.length === 0}
+                    tooltip="Unsnooze Selected CVEs"
+                    dataTestId="panel-button-unsuppress-selected-cves"
+                >
+                    Unsnooze
+                </PanelButton>
+            )}
+
             <span className="w-px bg-base-400 ml-2" />
             <PanelButton
                 icon={
