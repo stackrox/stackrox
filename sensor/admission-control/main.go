@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
-	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -18,10 +18,13 @@ import (
 	"github.com/stackrox/rox/sensor/admission-control/manager"
 	"github.com/stackrox/rox/sensor/admission-control/service"
 	"github.com/stackrox/rox/sensor/admission-control/settingswatch"
+	"golang.org/x/sys/unix"
 )
 
 const (
 	webhookEndpoint = ":8443"
+
+	internalGracePeriod = 15 * time.Second
 )
 
 var (
@@ -40,7 +43,7 @@ func mainCmd() error {
 	}
 
 	sigC := make(chan os.Signal, 1)
-	signal.Notify(sigC, syscall.SIGTERM, syscall.SIGINT)
+	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
 
 	// Note that the following call returns immediately (connecting happens in the background), hence this does not
 	// delay readiness of the admission-control service even if sensor is unavailable.
@@ -82,8 +85,35 @@ func mainCmd() error {
 
 	apiServer.Start()
 
-	sig := <-sigC
-	log.Infof("Received signal %v", sig)
+	// Graceful shutdown logic:
+	// Upon first SIGTERM, keep running normally until either the internal grace period (20s) passes, or another
+	// SIGTERM is received. However, mark the container as not ready immediately, to make sure we no longer receive
+	// new requests once the API server has picked up the non-readiness.
+	sigTermCounter := 0
+	var gracePeriodTimer <-chan time.Time
+	for {
+		select {
+		case sig := <-sigC:
+			log.Infof("Received signal %v", sig)
+			if sig == unix.SIGTERM {
+				sigTermCounter++
 
-	return nil
+				if sigTermCounter == 1 {
+					log.Infof("First SIGTERM. Marking as not ready, will exit in %v", internalGracePeriod)
+					mgr.Stop()
+					gracePeriodTimer = time.After(internalGracePeriod)
+				} else {
+					log.Info("Second SIGTERM. Exiting immediately.")
+					return nil
+				}
+			} else {
+				log.Info("Received signal other than SIGTERM. Exiting immediately.")
+				return nil
+			}
+
+		case <-gracePeriodTimer:
+			log.Infof("Grace period of %v has expired. Exiting ...", internalGracePeriod)
+			return nil
+		}
+	}
 }

@@ -163,6 +163,9 @@ spec:
               scheme: HTTPS
               path: /ready
               port: 8443
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1
           ports:
             - containerPort: 8443
               name: webhook

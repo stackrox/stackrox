@@ -118,6 +118,7 @@ func (m *manager) runSettingsWatch() {
 	for !m.stopSig.IsDone() {
 		select {
 		case <-m.stopSig.Done():
+			m.processNewSettings(nil)
 			return
 		case newSettings := <-m.settingsC:
 			m.processNewSettings(newSettings)
