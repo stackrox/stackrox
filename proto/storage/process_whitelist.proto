@@ -38,7 +38,7 @@ message WhitelistElement {
 
 message WhitelistItem {
     oneof item {
-        string process_name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
+        string process_name = 1;
     }
 }
 

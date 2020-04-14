@@ -52,7 +52,7 @@ func (suite *ProcessWhitelistIndexTestSuite) search(q *v1.Query, expectedResultS
 }
 
 func (suite *ProcessWhitelistIndexTestSuite) TestNoResults() {
-	q := search.NewQueryBuilder().AddStringsHighlighted(search.ProcessName, "This ID doesn't exist").ProtoQuery()
+	q := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentID, "This ID doesn't exist").ProtoQuery()
 	_, err := suite.search(q, 0)
 	suite.NoError(err)
 	suite.getAndStoreWhitelist()
@@ -80,7 +80,7 @@ func (suite *ProcessWhitelistIndexTestSuite) TestAddSearchDeleteWhitelist() {
 	whitelist := suite.getAndStoreWhitelist()
 	suite.getAndStoreWhitelist() // Don't find this one
 
-	q := search.NewQueryBuilder().AddStrings(search.ProcessName, whitelist.Elements[0].GetElement().GetProcessName()).ProtoQuery()
+	q := search.NewQueryBuilder().AddStrings(search.DeploymentID, whitelist.GetKey().GetDeploymentId()).ProtoQuery()
 	results, err := suite.search(q, 1)
 	suite.NoError(err)
 	suite.Equal(whitelist.GetId(), results[0].ID)

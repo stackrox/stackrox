@@ -65,7 +65,6 @@ message Alert {
     repeated string tags                     = 14 [(gogoproto.moretags) = "search:\"Tag,store\""];
 }
 
-
 message ListAlert {
     string id                               = 1;
     LifecycleStage lifecycle_stage          = 2 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
@@ -92,7 +91,7 @@ message ListAlertDeployment {
     string cluster_name                        = 4 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string cluster_id                          = 6 [(gogoproto.moretags) = "search:\"Cluster ID,store\""];
-    bool inactive = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment,store\""];
+    bool inactive = 7 [(gogoproto.moretags) = "search:\"Inactive Deployment\""];
 }
 
 enum ViolationState {

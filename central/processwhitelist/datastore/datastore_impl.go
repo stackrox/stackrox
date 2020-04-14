@@ -242,11 +242,9 @@ func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *stora
 	if err != nil {
 		return nil, err
 	}
-	err = ds.indexer.AddWhitelist(whitelist)
-	if err != nil {
-		return nil, err
-	}
 
+	// no need to index the whitelist here because the only indexed things are
+	// top level fields that are immutable
 	return whitelist, nil
 }
 
