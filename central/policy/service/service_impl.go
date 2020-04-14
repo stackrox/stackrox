@@ -425,6 +425,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
+			if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
+				return
+			}
+
 			if !compiledPolicy.AppliesTo(deployment) {
 				return
 			}
