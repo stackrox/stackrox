@@ -10,10 +10,14 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.FeatureFlagService
 import services.ImageIntegrationService
+import spock.lang.Retry
 import spock.lang.Shared
+import spock.lang.Timeout
 import spock.lang.Unroll
 import util.Env
 import util.Timer
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -47,6 +51,11 @@ class AdmissionControllerTest extends BaseSpecification {
             .setImage("busybox:latest")
             .addLabel("app", "test")
             .addAnnotation("admission.stackrox.io/break-glass", "yay")
+
+    static final private Deployment MISC_DEPLOYMENT = new Deployment()
+        .setName("random-busybox")
+        .setImage("busybox:1.31")
+        .addLabel("app", "random-busybox")
 
     def setupSpec() {
         clusterId = ClusterService.getClusterId()
@@ -263,5 +272,101 @@ class AdmissionControllerTest extends BaseSpecification {
         false        | true
         true         | false
         true         | true
+    }
+
+    @Retry(count = 0)
+    @Timeout(300)
+    def "Verify admission controller does not impair cluster operations when unstable"() {
+        when:
+        "Check if test is applicable"
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
+
+        and:
+        "Configure admission controller"
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(false)
+                .setScanInline(false)
+                .setTimeoutSeconds(10)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Maximum time to wait for propagation to sensor
+        sleep 5000
+
+        and:
+        "Start a chaos monkey thread that kills all ready admission control replicas"
+        def stopChaosMonkey = new AtomicBoolean()
+        def chaosMonkeyThread = Thread.start {
+            while (!stopChaosMonkey.get()) {
+                def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
+                for (def pod : admCtrlPods) {
+                    // Only kill pods that are ready, to ensure the service occasionally has (unstable) endpoints.
+                    if (!pod?.metadata?.deletionTimestamp && pod?.status?.containerStatuses[0]?.ready) {
+                        // Do a delete with a short grace period (we can't do force delete due to a K8s bug,
+                        // see https://github.com/kubernetes/kubernetes/issues/80313).
+                        orchestrator.deletePod(pod.metadata.namespace, pod.metadata.name, 1L)
+                    }
+                }
+                sleep 1000
+            }
+        }
+
+        then:
+        "Verify deployment can be created"
+        def deployment = MISC_DEPLOYMENT.clone()
+        def created = orchestrator.createDeploymentNoWait(deployment)
+        assert created
+
+        and:
+        "Verify deployment can be modified reliably"
+        for (int i = 0; i < 45; i++) {
+            sleep 1000
+            deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
+            assert orchestrator.updateDeploymentNoWait(deployment)
+        }
+
+        cleanup:
+        "Stop chaos monkey"
+        stopChaosMonkey.set(true)
+        chaosMonkeyThread.join()
+
+        and:
+        "Wait for all admission control replicas to become ready again"
+        def allReady = false
+        while (!allReady) {
+            sleep 1000
+
+            def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
+            if (admCtrlPods.size() < 3) {
+                continue
+            }
+            allReady = true
+            for (def pod : admCtrlPods) {
+                if (!pod.status.containerStatuses[0].ready) {
+                    allReady = false
+                    break
+                }
+            }
+        }
+        println "All admission control pod replicas ready"
+
+        and:
+        "Delete deployment"
+        if (created) {
+            def timer = new Timer(30, 1)
+            def deleted = false
+            while (!deleted && timer.IsValid()) {
+                try {
+                    orchestrator.deleteDeployment(deployment)
+                    deleted = true
+                } catch (NullPointerException ignore) {
+                    println "Caught NPE while deleting deployment, retrying in 1s..."
+                }
+            }
+            if (!deleted) {
+                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+            }
+        }
     }
 }

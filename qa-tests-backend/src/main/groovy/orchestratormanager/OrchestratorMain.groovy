@@ -1,5 +1,6 @@
 package orchestratormanager
 
+import io.fabric8.kubernetes.api.model.Pod
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
@@ -15,6 +16,10 @@ import objects.Service
 interface OrchestratorMain {
     def setup()
     def cleanup()
+
+    // Pods
+    List<Pod> getPods(String namespace, String appName)
+    Boolean deletePod(String namespace, String podName, Long gracePeriodSecs)
 
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)

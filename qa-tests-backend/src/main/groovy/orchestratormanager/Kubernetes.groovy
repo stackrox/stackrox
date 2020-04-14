@@ -55,6 +55,7 @@ import io.fabric8.kubernetes.client.Callback
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.client.dsl.Deletable
 import io.fabric8.kubernetes.client.dsl.ExecListener
 import io.fabric8.kubernetes.client.dsl.ExecWatch
 import io.fabric8.kubernetes.client.dsl.MixedOperation
@@ -190,16 +191,26 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
-    def getAndPrintPods(String ns, String name) {
-        LabelSelector selector = new LabelSelector()
-        selector.matchLabels = new HashMap<String, String>()
-        selector.matchLabels.put("app", name)
+    List<Pod> getPods(String namespace, String appName) {
+        def selector = new LabelSelector()
+        selector.matchLabels = ["app": appName]
         PodList list = evaluateWithRetry(2, 3) {
-            return client.pods().inNamespace(ns).withLabelSelector(selector).list()
+            return client.pods().inNamespace(namespace).withLabelSelector(selector).list()
         }
+        return list.getItems()
+    }
 
+    Boolean deletePod(String namespace, String podName, Long gracePeriodSecs) {
+        Deletable<Boolean> podClient = client.pods().inNamespace(namespace).withName(podName)
+        if (gracePeriodSecs != null) {
+            podClient = podClient.withGracePeriod(gracePeriodSecs)
+        }
+        return podClient.delete()
+    }
+
+    def getAndPrintPods(String ns, String name) {
         println "Status of ${name}'s pods:"
-        for (Pod pod : list.getItems()) {
+        for (Pod pod : getPods(ns, name)) {
             println "\t- ${pod.metadata.name}"
             for (ContainerStatus status : pod.status.containerStatuses) {
                 println "\t  Container status: ${status.state}"
