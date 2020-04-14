@@ -34,7 +34,7 @@ class MailService {
         }
         store = session.getStore(url)
 
-        Timer t = new Timer(10, 3)
+        Timer t = new Timer(20, 3)
         Exception exception = null
         while (t.IsValid()) {
             try {
@@ -67,9 +67,14 @@ class MailService {
         }
     }
 
+    void refreshConnection() throws MessagingException {
+        logout()
+        login()
+    }
+
     Message[] getMessages() throws Exception {
         try {
-            login() //call login() to refresh inbox contents
+            refreshConnection() //refresh inbox contents
             return folder.getMessages()
         } catch (Exception e) {
             println e.toString()
@@ -79,7 +84,7 @@ class MailService {
 
     Message[] getMessagesFromSender(String from) throws Exception {
         try {
-            login() //call login() to refresh inbox contents
+            refreshConnection() //refresh inbox contents
             return folder.search(new FromTerm(new InternetAddress(from)))
         } catch (Exception e) {
             println e.toString()
@@ -89,7 +94,7 @@ class MailService {
 
     Message[] searchMessages(SearchTerm term) throws Exception {
         try {
-            login() //call login() to refresh inbox contents
+            refreshConnection() //refresh inbox contents
             return folder.search(term)
         } catch (Exception e) {
             println e.toString()
