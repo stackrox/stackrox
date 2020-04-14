@@ -96,6 +96,10 @@ function generateURL(workflowState) {
     if (!queryParams[searchParams.page]) delete queryParams[searchParams.page];
     if (!queryParams[searchParams.sidePanel]) delete queryParams[searchParams.sidePanel];
 
+    // Don't write URLs with sort or sort2 empty, since that's superfluous
+    if (!queryParams[sortParams.page]) delete queryParams[sortParams.page];
+    if (!queryParams[sortParams.sidePanel]) delete queryParams[sortParams.sidePanel];
+
     const queryString = queryParams
         ? qs.stringify(queryParams, {
               addQueryPrefix: true,

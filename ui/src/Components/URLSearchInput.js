@@ -6,8 +6,7 @@ import URLSearchInputWithAutocomplete from 'Components/URLSearchInputWithAutocom
 
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 
-// eslint-disable-next-line react/no-multi-comp
-const URLSearchInput = props => {
+const URLSearchInput = ({ categories, ...props }) => {
     const [autoCompleteQuery, setAutoCompleteQuery] = useState('');
 
     function clearAutocomplete() {
@@ -26,7 +25,7 @@ const URLSearchInput = props => {
             query={SEARCH_AUTOCOMPLETE_QUERY}
             variables={{
                 query: autoCompleteQuery,
-                categories: props.categories
+                categories
             }}
         >
             {({ data }) => {

@@ -16,6 +16,8 @@ export const selectors = {
     },
     cancelButton: 'button[data-testid="cancel"]',
     search: {
+        searchLabels: '.react-select__multi-value__label',
+        // selectors for legacy tests
         searchModifier: '.react-select__multi-value__label:first',
         searchWord: '.react-select__multi-value__label:eq(1)'
     },
@@ -25,6 +27,7 @@ export const selectors = {
     },
     imageLink: 'div:contains("Image Name") + a',
     table: {
+        header: '[data-testid="filtered-header"]',
         column: {
             priority: 'div.rt-th div:contains("Priority")'
         },
@@ -32,7 +35,8 @@ export const selectors = {
             firstRow: 'div.rt-tr-group:first-child div.rt-tr'
         },
         rows: 'div.rt-tr-group div.rt-tr',
-        columns: '.rt-td'
+        columns: '.rt-td',
+        dataRows: '.rt-tbody .rt-tr-group .rt-tr'
     },
     collapsible: {
         card: '.Collapsible',

@@ -1,8 +1,15 @@
 import { matchPath } from 'react-router-dom';
 import qs from 'qs';
+
+import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState, WorkflowEntity } from './WorkflowState';
-import { nestedPaths as workflowPaths, urlEntityListTypes, urlEntityTypes } from '../routePaths';
+import {
+    nestedPaths as workflowPaths,
+    urlEntityListTypes,
+    urlEntityTypes,
+    riskPath
+} from '../routePaths';
 
 function getTypeKeyFromParamValue(value, listOnly) {
     const listMatch = Object.entries(urlEntityListTypes).find(entry => entry[1] === value);
@@ -75,8 +82,17 @@ function parseURL(location) {
         path: workflowPaths.DASHBOARD,
         exact: true
     });
+    const riskParams = {
+        params: {
+            ...matchPath(pathname, {
+                path: riskPath,
+                exact: true
+            }),
+            context: useCases.RISK
+        }
+    };
 
-    const { params } = entityParams || listParams || dashboardParams;
+    const { params } = entityParams || listParams || dashboardParams || riskParams;
     const queryStr = search ? qs.parse(search, { ignoreQueryPrefix: true }) : {};
 
     const stateStackFromURLParams = paramsToStateStack(params) || [];

@@ -1,79 +1,76 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import { useQuery } from 'react-apollo';
 
+import entityTypes, { searchCategories } from 'constants/entityTypes';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
+import workflowStateContext from 'Containers/workflowStateContext';
+import parseURL from 'modules/URLParser';
 import RiskPageHeader from './RiskPageHeader';
 import RiskSidePanel from './RiskSidePanel';
 import RiskTablePanel from './RiskTablePanel';
 
 const RiskPage = ({
     history,
-    location: { search },
+    location: { pathname, search },
     match: {
         params: { deploymentId }
     }
 }) => {
+    const workflowState = parseURL({ pathname, search });
+
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
 
     // Handle changes to the currently selected deployment.
-    const [selectedDeploymentId, setSelectedDeploymentId] = useState(deploymentId);
+    const setSelectedDeploymentId = useCallback(
+        newDeploymentId => {
+            const newWorkflowState = newDeploymentId
+                ? workflowState.pushRelatedEntity(entityTypes.DEPLOYMENT, newDeploymentId)
+                : workflowState.pop();
 
-    // Page changes.
-    const [currentPage, setCurrentPage] = useState(0);
+            const newUrl = newWorkflowState.toUrl();
 
-    // The currently loaded deployments, and the sort option.
-    const [currentDeployments, setCurrentDeployments] = useState([]);
-    const [sortOption, setSortOption] = useState({ field: 'Priority', reversed: false });
-
-    // The current number of deployments that match the query.
-    const [deploymentsCount, setDeploymentsCount] = useState(0);
-
-    // When the selected deployment changes, update the URL.
-    useEffect(
-        () => {
-            const urlSuffix = selectedDeploymentId ? `/${selectedDeploymentId}` : '';
-            history.push({
-                pathname: `/main/risk${urlSuffix}`,
-                search
-            });
+            history.push(newUrl);
         },
-        [selectedDeploymentId, history, search]
+        [workflowState, history]
     );
 
+    const searchQueryOptions = {
+        variables: {
+            categories: [searchCategories.DEPLOYMENT]
+        }
+    };
+    const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
+    const searchOptions = (searchData && searchData.searchOptions) || [];
+
     return (
-        <section className="flex flex-1 flex-col h-full">
-            <div className="flex flex-1 flex-col">
-                <RiskPageHeader
-                    currentPage={currentPage}
-                    setCurrentDeployments={setCurrentDeployments}
-                    setDeploymentsCount={setDeploymentsCount}
-                    setSelectedDeploymentId={setSelectedDeploymentId}
-                    isViewFiltered={isViewFiltered}
-                    setIsViewFiltered={setIsViewFiltered}
-                    sortOption={sortOption}
-                    selectedDeploymentId={selectedDeploymentId}
-                    currentDeployments={currentDeployments}
-                />
-                <div className="flex flex-1 relative">
-                    <div className="shadow border-primary-300 w-full overflow-hidden">
-                        <RiskTablePanel
-                            currentDeployments={currentDeployments}
-                            currentPage={currentPage}
-                            setCurrentPage={setCurrentPage}
-                            deploymentCount={deploymentsCount}
-                            selectedDeploymentId={selectedDeploymentId}
+        <workflowStateContext.Provider value={workflowState}>
+            <section className="flex flex-1 flex-col h-full">
+                <div className="flex flex-1 flex-col">
+                    <RiskPageHeader
+                        setSelectedDeploymentId={setSelectedDeploymentId}
+                        isViewFiltered={isViewFiltered}
+                        searchOptions={searchOptions}
+                    />
+                    <div className="flex flex-1 relative">
+                        <div className="shadow border-primary-300 w-full overflow-hidden">
+                            <RiskTablePanel
+                                selectedDeploymentId={deploymentId}
+                                setSelectedDeploymentId={setSelectedDeploymentId}
+                                isViewFiltered={isViewFiltered}
+                                setIsViewFiltered={setIsViewFiltered}
+                                searchOptions={searchOptions}
+                            />
+                        </div>
+                        <RiskSidePanel
+                            selectedDeploymentId={deploymentId}
                             setSelectedDeploymentId={setSelectedDeploymentId}
-                            setSortOption={setSortOption}
-                            isViewFiltered={isViewFiltered}
                         />
                     </div>
-                    <RiskSidePanel
-                        selectedDeploymentId={selectedDeploymentId}
-                        setSelectedDeploymentId={setSelectedDeploymentId}
-                    />
                 </div>
-            </div>
-        </section>
+            </section>
+        </workflowStateContext.Provider>
     );
 };
 

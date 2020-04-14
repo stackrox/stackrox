@@ -4,6 +4,7 @@ All notable changes to this project that require documentation updates will be d
 ## [NEXT RELEASE]
 - All `/v1/` API endpoints now support pretty-printing.  Make requests with the `?pretty` path parameter to receive pretty-printed json responses.
 - UI: added "Deployment Name" property in side panel for Deployment Details on Violations and Risk pages.
+- UI: In the Risk view, the URL now includes any search filters applied. You can now share the link and see the same filtered view.
 
 ## [41.0]
 ### Changed
@@ -184,12 +185,12 @@ Existing data will be preserved and available on upgrade.
 - `roxctl sensor generate openshift` can be used to generate sensor bundles for OpenShift clusters from
   the command line.
 ### Changed
-- Removed _DebugMetrics_ resource.  
-  Only users with _Admin_ role can access `/debug` endpoint.  
+- Removed _DebugMetrics_ resource.
+  Only users with _Admin_ role can access `/debug` endpoint.
   _Note: This is also applicable with authorization plugin for scoped access control enabled._
 - Due to the addition of the `roxctl sensor generate openshift` command, the `--admission-controller`
   flags that are exclusive to Kubernetes (non-OpenShift, `k8s`) clusters must be specified *after* the
-  `k8s` command.  
+  `k8s` command.
   For example, `roxctl sensor generate --admission-controller=true k8s` is no longer a
   legal invocation; use `roxctl sensor generate k8s --admission-controller=true` instead.
 
