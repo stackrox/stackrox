@@ -220,7 +220,13 @@ function* startDryRun(policy) {
         yield put(wizardActions.setWizardDryRunJobId(data.jobId));
         yield put(wizardActions.setWizardStage(wizardStages.preview));
     } catch (error) {
-        Raven.captureException(error);
+        if (error.response) {
+            yield put(notificationActions.addNotification(error.response.data.error));
+            yield put(notificationActions.removeOldestNotification());
+        } else {
+            // TODO-ivan: use global user notification system to display the problem to the user as well
+            Raven.captureException(error);
+        }
     }
 }
 
