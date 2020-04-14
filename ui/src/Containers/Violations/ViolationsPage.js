@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
+import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import dialogues from './dialogues';
 
 import ViolationsPageHeader from './ViolationsPageHeader';
@@ -29,7 +30,7 @@ function ViolationsPage({
     const [sortOption, setSortOption] = useState({ field: 'Violation Time', reversed: true });
 
     // Handle changes in the currently displayed violations.
-    const [currentAlerts, setCurrentAlerts] = useState([]);
+    const [currentPageAlerts, setCurrentPageAlerts] = useEntitiesByIdsCache();
     const [alertCount, setAlertCount] = useState(0);
 
     // Handle confirmation dialogue being open.
@@ -49,7 +50,7 @@ function ViolationsPage({
 
     // We need to be able to identify which alerts are runtime and which are not by id.
     const runtimeAlerts = new Set(
-        currentAlerts.filter(alert => alert.lifecycleStage === 'RUNTIME').map(alert => alert.id)
+        currentPageAlerts.filter(alert => alert.lifecycleStage === 'RUNTIME').map(alert => alert.id)
     );
 
     return (
@@ -59,8 +60,8 @@ function ViolationsPage({
                     currentPage={currentPage}
                     sortOption={sortOption}
                     selectedAlertId={selectedAlertId}
-                    currentAlerts={currentAlerts}
-                    setCurrentAlerts={setCurrentAlerts}
+                    currentPageAlerts={currentPageAlerts}
+                    setCurrentPageAlerts={setCurrentPageAlerts}
                     setSelectedAlertId={setSelectedAlertId}
                     setAlertCount={setAlertCount}
                     isViewFiltered={isViewFiltered}
@@ -69,7 +70,7 @@ function ViolationsPage({
                 <div className="flex flex-1 relative">
                     <div className="shadow border-primary-300 w-full overflow-hidden">
                         <ViolationsTablePanel
-                            violations={currentAlerts}
+                            violations={currentPageAlerts}
                             violationsCount={alertCount}
                             isViewFiltered={isViewFiltered}
                             setDialogue={setDialogue}
@@ -92,7 +93,7 @@ function ViolationsPage({
             {dialogue === dialogues.whitelist && (
                 <WhitelistConfirmation
                     setDialogue={setDialogue}
-                    alerts={currentAlerts}
+                    alerts={currentPageAlerts}
                     checkedAlertIds={checkedAlertIds}
                     setCheckedAlertIds={setCheckedAlertIds}
                 />

@@ -12,6 +12,7 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 
 const deploymentDetailsMap = {
     id: { label: 'Deployment ID' },
+    name: { label: 'Deployment Name' },
     type: { label: 'Deployment Type' },
     clusterName: { label: 'Cluster' },
     namespace: { label: 'Namespace' },

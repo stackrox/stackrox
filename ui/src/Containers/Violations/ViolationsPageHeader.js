@@ -23,10 +23,10 @@ function ViolationsPageHeader({
     setIsViewFiltered,
     currentPage,
     sortOption,
-    setCurrentAlerts,
+    setCurrentPageAlerts,
     setAlertCount,
     setSelectedAlertId,
-    currentAlerts,
+    currentPageAlerts,
     selectedAlertId,
     searchOptions,
     searchModifiers,
@@ -51,7 +51,7 @@ function ViolationsPageHeader({
     if (
         hasExecutableFilter &&
         selectedAlertId &&
-        !currentAlerts.find(alert => alert.id === selectedAlertId)
+        !currentPageAlerts.find(alert => alert.id === selectedAlertId)
     ) {
         setSelectedAlertId(null);
     }
@@ -62,9 +62,9 @@ function ViolationsPageHeader({
             if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
                 // Get the alerts that match the search request for the current page.
                 fetchAlerts(searchOptions, sortOption, currentPage, pageSize).then(
-                    setCurrentAlerts,
+                    setCurrentPageAlerts,
                     () => {
-                        setCurrentAlerts([]);
+                        setCurrentPageAlerts([]);
                     }
                 );
                 // Get the total count of alerts that match the search request.
@@ -76,7 +76,7 @@ function ViolationsPageHeader({
                 setPollEpoch(pollEpoch + 1);
             });
         },
-        [searchOptions, currentPage, sortOption, pollEpoch, setCurrentAlerts, setAlertCount]
+        [searchOptions, currentPage, sortOption, pollEpoch, setCurrentPageAlerts, setAlertCount]
     );
 
     // Render.
@@ -105,8 +105,8 @@ ViolationsPageHeader.propTypes = {
     setIsViewFiltered: PropTypes.func.isRequired,
     currentPage: PropTypes.number.isRequired,
     sortOption: PropTypes.shape({}).isRequired,
-    currentAlerts: PropTypes.arrayOf(PropTypes.object),
-    setCurrentAlerts: PropTypes.func.isRequired,
+    currentPageAlerts: PropTypes.arrayOf(PropTypes.object),
+    setCurrentPageAlerts: PropTypes.func.isRequired,
     setAlertCount: PropTypes.func.isRequired,
     setSelectedAlertId: PropTypes.func.isRequired,
     selectedAlertId: PropTypes.string,
@@ -120,7 +120,7 @@ ViolationsPageHeader.propTypes = {
 };
 
 ViolationsPageHeader.defaultProps = {
-    currentAlerts: [],
+    currentPageAlerts: [],
     selectedAlertId: null
 };
 
