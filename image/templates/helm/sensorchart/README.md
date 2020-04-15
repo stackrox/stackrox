@@ -112,8 +112,8 @@ and their default values.
 |:---------|:-----------|:--------------|
 |`cluster.name`| Name of your cluster. | |
 |`cluster.type`| Either Kubernetes (`KUBERNETES_CLUSTER`) or OpenShift (`OPENSHIFT_CLUSTER`) cluster. |`KUBERNETES_CLUSTER` |
-|`endpoint.central`| Address of the Central endpoint including port number.|`central.stackrox:443` |
-|`endpoint.advertised`| Address of the Sensor endpoint including port number.|`sensor.stackrox:443` |
+|`endpoint.central`| Address of the Central endpoint including port number. No trailing slash.|`central.stackrox:443` |
+|`endpoint.advertised`| Address of the Sensor endpoint including port number.No trailing slash.|`sensor.stackrox:443` |
 |`image.repository.main`|Repository from which to download the main image. |`main` |
 |`image.repository.collector`|Repository from which to download the collector image.  |`collector` |
 |`image.registry.main`| Address of the registry you are using for main image.|`stackrox.io` |

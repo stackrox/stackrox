@@ -14,7 +14,8 @@ type SlashHandling uint8
 
 // These are the defined URL schemes.
 const (
-	HTTPS Scheme = iota
+	NONE Scheme = iota
+	HTTPS
 	InsecureHTTP
 )
 
@@ -38,9 +39,14 @@ func (s Scheme) String() string {
 
 // FormatURL takes in an endpoint, whether to prepend https if no scheme is specified and if the url should end in a slash
 func FormatURL(endpoint string, defaultScheme Scheme, slash SlashHandling) (string, error) {
-	if !strings.HasPrefix(endpoint, "http") {
+	if defaultScheme == NONE {
+		endpoint = strings.TrimPrefix(endpoint, "http://")
+		endpoint = strings.TrimPrefix(endpoint, "https://")
+
+	} else if !strings.HasPrefix(endpoint, "http") {
 		endpoint = fmt.Sprintf("%s://%s", defaultScheme, endpoint)
 	}
+
 	if slash != HonorInputSlash {
 		if slash == TrailingSlash && !strings.HasSuffix(endpoint, "/") {
 			return endpoint + "/", nil

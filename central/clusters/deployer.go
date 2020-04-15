@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 )
 
@@ -67,6 +68,16 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		}
 	}
 
+	centralEndpoint, err := urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash)
+	if err != nil {
+		return nil, err
+	}
+
+	advertisedEndpoint, err := urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash)
+	if err != nil {
+		return nil, err
+	}
+
 	fields := map[string]interface{}{
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
@@ -75,8 +86,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"ImageRemote":   mainImageName.GetRemote(),
 		"ImageTag":      mainImageName.GetTag(),
 
-		"PublicEndpoint":     c.CentralApiEndpoint,
-		"AdvertisedEndpoint": env.AdvertisedEndpoint.Setting(),
+		"PublicEndpoint":     centralEndpoint,
+		"AdvertisedEndpoint": advertisedEndpoint,
 
 		"CollectorRegistry":    collectorImageName.GetRegistry(),
 		"CollectorImageRemote": collectorImageName.GetRemote(),
