@@ -54,7 +54,7 @@ allowPrivilegedContainer: true
 fsGroup:
   type: RunAsAny
 groups: []
-priority: 100
+priority: 0
 readOnlyRootFilesystem: true
 runAsUser:
   type: RunAsAny

@@ -8,7 +8,8 @@ All notable changes to this project that require documentation updates will be d
 - `SuppressCVEs(/v1/cves/suppress)` endpoint now only supports cve suppression/snoozing. 
 - `SuppressCVEs(/v1/cves/suppress)` endpoint now supports cve suppression/snoozing for specific duration. 
 - Added `UnsuppressCVEs(/v1/cves/unsuppress)` endpoint to support cve un-suppression/un-snoozing.
-
+- Changed central and sensor's SecurityContextConstraint (SCC) priority to 0 for OpenShift, so that they don't supercede
+default SCCs.
 ## [41.0]
 ### Changed
 - Updated RHEL base images from UBI7.7 to UBI8.1
