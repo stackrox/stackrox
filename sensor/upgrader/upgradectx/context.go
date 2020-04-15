@@ -76,13 +76,21 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	if err != nil {
 		return nil, errors.Wrap(err, "creating dynamic client")
 	}
-	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery())
+
+	expectedGVKs := make(map[schema.GroupVersionKind]struct{})
+	for _, gvk := range common.OrderedBundleResourceTypes {
+		expectedGVKs[gvk] = struct{}{}
+	}
+	for _, gvk := range common.StateResourceTypes {
+		expectedGVKs[gvk] = struct{}{}
+	}
+
+	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), expectedGVKs)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving Kubernetes resources from server")
 	}
 
 	numBundleResources := 0
-	numStateResources := 0
 	for _, br := range common.OrderedBundleResourceTypes {
 		resMD := resourceMap[br]
 		if resMD != nil {
@@ -92,6 +100,7 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	log.Infof("Server supports %d out of %d relevant bundle resource types", numBundleResources, len(common.OrderedBundleResourceTypes))
 
+	numStateResources := 0
 	for _, sr := range common.StateResourceTypes {
 		resMD := resourceMap[sr]
 		if resMD != nil {
@@ -212,15 +221,6 @@ func (c *UpgradeContext) GetResourceMetadata(gvk schema.GroupVersionKind, purpos
 		return nil
 	}
 	return resMD
-}
-
-// Resources returns a slice of the metadata objects for all supported API resources.
-func (c *UpgradeContext) Resources() []*resources.Metadata {
-	list := make([]*resources.Metadata, 0, len(c.resources))
-	for _, res := range c.resources {
-		list = append(list, res)
-	}
-	return list
 }
 
 // ClientSet returns the Kubernetes client set.
@@ -372,20 +372,19 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 
 	var result []k8sutil.Object
 
-	for _, resourceType := range c.resources {
-		if resourceType.Purpose&resourcePurpose != resourcePurpose {
+	for _, resourceMD := range c.resources {
+		if resourceMD.Purpose&resourcePurpose != resourcePurpose {
 			continue
 		}
-
-		resourceClient := c.DynamicClientForResource(resourceType, common.Namespace)
+		resourceClient := c.DynamicClientForResource(resourceMD, common.Namespace)
 		listObj, err := resourceClient.List(*listOpts)
 		if err != nil {
-			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceType)
+			return nil, errors.Wrapf(err, "listing relevant objects of type %v", resourceMD)
 		}
 
 		objs, err := c.unpackList(listObj)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unpacking list of objects of type %v", resourceType)
+			return nil, errors.Wrapf(err, "unpacking list of objects of type %v", resourceMD)
 		}
 		result = append(result, objs...)
 	}
