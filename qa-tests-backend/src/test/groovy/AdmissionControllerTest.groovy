@@ -303,8 +303,6 @@ class AdmissionControllerTest extends BaseSpecification {
                 for (def pod : admCtrlPods) {
                     // Only kill pods that are ready, to ensure the service occasionally has (unstable) endpoints.
                     if (!pod?.metadata?.deletionTimestamp && pod?.status?.containerStatuses[0]?.ready) {
-                        // Do a delete with a short grace period (we can't do force delete due to a K8s bug,
-                        // see https://github.com/kubernetes/kubernetes/issues/80313).
                         orchestrator.deletePod(pod.metadata.namespace, pod.metadata.name, 1L)
                     }
                 }

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/alpn"
 	downgradingServer "github.com/stackrox/rox/pkg/grpc/http1downgrade/server"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -25,6 +26,8 @@ type EndpointConfig struct {
 	TLS            verifier.TLSConfigurer
 
 	ServeGRPC, ServeHTTP bool
+
+	NoHTTP2 bool
 }
 
 // Kind returns a human-readable description of this endpoint.
@@ -66,8 +69,13 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 		}
 	}
 
+	if c.NoHTTP2 {
+		tlsConf = tlsConf.Clone()
+		tlsConf.NextProtos = sliceutils.StringDifference(tlsConf.NextProtos, []string{"h2", alpn.PureGRPCALPNString})
+	}
+
 	if tlsConf != nil {
-		if c.ServeGRPC {
+		if c.ServeGRPC && !c.NoHTTP2 {
 			tlsConf = alpn.ApplyPureGRPCALPNConfig(tlsConf)
 		}
 		lis = tls.NewListener(lis, tlsConf)
@@ -99,11 +107,13 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			TLSConfig: tlsConf,
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
-		var h2Srv http2.Server
-		if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
-			log.Warnf("Failed to instantiated endpoint listening at %q for HTTP/2", c.ListenEndpoint)
-		} else {
-			httpSrv.Handler = h2c.NewHandler(httpHandler, &h2Srv)
+		if !c.NoHTTP2 {
+			var h2Srv http2.Server
+			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
+				log.Warnf("Failed to instantiated endpoint listening at %q for HTTP/2", c.ListenEndpoint)
+			} else {
+				httpSrv.Handler = h2c.NewHandler(httpHandler, &h2Srv)
+			}
 		}
 		result = append(result, serverAndListener{
 			srv:      httpSrv,

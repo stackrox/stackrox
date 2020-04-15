@@ -76,6 +76,7 @@ func mainCmd() error {
 				ListenEndpoint: webhookEndpoint,
 				TLS:            verifier.NonCA{},
 				ServeHTTP:      true,
+				NoHTTP2:        true,
 			},
 		},
 	}
