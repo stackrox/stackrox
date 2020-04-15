@@ -82,8 +82,7 @@ const Menu = ({
         });
     }
 
-    const tooltipClassName = !tooltip || disabled ? 'visible xl:invisible' : '';
-
+    const tooltipClassName = !tooltip || disabled ? 'invisible' : '';
     return (
         <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>} className={tooltipClassName}>
             <div className={`${className} inline-block relative z-50`}>
