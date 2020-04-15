@@ -2750,6 +2750,41 @@ jobs:
             rm -rf sensor-remote
 
       - run:
+          name: Install the metrics server, and inactivate it, to reproduce ROX-4429
+          command: |
+            kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
+
+            echo "Waiting for metrics.k8s.io to be in kubectl API resources..."
+            success=0
+            for i in $(seq 1 10); do
+              if kubectl api-resources | grep metrics.k8s.io; then
+                success=1
+                break
+              fi
+              sleep 5
+            done
+            [[ "${success}" -eq 1 ]]
+
+            ## Patch the metrics server to be unreachable
+            kubectl -n kube-system patch svc/metrics-server --type json -p '[{"op": "replace", "path": "/spec/selector", "value": {"k8s-app": "non-existent"}}]'
+
+            echo "Waiting for metrics.k8s.io to NOT be in kubectl API resources..."
+            success=0
+            for i in $(seq 1 10); do
+              kubectl api-resources >stdout.out 2>stderr.out || true
+              if grep 'metrics.k8s.io.*the server is currently unable to handle the request' stderr.out; then
+                success=1
+                break
+              fi
+              echo "metrics.k8s.io still in API resources. Will try again..."
+              cat stdout.out
+              cat stderr.out
+              sleep 5
+            done
+            [[ "${success}" -eq 1 ]]
+            rm -f stdout.out stderr.out
+
+      - run:
           name: Create a "sensor-remote-new" cluster
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor generate k8s \
