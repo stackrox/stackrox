@@ -18,9 +18,9 @@
   "remediation": "Run `rpm -e $(rpm -qa *rpm*) $(rpm -qa *dnf*) $(rpm -qa *libsolv*) $(rpm -qa *hawkey*)` in the image build for production containers. Change applications to no longer use package managers at runtime, if applicable.",
   "whitelists": [
     {
-      "name": "Don't alert on StackRox scanner-v2",
+      "name": "Don't alert on StackRox scanner",
       "deployment": {
-        "name": "scanner-v2",
+        "name": "scanner",
         "scope": {
           "namespace": "stackrox"
         }
