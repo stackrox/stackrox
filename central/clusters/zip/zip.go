@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -38,6 +39,20 @@ func Handler(c datastore.DataStore, s siDataStore.DataStore) http.Handler {
 type zipHandler struct {
 	clusterStore  datastore.DataStore
 	identityStore siDataStore.DataStore
+}
+
+func renderBaseFiles(cluster *storage.Cluster, createUpgraderSA bool, certs sensor.Certs) ([]*zip.File, error) {
+	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get required cluster information")
+	}
+
+	baseFiles, err := renderer.RenderSensorHelm(fields, &certs)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get required cluster information")
+	}
+
+	return baseFiles, nil
 }
 
 // ServeHTTP serves a ZIP file for the cluster upon request.
@@ -93,15 +108,9 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		createUpgraderSA = *params.CreateUpgraderSA
 	}
 
-	fields, err := clusters.FieldsFromClusterAndRenderOpts(cluster, clusters.RenderOptions{CreateUpgraderSA: createUpgraderSA})
+	baseFiles, err := renderBaseFiles(cluster, createUpgraderSA, certs)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "unable to get required cluster information"))
-		return
-	}
-
-	baseFiles, err := renderer.RenderSensorHelm(fields, &certs)
-	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not render all files"))
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
 

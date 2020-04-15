@@ -88,7 +88,7 @@ spec:
           value: {{.Values.endpoint.central}}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{.Values.endpoint.advertised}}
-          {{if eq ".Values.cluster.type" "OPENSHIFT_CLUSTER"}}
+          {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
         - name: ROX_OPENSHIFT_API
           value: "true"
           {{- end}}
