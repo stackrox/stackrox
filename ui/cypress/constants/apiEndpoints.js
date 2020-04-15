@@ -52,7 +52,7 @@ export const network = {
 
 export const policies = {
     policy: 'v1/policies/*',
-    dryrun: 'v1/policies/dryrun'
+    dryrun: 'v1/policies/dryrunjob'
 };
 
 export const roles = {

@@ -4,9 +4,7 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { knownBackendFlags } from 'utils/featureFlags';
 import Panel from 'Components/Panel';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import Message from 'Components/Message';
 import Violations from './Violations';
 import Whitelisted from './Whitelisted';
@@ -46,9 +44,7 @@ function PreviewPanel({ header, dryRun, policyDisabled, onClose }) {
             </div>
         </>
     ) : (
-        <FeatureEnabled featureFlag={knownBackendFlags.ROX_DRY_RUN_JOB}>
-            <DryRunInProgressMessage />
-        </FeatureEnabled>
+        <DryRunInProgressMessage />
     );
 
     return (

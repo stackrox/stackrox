@@ -13,7 +13,6 @@ import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { takeEveryNewlyMatchedLocation, takeEveryLocation } from 'utils/sagaEffects';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 
 export function* getPolicies(filters) {
@@ -198,22 +197,6 @@ function* disableNotificationsForPolicies({ policyIds, notifierIds }) {
     }
 }
 
-function* getDryRun(policy) {
-    try {
-        const policyDryRun = yield call(service.getDryRun, policy);
-        yield put(wizardActions.setWizardDryRun(policyDryRun.data));
-        yield put(wizardActions.setWizardStage(wizardStages.preview));
-    } catch (error) {
-        if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
-        } else {
-            // TODO-ivan: use global user notification system to display the problem to the user as well
-            Raven.captureException(error);
-        }
-    }
-}
-
 function* startDryRun(policy) {
     try {
         const { data } = yield call(service.startDryRun, policy);
@@ -291,46 +274,25 @@ function* watchDisableNotificationsForPolicies() {
     yield takeLatest(backendTypes.DISABLE_POLICIES_NOTIFICATION, disableNotificationsForPolicies);
 }
 
-function* switchWizardState(stage, policy, isDryRunLoadingEnabled) {
-    switch (stage) {
-        case wizardStages.prepreview:
-            if (isDryRunLoadingEnabled) {
-                yield fork(startDryRun, policy);
-            } else {
-                yield fork(getDryRun, policy);
-            }
-            break;
-        case wizardStages.preview:
-            if (isDryRunLoadingEnabled) {
-                yield fork(checkDryRun);
-            }
-            break;
-        case wizardStages.save:
-            yield fork(savePolicy, policy);
-            break;
-        case wizardStages.create:
-            yield fork(createPolicy, policy);
-            break;
-        default:
-            break;
-    }
-}
-
 function* watchWizardState() {
     while (true) {
         const { stage } = yield take(wizardTypes.SET_WIZARD_STAGE);
         const policy = yield select(selectors.getWizardPolicy);
-        // this is to handle the error thrown by isBAckendFeatureFlagEnabled
-        try {
-            const featureFlags = yield select(selectors.getFeatureFlags);
-            const isDryRunLoadingEnabled = isBackendFeatureFlagEnabled(
-                featureFlags,
-                knownBackendFlags.ROX_DRY_RUN_JOB,
-                false
-            );
-            yield fork(switchWizardState, stage, policy, isDryRunLoadingEnabled);
-        } catch (error) {
-            yield fork(switchWizardState, stage, policy, false);
+        switch (stage) {
+            case wizardStages.prepreview:
+                yield fork(startDryRun, policy);
+                break;
+            case wizardStages.preview:
+                yield fork(checkDryRun);
+                break;
+            case wizardStages.save:
+                yield fork(savePolicy, policy);
+                break;
+            case wizardStages.create:
+                yield fork(createPolicy, policy);
+                break;
+            default:
+                break;
         }
     }
 }

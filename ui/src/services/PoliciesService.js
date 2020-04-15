@@ -119,16 +119,6 @@ export function createPolicy(policy) {
 }
 
 /**
- * Gets a dry run for a given policy.
- *
- * @param {!object} policy
- * @returns {Promise<AxiosResponse, Error>}
- */
-export function getDryRun(policy) {
-    return axios.post(`${baseUrl}/dryrun`, policy);
-}
-
-/**
  * Starts a dry run for a given policy.
  *
  * @param {!object} policy

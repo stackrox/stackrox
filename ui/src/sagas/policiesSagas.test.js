@@ -201,16 +201,40 @@ describe('Policies Sagas', () => {
             });
     });
 
-    it('should get policy dry run on PRE_PREVIEW wizard state', () => {
-        const dryRunMock = jest.fn().mockReturnValueOnce({ data: dryRun });
+    it('should forward from PREPREVIEW to PREVIEW wizard state', () => {
+        const jobId = '1234';
+        const dryRunJobMock = jest.fn().mockReturnValueOnce({ data: { jobId } });
+        const dryRunMock = jest
+            .fn()
+            .mockReturnValueOnce({ data: { pending: false, result: dryRun } });
 
         return expectSaga(saga)
             .provide([
-                [call(service.getDryRun, policy), dynamic(dryRunMock)],
-                [select(selectors.getWizardPolicy), policy]
+                [call(service.checkDryRun, jobId), dynamic(dryRunMock)],
+                [call(service.startDryRun, policy), dynamic(dryRunJobMock)],
+                [select(selectors.getWizardPolicy), policy],
+                [select(selectors.getWizardDryRun), { jobId }]
+            ])
+            .put(wizardActions.setWizardStage(wizardStages.preview))
+            .dispatch(wizardActions.setWizardStage(wizardStages.prepreview))
+            .silentRun();
+    });
+
+    it('should start, check, and set dry run state from PRPREVIEW to PREVIEW wizard state', () => {
+        const jobId = '1234';
+        const dryRunJobMock = jest.fn().mockReturnValueOnce({ data: { jobId } });
+        const dryRunMock = jest
+            .fn()
+            .mockReturnValueOnce({ data: { pending: false, result: dryRun } });
+
+        return expectSaga(saga)
+            .provide([
+                [call(service.checkDryRun, jobId), dynamic(dryRunMock)],
+                [call(service.startDryRun, policy), dynamic(dryRunJobMock)],
+                [select(selectors.getWizardPolicy), policy],
+                [select(selectors.getWizardDryRun), { jobId }]
             ])
             .put(wizardActions.setWizardDryRun(dryRun))
-            .put(wizardActions.setWizardStage(wizardStages.preview))
             .dispatch(wizardActions.setWizardStage(wizardStages.prepreview))
             .silentRun();
     });

@@ -1,7 +1,6 @@
 import { selectors, text, url } from '../constants/PoliciesPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
-import checkFeatureFlag from '../helpers/features';
 
 describe('Policies page', () => {
     withAuth();
@@ -140,13 +139,11 @@ describe('Policies page', () => {
     });
 
     it('should show dry run loading screen before showing dry run results', () => {
-        if (checkFeatureFlag('ROX_DRY_RUN_JOB', true)) {
-            cy.get(selectors.tableFirstRow).click({ force: true });
-            cy.get(selectors.editPolicyButton).click();
-            cy.get(selectors.nextButton).click();
-            cy.get(selectors.policyPreview.loading).should('exist');
-            closePolicySidePanel();
-        }
+        cy.get(selectors.tableFirstRow).click({ force: true });
+        cy.get(selectors.editPolicyButton).click();
+        cy.get(selectors.nextButton).click();
+        cy.get(selectors.policyPreview.loading).should('exist');
+        closePolicySidePanel();
     });
 
     it('should open the preview panel to view policy dry run', () => {
@@ -154,10 +151,8 @@ describe('Policies page', () => {
         cy.get(selectors.editPolicyButton).click();
         cy.get(selectors.nextButton).click();
 
-        if (checkFeatureFlag('ROX_DRY_RUN_JOB', true)) {
-            cy.get(selectors.policyPreview.loading).should('exist');
-            cy.wait(2000);
-        }
+        cy.get(selectors.policyPreview.loading).should('exist');
+        cy.wait(2000);
 
         cy.get('.warn-message').should('exist');
         cy.get('.alert-preview').should('exist');
@@ -322,7 +317,7 @@ describe('Policies page', () => {
             });
     });
 
-    it('should allow creating new categories and savnig them (ROX-1409)', () => {
+    it('should allow creating new categories and saving them (ROX-1409)', () => {
         const categoryName = 'ROX-1409-test-category';
         cy.get(selectors.tableFirstRow).click({ force: true });
         editPolicy();
