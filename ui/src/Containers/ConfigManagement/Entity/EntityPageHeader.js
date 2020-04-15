@@ -19,9 +19,10 @@ const getEntityVariables = (type, id) => {
 
 const getQueryAndVariables = (entityType, entityId) => {
     const query = entityNameQueryMap[entityType] || null;
+    const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     return {
         query,
-        variables: getEntityVariables(entityType, entityId)
+        variables: getEntityVariables(entityType, safeEntityId)
     };
 };
 

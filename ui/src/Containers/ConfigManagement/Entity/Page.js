@@ -6,7 +6,7 @@ import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
 
 import searchContext from 'Containers/searchContext';
 import { searchParams } from 'constants/searchParams';
-import PageHeader from './EntityPageHeader';
+import EntityPageHeader from './EntityPageHeader';
 import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
@@ -44,7 +44,11 @@ const EntityPage = ({ match, location }) => {
           };
     return (
         <div className="flex flex-1 flex-col" style={style}>
-            <PageHeader entityType={pageEntityType} entityId={pageEntityId} urlParams={urlParams} />
+            <EntityPageHeader
+                entityType={pageEntityType}
+                entityId={pageEntityId}
+                urlParams={urlParams}
+            />
             <Tabs
                 pageEntityId={pageEntityId}
                 entityType={pageEntityType}
