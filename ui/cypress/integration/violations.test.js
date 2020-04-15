@@ -227,10 +227,7 @@ describe('Violations page', () => {
         mockGetAlertWithEmptyContainerConfig();
         cy.get(ViolationsPageSelectors.lastTableRow).click();
         cy.wait('@alertWithEmptyContainerConfig');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
-            .click();
+        cy.get(ViolationsPageSelectors.sidePanel.enforcementTab).click();
         cy.get(ViolationsPageSelectors.securityBestPractices).should('not.have.text', 'Commands');
     });
 
@@ -238,10 +235,7 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels)
-            .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(3))
-            .click();
+        cy.get(ViolationsPageSelectors.sidePanel.policyTab).click();
         cy.get(PoliciesPageSelectors.policyDetailsPanel.detailsSection).should('exist');
         cy.get(PoliciesPageSelectors.policyDetailsPanel.idValueDiv).should('exist');
     });

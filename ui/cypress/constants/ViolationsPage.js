@@ -12,7 +12,10 @@ export const selectors = {
         tabs: 'button[data-testid="tab"]',
         getTabByIndex: index => `button[data-testid="tab"]:nth(${index})`,
         enforcementDetailMessage: '[data-testid="enforcement-detail-message"]',
-        enforcementExplanationMessage: '[data-testid="enforcement-explanation-message"]'
+        enforcementExplanationMessage: '[data-testid="enforcement-explanation-message"]',
+        enforcementTab:
+            '[data-testid="panel"]:eq(1) button[data-testid="tab"]:contains("Enforcement")',
+        policyTab: '[data-testid="panel"]:eq(1) button[data-testid="tab"]:contains("Policy")'
     },
     clusterTableHeader: '.rt-thead > .rt-tr > div:contains("Cluster")',
     viewDeploymentsButton: 'button:contains("View Deployments")',
