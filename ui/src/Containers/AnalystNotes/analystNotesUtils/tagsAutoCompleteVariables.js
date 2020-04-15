@@ -1,7 +1,7 @@
 import queryService from 'modules/queryService';
 
 export const violationCategories = ['ALERTS'];
-export const processCategories = ['PROCESS'];
+export const processCategories = ['DEPLOYMENTS'];
 
 const violationQueryPrefix = 'Tag';
 const processQueryPrefix = 'Process Tag';
