@@ -22,9 +22,11 @@ export const getContainerEvents = (containers, selectedEventType) => {
         subText: startTime ? format(startTime, dateTimeFormat) : 'N/A',
         events: events
             .filter(filterByEventType(selectedEventType))
-            .map(({ id: processId, timestamp, edges, type }) => ({
+            .map(({ id: processId, uid, reason, timestamp, edges, type }) => ({
                 id: processId,
                 type,
+                uid,
+                reason,
                 differenceInHours: getDifferenceInHours(timestamp, startTime),
                 timestamp,
                 edges

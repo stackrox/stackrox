@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 
 export const DEPLOYMENT_OVERVIEW_FRAGMENT = gql`
     fragment deploymentOverviewFields on Deployment {
-        numPolicyViolations: failingPolicyCount
+        numPolicyViolations: failingRuntimePolicyCount
         numProcessActivities: processActivityCount
         numRestarts: containerRestartCount
         numTerminations: containerTerminationCount
@@ -15,10 +15,7 @@ export const POD_FRAGMENT = gql`
         id
         name
         startTime: started
-        liveInstances {
-            finished
-            started
-        }
+        containerCount
     }
 `;
 
@@ -79,12 +76,10 @@ export const GET_POD_EVENT_TIMELINE = gql`
         pod(id: $podId) {
             ...podFields
         }
-        containers: containerInstances(query: $containersQuery) {
-            instanceId {
-                id
-            }
-            name: containerName
-            startTime: started
+        containers: groupedContainerInstances(query: $containersQuery) {
+            id
+            name
+            startTime
             events {
                 type: __typename
                 ... on PolicyViolationEvent {

@@ -6,12 +6,19 @@ import MainView from 'Components/TimelineGraph/MainView';
 import Minimap from 'Components/TimelineGraph/Minimap';
 import Pagination from 'Components/TimelineGraph/Pagination';
 
-const ABSOLUTE_MIN_TIME_RANGE = 0;
-const ABSOLUTE_MAX_TIME_RANGE = 24;
+const absoluteMinTimeRange = 0;
 
-const TimelineGraph = ({ data, goToNextView, currentPage, totalSize, pageSize, onPageChange }) => {
-    const [minTimeRange, setMinTimeRange] = useState(ABSOLUTE_MIN_TIME_RANGE);
-    const [maxTimeRange, setMaxTimeRange] = useState(ABSOLUTE_MAX_TIME_RANGE);
+const TimelineGraph = ({
+    data,
+    goToNextView,
+    currentPage,
+    totalSize,
+    pageSize,
+    onPageChange,
+    absoluteMaxTimeRange
+}) => {
+    const [minTimeRange, setMinTimeRange] = useState(absoluteMinTimeRange);
+    const [maxTimeRange, setMaxTimeRange] = useState(absoluteMaxTimeRange);
 
     const names = data.map(({ type, id, name, subText, hasChildren }) => ({
         type,
@@ -46,9 +53,9 @@ const TimelineGraph = ({ data, goToNextView, currentPage, totalSize, pageSize, o
                 </div>
                 <div className="w-3/4 font-700">
                     <Minimap
-                        minTimeRange={ABSOLUTE_MIN_TIME_RANGE}
+                        minTimeRange={absoluteMinTimeRange}
                         setMinTimeRange={setMinTimeRange}
-                        maxTimeRange={ABSOLUTE_MAX_TIME_RANGE}
+                        maxTimeRange={absoluteMaxTimeRange}
                         setMaxTimeRange={setMaxTimeRange}
                         data={data}
                         numRows={pageSize}
@@ -80,11 +87,13 @@ TimelineGraph.propTypes = {
     currentPage: PropTypes.number.isRequired,
     pageSize: PropTypes.number.isRequired,
     totalSize: PropTypes.number.isRequired,
-    onPageChange: PropTypes.func.isRequired
+    onPageChange: PropTypes.func.isRequired,
+    absoluteMaxTimeRange: PropTypes.number
 };
 
 TimelineGraph.defaultProps = {
-    data: []
+    data: [],
+    absoluteMaxTimeRange: 3600000 * 24 // default to 24 hours
 };
 
 export default TimelineGraph;

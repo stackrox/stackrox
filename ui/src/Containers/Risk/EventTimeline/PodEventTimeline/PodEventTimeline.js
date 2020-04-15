@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 import { ArrowLeft } from 'react-feather';
 
+import getPaginatedList from 'utils/getPaginatedList';
 import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import queryService from 'modules/queryService';
 import Button from 'Components/Button';
@@ -12,12 +13,8 @@ import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import EventTypeSelect from '../EventTypeSelect';
 import { getPod, getContainerEvents } from './getContainerEvents';
+import getLargestDifferenceInHours from '../eventTimelineUtils/getLargestDifferenceInHours';
 import { GET_POD_EVENT_TIMELINE } from '../timelineQueries';
-
-const defaultContainersSort = {
-    id: 'Container Name',
-    desc: false
-};
 
 const PodEventTimeline = ({
     id,
@@ -33,9 +30,7 @@ const PodEventTimeline = ({
         variables: {
             podId: id,
             // TODO: We should standardize on using Id vs. ID. Change this once backend makes the change
-            containersQuery: queryService.objectToWhereClause({ 'Pod ID': id }),
-            // TODO: Standardize on 1-indexing for Pagination so we can put the value adjustment into the function itself. https://github.com/stackrox/rox/pull/5075#discussion_r395284332
-            pagination: queryService.getPagination(defaultContainersSort, currentPage - 1, pageSize)
+            containersQuery: queryService.objectToWhereClause({ 'Pod ID': id })
         }
     });
 
@@ -66,9 +61,12 @@ const PodEventTimeline = ({
         <EventTypeSelect selectedEventType={selectedEventType} selectEventType={selectEventType} />
     );
 
-    const timelineData = getContainerEvents(data.containers, selectedEventType);
+    // Adding pagination for Grouped Container Instances required a substantial amount of work, so we're going with pagination on the frontend for now
+    const paginatedContainers = getPaginatedList(data.containers, currentPage, pageSize);
+    const timelineData = getContainerEvents(paginatedContainers, selectedEventType);
+    const absoluteMaxTimeRange = getLargestDifferenceInHours(timelineData);
 
-    const numTotalContainers = data?.pod?.liveInstances?.length || 0;
+    const numTotalContainers = data?.pod?.containerCount || 0;
 
     return (
         <Panel headerTextComponent={headerTextComponent} headerComponents={headerComponents}>
@@ -79,6 +77,7 @@ const PodEventTimeline = ({
                 totalSize={numTotalContainers}
                 pageSize={pageSize}
                 onPageChange={onPageChange}
+                absoluteMaxTimeRange={absoluteMaxTimeRange}
             />
         </Panel>
     );
@@ -92,11 +91,7 @@ PodEventTimeline.propTypes = {
     selectEventType: PropTypes.func.isRequired,
     currentPage: PropTypes.number.isRequired,
     pageSize: PropTypes.number.isRequired,
-    onPageChange: PropTypes.func.isRequired,
-    sort: PropTypes.shape({
-        id: PropTypes.string.isRequired,
-        desc: PropTypes.bool.isRequired
-    }).isRequired
+    onPageChange: PropTypes.func.isRequired
 };
 
 export default PodEventTimeline;

@@ -13,6 +13,8 @@ import TerminationEvent from './TerminationEvent';
 const EventMarker = ({
     name,
     type,
+    uid,
+    reason,
     timestamp,
     differenceInHours,
     translateX,
@@ -47,13 +49,25 @@ const EventMarker = ({
                 <PolicyViolationEvent name={name} type={type} timestamp={timestamp} width={size} />
             )}
             {type === eventTypes.PROCESS_ACTIVITY && (
-                <ProcessActivityEvent name={name} type={type} timestamp={timestamp} width={size} />
+                <ProcessActivityEvent
+                    name={name}
+                    type={type}
+                    uid={uid}
+                    timestamp={timestamp}
+                    width={size}
+                />
             )}
             {type === eventTypes.RESTART && (
                 <RestartEvent name={name} type={type} timestamp={timestamp} width={size} />
             )}
             {type === eventTypes.TERMINATION && (
-                <TerminationEvent name={name} type={type} timestamp={timestamp} width={size} />
+                <TerminationEvent
+                    name={name}
+                    type={type}
+                    reason={reason}
+                    timestamp={timestamp}
+                    width={size}
+                />
             )}
         </D3Anchor>
     );

@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react-hooks/rules-of-hooks */
+import React, { useState } from 'react';
 
 import TimelineGraph from './TimelineGraph';
 
@@ -8,6 +9,8 @@ export default {
 };
 
 export const withData = () => {
+    const [currentPage, onPageChange] = useState(1);
+    const pageSize = 5;
     const data = [
         {
             type: 'graph-type-1',
@@ -62,5 +65,14 @@ export const withData = () => {
             ]
         }
     ];
-    return <TimelineGraph data={data} />;
+    return (
+        <TimelineGraph
+            data={data}
+            currentPage={currentPage}
+            totalSize={data.length}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            absoluteMaxTimeRange={10}
+        />
+    );
 };

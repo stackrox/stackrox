@@ -6,22 +6,26 @@ import getDifferenceInHours from '../eventTimelineUtils/getDifferenceInHours';
 import filterByEventType from '../eventTimelineUtils/filterByEventType';
 
 const getPodEvents = (pods, selectedEventType) => {
-    const podsWithEvents = pods.map(({ id, name, inactive, startTime, events, liveInstances }) => ({
-        type: graphTypes.POD,
-        id,
-        name,
-        subText: inactive ? 'Inactive' : format(startTime, timelineStartTimeFormat),
-        events: events
-            .filter(filterByEventType(selectedEventType))
-            .map(({ id: processId, timestamp, edges, type }) => ({
-                id: processId,
-                type,
-                differenceInHours: getDifferenceInHours(timestamp, startTime),
-                timestamp,
-                edges
-            })),
-        hasChildren: liveInstances.length > 0
-    }));
+    const podsWithEvents = pods.map(
+        ({ id, name, inactive, startTime, events, containerCount }) => ({
+            type: graphTypes.POD,
+            id,
+            name,
+            subText: inactive ? 'Inactive' : format(startTime, timelineStartTimeFormat),
+            events: events
+                .filter(filterByEventType(selectedEventType))
+                .map(({ id: processId, uid, reason, timestamp, edges, type }) => ({
+                    id: processId,
+                    type,
+                    uid,
+                    reason,
+                    differenceInHours: getDifferenceInHours(timestamp, startTime),
+                    timestamp,
+                    edges
+                })),
+            hasChildren: containerCount > 0
+        })
+    );
     return podsWithEvents;
 };
 
