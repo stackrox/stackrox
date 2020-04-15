@@ -94,31 +94,39 @@ const processData = (data, workflowState, limit) => {
             const k8sIstioContent = (
                 <div className="flex">
                     <div className="flex flex-1 items-center justify-left mr-8">
-                        <img src={kubeSVG} alt="kube" className="pr-2" />
-                        <FixableCVECount
-                            cves={k8sCveCount}
-                            url={k8sUrl}
-                            fixableUrl={k8sFixableUrl}
-                            fixable={k8sFixableCount}
-                            orientation="vertical"
-                            showZero
-                        />
+                        <Tooltip
+                            content={<TooltipOverlay>Kubernetes Vulnerabilities</TooltipOverlay>}
+                        >
+                            <div className="flex">
+                                <img src={kubeSVG} alt="kube" className="pr-2" />
+                                <FixableCVECount
+                                    cves={k8sCveCount}
+                                    url={k8sUrl}
+                                    fixableUrl={k8sFixableUrl}
+                                    fixable={k8sFixableCount}
+                                    orientation="vertical"
+                                    showZero
+                                />
+                            </div>
+                        </Tooltip>
                         <Tooltip content={<TooltipOverlay>{indicationTooltipText}</TooltipOverlay>}>
                             {/* https://github.com/feathericons/react-feather/issues/56 */}
                             <div className="ml-2">{indicatorIcon}</div>
                         </Tooltip>
                     </div>
-                    <div className="flex items-center justify-left pr-2">
-                        <img src={istioSVG} alt="istio" className="pr-2" />
-                        <FixableCVECount
-                            cves={istioCveCount}
-                            url={istioUrl}
-                            fixableUrl={istioFixableUrl}
-                            fixable={istioFixableCount}
-                            orientation="vertical"
-                            showZero
-                        />
-                    </div>
+                    <Tooltip content={<TooltipOverlay>Istio Vulnerabilities</TooltipOverlay>}>
+                        <div className="flex items-center justify-left pr-2">
+                            <img src={istioSVG} alt="istio" className="pr-2" />
+                            <FixableCVECount
+                                cves={istioCveCount}
+                                url={istioUrl}
+                                fixableUrl={istioFixableUrl}
+                                fixable={istioFixableCount}
+                                orientation="vertical"
+                                showZero
+                            />
+                        </div>
+                    </Tooltip>
                 </div>
             );
 
