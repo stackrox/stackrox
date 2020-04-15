@@ -98,6 +98,8 @@ class AdmissionControllerTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(false)
                 .build()
