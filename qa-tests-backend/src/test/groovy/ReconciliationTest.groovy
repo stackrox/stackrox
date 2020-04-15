@@ -44,9 +44,12 @@ class ReconciliationTest extends BaseSpecification {
             return
         }
         def clusterId = ClusterService.getClusterId()
-        def reconciliationStatsForCluster = DevelopmentService.
-            getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
-        assert reconciliationStatsForCluster
+        def reconciliationStatsForCluster = null
+        withRetry(30, 2) {
+            reconciliationStatsForCluster = DevelopmentService.
+                getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
+            assert reconciliationStatsForCluster
+        }
         assert reconciliationStatsForCluster.getReconciliationDone()
         println "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
         for (def entry: reconciliationStatsForCluster.getDeletedObjectsByTypeMap().entrySet()) {
