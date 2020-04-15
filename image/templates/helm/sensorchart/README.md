@@ -118,7 +118,7 @@ and their default values.
 |`image.repository.collector`|Repository from which to download the collector image.  |`collector` |
 |`image.registry.main`| Address of the registry you are using for main image.|`stackrox.io` |
 |`image.registry.collector`| Address of the registry you are using for collector image.|`collector.stackrox.io` |
-|`config.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`EBPF` |
+|`config.collectionMethod`|Either `EBPF`, `KERNEL_MODULE`, or `NO_COLLECTION`. |`KERNEL_MODULE` |
 |`config.admissionControl.createService`|This setting controls whether Kubernetes is configured to contact the StackRox Kubernetes Security Platform with `AdmissionReview` requests. |`false` |
 |`config.admissionControl.listenOnUpdates`|When you keep it as `false`, the StackRox Kubernetes Security Platform creates the `ValidatingWebhookConfiguration` in a way that causes the Kubernetes API server not to send object update events. Since the volume of object updates is usually higher than the object creates, leaving this as `false` limits the load on the admission control service and decreases the chances of a malfunctioning admission control service.|`false` |
 |`config.admissionControl.enableService`|It controls whether the StackRox Kubernetes Security Platform evaluates policies; if it’s disabled, all AdmissionReview requests are automatically accepted.  |`false` |

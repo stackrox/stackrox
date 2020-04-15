@@ -15,7 +15,7 @@ image:
     collector: !! default "collector.stackrox.io" .CollectorRegistry !!
 
 config:
-  collectionMethod: !! default "EBPF" .CollectionMethod !!
+  collectionMethod: !! default "KERNEL_MODULE" .CollectionMethod !!
   admissionControl:
     createService: !! default false .AdmissionController !!
     listenOnUpdates: !! default false .AdmissionControlListenOnUpdates !!
