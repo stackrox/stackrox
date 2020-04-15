@@ -191,9 +191,9 @@ describe('Violations page', () => {
         mockGetAlert();
         cy.get(ViolationsPageSelectors.firstPanelTableRow).click();
         cy.wait('@alertById');
-        cy.get(ViolationsPageSelectors.panels)
+        cy.get(ViolationsPageSelectors.panels, { timeout: 7000 })
             .eq(1)
-            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1))
+            .get(ViolationsPageSelectors.sidePanel.getTabByIndex(1), { timeout: 7000 })
             .click();
         cy.get(ViolationsPageSelectors.sidePanel.enforcementDetailMessage).should(message => {
             expect(message).to.contain('Kill Pod');

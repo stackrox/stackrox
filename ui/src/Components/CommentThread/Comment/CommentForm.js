@@ -26,6 +26,9 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
                         onChange={handleChange}
                         onBlur={handleBlur}
                         value={values.message}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus
+                        autoFocus
+                        aria-label="Comment Input"
                     />
                     {errors && errors.message && (
                         <span className="text-alert-700">{errors.message}</span>
