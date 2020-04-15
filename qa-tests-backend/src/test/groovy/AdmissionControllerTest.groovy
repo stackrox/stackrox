@@ -1,5 +1,6 @@
 import common.Constants
 import groups.BAT
+import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -18,6 +19,7 @@ import util.Env
 import util.Timer
 
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
 
 class AdmissionControllerTest extends BaseSpecification {
     @Shared
@@ -28,6 +30,8 @@ class AdmissionControllerTest extends BaseSpecification {
     private String gcrId
     @Shared
     private String clusterId
+
+    private ChaosMonkey chaosMonkey
 
     static final private String GCR_NGINX         = "qagcrnginx"
     static final private String BUSYBOX_NO_BYPASS = "busybox-no-bypass"
@@ -58,6 +62,8 @@ class AdmissionControllerTest extends BaseSpecification {
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
@@ -73,6 +79,22 @@ class AdmissionControllerTest extends BaseSpecification {
 
         gcrId = ImageIntegrationService.addGcrRegistry()
         assert gcrId != null
+    }
+
+    def setup() {
+        if (FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE")) {
+            // By default, operate with a chaos monkey that keeps one ready replica alive and deletes with a 10s grace
+            // period, which should be sufficient for K8s to pick up readiness changes and update endpoints.
+            chaosMonkey = new ChaosMonkey(1, 10L)
+            chaosMonkey.waitForEffect()
+        }
+    }
+
+    def cleanup() {
+        if (chaosMonkey) {
+            chaosMonkey.stop()
+            chaosMonkey.waitForReady()
+        }
     }
 
     def cleanupSpec() {
@@ -283,6 +305,11 @@ class AdmissionControllerTest extends BaseSpecification {
         Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
 
         and:
+        "Stop the regular chaos monkey"
+        chaosMonkey.stop()
+        chaosMonkey = null
+
+        and:
         "Configure admission controller"
         AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
                 .setEnabled(false)
@@ -295,20 +322,8 @@ class AdmissionControllerTest extends BaseSpecification {
         sleep 5000
 
         and:
-        "Start a chaos monkey thread that kills all ready admission control replicas"
-        def stopChaosMonkey = new AtomicBoolean()
-        def chaosMonkeyThread = Thread.start {
-            while (!stopChaosMonkey.get()) {
-                def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
-                for (def pod : admCtrlPods) {
-                    // Only kill pods that are ready, to ensure the service occasionally has (unstable) endpoints.
-                    if (!pod?.metadata?.deletionTimestamp && pod?.status?.containerStatuses[0]?.ready) {
-                        orchestrator.deletePod(pod.metadata.namespace, pod.metadata.name, 1L)
-                    }
-                }
-                sleep 1000
-            }
-        }
+        "Start a chaos monkey thread that kills _all_ ready admission control replicas with a short grace period"
+        def killAllChaosMonkey = new ChaosMonkey(0, 1L)
 
         then:
         "Verify deployment can be created"
@@ -326,28 +341,11 @@ class AdmissionControllerTest extends BaseSpecification {
 
         cleanup:
         "Stop chaos monkey"
-        stopChaosMonkey.set(true)
-        chaosMonkeyThread.join()
+        killAllChaosMonkey.stop()
 
         and:
         "Wait for all admission control replicas to become ready again"
-        def allReady = false
-        while (!allReady) {
-            sleep 1000
-
-            def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
-            if (admCtrlPods.size() < 3) {
-                continue
-            }
-            allReady = true
-            for (def pod : admCtrlPods) {
-                if (!pod.status.containerStatuses[0].ready) {
-                    allReady = false
-                    break
-                }
-            }
-        }
-        println "All admission control pod replicas ready"
+        killAllChaosMonkey.waitForReady()
 
         and:
         "Delete deployment"
@@ -365,6 +363,74 @@ class AdmissionControllerTest extends BaseSpecification {
             if (!deleted) {
                 println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
             }
+        }
+    }
+
+    class ChaosMonkey {
+        def stopFlag = new AtomicBoolean()
+        def lock = new ReentrantLock()
+        def effectCond = lock.newCondition()
+
+        Thread thread
+
+        ChaosMonkey(int minReadyReplicas, Long gracePeriod) {
+            thread = Thread.start {
+                while (!stopFlag.get()) {
+                    // Get the current ready, non-deleted pod replicas
+                    def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
+                            "stackrox", "admission-control"))
+                    admCtrlPods.removeIf { it?.status?.containerStatuses[0]?.ready }
+
+                    if (admCtrlPods.size() <= minReadyReplicas) {
+                        lock.lock()
+                        effectCond.signalAll()
+                        lock.unlock()
+                    }
+
+                    admCtrlPods.removeIf { it?.metadata?.deletionTimestamp }
+
+                    // If there are more than the minimum number of ready replicas, randomly pick some to delete
+                    if (admCtrlPods.size() > minReadyReplicas) {
+                        Collections.shuffle(admCtrlPods)
+                        def podsToDelete = admCtrlPods.drop(minReadyReplicas)
+                        podsToDelete.forEach {
+                            orchestrator.deletePod(it.metadata.namespace, it.metadata.name, gracePeriod)
+                        }
+                    }
+                    sleep 1000
+                }
+            }
+        }
+
+        void stop() {
+            stopFlag.set(true)
+            thread.join()
+        }
+
+        def waitForEffect() {
+            lock.lock()
+            effectCond.await()
+            lock.unlock()
+        }
+
+        void waitForReady() {
+            def allReady = false
+            while (!allReady) {
+                sleep 1000
+
+                def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
+                if (admCtrlPods.size() < 3) {
+                    continue
+                }
+                allReady = true
+                for (def pod : admCtrlPods) {
+                    if (!pod.status.containerStatuses[0].ready) {
+                        allReady = false
+                        break
+                    }
+                }
+            }
+            println "All admission control pod replicas ready"
         }
     }
 }
