@@ -40,7 +40,7 @@ var (
 	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", true)
 
 	// DryRunPolicyJobMechanism enables submitting dry run of a policy as a job, and querying the status using job id.
-	DryRunPolicyJobMechanism = registerFeature("Dry run policy job mechanism", "ROX_DRY_RUN_JOB", false)
+	DryRunPolicyJobMechanism = registerFeature("Dry run policy job mechanism", "ROX_DRY_RUN_JOB", true)
 
 	// RocksDB enables using RocksDB as a databases instead of BadgerDB
 	RocksDB = registerFeature("Use RocksDB instead of BadgerDB", "ROX_ROCKSDB", false)
