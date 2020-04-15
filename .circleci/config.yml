@@ -1855,7 +1855,9 @@ jobs:
           paths:
             - image/rhel/bundle.tar.gz
 
-      - cleanup-clusters-on-fail
+      # TODO: Add this back -- it was temporarily removed because of stability issues with this build caused by Google
+      # storage.
+      # - cleanup-clusters-on-fail
 
   build-deployer:
     executor: custom
