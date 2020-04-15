@@ -85,7 +85,7 @@ const Menu = ({
     const tooltipClassName = !tooltip || disabled ? 'invisible' : '';
     return (
         <Tooltip content={<TooltipOverlay>{tooltip}</TooltipOverlay>} className={tooltipClassName}>
-            <div className={`${className} inline-block relative z-50`}>
+            <div className={`${className} inline-block relative z-10`}>
                 <button
                     className={`flex h-full w-full ${buttonClass}`}
                     type="button"
@@ -97,7 +97,7 @@ const Menu = ({
                 </button>
                 {isMenuOpen && (
                     <div
-                        className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-50 min-w-32 bg-base-100 shadow ${menuClassName}`}
+                        className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-10 min-w-32 bg-base-100 shadow ${menuClassName}`}
                         data-testid="menu-list"
                     >
                         {grouped ? renderGroupedOptions(options) : renderOptions(options)}
