@@ -156,7 +156,7 @@ spec:
           fsGroup: 4000
       serviceAccount: admission-control
       containers:
-        - image: {{ printf "%s/%s:!!.MainVersion!!" .Values.image.registry.main .Values.image.repository.main }}
+        - image: {{ printf "%s/%s:!!.ImageTag!!" .Values.image.registry.main .Values.image.repository.main }}
           name: admission-control
           readinessProbe:
             httpGet:

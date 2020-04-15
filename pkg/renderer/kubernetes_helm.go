@@ -53,7 +53,7 @@ func getChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
 	return zip.NewFile(filepath.Join(prefix, filename), data, flags), true
 }
 
-func getSensorChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
+func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 	dataStr := string(data)
 	if len(strings.TrimSpace(dataStr)) == 0 {
 		return nil, false
@@ -172,7 +172,7 @@ func RenderSensorHelm(values map[string]interface{}, certs *sensor.Certs) ([]*zi
 	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
-		if file, ok := getSensorChartFile(chartPrefixPair.prefix, filepath.Base(k), []byte(v)); ok {
+		if file, ok := getSensorChartFile(filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}
 	}

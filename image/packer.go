@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig"
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -168,43 +169,18 @@ func processSensorChartFile(box packr.Box, path string, file packd.File, chartFi
 		return nil
 	}
 
-	dataReader := ioutil.NopCloser(file)
-
-	data, err := ioutil.ReadAll(dataReader)
-	if err != nil {
-		return errors.Wrapf(err, "failed to read file %s", path)
-	}
 	// Render the versions into the files that need it
-	if path == chartYamlFile || path == "templates/admission-controller.yaml" ||
-		path == "templates/sensor.yaml" {
-		t, err := template.New(strings.TrimSuffix(path, ".yaml")).
-			Delims("!!", "!!").Parse(file.String())
-		if err != nil {
-			return err
-		}
-
-		data, err = templates.ExecuteToBytes(t, map[string]interface{}{
-			"MainVersion":      values["ImageTag"],
-			"CollectorVersion": values["CollectorImageTag"],
-		})
-		if err != nil {
-			return err
-		}
+	t, err := template.New(strings.TrimSuffix(path, ".yaml")).
+		Delims("!!", "!!").Funcs(rendererUtils.BuiltinFuncs).Funcs(sprig.TxtFuncMap()).
+		Parse(file.String())
+	if err != nil {
+		return err
 	}
 
-	if path == valuesYamlFile {
-		fileData, err := box.Find("sensor/values.yaml")
-		if err != nil {
-			return err
-		}
-		t, err := template.New("values").Funcs(rendererUtils.BuiltinFuncs).Parse(string(fileData))
-		if err != nil {
-			return err
-		}
-		data, err = templates.ExecuteToBytes(t, values)
-		if err != nil {
-			return err
-		}
+	data, err := templates.ExecuteToBytes(t, values)
+
+	if err != nil {
+		return err
 	}
 
 	*chartFiles = append(*chartFiles, &chartutil.BufferedFile{

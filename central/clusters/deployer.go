@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaultimages"
+	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -60,8 +61,10 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 	}
 
 	envVars := make(map[string]string)
-	for _, feature := range features.Flags {
-		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
+	if devbuild.IsEnabled() {
+		for _, feature := range features.Flags {
+			envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
+		}
 	}
 
 	fields := map[string]interface{}{

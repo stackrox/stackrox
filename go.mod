@@ -5,6 +5,7 @@ go 1.13
 require (
 	cloud.google.com/go v0.47.0
 	github.com/BurntSushi/toml v0.3.1
+	github.com/Masterminds/sprig v0.0.0-20190301161902-9f8fceff796f
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/PagerDuty/go-pagerduty v0.0.0-20191002190746-f60f4fc45222
 	github.com/RoaringBitmap/roaring v0.4.21

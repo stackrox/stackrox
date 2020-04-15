@@ -1,31 +1,38 @@
 cluster:
-  name:
-  type: KUBERNETES_CLUSTER
+  name: !! default "" .ClusterName !!
+  type: !! default "KUBERNETES_CLUSTER" .ClusterType !!
 
 endpoint:
-  central: central.stackrox:443
-  advertised: sensor.stackrox:443
+  central: !! default "central.stackrox:443" .PublicEndpoint !!
+  advertised: !! default "sensor.stackrox:443" .AdvertisedEndpoint !!
 
 image:
   repository:
-    main: main
-    collector: collector
+    main: !! default "main" .ImageRemote !!
+    collector: !! default "collector" .CollectorImageRemote !!
   registry:
-    main: stackrox.io
-    collector: collector.stackrox.io
+    main: !! default "stackrox.io" .ImageRegistry !!
+    collector: !! default "collector.stackrox.io" .CollectorRegistry !!
 
 config:
-  collectionMethod: EBPF
+  collectionMethod: !! default "EBPF" .CollectionMethod !!
   admissionControl:
-    createService: false
-    listenOnUpdates: false
-    enableService: false
-    enforceOnUpdates: false
-    scanInline: false
-    disableBypass: false
-    timeout: 3
+    createService: !! default false .AdmissionController !!
+    listenOnUpdates: !! default false .AdmissionControlListenOnUpdates !!
+    enableService: !! default false .AdmissionControllerEnabled !!
+    enforceOnUpdates: !! default false .AdmissionControlEnforceOnUpdates !!
+    scanInline: !! default false .ScanInline !!
+    disableBypass: !! default false .DisableBypass !!
+    timeout: !! default 3 .TimeoutSeconds !!
   registryOverride:
-  disableTaintTolerations: false
-  createUpgraderServiceAccount: false
+  disableTaintTolerations: !! default false (not .TolerationsEnabled ) !!
+  createUpgraderServiceAccount: !! default false .CreateUpgraderSA !!
 
-envVars: []
+envVars: !! if empty .EnvVars !! []
+  !! else !!
+  !! range $key, $value := .EnvVars !!
+   - name: !! $key !!
+     value: !! jsonquote $value !!
+  !! end  !!
+  !! end  !!
+
