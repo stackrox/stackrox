@@ -24,10 +24,11 @@ import EntityList from '../List/EntityList';
 
 const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
     const searchParam = useContext(searchContext);
+    const safeImageId = decodeURIComponent(id);
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
-        id,
+        id: safeImageId,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
             'Lifecycle Stage': 'DEPLOY'
