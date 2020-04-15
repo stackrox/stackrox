@@ -13,7 +13,8 @@ const Tags = ({
     defaultOpen,
     isCollapsible,
     isLoading,
-    autoComplete
+    autoComplete,
+    onInputChange
 }) => {
     const options = autoComplete.map(option => ({ label: option, value: option }));
 
@@ -26,6 +27,7 @@ const Tags = ({
                 options={options}
                 placeholder="No tags created yet. Create new tags."
                 onChange={onChange}
+                onInputChange={onInputChange}
                 className="block w-full bg-base-100 border-base-300 text-base-600 z-1 focus:border-base-500"
                 value={tags}
                 isDisabled={isDisabled}
@@ -53,6 +55,7 @@ Tags.propTypes = {
     title: PropTypes.string,
     tags: PropTypes.arrayOf(PropTypes.string),
     onChange: PropTypes.func.isRequired,
+    onInputChange: PropTypes.func.isRequired,
     defaultOpen: PropTypes.bool,
     isCollapsible: PropTypes.bool,
     isLoading: PropTypes.bool,

@@ -5,12 +5,11 @@ import { useMutation } from 'react-apollo';
 import pluralize from 'pluralize';
 import { toast } from 'react-toastify';
 
-import { violationTagsAutoCompleteVariables } from 'Containers/AnalystNotes/analystNotesUtils/tagsAutoCompleteVariables';
 import captureGraphQLErrors from 'modules/captureGraphQLErrors';
 import CustomDialogue from 'Components/CustomDialogue';
 import MessageBanner from 'Components/MessageBanner';
 import Tags from 'Components/Tags';
-import SearchAutoComplete from 'Containers/Search/SearchAutoComplete';
+import ViolationTagsSearchAutoComplete from 'Containers/AnalystNotes/ViolationTags/ViolationTagsSearchAutoComplete';
 
 const BULK_ADD_ALERT_TAGS = gql`
     mutation bulkAddAlertTags($resourceIds: [ID!]!, $tags: [String!]!) {
@@ -65,20 +64,17 @@ function TagConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds }) {
                 />
             )}
             <div className="p-4">
-                <SearchAutoComplete
-                    categories={violationTagsAutoCompleteVariables.categories}
-                    query={violationTagsAutoCompleteVariables.query}
-                >
-                    {({ isLoading: isAutoCompleteLoading, options }) => (
+                <ViolationTagsSearchAutoComplete>
+                    {({ options, onInputChange }) => (
                         <Tags
                             tags={tags}
                             onChange={setTags}
-                            isLoading={isAutoCompleteLoading}
                             autoComplete={options}
                             defaultOpen
+                            onInputChange={onInputChange}
                         />
                     )}
-                </SearchAutoComplete>
+                </ViolationTagsSearchAutoComplete>
             </div>
         </CustomDialogue>
     );

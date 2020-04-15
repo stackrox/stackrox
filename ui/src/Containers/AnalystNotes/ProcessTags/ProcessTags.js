@@ -1,28 +1,26 @@
 import React from 'react';
 
-import { processTagsAutoCompleteVariables } from 'Containers/AnalystNotes/analystNotesUtils/tagsAutoCompleteVariables';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 import AnalystTags from 'Containers/AnalystNotes/AnalystTags';
-import SearchAutoComplete from 'Containers/Search/SearchAutoComplete';
-import ProcessKeyProps from './processKeyProps';
+import ProcessTagsSearchAutoComplete from './ProcessTagsSearchAutoComplete';
+import ProcessKeyProps from '../processKeyProps';
 
 const ProcessTags = ({ deploymentID, containerName, execFilePath, args }) => {
     const variables = { key: { deploymentID, containerName, execFilePath, args } };
+
     return (
-        <SearchAutoComplete
-            categories={processTagsAutoCompleteVariables.categories}
-            query={processTagsAutoCompleteVariables.query}
-        >
-            {({ isLoading, options }) => (
+        <ProcessTagsSearchAutoComplete>
+            {({ isLoading, options, onInputChange, autoCompleteVariables }) => (
                 <AnalystTags
                     type={ANALYST_NOTES_TYPES.PROCESS}
                     variables={variables}
                     autoComplete={options}
-                    autoCompleteVariables={processTagsAutoCompleteVariables}
+                    autoCompleteVariables={autoCompleteVariables}
                     isLoadingAutoComplete={isLoading}
+                    onInputChange={onInputChange}
                 />
             )}
-        </SearchAutoComplete>
+        </ProcessTagsSearchAutoComplete>
     );
 };
 

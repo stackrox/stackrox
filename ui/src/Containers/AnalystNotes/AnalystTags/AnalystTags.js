@@ -14,7 +14,14 @@ import { getQueriesByType, getTagsDataByType } from './analystTagsQueries';
 import getRefetchQueriesByCondition from '../analystNotesUtils/getRefetchQueriesByCondition';
 import GET_PROCESS_COMMENTS_TAGS_COUNT from '../processCommentsTagsQuery';
 
-const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, isCollapsible }) => {
+const AnalystTags = ({
+    type,
+    variables,
+    autoComplete,
+    autoCompleteVariables,
+    isCollapsible,
+    onInputChange
+}) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_TAGS, {
@@ -79,6 +86,7 @@ const AnalystTags = ({ type, variables, autoComplete, autoCompleteVariables, isC
             title={title}
             tags={tags}
             onChange={onChange}
+            onInputChange={onInputChange}
             isLoading={isLoading}
             isDisabled={isDisabled}
             isCollapsible={isCollapsible}
@@ -93,7 +101,8 @@ AnalystTags.propTypes = {
     variables: PropTypes.shape({}).isRequired,
     autoComplete: PropTypes.arrayOf(PropTypes.string),
     autoCompleteVariables: PropTypes.shape({}).isRequired,
-    isCollapsible: PropTypes.bool
+    isCollapsible: PropTypes.bool,
+    onInputChange: PropTypes.func.isRequired
 };
 
 AnalystTags.defaultProps = {
