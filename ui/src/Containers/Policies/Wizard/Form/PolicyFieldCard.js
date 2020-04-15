@@ -4,19 +4,32 @@ import { Trash2, PlusCircle } from 'react-feather';
 
 import reduxFormPropTypes from 'constants/reduxFormPropTypes';
 import Button from 'Components/Button';
-import ToggleSwitch from 'Components/ToggleSwitch';
+// import ToggleSwitch from 'Components/ToggleSwitch';
+import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import AndOrOperator from 'Components/AndOrOperator';
-// import FieldValue from './FieldValue';
+import FieldValue from './FieldValue';
+
+const emptyFieldValue = {
+    value: ''
+};
 
 function PolicyFieldCard({
-    toggleHandler,
     isNegated,
     removeFieldHandler,
     fields,
     header,
-    addValueHander,
-    booleanOperator
+    booleanOperator,
+    fieldKey,
+    toggleFieldName
 }) {
+    function addValueHander() {
+        fields.push(emptyFieldValue);
+    }
+
+    function removeValueHandler(index) {
+        return () => fields.remove(index);
+    }
+
     const borderColorClass = isNegated ? 'border-accent-400' : 'border-base-400';
     return (
         <>
@@ -25,16 +38,15 @@ function PolicyFieldCard({
                     <div className="flex flex-1 font-700 p-2 pl-3 text-base-600 text-sm uppercase items-center">
                         {header}:
                     </div>
-                    {toggleHandler && (
+                    {fieldKey.canNegate && (
                         <div className={`flex items-center p-2 border-l-2 ${borderColorClass}`}>
-                            <ToggleSwitch
-                                small
-                                id="policy-field-card-negation"
-                                toggleHandler={toggleHandler}
-                                enabled={isNegated}
-                                label="NOT"
-                                labelClassName="text-sm text-base-600 font-700"
-                            />
+                            <label
+                                htmlFor={toggleFieldName}
+                                className="text-sm text-base-600 font-700 mr-2"
+                            >
+                                NOT
+                            </label>
+                            <ReduxToggleField name={toggleFieldName} className="self-center" />
                         </div>
                     )}
                     <Button
@@ -43,19 +55,26 @@ function PolicyFieldCard({
                         className={`p-2 border-l-2 ${borderColorClass}`}
                     />
                 </div>
-                {fields.map((name, index) => {
-                    const fieldValue = fields.get(index);
-                    return <div key={name}>{fieldValue.value}</div>;
-                })}
-                <div className="flex flex-col p-2">
-                    {addValueHander && (
+                <div className="p-2">
+                    {fields.map((name, i) => (
+                        <FieldValue
+                            key={name}
+                            name={`${name}.value`}
+                            length={fields.length}
+                            booleanOperator={booleanOperator}
+                            fieldKey={fieldKey}
+                            removeValueHandler={removeValueHandler(i)}
+                            index={i}
+                        />
+                    ))}
+                    <div className="flex flex-col pt-2">
                         <div className="flex justify-center">
                             <Button
                                 onClick={addValueHander}
                                 icon={<PlusCircle className="w-5 h-5" />}
                             />
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
             <AndOrOperator value={booleanOperator} />
@@ -64,19 +83,16 @@ function PolicyFieldCard({
 }
 
 PolicyFieldCard.propTypes = {
-    toggleHandler: PropTypes.func,
     isNegated: PropTypes.bool,
     removeFieldHandler: PropTypes.func.isRequired,
     header: PropTypes.string.isRequired,
-    addValueHander: PropTypes.func,
     booleanOperator: PropTypes.string.isRequired,
+    toggleFieldName: PropTypes.string.isRequired,
     ...reduxFormPropTypes
 };
 
 PolicyFieldCard.defaultProps = {
-    toggleHandler: null,
-    isNegated: false,
-    addValueHander: null
+    isNegated: false
 };
 
 export default PolicyFieldCard;

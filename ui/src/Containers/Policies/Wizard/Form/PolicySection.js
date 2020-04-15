@@ -10,19 +10,25 @@ import Button from 'Components/Button';
 import SectionHeaderInput from 'Components/SectionHeaderInput';
 import AndOrOperator from 'Components/AndOrOperator';
 import PolicyFieldCard from './PolicyFieldCard';
+import { policyConfiguration } from './descriptors';
 
-const getEmptyPolicyFieldCard = (name, negate) => ({
-    field_name: name,
+const getEmptyPolicyFieldCard = fieldKey => ({
+    field_name: fieldKey.name,
     boolean_operator: 'OR',
-    negate,
-    values: []
+    values: [
+        {
+            value: 'hi'
+        }
+    ],
+    negate: fieldKey.negate,
+    fieldKey
 });
 
 function PolicySection({ fields, header, removeSectionHandler }) {
     const [, drop] = useDrop({
         accept: DRAG_DROP_TYPES.KEY,
-        drop: ({ fieldKey: { name, canNegate } }) => {
-            const newPolicyFieldCard = getEmptyPolicyFieldCard(name, canNegate);
+        drop: ({ fieldKey }) => {
+            const newPolicyFieldCard = getEmptyPolicyFieldCard(fieldKey);
             fields.push(newPolicyFieldCard);
         }
     });
@@ -44,11 +50,17 @@ function PolicySection({ fields, header, removeSectionHandler }) {
                 </div>
                 <div className="p-2">
                     {fields.map((name, i) => {
+                        const field = fields.get(i);
                         const {
                             negate,
                             field_name: fieldName,
                             boolean_operator: booleanOperator
-                        } = fields.get(i);
+                        } = field;
+                        let { fieldKey } = field;
+                        if (!fieldKey)
+                            fieldKey = policyConfiguration.descriptor.find(
+                                fieldObj => fieldObj.name === fieldName
+                            );
                         return (
                             <FieldArray
                                 key={name}
@@ -58,6 +70,8 @@ function PolicySection({ fields, header, removeSectionHandler }) {
                                 header={fieldName}
                                 booleanOperator={booleanOperator}
                                 removeFieldHandler={removeFieldHandler(i)}
+                                fieldKey={fieldKey}
+                                toggleFieldName={`${name}.negate`}
                             />
                         );
                     })}

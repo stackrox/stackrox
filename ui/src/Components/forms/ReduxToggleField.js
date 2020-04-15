@@ -6,7 +6,7 @@ const ReduxToggleField = ({ name, disabled, reverse, className }) => {
     const classNames = reverse ? 'form-switch-reverse' : 'form-switch';
 
     // eslint-disable-next-line jsx-a11y/label-has-associated-control
-    const label = <label className="form-switch-label" key={`{name}-label`} htmlFor={name} />;
+    const label = <label className="form-switch-label" key={`${name}-label`} htmlFor={name} />;
 
     return (
         <div className={className}>

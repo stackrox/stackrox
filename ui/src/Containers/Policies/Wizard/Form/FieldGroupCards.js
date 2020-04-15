@@ -10,7 +10,7 @@ import flattenObject from 'utils/flattenObject';
 import removeEmptyFields from 'utils/removeEmptyFields';
 import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 import FormField from 'Components/FormField';
-import FieldValue from 'Containers/Policies/Wizard/Form/FieldValue';
+import Field from 'Containers/Policies/Wizard/Form/Field';
 
 class FieldGroupCards extends Component {
     static propTypes = {
@@ -85,7 +85,7 @@ class FieldGroupCards extends Component {
                             required={field.required}
                             onRemove={removeField}
                         >
-                            <FieldValue field={field} />
+                            <Field field={field} />
                         </FormField>
                     );
                 })}
@@ -126,8 +126,12 @@ class FieldGroupCards extends Component {
 
         return (
             <div className="header-control float-right">
-                {headerField.label && <span className="pr-1">{headerField.label}</span>}
-                <FieldValue field={headerField} />
+                {headerField.label && (
+                    <label htmlFor={headerField.jsonpath} className="pr-1">
+                        {headerField.label}
+                    </label>
+                )}
+                <Field field={headerField} />
             </div>
         );
     };
