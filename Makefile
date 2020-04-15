@@ -475,7 +475,7 @@ docker-build-data-image:
 	test -f $(CURDIR)/image/keys/data-key
 	test -f $(CURDIR)/image/keys/data-iv
 	docker build -t stackrox-data:$(TAG) \
-		--build-arg DOCS_BUNDLE_VERSION=$(shell cat DOCS_VERSION) \
+		--build-arg DOCS_VERSION=$(shell cat DOCS_VERSION) \
 		$(ALPINE_MIRROR_BUILD_ARG) \
 		image/ \
 		--file image/stackrox-data.Dockerfile
