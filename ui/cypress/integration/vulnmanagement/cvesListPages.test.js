@@ -72,7 +72,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             });
     });
 
-    it('should unsuppress suppressed CVE', () => {
+    it.skip('should unsuppress suppressed CVE', () => {
         cy.visit(`${url.list.cves}?s[CVE%20Snoozed]=true`);
         cy.get(selectors.cveUnsuppressPanelButton).should('be.disabled');
 
