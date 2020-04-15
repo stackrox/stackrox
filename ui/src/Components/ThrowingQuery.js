@@ -5,7 +5,10 @@ import Raven from 'raven-js';
 import * as Icons from 'react-feather';
 
 const GraphQLError = ({ error }) => (
-    <div className="flex h-full w-1/2 m-auto items-center justify-center bg-base-100 text-base-600">
+    <div
+        className="flex h-full w-1/2 m-auto items-center justify-center bg-base-100 text-base-600"
+        data-testid="graphql-error"
+    >
         <div className="flex items-center justify-center">
             <Icons.XSquare size="48" />
         </div>

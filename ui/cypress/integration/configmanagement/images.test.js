@@ -8,6 +8,7 @@ import {
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows
 } from '../../helpers/configWorkflowUtils';
+import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 
 describe('Config Management Entities (Images)', () => {
@@ -56,5 +57,19 @@ describe('Config Management Entities (Images)', () => {
             renderListAndSidePanel('images');
             sidePanelEntityCountMatchesTableRows('Deployments');
         });
+    });
+
+    // regression test for ROX-4543-crash-when-drilling-down-to-image-deployments
+    it('should allow user to drill down from cluster to image to image-deployments', () => {
+        renderListAndSidePanel('clusters');
+        clickOnCountWidget('images', 'side-panel');
+        cy.get(`[data-testid="side-panel"] ${configManagementSelectors.tableRows}:last`).click({
+            force: true
+        });
+        clickOnCountWidget('deployments', 'entityList');
+
+        // GraphQL error takes a while to show up, and just extending the cy.get timeout does not work with should-not
+        cy.wait(1000);
+        cy.get('[data-testid="graphql-error"]').should('not.exist');
     });
 });

@@ -181,6 +181,9 @@ describe('Risk page', () => {
             // first, make sure the deployments API calls returned some number of rows
             cy.get(RiskPageSelectors.table.dataRows);
 
+            //  need to wait here, to prevent flakey results
+            cy.wait(1000);
+
             // second, save the "n Deployments" number in the table header
             cy.get(RiskPageSelectors.table.header)
                 .invoke('text')
