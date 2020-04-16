@@ -43,6 +43,7 @@ const RiskPage = ({
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
+    const autoFocusSearchInput = !deploymentId;
 
     return (
         <workflowStateContext.Provider value={workflowState}>
@@ -52,6 +53,7 @@ const RiskPage = ({
                         setSelectedDeploymentId={setSelectedDeploymentId}
                         isViewFiltered={isViewFiltered}
                         searchOptions={searchOptions}
+                        autoFocusSearchInput={autoFocusSearchInput}
                     />
                     <div className="flex flex-1 relative">
                         <div className="shadow border-primary-300 w-full overflow-hidden">

@@ -5,7 +5,7 @@ import entityTypes, { searchCategories } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
 import URLSearchInput from 'Components/URLSearchInput';
 
-function RiskPageHeader({ isViewFiltered, searchOptions }) {
+function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions }) {
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
     const autoCompleteCategories = [searchCategories[entityTypes.DEPLOYMENT]];
 
@@ -16,13 +16,14 @@ function RiskPageHeader({ isViewFiltered, searchOptions }) {
                 categoryOptions={searchOptions}
                 categories={autoCompleteCategories}
                 placeholder="Add one or more resource filters"
-                autoFocusSearchInput
+                autoFocus={autoFocusSearchInput}
             />
         </PageHeader>
     );
 }
 
 RiskPageHeader.propTypes = {
+    autoFocusSearchInput: PropTypes.bool.isRequired,
     isViewFiltered: PropTypes.bool.isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired
 };
