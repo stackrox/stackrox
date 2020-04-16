@@ -50,3 +50,24 @@ func TestRenderOpenshiftEnv(t *testing.T) {
 		assert.True(t, found)
 	}
 }
+
+func TestRenderWithNoCollection(t *testing.T) {
+	cluster := &storage.Cluster{
+		Name:             "cluster",
+		MainImage:        "stackrox/main:abc",
+		Type:             storage.ClusterType_OPENSHIFT_CLUSTER,
+		CollectionMethod: storage.CollectionMethod_NO_COLLECTION,
+	}
+
+	baseFiles, err := renderBaseFiles(cluster, false, sensor.Certs{})
+	require.NoError(t, err)
+
+	var found bool
+	for _, f := range baseFiles {
+		if f.Name == "collector-secret.yaml" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found)
+}
