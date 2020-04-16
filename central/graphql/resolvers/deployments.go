@@ -271,7 +271,7 @@ func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q
 
 // FailingPolicies returns policy resolvers for policies failing on this deployment
 func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args PaginatedQuery) ([]*policyResolver, error) {
-	if err := readPolicies(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 
@@ -321,7 +321,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 
 // FailingPolicyCount returns count of policies failing on this deployment
 func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args RawQuery) (int32, error) {
-	if err := readPolicies(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}
 	query, err := args.AsV1QueryOrEmpty()
@@ -345,7 +345,7 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
-	if err := readPolicies(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 

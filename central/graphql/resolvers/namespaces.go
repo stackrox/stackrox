@@ -369,7 +369,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
-	if err := readPolicies(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 
@@ -394,7 +394,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatus")
 
-	if err := readPolicies(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 
