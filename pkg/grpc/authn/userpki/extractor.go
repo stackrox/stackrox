@@ -92,24 +92,27 @@ func (a attributes) add(key string, values ...string) {
 }
 
 // ExtractAttributes converts a subset of CertInfo into an attribute map for authorization
-func ExtractAttributes(userCert requestinfo.CertInfo) map[string][]string {
+func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
 	output := make(attributes)
-	// these are the canonical stackrox attributes we use in the UI
-	output.add("userid", userID(userCert))
-	output.add("name", userCert.Subject.CommonName)
-	output.add("email", userCert.EmailAddresses...)
-	output.add("groups", userCert.Subject.OrganizationalUnit...)
 
-	// standard LDAP-like attribute naming for external systems
-	output["CN"] = output["name"]
-	output.add("C", userCert.Subject.Country...)
-	output.add("O", userCert.Subject.Organization...)
-	output.add("OU", userCert.Subject.OrganizationalUnit...)
-	output.add("L", userCert.Subject.Locality...)
-	output.add("ST", userCert.Subject.Province...)
-	output.add("STREET", userCert.Subject.StreetAddress...)
-	output.add("POSTALCODE", userCert.Subject.PostalCode...)
-	output.add("DN", userCert.Subject.String())
+	for _, userCert := range userCerts {
+		// these are the canonical stackrox attributes we use in the UI
+		output.add("userid", userID(userCert))
+		output.add("name", userCert.Subject.CommonName)
+		output.add("email", userCert.EmailAddresses...)
+		output.add("groups", userCert.Subject.OrganizationalUnit...)
+
+		// standard LDAP-like attribute naming for external systems
+		output["CN"] = output["name"]
+		output.add("C", userCert.Subject.Country...)
+		output.add("O", userCert.Subject.Organization...)
+		output.add("OU", userCert.Subject.OrganizationalUnit...)
+		output.add("L", userCert.Subject.Locality...)
+		output.add("ST", userCert.Subject.Province...)
+		output.add("STREET", userCert.Subject.StreetAddress...)
+		output.add("POSTALCODE", userCert.Subject.PostalCode...)
+		output.add("DN", userCert.Subject.String())
+	}
 
 	return output
 }

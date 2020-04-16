@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -90,8 +91,7 @@ func (p *backendImpl) RefreshURL() string {
 func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		log.Debugf("Invalid URL %q wrt %q", r.URL.Path, p.pathPrefix)
-		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
 	}
 
 	if restPath != authenticateHandlerPath {
@@ -99,23 +99,34 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodGet {
-		return nil, "", httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
+		return nil, "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
+
 	ri := requestinfo.FromContext(r.Context())
-	if len(ri.VerifiedChains) != 1 {
+	if len(ri.VerifiedChains) == 0 {
 		return nil, "", errNoCertificate
 	}
-	for _, ca := range ri.VerifiedChains[0] {
-		if p.fingerprints.Contains(ca.CertFingerprint) {
+
+	for _, chain := range ri.VerifiedChains {
+		valid := false
+		for i := len(chain) - 1; i > 0; i-- {
+			if p.fingerprints.Contains(chain[i].CertFingerprint) {
+				valid = true
+				break
+			}
+		}
+		if !valid {
 			continue
 		}
-		userCert := ri.VerifiedChains[0][0]
+
+		userCert := chain[0]
 		authResp := &authproviders.AuthResponse{
 			Claims:     externalUser(userCert),
 			Expiration: userCert.NotAfter,
 		}
 		return authResp, "", nil
 	}
+
 	return nil, "", errInvalidCertificate
 }
 

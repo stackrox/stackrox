@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/x509"
 	"net/http"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -36,17 +39,21 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, err error) {
-	ri := requestinfo.FromContext(r.Context())
-	if len(ri.VerifiedChains) != 1 {
-		return "", errNoCertificate
-	}
-	for _, cert := range ri.VerifiedChains[0] {
-		if prov := f.callbacks.GetProviderForFingerprint(cert.CertFingerprint); prov != nil {
-			return prov.ID(), nil
-		}
+	if r.Method != http.MethodGet {
+		return "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
 
-	return "", errInvalidCertificate
+	restURL := strings.TrimPrefix(r.URL.Path, f.callbackURLPath)
+	if len(restURL) == len(r.URL.Path) {
+		return "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
+	}
+
+	if restURL == "" {
+		return "", httputil.Errorf(http.StatusNotFound, "Not Found")
+	}
+
+	providerID, _ = stringutils.Split2(restURL, "/")
+	return providerID, nil
 }
 
 func (f *factory) ResolveProvider(state string) (providerID string, err error) {
