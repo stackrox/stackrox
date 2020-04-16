@@ -6,7 +6,9 @@
 package set
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the
@@ -250,6 +252,24 @@ func (k Uint32Set) Freeze() FrozenUint32Set {
 	return NewFrozenUint32SetFromMap(k)
 }
 
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k Uint32Set) ElementsString(sep string) string {
+	if len(k) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
 // NewUint32Set returns a new thread unsafe set with the given key type.
 func NewUint32Set(initial ...uint32) Uint32Set {
 	underlying := make(map[uint32]struct{}, len(initial))
@@ -348,4 +368,58 @@ func (k FrozenUint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
 	sortable := &sortableUint32Slice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
+}
+
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k FrozenUint32Set) ElementsString(sep string) string {
+	if len(k.underlying) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k.underlying {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
+// The following functions make use of casting `k.underlying` into a mutable Set. This is safe, since we never leak
+// references to these objects, and only invoke mutable set methods that are guaranteed to return a new copy.
+
+// Union returns a frozen set that represents the union between this and other.
+func (k FrozenUint32Set) Union(other FrozenUint32Set) FrozenUint32Set {
+	if len(k.underlying) == 0 {
+		return other
+	}
+	if len(other.underlying) == 0 {
+		return k
+	}
+	return FrozenUint32Set{
+		underlying: Uint32Set(k.underlying).Union(other.underlying),
+	}
+}
+
+// Intersect returns a frozen set that represents the intersection between this and other.
+func (k FrozenUint32Set) Intersect(other FrozenUint32Set) FrozenUint32Set {
+	return FrozenUint32Set{
+		underlying: Uint32Set(k.underlying).Intersect(other.underlying),
+	}
+}
+
+// Difference returns a frozen set that represents the set difference between this and other.
+func (k FrozenUint32Set) Difference(other FrozenUint32Set) FrozenUint32Set {
+	return FrozenUint32Set{
+		underlying: Uint32Set(k.underlying).Difference(other.underlying),
+	}
+}
+
+// Unfreeze returns a mutable set with the same contents as this frozen set. This set will not be affected by any
+// subsequent modifications to the returned set.
+func (k FrozenUint32Set) Unfreeze() Uint32Set {
+	return Uint32Set(k.underlying).Clone()
 }

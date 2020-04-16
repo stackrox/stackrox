@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -102,12 +103,12 @@ func PolicyIsInLifecycleStage(policy *storage.Policy, targetStage storage.Lifecy
 	return false
 }
 
-// AnyPoliciesEnforced checks if any policy in the given list is being enforced.
-func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) int {
+// AnyPoliciesEnforced checks if any policy in the given set is being enforced.
+func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames set.StringSet) int {
 	policies := ctx.Data().Policies()
 	count := 0
 
-	for _, name := range policyNames {
+	for name := range policyNames {
 		p := policies[name]
 		if p.GetDisabled() {
 			continue
@@ -146,8 +147,8 @@ func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category 
 		framework.Failf(ctx, "No policies are in place to detect %q category issues", category)
 		return
 	}
-	policies := policySet.AsSlice()
-	if AnyPoliciesEnforced(ctx, policies) > 0 {
+
+	if AnyPoliciesEnforced(ctx, policySet) > 0 {
 		framework.Passf(ctx, "Policies are in place to detect and enforce %q category issues.", category)
 	} else {
 		framework.Failf(ctx, "No policies are being enforced in %q category issues.", category)

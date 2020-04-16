@@ -118,7 +118,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 
 var (
 	autocompleteCategories = func() protoSet.V1SearchCategorySet {
-		s := protoSet.NewV1SearchCategorySet(centralsearch.GetGlobalSearchCategories().AsSlice()...)
+		s := centralsearch.GetGlobalSearchCategories().Clone()
 		s.Add(v1.SearchCategory_COMPLIANCE)
 		return s
 	}()

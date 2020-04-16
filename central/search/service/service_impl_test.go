@@ -51,7 +51,7 @@ import (
 func TestSearchCategoryToResourceMap(t *testing.T) {
 	allCategories := set.NewV1SearchCategorySet(GetAllSearchableCategories()...).Union(autocompleteCategories)
 	categoryToResource := GetSearchCategoryToResourceMetadata()
-	for _, searchCategory := range allCategories.AsSlice() {
+	for searchCategory := range allCategories {
 		_, ok := categoryToResource[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
 		// SearchCategoryToResource map!
@@ -62,7 +62,7 @@ func TestSearchCategoryToResourceMap(t *testing.T) {
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
 	t.Parallel()
 
-	for _, cat := range autocompleteCategories.AsSlice() {
+	for cat := range autocompleteCategories {
 		_, ok := categoryToOptionsMultimap[cat]
 		assert.True(t, ok, "no options multimap for category", cat)
 	}

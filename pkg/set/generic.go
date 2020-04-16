@@ -1,7 +1,9 @@
 package set
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/mauricelam/genny/generic"
 )
@@ -251,6 +253,24 @@ func (k KeyTypeSet) Freeze() FrozenKeyTypeSet {
 	return NewFrozenKeyTypeSetFromMap(k)
 }
 
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k KeyTypeSet) ElementsString(sep string) string {
+	if len(k) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
 // NewKeyTypeSet returns a new thread unsafe set with the given key type.
 func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
 	underlying := make(map[KeyType]struct{}, len(initial))
@@ -349,4 +369,58 @@ func (k FrozenKeyTypeSet) AsSortedSlice(less func(i, j KeyType) bool) []KeyType 
 	sortable := &sortableKeyTypeSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
+}
+
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k FrozenKeyTypeSet) ElementsString(sep string) string {
+	if len(k.underlying) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k.underlying {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
+// The following functions make use of casting `k.underlying` into a mutable Set. This is safe, since we never leak
+// references to these objects, and only invoke mutable set methods that are guaranteed to return a new copy.
+
+// Union returns a frozen set that represents the union between this and other.
+func (k FrozenKeyTypeSet) Union(other FrozenKeyTypeSet) FrozenKeyTypeSet {
+	if len(k.underlying) == 0 {
+		return other
+	}
+	if len(other.underlying) == 0 {
+		return k
+	}
+	return FrozenKeyTypeSet{
+		underlying: KeyTypeSet(k.underlying).Union(other.underlying),
+	}
+}
+
+// Intersect returns a frozen set that represents the intersection between this and other.
+func (k FrozenKeyTypeSet) Intersect(other FrozenKeyTypeSet) FrozenKeyTypeSet {
+	return FrozenKeyTypeSet{
+		underlying: KeyTypeSet(k.underlying).Intersect(other.underlying),
+	}
+}
+
+// Difference returns a frozen set that represents the set difference between this and other.
+func (k FrozenKeyTypeSet) Difference(other FrozenKeyTypeSet) FrozenKeyTypeSet {
+	return FrozenKeyTypeSet{
+		underlying: KeyTypeSet(k.underlying).Difference(other.underlying),
+	}
+}
+
+// Unfreeze returns a mutable set with the same contents as this frozen set. This set will not be affected by any
+// subsequent modifications to the returned set.
+func (k FrozenKeyTypeSet) Unfreeze() KeyTypeSet {
+	return KeyTypeSet(k.underlying).Clone()
 }

@@ -110,11 +110,10 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *storage.Deployme
 			capsDropped.Add(cap)
 		}
 	}
-	if capsAdded.Cardinality() != 0 {
-		addedSlice := capsAdded.AsSlice()
-		capAddFactor = fmt.Sprintf("Capabilities %s were added", strings.Join(addedSlice, ", "))
+	if !capsAdded.IsEmpty() {
+		capAddFactor = fmt.Sprintf("Capabilities %s were added", capsAdded.ElementsString(", "))
 	}
-	if capsDropped.Cardinality() == 0 {
+	if capsDropped.IsEmpty() {
 		capDropFactor = "No capabilities were dropped"
 	}
 	return

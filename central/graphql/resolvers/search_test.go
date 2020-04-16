@@ -57,12 +57,10 @@ func TestSearchCategories(t *testing.T) {
 		CVEDataStore:             cves,
 	}
 
-	globalSearchCategories := search2.GetGlobalSearchCategories().AsSlice()
-
 	searchCategories := resolver.getAutoCompleteSearchers()
 	searchFuncs := resolver.getSearchFuncs()
 
-	for _, globalCategory := range globalSearchCategories {
+	for globalCategory := range search2.GetGlobalSearchCategories() {
 		assert.True(t, searchCategories[globalCategory] != nil, "global search category %s does not exist in auto complete", globalCategory)
 	}
 	for category := range searchCategories {

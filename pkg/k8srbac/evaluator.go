@@ -64,7 +64,7 @@ func MakeNamespaceEvaluators(roles []*storage.K8SRole, bindings []*storage.K8SRo
 	}
 
 	evaluators := make(map[string]Evaluator)
-	for _, namespace := range namespaces.AsSlice() {
+	for namespace := range namespaces {
 		evaluators[namespace] = MakeNamespaceEvaluator(namespace, roles, bindings)
 	}
 	return evaluators

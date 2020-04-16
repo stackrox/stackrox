@@ -18,7 +18,7 @@ func getRolesForBindings(ctx context.Context, roleStore datastore.DataStore, bin
 	}
 
 	roles := make([]*storage.K8SRole, 0, roleIDs.Cardinality())
-	for _, roleID := range roleIDs.AsSlice() {
+	for roleID := range roleIDs {
 		role, exists, err := roleStore.GetRole(ctx, roleID)
 		if exists && err == nil {
 			roles = append(roles, role)

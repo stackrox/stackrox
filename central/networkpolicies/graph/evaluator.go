@@ -169,11 +169,11 @@ func makePolicyConnectors(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.Networ
 	policyConnectors := make(map[string]*policyConnector)
 	for _, node := range nodes {
 		nodeData := nodeToNodeData[node]
-		for _, policyID := range nodeData.appliedIngress.AsSlice() {
+		for policyID := range nodeData.appliedIngress {
 			connector := getOrCreatePolicyConnector(policyID, policyConnectors)
 			connector.appliedIngress[node] = struct{}{}
 		}
-		for _, policyID := range nodeData.matchedEgress.AsSlice() {
+		for policyID := range nodeData.matchedEgress {
 			connector := getOrCreatePolicyConnector(policyID, policyConnectors)
 			connector.matchedEgress[node] = struct{}{}
 		}
@@ -245,16 +245,16 @@ func setOutgoingEdges(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.NetworkNod
 }
 
 func getAllowedEgress(data *DeploymentPolicyData, policyConnectors map[string]*policyConnector) map[*v1.NetworkNode]struct{} {
-	return getAllowedNodes(data.appliedEgress.AsSlice(), policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.matchedEgress })
+	return getAllowedNodes(data.appliedEgress, policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.matchedEgress })
 }
 
 func getAllowedIngress(data *DeploymentPolicyData, policyConnectors map[string]*policyConnector) map[*v1.NetworkNode]struct{} {
-	return getAllowedNodes(data.matchedIngress.AsSlice(), policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.appliedIngress })
+	return getAllowedNodes(data.matchedIngress, policyConnectors, func(policy *policyConnector) map[*v1.NetworkNode]struct{} { return policy.appliedIngress })
 }
 
-func getAllowedNodes(policyIDs []string, policyConnectors map[string]*policyConnector, setFromPolicy func(*policyConnector) map[*v1.NetworkNode]struct{}) map[*v1.NetworkNode]struct{} {
+func getAllowedNodes(policyIDs set.StringSet, policyConnectors map[string]*policyConnector, setFromPolicy func(*policyConnector) map[*v1.NetworkNode]struct{}) map[*v1.NetworkNode]struct{} {
 	dstNodes := make(map[*v1.NetworkNode]struct{})
-	for _, policyID := range policyIDs {
+	for policyID := range policyIDs {
 		if policy, ok := policyConnectors[policyID]; ok {
 			for dstNode := range setFromPolicy(policy) {
 				dstNodes[dstNode] = struct{}{}

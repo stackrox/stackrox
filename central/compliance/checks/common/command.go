@@ -201,7 +201,7 @@ func onlyContains(values []string, key, targets, defaults string) (string, bool)
 	}
 
 	defaultSet := pkgSet.NewStringSet(strings.Split(defaults, ";")...)
-	for _, t := range targetSet.AsSlice() {
+	for t := range targetSet {
 		if defaultSet.Contains(t) {
 			matchingValues = append(matchingValues, t)
 		} else {

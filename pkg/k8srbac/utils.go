@@ -6,22 +6,22 @@ import (
 )
 
 // ReadResourceVerbs verbs are all possible verbs in a PolicyRule that give some read access.
-var ReadResourceVerbs = set.NewStringSet("get", "list", "watch")
+var ReadResourceVerbs = set.NewFrozenStringSet("get", "list", "watch")
 
 // WriteResourceVerbs verbs are all possible verbs in a PolicyRule that give some write access.
-var WriteResourceVerbs = set.NewStringSet("create", "bind", "patch", "update", "delete", "deletecollection")
+var WriteResourceVerbs = set.NewFrozenStringSet("create", "bind", "patch", "update", "delete", "deletecollection")
 
 // ResourceVerbs verbs are all possible verbs in a PolicyRule that give access.
-var ResourceVerbs = set.NewStringSet(WriteResourceVerbs.Union(ReadResourceVerbs).AsSlice()...)
+var ResourceVerbs = WriteResourceVerbs.Union(ReadResourceVerbs)
 
 // ReadURLVerbs verbs are all possible verbs in a PolicyRule that give some read access to a raw URL suffix.
-var ReadURLVerbs = set.NewStringSet("get", "head")
+var ReadURLVerbs = set.NewFrozenStringSet("get", "head")
 
 // WriteURLVerbs verbs are all possible verbs in a PolicyRule that give some write access to a raw URL suffix.
-var WriteURLVerbs = set.NewStringSet("post", "put", "patch", "delete")
+var WriteURLVerbs = set.NewFrozenStringSet("post", "put", "patch", "delete")
 
 // URLVerbs verbs are all possible verbs in a PolicyRule that give some access to a raw URL suffix.
-var URLVerbs = set.NewStringSet(WriteURLVerbs.Union(ReadURLVerbs).AsSlice()...)
+var URLVerbs = WriteURLVerbs.Union(ReadURLVerbs)
 
 // DefaultLabel key/value pair that identifies default Kubernetes roles and role bindings
 var DefaultLabel = struct {

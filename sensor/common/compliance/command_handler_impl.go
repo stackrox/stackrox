@@ -169,7 +169,7 @@ func (c *commandHandlerImpl) checkScrapeCompleted(scrapeID string, state *scrape
 	var updates []*central.ScrapeUpdate
 	if state.desiredNodes == 0 || state.remainingNodes.Cardinality() == 0 {
 		if state.remainingNodes.Cardinality() != 0 {
-			log.Warnf("compliance data for the following nodes was not collected: %+v", state.remainingNodes.AsSlice())
+			log.Warnf("compliance data for the following nodes was not collected: %s", state.remainingNodes.ElementsString(", "))
 		}
 		if update := c.killScrape(scrapeID); update != nil {
 			updates = append(updates, update)

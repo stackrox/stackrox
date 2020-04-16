@@ -239,7 +239,7 @@ func (m *manager) cleanupRuns() {
 	}
 
 	// Step 3: Actually delete the runs
-	for _, runID := range runsToDelete.AsSlice() {
+	for runID := range runsToDelete {
 		delete(m.runsByID, runID)
 	}
 }

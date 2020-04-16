@@ -225,7 +225,7 @@ func filterFlowsAndMaskScopeAlienDeployments(ctx context.Context, clusterID stri
 			sac.ClusterScopeKeys(clusterID)))
 
 	existingButInvisibleDeploymentsList, err := deploymentDS.SearchListDeployments(allDeploymentsReadCtx,
-		search.NewQueryBuilder().AddDocIDs(missingDeploymentIDs.AsSlice()...).ProtoQuery())
+		search.NewQueryBuilder().AddDocIDSet(missingDeploymentIDs).ProtoQuery())
 	if err != nil {
 		return nil, nil, err
 	}

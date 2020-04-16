@@ -29,7 +29,7 @@ func TestContextAccessChecksForError(t *testing.T) {
 	}()
 
 	assert.Panics(t, func() { ForEachNode(ctx, checkFn) })
-	assert.Empty(t, seenNodeIDs.AsSlice())
+	assert.Empty(t, seenNodeIDs)
 }
 
 func TestContextStopAbortsCurrentCheckOnly(t *testing.T) {

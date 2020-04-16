@@ -597,7 +597,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	for _, indicator := range expectedIndicators {
 		uniqueDeploymentIDs.Add(indicator.GetDeploymentId())
 	}
-	for _, depID := range uniqueDeploymentIDs.AsSlice() {
+	for depID := range uniqueDeploymentIDs {
 		suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(suite.hasWriteCtx, depID))
 	}
 

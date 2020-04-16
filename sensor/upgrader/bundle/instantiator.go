@@ -45,7 +45,7 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, e
 	neglectedFiles.RemoveMatching(common.IsWhitelistedBundleFile)
 
 	if neglectedFiles.Cardinality() > 0 {
-		return nil, errors.Errorf("the following non-whitelisted files in the bundle have been neglected: %s", strings.Join(neglectedFiles.AsSlice(), ", "))
+		return nil, errors.Errorf("the following non-whitelisted files in the bundle have been neglected: %s", neglectedFiles.ElementsString(", "))
 	}
 
 	if err := validateMetadata(allObjects); err != nil {

@@ -6,7 +6,9 @@
 package set
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 )
@@ -252,6 +254,24 @@ func (k V1SearchCategorySet) Freeze() FrozenV1SearchCategorySet {
 	return NewFrozenV1SearchCategorySetFromMap(k)
 }
 
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k V1SearchCategorySet) ElementsString(sep string) string {
+	if len(k) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
 // NewV1SearchCategorySet returns a new thread unsafe set with the given key type.
 func NewV1SearchCategorySet(initial ...v1.SearchCategory) V1SearchCategorySet {
 	underlying := make(map[v1.SearchCategory]struct{}, len(initial))
@@ -350,4 +370,58 @@ func (k FrozenV1SearchCategorySet) AsSortedSlice(less func(i, j v1.SearchCategor
 	sortable := &sortableV1SearchCategorySlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
+}
+
+// ElementsString returns a string representation of all elements, with individual element strings separated by `sep`.
+// The string representation of an individual element is obtained via `fmt.Fprint`.
+func (k FrozenV1SearchCategorySet) ElementsString(sep string) string {
+	if len(k.underlying) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	first := true
+	for elem := range k.underlying {
+		if !first {
+			sb.WriteString(sep)
+		}
+		fmt.Fprint(&sb, elem)
+		first = false
+	}
+	return sb.String()
+}
+
+// The following functions make use of casting `k.underlying` into a mutable Set. This is safe, since we never leak
+// references to these objects, and only invoke mutable set methods that are guaranteed to return a new copy.
+
+// Union returns a frozen set that represents the union between this and other.
+func (k FrozenV1SearchCategorySet) Union(other FrozenV1SearchCategorySet) FrozenV1SearchCategorySet {
+	if len(k.underlying) == 0 {
+		return other
+	}
+	if len(other.underlying) == 0 {
+		return k
+	}
+	return FrozenV1SearchCategorySet{
+		underlying: V1SearchCategorySet(k.underlying).Union(other.underlying),
+	}
+}
+
+// Intersect returns a frozen set that represents the intersection between this and other.
+func (k FrozenV1SearchCategorySet) Intersect(other FrozenV1SearchCategorySet) FrozenV1SearchCategorySet {
+	return FrozenV1SearchCategorySet{
+		underlying: V1SearchCategorySet(k.underlying).Intersect(other.underlying),
+	}
+}
+
+// Difference returns a frozen set that represents the set difference between this and other.
+func (k FrozenV1SearchCategorySet) Difference(other FrozenV1SearchCategorySet) FrozenV1SearchCategorySet {
+	return FrozenV1SearchCategorySet{
+		underlying: V1SearchCategorySet(k.underlying).Difference(other.underlying),
+	}
+}
+
+// Unfreeze returns a mutable set with the same contents as this frozen set. This set will not be affected by any
+// subsequent modifications to the returned set.
+func (k FrozenV1SearchCategorySet) Unfreeze() V1SearchCategorySet {
+	return V1SearchCategorySet(k.underlying).Clone()
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/conv"
 	"github.com/stackrox/rox/pkg/generic"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -116,6 +117,14 @@ func (qb *QueryBuilder) AddLinkedFields(fields []FieldLabel, values []string) *Q
 // AddDocIDs adds the list of ids to the DocID query of the QueryBuilder.
 func (qb *QueryBuilder) AddDocIDs(ids ...string) *QueryBuilder {
 	qb.ids = append(qb.ids, ids...)
+	return qb
+}
+
+// AddDocIDSet adds the set of ids to the DocID query of the QueryBuilder.
+func (qb *QueryBuilder) AddDocIDSet(idSet set.StringSet) *QueryBuilder {
+	for id := range idSet {
+		qb.ids = append(qb.ids, id)
+	}
 	return qb
 }
 

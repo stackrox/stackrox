@@ -126,7 +126,7 @@ func (resolver *secretResolver) getDeploymentQuery(args RawQuery) (*v1.Query, er
 	for _, dr := range secret.Relationship.GetDeploymentRelationships() {
 		deploymentIDs.Add(dr.GetId())
 	}
-	deploymentIDQuery := search.NewQueryBuilder().AddDocIDs(deploymentIDs.AsSlice()...).ProtoQuery()
+	deploymentIDQuery := search.NewQueryBuilder().AddDocIDSet(deploymentIDs).ProtoQuery()
 
 	return search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery), nil
 }

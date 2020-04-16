@@ -66,14 +66,13 @@ func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*st
 	for _, group := range groups {
 		roleNameSet.Add(group.GetRoleName())
 	}
-	if roleNameSet.Cardinality() == 0 {
+	if roleNameSet.IsEmpty() {
 		return nil, errors.New("no roles can be found for user")
 	}
-	roleNamesSlice := roleNameSet.AsSlice()
 
 	// Load the roles (need to load individually because we want to ignore missing roles)
-	var roles = make([]*storage.Role, 0, len(roleNamesSlice))
-	for _, roleName := range roleNamesSlice {
+	var roles = make([]*storage.Role, 0, roleNameSet.Cardinality())
+	for roleName := range roleNameSet {
 		role, err := rm.roles.GetRole(ctx, roleName)
 		if err != nil {
 			return nil, err
