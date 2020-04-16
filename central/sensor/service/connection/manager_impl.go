@@ -65,6 +65,7 @@ func (m *manager) initializeUpgradeControllers() error {
 	if err != nil {
 		return err
 	}
+
 	m.connectionsByClusterIDMutex.Lock()
 	defer m.connectionsByClusterIDMutex.Unlock()
 	for _, cluster := range clusters {

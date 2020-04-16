@@ -263,8 +263,8 @@ export function parseUpgradeStatus(upgradeStatus) {
 }
 
 function findUpgradeState(upgradeStatus) {
-    const upgradability = get(upgradeStatus, 'upgradability', undefined);
-    if (!upgradability) {
+    const upgradability = get(upgradeStatus, 'upgradability', null);
+    if (!upgradability || upgradability === 'UNSET') {
         return null;
     }
 
