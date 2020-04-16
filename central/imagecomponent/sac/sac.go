@@ -1,13 +1,8 @@
 package sac
 
 import (
-	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
-	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
-	imageDackBox "github.com/stackrox/rox/central/image/dackbox"
-	componentDackBox "github.com/stackrox/rox/central/imagecomponent/dackbox"
-	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
+	"github.com/stackrox/rox/central/dackbox"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,36 +10,20 @@ import (
 )
 
 var (
-	imageComponentSAC = sac.ForResource(resources.ImageComponent)
-
-	imageComponentClusterPath = [][]byte{
-		componentDackBox.Bucket,
-		imageDackBox.Bucket,
-		deploymentDackBox.Bucket,
-		namespaceDackBox.SACBucket,
-		clusterDackBox.Bucket,
-	}
-
-	imageComponentNamespacePath = [][]byte{
-		componentDackBox.Bucket,
-		imageDackBox.Bucket,
-		deploymentDackBox.Bucket,
-		namespaceDackBox.SACBucket,
-	}
+	imageComponentSAC = sac.ForResource(resources.Image)
 
 	imageComponentSACFilter filtered.Filter
 	once                    sync.Once
 )
 
 // GetSACFilter returns the sac filter for image component ids.
-func GetSACFilter(graphProvider graph.Provider) filtered.Filter {
+func GetSACFilter() filtered.Filter {
 	once.Do(func() {
 		var err error
 		imageComponentSACFilter, err = filtered.NewSACFilter(
 			filtered.WithResourceHelper(imageComponentSAC),
-			filtered.WithGraphProvider(graphProvider),
-			filtered.WithClusterPath(imageComponentClusterPath...),
-			filtered.WithNamespacePath(imageComponentNamespacePath...),
+			filtered.WithScopeTransform(dackbox.ComponentSACTransform),
+			filtered.WithReadAccess(),
 		)
 		utils.Must(err)
 	})

@@ -112,7 +112,7 @@ func createDataStore(t *testing.T, dacky *pkgDackBox.DackBox, bleveIndex bleve.I
 		deploymentIndexer.New(bleveIndex),
 		clusterIndexer.New(bleveIndex))
 
-	ds, err := cveDataStore.New(store, cveIndexer, searcher)
+	ds, err := cveDataStore.New(dacky, store, cveIndexer, searcher)
 	require.NoError(t, err)
 	return ds
 }

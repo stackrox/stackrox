@@ -7,13 +7,16 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/central/cve/index"
+	sacFilters "github.com/stackrox/rox/central/cve/sac"
 	"github.com/stackrox/rox/central/cve/search"
 	"github.com/stackrox/rox/central/cve/store"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/sac"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 var (
@@ -21,9 +24,10 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage       store.Store
+	indexer       index.Indexer
+	searcher      search.Searcher
+	graphProvider graph.Provider
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -51,9 +55,11 @@ func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, []string{id})
+	if err != nil || len(filteredIDs) != 1 {
 		return nil, false, err
 	}
+
 	cve, found, err := ds.storage.Get(id)
 	if err != nil || !found {
 		return nil, false, err
@@ -62,9 +68,11 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.CVE, bool
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, []string{id})
+	if err != nil || len(filteredIDs) != 1 {
 		return false, err
 	}
+
 	found, err := ds.storage.Exists(id)
 	if err != nil || !found {
 		return false, err
@@ -73,11 +81,12 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.CVE, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, ids)
+	if err != nil {
 		return nil, err
 	}
 
-	cves, _, err := ds.storage.GetBatch(ids)
+	cves, _, err := ds.storage.GetBatch(filteredIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +162,7 @@ func (ds *datastoreImpl) UpsertClusterCVEs(ctx context.Context, parts ...convert
 }
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error {
+	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -178,6 +188,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *types.Timestamp, d
 }
 
 func (ds *datastoreImpl) Unsuppress(ctx context.Context, ids ...string) error {
+	// Check global write permissions since this may effect images risk/visibility in in places the user does not have read access.
 	if ok, err := imagesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -213,4 +224,13 @@ func getSuppressExpiry(start *types.Timestamp, duration *types.Duration) (*types
 		return nil, err
 	}
 	return &types.Timestamp{Seconds: start.GetSeconds() + int64(d.Seconds())}, nil
+}
+
+func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
+	var filteredIDs []string
+	var err error
+	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
+		filteredIDs, err = filtered.ApplySACFilters(graphContext, ids, sacFilters.GetSACFilters()...)
+	})
+	return filteredIDs, err
 }

@@ -106,8 +106,8 @@ func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Sear
 	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, clusterRanker)
 
 	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{
-		search.NamespaceCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToNamespace, nsSAC.GetSACFilter(graphProvider)),
-		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToDeployment, deploymentSAC.GetSACFilter(graphProvider)),
-		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToCVE, cveSAC.GetSACFilters(graphProvider)...),
+		search.NamespaceCount.String():  counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToNamespace, nsSAC.GetSACFilter()),
+		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToDeployment, deploymentSAC.GetSACFilter()),
+		search.CVECount.String():        counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ClusterToCVE, cveSAC.GetSACFilters()...),
 	})
 }

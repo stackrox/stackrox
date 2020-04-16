@@ -1,17 +1,15 @@
 package filtered
 
 import (
-	"bytes"
+	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
-// GraphProvider is an interface that allows us to interact with an RGraph for the duration of a function's execution.
-type GraphProvider interface {
-	NewGraphView() graph.DiscardableRGraph
-}
+// ScopeTransform defines a transformation that turns a key into all of it's parent scopes.
+type ScopeTransform func(ctx context.Context, key []byte) [][]sac.ScopeKey
 
 // SACFilterOption represents an option when creating a SAC filter.
 type SACFilterOption func(*filterBuilder)
@@ -32,75 +30,49 @@ func WithResourceHelper(resourceHelper sac.ForResourceHelper) SACFilterOption {
 	}
 }
 
-// WithGraphProvider uses the input graph provider for mapping ids to their scopes.
-func WithGraphProvider(gp GraphProvider) SACFilterOption {
+// WithScopeTransform uses the input scope transform for getting the scopes of keys.
+func WithScopeTransform(scopeTransform ScopeTransform) SACFilterOption {
 	return func(filter *filterBuilder) {
-		filter.graphProvider = gp
+		filter.scopeTransform = scopeTransform
 	}
 }
 
-// WithClusterPath provides the path in the graph to the cluster scope by the bucket hops
-func WithClusterPath(steps ...[]byte) SACFilterOption {
+// WithReadAccess filters out elements the context has no read access to.
+func WithReadAccess() SACFilterOption {
 	return func(filter *filterBuilder) {
-		filter.clusterPath = steps
+		filter.access = storage.Access_READ_ACCESS
 	}
 }
 
-// WithNamespacePath provides the path in the graph to the namespace scope by the bucket hops.
-// Must be the leading portion of the cluster path if provided.
-func WithNamespacePath(steps ...[]byte) SACFilterOption {
+// WithWriteAccess filters out elements the context has no write access to.
+func WithWriteAccess() SACFilterOption {
 	return func(filter *filterBuilder) {
-		filter.namespacePath = steps
+		filter.access = storage.Access_READ_WRITE_ACCESS
 	}
 }
 
 type filterBuilder struct {
 	resourceHelper *sac.ForResourceHelper
-	graphProvider  GraphProvider
-	namespacePath  [][]byte
-	clusterPath    [][]byte
+	scopeTransform ScopeTransform
+	access         storage.Access
 }
 
 func compile(builder *filterBuilder) (Filter, error) {
 	if builder.resourceHelper == nil {
 		return nil, errors.New("cannot create a SAC filter without a resource type")
 	}
-	if builder.graphProvider == nil && builder.clusterPath != nil {
-		return nil, errors.New("cannot create a cluster or namespace scoped SAC filter without a graph provider")
+	if builder.access == storage.Access_NO_ACCESS {
+		return nil, errors.New("cannot create a SAC filter without a access level")
 	}
-	if builder.namespacePath != nil && builder.clusterPath == nil {
-		return nil, errors.New("cannot create a namespace scope SAC filter without a cluster path")
-	}
-	if builder.namespacePath != nil && !isPrefixOf(builder.namespacePath, builder.clusterPath) {
-		return nil, errors.New("namespace path must be a sub-path to the cluster path")
-	}
-	if builder.clusterPath == nil && builder.namespacePath == nil {
+	if builder.scopeTransform == nil {
 		return &globalFilterImpl{
 			resourceHelper: *builder.resourceHelper,
-		}, nil
-	} else if builder.namespacePath == nil {
-		return &clusterFilterImpl{
-			resourceHelper: *builder.resourceHelper,
-			graphProvider:  builder.graphProvider,
-			clusterPath:    builder.clusterPath,
+			access:         builder.access,
 		}, nil
 	}
-	return &namespaceFilterImpl{
+	return &scopedSACFilterImpl{
 		resourceHelper: *builder.resourceHelper,
-		graphProvider:  builder.graphProvider,
-		clusterPath:    builder.clusterPath,
-		namespaceIndex: len(builder.namespacePath) - 1,
+		scopeFunc:      builder.scopeTransform,
+		access:         builder.access,
 	}, nil
-}
-
-func isPrefixOf(subpath, path [][]byte) bool {
-	if len(subpath) >= len(path) {
-		return false
-	}
-	for idx, step := range subpath {
-		if !bytes.Equal(step, path[idx]) {
-			return false
-		}
-	}
-	return true
 }

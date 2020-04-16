@@ -29,7 +29,8 @@ var (
 			ThenMapToMany(transformation.BackwardFromContext()).
 			Then(transformation.HasPrefix(deploymentDackBox.Bucket)).
 			ThenMapEachToMany(transformation.BackwardFromContext()).
-			Then(transformation.HasPrefix(nsDackBox.Bucket)),
+			Then(transformation.HasPrefix(nsDackBox.Bucket)).
+			ThenMapEachToOne(transformation.StripPrefix(nsDackBox.Bucket)),
 
 		// Image (backwards) Deployments
 		v1.SearchCategory_DEPLOYMENTS: transformation.AddPrefix(imageDackBox.Bucket).

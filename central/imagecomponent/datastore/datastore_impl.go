@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/imagecomponent/index"
+	sacFilters "github.com/stackrox/rox/central/imagecomponent/sac"
 	"github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/imagecomponent/store"
 	"github.com/stackrox/rox/central/ranking"
@@ -12,9 +13,11 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/filtered"
 )
 
 var (
@@ -24,9 +27,10 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage       store.Store
+	indexer       index.Indexer
+	searcher      search.Searcher
+	graphProvider graph.Provider
 
 	risks                riskDataStore.DataStore
 	imageComponentRanker *ranking.Ranker
@@ -58,9 +62,11 @@ func (ds *datastoreImpl) Count(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, []string{id})
+	if err != nil || len(filteredIDs) != 1 {
 		return nil, false, err
 	}
+
 	component, found, err := ds.storage.Get(id)
 	if err != nil || !found {
 		return nil, false, err
@@ -71,9 +77,11 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageComp
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, []string{id})
+	if err != nil || len(filteredIDs) != 1 {
 		return false, err
 	}
+
 	found, err := ds.storage.Exists(id)
 	if err != nil || !found {
 		return false, err
@@ -82,10 +90,12 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageComponent, error) {
-	if ok, err := imagesSAC.ReadAllowed(ctx); err != nil || !ok {
+	filteredIDs, err := ds.filterReadable(ctx, ids)
+	if err != nil {
 		return nil, err
 	}
-	components, _, err := ds.storage.GetBatch(ids)
+
+	components, _, err := ds.storage.GetBatch(filteredIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -165,4 +175,13 @@ func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageCompo
 	for _, ic := range ics {
 		ic.Priority = ds.imageComponentRanker.GetRankForID(ic.GetId())
 	}
+}
+
+func (ds *datastoreImpl) filterReadable(ctx context.Context, ids []string) ([]string, error) {
+	var filteredIDs []string
+	var err error
+	graph.Context(ctx, ds.graphProvider, func(graphContext context.Context) {
+		filteredIDs, err = filtered.ApplySACFilters(graphContext, ids, sacFilters.GetSACFilter())
+	})
+	return filteredIDs, err
 }

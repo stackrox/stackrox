@@ -210,15 +210,7 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		if err != nil {
 			return err
 		}
-		err = txn.Graph().AddRefs(clusterKey, namespaceSACKey)
-		if err != nil {
-			return err
-		}
-		err = txn.Graph().AddRefs(namespaceKey, deploymentKey)
-		if err != nil {
-			return err
-		}
-		err = txn.Graph().AddRefs(namespaceSACKey, deploymentKey)
+		err = txn.Graph().AddRefs(namespaceKey, deploymentKey, namespaceSACKey)
 		if err != nil {
 			return err
 		}
@@ -275,13 +267,16 @@ func (b *StoreImpl) collectDeploymentKeys(id string) [][]byte {
 	namespaceKeys := namespaceDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(deploymentKey))
 	allKeys = allKeys.Union(namespaceKeys)
 
-	namespaceSACKeys := namespaceDackBox.SACBucketHandler.FilterKeys(graphView.GetRefsTo(deploymentKey))
+	// Deployment should have a single namespace link up. If not, early exit.
+	if len(namespaceKeys) != 1 {
+		return allKeys
+	}
+	namespaceKey := namespaceKeys[0]
+
+	namespaceSACKeys := namespaceDackBox.SACBucketHandler.FilterKeys(graphView.GetRefsFrom(namespaceKey))
 	allKeys = allKeys.Union(namespaceSACKeys)
 
-	clusterKeys := sortedkeys.SortedKeys{}
-	for _, namespaceKey := range namespaceKeys {
-		clusterKeys = clusterKeys.Union(clusterDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(namespaceKey)))
-	}
+	clusterKeys := clusterDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(namespaceKey))
 	allKeys = allKeys.Union(clusterKeys)
 
 	return allKeys

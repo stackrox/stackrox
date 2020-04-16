@@ -10,6 +10,7 @@ import (
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/dackbox/graph"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -30,11 +31,12 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) (DataStore, error) {
+func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexer, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:              storage,
 		indexer:              indexer,
 		searcher:             searcher,
+		graphProvider:        graphProvider,
 		risks:                risks,
 		imageComponentRanker: ranker,
 	}

@@ -19,4 +19,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_30_to_m_31_group_key_format"
 	_ "github.com/stackrox/rox/migrator/migrations/m_31_to_m_32_remove_unique_indicators"
 	_ "github.com/stackrox/rox/migrator/migrations/m_32_to_m_33_dackbox"
+	_ "github.com/stackrox/rox/migrator/migrations/m_33_to_m_34_graph_schema"
 )

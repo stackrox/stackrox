@@ -31,6 +31,7 @@ func TestLinearGraphDerivedFieldCounting(t *testing.T) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	require.NoError(t, err, "filter creation should have succeeded")
 
@@ -52,6 +53,7 @@ func BenchmarkLinearGraphDerivedFieldCounting(b *testing.B) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	require.NoError(b, err, "filter creation should have succeeded")
 

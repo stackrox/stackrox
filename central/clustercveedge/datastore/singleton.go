@@ -27,7 +27,7 @@ func initialize() {
 
 	searcher := search.New(storage, index.New(globalindex.GetGlobalIndex()))
 
-	ad, err = New(storage, index.New(globalindex.GetGlobalIndex()), searcher)
+	ad, err = New(globaldb.GetGlobalDackBox(), storage, index.New(globalindex.GetGlobalIndex()), searcher)
 	utils.Must(err)
 }
 

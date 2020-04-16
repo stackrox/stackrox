@@ -8,9 +8,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/dackbox/graph"
-	"github.com/stackrox/rox/pkg/dackbox/graph/mocks"
-	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	searchMocks "github.com/stackrox/rox/pkg/search/blevesearch/mocks"
@@ -18,40 +15,17 @@ import (
 )
 
 var (
-	prefix1 = []byte("pre1")
-	prefix2 = []byte("pre2")
-	prefix3 = []byte("namespacesSACBucket")
-	prefix4 = []byte("clusters")
+	id1 = "id1"
+	id2 = "id2"
+	id3 = "id3"
+	id4 = "id4"
 
-	id1 = []byte("id1")
-	id2 = []byte("id2")
-	id3 = []byte("id3")
-	id4 = []byte("id4")
-	id5 = []byte("id5")
-	id6 = []byte("id6")
-	id7 = []byte("id7")
-	id8 = []byte("id8")
-	id9 = []byte("id9")
+	cluster1 = "c1"
+	cluster2 = "c2"
 
-	prefixedID1 = dbhelper.GetBucketKey(prefix1, id1)
-	prefixedID2 = dbhelper.GetBucketKey(prefix1, id2)
-	prefixedID3 = dbhelper.GetBucketKey(prefix2, id3)
-	prefixedID4 = dbhelper.GetBucketKey(prefix2, id4)
-	prefixedID9 = dbhelper.GetBucketKey(prefix2, id9)
-	prefixedID5 = dbhelper.GetBucketKey(prefix3, id5)
-	prefixedID6 = dbhelper.GetBucketKey(prefix3, id6)
-	prefixedID7 = dbhelper.GetBucketKey(prefix4, id7)
-	prefixedID8 = dbhelper.GetBucketKey(prefix4, id8)
-
-	// id1 -> id9
-	//      \ id3 -> id5 (namespace) -> id7, id8 (cluster)
-	// id2 -> id4 -> id6 (namespace) -> id7 (cluster)
-	toID1 = [][]byte{prefixedID9, prefixedID3}
-	toID2 = [][]byte{prefixedID4}
-	toID3 = [][]byte{prefixedID5}
-	toID4 = [][]byte{prefixedID6}
-	toID5 = [][]byte{prefixedID7, prefixedID8}
-	toID6 = [][]byte{prefixedID7}
+	namespace1 = "ns1"
+	namespace2 = "ns2"
+	namespace3 = "ns3"
 
 	globalResource = permissions.ResourceMetadata{
 		Resource: "resource",
@@ -75,7 +49,6 @@ func TestFilteredSearcher(t *testing.T) {
 type filteredSearcherTestSuite struct {
 	suite.Suite
 
-	mockRGraph         *mocks.MockRGraph
 	mockUnsafeSearcher *searchMocks.MockUnsafeSearcher
 
 	mockCtrl *gomock.Controller
@@ -83,7 +56,6 @@ type filteredSearcherTestSuite struct {
 
 func (s *filteredSearcherTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockRGraph = mocks.NewMockRGraph(s.mockCtrl)
 	s.mockUnsafeSearcher = searchMocks.NewMockUnsafeSearcher(s.mockCtrl)
 }
 
@@ -94,10 +66,16 @@ func (s *filteredSearcherTestSuite) TearDownTest() {
 func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
@@ -105,6 +83,7 @@ func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 
 	filter, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(globalResource)),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -113,10 +92,16 @@ func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 	s.NoError(err, "search should have succeeded")
 	s.Equal([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, results)
 }
@@ -124,10 +109,16 @@ func (s *filteredSearcherTestSuite) TestGlobalAllowed() {
 func (s *filteredSearcherTestSuite) TestGlobalDenied() {
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
@@ -135,6 +126,7 @@ func (s *filteredSearcherTestSuite) TestGlobalDenied() {
 
 	filter, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(globalResource)),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -144,34 +136,31 @@ func (s *filteredSearcherTestSuite) TestGlobalDenied() {
 	s.Equal([]search.Result{}, results)
 }
 
-func (s *filteredSearcherTestSuite) TestClusterScoped() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID6).Return(toID6)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
+func (s *filteredSearcherTestSuite) TestScoped() {
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(clusterResource),
-		sac.ClusterScopeKeys("id7")))
+		sac.ClusterScopeKeys(cluster1)))
 
 	filter, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(clusterResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithClusterPath(prefix1, prefix2, prefix3, prefix4),
+		WithScopeTransform(s.fakeTransformer()),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -179,73 +168,29 @@ func (s *filteredSearcherTestSuite) TestClusterScoped() {
 	results, err := searcher.Search(ctx, &v1.Query{})
 	s.NoError(err, "search should have succeeded")
 	s.Equal([]search.Result{
+		// id1 and id3 are the only ids in cluster1
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
-		},
-	}, results)
-}
-
-func (s *filteredSearcherTestSuite) TestClusterScopedMultiCluster() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID6).Return(toID6)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
-		{
-			ID: string(id1),
-		},
-		{
-			ID: string(id2),
-		},
-	}, nil)
-
-	// Allow first namespace and cluster
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-		sac.ResourceScopeKeys(clusterResource),
-		sac.ClusterScopeKeys("id8")))
-
-	filter, err := NewSACFilter(
-		WithResourceHelper(sac.ForResource(clusterResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithClusterPath(prefix1, prefix2, prefix3, prefix4),
-	)
-	s.NoError(err, "filter creation should have succeeded")
-
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{
-		{
-			ID: string(id1),
+			ID: id3,
 		},
 	}, results)
 }
 
-func (s *filteredSearcherTestSuite) TestNamespaceScoped() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID6).Return(toID6)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
+func (s *filteredSearcherTestSuite) TestMultiScoped() {
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
@@ -253,14 +198,13 @@ func (s *filteredSearcherTestSuite) TestNamespaceScoped() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(namespaceResource),
-		sac.ClusterScopeKeys("id7"),
-		sac.NamespaceScopeKeys("id5")))
+		sac.ClusterScopeKeys(cluster2),
+		sac.NamespaceScopeKeys(namespace2)))
 
 	filter, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(namespaceResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithNamespacePath(prefix1, prefix2, prefix3),
-		WithClusterPath(prefix1, prefix2, prefix3, prefix4),
+		WithScopeTransform(s.fakeTransformer()),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -268,151 +212,140 @@ func (s *filteredSearcherTestSuite) TestNamespaceScoped() {
 	results, err := searcher.Search(ctx, &v1.Query{})
 	s.NoError(err, "search should have succeeded")
 	s.Equal([]search.Result{
+		// Only id2 and id3 are allowed since they are the only ids in cluster2:namespace2
 		{
-			ID: string(id1),
-		},
-	}, results)
-}
-
-func (s *filteredSearcherTestSuite) TestNamespaceScopedMultiCluster() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID6).Return(toID6)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
-	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
-		{
-			ID: string(id1),
+			ID: id2,
 		},
 		{
-			ID: string(id2),
-		},
-	}, nil)
-
-	// Allow first namespace and cluster
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-		sac.ResourceScopeKeys(namespaceResource),
-		sac.ClusterScopeKeys("id8")))
-
-	filter, err := NewSACFilter(
-		WithResourceHelper(sac.ForResource(namespaceResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithNamespacePath(prefix1, prefix2, prefix3),
-		WithClusterPath(prefix1, prefix2, prefix3, prefix4),
-	)
-	s.NoError(err, "filter creation should have succeeded")
-
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter)
-	results, err := searcher.Search(ctx, &v1.Query{})
-	s.NoError(err, "search should have succeeded")
-	s.Equal([]search.Result{
-		{
-			ID: string(id1),
+			ID: id3,
 		},
 	}, results)
 }
 
 func (s *filteredSearcherTestSuite) TestMutipleSACFiltersFail() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(clusterResource),
-		sac.ClusterScopeKeys("id7")))
+		sac.ClusterScopeKeys(cluster2)))
 
 	filter1, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(clusterResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithClusterPath(prefix1, prefix2, prefix3),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter1)
+	filter2, err := NewSACFilter(
+		WithResourceHelper(sac.ForResource(clusterResource)),
+		WithReadAccess(),
+	)
+	s.NoError(err, "filter creation should have succeeded")
+
+	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter1, filter2)
 	results, err := searcher.Search(ctx, &v1.Query{})
 	s.Nil(err, "filtered searcher should have succeeded")
 	s.Len(results, 0, "filtered results should have been empty")
 }
 
 func (s *filteredSearcherTestSuite) TestMutipleSACFiltersPass() {
-	// Expect graph and search interactions.
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID1).Return(toID1)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID2).Return(toID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID3).Return(toID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID6).Return(toID6)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID9).Return(nil)
-
 	s.mockUnsafeSearcher.EXPECT().Search(gomock.Any()).Return([]search.Result{
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, nil)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(clusterResource),
-		sac.ClusterScopeKeys("id7")))
+		sac.ClusterScopeKeys(cluster1, cluster2)))
 
 	filter1, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(clusterResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithClusterPath(prefix1, prefix2, prefix3),
+		WithScopeTransform(s.fakeTransformer()),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
 	filter2, err := NewSACFilter(
 		WithResourceHelper(sac.ForResource(clusterResource)),
-		WithGraphProvider(fakeGraphProvider{mg: s.mockRGraph}),
-		WithClusterPath(prefix1, prefix2, prefix3, prefix4),
+		WithScopeTransform(s.fakeTransformer()),
+		WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
-	searcher := UnsafeSearcher(s.mockUnsafeSearcher, []Filter{filter1, filter2}...)
+	searcher := UnsafeSearcher(s.mockUnsafeSearcher, filter1, filter2)
 	results, err := searcher.Search(ctx, &v1.Query{})
 	s.NoError(err, "search should have succeeded")
 	s.Equal([]search.Result{
+		// All ids present since all clusters are allowed.
 		{
-			ID: string(id1),
+			ID: id1,
 		},
 		{
-			ID: string(id2),
+			ID: id2,
+		},
+		{
+			ID: id3,
+		},
+		{
+			ID: id4,
 		},
 	}, results)
 }
 
-type fakeGraphProvider struct {
-	mg *mocks.MockRGraph
-}
-
-func (fgp fakeGraphProvider) NewGraphView() graph.DiscardableRGraph {
-	return graph.NewDiscardableGraph(fgp.mg, func() {})
+func (s *filteredSearcherTestSuite) fakeTransformer() ScopeTransform {
+	return func(_ context.Context, key []byte) [][]sac.ScopeKey {
+		sKey := string(key)
+		if sKey == id1 {
+			return [][]sac.ScopeKey{{sac.ClusterScopeKey(cluster1), sac.NamespaceScopeKey(namespace1)}}
+		}
+		if sKey == id2 {
+			return [][]sac.ScopeKey{{sac.ClusterScopeKey(cluster2), sac.NamespaceScopeKey(namespace2)}}
+		}
+		if sKey == id3 {
+			return [][]sac.ScopeKey{
+				{
+					sac.ClusterScopeKey(cluster1),
+					sac.NamespaceScopeKey(namespace1),
+				},
+				{
+					sac.ClusterScopeKey(cluster2),
+					sac.NamespaceScopeKey(namespace2),
+				},
+			}
+		}
+		if sKey == id4 {
+			return [][]sac.ScopeKey{
+				{
+					sac.ClusterScopeKey(cluster2),
+					sac.NamespaceScopeKey(namespace3),
+				},
+			}
+		}
+		s.Fail("unexpected id")
+		return nil
+	}
 }

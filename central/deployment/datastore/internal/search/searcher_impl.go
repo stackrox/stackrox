@@ -175,7 +175,7 @@ func formatSearcher(graphProvider graph.Provider,
 			imageComponentEdgeSearcher,
 			imageSearcher,
 			deploymentSearcher)
-		filteredSearcher = filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter(graphProvider)) // Make the UnsafeSearcher safe.
+		filteredSearcher = filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
 	} else {
 		filteredSearcher = deploymentsSearchHelper.FilteredSearcher(deploymentIndexer) // Make the UnsafeSearcher safe.
 	}
@@ -237,7 +237,7 @@ func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Sear
 		return searcher
 	}
 	return derivedfields.CountSortedSearcher(searcher, map[string]counter.DerivedFieldCounter{
-		search.ImageCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToImage, imageSAC.GetSACFilter(graphProvider)),
-		search.CVECount.String():   counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToCVE, cveSAC.GetSACFilters(graphProvider)...),
+		search.ImageCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToImage, imageSAC.GetSACFilter()),
+		search.CVECount.String():   counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToCVE, cveSAC.GetSACFilters()...),
 	})
 }

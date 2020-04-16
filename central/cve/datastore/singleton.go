@@ -42,7 +42,7 @@ func initialize() {
 		deploymentIndexer.New(globalindex.GetGlobalIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
-	ds, err = New(storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
+	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)
 	utils.Must(err)
 }
 

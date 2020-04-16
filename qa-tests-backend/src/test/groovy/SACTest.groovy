@@ -147,8 +147,7 @@ class SACTest extends BaseSpecification {
         deleteSecret(DEPLOYMENT_QA1.namespace)
     }
 
-    // TODO: Re-enable after sac fixes.
-    /*def "Verify GetSummaryCounts using a token with partial access receives partial results"() {
+    def "Verify GetSummaryCounts using a token with partial access receives partial results"() {
         when:
         "GetSummaryCounts is called using a token with restricted access"
         createSecret(DEPLOYMENT_QA1.namespace)
@@ -167,7 +166,7 @@ class SACTest extends BaseSpecification {
         BaseService.useBasicAuth()
         deleteSecret(DEPLOYMENT_QA1.namespace)
         deleteSecret(DEPLOYMENT_QA2.namespace)
-    }*/
+    }
 
     def "Verify GetSummaryCounts using a token with all access receives all results"() {
         when:
@@ -247,9 +246,8 @@ class SACTest extends BaseSpecification {
         "Data inputs are: "
         tokenName                | category      | numResults
         NOACCESSTOKEN            | "Cluster"     | 0
-        // TODO: Re-enable after sac fixes.
-        // "searchDeploymentsToken" | "Deployments" | 1
-        // "searchImagesToken"      | "Images"      | 1
+        "searchDeploymentsToken" | "Deployment" | 1
+        "searchImagesToken"      | "Image"      | 1
     }
 
     @Unroll
@@ -314,8 +312,7 @@ class SACTest extends BaseSpecification {
         NOACCESSTOKEN            | "Deployment" | 0
         NOACCESSTOKEN            | "Image"      | 0
         "searchDeploymentsToken" | "Deployment" | 1
-        // TODO: Re-enable after sac fixes.
-        // "searchImagesToken"      | "Image"      | 1
+        "searchImagesToken"      | "Image"      | 1
         "searchNamespacesToken"  | "Namespace"  | 1
     }
 
@@ -360,8 +357,7 @@ class SACTest extends BaseSpecification {
         NOACCESSTOKEN            | 0           | this.&getImageCount      | "Image"
         NOACCESSTOKEN            | 0           | this.&getNamespaceCount  | "Namespace"
         "searchNamespacesToken"  | 1           | this.&getNamespaceCount  | "Namespace"
-        // TODO: Re-enable after sac fixes.
-        // "searchImagesToken"      | 1           | this.&getImageCount      | "Image"
+        "searchImagesToken"      | 1           | this.&getImageCount      | "Image"
     }
 
     @Unroll
@@ -468,8 +464,7 @@ class SACTest extends BaseSpecification {
         "kubeSystemImagesToken"  | "kube-system"  | [SSOC.SearchCategory.IMAGES]
         "searchNamespacesToken"  | "test-qa1"     | [SSOC.SearchCategory.NAMESPACES]
         "searchDeploymentsToken" | "test-qa1"     | [SSOC.SearchCategory.DEPLOYMENTS]
-        // TODO: Re-enable after sac fixes.
-        // "searchImagesToken"      | "test-qa1"     | [SSOC.SearchCategory.IMAGES]
+        "searchImagesToken"      | "test-qa1"     | [SSOC.SearchCategory.IMAGES]
     }
 
     def "Verify that SAC has the same effect as query restriction for network flows"() {

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
@@ -28,7 +27,6 @@ var (
 	id4  = []byte("id4")
 	id5  = []byte("id5")
 	id6  = []byte("id6")
-	id7  = []byte("id7")
 	id11 = []byte("id11")
 
 	prefixedID1  = dbhelper.GetBucketKey(prefix1, id1)
@@ -37,7 +35,6 @@ var (
 	prefixedID4  = dbhelper.GetBucketKey(prefix3, id4)
 	prefixedID5  = dbhelper.GetBucketKey(prefix3, id5)
 	prefixedID6  = dbhelper.GetBucketKey(clusterPrefix, id6)
-	prefixedID7  = dbhelper.GetBucketKey(clusterPrefix, id7)
 	prefixedID11 = dbhelper.GetBucketKey(prefix1, id11)
 
 	// Fake hierarchy for test, use prefixed values since that is what will be stored in the graph.
@@ -46,16 +43,9 @@ var (
 	fromID3  = [][]byte{prefixedID5}
 	fromID11 = [][]byte{prefixedID2}
 
-	toID4 = [][]byte{prefixedID6}
-	toID5 = [][]byte{prefixedID7}
-
 	globalResource = permissions.ResourceMetadata{
 		Resource: "resource",
 		Scope:    permissions.GlobalScope,
-	}
-	clusterResource = permissions.ResourceMetadata{
-		Resource: "resource",
-		Scope:    permissions.ClusterScope,
 	}
 )
 
@@ -94,6 +84,7 @@ func (s *derivedFieldCounterTestSuite) TestCounterForward() {
 
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -116,42 +107,12 @@ func (s *derivedFieldCounterTestSuite) TestCounterForwardWithPartialPath() {
 
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
 	prefixPath := dackbox.Path{Path: [][]byte{prefix1, prefix2, prefix3}, ForwardTraversal: true}
 	counter := NewGraphBasedDerivedFieldCounter(fakeGraphProvider{mg: s.mockRGraph}, prefixPath, filter)
-	count, _ := counter.Count(ctx, string(id1))
-	s.Equal(map[string]int32{string(id1): int32(1)}, count)
-}
-
-/*
-id1 -> id2 -> id4
-id1 -> id3 -> id5 (no access)
-*/
-func (s *derivedFieldCounterTestSuite) TestCounterForwardWithSACFilter() {
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID1).Return(fromID1)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID2).Return(fromID2)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID4).Return(toID4)
-	s.mockRGraph.EXPECT().GetRefsFrom(prefixedID3).Return(fromID3)
-	s.mockRGraph.EXPECT().GetRefsTo(prefixedID5).Return(toID5)
-
-	graphProvider := fakeGraphProvider{mg: s.mockRGraph}
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-		sac.ResourceScopeKeys(clusterResource),
-		sac.ClusterScopeKeys("id6")))
-
-	filter, err := filtered.NewSACFilter(
-		filtered.WithResourceHelper(sac.ForResource(clusterResource)),
-		filtered.WithGraphProvider(graphProvider),
-		filtered.WithClusterPath(prefix3, clusterPrefix),
-	)
-	s.NoError(err, "filter creation should have succeeded")
-
-	prefixPath := dackbox.Path{Path: [][]byte{prefix1, prefix2, prefix3}, ForwardTraversal: true}
-	counter := NewGraphBasedDerivedFieldCounter(graphProvider, prefixPath, filter)
 	count, _ := counter.Count(ctx, string(id1))
 	s.Equal(map[string]int32{string(id1): int32(1)}, count)
 }
@@ -169,6 +130,7 @@ func (s *derivedFieldCounterTestSuite) TestCounterForwardRepeated() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -194,6 +156,7 @@ func (s *derivedFieldCounterTestSuite) TestCounterForwardOneToMany() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
@@ -217,6 +180,7 @@ func (s *derivedFieldCounterTestSuite) TestCounterForwardWithDiffPrefix() {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 	filter, err := filtered.NewSACFilter(
 		filtered.WithResourceHelper(sac.ForResource(globalResource)),
+		filtered.WithReadAccess(),
 	)
 	s.NoError(err, "filter creation should have succeeded")
 
