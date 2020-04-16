@@ -81,6 +81,8 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	defer m.publicIPsUpdateSig.Reset()
+
 	for deletedIP, deletionTS := range m.publicIPDeletions {
 		if now.Sub(deletionTS) >= publicIPAfterglowPeriod {
 			// Have the deletion take effect.
@@ -111,7 +113,6 @@ func (m *publicIPsManager) regenerateAndPushPublicIPsProto() {
 
 	m.publicIPListProtoStream.Push(publicIPsList)
 	m.lastSentList = publicIPsList
-	m.publicIPsUpdateSig.Reset()
 }
 
 func (m *publicIPsManager) PublicIPsProtoStream() concurrency.ReadOnlyValueStream {
