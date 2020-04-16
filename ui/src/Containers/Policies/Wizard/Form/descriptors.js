@@ -20,6 +20,21 @@ const equalityOptions = [
     { label: 'Is less than', value: 'LESS_THAN' }
 ];
 
+// TO-DO: to add when old policy format is deprecated
+// const newEqualityOptions = [
+//     { label: 'Is greater than', value: '>' },
+//     {
+//         label: 'Is greater than or equal to',
+//         value: '>='
+//     },
+//     { label: 'Is equal to', value: '=' },
+//     {
+//         label: 'Is less than or equal to',
+//         value: '<='
+//     },
+//     { label: 'Is less than', value: '<' }
+// ];
+
 const cpuResource = (label, policy, field) => ({
     label,
     name: label,
@@ -29,14 +44,16 @@ const cpuResource = (label, policy, field) => ({
         {
             jsonpath: `fields.${policy}.${field}.op`,
             type: 'select',
-            options: equalityOptions
+            options: equalityOptions,
+            subpath: 'key'
         },
         {
             jsonpath: `fields.${policy}.${field}.value`,
             type: 'number',
             placeholder: '# of cores',
             min: 0,
-            step: 0.1
+            step: 0.1,
+            subpath: 'value'
         }
     ],
     required: false,
@@ -94,13 +111,15 @@ const memoryResource = (label, policy, field) => ({
         {
             jsonpath: `fields.${policy}.${field}.op`,
             type: 'select',
-            options: equalityOptions
+            options: equalityOptions,
+            subpath: 'key'
         },
         {
             jsonpath: `fields.${policy}.${field}.value`,
             type: 'number',
             placeholder: '# MB',
-            min: 0
+            min: 0,
+            subpath: 'value'
         }
     ],
     required: false,
@@ -297,12 +316,15 @@ const policyConfigurationDescriptor = [
                     { label: 'USER', value: 'USER' },
                     { label: 'WORKDIR', value: 'WORKDIR' },
                     { label: 'ONBUILD', value: 'ONBUILD' }
-                ]
+                ],
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.lineRule.value',
+                name: 'value',
                 type: 'text',
-                placeholder: '.*example.*'
+                placeholder: '.*example.*',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -330,7 +352,8 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.cvss.op',
                 type: 'select',
-                options: equalityOptions
+                options: equalityOptions,
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.cvss.value',
@@ -338,7 +361,8 @@ const policyConfigurationDescriptor = [
                 placeholder: '0-10',
                 max: 10,
                 min: 0,
-                step: 0.1
+                step: 0.1,
+                subpath: 'value'
             }
         ],
         required: false,
@@ -376,12 +400,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.component.name',
                 type: 'text',
-                placeholder: 'example'
+                placeholder: 'example',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.component.version',
                 type: 'text',
-                placeholder: '1.2.[0-9]+'
+                placeholder: '1.2.[0-9]+',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -398,12 +424,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.env.key',
                 type: 'text',
-                placeholder: 'Key'
+                placeholder: 'Key',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.env.value',
                 type: 'text',
-                placeholder: 'Value'
+                placeholder: 'Value',
+                subpath: 'value'
             },
             {
                 jsonpath: 'fields.env.envVarSource',
@@ -412,7 +440,8 @@ const policyConfigurationDescriptor = [
                     label: envVarSrcLabels[key],
                     value: key
                 })),
-                placeholder: 'Value From'
+                placeholder: 'Value From',
+                subpath: 'source'
             }
         ],
         required: false,
@@ -429,12 +458,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.disallowedAnnotation.key',
                 type: 'text',
-                placeholder: 'admission.stackrox.io/break-glass'
+                placeholder: 'admission.stackrox.io/break-glass',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.disallowedAnnotation.value',
                 type: 'text',
-                placeholder: ''
+                placeholder: '',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -451,12 +482,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.requiredLabel.key',
                 type: 'text',
-                placeholder: 'owner'
+                placeholder: 'owner',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.requiredLabel.value',
                 type: 'text',
-                placeholder: '.*'
+                placeholder: '.*',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -473,12 +506,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.requiredAnnotation.key',
                 type: 'text',
-                placeholder: 'owner'
+                placeholder: 'owner',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.requiredAnnotation.value',
                 type: 'text',
-                placeholder: '.*'
+                placeholder: '.*',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -703,12 +738,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.requiredImageLabel.key',
                 type: 'text',
-                placeholder: 'requiredLabelKey.*'
+                placeholder: 'requiredLabelKey.*',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.requiredImageLabel.value',
                 type: 'text',
-                placeholder: 'requiredValue.*'
+                placeholder: 'requiredValue.*',
+                subpath: 'value'
             }
         ],
         required: false,
@@ -724,12 +761,14 @@ const policyConfigurationDescriptor = [
             {
                 jsonpath: 'fields.disallowedImageLabel.key',
                 type: 'text',
-                placeholder: 'disallowedLabelKey.*'
+                placeholder: 'disallowedLabelKey.*',
+                subpath: 'key'
             },
             {
                 jsonpath: 'fields.disallowedImageLabel.value',
                 type: 'text',
-                placeholder: 'disallowedValue.*'
+                placeholder: 'disallowedValue.*',
+                subpath: 'value'
             }
         ],
         required: false,

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { formValueSelector } from 'redux-form';
+import { getFormValues } from 'redux-form';
 import { createStructuredSelector } from 'reselect';
 import { ArrowRight } from 'react-feather';
 
@@ -10,7 +10,7 @@ import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/policies/wizard';
 import PanelButton from 'Components/PanelButton';
-import { formatPolicyFields, getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
+import { formatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 
 function FormButtons({
     policies,
@@ -94,13 +94,10 @@ FormButtons.defaultProps = {
     }
 };
 
-const getFormData = state =>
-    formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
-
 const mapStateToProps = createStructuredSelector({
     policies: selectors.getFilteredPolicies,
     wizardPolicy: selectors.getWizardPolicy,
-    formData: getFormData,
+    formData: getFormValues('policyCreationForm'),
     wizardPolicyIsNew: selectors.getWizardIsNew
 });
 

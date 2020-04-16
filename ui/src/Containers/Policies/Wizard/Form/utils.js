@@ -73,9 +73,80 @@ export function postFormatEnforcementField(policy) {
     return serverPolicy;
 }
 
+export function parseValueStr(value) {
+    const valueArr = value.split('=');
+    // for nested policy criteria fields
+    if (valueArr.length === 2) {
+        return {
+            key: valueArr[0],
+            value: valueArr[1]
+        };
+    }
+    // for the Environment Variable policy criteria
+    if (valueArr.length === 3) {
+        return {
+            source: valueArr[0],
+            key: valueArr[1],
+            value: valueArr[2]
+        };
+    }
+    return {
+        value
+    };
+}
+
+function preFormatNestedPolicyFields(policy) {
+    if (!policy.policy_sections) return policy;
+
+    const clientPolicy = { ...policy };
+    // itreating through each value in a policy group in a policy section to parse value string
+    policy.policy_sections.forEach((policySection, sectionIdx) => {
+        const { policy_groups: policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            values.forEach((value, valueIdx) => {
+                clientPolicy.policy_sections[sectionIdx].policy_groups[groupIdx].values[
+                    valueIdx
+                ] = parseValueStr(value.value);
+            });
+        });
+    });
+    return clientPolicy;
+}
+
+export function formatValueStr({ source, key, value }) {
+    let valueStr = value;
+    if (source) {
+        valueStr = `${source}=${key}=${value}`;
+    } else if (key) {
+        valueStr = `${key}=${value}`;
+    }
+    return valueStr;
+}
+
+function postFormatNestedPolicyFields(policy) {
+    if (!policy.policy_sections) return policy;
+
+    const serverPolicy = { ...policy };
+    // itereating through each value in a policy group in a policy section to format to a flat value string
+    policy.policy_sections.forEach((policySection, sectionIdx) => {
+        const { policy_groups: policyGroups } = policySection;
+        policyGroups.forEach((policyGroup, groupIdx) => {
+            const { values } = policyGroup;
+            values.forEach((value, valueIdx) => {
+                serverPolicy.policy_sections[sectionIdx].policy_groups[groupIdx].values[
+                    valueIdx
+                ] = { value: formatValueStr(value) };
+            });
+        });
+    });
+    return serverPolicy;
+}
+
 export function preFormatPolicyFields(policy) {
     let formattedPolicy = removeEmptyFields(policy);
     formattedPolicy = preFormatWhitelistField(formattedPolicy);
+    formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
     return formattedPolicy;
 }
 
@@ -84,6 +155,7 @@ export function formatPolicyFields(policy) {
     serverPolicy = postFormatLifecycleField(serverPolicy);
     serverPolicy = postFormatEnforcementField(serverPolicy);
     serverPolicy = postFormatWhitelistField(serverPolicy);
+    serverPolicy = postFormatNestedPolicyFields(serverPolicy);
     return serverPolicy;
 }
 

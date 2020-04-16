@@ -15,7 +15,10 @@ import WhitelistScope from './WhitelistScope';
 
 export default function Field({ field, name }) {
     if (field === undefined) return null;
-    const path = name || field.jsonpath;
+    // this is to accomodate for recursive Fields (when type is 'group')
+    const pathName = field.subpath ? name : `${name}.value`;
+    // we use jsonpath for non-policy configuration fields
+    const path = name ? pathName : field.jsonpath;
     switch (field.type) {
         case 'text':
             return (
@@ -73,7 +76,10 @@ export default function Field({ field, name }) {
                 />
             );
         case 'group':
-            return field.jsonpaths.map(input => <Field key={input.jsonpath} field={input} />);
+            return field.jsonpaths.map(subField => {
+                const subFieldName = name ? `${name}.${subField.subpath}` : subField.jsonpath;
+                return <Field key={subField.jsonpath} name={subFieldName} field={subField} />;
+            });
         case 'scope':
             return <FieldArray key={path} name={path} component={RestrictToScope} />;
         case 'whitelistScope':

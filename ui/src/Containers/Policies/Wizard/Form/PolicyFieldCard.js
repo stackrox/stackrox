@@ -59,7 +59,7 @@ function PolicyFieldCard({
                     {fields.map((name, i) => (
                         <FieldValue
                             key={name}
-                            name={`${name}.value`}
+                            name={name}
                             length={fields.length}
                             booleanOperator={booleanOperator}
                             fieldKey={fieldKey}

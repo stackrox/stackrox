@@ -7,6 +7,84 @@ import { policy as policySchema } from './schemas';
 const baseUrl = '/v1/policies';
 const policyCategoriesUrl = '/v1/policyCategories';
 
+// this is the sample policy until BE is implemented and migrated to new policy format
+// const samplePolicy = {
+//     policy_version: '2.0',
+//     id: '6a47dd95-6904-4997-ba21-c510ba3e75fa',
+//     name: 'Registry Dependent CVSS',
+//     description: 'Alert on vulnerabilities with varying CVSS scores depending on registry',
+//     severity: 'HIGH_SEVERITY',
+//     lifecycle_stages: ['BUILD', 'DEPLOY'],
+//     categories: ['Security Best Practices'],
+//     rationale: 'Demonstrate boolean policy logic',
+//     remediation: 'Rebuild images',
+//     policy_sections: [
+//         {
+//             section_name: 'Docker Registries',
+//             policy_groups: [
+//                 {
+//                     field_name: 'Dockerfile Line',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: 'FROM=.*example.*' }]
+//                 },
+//                 {
+//                     field_name: 'Environment Variable',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: 'SECRET_KEY=sampleKey=sampleValue' }]
+//                 },
+//                 {
+//                     field_name: 'CVSS',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: '>=5' }]
+//                 },
+//                 {
+//                     field_name: 'Image Registry',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: 'docker.io' }]
+//                 }
+//             ]
+//         },
+//         {
+//             section_name: 'Other Registries',
+//             policy_groups: [
+//                 {
+//                     field_name: 'CVSS',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: '>=7' }]
+//                 },
+//                 {
+//                     field_name: 'Image Registry',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: 'grc.io' }, { value: 'gke.grc.io' }, { value: 'quay.io' }]
+//                 }
+//             ]
+//         },
+//         {
+//             section_name: 'StackRox Registries',
+//             policy_groups: [
+//                 {
+//                     field_name: 'CVSS',
+//                     boolean_operator: 'OR',
+//                     negate: false,
+//                     values: [{ value: '=10' }]
+//                 },
+//                 {
+//                     field_name: 'Image Registry',
+//                     boolean_operator: 'OR',
+//                     negate: true,
+//                     values: [{ value: 'stackrox.io' }, { value: 'collector.stackrox.io' }]
+//                 }
+//             ]
+//         }
+//     ]
+// };
+
 /**
  * Fetches policy summary for a given policy ID.
  * Returns normalized response with policy entity extracted.
