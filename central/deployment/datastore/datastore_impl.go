@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -515,25 +516,31 @@ func checkIndicatorWriteSAC(ctx context.Context) error {
 	return nil
 }
 
+// This is a bit ugly -- users can comment on processes, which, as a side-effect, affects tags on deployments.
+// However, the tags being stored in the deployment is an internal indexing consistency mechanism for indexing only, and we do NOT
+// want to not do this just because the user has process indicator SAC but not deployment SAC.
+// Therefore, we use an elevated context for all deployment operations.
+func getElevatedCtxForProcessTagOpts() context.Context {
+	return sac.WithAllAccess(context.Background())
+}
+
 func (ds *datastoreImpl) AddTagsToProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey, tags []string) error {
 	if err := checkIndicatorWriteSAC(ctx); err != nil {
 		return err
 	}
 
-	// This is a bit ugly -- users can comment on processes, which, as a side-effect, affects tags on deployments.
-	// However, the tags being stored in the deployment is an internal indexing consistency mechanism for indexing only, and we do NOT
-	// want to not do this just because the user has process indicator SAC but not deployment SAC.
-	// Therefore, we use an elevated context for all deployment operations.
-	elevatedCtx := sac.WithAllAccess(context.Background())
+	elevatedCtx := getElevatedCtxForProcessTagOpts()
 	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
 	// It's possible to comment on tags for deployments that no longer exist.
 	if err == nil && deployment != nil {
 		existingTags := deployment.GetProcessTags()
 		unionTags := sliceutils.StringUnion(existingTags, tags)
 		sort.Strings(unionTags)
-		deployment.ProcessTags = unionTags
-		if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
-			return err
+		if !sliceutils.StringEqual(existingTags, unionTags) {
+			deployment.ProcessTags = unionTags
+			if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -545,7 +552,38 @@ func (ds *datastoreImpl) RemoveTagsFromProcessKey(ctx context.Context, key *anal
 		return err
 	}
 
-	return ds.processTagsStore.RemoveProcessTags(key, tags)
+	if err := ds.processTagsStore.RemoveProcessTags(key, tags); err != nil {
+		return errors.Wrap(err, "removing from store")
+	}
+	tagsToRemove := set.NewStringSet(tags...)
+	err := ds.processTagsStore.WalkTagsForDeployment(key.DeploymentID, func(tag string) bool {
+		// This tag still exists, can't remove it from the deployment.
+		tagsToRemove.Remove(tag)
+		return tagsToRemove.Cardinality() > 0
+	})
+	if err != nil {
+		return errors.Wrap(err, "walking store")
+	}
+
+	if tagsToRemove.Cardinality() == 0 {
+		return nil
+	}
+
+	elevatedCtx := getElevatedCtxForProcessTagOpts()
+	deployment, _, err := ds.GetDeployment(elevatedCtx, key.DeploymentID)
+	// It's possible to comment on tags for deployments that no longer exist.
+	if err == nil && deployment != nil {
+		existingTags := deployment.GetProcessTags()
+		diffTags := sliceutils.StringDifference(existingTags, tagsToRemove.AsSlice())
+		sort.Strings(diffTags)
+		if !sliceutils.StringEqual(existingTags, diffTags) {
+			deployment.ProcessTags = diffTags
+			if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) GetTagsForProcessKey(ctx context.Context, key *analystnotes.ProcessNoteKey) ([]string, error) {

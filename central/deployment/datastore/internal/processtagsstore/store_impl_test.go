@@ -10,9 +10,13 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+func getDeploymentID(deploymentSeed int) string {
+	return fmt.Sprintf("DEPLOY:%d", deploymentSeed)
+}
+
 func getKey(deploymentSeed, containerSeed int) *analystnotes.ProcessNoteKey {
 	key := &analystnotes.ProcessNoteKey{
-		DeploymentID:  fmt.Sprintf("DEPLOY%d", deploymentSeed),
+		DeploymentID:  getDeploymentID(deploymentSeed),
 		ContainerName: fmt.Sprintf("CONTAINER%d", containerSeed),
 		ExecFilePath:  "EXEC",
 	}
@@ -65,6 +69,24 @@ func (suite *StoreTestSuite) TestStore() {
 
 	suite.NoError(suite.store.UpsertProcessTags(getKey(0, 2), []string{"blah"}))
 	suite.Equal([]string{"blah"}, suite.mustGetTags(0, 2))
+
+	suite.NoError(suite.store.UpsertProcessTags(getKey(1, 2), []string{"five", "four"}))
+
+	// Test walk
+	var seenTags []string
+	suite.NoError(suite.store.WalkTagsForDeployment(getDeploymentID(1), func(tag string) bool {
+		seenTags = append(seenTags, tag)
+		return true
+	}))
+	suite.ElementsMatch([]string{"one", "three", "four", "five"}, seenTags)
+
+	var seenTag string
+	suite.NoError(suite.store.WalkTagsForDeployment(getDeploymentID(1), func(tag string) bool {
+		suite.Require().Empty(seenTag)
+		seenTag = tag
+		return false
+	}))
+	suite.Contains([]string{"one", "three", "four", "five"}, seenTag)
 
 	suite.NoError(suite.store.RemoveProcessTags(getKey(1, 1), []string{"one", "three", "four"}))
 	suite.Empty(suite.mustGetTags(1, 1))

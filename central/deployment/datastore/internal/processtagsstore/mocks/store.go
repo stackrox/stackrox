@@ -75,3 +75,17 @@ func (mr *MockStoreMockRecorder) RemoveProcessTags(key, tags interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessTags", reflect.TypeOf((*MockStore)(nil).RemoveProcessTags), key, tags)
 }
+
+// WalkTagsForDeployment mocks base method
+func (m *MockStore) WalkTagsForDeployment(deploymentID string, f func(string) bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkTagsForDeployment", deploymentID, f)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkTagsForDeployment indicates an expected call of WalkTagsForDeployment
+func (mr *MockStoreMockRecorder) WalkTagsForDeployment(deploymentID, f interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkTagsForDeployment", reflect.TypeOf((*MockStore)(nil).WalkTagsForDeployment), deploymentID, f)
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
@@ -60,6 +61,38 @@ func (s *storeImpl) GetTagsForProcessKey(key *analystnotes.ProcessNoteKey) ([]st
 		return nil, err
 	}
 	return tags, nil
+}
+
+var (
+	errExitEarly = errors.New("early exit")
+)
+
+func (s *storeImpl) WalkTagsForDeployment(deploymentID string, f func(tag string) bool) error {
+	seenTags := set.NewStringSet()
+	return s.bucketRef.View(func(b *bbolt.Bucket) error {
+		deploymentSubBucket := b.Bucket([]byte(deploymentID))
+		if deploymentSubBucket == nil {
+			return nil
+		}
+		err := deploymentSubBucket.ForEach(func(k, v []byte) error {
+			var tags []string
+			if err := json.Unmarshal(v, &tags); err != nil {
+				return errors.Wrap(err, "JSON unmarshaling")
+			}
+			for _, tag := range tags {
+				if added := seenTags.Add(tag); added {
+					if shouldContinue := f(tag); !shouldContinue {
+						return errExitEarly
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil && err != errExitEarly {
+			return err
+		}
+		return nil
+	})
 }
 
 func (s *storeImpl) UpsertProcessTags(key *analystnotes.ProcessNoteKey, tags []string) error {
