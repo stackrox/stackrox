@@ -1,17 +1,17 @@
 ARG DATA_IMAGE_TAG=latest
 FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
-FROM alpine:3.10
+FROM alpine:3.11
 ARG ALPINE_MIRROR=sjc.edge.kernel.org
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
-RUN echo http://${ALPINE_MIRROR}/alpine/v3.10/main > /etc/apk/repositories; \
-    echo http://${ALPINE_MIRROR}/alpine/v3.10/community >> /etc/apk/repositories
+RUN echo http://${ALPINE_MIRROR}/alpine/v3.11/main > /etc/apk/repositories; \
+    echo http://${ALPINE_MIRROR}/alpine/v3.11/community >> /etc/apk/repositories
 
 RUN apk update && \
     apk add --no-cache \
         ca-certificates \
-        su-exec=0.2-r0 \
+        su-exec \
         musl \
         && \
     apk --purge del apk-tools \

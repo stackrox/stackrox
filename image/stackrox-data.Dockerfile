@@ -1,13 +1,13 @@
 ARG DOCS_VERSION
 FROM stackrox/docs:embed-$DOCS_VERSION AS docs
 
-FROM alpine:3.10
+FROM alpine:3.11
 ARG ALPINE_MIRROR=sjc.edge.kernel.org
 
 RUN mkdir /stackrox-data
 
-RUN echo http://$ALPINE_MIRROR/alpine/v3.10/main > /etc/apk/repositories; \
-    echo http://$ALPINE_MIRROR/alpine/v3.10/community >> /etc/apk/repositories
+RUN echo http://$ALPINE_MIRROR/alpine/v3.11/main > /etc/apk/repositories; \
+    echo http://$ALPINE_MIRROR/alpine/v3.11/community >> /etc/apk/repositories
 
 RUN apk update && \
     apk add --no-cache \
