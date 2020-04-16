@@ -76,7 +76,8 @@ function withAdjustedBehavior(SelectComponent) {
             options: PropTypes.arrayOf(PropTypes.object),
             styles: PropTypes.shape({}),
             'data-testid': PropTypes.string,
-            isMulti: PropTypes.bool
+            isMulti: PropTypes.bool,
+            disallowWhitespace: PropTypes.bool
         };
 
         static defaultProps = {
@@ -90,11 +91,32 @@ function withAdjustedBehavior(SelectComponent) {
             options: [],
             styles: defaultSelectStyles,
             'data-testid': '',
-            isMulti: false
+            isMulti: false,
+            disallowWhitespace: false
         };
 
         state = {
             createdOptions: []
+        };
+
+        trimNewValueWhitespace = newValue => {
+            // if it's not related to the creatable component creating new values, then ignore
+            if (!Array.isArray(newValue)) return newValue;
+            const trimmedNewValue = newValue.map(datum => {
+                // if a new creatable value is not being added, don't make any changes
+                const { __isNew__ } = datum;
+                if (!__isNew__) return { ...datum };
+                // if a new creatable value is being added, trim the white space first
+                const { label, value, ...rest } = datum;
+                const trimmedLabel = label.trimStart().trimEnd();
+                const trimmedValue = value.trimStart().trimEnd();
+                return {
+                    label: trimmedLabel,
+                    value: trimmedValue,
+                    ...rest
+                };
+            });
+            return trimmedNewValue;
         };
 
         // we have to keep the list of created options to be able to reference them by option value
@@ -121,13 +143,16 @@ function withAdjustedBehavior(SelectComponent) {
 
         // we want to pass to the callback from props only value(s) as the first parameter
         onChange = (newValue, changeAction, ...rest) => {
-            this.updateCreatedOptions(newValue, changeAction);
-            const { getOptionValue, onChange } = this.props;
+            const { getOptionValue, onChange, disallowWhitespace } = this.props;
+            const modifiedNewValue = disallowWhitespace
+                ? this.trimNewValueWhitespace(newValue, disallowWhitespace)
+                : newValue;
+            this.updateCreatedOptions(modifiedNewValue, changeAction);
             const onlyValues =
-                newValue && Array.isArray(newValue)
-                    ? newValue.map(option => getOptionValue(option))
-                    : getOptionValue(newValue);
-            onChange(onlyValues, newValue, changeAction, ...rest);
+                modifiedNewValue && Array.isArray(modifiedNewValue)
+                    ? modifiedNewValue.map(option => getOptionValue(option))
+                    : getOptionValue(modifiedNewValue);
+            onChange(onlyValues, modifiedNewValue, changeAction, ...rest);
         };
 
         // tranforms value from a single value to a format that react-select expects

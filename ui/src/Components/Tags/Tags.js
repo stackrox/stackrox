@@ -32,6 +32,7 @@ const Tags = ({
                 value={tags}
                 isDisabled={isDisabled}
                 isMulti
+                disallowWhitespace
             />
         );
     }
