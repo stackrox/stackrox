@@ -35,18 +35,18 @@ function DeploymentColumn({ original }) {
         <div className="flex items-center">
             <span
                 className="pr-2"
-                title={`${original.deployment.inactive ? 'Inactive' : 'Active'} Deployment`}
+                title={`${original?.deployment?.inactive ? 'Inactive' : 'Active'} Deployment`}
             >
                 <Icon.Circle
                     className="h-2 w-2 text-success-600"
-                    hidden={original.deployment.inactive}
+                    hidden={original?.deployment?.inactive}
                 />
                 <Icon.Slash
                     className="h-2 w-2 text-base-500"
-                    hidden={!original.deployment.inactive}
+                    hidden={!original?.deployment?.inactive}
                 />
             </span>
-            <span>{original.deployment.name}</span>
+            <span>{original?.deployment?.name}</span>
         </div>
     );
 }
@@ -64,9 +64,9 @@ DeploymentColumn.propTypes = {
 // ////////////////////////////////////////
 function PolicyColumn({ original }) {
     return (
-        <Tooltip content={<TooltipOverlay>{original.policy.description}</TooltipOverlay>}>
+        <Tooltip content={<TooltipOverlay>{original?.policy?.description}</TooltipOverlay>}>
             <div className="inline-block hover:text-primary-700 underline">
-                {original.policy.name}
+                {original?.policy?.name}
             </div>
         </Tooltip>
     );
@@ -84,8 +84,8 @@ PolicyColumn.propTypes = {
 // Display the enforcement.
 // ////////////////////////
 function EnforcementColumn({ original }) {
-    const count = original.enforcementCount;
-    if (original.lifecycleStage === 'DEPLOY') {
+    const count = original?.enforcementCount;
+    if (original?.lifecycleStage === 'DEPLOY') {
         const message = count === 0 ? 'No' : 'Yes';
         return <span>{message}</span>;
     }
