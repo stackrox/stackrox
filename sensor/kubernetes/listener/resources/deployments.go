@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -17,6 +18,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
+)
+
+var (
+	// It is highly recommended that nobody change this value unless they are absolutely sure,
+	// but even then maybe don't do it.
+	podNamespace = uuid.FromStringOrPanic("32581326-b68f-49f5-a8a2-83853cac8813")
 )
 
 // deploymentDispatcherImpl is a Dispatcher implementation for deployment events.
@@ -200,8 +207,11 @@ func (d *deploymentHandler) maybeUpdateParentsOfPod(pod *v1.Pod, oldObj interfac
 
 // processPodEvent returns a SensorEvent indicating a change in a pod's state.
 func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v1.Pod, action central.ResourceAction) *central.SensorEvent {
+	// Our current search mechanism does not support namespaced IDs, so if this is a top-level pod,
+	// then having the PodID and DeploymentID fields equal will cause errors.
+	// It is best to prevent this case by transforming all PodIDs.
+	uid := uuid.NewV5(podNamespace, string(k8sPod.GetUID())).String()
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		uid := string(k8sPod.GetUID())
 		// If we couldn't find an owning deployment ID, that means the deployment was probably removed,
 		// which means the pod would have been removed from the podStore when the owning deployment was.
 		if owningDeploymentID != "" {
@@ -219,7 +229,7 @@ func (d *deploymentHandler) processPodEvent(owningDeploymentID string, k8sPod *v
 		}
 	}
 	p := &storage.Pod{
-		Id:           string(k8sPod.GetUID()),
+		Id:           uid,
 		Name:         k8sPod.GetName(),
 		DeploymentId: owningDeploymentID,
 		ClusterId:    clusterid.Get(),
