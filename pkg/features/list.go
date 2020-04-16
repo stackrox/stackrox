@@ -18,7 +18,7 @@ var (
 
 	// AnalystNotesUI enables the Analyst Notes UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", false)
+	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", true)
 
 	// EventTimelineUI enables the Event Timeline UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
