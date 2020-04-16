@@ -10,7 +10,7 @@ import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
-import getLargestDifferenceInHours from '../eventTimelineUtils/getLargestDifferenceInHours';
+import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';
 import { GET_DEPLOYMENT_EVENT_TIMELINE } from '../timelineQueries';
 
 const defaultPodsSort = {
@@ -64,7 +64,7 @@ const DeploymentEventTimeline = ({
     );
 
     const timelineData = getPodEvents(data.pods, selectedEventType);
-    const absoluteMaxTimeRange = getLargestDifferenceInHours(timelineData);
+    const absoluteMaxTimeRange = getLargestDifferenceInMilliseconds(timelineData);
 
     return (
         <Panel header={header} headerComponents={headerComponents}>

@@ -27,7 +27,7 @@ const EventsRow = ({
                 height={height}
                 width={width}
             />
-            {events.map(({ id, type, uid, reason, differenceInHours, timestamp }) => (
+            {events.map(({ id, type, uid, reason, differenceInMilliseconds, timestamp }) => (
                 <EventMarker
                     key={id}
                     name={name}
@@ -35,7 +35,7 @@ const EventsRow = ({
                     reason={reason}
                     type={type}
                     timestamp={timestamp}
-                    differenceInHours={differenceInHours}
+                    differenceInMilliseconds={differenceInMilliseconds}
                     translateX={translateX}
                     translateY={eventMarkerOffsetY}
                     size={eventMarkerSize}

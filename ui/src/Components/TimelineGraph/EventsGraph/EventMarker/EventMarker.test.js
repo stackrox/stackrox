@@ -10,12 +10,12 @@ test('should show a policy violation event marker', async () => {
                 name="eventName"
                 type="PolicyViolationEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
-                differenceInHours={1}
+                differenceInMilliseconds={3600000}
                 translateX={0}
                 translateY={0}
                 size={10}
                 minTimeRange={0}
-                maxTimeRange={2}
+                maxTimeRange={3600000 * 2}
             />
         </svg>
     );
@@ -30,12 +30,12 @@ test('should show a process activity event marker', async () => {
                 name="eventName"
                 type="ProcessActivityEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
-                differenceInHours={1}
+                differenceInMilliseconds={3600000}
                 translateX={0}
                 translateY={0}
                 size={10}
                 minTimeRange={0}
-                maxTimeRange={2}
+                maxTimeRange={3600000 * 2}
             />
         </svg>
     );
@@ -50,12 +50,12 @@ test('should show a container restart event marker', async () => {
                 name="eventName"
                 type="ContainerRestartEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
-                differenceInHours={1}
+                differenceInMilliseconds={3600000}
                 translateX={0}
                 translateY={0}
                 size={10}
                 minTimeRange={0}
-                maxTimeRange={2}
+                maxTimeRange={3600000 * 2}
             />
         </svg>
     );
@@ -70,12 +70,12 @@ test('should show a container termination event marker', async () => {
                 name="eventName"
                 type="ContainerTerminationEvent"
                 timestamp="2020-04-20T20:20:20.358227916Z"
-                differenceInHours={1}
+                differenceInMilliseconds={3600000}
                 translateX={0}
                 translateY={0}
                 size={10}
                 minTimeRange={0}
-                maxTimeRange={2}
+                maxTimeRange={3600000 * 2}
             />
         </svg>
     );

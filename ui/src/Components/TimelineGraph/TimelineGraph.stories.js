@@ -20,19 +20,19 @@ export const withData = () => {
             events: [
                 {
                     id: 'event-1',
-                    differenceInHours: 5,
+                    differenceInMilliseconds: 3600000 * 3,
                     type: 'event-type-1',
                     edges: []
                 },
                 {
                     id: 'event-2',
-                    differenceInHours: 2,
+                    differenceInMilliseconds: 3600000 * 2,
                     type: 'event-type-2',
                     edges: []
                 },
                 {
                     id: 'event-3',
-                    differenceInHours: 1,
+                    differenceInMilliseconds: 3600000,
                     type: 'event-type-3',
                     edges: []
                 }
@@ -46,19 +46,19 @@ export const withData = () => {
             events: [
                 {
                     id: 'event-4',
-                    differenceInHours: 5,
+                    differenceInMilliseconds: 3600000 * 3,
                     type: 'event-type-1',
                     edges: []
                 },
                 {
                     id: 'event-5',
-                    differenceInHours: 6,
+                    differenceInMilliseconds: 3600000 * 2,
                     type: 'event-type-2',
                     edges: []
                 },
                 {
                     id: 'event-6',
-                    differenceInHours: 9,
+                    differenceInMilliseconds: 3600000,
                     type: 'event-type-3',
                     edges: []
                 }

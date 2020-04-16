@@ -76,7 +76,7 @@ TimelineGraph.propTypes = {
             events: PropTypes.arrayOf(
                 PropTypes.shape({
                     id: PropTypes.string.isRequired,
-                    differenceInHours: PropTypes.number.isRequired,
+                    differenceInMilliseconds: PropTypes.number.isRequired,
                     edges: PropTypes.arrayOf(PropTypes.shape({})),
                     type: PropTypes.string.isRequired
                 })

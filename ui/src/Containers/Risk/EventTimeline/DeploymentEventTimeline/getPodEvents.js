@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 
 import { timelineStartTimeFormat } from 'constants/dateTimeFormat';
 import { graphTypes } from 'constants/timelineTypes';
-import getDifferenceInHours from '../eventTimelineUtils/getDifferenceInHours';
+import getDifferenceInMilliseconds from '../eventTimelineUtils/getDifferenceInMilliseconds';
 import filterByEventType from '../eventTimelineUtils/filterByEventType';
 
 const getPodEvents = (pods, selectedEventType) => {
@@ -19,7 +19,7 @@ const getPodEvents = (pods, selectedEventType) => {
                     type,
                     uid,
                     reason,
-                    differenceInHours: getDifferenceInHours(timestamp, startTime),
+                    differenceInMilliseconds: getDifferenceInMilliseconds(timestamp, startTime),
                     timestamp,
                     edges
                 })),

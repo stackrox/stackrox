@@ -5,17 +5,7 @@ import { axisTop, axisBottom } from 'd3-axis';
 import selectors from 'Components/TimelineGraph/MainView/selectors';
 import { getWidth } from 'utils/d3Utils';
 import D3Anchor from 'Components/D3Anchor';
-
-function timeDiffTickFormat(datum, i, values) {
-    if (i !== 0 && i !== values.length - 1) {
-        // since "datum" is the difference in hours, we want to get the whole number value for the hours value
-        const hours = datum.toFixed(0);
-        // (datum % 1) will get the fractional value from the difference in hours. We can use that to calculate the minute values
-        const minutes = String(Math.round((datum % 1).toFixed(2) * 60)).padStart(2, '0');
-        return `+${hours}:${minutes}h`;
-    }
-    return null;
-}
+import getTimeDiffTickFormat from './getTimeDiffTickFormat';
 
 function getAxisDirection(direction) {
     switch (direction) {
@@ -36,7 +26,8 @@ const Axis = ({ translateX, translateY, minDomain, maxDomain, direction }) => {
             .domain([minDomain, maxDomain])
             .range([0, width]);
         const axis = getAxisDirection(direction)(scale)
-            .tickFormat(timeDiffTickFormat)
+            .ticks(8)
+            .tickFormat(getTimeDiffTickFormat)
             .tickSize(0);
 
         container.call(axis).call(g => g.select('.domain').style('stroke', 'var(--base-300)'));

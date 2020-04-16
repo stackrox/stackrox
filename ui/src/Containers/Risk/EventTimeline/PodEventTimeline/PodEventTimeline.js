@@ -13,7 +13,7 @@ import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
 import EventTypeSelect from '../EventTypeSelect';
 import { getPod, getContainerEvents } from './getContainerEvents';
-import getLargestDifferenceInHours from '../eventTimelineUtils/getLargestDifferenceInHours';
+import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';
 import { GET_POD_EVENT_TIMELINE } from '../timelineQueries';
 
 const PodEventTimeline = ({
@@ -64,7 +64,7 @@ const PodEventTimeline = ({
     // Adding pagination for Grouped Container Instances required a substantial amount of work, so we're going with pagination on the frontend for now
     const paginatedContainers = getPaginatedList(data.containers, currentPage, pageSize);
     const timelineData = getContainerEvents(paginatedContainers, selectedEventType);
-    const absoluteMaxTimeRange = getLargestDifferenceInHours(timelineData);
+    const absoluteMaxTimeRange = getLargestDifferenceInMilliseconds(timelineData);
 
     const numTotalContainers = data?.pod?.containerCount || 0;
 

@@ -16,7 +16,7 @@ const EventMarker = ({
     uid,
     reason,
     timestamp,
-    differenceInHours,
+    differenceInMilliseconds,
     translateX,
     translateY,
     minTimeRange,
@@ -29,7 +29,7 @@ const EventMarker = ({
         const xScale = scaleLinear()
             .domain([minTimeRange, maxTimeRange])
             .range([0, width]);
-        const x = xScale(differenceInHours).toFixed(0);
+        const x = xScale(differenceInMilliseconds).toFixed(0);
 
         container.attr(
             'transform',
