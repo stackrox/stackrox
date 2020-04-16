@@ -2,6 +2,7 @@ package blevesearch
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +18,12 @@ type prefixAndInversion struct {
 	prefix    string
 	inversion string
 }
+
+const (
+	// We use delta because of precision difference between float32 and float64.
+	// For example, 4.6 -> 4.599999904632568, 9.8 -> 9.800000190734863
+	numericQueryDelta = 0.01
+)
 
 var (
 	prefixesAndInversions = []prefixAndInversion{
@@ -132,9 +139,14 @@ func createNumericQuery(field string, prefix string, value *float64) query.Query
 	var min, max *float64
 	var maxInclusive, minInclusive *bool
 
-	// We use delta because of precision difference between float32 and float64.
-	// For example, 4.6 -> 4.599999904632568, 9.8 -> 9.800000190734863
-	delta := float64(0.01)
+	var delta float64
+	// For performance reasons, if there is no fractional part of the float64 then
+	// simply use the passed float64
+	if value != nil {
+		if _, fraction := math.Modf(*value); fraction > 0 {
+			delta = numericQueryDelta
+		}
+	}
 
 	switch prefix {
 	case "<=":
@@ -156,11 +168,10 @@ func createNumericQuery(field string, prefix string, value *float64) query.Query
 	default:
 		minInclusive = boolPtr(true)
 		maxInclusive = boolPtr(true)
+
 		if value != nil {
-			minVal := float64(*value - delta)
-			maxVal := float64(*value + delta)
-			min = floatPtr(minVal)
-			max = floatPtr(maxVal)
+			min = adjustValue(value, -delta)
+			max = adjustValue(value, delta)
 		}
 	}
 	q := bleve.NewNumericRangeInclusiveQuery(min, max, minInclusive, maxInclusive)
