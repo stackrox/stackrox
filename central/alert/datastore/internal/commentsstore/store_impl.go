@@ -162,6 +162,10 @@ func (b *storeImpl) RemoveAlertComments(alertID string) error {
 		bucket := tx.Bucket(alertCommentsBucket)
 		err := bucket.DeleteBucket([]byte(alertID))
 		if err != nil {
+			// It's already deleted, no need to return an error.
+			if err == bolt.ErrBucketNotFound {
+				return nil
+			}
 			return errors.Wrapf(err, "deleting comments of alert %q", alertID)
 		}
 		return nil

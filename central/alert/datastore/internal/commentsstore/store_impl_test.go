@@ -195,8 +195,9 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	gotCommentsAfterAdd, err := suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
 	suite.Len(gotCommentsAfterAdd, 2)
-	err = suite.store.RemoveAlertComments(alertID)
-	suite.NoError(err)
+	suite.NoError(suite.store.RemoveAlertComments(alertID))
+	// Make sure a second delete is a no-op and does not return an error.
+	suite.NoError(suite.store.RemoveAlertComments(alertID))
 	gotCommentsAfterDeleteAll, err := suite.store.GetCommentsForAlert(alertID)
 	suite.NoError(err)
 	suite.Nil(gotCommentsAfterDeleteAll)
