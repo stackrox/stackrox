@@ -1,9 +1,16 @@
 package resolvers
 
 import (
+	"context"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/processwhitelist"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -11,31 +18,32 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddInterfaceType("DeploymentEvent", []string{
-			"id: String!",
+			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
 		}),
 		schema.AddType("ContainerTerminationEvent", []string{
-			"id: String!",
+			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
 			"exitCode: Int!",
 			"reason: String!",
 		}, "DeploymentEvent"),
 		schema.AddType("ContainerRestartEvent", []string{
-			"id: String!",
+			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
 		}, "DeploymentEvent"),
 		schema.AddType("ProcessActivityEvent", []string{
-			"id: String!",
+			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
 			"uid: Int!",
 			"parentUid: Int!",
+			"whitelisted: Boolean!",
 		}, "DeploymentEvent"),
 		schema.AddType("PolicyViolationEvent", []string{
-			"id: String!",
+			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
 		}, "DeploymentEvent"),
@@ -44,7 +52,7 @@ func init() {
 
 // DeploymentEvent is the parent interface for events.
 type DeploymentEvent interface {
-	ID() string
+	ID() graphql.ID
 	Name() string
 	Timestamp() *graphql.Time
 }
@@ -80,7 +88,7 @@ func (resolver *DeploymentEventResolver) ToPolicyViolationEvent() (*PolicyViolat
 
 // ContainerTerminationEventResolver represents a container termination (failure or graceful) event.
 type ContainerTerminationEventResolver struct {
-	id        string
+	id        graphql.ID
 	name      string
 	timestamp time.Time
 	exitCode  int32
@@ -88,7 +96,7 @@ type ContainerTerminationEventResolver struct {
 }
 
 // ID returns the event's ID.
-func (resolver *ContainerTerminationEventResolver) ID() string {
+func (resolver *ContainerTerminationEventResolver) ID() graphql.ID {
 	return resolver.id
 }
 
@@ -114,13 +122,13 @@ func (resolver *ContainerTerminationEventResolver) Reason() string {
 
 // ContainerRestartEventResolver represents a container restart event.
 type ContainerRestartEventResolver struct {
-	id        string
+	id        graphql.ID
 	name      string
 	timestamp time.Time
 }
 
 // ID returns the event's ID.
-func (resolver *ContainerRestartEventResolver) ID() string {
+func (resolver *ContainerRestartEventResolver) ID() graphql.ID {
 	return resolver.id
 }
 
@@ -136,15 +144,17 @@ func (resolver *ContainerRestartEventResolver) Timestamp() *graphql.Time {
 
 // ProcessActivityEventResolver represents a process start event.
 type ProcessActivityEventResolver struct {
-	id        string
-	name      string
-	timestamp time.Time
-	uid       int32
-	parentUID int32
+	id               graphql.ID
+	name             string
+	timestamp        time.Time
+	uid              int32
+	parentUID        int32
+	canReadWhitelist bool
+	whitelisted      bool
 }
 
 // ID returns the event's ID.
-func (resolver *ProcessActivityEventResolver) ID() string {
+func (resolver *ProcessActivityEventResolver) ID() graphql.ID {
 	return resolver.id
 }
 
@@ -168,15 +178,85 @@ func (resolver *ProcessActivityEventResolver) ParentUID() int32 {
 	return resolver.parentUID
 }
 
+// Whitelisted returns true if this process is whitelisted.
+func (resolver *ProcessActivityEventResolver) Whitelisted() bool {
+	if resolver.canReadWhitelist {
+		return resolver.whitelisted
+	}
+	// Default to true if the requester cannot read the whitelist.
+	return true
+}
+
+func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v1.Query) ([]*ProcessActivityEventResolver, error) {
+	if err := readIndicators(ctx); err != nil {
+		return nil, err
+	}
+
+	indicators, err := resolver.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving process indicators from search")
+	}
+
+	processEvents := make([]*ProcessActivityEventResolver, 0, len(indicators))
+	whitelists := make(map[string]*set.StringSet)
+	// This determines if we should read whitelist information.
+	// nil means we can.
+	canReadWhitelist := readWhitelists(ctx) == nil
+	for _, indicator := range indicators {
+		var keyStr, procName string
+		if canReadWhitelist {
+			key := &storage.ProcessWhitelistKey{
+				ClusterId:     indicator.GetClusterId(),
+				Namespace:     indicator.GetNamespace(),
+				DeploymentId:  indicator.GetDeploymentId(),
+				ContainerName: indicator.GetContainerName(),
+			}
+			keyStr = key.String()
+			procName = processWhitelistPkg.WhitelistItemFromProcess(indicator)
+			if procName != "" {
+				if _, exists := whitelists[keyStr]; !exists {
+					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessWhitelist(ctx, key)
+					if err != nil || !exists {
+						log.Error(errors.Wrapf(err, "retrieving whitelist data for process %s", indicator.GetSignal().GetName()))
+					} else {
+						whitelists[keyStr] = processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
+					}
+				}
+			}
+		}
+
+		timestamp, ok := convertTimestamp(indicator.GetSignal().GetName(), "indicator", indicator.GetSignal().GetTime())
+		if !ok {
+			continue
+		}
+		// -1 indicates we do not have parent UID information (either no parent exists or we do not know its UID).
+		parentUID := int32(-1)
+		if len(indicator.GetSignal().GetLineageInfo()) > 0 {
+			// This process's direct parent should be the first entry.
+			parentUID = int32(indicator.GetSignal().GetLineageInfo()[0].GetParentUid())
+		}
+		processEvents = append(processEvents, &ProcessActivityEventResolver{
+			id:               graphql.ID(indicator.GetId()),
+			name:             indicator.GetSignal().GetName(),
+			timestamp:        timestamp,
+			uid:              int32(indicator.GetSignal().GetUid()),
+			parentUID:        parentUID,
+			canReadWhitelist: canReadWhitelist,
+			whitelisted:      whitelists[keyStr] == nil || whitelists[keyStr].Contains(procName),
+		})
+	}
+	return processEvents, nil
+}
+
 // PolicyViolationEventResolver represents a policy violation event.
 type PolicyViolationEventResolver struct {
-	id        string
+	id        graphql.ID
 	name      string
 	timestamp time.Time
 }
 
 // ID returns the event's ID.
-func (resolver *PolicyViolationEventResolver) ID() string {
+func (resolver *PolicyViolationEventResolver) ID() graphql.ID {
 	return resolver.id
 }
 
@@ -188,4 +268,31 @@ func (resolver *PolicyViolationEventResolver) Name() string {
 // Timestamp returns the event's timestamp.
 func (resolver *PolicyViolationEventResolver) Timestamp() *graphql.Time {
 	return &graphql.Time{Time: resolver.timestamp}
+}
+
+func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v1.Query) ([]*PolicyViolationEventResolver, error) {
+	if err := readAlerts(ctx); err != nil {
+		return nil, err
+	}
+
+	alerts, err := resolver.ViolationsDataStore.SearchRawAlerts(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving alerts from search")
+	}
+
+	policyViolationEvents := make([]*PolicyViolationEventResolver, 0, len(alerts))
+	for _, alert := range alerts {
+		timestamp, ok := convertTimestamp(alert.GetPolicy().GetName(), "alert", alert.GetTime())
+		if !ok {
+			continue
+		}
+		policy := alert.GetPolicy()
+		policyViolationEvents = append(policyViolationEvents, &PolicyViolationEventResolver{
+			id:        graphql.ID(policy.GetId()),
+			name:      policy.GetName(),
+			timestamp: timestamp,
+		})
+	}
+
+	return policyViolationEvents, nil
 }

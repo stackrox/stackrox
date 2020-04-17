@@ -71,6 +71,7 @@ var (
 	CPUCoresLimit                 = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest               = newFieldLabel("CPU Cores Request")
 	ContainerID                   = newFieldLabel("Container ID")
+	ContainerName                 = newFieldLabel("Container Name")
 	ContainerImageDigest          = newFieldLabel("Container Image Digest")
 	DeploymentID                  = newFieldLabel("Deployment ID")
 	DeploymentName                = newFieldLabel("Deployment")
@@ -118,8 +119,8 @@ var (
 	Tag            = newFieldLabel("Tag")
 
 	// Pod Search fields
-	PodID   = newFieldLabel("Pod ID")  // Used externally. Same as PodUID
-	PodUID  = newFieldLabel("Pod UID") // Used internally. Same as PodID
+	PodUID  = newFieldLabel("Pod UID")
+	PodID   = newFieldLabel("Pod ID")
 	PodName = newFieldLabel("Pod Name")
 
 	// ProcessIndicator Search fields

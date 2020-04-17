@@ -17,9 +17,9 @@ message ProcessIndicator {
     string deployment_id      = 2 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     int64 deployment_state_ts = 10 [(gogoproto.moretags) = "search:\"Deployment State TS,hidden\""];
 
-    string container_name = 3;
+    string container_name = 3 [(gogoproto.moretags) = "search:\"Container Name,hidden\""];
     // Pod name
-    string pod_id         = 4;
+    string pod_id         = 4 [(gogoproto.moretags) = "search:\"Pod ID,hidden\""];
     string pod_uid        = 11 [(gogoproto.moretags) = "search:\"Pod UID,hidden\""];
 
     // The emit timestamp of the message. Used for measuring latency

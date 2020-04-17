@@ -27,4 +27,5 @@ const (
 	Tokens
 	Violations
 	Pods
+	ContainerInstances
 )

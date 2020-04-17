@@ -151,6 +151,15 @@ func waitForTermination(t *testing.T, deploymentName string) {
 	}
 }
 
+// The deploymentName must be copied form the file path passed in
+func setupDeploymentFromFile(t *testing.T, deploymentName, path string) {
+	cmd := exec.Command(`kubectl`, `create`, `-f`, path)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	waitForDeployment(t, deploymentName)
+}
+
 func setupNginxLatestTagDeployment(t *testing.T) {
 	setupDeployment(t, "nginx", nginxDeploymentName)
 }
@@ -161,6 +170,14 @@ func setupDeployment(t *testing.T, image, deploymentName string) {
 	require.NoError(t, err, string(output))
 
 	waitForDeployment(t, deploymentName)
+}
+
+func teardownDeploymentFromFile(t *testing.T, deploymentName, path string) {
+	cmd := exec.Command(`kubectl`, `delete`, `-f`, path, `--ignore-not-found=true`)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+
+	waitForTermination(t, deploymentName)
 }
 
 func teardownDeployment(t *testing.T, deploymentName string) {

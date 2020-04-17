@@ -38,6 +38,7 @@ func init() {
 		schema.AddExtraResolver(resolverName, "policyCount(query: String): Int!"),
 		schema.AddExtraResolver(resolverName, `failingPolicies(query: String, pagination: Pagination): [Policy!]!`),
 		schema.AddExtraResolver(resolverName, `failingPolicyCount(query: String): Int!`),
+		schema.AddExtraResolver(resolverName, `failingRuntimePolicyCount(query: String): Int!`),
 		schema.AddExtraResolver(resolverName, `failingPolicyCounter(query: String): PolicyCounter`),
 		schema.AddExtraResolver(resolverName, "complianceResults(query: String): [ControlResult!]!"),
 		schema.AddExtraResolver(resolverName, "serviceAccountID: String!"),
@@ -343,6 +344,28 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	return int32(set.Cardinality()), nil
 }
 
+// FailingRuntimePolicyCount returns count of all runtime policies failing on this deployment (not just unique)
+func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Context, args RawQuery) (int32, error) {
+	if err := readAlerts(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	query, err = resolver.getFailingAlertsQuery(query)
+	if err != nil {
+		return 0, err
+	}
+	query = search.NewConjunctionQuery(query,
+		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery())
+	alerts, err := resolver.root.ViolationsDataStore.Search(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(alerts)), nil
+}
+
 // FailingPolicyCounter returns a policy counter for all the failed policies.
 func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, args RawQuery) (*PolicyCounterResolver, error) {
 	if err := readAlerts(ctx); err != nil {
@@ -598,7 +621,7 @@ func (resolver *deploymentResolver) ProcessActivityCount(ctx context.Context) (i
 		return 0, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
-	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
+	indicators, err := resolver.root.ProcessIndicatorStore.Search(ctx, query)
 	if err != nil {
 		return 0, err
 	}

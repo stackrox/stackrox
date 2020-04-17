@@ -1,9 +1,10 @@
-package resources
+package utils
 
 import (
 	"fmt"
 	"regexp"
 
+	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -50,11 +51,20 @@ func ParsePodID(str string) (PodID, error) {
 	}, nil
 }
 
-// getPodID returns a pod ID for the given pod object.
-func getPodID(pod *v1.Pod) PodID {
+// GetPodIDFromV1Pod returns a pod ID for the given pod object.
+func GetPodIDFromV1Pod(pod *v1.Pod) PodID {
 	return PodID{
 		Name:      pod.Name,
 		Namespace: pod.Namespace,
 		UID:       pod.UID,
+	}
+}
+
+// GetPodIDFromStoragePod returns a pod ID for the given pod object.
+func GetPodIDFromStoragePod(pod *storage.Pod) PodID {
+	return PodID{
+		Name:      pod.GetName(),
+		Namespace: pod.GetNamespace(),
+		UID:       types.UID(pod.GetId()),
 	}
 }

@@ -34,6 +34,7 @@ import (
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	whitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -80,6 +81,7 @@ type Resolver struct {
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
+	WhiteListDataStore          whitelistStore.DataStore
 	k8sIstioCVEManager          fetcher.K8sIstioCVEManager
 	cveMatcher                  *cveMatcher.CVEMatcher
 }
@@ -118,6 +120,7 @@ func New() *Resolver {
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
+		WhiteListDataStore:          whitelistStore.Singleton(),
 		k8sIstioCVEManager:          fetcher.SingletonManager(),
 		cveMatcher:                  cveMatcher.Singleton(),
 	}
@@ -147,6 +150,7 @@ var (
 	readRoles                  = readAuth(resources.Role)
 	readSecrets                = readAuth(resources.Secret)
 	readServiceAccounts        = readAuth(resources.ServiceAccount)
+	readWhitelists             = readAuth(resources.ProcessWhitelist)
 	writeAlerts                = writeAuth(resources.Alert)
 	writeCompliance            = writeAuth(resources.Compliance)
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)

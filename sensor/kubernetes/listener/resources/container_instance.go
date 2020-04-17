@@ -6,11 +6,12 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
-	podID := getPodID(pod).String()
+	podID := podUtils.GetPodIDFromV1Pod(pod).String()
 	result := make([]*storage.ContainerInstance, len(pod.Status.ContainerStatuses))
 	for i, c := range pod.Status.ContainerStatuses {
 		instID := containerInstanceID(c, pod.Spec.NodeName)

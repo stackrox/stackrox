@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
-	"testing"
 	"time"
 
 	"github.com/machinebox/graphql"
@@ -23,7 +22,7 @@ var (
 	graphqlClient       *graphql.Client
 )
 
-func makeGraphQLRequest(t *testing.T, query string, vars map[string]interface{}, resp interface{}, timeout time.Duration) {
+func makeGraphQLRequest(t testutils.T, query string, vars map[string]interface{}, resp interface{}, timeout time.Duration) {
 	graphQLOnce.Do(func() {
 		httpReq := http.Request{Header: make(http.Header)}
 		httpReq.SetBasicAuth(testutils.RoxUsername(t), testutils.RoxPassword(t))
@@ -34,6 +33,7 @@ func makeGraphQLRequest(t *testing.T, query string, vars map[string]interface{},
 		graphqlClient = graphql.NewClient(fmt.Sprintf("%s/api/graphql", url),
 			graphql.WithHTTPClient(&http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}),
 		)
+		require.NotNil(t, graphqlClient)
 	})
 
 	req := graphql.NewRequest(query)

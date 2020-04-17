@@ -1,12 +1,11 @@
 package resources
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
+	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	v1 "k8s.io/api/core/v1"
 )
@@ -102,8 +101,8 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 					continue
 				}
 				podID := inst.GetContainingPodId()
-				if idx := strings.Index(podID, "."); idx != -1 {
-					podID = podID[:idx]
+				if id, err := podUtils.ParsePodID(podID); err == nil {
+					podID = id.Name
 				}
 
 				result.AddContainerID(id, clusterentities.ContainerMetadata{
@@ -126,8 +125,8 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 					continue
 				}
 				podID := inst.GetContainingPodId()
-				if idx := strings.Index(podID, "."); idx != -1 {
-					podID = podID[:idx]
+				if id, err := podUtils.ParsePodID(podID); err == nil {
+					podID = id.Name
 				}
 
 				result.AddContainerID(id, clusterentities.ContainerMetadata{

@@ -19,24 +19,24 @@ const (
 	apiEndpointEnvVar = "API_ENDPOINT"
 )
 
-func mustGetEnvVar(t *testing.T, envVar string) string {
+func mustGetEnvVar(t T, envVar string) string {
 	value := os.Getenv(envVar)
 	require.NotEmpty(t, value, "Please set %s", envVar)
 	return value
 }
 
 // RoxUsername returns the rox basic auth username (or fails the test if not found).
-func RoxUsername(t *testing.T) string {
+func RoxUsername(t T) string {
 	return mustGetEnvVar(t, usernameEnvVar)
 }
 
 // RoxPassword returns the rox basic auth password (or fails the test if not found).
-func RoxPassword(t *testing.T) string {
+func RoxPassword(t T) string {
 	return mustGetEnvVar(t, passwordEnvVar)
 }
 
 // RoxAPIEndpoint returns the central API endpoint (or fails the test if not found).
-func RoxAPIEndpoint(t *testing.T) string {
+func RoxAPIEndpoint(t T) string {
 	return mustGetEnvVar(t, apiEndpointEnvVar)
 }
 

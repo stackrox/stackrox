@@ -29,11 +29,12 @@ func _() {
 	_ = x[Tokens-18]
 	_ = x[Violations-19]
 	_ = x[Pods-20]
+	_ = x[ContainerInstances-21]
 }
 
-const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPods"
+const _Resolver_name = "ClusterComplianceComlianceControlCVEsDeploymentsGroupsImagesImageComponentsK8sRolesNamespacesNodesNotifiersPoliciesRolesRootSecretsServiceAccountsSubjectsTokensViolationsPodsContainerInstances"
 
-var _Resolver_index = [...]uint8{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 115, 120, 124, 131, 146, 154, 160, 170, 174}
+var _Resolver_index = [...]uint8{0, 7, 17, 33, 37, 48, 54, 60, 75, 83, 93, 98, 107, 115, 120, 124, 131, 146, 154, 160, 170, 174, 192}
 
 func (i Resolver) String() string {
 	if i < 0 || i >= Resolver(len(_Resolver_index)-1) {
