@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -357,8 +358,10 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 	}
 
 	var resp v1.DryRunResponse
-	// Dry runs do not apply to policies with whitelists because they are evaluated through the process indicator pipeline
-	if request.GetFields().GetWhitelistEnabled() {
+
+	// Dry runs do not apply to policies with whitelists or runtime lifecycle stage because they are evaluated
+	// through the process indicator pipeline
+	if request.GetFields().GetWhitelistEnabled() || sliceutils.Find(request.GetLifecycleStages(), storage.LifecycleStage_RUNTIME) != -1 {
 		return &resp, nil
 	}
 
@@ -462,8 +465,9 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	}
 
 	var resp v1.DryRunResponse
-	// Dry runs do not apply to policies with whitelists because they are evaluated through the process indicator pipeline
-	if request.GetFields().GetWhitelistEnabled() {
+	// Dry runs do not apply to policies with whitelists or runtime lifecycle stage because they are evaluated
+	// through the process indicator pipeline
+	if request.GetFields().GetWhitelistEnabled() || sliceutils.Find(request.GetLifecycleStages(), storage.LifecycleStage_RUNTIME) != -1 {
 		return &resp, nil
 	}
 

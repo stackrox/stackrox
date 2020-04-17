@@ -10,6 +10,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
+	sbpMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/mocks"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/status"
@@ -30,8 +32,9 @@ func TestPolicyService(t *testing.T) {
 
 type PolicyServiceTestSuite struct {
 	suite.Suite
-	policies *mocks.MockDataStore
-	tested   Service
+	policies                     *mocks.MockDataStore
+	mockDeploymentMatcherBuilder *matcherMocks.MockBuilder
+	tested                       Service
 
 	envIsolator *testutils.EnvIsolator
 
@@ -46,6 +49,8 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 
 	s.policies = mocks.NewMockDataStore(s.mockCtrl)
 
+	s.mockDeploymentMatcherBuilder = matcherMocks.NewMockBuilder(s.mockCtrl)
+
 	s.tested = New(
 		s.policies,
 		nil,
@@ -53,7 +58,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 		nil,
 		nil,
 		nil,
-		nil,
+		s.mockDeploymentMatcherBuilder,
 		nil,
 		nil,
 		nil,
@@ -144,4 +149,28 @@ func (s *PolicyServiceTestSuite) TestMultipleFailures() {
 	s.Nil(resp)
 	s.Error(err)
 	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
+	ctx := context.Background()
+	runtimePolicy := &storage.Policy{
+		Id:              "1",
+		Name:            "RuntimePolicy",
+		Severity:        storage.Severity_LOW_SEVERITY,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		Categories:      []string{"test"},
+		Fields: &storage.PolicyFields{
+			ProcessPolicy: &storage.ProcessPolicy{
+				Name: "apt-get",
+			},
+			SetPrivileged: &storage.PolicyFields_Privileged{
+				Privileged: true,
+			},
+		},
+	}
+	// Runtime policy dry run exits early and returns empty results
+	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(runtimePolicy).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).Times(1)
+	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
+	s.Nil(err)
+	s.Nil(resp.GetAlerts())
 }
