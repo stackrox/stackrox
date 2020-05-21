@@ -41,9 +41,19 @@ func (suite *IndicatorStoreTestSuite) TearDownSuite() {
 	_ = os.RemoveAll(suite.dir)
 }
 
+func (suite *IndicatorStoreTestSuite) getAllIndicators() ([]*storage.ProcessIndicator, error) {
+	// Get all indicators
+	var retrievedIndicators []*storage.ProcessIndicator
+	err := suite.store.Walk(func(pi *storage.ProcessIndicator) error {
+		retrievedIndicators = append(retrievedIndicators, pi)
+		return nil
+	})
+	return retrievedIndicators, err
+}
+
 func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
 	for _, i := range indicators {
-		retrievedIndicator, exists, err := suite.store.GetProcessIndicator(i.GetId())
+		retrievedIndicator, exists, err := suite.store.Get(i.GetId())
 		suite.NoError(err)
 		suite.True(exists)
 		suite.NotNil(retrievedIndicator)
@@ -51,10 +61,9 @@ func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*storage
 	}
 
 	// Get all indicators
-	retrievedIndicators, err := suite.store.GetProcessIndicators()
+	retrievedIndicators, err := suite.getAllIndicators()
 	suite.NoError(err)
 	suite.ElementsMatch(indicators, retrievedIndicators)
-
 }
 
 func (suite *IndicatorStoreTestSuite) TestIndicators() {
@@ -88,7 +97,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 		Signal:       repeatedSignal,
 	}
 
-	err := suite.store.AddProcessIndicators(indicators...)
+	err := suite.store.UpsertMany(indicators)
 	suite.NoError(err)
 	suite.verifyIndicatorsAre(indicators...)
 
@@ -99,7 +108,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	}
 
 	var walkedIndicators []*storage.ProcessIndicator
-	err = suite.store.WalkAll(func(pi *storage.ProcessIndicator) error {
+	err = suite.store.Walk(func(pi *storage.ProcessIndicator) error {
 		walkedIndicators = append(walkedIndicators, pi)
 		return nil
 	})
@@ -112,7 +121,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	// Adding an indicator with the same secondary key should replace the original one.
-	err = suite.store.AddProcessIndicators(repeatIndicator)
+	err = suite.store.UpsertMany([]*storage.ProcessIndicator{repeatIndicator})
 	suite.NoError(err)
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
@@ -127,7 +136,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
 	for _, i := range []*storage.ProcessIndicator{indicators[1], repeatIndicator} {
-		suite.NoError(suite.store.RemoveProcessIndicators([]string{i.GetId()}))
+		suite.NoError(suite.store.DeleteMany([]string{i.GetId()}))
 		keys, err = suite.store.GetKeysToIndex()
 		suite.NoError(err)
 		suite.Contains(keys, i.GetId())
@@ -138,7 +147,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(err)
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
-	err = suite.store.AddProcessIndicators(indicators...)
+	err = suite.store.UpsertMany(indicators)
 	suite.NoError(err)
 
 	indicatorIDs := make([]string, 0, len(indicators))
@@ -159,19 +168,15 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.NoError(err)
 	suite.NoError(suite.store.AckKeysIndexed(keys...))
 
-	err = suite.store.AddProcessIndicators(indicators...)
+	err = suite.store.UpsertMany(indicators)
 	suite.NoError(err)
 
-	indicators, err = suite.store.GetProcessIndicators()
+	indicators, err = suite.getAllIndicators()
 	suite.NoError(err)
 
 	var ids []string
 	for _, i := range indicators {
 		ids = append(ids, i.GetId())
 	}
-	suite.NoError(suite.store.RemoveProcessIndicators(ids))
-
-	v, err := suite.store.GetProcessInfoToArgs()
-	suite.NoError(err)
-	suite.Len(v, 0)
+	suite.NoError(suite.store.DeleteMany(ids))
 }

@@ -15,8 +15,8 @@ function ViolationsPage({
     history,
     location: { search },
     match: {
-        params: { alertId }
-    }
+        params: { alertId },
+    },
 }) {
     // Handle changes to applied search options.
     const [isViewFiltered, setIsViewFiltered] = useState(false);
@@ -37,20 +37,19 @@ function ViolationsPage({
     const [dialogue, setDialogue] = useState(null);
 
     // When the selected image changes, update the URL.
-    useEffect(
-        () => {
-            const urlSuffix = selectedAlertId ? `/${selectedAlertId}` : '';
-            history.push({
-                pathname: `/main/violations${urlSuffix}`,
-                search
-            });
-        },
-        [selectedAlertId, history, search]
-    );
+    useEffect(() => {
+        const urlSuffix = selectedAlertId ? `/${selectedAlertId}` : '';
+        history.push({
+            pathname: `/main/violations${urlSuffix}`,
+            search,
+        });
+    }, [selectedAlertId, history, search]);
 
     // We need to be able to identify which alerts are runtime and which are not by id.
     const runtimeAlerts = new Set(
-        currentPageAlerts.filter(alert => alert.lifecycleStage === 'RUNTIME').map(alert => alert.id)
+        currentPageAlerts
+            .filter((alert) => alert.lifecycleStage === 'RUNTIME')
+            .map((alert) => alert.id)
     );
 
     return (
@@ -120,7 +119,7 @@ function ViolationsPage({
 ViolationsPage.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    match: ReactRouterPropTypes.match.isRequired
+    match: ReactRouterPropTypes.match.isRequired,
 };
 
 export default ViolationsPage;

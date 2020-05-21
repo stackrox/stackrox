@@ -29,11 +29,11 @@ const PolicyFindings = ({ entityContext = {}, policyId, alerts }) => {
 PolicyFindings.propTypes = {
     entityContext: PropTypes.shape({}),
     policyId: PropTypes.string.isRequired,
-    alerts: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    alerts: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 PolicyFindings.defaultProps = {
-    entityContext: {}
+    entityContext: {},
 };
 
 export default PolicyFindings;

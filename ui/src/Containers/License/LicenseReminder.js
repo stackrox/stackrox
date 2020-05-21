@@ -6,7 +6,7 @@ import { selectors } from 'reducers';
 import { withRouter } from 'react-router-dom';
 import {
     createExpirationMessageWithLink,
-    createExpirationMessageWithoutLink
+    createExpirationMessageWithoutLink,
 } from 'Containers/License/helpers';
 
 import MessageBanner from 'Components/MessageBanner';
@@ -19,16 +19,13 @@ const LicenseReminder = ({ expirationDate, shouldHaveReadPermission }) => {
     const [showReminder, setReminder] = useState(true);
     const [expirationMessage, setExpirationMessage] = useState(null);
 
-    useEffect(
-        () => {
-            if (!expirationDate) {
-                setExpirationMessage(null);
-                return;
-            }
-            setExpirationMessage(createExpirationMessage(expirationDate));
-        },
-        [createExpirationMessage, expirationDate]
-    );
+    useEffect(() => {
+        if (!expirationDate) {
+            setExpirationMessage(null);
+            return;
+        }
+        setExpirationMessage(createExpirationMessage(expirationDate));
+    }, [createExpirationMessage, expirationDate]);
 
     if (!shouldHaveReadPermission('Licenses')) return null;
     if (!showReminder) return null;
@@ -49,19 +46,16 @@ const LicenseReminder = ({ expirationDate, shouldHaveReadPermission }) => {
 
 LicenseReminder.propTypes = {
     expirationDate: PropTypes.string,
-    shouldHaveReadPermission: PropTypes.func.isRequired
+    shouldHaveReadPermission: PropTypes.func.isRequired,
 };
 
 LicenseReminder.defaultProps = {
-    expirationDate: null
+    expirationDate: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     expirationDate: selectors.getLicenseExpirationDate,
-    shouldHaveReadPermission: selectors.shouldHaveReadPermission
+    shouldHaveReadPermission: selectors.shouldHaveReadPermission,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(withRouter(LicenseReminder));
+export default connect(mapStateToProps, null)(withRouter(LicenseReminder));

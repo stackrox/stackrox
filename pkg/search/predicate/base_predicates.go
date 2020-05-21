@@ -3,17 +3,16 @@ package predicate
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoreflect"
-	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -106,6 +105,8 @@ func createSlicePredicate(fullPath string, fieldType reflect.Type, value string)
 }
 
 func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
+	value, isRequired := stringutils.MaybeTrimPrefix(value, builders.RequiredKeyValuePrefix)
+
 	key, value := stringutils.Split2(value, "=")
 
 	keyPred, err := createBasePredicate(fullPath, fieldType.Key(), key)
@@ -117,40 +118,25 @@ func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (
 		return nil, err
 	}
 
-	// This is a hack! It relies on all "required label" policies using negated queries and all "disallowed label"
-	// policies using non-negated queries.  It should definitely change after we get rid of search based policies.
-	matchAll := strings.HasPrefix(key, search.NegationPrefix) || strings.HasPrefix(value, search.NegationPrefix)
-
-	if matchAll {
-		return createMatchAllMapPredicate(keyPred, valPred), nil
+	if isRequired {
+		return createMapRequiredPredicate(keyPred, valPred), nil
 	}
+
 	return createMatchAnyMapPredicate(keyPred, valPred), nil
 }
 
-func createMatchAllMapPredicate(keyPred, valPred internalPredicate) internalPredicate {
-	if keyPred == alwaysTrue && valPred == alwaysTrue {
-		return alwaysTrue
-	}
-
+func createMapRequiredPredicate(keyPred, valPred internalPredicate) internalPredicate {
+	// We will match _unless_ there is at least one element for which
+	// both key and value match.
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
-		if instance.IsZero() || instance.IsNil() {
-			// This is a hack!  This path is used by RequiredMapValue policies so it needs to return true if the
-			// required value isn't in the map even though there were no matches in the empty map.  This should
-			// definitely change after we get rid of search based policies.
-			return &search.Result{}, true
-		}
-
 		// The expectation is that we only support searching on map[string]string for now
 		iter := instance.MapRange()
 		for iter.Next() {
 			key := iter.Key()
 			val := iter.Value()
 			_, keyMatch := keyPred.Evaluate(key)
-			if !keyMatch {
-				return nil, false
-			}
 			_, valueMatch := valPred.Evaluate(val)
-			if !valueMatch {
+			if keyMatch && valueMatch {
 				return nil, false
 			}
 		}
@@ -189,7 +175,7 @@ func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPred
 }
 
 func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
-	boolValue, err := strconv.ParseBool(value)
+	baseMatcher, err := basematchers.ForBool(value)
 	if err != nil {
 		return nil, err
 	}
@@ -197,46 +183,35 @@ func createBoolPredicate(fullPath, value string) (internalPredicate, error) {
 		if instance.Kind() != reflect.Bool {
 			return nil, false
 		}
-		if instance.Bool() != boolValue {
-			return nil, false
+		instanceAsBool := instance.Bool()
+		if baseMatcher(instanceAsBool) {
+			return &search.Result{
+				Matches: formatSingleMatchf(fullPath, "%t", instanceAsBool),
+			}, true
 		}
-		return &search.Result{
-			Matches: formatSingleMatchf(fullPath, "%t", instance.Bool()),
-		}, true
+		return nil, false
 	}), nil
 }
 
 func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum) (internalPredicate, error) {
-	// Map the enum strings to integer values.
-	enumDesc, err := protoreflect.GetEnumDescriptor(enumRef)
+	baseMatcher, numberToName, err := basematchers.ForEnum(value, enumRef)
 	if err != nil {
 		return nil, err
 	}
-	nameToNumber := mapEnumValues(enumDesc)
 
-	// Get the comparator if needed.
-	cmpStr, value := getNumericComparator(value)
-
-	// Translate input value to an int if needed.
-	var int64Value int64
-	int32Value, hasIntValue := nameToNumber[strings.ToLower(value)]
-	if hasIntValue {
-		int64Value = int64(int32Value)
-	} else {
-		return nil, errors.Errorf("unrecognized enum value: %s in %+v", value, nameToNumber)
-	}
-
-	// Generate the comparator for the integer values.
-	comparator, err := intComparator(cmpStr)
-	if err != nil {
-		return nil, err
-	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			if comparator(instance.Int(), int64Value) {
+			instanceAsInt := instance.Int()
+			if baseMatcher(instanceAsInt) {
+				matchedValue := numberToName[int32(instanceAsInt)]
+				// Should basically never happen.
+				if matchedValue == "" {
+					utils.Should(errors.Errorf("enum query matched (%s/%s), but no value in numberToName (%d)", fullPath, value, instanceAsInt))
+					matchedValue = strconv.Itoa(int(instanceAsInt))
+				}
 				return &search.Result{
-					Matches: formatSingleMatchf(fullPath, "%d", instance.Int()),
+					Matches: formatSingleMatchf(fullPath, matchedValue),
 				}, true
 			}
 		}
@@ -245,146 +220,81 @@ func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum)
 }
 
 func createIntPredicate(fullPath, value string) (internalPredicate, error) {
-	cmpStr, value := getNumericComparator(value)
-	comparator, err := intComparator(cmpStr)
-	if err != nil {
-		return nil, err
-	}
-	intValue, err := parseInt(value)
+	baseMatcher, err := basematchers.ForInt(value)
 	if err != nil {
 		return nil, err
 	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			if !comparator(instance.Int(), intValue) {
-				return nil, false
+			instanceAsInt := instance.Int()
+			if baseMatcher(instanceAsInt) {
+				return &search.Result{
+					Matches: formatSingleMatchf(fullPath, "%d", instanceAsInt),
+				}, true
 			}
-			return &search.Result{
-				Matches: formatSingleMatchf(fullPath, "%d", instance.Int()),
-			}, true
 		}
 		return nil, false
 	}), nil
 }
 
 func createUintPredicate(fullPath, value string) (internalPredicate, error) {
-	cmpStr, value := getNumericComparator(value)
-	comparator, err := uintComparator(cmpStr)
-	if err != nil {
-		return nil, err
-	}
-	uintValue, err := parseUint(value)
+	baseMatcher, err := basematchers.ForUint(value)
 	if err != nil {
 		return nil, err
 	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-			if !comparator(instance.Uint(), uintValue) {
-				return nil, false
+			instanceAsUInt := instance.Uint()
+			if baseMatcher(instanceAsUInt) {
+				return &search.Result{
+					Matches: formatSingleMatchf(fullPath, "%d", instanceAsUInt),
+				}, true
 			}
-			return &search.Result{
-				Matches: formatSingleMatchf(fullPath, "%d", instance.Uint()),
-			}, true
 		}
 		return nil, false
 	}), nil
 }
 
 func createFloatPredicate(fullPath, value string) (internalPredicate, error) {
-	cmpStr, value := getNumericComparator(value)
-	comparator, err := floatComparator(cmpStr)
-	if err != nil {
-		return nil, err
-	}
-	floatValue, err := parseFloat(value)
+	baseMatcher, err := basematchers.ForFloat(value)
 	if err != nil {
 		return nil, err
 	}
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		switch instance.Kind() {
 		case reflect.Float32, reflect.Float64:
-			if !comparator(instance.Float(), floatValue) {
-				return nil, false
+			instanceAsFloat := instance.Float()
+			if baseMatcher(instanceAsFloat) {
+				return &search.Result{
+					Matches: formatSingleMatchf(fullPath, "%0.f", instanceAsFloat),
+				}, true
 			}
-			return &search.Result{
-				Matches: formatSingleMatchf(fullPath, "%0.f", instance.Float()),
-			}, true
 		}
 		return nil, false
 	}), nil
 }
 
 func createStringPredicate(fullPath, value string) (internalPredicate, error) {
-	negated := strings.HasPrefix(value, search.NegationPrefix)
-	if negated {
-		value = strings.TrimPrefix(value, search.NegationPrefix)
-	}
-	if strings.HasPrefix(value, search.RegexPrefix) {
-		value = strings.TrimPrefix(value, search.RegexPrefix)
-		return stringRegexPredicate(fullPath, value, negated)
-	} else if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) && len(value) > 1 {
-		return stringExactPredicate(fullPath, value[1:len(value)-1], negated)
-	}
-	return stringPrefixPredicate(fullPath, value, negated)
-}
-
-func stringRegexPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
-	matcher, err := regexp.Compile(value)
+	baseMatcher, err := basematchers.ForString(value)
 	if err != nil {
 		return nil, err
 	}
-	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
-		if regexutils.MatchWholeString(matcher, instance) == negated {
-			return nil, false
-		}
-
-		return &search.Result{
-			Matches: formatSingleMatchf(fullPath, instance),
-		}, true
-	}), nil
+	return wrapStringMatcher(fullPath, baseMatcher), nil
 }
 
-func stringExactPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
-	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
-		if (instance == value) == negated {
-			return nil, false
-		}
-		return &search.Result{
-			Matches: formatSingleMatchf(fullPath, instance),
-		}, true
-	}), nil
-}
-
-func stringPrefixPredicate(fullPath, value string, negated bool) (internalPredicate, error) {
-	return wrapStringPredicate(func(instance string) (*search.Result, bool) {
-		// matched == negated is equivalent to !(matched XOR negated), which is what we want here
-		if (value == search.WildcardString || strings.HasPrefix(instance, value)) == negated {
-			return nil, false
-		}
-		return &search.Result{
-			Matches: formatSingleMatchf(fullPath, instance),
-		}, true
-	}), nil
-}
-
-func wrapStringPredicate(pred func(string) (*search.Result, bool)) internalPredicate {
+func wrapStringMatcher(fullPath string, matcher func(string) bool) internalPredicate {
 	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
 		if instance.Kind() != reflect.String {
 			return nil, false
 		}
-		return pred(instance.String())
+		instanceAsStr := instance.String()
+		if matcher(instance.String()) {
+			return &search.Result{
+				Matches: formatSingleMatchf(fullPath, instanceAsStr),
+			}, true
+		}
+		return nil, false
 	})
-}
-
-func mapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[string]int32) {
-	nameToNumber = make(map[string]int32)
-	for _, v := range enumDesc.GetValue() {
-		lName := strings.ToLower(v.GetName())
-		nameToNumber[lName] = v.GetNumber()
-	}
-	return
 }

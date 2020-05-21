@@ -23,7 +23,7 @@ func TestMapQueries(t *testing.T) {
 	indexer, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
 
-	deploymentIndexer := deploymentIndex.New(indexer)
+	deploymentIndexer := deploymentIndex.New(indexer, indexer)
 
 	d1 := getDeployment("d1", map[string]string{"h1": "h2", "h3": "h4"})
 	d2 := getDeployment("d2", map[string]string{"not-h1": "h2", "h5": "h6", "h7": "h8"})

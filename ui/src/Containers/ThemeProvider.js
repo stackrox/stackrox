@@ -4,7 +4,7 @@ import { useMediaQuery } from 'react-responsive';
 
 const defaultContextData = {
     isDarkMode: false,
-    toggle: () => {}
+    toggle: () => {},
 };
 
 export const ThemeContext = createContext(defaultContextData);
@@ -17,24 +17,21 @@ const useEffectDarkMode = () => {
     const userPrefersDarkMode = useMediaQuery({ query: '(prefers-color-scheme: dark)' });
     const [themeState, setThemeState] = useState({
         isDarkMode: userPrefersDarkMode,
-        hasThemeMounted: false
+        hasThemeMounted: false,
     });
-    useEffect(
-        () => {
-            const darkModeValue = localStorage.getItem(DARK_MODE_KEY);
-            let isDarkMode;
-            // In the very beginning, default to using what the user prefers.
-            if (darkModeValue === null) {
-                isDarkMode = userPrefersDarkMode;
-            } else {
-                // It's always either 'true' or 'false', but if it's something unexpected,
-                // default to light mode.
-                isDarkMode = darkModeValue === 'true';
-            }
-            setThemeState({ isDarkMode, hasThemeMounted: true });
-        },
-        [userPrefersDarkMode]
-    );
+    useEffect(() => {
+        const darkModeValue = localStorage.getItem(DARK_MODE_KEY);
+        let isDarkMode;
+        // In the very beginning, default to using what the user prefers.
+        if (darkModeValue === null) {
+            isDarkMode = userPrefersDarkMode;
+        } else {
+            // It's always either 'true' or 'false', but if it's something unexpected,
+            // default to light mode.
+            isDarkMode = darkModeValue === 'true';
+        }
+        setThemeState({ isDarkMode, hasThemeMounted: true });
+    }, [userPrefersDarkMode]);
 
     return [themeState, setThemeState];
 };
@@ -47,7 +44,7 @@ const ThemeProvider = ({ children }) => {
         return <div />;
     }
 
-    const getTheme = isDarkMode => (isDarkMode ? 'theme-dark' : 'theme-light');
+    const getTheme = (isDarkMode) => (isDarkMode ? 'theme-dark' : 'theme-light');
     document.body.classList.add(getTheme(themeState.isDarkMode));
     document.body.classList.remove(getTheme(!themeState.isDarkMode));
 
@@ -66,7 +63,7 @@ const ThemeProvider = ({ children }) => {
         <ThemeContext.Provider
             value={{
                 isDarkMode: themeState.isDarkMode,
-                toggle
+                toggle,
             }}
         >
             {children}
@@ -75,7 +72,7 @@ const ThemeProvider = ({ children }) => {
 };
 
 ThemeProvider.propTypes = {
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export { ThemeProvider, useTheme };

@@ -1,13 +1,85 @@
-
+import groups.BAT
 import io.stackrox.proto.api.v1.AuthServiceOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
+import org.junit.Assume
+import org.junit.experimental.categories.Category
 import services.AuthService
-import org.apache.commons.lang.StringUtils
+import services.BaseService
 
+@Category(BAT)
 class AuthServiceTest extends BaseSpecification {
-    def "Verify Auth Token is used"() {
-    when:
+
+    private static Map<String, List<String>> getAttrMap(List<AuthServiceOuterClass.UserAttribute> attrList) {
+        attrList.collectEntries {
+            [it.key, it.valuesList]
+        }
+    }
+
+    def "Verify response for basic auth"() {
+        when:
+        BaseService.useBasicAuth()
         AuthServiceOuterClass.AuthStatus status = AuthService.getAuthStatus()
-    then:
-        assert !(StringUtils.isEmpty(status.getUserId()))
+
+        then:
+        assert status
+        assert status.userId == "admin"
+
+        status.authProvider.withDo {
+            assert name == "Login with username/password"
+            assert id == "4df1b98c-24ed-4073-a9ad-356aec6bb62d"
+            assert type == "basic"
+        }
+
+        status.userInfo.withDo {
+            assert permissions.globalAccess == RoleOuterClass.Access.READ_WRITE_ACCESS
+            assert permissions.resourceToAccessCount > 0
+            permissions.resourceToAccessMap.each {
+                assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+            }
+            def adminRole = rolesList.find { it.name == "Admin" }
+            assert adminRole
+            assert adminRole.globalAccess == RoleOuterClass.Access.READ_WRITE_ACCESS
+            assert adminRole.resourceToAccessCount > 0
+            adminRole.resourceToAccessMap.each {
+                assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+            }
+        }
+
+        def attrMap = getAttrMap(status.userAttributesList)
+        assert attrMap["username"] == ["admin"]
+        assert attrMap["role"] == ["Admin"]
+    }
+
+    def "Verify response for auth token"() {
+        when:
+        Assume.assumeTrue(allAccessToken != null)
+        BaseService.useApiToken(allAccessToken)
+
+        AuthServiceOuterClass.AuthStatus status = AuthService.getAuthStatus()
+
+        then:
+        assert status
+        assert status.userId.startsWith("auth-token:")
+        assert !status.authProvider.id
+
+        status.userInfo.withDo {
+            assert permissions.globalAccess == RoleOuterClass.Access.NO_ACCESS
+            assert permissions.resourceToAccessCount > 0
+            permissions.resourceToAccessMap.each {
+                assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+            }
+
+            def tokenRole = rolesList.find { it.name.startsWith("Test Automation Role - ") }
+            assert tokenRole
+            assert tokenRole.globalAccess == RoleOuterClass.Access.NO_ACCESS
+            assert tokenRole.resourceToAccessCount > 0
+            tokenRole.resourceToAccessMap.each {
+                assert it.value == RoleOuterClass.Access.READ_WRITE_ACCESS
+            }
+        }
+
+        def attrMap = getAttrMap(status.userAttributesList)
+        assert attrMap["name"][0].startsWith("allAccessToken-")
+        assert attrMap["role"][0].startsWith("Test Automation Role - ")
     }
 }

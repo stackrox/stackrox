@@ -37,7 +37,7 @@ const WorkflowListPage = ({
     selection,
     setSelection,
     renderRowActionButtons,
-    history
+    history,
 }) => {
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
@@ -45,8 +45,8 @@ const WorkflowListPage = ({
     const searchCategories = [searchCategoryTypes[entityListType]];
     const searchQueryOptions = {
         variables: {
-            categories: searchCategories
-        }
+            categories: searchCategories,
+        },
     };
     const { data: searchData } = useQuery(SEARCH_OPTIONS_QUERY, searchQueryOptions);
     const searchOptions = (searchData && searchData.searchOptions) || [];
@@ -80,13 +80,13 @@ const WorkflowListPage = ({
     const defaultExpandedRows = showSubrows ? getDefaultExpandedRows(displayData) : null;
 
     function onSortedChange(newSort, column) {
-        const workflowSort = newSort.map(sortItem => {
+        const workflowSort = newSort.map((sortItem) => {
             const id = sortFields[sortItem.id] || column.sortField;
             setSortFields({ [sortItem.id]: id, ...sortFields });
             const { desc } = sortItem;
             return {
                 id,
-                desc
+                desc,
             };
         });
 
@@ -126,9 +126,9 @@ WorkflowListPage.propTypes = {
     queryOptions: PropTypes.shape({
         variables: PropTypes.shape({
             pagination: PropTypes.shape({
-                limit: PropTypes.number
-            })
-        })
+                limit: PropTypes.number,
+            }),
+        }),
     }),
     entityListType: PropTypes.string.isRequired,
     getTableColumns: PropTypes.func.isRequired,
@@ -145,7 +145,7 @@ WorkflowListPage.propTypes = {
     setSelection: PropTypes.func,
     renderRowActionButtons: PropTypes.func,
     history: ReactRouterPropTypes.history.isRequired,
-    totalResults: PropTypes.number
+    totalResults: PropTypes.number,
 };
 
 WorkflowListPage.defaultProps = {
@@ -164,7 +164,7 @@ WorkflowListPage.defaultProps = {
     selection: [],
     setSelection: null,
     renderRowActionButtons: null,
-    totalResults: 0
+    totalResults: 0,
 };
 
 export default withRouter(WorkflowListPage);

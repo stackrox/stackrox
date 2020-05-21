@@ -40,3 +40,14 @@ func (d *deploymentStore) getDeployment(id string) *storage.Deployment {
 
 	return d.deploymentMap[id]
 }
+
+func (d *deploymentStore) getAll() []*storage.Deployment {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	deployments := make([]*storage.Deployment, 0, len(d.deploymentMap))
+	for _, deployment := range d.deploymentMap {
+		deployments = append(deployments, deployment)
+	}
+	return deployments
+}

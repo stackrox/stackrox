@@ -8,10 +8,10 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 var (
@@ -32,9 +32,8 @@ func Command() *cobra.Command {
 	}
 	c.AddCommand(LogLevelCommand())
 	c.AddCommand(DumpCommand())
-	if features.DiagnosticBundle.Enabled() {
-		c.AddCommand(DownloadDiagnosticsCommand())
-	}
+	c.AddCommand(DownloadDiagnosticsCommand())
+
 	flags.AddTimeout(c)
 	return c
 }
@@ -50,13 +49,13 @@ func LogLevelCommand() *cobra.Command {
 		Use:   "log",
 		Short: `"log" to get current log level; "log --level=<level>" to set log level`,
 		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			timeout := flags.Timeout(c)
 			if level == "" {
 				return getLogLevel(modules, timeout)
 			}
 			return setLogLevel(level, modules, timeout)
-		},
+		}),
 	}
 	c.Flags().StringVarP(&level, "level", "l", "",
 		fmt.Sprintf("the log level to set the modules to (%s) ", levelList))

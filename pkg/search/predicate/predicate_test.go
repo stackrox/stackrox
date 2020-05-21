@@ -323,30 +323,12 @@ func TestSearchPredicate(t *testing.T) {
 			expectation: true,
 		},
 		{
-			name: "negated map query returns false if any map entry does not match",
-			query: search.NewQueryBuilder().
-				AddMapQuery(search.ImageLabel, search.ExactMatchString("labelOne"), search.NegateQueryString(search.ExactMatchString("zzz"))).
-				ProtoQuery(),
-			factory:     imageFactory,
-			object:      passingImage,
-			expectation: false,
-		},
-		{
 			name: "negated map query returns true if all map entries match",
 			query: search.NewQueryBuilder().
 				AddMapQuery(search.ImageLabel, search.RegexQueryString("label.*"), search.NegateQueryString(search.RegexQueryString("zzz.*"))).
 				ProtoQuery(),
 			factory:     imageFactory,
 			object:      passingImage,
-			expectation: true,
-		},
-		{
-			name: "negated map query returns true for an empty map",
-			query: search.NewQueryBuilder().
-				AddMapQuery(search.Label, search.ExactMatchString("key"), search.NegateQueryString(search.ExactMatchString("value"))).
-				ProtoQuery(),
-			factory:     deploymentFactory,
-			object:      deployment,
 			expectation: true,
 		},
 		{

@@ -1,8 +1,7 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/central/globaldb"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -13,7 +12,7 @@ var (
 )
 
 func initialize() {
-	ge = newGraphEvaluator(namespaceDataStore.New(globaldb.GetGlobalDB()))
+	ge = newGraphEvaluator(namespaceDataStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

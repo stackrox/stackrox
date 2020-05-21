@@ -26,7 +26,7 @@ Link.propTypes = {
     url: PropTypes.string.isRequired,
     pdf: PropTypes.bool,
     className: PropTypes.string,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 Link.defaultProps = {
@@ -34,7 +34,7 @@ Link.defaultProps = {
     text: null,
     pdf: false,
     className: '',
-    dataTestId: null
+    dataTestId: null,
 };
 
 export default Link;

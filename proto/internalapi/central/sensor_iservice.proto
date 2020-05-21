@@ -30,15 +30,16 @@ message ReassessPolicies {}
 
 message MsgToSensor {
     oneof msg {
-        SensorEnforcement            enforcement                    = 1;
-        ScrapeCommand                scrape_command                 = 2;
-        NetworkPoliciesCommand       network_policies_command       = 3;
-        ClusterConfig                cluster_config                 = 4;
-        SensorUpgradeTrigger         sensor_upgrade_trigger         = 5;
-        PullTelemetryDataRequest     telemetry_data_request         = 6;
-        PolicySync                   policy_sync                    = 7;
-        ReassessPolicies             reassess_policies              = 8;
-        WhitelistSync                whitelist_sync                 = 9;
+        SensorEnforcement              enforcement                        =  1;
+        ScrapeCommand                  scrape_command                     =  2;
+        NetworkPoliciesCommand         network_policies_command           =  3;
+        ClusterConfig                  cluster_config                     =  4;
+        SensorUpgradeTrigger           sensor_upgrade_trigger             =  5;
+        PullTelemetryDataRequest       telemetry_data_request             =  6;
+        PolicySync                     policy_sync                        =  7;
+        ReassessPolicies               reassess_policies                  =  8;
+        WhitelistSync                  whitelist_sync                     =  9;
+        CancelPullTelemetryDataRequest cancel_pull_telemetry_data_request = 10;
     }
 }
 

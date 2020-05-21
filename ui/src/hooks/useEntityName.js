@@ -1,5 +1,5 @@
-import { entityNameQueryMap } from 'modules/queryMap';
-import getEntityName from 'modules/getEntityName';
+import { entityNameQueryMap } from 'utils/queryMap';
+import getEntityName from 'utils/getEntityName';
 import isGQLLoading from 'utils/gqlLoading';
 import { useQuery } from 'react-apollo';
 
@@ -9,11 +9,11 @@ function useEntityName(entityType, entityId, skip) {
     const nameQueryOptions = {
         options: {
             fetchPolicy: 'cache-first',
-            skip
+            skip,
         },
         variables: {
-            id: entityId
-        }
+            id: entityId,
+        },
     };
     const { loading, error, data } = useQuery(entityNameQuery, nameQueryOptions);
 
@@ -25,7 +25,7 @@ function useEntityName(entityType, entityId, skip) {
     return {
         loading,
         error,
-        entityName
+        entityName,
     };
 }
 

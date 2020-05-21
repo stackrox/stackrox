@@ -10,10 +10,10 @@ import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
-import parseURL from 'modules/URLParser';
+import parseURL from 'utils/URLParser';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { WorkflowState } from 'modules/WorkflowState';
-import { useCaseEntityMap } from 'modules/entityRelationships';
+import { WorkflowState } from 'utils/WorkflowState';
+import { useCaseEntityMap } from 'utils/entityRelationships';
 import { exportCvesAsCsv } from 'services/VulnerabilitiesService';
 
 import WorkflowSidePanel from './WorkflowSidePanel';

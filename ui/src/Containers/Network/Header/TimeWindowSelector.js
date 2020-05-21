@@ -24,7 +24,7 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
                 onChange={selectTimeWindow}
                 value={activityTimeWindow}
             >
-                {timeWindows.map(window => (
+                {timeWindows.map((window) => (
                     <option key={window} value={window}>
                         {window}
                     </option>
@@ -39,18 +39,15 @@ const TimeWindowSelector = ({ setActivityTimeWindow, activityTimeWindow }) => {
 
 TimeWindowSelector.propTypes = {
     activityTimeWindow: PropTypes.string.isRequired,
-    setActivityTimeWindow: PropTypes.func.isRequired
+    setActivityTimeWindow: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    activityTimeWindow: selectors.getNetworkActivityTimeWindow
+    activityTimeWindow: selectors.getNetworkActivityTimeWindow,
 });
 
 const mapDispatchToProps = {
-    setActivityTimeWindow: pageActions.setNetworkActivityTimeWindow
+    setActivityTimeWindow: pageActions.setNetworkActivityTimeWindow,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(TimeWindowSelector);
+export default connect(mapStateToProps, mapDispatchToProps)(TimeWindowSelector);

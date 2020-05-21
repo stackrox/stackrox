@@ -7,16 +7,16 @@ import dialogueStages from 'Containers/Network/Dialogue/dialogueStages';
 export const types = {
     SET_DIALOGUE_STAGE: 'network/SET_DIALOGUE_STAGE',
     SET_NETWORK_NOTIFIERS: 'network/SET_NETWORK_NOTIFIERS',
-    SEND_POLICY_MODIFICATION_NOTIFICATION: 'network/SEND_POLICY_MODIFICATION_NOTIFICATION'
+    SEND_POLICY_MODIFICATION_NOTIFICATION: 'network/SEND_POLICY_MODIFICATION_NOTIFICATION',
 };
 
 // Actions
 //---------
 
 export const actions = {
-    setNetworkDialogueStage: stage => ({ type: types.SET_DIALOGUE_STAGE, stage }),
-    setNetworkNotifiers: notifierIds => ({ type: types.SET_NETWORK_NOTIFIERS, notifierIds }),
-    notifyNetworkPolicyModification: () => ({ type: types.SEND_POLICY_MODIFICATION_NOTIFICATION })
+    setNetworkDialogueStage: (stage) => ({ type: types.SET_DIALOGUE_STAGE, stage }),
+    setNetworkNotifiers: (notifierIds) => ({ type: types.SET_NETWORK_NOTIFIERS, notifierIds }),
+    notifyNetworkPolicyModification: () => ({ type: types.SEND_POLICY_MODIFICATION_NOTIFICATION }),
 };
 
 // Reducers
@@ -39,7 +39,7 @@ const selectedNetworkNotifiers = (state = [], action) => {
 
 const reducer = combineReducers({
     networkDialogueStage,
-    selectedNetworkNotifiers
+    selectedNetworkNotifiers,
 });
 
 export default reducer;
@@ -48,10 +48,10 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
-const getNetworkDialogueStage = state => state.networkDialogueStage;
-const getNetworkNotifiers = state => state.selectedNetworkNotifiers;
+const getNetworkDialogueStage = (state) => state.networkDialogueStage;
+const getNetworkNotifiers = (state) => state.selectedNetworkNotifiers;
 
 export const selectors = {
     getNetworkDialogueStage,
-    getNetworkNotifiers
+    getNetworkNotifiers,
 };

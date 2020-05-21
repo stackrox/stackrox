@@ -19,7 +19,7 @@ import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import entityTypes, {
     resourceTypes,
-    resourceTypeToApplicableStandards
+    resourceTypeToApplicableStandards,
 } from 'constants/entityTypes';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
@@ -30,7 +30,7 @@ function processData(data, entityId) {
         labels: [],
         name: '',
         clusterName: '',
-        id: entityId
+        id: entityId,
     };
 
     if (!data || !data.results || !data.results.metadata) return defaultValue;
@@ -39,7 +39,7 @@ function processData(data, entityId) {
 
     return {
         ...rest,
-        ...metadata
+        ...metadata,
     };
 }
 
@@ -51,7 +51,7 @@ const NamespacePage = ({
     entityListType2,
     entityId2,
     query,
-    sidePanelMode
+    sidePanelMode,
 }) => {
     const searchParam = useContext(searchContext);
     return (
@@ -69,7 +69,7 @@ const NamespacePage = ({
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
                         Namespace: namespace.name,
-                        ...query[searchParam]
+                        ...query[searchParam],
                     };
                     contents = (
                         <section
@@ -136,7 +136,7 @@ const NamespacePage = ({
                                     <Labels labels={labels} />
                                 </Widget>
                                 {resourceTypeToApplicableStandards[resourceTypes.NAMESPACE].map(
-                                    standardType => (
+                                    (standardType) => (
                                         <ComplianceByStandard
                                             key={standardType}
                                             standardType={standardType}

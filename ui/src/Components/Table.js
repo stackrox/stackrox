@@ -27,7 +27,7 @@ class Table extends Component {
         page: PropTypes.number,
         trClassName: PropTypes.string,
         showThead: PropTypes.bool,
-        defaultSorted: PropTypes.arrayOf(PropTypes.object)
+        defaultSorted: PropTypes.arrayOf(PropTypes.object),
     };
 
     static defaultProps = {
@@ -40,13 +40,13 @@ class Table extends Component {
         page: 0,
         trClassName: '',
         showThead: true,
-        defaultSorted: []
+        defaultSorted: [],
     };
 
     getTheadProps = () => {
         if (!this.props.showThead) {
             return {
-                style: { display: 'none' }
+                style: { display: 'none' },
             };
         }
         // returns an object, if there are no styles to override
@@ -54,7 +54,7 @@ class Table extends Component {
     };
 
     getTrGroupProps = (state, rowInfo) => ({
-        className: rowInfo && rowInfo.original ? this.props.trClassName : 'hidden'
+        className: rowInfo && rowInfo.original ? this.props.trClassName : 'hidden',
     });
 
     getTrProps = (state, rowInfo) => {
@@ -76,21 +76,21 @@ class Table extends Component {
                     this.props.onRowClick(rowInfo.original);
                 }
             },
-            className: classes.join(' ')
+            className: classes.join(' '),
         };
     };
 
-    getColumnClassName = column => column.className || defaultColumnClassName;
+    getColumnClassName = (column) => column.className || defaultColumnClassName;
 
-    getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
+    getHeaderClassName = (column) => column.headerClassName || defaultHeaderClassName;
 
     render() {
         const { rows, columns, defaultSorted, manual, ...rest } = this.props;
         if (!columns || !columns.length) return null;
-        columns.forEach(column =>
+        columns.forEach((column) =>
             Object.assign(column, {
                 className: this.getColumnClassName(column),
-                headerClassName: this.getHeaderClassName(column)
+                headerClassName: this.getHeaderClassName(column),
             })
         );
         return (

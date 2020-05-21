@@ -21,7 +21,9 @@ func NewModifiedGraph(graph RWGraph) *ModifiedGraph {
 	}
 }
 
-// ModifiedGraph provides a view of a Graph that tracks changes.
+// ModifiedGraph provides a view of an RWGraph that tracks changes.
+// Anytime a key is modified in the graph, the affected values are recorded, and the changes can be played back onto
+// an 'applyableGraph' with the Apply function.
 type ModifiedGraph struct {
 	RWGraph
 

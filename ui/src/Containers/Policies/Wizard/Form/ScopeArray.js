@@ -10,15 +10,15 @@ const removeFieldHandler = (fields, index) => () => {
     fields.remove(index);
 };
 
-const addFieldHandler = fields => () => {
+const addFieldHandler = (fields) => () => {
     fields.push({});
 };
 
 const ScopeArray = ({ fields, clusters, deployments, isDeploymentScope }) => {
     const clusterOptions = [{ label: 'Cluster', value: '' }].concat(
-        clusters.map(cluster => ({
+        clusters.map((cluster) => ({
             label: cluster.name,
-            value: cluster.id
+            value: cluster.id,
         }))
     );
 
@@ -26,7 +26,7 @@ const ScopeArray = ({ fields, clusters, deployments, isDeploymentScope }) => {
         ? [{ label: 'Deployment', value: '' }].concat(
               deployments.map(({ deployment }) => ({
                   label: deployment.name,
-                  value: deployment.name
+                  value: deployment.name,
               }))
           )
         : [];
@@ -53,19 +53,16 @@ const ScopeArray = ({ fields, clusters, deployments, isDeploymentScope }) => {
 
 ScopeArray.propTypes = {
     fields: PropTypes.shape({
-        map: PropTypes.func.isRequired
+        map: PropTypes.func.isRequired,
     }).isRequired,
     clusters: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     deployments: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    isDeploymentScope: PropTypes.bool.isRequired
+    isDeploymentScope: PropTypes.bool.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters,
-    deployments: selectors.getDeployments
+    deployments: selectors.getDeployments,
 });
 
-export default connect(
-    mapStateToProps,
-    {}
-)(ScopeArray);
+export default connect(mapStateToProps, {})(ScopeArray);

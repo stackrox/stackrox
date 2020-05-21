@@ -1,8 +1,6 @@
 import static com.jayway.restassured.RestAssured.given
 
 import spock.lang.Shared
-import org.junit.Assume
-import services.FeatureFlagService
 import com.jayway.restassured.config.RestAssuredConfig
 import com.jayway.restassured.config.SSLConfig
 import groups.BAT
@@ -31,7 +29,6 @@ class DiagnosticBundleTest extends BaseSpecification {
     private GenerateTokenResponse noAccessToken
 
     def setupSpec() {
-        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_DIAGNOSTIC_BUNDLE"))
         disableAuthzPlugin()
 
         adminToken = services.ApiTokenService.generateToken(UUID.randomUUID().toString(), "Admin")

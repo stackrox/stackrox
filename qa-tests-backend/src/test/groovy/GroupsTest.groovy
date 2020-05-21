@@ -58,14 +58,14 @@ class GroupsTest extends BaseSpecification {
     }
 
     @Unroll
-    def "Test that GetGroup and GetGroups work correctly with query args (#authProvider, #key, #value)"() {
+    def "Test that GetGroup and GetGroups work correctly with query args (#authProviderId, #key, #value)"() {
         when:
         "A query is made for GetGroup and GetGroups with the given params"
         def propsBuilder = GroupProperties.newBuilder()
         def reqBuilder = GetGroupsRequest.newBuilder()
-        if (authProvider != null) {
-            propsBuilder.setAuthProviderId(authProvider)
-            reqBuilder.setAuthProviderId(authProvider)
+        if (authProviderId != null) {
+            propsBuilder.setAuthProviderId(PROVIDERS[authProviderId])
+            reqBuilder.setAuthProviderId(PROVIDERS[authProviderId])
         }
         if (key != null) {
             propsBuilder.setKey(key)
@@ -98,12 +98,12 @@ class GroupsTest extends BaseSpecification {
 
         where:
         "Data inputs are"
-        authProvider | key   | value | expectGroup | expectGroups
-        null         | null  | null  | "Group0"    | ["Group0", "Group1", "Group2", "Group3"]
-        PROVIDERS[0] | null  | null  | "Group1"    | ["Group1", "Group2"]
-        null         | "foo" | "bar" | null        | ["Group2", "Group3"]
-        PROVIDERS[0] | "foo" | "bar" | "Group2"    | ["Group2"]
-        PROVIDERS[1] | null  | null  | null        | ["Group3"]
-        PROVIDERS[1] | "foo" | "bar" | "Group3"    | ["Group3"]
+        authProviderId | key   | value | expectGroup | expectGroups
+        null           | null  | null  | "Group0"    | ["Group0", "Group1", "Group2", "Group3"]
+        0              | null  | null  | "Group1"    | ["Group1", "Group2"]
+        null           | "foo" | "bar" | null        | ["Group2", "Group3"]
+        0              | "foo" | "bar" | "Group2"    | ["Group2"]
+        1              | null  | null  | null        | ["Group3"]
+        1              | "foo" | "bar" | "Group3"    | ["Group3"]
     }
 }

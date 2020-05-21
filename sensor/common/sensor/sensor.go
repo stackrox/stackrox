@@ -2,7 +2,6 @@ package sensor
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
@@ -31,7 +29,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image"
-	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
 
@@ -106,29 +103,11 @@ func (s *Sensor) startProfilingServer() *http.Server {
 }
 
 func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error) {
-	kernelObjsBaseURL := fmt.Sprintf("https://%s/kernel-objects", centralEndpoint)
-	serverName, _, _, err := netutil.ParseEndpoint(centralEndpoint)
-	if err != nil {
-		return nil, errors.Wrapf(err, "parsing central endpoint %q", centralEndpoint)
-	}
-	if netutil.IsIPAddress(serverName) {
-		serverName = mtls.CentralSubject.Hostname()
-	}
+	kernelObjsBaseURL := "/kernel-objects"
 
-	tlsConfig, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
-		UseClientCert: true,
-		ServerName:    serverName,
-	})
+	transport, err := clientconn.AuthenticatedHTTPTransport(centralEndpoint, mtls.CentralSubject, nil, clientconn.UseServiceCertToken(true))
 	if err != nil {
-		return nil, errors.Wrap(err, "instantiating TLS config for HTTP access to central")
-	}
-
-	tlsConfig.NextProtos = []string{"http/1.1", "http/1.0"}
-	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
-	if err := http2.ConfigureTransport(transport); err != nil {
-		log.Warnf("Could not configure transport for HTTP/2 usage: %v", err)
+		return nil, errors.Wrap(err, "instantiating central HTTP transport")
 	}
 
 	kernelObjsClient := &http.Client{

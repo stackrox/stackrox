@@ -2,6 +2,7 @@ package compact
 
 import (
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
 
 	"github.com/dgraph-io/badger"
@@ -25,9 +26,9 @@ func Command() *cobra.Command {
 		Use:   "compact",
 		Short: "Compact allows you to aggressively compact a DB offline",
 		Long:  "Compact allows you to aggressively compact a DB offline",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return compact(path, discardRatio, iterations)
-		},
+		}),
 	}
 	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().Float64Var(&discardRatio, "discard-ratio", 0.5, "Specify the required amount of data to be rewritten for GC to rewrite a value log. Lower is more aggressive")

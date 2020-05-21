@@ -2,12 +2,32 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+- Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
+- UI: In Platform Configuration > Interactions: 1. replace "AWS ECR" with "Amazon ECR" and 2. replace "S3" (and "AWS S3" placeholder for Integration Name in New Integration pane) with "Amazon S3" (ROX-4912)
 
+## [43.0]
+- Detection APIs were not properly handling suppressed CVEs and they were being included in evaluation. This is now resolved.
+- Previously, the Scanner deployment did not mount the additional CA secret and thus would fail to scan self-signed registries. This is resolved.
+- AWS S3 and AWS ECR integrations now accept an endpoint to work with non public AWS endpoints.
+- UI: Fixed the display of the Privileged field when viewing a policy in the Vulnerability Management section (ROX-4752)
+- API changes/deprecations related to supporting multiple roles:
+  - `GenerateToken(/v1/apitokens/generate)`: the singular `role` field in the request field is deprecated; please use
+    the array field `roles`.
+  - `GetAPIToken(/v1/apitokens/{id})`, `GetAPITokens(/v1/apitokens)`: the singular `role` field in the response payload
+    is deprecated; please use the array field `roles`.
+  - Audit logs: the singular `user.role` field in the audit message payload is deprecated; please use the singular
+    `user.permissions` field for the effective permissions of the user, and the array field `user.roles` for all the
+    the individual roles associated with a user.
+- The Compliance container within the Collector daemonset now has a hostpath of '/', which is needed to be able to read 
+  configuration files anywhere on the host. This requires the allowedHostVolumes within the stackrox-collector PSP to allow '/' to be mounted.
+  For added security, the PSP has set '/' as readonly and the Collector container's docker socket mount has also been set to readonly.
+  
 ## [42.0]
 - All `/v1/` API endpoints now support pretty-printing.  Make requests with the `?pretty` path parameter to receive pretty-printed json responses.
 - UI: added "Deployment Name" property in side panel for Deployment Details on Violations and Risk pages.
 - UI: In the Risk view, the URL now includes any search filters applied. You can now share the link and see the same filtered view.
 - UI: In the Config Management section, fixed a UI crash issue when going from a single image view within containing context, like a single cluster, down to that image's deployments. (ROX-4543)
+- UI: In the Platform Configuration -> Clusters view, the text “On the latest version” has been changed to “Up to date with Central version” (ROX-4739).
 - `SuppressCVEs(/v1/cves/suppress)` endpoint now only supports cve suppression/snoozing.
 - `SuppressCVEs(/v1/cves/suppress)` endpoint now supports cve suppression/snoozing for specific duration.
 - Added `UnsuppressCVEs(/v1/cves/unsuppress)` endpoint to support cve un-suppression/un-snoozing.

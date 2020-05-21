@@ -15,24 +15,26 @@ const SideBar = ({
     header,
     rows,
     selected,
-    addRowButton
+    addRowButton,
 }) => {
     function onRowSelectHandler() {
-        return row => {
+        return (row) => {
             onSelectRow(row);
-            onCancel();
+            if (onCancel) {
+                onCancel();
+            }
         };
     }
 
     function onDeleteHandler(row) {
-        return e => {
+        return (e) => {
             e.stopPropagation();
             onDelete(row);
         };
     }
 
     function renderRowActionButtons(row) {
-        if (row.noAction) return null;
+        if (!onDelete || row.noAction) return null;
         return (
             <div className="border-2 border-base-400 bg-base-100 flex">
                 <RowActionButton
@@ -49,14 +51,14 @@ const SideBar = ({
         {
             id: 'name',
             accessor: 'name',
-            className: `${defaultColumnClassName}`
+            className: `${defaultColumnClassName}`,
         },
         {
             accessor: '',
             headerClassName: 'hidden',
             className: rtTrActionsClassName,
-            Cell: ({ original }) => renderRowActionButtons(original)
-        }
+            Cell: ({ original }) => renderRowActionButtons(original),
+        },
     ];
     return (
         <Panel
@@ -88,13 +90,15 @@ SideBar.propTypes = {
     selected: PropTypes.shape({}),
     onSelectRow: PropTypes.func.isRequired,
     addRowButton: PropTypes.node.isRequired,
-    onCancel: PropTypes.func.isRequired,
-    onDelete: PropTypes.func.isRequired,
-    type: PropTypes.string.isRequired
+    onCancel: PropTypes.func,
+    onDelete: PropTypes.func,
+    type: PropTypes.string.isRequired,
 };
 
 SideBar.defaultProps = {
-    selected: null
+    onCancel: null,
+    onDelete: null,
+    selected: null,
 };
 
 export default SideBar;

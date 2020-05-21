@@ -21,9 +21,9 @@ func newRoxGatherer(central *CentralGatherer, cluster *ClusterGatherer) *RoxGath
 }
 
 // Gather returns telemetry information about this Rox
-func (c *RoxGatherer) Gather(ctx context.Context) *data.TelemetryData {
+func (c *RoxGatherer) Gather(ctx context.Context, pullFromSensors bool) *data.TelemetryData {
 	return &data.TelemetryData{
 		Central:  c.central.Gather(),
-		Clusters: c.cluster.Gather(ctx),
+		Clusters: c.cluster.Gather(ctx, pullFromSensors),
 	}
 }

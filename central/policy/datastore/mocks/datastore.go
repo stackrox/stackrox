@@ -215,3 +215,19 @@ func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(ctx, request interface
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).DeletePolicyCategory), ctx, request)
 }
+
+// ImportPolicies mocks base method
+func (m *MockDataStore) ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) ([]*v1.ImportPolicyResponse, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ImportPolicies", ctx, policies, overwrite)
+	ret0, _ := ret[0].([]*v1.ImportPolicyResponse)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ImportPolicies indicates an expected call of ImportPolicies
+func (mr *MockDataStoreMockRecorder) ImportPolicies(ctx, policies, overwrite interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImportPolicies", reflect.TypeOf((*MockDataStore)(nil).ImportPolicies), ctx, policies, overwrite)
+}

@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -175,7 +174,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
 	suite.makeAlertsMockReturn()
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := protoutils.CloneStorageAlert(alert)
+	clonedAlert := alert.Clone()
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -188,7 +187,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := protoutils.CloneStorageAlert(alert)
+	clonedAlert := alert.Clone()
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -206,7 +205,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert()
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
-	clonedAlert := protoutils.CloneStorageAlert(alert)
+	clonedAlert := alert.Clone()
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
 	suite.NotEqual(clonedAlert, alert)
 	suite.Len(alert.GetProcessViolation().GetProcesses(), 1)

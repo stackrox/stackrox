@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -22,10 +23,6 @@ func init() {
 		schema.AddQuery("pods(query: String, pagination: Pagination): [Pod!]!"),
 		schema.AddQuery("podCount(query: String): Int!"),
 		schema.AddExtraResolver(resolverName, "containerCount: Int!"),
-		schema.AddExtraResolver(resolverName, "policyViolationEvents: [PolicyViolationEvent!]!"),
-		schema.AddExtraResolver(resolverName, "processActivityEvents: [ProcessActivityEvent!]!"),
-		schema.AddExtraResolver(resolverName, "containerRestartEvents: [ContainerRestartEvent!]!"),
-		schema.AddExtraResolver(resolverName, "containerTerminationEvents: [ContainerTerminationEvent!]!"),
 		schema.AddExtraResolver(resolverName, "events: [DeploymentEvent!]!"),
 	)
 }
@@ -92,8 +89,8 @@ func (resolver *podResolver) ContainerCount() int32 {
 	return int32(containerNames.Cardinality())
 }
 
-// PolicyViolationEvents returns all policy violations associated with this pod.
-func (resolver *podResolver) PolicyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
+// policyViolationEvents returns all policy violations associated with this pod.
+func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "PolicyViolationEvents")
 
 	// We search by PodID (name) to filter out processes involving other pods.
@@ -110,8 +107,8 @@ func (resolver *podResolver) PolicyViolationEvents(ctx context.Context) ([]*Poli
 	return resolver.root.getPolicyViolationEvents(ctx, q)
 }
 
-// ProcessActivityEvents returns all the process activities associated with this pod.
-func (resolver *podResolver) ProcessActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
+// processActivityEvents returns all the process activities associated with this pod.
+func (resolver *podResolver) processActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "ProcessActivityEvents")
 
 	// It is possible that not all process indicators have PodUID populated. For now, it is safer to not use it.
@@ -124,8 +121,8 @@ func (resolver *podResolver) ProcessActivityEvents(ctx context.Context) ([]*Proc
 	return resolver.root.getProcessActivityEvents(ctx, query)
 }
 
-// ContainerRestartEvents returns all the container restart events associated with this pod.
-func (resolver *podResolver) ContainerRestartEvents() []*ContainerRestartEventResolver {
+// containerRestartEvents returns all the container restart events associated with this pod.
+func (resolver *podResolver) containerRestartEvents() []*ContainerRestartEventResolver {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "ContainerRestartEvents")
 
 	var events []*ContainerRestartEventResolver
@@ -172,8 +169,8 @@ func (resolver *podResolver) ContainerRestartEvents() []*ContainerRestartEventRe
 	return events
 }
 
-// ContainerTerminationEvents returns all the container termination events associated with this pod.
-func (resolver *podResolver) ContainerTerminationEvents() []*ContainerTerminationEventResolver {
+// containerTerminationEvents returns all the container termination events associated with this pod.
+func (resolver *podResolver) containerTerminationEvents() []*ContainerTerminationEventResolver {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "ContainerTerminationEvents")
 
 	var events []*ContainerTerminationEventResolver
@@ -196,13 +193,13 @@ func (resolver *podResolver) ContainerTerminationEvents() []*ContainerTerminatio
 	return events
 }
 
-// Events returns all events associated with this pod.
+// Events returns all events associated with this pod sorted by timestamp.
 func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "Events")
 
 	var events []*DeploymentEventResolver
 
-	policyViolations, err := resolver.PolicyViolationEvents(ctx)
+	policyViolations, err := resolver.policyViolationEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +207,7 @@ func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventReso
 		events = append(events, &DeploymentEventResolver{policyViolation})
 	}
 
-	processActivities, err := resolver.ProcessActivityEvents(ctx)
+	processActivities, err := resolver.processActivityEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -218,15 +215,19 @@ func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventReso
 		events = append(events, &DeploymentEventResolver{processActivity})
 	}
 
-	containerRestarts := resolver.ContainerRestartEvents()
+	containerRestarts := resolver.containerRestartEvents()
+	correctContainerRestartTimestamp(containerRestarts, processActivities)
 	for _, containerRestart := range containerRestarts {
 		events = append(events, &DeploymentEventResolver{containerRestart})
 	}
 
-	containerTerminations := resolver.ContainerTerminationEvents()
+	containerTerminations := resolver.containerTerminationEvents()
+	correctContainerTerminationTimestamp(containerTerminations, processActivities)
 	for _, containerTermination := range containerTerminations {
 		events = append(events, &DeploymentEventResolver{containerTermination})
 	}
+
+	sort.SliceStable(events, func(i, j int) bool { return events[i].Timestamp().Before(events[j].Timestamp().Time) })
 
 	return events, nil
 }

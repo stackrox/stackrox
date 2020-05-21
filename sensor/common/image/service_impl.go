@@ -41,10 +41,10 @@ func (s *serviceImpl) SetClient(conn *grpc.ClientConn) {
 
 func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest) (*sensor.GetImageResponse, error) {
 	if id := req.GetImage().GetId(); id != "" {
-		obj := s.imageCache.Get(id)
-		if obj != nil {
+		img, _ := s.imageCache.Get(id).(*storage.Image)
+		if img != nil && (!req.GetScanInline() || img.GetScan() != nil) {
 			return &sensor.GetImageResponse{
-				Image: obj.(*storage.Image),
+				Image: img,
 			}, nil
 		}
 	}

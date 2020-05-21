@@ -6,21 +6,21 @@ import ReactSelect, { Creatable } from './ReactSelect';
 const lifecycleOptions = [
     {
         label: 'Build',
-        value: 'BUILD'
+        value: 'BUILD',
     },
     {
         label: 'Deploy',
-        value: 'DEPLOY'
+        value: 'DEPLOY',
     },
     {
         label: 'Runtime',
-        value: 'RUNTIME'
-    }
+        value: 'RUNTIME',
+    },
 ];
 
 export default {
     title: 'ReactSelect',
-    component: ReactSelect
+    component: ReactSelect,
 };
 
 export const basicUsage = () => {
@@ -42,16 +42,16 @@ export const basicUsage = () => {
 const existingPolicies = [
     {
         value: '93f4b2dd-ef5a-419e-8371-38aed480fb36',
-        label: 'Fixable CVSS \u003e= 6 and Privileged'
+        label: 'Fixable CVSS \u003e= 6 and Privileged',
     },
     {
         value: 'f09f8da1-6111-4ca0-8f49-294a76c65115',
-        label: 'Fixable CVSS \u003e= 7'
+        label: 'Fixable CVSS \u003e= 7',
     },
     {
         value: '13b4eddc-2619-4953-b1ee-4c762144ca1e',
-        label: 'Images with no scans'
-    }
+        label: 'Images with no scans',
+    },
 ];
 
 export const asCreatable = () => {

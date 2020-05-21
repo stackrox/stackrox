@@ -7,7 +7,7 @@ import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
 import Message from 'Components/Message';
 import { useTheme } from 'Containers/ThemeProvider';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 
 import { LIST_PAGE_SIZE, defaultCountKeyMap } from 'constants/workflowPages.constants';
 import useCases from 'constants/useCaseTypes';
@@ -20,7 +20,7 @@ export const entityGridContainerBaseClassName =
 export const entityGridContainerClassName = `${entityGridContainerBaseClassName} grid-columns-1 md:grid-columns-2 lg:grid-columns-3`;
 
 const useCaseDefaultSorts = {
-    [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts
+    [useCases.VULN_MANAGEMENT]: vulnMgmtDefaultSorts,
 };
 
 const WorkflowEntityPage = ({
@@ -37,7 +37,7 @@ const WorkflowEntityPage = ({
     search,
     sort,
     page,
-    setRefreshTrigger
+    setRefreshTrigger,
 }) => {
     const { isDarkMode } = useTheme();
     const enhancedQueryOptions =
@@ -136,7 +136,7 @@ WorkflowEntityPage.propTypes = {
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
     page: PropTypes.number,
-    setRefreshTrigger: PropTypes.func
+    setRefreshTrigger: PropTypes.func,
 };
 
 WorkflowEntityPage.defaultProps = {
@@ -146,7 +146,7 @@ WorkflowEntityPage.defaultProps = {
     search: null,
     sort: null,
     page: 1,
-    setRefreshTrigger: null
+    setRefreshTrigger: null,
 };
 
 export default WorkflowEntityPage;

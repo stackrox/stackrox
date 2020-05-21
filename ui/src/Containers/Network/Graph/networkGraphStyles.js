@@ -13,7 +13,7 @@ const deploymentStyle = {
     'font-family': 'Open Sans',
     'min-zoomed-font-size': '20px',
     color: COLORS.label,
-    'z-compound-depth': 'top'
+    'z-compound-depth': 'top',
 };
 
 // Note: there is no specificity in cytoscape style
@@ -36,15 +36,15 @@ const styles = [
             label: 'data(name)',
             padding: '0px',
             'text-transform': 'uppercase',
-            'z-compound-depth': 'top'
-        }
+            'z-compound-depth': 'top',
+        },
     },
     {
         selector: ':parent > node.deployment',
         style: {
             'background-color': COLORS.inactive,
-            ...deploymentStyle
-        }
+            ...deploymentStyle,
+        },
     },
     {
         selector: 'node.nsHovered',
@@ -55,8 +55,8 @@ const styles = [
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 70%, 1)',
             'overlay-opacity': 0.05,
-            'z-compound-depth': 'auto'
-        }
+            'z-compound-depth': 'auto',
+        },
     },
     {
         selector: 'node.nsSelected',
@@ -67,15 +67,15 @@ const styles = [
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 60%, 1)',
             'overlay-opacity': 0.05,
-            'z-compound-depth': 'auto'
-        }
+            'z-compound-depth': 'auto',
+        },
     },
     {
         selector: 'node.nsActive',
         style: {
             'border-style': 'dashed',
-            'border-color': COLORS.active
-        }
+            'border-color': COLORS.active,
+        },
     },
     {
         selector: 'node.nsActive.nsHovered',
@@ -86,8 +86,8 @@ const styles = [
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 60%, 1)',
             'overlay-opacity': 0.1,
-            'z-compound-depth': 'auto'
-        }
+            'z-compound-depth': 'auto',
+        },
     },
     {
         selector: 'node.nsActive.nsSelected',
@@ -98,8 +98,8 @@ const styles = [
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
             'overlay-opacity': 0.1,
-            'z-compound-depth': 'auto'
-        }
+            'z-compound-depth': 'auto',
+        },
     },
     {
         selector: 'node.active',
@@ -107,8 +107,8 @@ const styles = [
             'background-color': COLORS.active,
             'border-style': 'double',
             'border-width': '1px',
-            'border-color': COLORS.active
-        }
+            'border-color': COLORS.active,
+        },
     },
     {
         selector: 'node.nonIsolated',
@@ -116,14 +116,14 @@ const styles = [
             'background-color': COLORS.nonIsolated,
             'border-style': 'double',
             'border-width': '1px',
-            'border-color': COLORS.nonIsolated
-        }
+            'border-color': COLORS.nonIsolated,
+        },
     },
     {
         selector: 'node.disallowed',
         style: {
-            'background-color': COLORS.disallowed
-        }
+            'background-color': COLORS.disallowed,
+        },
     },
     {
         selector: 'node.hovered',
@@ -131,8 +131,8 @@ const styles = [
             opacity: 1,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 60%, 1)',
-            'overlay-opacity': 0.1
-        }
+            'overlay-opacity': 0.1,
+        },
     },
     {
         selector: 'node.selected',
@@ -140,21 +140,21 @@ const styles = [
             opacity: 1,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
-            'overlay-opacity': 0.1
-        }
+            'overlay-opacity': 0.1,
+        },
     },
     {
         selector: ':parent > node.background',
         style: {
-            ...deploymentStyle
-        }
+            ...deploymentStyle,
+        },
     },
     {
         selector: ':parent.background',
         style: {
             opacity: 0.5,
-            'z-compound-depth': 'auto'
-        }
+            'z-compound-depth': 'auto',
+        },
     },
     {
         selector: ':parent > node.nsEdge',
@@ -162,16 +162,16 @@ const styles = [
             width: 0.5,
             height: 0.5,
             padding: '0px',
-            'background-color': 'white'
-        }
+            'background-color': 'white',
+        },
     },
     {
         selector: 'edge',
         style: {
             width: 1,
             'line-style': 'dashed',
-            'line-color': 'hsla(231, 74%, 82%, 1.00)'
-        }
+            'line-color': 'hsla(231, 74%, 82%, 1.00)',
+        },
     },
     {
         selector: 'edge.namespace',
@@ -190,20 +190,20 @@ const styles = [
             'text-border-opacity': 1,
             'text-border-color': 'hsla(230, 51%, 75%, 1.00)',
             'text-border-width': 1,
-            width: 3
-        }
+            width: 3,
+        },
     },
     {
         selector: 'edge.taxi-vertical',
         style: {
-            'taxi-direction': 'vertical'
-        }
+            'taxi-direction': 'vertical',
+        },
     },
     {
         selector: 'edge.taxi-horizontal',
         style: {
-            'taxi-direction': 'horizontal'
-        }
+            'taxi-direction': 'horizontal',
+        },
     },
     {
         selector: 'edge.inner',
@@ -212,23 +212,23 @@ const styles = [
             'line-style': 'dashed',
             'target-endpoint': 'inside-to-node',
             'z-index': 1000,
-            'z-index-compare': 'manual'
-        }
+            'z-index-compare': 'manual',
+        },
     },
 
     {
         selector: 'edge.nonIsolated',
         style: {
-            display: 'none'
-        }
+            display: 'none',
+        },
     },
     {
         selector: 'edge.active',
         style: {
             'line-style': 'solid',
             'line-color': 'hsla(229, 76%, 87%, 1)',
-            'z-compound-depth': 'top'
-        }
+            'z-compound-depth': 'top',
+        },
     },
     {
         selector: 'edge.disallowed',
@@ -237,17 +237,17 @@ const styles = [
             'line-color': COLORS.disallowed,
             'z-compound-depth': 'top',
             color: COLORS.disallowed,
-            'text-border-color': COLORS.disallowed
-        }
+            'text-border-color': COLORS.disallowed,
+        },
     },
     {
         selector: ':active',
         style: {
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
-            'overlay-opacity': 0.1
-        }
-    }
+            'overlay-opacity': 0.1,
+        },
+    },
 ];
 
 export default styles;

@@ -20,12 +20,12 @@ const ReduxTextField = ({ name, disabled, placeholder }) => (
 ReduxTextField.propTypes = {
     name: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
-    placeholder: PropTypes.string
+    placeholder: PropTypes.string,
 };
 
 ReduxTextField.defaultProps = {
     disabled: false,
-    placeholder: ''
+    placeholder: '',
 };
 
 export default ReduxTextField;

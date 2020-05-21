@@ -5,7 +5,7 @@ import TileContent from './TileContent';
 
 export default {
     title: 'TileContent',
-    component: TileContent
+    component: TileContent,
 };
 
 export const withSuperText = () => {

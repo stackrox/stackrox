@@ -19,7 +19,7 @@ function Panel({
     wizardStage,
     initialValues,
     fieldGroups,
-    onClose
+    onClose,
 }) {
     if (isFetchingPolicy || wizardPolicy == null) return <Loader />;
     const header = wizardPolicy === null ? '' : wizardPolicy.name;
@@ -41,30 +41,36 @@ function Panel({
             return <EnforcementPanel header={header} onClose={onClose} />;
         case wizardStages.details:
         default:
-            return <PolicyDetailsPanel header={header} onClose={onClose} />;
+            return (
+                <PolicyDetailsPanel
+                    header={header}
+                    onClose={onClose}
+                    initialValues={initialValues}
+                />
+            );
     }
 }
 
 Panel.propTypes = {
     isFetchingPolicy: PropTypes.bool.isRequired,
     wizardPolicy: PropTypes.shape({
-        name: PropTypes.string
+        name: PropTypes.string,
     }),
     wizardStage: PropTypes.string.isRequired,
     initialValues: PropTypes.shape({}),
     fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
 };
 
 Panel.defaultProps = {
     wizardPolicy: null,
-    initialValues: null
+    initialValues: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    isFetchingPolicy: state => selectors.getLoadingStatus(state, types.FETCH_POLICY),
+    isFetchingPolicy: (state) => selectors.getLoadingStatus(state, types.FETCH_POLICY),
     wizardPolicy: selectors.getWizardPolicy,
-    wizardStage: selectors.getWizardStage
+    wizardStage: selectors.getWizardStage,
 });
 
 export default connect(mapStateToProps)(Panel);

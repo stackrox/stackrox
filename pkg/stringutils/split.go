@@ -10,7 +10,7 @@ func Split2(str string, sep string) (string, string) {
 	if splitIdx == -1 {
 		return str, ""
 	}
-	return str[:splitIdx], str[splitIdx+1:]
+	return str[:splitIdx], str[splitIdx+len(sep):]
 }
 
 // SplitNPadded acts like `strings.SplitN`, but will *always* return a slice of length n (padded with empty strings

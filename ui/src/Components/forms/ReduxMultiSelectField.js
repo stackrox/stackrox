@@ -19,14 +19,14 @@ ReduxMultiSelect.propTypes = {
     input: PropTypes.shape({
         value: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
         name: PropTypes.string,
-        onChange: PropTypes.func
+        onChange: PropTypes.func,
     }).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    placeholder: PropTypes.string
+    placeholder: PropTypes.string,
 };
 
 ReduxMultiSelect.defaultProps = {
-    placeholder: 'Select options'
+    placeholder: 'Select options',
 };
 
 const ReduxMultiSelectField = ({ name, options }) => (
@@ -41,7 +41,7 @@ const ReduxMultiSelectField = ({ name, options }) => (
 
 ReduxMultiSelectField.propTypes = {
     name: PropTypes.string.isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default ReduxMultiSelectField;

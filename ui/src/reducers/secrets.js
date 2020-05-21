@@ -9,7 +9,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
@@ -17,7 +17,7 @@ import {
 export const types = {
     FETCH_SECRETS: createFetchingActionTypes('secrets/FETCH_SECRETS'),
     FETCH_SECRET: createFetchingActionTypes('secrets/FETCH_SECRET'),
-    ...searchTypes('secrets')
+    ...searchTypes('secrets'),
 };
 
 // Actions
@@ -25,7 +25,7 @@ export const types = {
 export const actions = {
     fetchSecrets: createFetchingActions(types.FETCH_SECRETS),
     fetchSecret: createFetchingActions(types.FETCH_SECRET),
-    ...getSearchActions('secrets')
+    ...getSearchActions('secrets'),
 };
 
 // Reducers
@@ -57,23 +57,19 @@ const filteredIds = (state = [], action) => {
 const reducer = combineReducers({
     byId,
     filteredIds,
-    ...searchReducers('secrets')
+    ...searchReducers('secrets'),
 });
 
 export default reducer;
 
 // Selectors
 
-const getSecretsById = state => state.byId;
-const getSecrets = createSelector(
-    [getSecretsById],
-    secrets => Object.values(secrets)
-);
-const getFilteredIds = state => state.filteredIds;
+const getSecretsById = (state) => state.byId;
+const getSecrets = createSelector([getSecretsById], (secrets) => Object.values(secrets));
+const getFilteredIds = (state) => state.filteredIds;
 const getSecret = (state, id) => getSecretsById(state)[id];
-const getFilteredSecrets = createSelector(
-    [getSecretsById, getFilteredIds],
-    (secrets, ids) => ids.map(id => secrets[id])
+const getFilteredSecrets = createSelector([getSecretsById, getFilteredIds], (secrets, ids) =>
+    ids.map((id) => secrets[id])
 );
 
 export const selectors = {
@@ -81,5 +77,5 @@ export const selectors = {
     getSecrets,
     getSecret,
     getFilteredSecrets,
-    ...getSearchSelectors('secrets')
+    ...getSearchSelectors('secrets'),
 };

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import FormFieldRemoveButton from 'Components/FormFieldRemoveButton';
 
-const FormField = props => (
+const FormField = (props) => (
     <div className="mb-4">
         <div className="py-2 text-base-600 font-700">
             <span>{props.label}</span>
@@ -25,7 +25,7 @@ const FormField = props => (
 FormField.defaultProps = {
     name: '',
     required: false,
-    onRemove: null
+    onRemove: null,
 };
 
 FormField.propTypes = {
@@ -33,7 +33,7 @@ FormField.propTypes = {
     label: PropTypes.string.isRequired,
     required: PropTypes.bool,
     onRemove: PropTypes.func,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export default FormField;

@@ -82,10 +82,7 @@ func newScanner(ii *storage.ImageIntegration, activeRegistries registries.Set) (
 		return nil, err
 	}
 
-	endpoint, err := urlfmt.FormatURL(conf.Endpoint, urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
+	endpoint := urlfmt.FormatURL(conf.Endpoint, urlfmt.InsecureHTTP, urlfmt.NoTrailingSlash)
 
 	config := anchoreClient.NewConfiguration()
 	config.BasePath = fmt.Sprintf("%s/v1", endpoint)

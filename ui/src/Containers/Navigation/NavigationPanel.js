@@ -10,32 +10,32 @@ import {
     policiesListPath,
     integrationsPath,
     accessControlPath,
-    systemConfigPath
+    systemConfigPath,
 } from 'routePaths';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
 const navLinks = [
     {
         text: 'Clusters',
-        to: clustersPath.replace('/:clusterId', '')
+        to: clustersPath.replace('/:clusterId', ''),
     },
     {
         text: 'System Policies',
-        to: policiesListPath
+        to: policiesListPath,
     },
     {
         text: 'Integrations',
-        to: integrationsPath
+        to: integrationsPath,
     },
     {
         text: 'Access Control',
-        to: accessControlPath
+        to: accessControlPath,
     },
     {
         text: 'System Configuration',
         to: systemConfigPath,
-        data: 'system-config'
-    }
+        data: 'system-config',
+    },
 ];
 
 class NavigationPanel extends Component {
@@ -45,15 +45,15 @@ class NavigationPanel extends Component {
         featureFlags: PropTypes.arrayOf(
             PropTypes.shape({
                 envVar: PropTypes.string.isRequired,
-                enabled: PropTypes.bool.isRequired
+                enabled: PropTypes.bool.isRequired,
             })
-        ).isRequired
+        ).isRequired,
     };
 
     constructor(props) {
         super(props);
         this.panels = {
-            configure: this.renderConfigurePanel
+            configure: this.renderConfigurePanel,
         };
     }
 
@@ -62,7 +62,7 @@ class NavigationPanel extends Component {
             <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                 Configure StackRox Settings
             </li>
-            {filterLinksByFeatureFlag(this.props.featureFlags, navLinks).map(navLink => (
+            {filterLinksByFeatureFlag(this.props.featureFlags, navLinks).map((navLink) => (
                 <li key={navLink.text} className="text-sm">
                     <Link
                         to={navLink.to}
@@ -96,7 +96,7 @@ class NavigationPanel extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags
+    featureFlags: selectors.getFeatureFlags,
 });
 
 export default withRouter(connect(mapStateToProps)(NavigationPanel));

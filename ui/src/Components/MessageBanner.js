@@ -6,7 +6,7 @@ const className = 'w-full flex items-center justify-center leading-normal p-3';
 const messageClasses = {
     warn: `${className} bg-warning-300 text-warning-800`,
     error: `${className} bg-alert-300 text-alert-800`,
-    info: `${className} bg-tertiary-300 text-tertiary-800`
+    info: `${className} bg-tertiary-300 text-tertiary-800`,
 };
 
 function MessageBanner({ component, message, type, showCancel, onCancel }) {
@@ -32,7 +32,7 @@ MessageBanner.defaultProps = {
     message: null,
     type: 'info',
     showCancel: false,
-    onCancel: null
+    onCancel: null,
 };
 
 MessageBanner.propTypes = {
@@ -40,7 +40,7 @@ MessageBanner.propTypes = {
     message: PropTypes.string,
     type: PropTypes.oneOf(['warn', 'error', 'info']),
     showCancel: PropTypes.bool,
-    onCancel: PropTypes.func
+    onCancel: PropTypes.func,
 };
 
 export default MessageBanner;

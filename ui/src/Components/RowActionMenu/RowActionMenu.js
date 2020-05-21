@@ -13,7 +13,7 @@ const RowActionMenu = ({
     menuClassName,
     buttonClassName,
     options,
-    dataTestId
+    dataTestId,
 }) => (
     <Tooltip content={<TooltipOverlay>{text}</TooltipOverlay>}>
         <div>
@@ -21,7 +21,7 @@ const RowActionMenu = ({
                 className={`${className} ${border}`}
                 menuClassName={menuClassName}
                 buttonClass={`p-1 px-4 ${buttonClassName}`}
-                buttonContent={icon}
+                buttonIcon={icon}
                 options={options}
                 dataTestId={dataTestId}
             />
@@ -43,12 +43,12 @@ RowActionMenu.propTypes = {
                 icon: PropTypes.object,
                 label: PropTypes.string.isRequired,
                 link: PropTypes.string,
-                onClick: PropTypes.func
+                onClick: PropTypes.func,
             })
         ).isRequired,
-        PropTypes.shape({})
+        PropTypes.shape({}),
     ]).isRequired,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 RowActionMenu.defaultProps = {
@@ -56,7 +56,7 @@ RowActionMenu.defaultProps = {
     menuClassName: 'bg-base-200 min-w-28',
     buttonClassName: 'hover:bg-primary-200 text-primary-600 hover:text-primary-700',
     border: '',
-    dataTestId: ''
+    dataTestId: '',
 };
 
 export default RowActionMenu;

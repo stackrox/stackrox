@@ -13,7 +13,8 @@ import { actions as notificationActions } from 'reducers/notifications';
 import { types as metadataTypes } from 'reducers/metadata';
 import { pollUntilCentralRestarts } from 'sagas/metadataSagas';
 
-export const storeRequestedLocation = location => store.set('license_requested_location', location);
+export const storeRequestedLocation = (location) =>
+    store.set('license_requested_location', location);
 export const getAndClearRequestedLocation = () => {
     const location = store.get('license_requested_location');
     store.remove('license_requested_location');
@@ -120,6 +121,6 @@ export default function* license() {
     }
     yield all([
         takeEveryLocation(licensePath, clearLicenseUploadStatus),
-        fork(watchLicenseActivation)
+        fork(watchLicenseActivation),
     ]);
 }

@@ -9,7 +9,7 @@ import (
 // A RoleMapper returns the role corresponding to an identifier
 // obtained from a token.
 type RoleMapper interface {
-	FromUserDescriptor(ctx context.Context, user *UserDescriptor) (*storage.Role, error)
+	FromUserDescriptor(ctx context.Context, user *UserDescriptor) ([]*storage.Role, error)
 }
 
 // UserDescriptor contains the necessary user information to map it to a user

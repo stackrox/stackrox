@@ -7,11 +7,9 @@ import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-14 border-b border-base-400';
 
-const Panel = props => (
+const Panel = (props) => (
     <div
-        className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${
-            props.className
-        }`}
+        className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${props.className}`}
         data-testid={props.id}
     >
         <div className="flex-no-wrap">
@@ -22,7 +20,9 @@ const Panel = props => (
                     </div>
                 )}
                 {props.headerTextComponent ? (
-                    props.headerTextComponent
+                    <div className="flex" data-testid={`${props.id}-header`}>
+                        {props.headerTextComponent}
+                    </div>
                 ) : (
                     <div
                         className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${
@@ -31,7 +31,7 @@ const Panel = props => (
                         data-testid={`${props.id}-header`}
                     >
                         <Tooltip content={<TooltipOverlay>{props.header}</TooltipOverlay>}>
-                            <div className="truncate flex-none">{props.header}</div>
+                            <div className="line-clamp break-all">{props.header}</div>
                         </Tooltip>
                     </div>
                 )}
@@ -69,7 +69,7 @@ Panel.propTypes = {
     closeButtonIconColor: PropTypes.string,
     headerComponents: PropTypes.element,
     leftButtons: PropTypes.node,
-    isUpperCase: PropTypes.bool
+    isUpperCase: PropTypes.bool,
 };
 
 Panel.defaultProps = {
@@ -84,7 +84,7 @@ Panel.defaultProps = {
     closeButtonIconColor: '',
     headerComponents: null,
     leftButtons: null,
-    isUpperCase: true
+    isUpperCase: true,
 };
 
 export default Panel;

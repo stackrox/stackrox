@@ -71,7 +71,7 @@ func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.Resourc
 	if backup == nil {
 		return nil, status.Errorf(codes.NotFound, "No external backup with id %q found", request.GetId())
 	}
-	secrets.ScrubSecretsFromStruct(backup)
+	secrets.ScrubSecretsFromStructWithReplacement(backup, secrets.ReplacementStr)
 	return backup, nil
 }
 
@@ -82,7 +82,7 @@ func (s *serviceImpl) GetExternalBackups(ctx context.Context, _ *v1.Empty) (*v1.
 		return nil, err
 	}
 	for _, b := range backups {
-		secrets.ScrubSecretsFromStruct(b)
+		secrets.ScrubSecretsFromStructWithReplacement(b, secrets.ReplacementStr)
 	}
 	return &v1.GetExternalBackupsResponse{
 		ExternalBackups: backups,

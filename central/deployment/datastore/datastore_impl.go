@@ -15,7 +15,6 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
-	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -52,7 +51,6 @@ type datastoreImpl struct {
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
-	indicators             piDS.DataStore
 	whitelists             pwDS.DataStore
 	risks                  riskDS.DataStore
 	deletedDeploymentCache expiringcache.Cache
@@ -66,7 +64,7 @@ type datastoreImpl struct {
 }
 
 func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtagsstore.Store, indexer deploymentIndex.Indexer, searcher deploymentSearch.Searcher,
-	images imageDS.DataStore, indicators piDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
+	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (*datastoreImpl, error) {
 
@@ -76,7 +74,6 @@ func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtag
 		deploymentIndexer:      indexer,
 		deploymentSearcher:     searcher,
 		images:                 images,
-		indicators:             indicators,
 		whitelists:             whitelists,
 		networkFlows:           networkFlows,
 		risks:                  risks,
@@ -235,18 +232,11 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
-	return ds.upsertDeployment(ctx, deployment, true, true)
-}
-
-// UpsertDeployment inserts a deployment into deploymentStore
-func (ds *datastoreImpl) UpsertDeploymentIntoStoreOnly(ctx context.Context, deployment *storage.Deployment) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeploymentIntoStoreOnly")
-
-	return ds.upsertDeployment(ctx, deployment, false, true)
+	return ds.upsertDeployment(ctx, deployment, true)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
-func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, indexingRequired bool, populateTagsFromExisting bool) error {
+func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment, populateTagsFromExisting bool) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -255,11 +245,8 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 	// Update deployment with latest risk score
 	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
-	if !features.PodDeploymentSeparation.Enabled() {
-		ds.processFilter.Update(deployment)
-	}
 
-	err := ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
+	return ds.keyedMutex.DoStatusWithLock(deployment.GetId(), func() error {
 		if populateTagsFromExisting {
 			existingDeployment, _, err := ds.deploymentStore.GetDeployment(deployment.GetId())
 			// Best-effort, don't bother checking the error.
@@ -270,7 +257,7 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}
-		if indexingRequired && !features.Dackbox.Enabled() {
+		if !features.Dackbox.Enabled() {
 			if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
 				return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 			}
@@ -281,28 +268,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 
 		return nil
 	})
-	if err != nil {
-		return err
-	}
-
-	if features.PodDeploymentSeparation.Enabled() {
-		return nil
-	}
-
-	if ds.indicators == nil {
-		return nil
-	}
-
-	deleteIndicatorsCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Indicator)))
-
-	if err := ds.indicators.RemoveProcessIndicatorsOfStaleContainers(deleteIndicatorsCtx, deployment); err != nil {
-		log.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
-			deployment.GetNamespace(), deployment.GetName(), err)
-	}
-	return nil
 }
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
@@ -320,9 +285,9 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return nil
 	}
 	ds.deletedDeploymentCache.Add(id, true)
-	if !features.PodDeploymentSeparation.Enabled() {
-		ds.processFilter.Delete(id)
-	}
+	// Though the filter is updated upon pod update,
+	// We still want to ensure it is properly cleared when the deployment is deleted.
+	ds.processFilter.Delete(id)
 
 	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
@@ -347,7 +312,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	deleteRelatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Indicator, resources.NetworkGraph, resources.ProcessWhitelist, resources.Risk),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.ProcessWhitelist, resources.Risk),
 		))
 
 	if err := ds.risks.RemoveRisk(deleteRelatedCtx, id, storage.RiskSubjectType_DEPLOYMENT); err != nil {
@@ -355,11 +320,6 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	}
 	if err := ds.whitelists.RemoveProcessWhitelistsByDeployment(deleteRelatedCtx, id); err != nil {
 		errorList.AddError(err)
-	}
-	if !features.PodDeploymentSeparation.Enabled() {
-		if err := ds.indicators.RemoveProcessIndicatorsByDeployment(deleteRelatedCtx, id); err != nil {
-			errorList.AddError(err)
-		}
 	}
 	flowStore := ds.networkFlows.GetFlowStore(deleteRelatedCtx, clusterID)
 	if err := flowStore.RemoveFlowsForDeployment(deleteRelatedCtx, id); err != nil {
@@ -538,7 +498,7 @@ func (ds *datastoreImpl) AddTagsToProcessKey(ctx context.Context, key *analystno
 		sort.Strings(unionTags)
 		if !sliceutils.StringEqual(existingTags, unionTags) {
 			deployment.ProcessTags = unionTags
-			if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
+			if err := ds.upsertDeployment(elevatedCtx, deployment, false); err != nil {
 				return err
 			}
 		}
@@ -578,7 +538,7 @@ func (ds *datastoreImpl) RemoveTagsFromProcessKey(ctx context.Context, key *anal
 		sort.Strings(diffTags)
 		if !sliceutils.StringEqual(existingTags, diffTags) {
 			deployment.ProcessTags = diffTags
-			if err := ds.upsertDeployment(elevatedCtx, deployment, true, false); err != nil {
+			if err := ds.upsertDeployment(elevatedCtx, deployment, false); err != nil {
 				return err
 			}
 		}

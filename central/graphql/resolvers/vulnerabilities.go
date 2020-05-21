@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -209,7 +208,7 @@ func tryUnsuppressedQuery(q *v1.Query) *v1.Query {
 		return q
 	}
 
-	local := proto.Clone(q).(*v1.Query)
+	local := q.Clone()
 	pagination := local.GetPagination()
 	local.Pagination = nil
 	local = search.NewConjunctionQuery(local, search.NewQueryBuilder().AddBools(search.CVESuppressed, false).ProtoQuery())

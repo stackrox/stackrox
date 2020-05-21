@@ -23,12 +23,12 @@ SaveButton.propTypes = {
     dispatch: PropTypes.func.isRequired,
     formName: PropTypes.string.isRequired,
     className: PropTypes.string,
-    isPristineForm: PropTypes.bool
+    isPristineForm: PropTypes.bool,
 };
 
 SaveButton.defaultProps = {
     className: '',
-    isPristineForm: false
+    isPristineForm: false,
 };
 
 const mapStateToProps = (state, props) => ({ isPristineForm: isPristine(props.formName)(state) });

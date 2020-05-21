@@ -384,9 +384,9 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 		return nil
 	}
 
-	clusterIDsInNodeStore := set.NewStringSet()
+	orphanedClusterIDsInNodeStore := set.NewStringSet()
 	for clusterID := range clusterNodeStores {
-		clusterIDsInNodeStore.Add(clusterID)
+		orphanedClusterIDsInNodeStore.Add(clusterID)
 	}
 
 	clusters, err := ds.GetClusters(ctx)
@@ -394,10 +394,10 @@ func (ds *datastoreImpl) doCleanUpNodeStore(ctx context.Context) error {
 		return errors.Wrap(err, "retrieving clusters")
 	}
 	for _, cluster := range clusters {
-		clusterIDsInNodeStore.Remove(cluster.GetId())
+		orphanedClusterIDsInNodeStore.Remove(cluster.GetId())
 	}
 
-	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, clusterIDsInNodeStore.AsSlice()...)
+	return ds.nodeDataStore.RemoveClusterNodeStores(ctx, orphanedClusterIDsInNodeStore.AsSlice()...)
 }
 
 func (ds *datastoreImpl) updateClusterPriority(clusters ...*storage.Cluster) {

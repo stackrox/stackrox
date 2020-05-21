@@ -83,12 +83,12 @@ func MemOnlyIndex() (bleve.Index, error) {
 }
 
 // InitializeIndices initializes the index in the specified path.
-func InitializeIndices(scorchPath string, persisted IndexPersisted) (bleve.Index, error) {
+func InitializeIndices(name, scorchPath string, persisted IndexPersisted) (bleve.Index, error) {
 	globalIndex, err := initializeIndices(scorchPath, persisted)
 	if err != nil {
 		return nil, err
 	}
-	go startMonitoring(globalIndex, scorchPath)
+	go startMonitoring(globalIndex, name, scorchPath)
 	return globalIndex, nil
 }
 
@@ -108,6 +108,7 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.
 		if err != nil {
 			return nil, err
 		}
+		globalIndex.SetName(scorchPath)
 		return globalIndex, nil
 	}
 	globalIndex, err := bleve.OpenUsing(scorchPath, kvconfig)

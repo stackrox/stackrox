@@ -1,38 +1,38 @@
 import { shape } from 'prop-types';
 
-const getRouterOptions = fn => ({
+const getRouterOptions = (fn) => ({
     context: {
         router: {
             history: {
                 push: fn(),
                 replace: fn(),
-                createHref: fn()
+                createHref: fn(),
             },
             route: {
                 location: {
                     hash: '',
                     pathname: '',
                     search: '',
-                    state: ''
+                    state: '',
                 },
                 match: {
                     params: {},
                     isExact: false,
                     path: '',
-                    url: ''
-                }
-            }
-        }
+                    url: '',
+                },
+            },
+        },
     },
     childContextTypes: {
         router: shape({
             route: shape({
                 location: shape(),
-                match: shape()
+                match: shape(),
             }),
-            history: shape({})
-        })
-    }
+            history: shape({}),
+        }),
+    },
 });
 
 export default getRouterOptions;

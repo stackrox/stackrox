@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/collector"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/gcp"
@@ -26,7 +27,7 @@ func versionCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "version",
 		Short: "Version of the CLI",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(os.Stdout)
 				enc.SetIndent("", "  ")
@@ -34,7 +35,7 @@ func versionCommand() *cobra.Command {
 			}
 			fmt.Println(version.GetMainVersion())
 			return nil
-		},
+		}),
 	}
 	c.PersistentFlags().Bool("json", false, "print extended version information as JSON")
 	return c

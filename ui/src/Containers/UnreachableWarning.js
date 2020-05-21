@@ -47,15 +47,15 @@ const UnreachableWarning = ({ serverState }) => {
 };
 
 UnreachableWarning.propTypes = {
-    serverState: PropTypes.string
+    serverState: PropTypes.string,
 };
 
 UnreachableWarning.defaultProps = {
-    serverState: serverStates.UP
+    serverState: serverStates.UP,
 };
 
 // not using `reselect` because it falsely assumes the serverState nested property has not changed,
 // if the server comes back online
-const mapStateToProps = state => ({ serverState: selectors.getServerState(state) });
+const mapStateToProps = (state) => ({ serverState: selectors.getServerState(state) });
 
 export default connect(mapStateToProps)(UnreachableWarning);

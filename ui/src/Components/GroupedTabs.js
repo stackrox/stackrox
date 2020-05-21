@@ -25,7 +25,7 @@ Tab.propTypes = {
     text: PropTypes.string.isRequired,
     index: PropTypes.number.isRequired,
     active: PropTypes.bool.isRequired,
-    to: PropTypes.string.isRequired
+    to: PropTypes.string.isRequired,
 };
 
 const GroupedTabs = ({ groups, tabs, activeTab }) => {
@@ -35,7 +35,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
         return acc;
     }, {});
     const result = groups
-        .filter(group => groupMapping[group])
+        .filter((group) => groupMapping[group])
         .map((group, idx) => {
             const grouppedTabs = groupMapping[group];
             // not showing groups when it's the first (overview) or when there is only one tab child
@@ -96,10 +96,10 @@ GroupedTabs.propTypes = {
             group: PropTypes.string.isRequired,
             value: PropTypes.string.isRequired,
             text: PropTypes.string.isRequired,
-            to: PropTypes.string.isRequired
+            to: PropTypes.string.isRequired,
         })
     ).isRequired,
-    activeTab: PropTypes.string.isRequired
+    activeTab: PropTypes.string.isRequired,
 };
 
 export default GroupedTabs;

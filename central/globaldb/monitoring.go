@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb/metrics"
 )
 
-const gatherFrequency = 1 * time.Minute
+const gatherFrequency = 5 * time.Minute
 
 func gatherBucketStats(name string, stats bolt.BucketStats) {
 	// Ignore Bolt extra mapping buckets

@@ -14,7 +14,7 @@ import gql from 'graphql-tag';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import useCases from 'constants/useCaseTypes';
 import EntityList from '../../List/EntityList';
 import DeploymentFindings from './DeploymentFindings';
@@ -24,7 +24,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam]),
     };
 
     const defaultQuery = gql`
@@ -70,7 +70,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                         : 'serviceAccount serviceAccountID'
                 }
                 failingPolicyCount(query: $query)
-            
+
                 tolerations {
                     key
                     operator
@@ -140,22 +140,22 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                     serviceAccount,
                     serviceAccountID,
                     imageCount,
-                    secretCount
+                    secretCount,
                 } = entity;
 
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: created ? format(created, dateTimeFormat) : 'N/A'
+                        value: created ? format(created, dateTimeFormat) : 'N/A',
                     },
                     {
                         key: 'Deployment Type',
-                        value: type
+                        value: type,
                     },
                     {
                         key: 'Replicas',
-                        value: replicas
-                    }
+                        value: replicas,
+                    },
                 ];
 
                 return (

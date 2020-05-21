@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -92,7 +91,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return p.processRemove(store, node)
 	}
 
-	node = proto.Clone(node).(*storage.Node)
+	node = node.Clone()
 	node.ClusterId = clusterID
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {

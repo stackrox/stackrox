@@ -9,7 +9,7 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    Legend
+    Legend,
 } from 'recharts';
 
 const CustomLineChart = ({ data, name, xAxisDataKey, children }) => (
@@ -20,7 +20,7 @@ const CustomLineChart = ({ data, name, xAxisDataKey, children }) => (
                 top: 30,
                 right: 50,
                 left: 10,
-                bottom: 10
+                bottom: 10,
             }}
         >
             <XAxis dataKey={xAxisDataKey}>
@@ -35,7 +35,7 @@ const CustomLineChart = ({ data, name, xAxisDataKey, children }) => (
                     bottom: 0,
                     width: '100%',
                     textTransform: 'capitalize',
-                    fill: 'var(--primary-800)'
+                    fill: 'var(--primary-800)',
                 }}
             />
             {children}
@@ -47,7 +47,7 @@ CustomLineChart.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     name: PropTypes.string.isRequired,
     xAxisDataKey: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export default CustomLineChart;

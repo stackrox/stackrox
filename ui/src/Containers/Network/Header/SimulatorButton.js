@@ -17,7 +17,7 @@ class SimulatorButton extends Component {
         openWizard: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
-        history: ReactRouterPropTypes.history.isRequired
+        history: ReactRouterPropTypes.history.isRequired,
     };
 
     toggleSimulation = () => {
@@ -59,18 +59,13 @@ const getCreatingOrSimulating = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    creatingOrSimulating: getCreatingOrSimulating
+    creatingOrSimulating: getCreatingOrSimulating,
 });
 
 const mapDispatchToProps = {
     openWizard: pageActions.openNetworkWizard,
     closeWizard: pageActions.closeNetworkWizard,
-    setWizardStage: wizardActions.setNetworkWizardStage
+    setWizardStage: wizardActions.setNetworkWizardStage,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(SimulatorButton)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(SimulatorButton));

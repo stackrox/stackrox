@@ -68,28 +68,22 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		}
 	}
 
-	centralEndpoint, err := urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
+	command := "kubectl"
+	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER {
+		command = "oc"
 	}
-
-	advertisedEndpoint, err := urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
-
 	fields := map[string]interface{}{
 		"ClusterName": c.Name,
 		"ClusterType": c.Type.String(),
 
-		"ImageRegistry": mainImageName.GetRegistry(),
+		"ImageRegistry": urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"ImageRemote":   mainImageName.GetRemote(),
 		"ImageTag":      mainImageName.GetTag(),
 
-		"PublicEndpoint":     centralEndpoint,
-		"AdvertisedEndpoint": advertisedEndpoint,
+		"PublicEndpoint":     urlfmt.FormatURL(c.CentralApiEndpoint, urlfmt.NONE, urlfmt.NoTrailingSlash),
+		"AdvertisedEndpoint": urlfmt.FormatURL(env.AdvertisedEndpoint.Setting(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 
-		"CollectorRegistry":    collectorImageName.GetRegistry(),
+		"CollectorRegistry":    urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.NONE, urlfmt.NoTrailingSlash),
 		"CollectorImageRemote": collectorImageName.GetRemote(),
 		"CollectorImageTag":    collectorImageName.GetTag(),
 		"CollectionMethod":     c.CollectionMethod.String(),
@@ -99,6 +93,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 
 		"EnvVars":             envVars,
 		"AdmissionController": false,
+
+		"K8sCommand": command,
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

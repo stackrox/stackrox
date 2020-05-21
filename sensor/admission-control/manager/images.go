@@ -94,13 +94,17 @@ func (m *manager) getAvailableImagesAndKickOffScans(ctx context.Context, s *stat
 
 	pendingCount := int32(1)
 
+	scanInline := s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline()
+
 	for idx, container := range deployment.GetContainers() {
 		image := container.GetImage()
-		if image.GetId() != "" || s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+		if image.GetId() != "" || scanInline {
 			cachedImage := m.getCachedImage(image)
 			if cachedImage != nil {
 				images[idx] = cachedImage
-			} else if ctx != nil {
+			}
+			// The cached image might be insufficient if it doesn't have a scan and we want to do inline scans.
+			if ctx != nil && (cachedImage == nil || (scanInline && cachedImage.GetScan() == nil)) {
 				atomic.AddInt32(&pendingCount, 1)
 				go m.fetchImage(ctx, s, imgChan, &pendingCount, idx, image)
 			}

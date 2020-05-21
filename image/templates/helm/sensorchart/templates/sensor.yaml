@@ -223,6 +223,7 @@ spec:
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
           name: var-run-docker-sock
+          readOnly: true
         - mountPath: /host/proc
           name: proc-ro
           readOnly: true
@@ -274,34 +275,9 @@ spec:
           name: etc-ssl
         - mountPath: /etc/pki/ca-trust/
           name: etc-pki-volume
-        - mountPath: /host/etc
-          name: etc-ro
+        - mountPath: /host
+          name: host-root-ro
           readOnly: true
-        - mountPath: /host/lib
-          name: lib
-          readOnly: true
-        - mountPath: /host/usr/bin
-          name: usr-bin
-          readOnly: true
-        - mountPath: /host/usr/sbin
-          name: usr-sbin
-          readOnly: true
-        - mountPath: /host/usr/lib
-          name: usr-lib
-          readOnly: true
-        - mountPath: /host/var/lib
-          name: var-lib
-          readOnly: true
-        - mountPath: /host/var/log/audit
-          name: var-log-audit
-          readOnly: true
-        - mountPath: /host/run
-          name: run
-        - mountPath: /host/proc
-          name: proc-ro
-          readOnly: true
-        - mountPath: /host/var/run/docker.sock
-          name: var-run-docker-sock
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
@@ -338,26 +314,8 @@ spec:
           - key: ca.pem
             path: ca.pem
       - hostPath:
-          path: /lib
-        name: lib
-      - hostPath:
-          path: /usr/bin
-        name: usr-bin
-      - hostPath:
-          path: /usr/lib
-        name: usr-lib
-      - hostPath:
-          path: /usr/sbin
-        name: usr-sbin
-      - hostPath:
-          path: /var/lib
-        name: var-lib
-      - hostPath:
-          path: /var/log/audit
-        name: var-log-audit
-      - hostPath:
-          path: /run
-        name: run
+          path: /
+        name: host-root-ro
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume

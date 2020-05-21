@@ -5,7 +5,7 @@ import { useMutation } from 'react-apollo';
 import pluralize from 'pluralize';
 import { toast } from 'react-toastify';
 
-import captureGraphQLErrors from 'modules/captureGraphQLErrors';
+import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import CustomDialogue from 'Components/CustomDialogue';
 import MessageBanner from 'Components/MessageBanner';
 import Tags from 'Components/Tags';
@@ -37,7 +37,7 @@ function TagConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds }) {
 
     function tagViolations() {
         addBulkTags({
-            variables: { resourceIds: checkedAlertIds, tags }
+            variables: { resourceIds: checkedAlertIds, tags },
         });
     }
 
@@ -83,7 +83,7 @@ function TagConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds }) {
 TagConfirmation.propTypes = {
     setDialogue: PropTypes.func.isRequired,
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-    setCheckedAlertIds: PropTypes.func.isRequired
+    setCheckedAlertIds: PropTypes.func.isRequired,
 };
 
 export default React.memo(TagConfirmation);

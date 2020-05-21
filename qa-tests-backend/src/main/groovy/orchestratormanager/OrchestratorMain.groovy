@@ -38,6 +38,7 @@ interface OrchestratorMain {
     def getDeploymentNodeSelectors(Deployment deployment)
     def getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
+    def createPortForward(int port, Deployment deployment)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)
@@ -95,6 +96,8 @@ interface OrchestratorMain {
     List<K8sServiceAccount> getServiceAccounts()
     def createServiceAccount(K8sServiceAccount serviceAccount)
     def deleteServiceAccount(K8sServiceAccount serviceAccount)
+    def addServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
+    def removeServiceAccountImagePullSecret(String accountName, String secretName, String namespace)
 
     //Roles
     List<K8sRole> getRoles()

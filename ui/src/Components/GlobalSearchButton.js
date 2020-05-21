@@ -12,7 +12,7 @@ const GlobalSearchButton = ({
     toggleGlobalSearchView,
     topNavBtnTextClass,
     topNavBtnSvgClass,
-    topNavBtnClass
+    topNavBtnClass,
 }) => (
     <Tooltip content={<TooltipOverlay>Search</TooltipOverlay>} className="sm:visible md:invisible">
         <button
@@ -30,16 +30,11 @@ GlobalSearchButton.propTypes = {
     toggleGlobalSearchView: PropTypes.func.isRequired,
     topNavBtnTextClass: PropTypes.string.isRequired,
     topNavBtnSvgClass: PropTypes.string.isRequired,
-    topNavBtnClass: PropTypes.string.isRequired
+    topNavBtnClass: PropTypes.string.isRequired,
 };
 
-const mapDispatchToProps = dispatch => ({
-    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView())
+const mapDispatchToProps = (dispatch) => ({
+    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
 });
 
-export default withRouter(
-    connect(
-        null,
-        mapDispatchToProps
-    )(GlobalSearchButton)
-);
+export default withRouter(connect(null, mapDispatchToProps)(GlobalSearchButton));

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
-	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/processwhitelist/store/bolt"
 	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/role/resources"
@@ -69,7 +69,7 @@ func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
 	var err error
 	suite.db, err = bolthelper.NewTemp("process_whitelist_service_test.db")
 	suite.NoError(err)
-	wlStore, err := store.New(suite.db, storecache.NewMapBackedCache())
+	wlStore, err := bolt.NewStore(suite.db, storecache.NewMapBackedCache())
 	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")

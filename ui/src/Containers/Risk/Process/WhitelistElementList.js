@@ -9,7 +9,7 @@ const ProcessWhitelistElementsList = ({
     whitelistKey,
     elements,
     processEpoch,
-    setProcessEpoch
+    setProcessEpoch,
 }) => {
     if (!elements || !elements.length) {
         return <span className="p-3 block"> No elements in this whitelist </span>;
@@ -19,7 +19,7 @@ const ProcessWhitelistElementsList = ({
         return () => {
             const query = {
                 keys: [{ ...whitelistKey }],
-                removeElements: [element]
+                removeElements: [element],
             };
             addDeleteProcesses(query).then(() => {
                 setProcessEpoch(processEpoch + 1);
@@ -55,17 +55,17 @@ const ProcessWhitelistElementsList = ({
 ProcessWhitelistElementsList.propTypes = {
     elements: PropTypes.arrayOf(
         PropTypes.shape({
-            processName: PropTypes.string
+            processName: PropTypes.string,
         })
     ),
     whitelistKey: PropTypes.shape({}),
     processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired
+    setProcessEpoch: PropTypes.func.isRequired,
 };
 
 ProcessWhitelistElementsList.defaultProps = {
     elements: [],
-    whitelistKey: {}
+    whitelistKey: {},
 };
 
 export default ProcessWhitelistElementsList;

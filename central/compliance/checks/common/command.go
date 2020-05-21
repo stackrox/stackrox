@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/assert"
 	pkgSet "github.com/stackrox/rox/pkg/set"
 )
 
@@ -64,12 +65,25 @@ func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, 
 	return values
 }
 
+// FailOverride is passed as an option and will override the fail values if set
+type FailOverride func(ctx framework.ComplianceContext, msg string)
+
+func getFailOverride(overrides []FailOverride) FailOverride {
+	if len(overrides) == 0 {
+		return nil
+	}
+	if len(overrides) > 1 {
+		assert.Panicf("fail overrides can only have one element, but has %d", len(overrides))
+	}
+	return overrides[0]
+}
+
 // CommandEvaluationFunc is a generic function that checks command lines
-type CommandEvaluationFunc func(framework.ComplianceContext, []string, string, string, string)
+type CommandEvaluationFunc func(framework.ComplianceContext, []string, string, string, string, ...FailOverride)
 type helperEvaluationFunc func([]string, string, string, string) (message string, passes bool)
 
 // Info returns info with values set for the flag. Info is used when there is no strict determination of if the check is met
-func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal string) {
+func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal string, _ ...FailOverride) {
 	if len(values) == 0 {
 		framework.Notef(ctx, "%q is to the default value of %q", key, defaultVal)
 		return
@@ -78,46 +92,50 @@ func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal s
 }
 
 // Set checks whether or not a value is set in the command line
-func Set(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, valuesAreSet)
+func Set(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, valuesAreSet, overrides)
 }
 
 // Unset checks whether or not a value is not set in the command line
-func Unset(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, unset)
+func Unset(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, unset, overrides)
 }
 
 // Matches checks whether or not a value matches the target value exactly
-func Matches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, matches)
+func Matches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, matches, overrides)
 }
 
 // OnlyContains checks whether or not a value contains only the target values (where target values are delimited by ",")
-func OnlyContains(ctx framework.ComplianceContext, values []string, key, targets, defaultVal string) {
-	resultWrapper(ctx, values, key, targets, defaultVal, onlyContains)
+func OnlyContains(ctx framework.ComplianceContext, values []string, key, targets, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, targets, defaultVal, onlyContains, overrides)
 }
 
 // NotMatches checks where or not a value matches the target value exactly
-func NotMatches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, notMatches)
+func NotMatches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, notMatches, overrides)
 }
 
 // Contains checks where or not a value contains the target value
-func Contains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, contains)
+func Contains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, contains, overrides)
 }
 
 // NotContains checks where or not a value contains the target value
-func NotContains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string) {
-	resultWrapper(ctx, values, key, target, defaultVal, notContains)
+func NotContains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
+	resultWrapper(ctx, values, key, target, defaultVal, notContains, overrides)
 }
 
-func resultWrapper(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, f helperEvaluationFunc) {
+func resultWrapper(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, f helperEvaluationFunc, overrides []FailOverride) {
 	msg, pass := f(values, key, target, defaultVal)
 	if pass {
 		framework.Pass(ctx, msg)
 	} else {
-		framework.Fail(ctx, msg)
+		if override := getFailOverride(overrides); override != nil {
+			override(ctx, msg)
+		} else {
+			framework.Fail(ctx, msg)
+		}
 	}
 }
 

@@ -17,7 +17,7 @@ const svgMapping = {
     [entityTypes.PCI_DSS_3_2]: PCI,
     [entityTypes.HIPAA_164]: HIPAA,
     [entityTypes.NIST_800_190]: NIST,
-    [entityTypes.NIST_SP_800_53_Rev_4]: NIST
+    [entityTypes.NIST_SP_800_53_Rev_4]: NIST,
 };
 
 const ControlDetails = ({ standardId, control, description, className }) => (
@@ -48,11 +48,11 @@ ControlDetails.propTypes = {
     standardId: PropTypes.string.isRequired,
     control: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 ControlDetails.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default connect()(ControlDetails);

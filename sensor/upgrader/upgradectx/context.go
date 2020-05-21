@@ -3,12 +3,10 @@ package upgradectx
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -51,8 +49,8 @@ type UpgradeContext struct {
 
 	ownerRef *metav1.OwnerReference
 
-	httpClient     *http.Client
-	grpcClientConn *grpc.ClientConn
+	centralHTTPClient *http.Client
+	grpcClientConn    *grpc.ClientConn
 }
 
 // Create creates a new upgrader context from the given config.
@@ -83,6 +81,9 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 	for _, gvk := range common.StateResourceTypes {
 		expectedGVKs[gvk] = struct{}{}
+	}
+	if config.Owner != nil {
+		expectedGVKs[config.Owner.GVK] = struct{}{}
 	}
 
 	resourceMap, err := resources.GetAvailableResources(k8sClientSet.Discovery(), expectedGVKs)
@@ -148,33 +149,11 @@ func Create(ctx context.Context, config *config.UpgraderConfig) (*UpgradeContext
 	}
 
 	if config.CentralEndpoint != "" {
-		host, _, err := net.SplitHostPort(config.CentralEndpoint)
+		transport, err := clientconn.AuthenticatedHTTPTransport(config.CentralEndpoint, mtls.CentralSubject, nil, clientconn.UseServiceCertToken(true))
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing central endpoint")
+			return nil, errors.Wrap(err, "failed to initialize HTTP transport to Central")
 		}
-
-		tlsConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
-			UseClientCert: true,
-			ServerName:    host,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "instantiating TLS config")
-		}
-
-		// Set up the HTTP transport: use TLS, ServiceCert tokens, and respect context cancellations.
-		var transport http.RoundTripper = &http.Transport{
-			TLSClientConfig: tlsConf,
-		}
-
-		if len(tlsConf.Certificates) != 1 {
-			return nil, errors.Errorf("TLS config has unexpected number of client certificates (%d, expected 1)", len(tlsConf.Certificates))
-		}
-
-		transport = servicecerttoken.NewServiceCertInjectingRoundTripper(&tlsConf.Certificates[0], transport)
-		transport = httputil.ContextBoundRoundTripper(ctx, transport)
-
-		tlsConf.NextProtos = nil // no HTTP/2 or pure GRPC!
-		c.httpClient = &http.Client{
+		c.centralHTTPClient = &http.Client{
 			Transport: transport,
 		}
 		c.grpcClientConn, err = clientconn.AuthenticatedGRPCConnection(config.CentralEndpoint, mtls.CentralSubject, clientconn.UseServiceCertToken(true))
@@ -296,21 +275,14 @@ func (c *UpgradeContext) ClusterID() string {
 	return c.config.ClusterID
 }
 
-// DoHTTPRequest performs an HTTP request. If the URL in req is relative, the central endpoint is filled in as the host,
-// using the HTTPS scheme by default.
-func (c *UpgradeContext) DoHTTPRequest(req *http.Request) (*http.Response, error) {
-	if c.httpClient == nil {
+// DoCentralHTTPRequest performs an HTTP request to central. If the URL in req is relative, the central endpoint is filled in
+// as the host, using the HTTPS scheme by default.
+func (c *UpgradeContext) DoCentralHTTPRequest(req *http.Request) (*http.Response, error) {
+	if c.centralHTTPClient == nil {
 		return nil, errors.New("no HTTP client configured")
 	}
 
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = "https"
-	}
-	if req.URL.Host == "" {
-		req.URL.Host = c.config.CentralEndpoint
-	}
-
-	return c.httpClient.Do(req)
+	return c.centralHTTPClient.Do(req)
 }
 
 // GetGRPCClient gets the gRPC client that can be used to make requests to Central.

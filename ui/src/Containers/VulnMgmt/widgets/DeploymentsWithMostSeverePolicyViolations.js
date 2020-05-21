@@ -11,7 +11,7 @@ import LabelChip from 'Components/LabelChip';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { getPolicySeverityCounts, sortDeploymentsByPolicyViolations } from 'utils/policyUtils';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
@@ -34,7 +34,7 @@ const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
 `;
 
 const processData = (data, workflowState, limit) => {
-    const results = data.results.map(deployment => {
+    const results = data.results.map((deployment) => {
         const policySeverityCounts = getPolicySeverityCounts(deployment.failingPolicies);
 
         return { ...deployment, policySeverityCounts };
@@ -95,8 +95,8 @@ const processData = (data, workflowState, limit) => {
                 tooltip: {
                     title: tooltipTitle,
                     subtitle: tooltipSubtitle,
-                    body: tooltipBody
-                }
+                    body: tooltipBody,
+                },
             };
         }
     );
@@ -107,9 +107,9 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            })
-        }
+                Category: 'Vulnerability Management',
+            }),
+        },
     });
 
     let content = <Loader />;
@@ -153,12 +153,12 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
 
 DeploymentsWithMostSeverePolicyViolations.propTypes = {
     entityContext: PropTypes.shape({}),
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 DeploymentsWithMostSeverePolicyViolations.defaultProps = {
     entityContext: {},
-    limit: 5
+    limit: 5,
 };
 
 export default DeploymentsWithMostSeverePolicyViolations;

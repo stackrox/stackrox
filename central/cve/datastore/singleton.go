@@ -39,7 +39,7 @@ func initialize() {
 		componentIndexer.New(globalindex.GetGlobalIndex()),
 		imageComponentEdgeIndexer.New(globalindex.GetGlobalIndex()),
 		imageIndexer.New(globalindex.GetGlobalIndex()),
-		deploymentIndexer.New(globalindex.GetGlobalIndex()),
+		deploymentIndexer.New(globalindex.GetGlobalIndex(), globalindex.GetProcessIndex()),
 		clusterIndexer.New(globalindex.GetGlobalTmpIndex()))
 
 	ds, err = New(globaldb.GetGlobalDackBox(), storage, cveIndexer.New(globalindex.GetGlobalIndex()), searcher)

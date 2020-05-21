@@ -1,4 +1,8 @@
-export const baseURL = '/main/configmanagement';
+import scopeSelectors from '../helpers/scopeSelectors';
+import tableSelectors from '../selectors/table';
+import { violationTagsSelectors } from '../selectors/tags';
+
+const baseURL = '/main/configmanagement';
 
 export const url = {
     dashboard: baseURL,
@@ -13,7 +17,7 @@ export const url = {
         secrets: `${baseURL}/secrets`,
         subjects: `${baseURL}/subjects`,
         serviceAccounts: `${baseURL}/serviceaccounts`,
-        roles: `${baseURL}/roles`
+        roles: `${baseURL}/roles`,
     },
     single: {
         policy: `${baseURL}/policy`,
@@ -26,13 +30,13 @@ export const url = {
         secret: `${baseURL}/secret`,
         subject: `${baseURL}/subject`,
         serviceAccount: `${baseURL}/serviceaccount`,
-        role: `${baseURL}/role`
-    }
+        role: `${baseURL}/role`,
+    },
 };
 
 export const controlStatus = {
     pass: 'pass',
-    fail: 'fail'
+    fail: 'fail',
 };
 
 export const dashboardSelectors = {
@@ -41,10 +45,10 @@ export const dashboardSelectors = {
     tileLinkValue: "[data-testid='tile-link-value']",
     applicationAndInfrastructureDropdown: 'button:contains("Application & Infrastructure")',
     rbacVisibilityDropdown: 'button:contains("RBAC")',
-    getMenuListItem: name => {
+    getMenuListItem: (name) => {
         return `[data-testid="menu-list"] [data-testid="${name}"]`;
     },
-    getWidget: title => {
+    getWidget: (title) => {
         return `[data-testid="widget"]:contains('${title}')`;
     },
     viewAllButton: 'button:contains("View All")',
@@ -56,20 +60,20 @@ export const dashboardSelectors = {
             ratedAsLow:
                 '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("rated as low")',
             policiesWithoutViolations:
-                '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("policies")'
-        }
+                '[data-testid="widget"]:contains("Policy Violations by Severity") a:contains("policies")',
+        },
     },
     cisStandardsAcrossClusters: {
         widget: '[data-testid="compliance-by-controls"]',
         select: {
             input: '[data-testid="compliance-by-controls"] .react-select__control',
             value: '[data-testid="compliance-by-controls"] .react-select__single-value',
-            options: '[data-testid="compliance-by-controls"] .react-select__option'
+            options: '[data-testid="compliance-by-controls"] .react-select__option',
         },
         passingControlsLink: 'a[title*="Controls Passing"]',
-        failingControlsLinks: 'a[title*="Controls Failing"]'
+        failingControlsLinks: 'a[title*="Controls Failing"]',
     },
-    horizontalBars: '.rv-xy-plot__series.rv-xy-plot__series--bar > rect'
+    horizontalBars: '.rv-xy-plot__series.rv-xy-plot__series--bar > rect',
 };
 
 export const listSelectors = {
@@ -79,7 +83,7 @@ export const listSelectors = {
     tableLinks: '.rt-tr-group > .rt-tr > .rt-td > a',
     tablePanelHeader: '[data-testid="panel"] [data-testid="panel-header"]',
     tableNextPage: '[data-testid="next-page-button"]',
-    sidePanel: '[data-testid="side-panel"]'
+    sidePanel: '[data-testid="side-panel"]',
 };
 
 export const entitySelectors = {
@@ -93,11 +97,21 @@ export const entitySelectors = {
     relatedEntityWidgetValue: '[data-testid="related-entity-value"]',
     groupedTabs: '[data-testid="grouped-tab"] [data-testid="tab"]',
     failingNodes: '[data-testid="widget"] .rt-tr-group > .rt-tr',
-    deploymentsWithFailedPolicies: '[data-testid="deployments-with-failed-policies"]'
+    deploymentsWithFailedPolicies: '[data-testid="deployments-with-failed-policies"]',
+};
+
+const sidePanelSelectors = {
+    policyFindingsSection: scopeSelectors('[data-testid="policy-findings-section"]', {
+        table: tableSelectors,
+    }),
+    violationTags: violationTagsSelectors,
 };
 
 export const selectors = {
     ...dashboardSelectors,
     ...listSelectors,
-    ...entitySelectors
+    ...entitySelectors,
+    // TODO-ivan: do the proper scoped definitions for the above
+    mainTable: scopeSelectors('[data-testid="panel"]', tableSelectors),
+    sidePanel1: scopeSelectors('[data-testid="side-panel"]', sidePanelSelectors),
 };

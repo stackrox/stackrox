@@ -37,7 +37,7 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 
 // ListImage returns ListImage with given id.
 func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ListImage")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
 	branch := b.dacky.NewReadOnlyTransaction()
 	defer branch.Discard()
@@ -68,7 +68,7 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 
 // GetImages returns all images regardless of request
 func (b *storeImpl) GetImages() ([]*storage.Image, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	branch := b.dacky.NewReadOnlyTransaction()
 	defer branch.Discard()
@@ -94,7 +94,7 @@ func (b *storeImpl) GetImages() ([]*storage.Image, error) {
 
 // CountImages returns the number of images currently stored in the DB.
 func (b *storeImpl) CountImages() (int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Count, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image")
 
 	branch := b.dacky.NewReadOnlyTransaction()
 	defer branch.Discard()
@@ -109,7 +109,7 @@ func (b *storeImpl) CountImages() (int, error) {
 
 // GetImage returns image with given id.
 func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	branch := b.dacky.NewReadOnlyTransaction()
 	defer branch.Discard()
@@ -123,7 +123,7 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 
 // GetImagesBatch returns images with given ids.
 func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
 	branch := b.dacky.NewReadOnlyTransaction()
 	defer branch.Discard()
@@ -146,7 +146,7 @@ func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, e
 
 // Upsert writes and image to the DB, overwriting previous data.
 func (b *storeImpl) Upsert(image *storage.Image) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Upsert, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	iTime := protoTypes.TimestampNow()
 	if !b.noUpdateTimestamps {
@@ -162,7 +162,7 @@ func (b *storeImpl) Upsert(image *storage.Image) error {
 
 // DeleteImage deletes an image and all it's data.
 func (b *storeImpl) Delete(id string) error {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Image")
+	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Image")
 
 	keyTxn := b.dacky.NewReadOnlyTransaction()
 	defer keyTxn.Discard()

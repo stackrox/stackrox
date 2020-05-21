@@ -1,23 +1,17 @@
 package store
 
 import (
-	bbolt "github.com/etcd-io/bbolt"
 	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/storecache"
 )
 
 // Store provides storage functionality for process whitelists.
+//go:generate mockgen-wrapper
 type Store interface {
-	AddWhitelist(whitelist *storage.ProcessWhitelist) error
-	DeleteWhitelist(id string) error
-	GetWhitelist(id string) (*storage.ProcessWhitelist, error)
-	GetWhitelists(ids []string) ([]*storage.ProcessWhitelist, []int, error)
-	ListWhitelists() ([]*storage.ProcessWhitelist, error)
-	UpdateWhitelist(whitelist *storage.ProcessWhitelist) error
-	WalkAll(fn func(whitelist *storage.ProcessWhitelist) error) error
-}
+	Get(id string) (*storage.ProcessWhitelist, bool, error)
+	GetMany(ids []string) ([]*storage.ProcessWhitelist, []int, error)
+	Walk(fn func(whitelist *storage.ProcessWhitelist) error) error
 
-// New provides a new instance of Store.
-func New(db *bbolt.DB, cache storecache.Cache) (Store, error) {
-	return newStore(db, cache)
+	Upsert(whitelist *storage.ProcessWhitelist) error
+
+	Delete(id string) error
 }

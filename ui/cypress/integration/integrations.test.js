@@ -12,7 +12,7 @@ describe('Integrations page', () => {
 
     it('Plugin tiles should all be the same height', () => {
         let value = null;
-        cy.get(selectors.plugins).each($el => {
+        cy.get(selectors.plugins).each(($el) => {
             if (value) expect($el[0].clientHeight).to.equal(value);
             else value = $el[0].clientHeight;
         });
@@ -30,9 +30,7 @@ describe('Integrations page', () => {
         cy.get(selectors.buttons.delete).should('not.exist');
         cy.get(selectors.buttons.new).click();
 
-        const name = `Docker Registry ${Math.random()
-            .toString(36)
-            .substring(7)}`;
+        const name = `Docker Registry ${Math.random().toString(36).substring(7)}`;
         cy.get(selectors.dockerRegistryForm.nameInput).type(name);
 
         cy.get(
@@ -59,9 +57,7 @@ describe('Integrations page', () => {
 describe('API Token Creation Flow', () => {
     withAuth();
 
-    const randomTokenName = `Token${Math.random()
-        .toString(36)
-        .substring(7)}`;
+    const randomTokenName = `Token${Math.random().toString(36).substring(7)}`;
 
     beforeEach(() => {
         cy.visit('/');
@@ -85,14 +81,14 @@ describe('API Token Creation Flow', () => {
         cy.get(selectors.buttons.generate).click();
         cy.get(selectors.apiTokenBox);
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
-        cy.get(selectors.apiTokenDetailsDiv).contains('Role:Admin');
+        cy.get(selectors.apiTokenDetailsDiv).contains('Roles:Admin');
     });
 
     it('should show the generated API token in the table, and be clickable', () => {
         cy.get(selectors.apiTokenTile).click();
         cy.get(`.rt-tr:contains("${randomTokenName}")`).click();
         cy.get(selectors.apiTokenDetailsDiv).contains(`Name:${randomTokenName}`);
-        cy.get(selectors.apiTokenDetailsDiv).contains('Role:Admin');
+        cy.get(selectors.apiTokenDetailsDiv).contains('Roles:Admin');
     });
 
     it('should be able to revoke the API token', () => {

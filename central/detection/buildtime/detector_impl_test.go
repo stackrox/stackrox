@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	detectionPkg "github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/protoutils"
 	mappings "github.com/stackrox/rox/pkg/search/options/images"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	compilerWithoutProcessIndicators := detectionPkg.NewPolicyCompiler(
+	compilerWithoutProcessIndicators := detectionPkg.NewLegacyPolicyCompiler(
 		matcher.NewBuilder(
 			matcher.NewRegistry(nil),
 			mappings.OptionsMap,
@@ -45,7 +44,7 @@ func TestDetector(t *testing.T) {
 
 	// Load the latest tag policy since that has image fields, and add the BUILD lifecycle so it gets compiled for the
 	// buildtime policy set.
-	policyToTest := protoutils.CloneStoragePolicy(getPolicy(defaultPolicies, "Latest tag", t))
+	policyToTest := getPolicy(defaultPolicies, "Latest tag", t).Clone()
 	policyToTest.LifecycleStages = append(policyToTest.LifecycleStages, storage.LifecycleStage_BUILD)
 
 	require.NoError(t, policySet.UpsertPolicy(policyToTest))

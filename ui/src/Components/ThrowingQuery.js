@@ -20,7 +20,7 @@ const GraphQLError = ({ error }) => (
 );
 
 GraphQLError.propTypes = {
-    error: PropTypes.shape({ message: PropTypes.string.isRequired }).isRequired
+    error: PropTypes.shape({ message: PropTypes.string.isRequired }).isRequired,
 };
 
 const ThrowingQuery = ({ children, ...rest }) => (

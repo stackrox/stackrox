@@ -12,6 +12,7 @@ import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
 import services.ImageIntegrationService
+import services.MetadataService
 import services.RoleService
 import services.SACService
 import spock.lang.Retry
@@ -25,7 +26,7 @@ import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 @Slf4j
-@Retry(condition = { Helpers.determineRetry() })
+@Retry(condition = { Helpers.determineRetry(failure) })
 class BaseSpecification extends Specification {
 
     static final String RUN_ID
@@ -43,7 +44,9 @@ class BaseSpecification extends Specification {
 
     private static boolean globalSetupDone = false
 
-    private static String allAccessToken = null
+    protected static String allAccessToken = null
+
+    public static strictIntegrationTesting = false
 
     private static globalSetup() {
         if (globalSetupDone) {
@@ -52,11 +55,30 @@ class BaseSpecification extends Specification {
 
         println "Performing global setup"
 
+        if (!Env.IN_CI || Env.get("CIRCLE_TAG")) {
+            // Strictly test integration with external services when running in
+            // a dev environment or in CI against tagged builds (e.g. nightly builds).
+            println "Will perform strict integration testing (if any is required)"
+            strictIntegrationTesting = true
+        }
+
         RoleOuterClass.Role testRole = null
         ApiTokenService.GenerateTokenResponse tokenResp = null
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+
+        withRetry(10, 1) {
+            try {
+                def metadata = MetadataService.getMetadataServiceClient().getMetadata()
+                println "Testing against:"
+                println metadata
+            }
+            catch (Exception ex) {
+                println "Check the test target deployment, auth credentials, kube service proxy, etc."
+                throw(ex)
+            }
+        }
 
         withRetry(30, 1) {
             def allResources = RoleService.getResources()
@@ -95,7 +117,7 @@ class BaseSpecification extends Specification {
     @Rule
     TestName name = new TestName()
     @Shared
-    boolean isTestrail = System.getenv("testrail")
+    boolean isTestrail = Env.get("testrail")
     @Shared
     TestRailconfig tc = new TestRailconfig()
     @Shared

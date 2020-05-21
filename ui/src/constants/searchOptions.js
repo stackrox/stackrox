@@ -7,20 +7,20 @@ export const SEARCH_CATEGORIES = {
     SEARCH_UNSET: 'SEARCH_UNSET',
     SECRETS: 'SECRETS',
     COMPLIANCE: 'COMPLIANCE',
-    SUBJECT: 'SUBJECT'
+    SUBJECT: 'SUBJECT',
 };
 
 export const CLIENT_SIDE_SEARCH_OPTIONS = {
     COMPLIANCE: {
-        STATE: 'Compliance State'
+        STATE: 'Compliance State',
     },
     POLICY_STATUS: {
         CATEGORY: 'Policy Status',
         VALUES: {
             PASS: 'Pass',
-            FAIL: 'Fail'
-        }
-    }
+            FAIL: 'Fail',
+        },
+    },
 };
 
 export const availableSearchOptions = Object.values(SEARCH_CATEGORIES);

@@ -4,6 +4,7 @@ import org.junit.experimental.categories.Category
 import services.AuthProviderService
 import services.AuthService
 import services.BaseService
+import services.GroupService
 import spock.lang.Shared
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -35,6 +36,7 @@ class ClientCertAuthTest extends BaseSpecification {
             providerIDs[i] = AuthProviderService.createAuthProvider(
                     "Test Client CA Auth ${i}", "userpki", ["keys": cert])
             println "Client cert auth provider ID is ${providerIDs[i]}"
+            GroupService.addDefaultMapping(providerIDs[i], "None")
             certTokens[i] = AuthProviderService.getAuthProviderLoginToken(providerIDs[i])
             println "Certificate token is ${certTokens[i]}"
         }
@@ -44,6 +46,7 @@ class ClientCertAuthTest extends BaseSpecification {
         BaseService.useBasicAuth()
         for (String providerID : providerIDs) {
             if (providerID) {
+                GroupService.removeAllMappingsForProvider(providerID)
                 AuthProviderService.deleteAuthProvider(providerID)
             }
         }

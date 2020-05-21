@@ -139,15 +139,10 @@ func (d *datastoreImpl) RemoveRisk(ctx context.Context, subjectID string, subjec
 }
 
 func (d *datastoreImpl) getRisk(id string) (*storage.Risk, bool, error) {
-	risk, err := d.storage.Get(id)
-	if err != nil {
+	risk, exists, err := d.storage.Get(id)
+	if err != nil || !exists {
 		return nil, false, err
 	}
-
-	if risk == nil {
-		return nil, false, nil
-	}
-
 	return risk, true, nil
 }
 

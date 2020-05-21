@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { useQuery } from 'react-apollo';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
@@ -14,7 +14,7 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import {
     severityColorMap,
     severityTextColorMap,
-    severityColorLegend
+    severityColorLegend,
 } from 'constants/severityColors';
 
 const CVES_QUERY = gql`
@@ -33,8 +33,8 @@ const CvesByCvssScore = ({ entityContext }) => {
     const { loading, data = {} } = useQuery(CVES_QUERY, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
-            scopeQuery: queryService.entityContextToQueryString(entityContext)
-        }
+            scopeQuery: queryService.entityContextToQueryString(entityContext),
+        },
     });
 
     let content = <Loader />;
@@ -48,7 +48,7 @@ const CvesByCvssScore = ({ entityContext }) => {
 
     function getChildren(vulns, severity) {
         return vulns
-            .filter(vuln => vuln.severity === severity)
+            .filter((vuln) => vuln.severity === severity)
             .map(({ cve, cvss, summary }) => {
                 const severityString = `${severity.toUpperCase()}_SEVERITY`;
                 return {
@@ -58,7 +58,7 @@ const CvesByCvssScore = ({ entityContext }) => {
                     labelColor: severityTextColorMap[severityString],
                     textColor: severityTextColorMap[severityString],
                     value: cvss,
-                    link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl()
+                    link: workflowState.pushRelatedEntity(entityTypes.CVE, cve).toUrl(),
                 };
             });
     }
@@ -71,7 +71,7 @@ const CvesByCvssScore = ({ entityContext }) => {
                 color,
                 children: getChildren(vulns, severity),
                 textColor,
-                value: 0
+                value: 0,
             };
         });
     }
@@ -79,11 +79,11 @@ const CvesByCvssScore = ({ entityContext }) => {
     function getSidePanelData(vulns) {
         return severityColorLegend.map(({ title, textColor }) => {
             const severity = title.toUpperCase();
-            const category = vulns.filter(vuln => vuln.severity === severity);
+            const category = vulns.filter((vuln) => vuln.severity === severity);
             const text = `${category.length} rated as ${title}`;
             return {
                 text,
-                textColor
+                textColor,
             };
         });
     }
@@ -118,11 +118,11 @@ const CvesByCvssScore = ({ entityContext }) => {
 };
 
 CvesByCvssScore.propTypes = {
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
 };
 
 CvesByCvssScore.defaultProps = {
-    entityContext: {}
+    entityContext: {},
 };
 
 export default CvesByCvssScore;

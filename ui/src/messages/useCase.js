@@ -8,12 +8,12 @@ const useCaseLabels = {
     SECRET: 'Secret',
     POLICY: 'Policy',
     SERVICE_ACCOUNT: 'Service Account',
-    DEPLOYMENT: 'Deployment'
+    DEPLOYMENT: 'Deployment',
 };
 
 export const useCaseShortLabels = {
     [useCaseTypes.CONFIG_MANAGEMENT]: 'CM',
-    [useCaseTypes.VULN_MANAGEMENT]: 'VM'
+    [useCaseTypes.VULN_MANAGEMENT]: 'VM',
 };
 
 export default useCaseLabels;

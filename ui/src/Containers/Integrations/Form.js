@@ -17,41 +17,46 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
+import HelpIcon from 'Components/forms/HelpIcon';
 import formDescriptors from 'Containers/Integrations/formDescriptors';
+import { setFormSubmissionOptions } from './integrationFormUtils';
 import Schedule from './Schedule';
 
 class Form extends Component {
     static propTypes = {
         initialValues: PropTypes.shape({
             id: PropTypes.string,
-            name: PropTypes.string
+            name: PropTypes.string,
         }),
+        isNewIntegration: PropTypes.bool.isRequired,
         source: PropTypes.oneOf([
             'imageIntegrations',
             'notifiers',
             'authProviders',
             'clusters',
             'backups',
-            'authPlugins'
+            'authPlugins',
         ]).isRequired,
         type: PropTypes.string.isRequired,
         formFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({
-            name: PropTypes.string
+            name: PropTypes.string,
         }).isRequired,
         onClose: PropTypes.func.isRequired,
         testIntegration: PropTypes.func.isRequired,
         saveIntegration: PropTypes.func.isRequired,
-        triggerBackup: PropTypes.func.isRequired
+        triggerBackup: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
-        initialValues: null
+        initialValues: null,
     };
 
     onTest = () => {
+        const { source, type, isNewIntegration } = this.props;
         const data = this.addDefaultFormValues();
-        this.props.testIntegration(this.props.source, data);
+        const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
+        this.props.testIntegration(source, data, options);
     };
 
     onBackup = () => {
@@ -59,9 +64,11 @@ class Form extends Component {
     };
 
     onSubmit = () => {
-        const { source, type } = this.props;
+        const { source, type, isNewIntegration } = this.props;
         const data = this.addDefaultFormValues();
-        this.props.saveIntegration(source, type, data);
+        const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
+        this.props.saveIntegration(source, type, data, options);
+        this.props.onClose();
     };
 
     // isEditMode returns true if the form is editing an existing entity
@@ -70,7 +77,7 @@ class Form extends Component {
 
     addDefaultFormValues = () => {
         const { initialValues, formData } = this.props;
-        const data = Object.assign({}, initialValues, formData);
+        const data = { ...initialValues, ...formData };
         const { location } = window;
         data.uiEndpoint = this.props.source === 'authProviders' ? location.host : location.origin;
         data.type = this.props.type;
@@ -83,10 +90,15 @@ class Form extends Component {
         return data;
     };
 
-    renderHiddenField = field => <input type="hidden" name={field.jsonpath} value={field.value} />;
+    renderHiddenField = (field) => (
+        <input type="hidden" name={field.jsonpath} value={field.value} />
+    );
 
-    renderFormField = field => {
+    renderFormField = (field, initialValues) => {
         const disabled = field.disabled || (this.isEditMode() && field.immutable);
+        const placeholder = field.placeholderFunction
+            ? field.placeholderFunction(initialValues)
+            : field.placeholder;
         switch (field.type) {
             case 'text':
                 return (
@@ -94,7 +106,7 @@ class Form extends Component {
                         key={field.jsonpath}
                         name={field.jsonpath}
                         disabled={disabled}
-                        placeholder={field.placeholder}
+                        placeholder={placeholder}
                         value={field.default}
                     />
                 );
@@ -104,7 +116,7 @@ class Form extends Component {
                         key={field.jsonpath}
                         name={field.jsonpath}
                         disabled={disabled}
-                        placeholder={field.placeholder}
+                        placeholder={placeholder}
                         value={field.default}
                     />
                 );
@@ -113,7 +125,7 @@ class Form extends Component {
                     <ReduxToggleField
                         name={field.jsonpath}
                         disabled={disabled}
-                        placeholder={field.placeholder}
+                        placeholder={placeholder}
                         value={field.default}
                     />
                 );
@@ -133,7 +145,7 @@ class Form extends Component {
                     <ReduxPasswordField
                         name={field.jsonpath}
                         key={field.jsonpath}
-                        placeholder={field.placeholder}
+                        placeholder={placeholder}
                         disabled={disabled}
                     />
                 );
@@ -164,30 +176,46 @@ class Form extends Component {
     };
 
     renderForm = () => {
-        const { formFields } = this.props;
+        const { formFields, initialValues } = this.props;
         return (
             <form id="integrations-form" className="w-full p-4">
                 <div>
                     {formFields
-                        .filter(field => field.type !== 'hidden')
-                        .map(field => {
+                        .filter((field) => {
+                            return field.hiddenFunction
+                                ? !field.hiddenFunction(initialValues)
+                                : !field.hidden;
+                        })
+                        .map((field) => {
                             if (field.type === 'html') {
                                 return field.html;
                             }
                             const width = field.type === 'toggle' ? 'w-full' : 'w-2/3';
                             const align = field.type !== 'list' ? 'items-center' : 'pt-2';
+                            const helpIconDescription = field.helpFunction
+                                ? field.helpFunction(initialValues)
+                                : field.help;
                             return (
                                 // eslint-disable-next-line jsx-a11y/label-has-for
                                 <div className="flex mt-4" htmlFor={field.key} key={field.label}>
                                     <div className={`mr-4 flex ${width} capitalize ${align}`}>
                                         {field.label}
+                                        {helpIconDescription && (
+                                            <div className="ml-2">
+                                                <HelpIcon description={helpIconDescription} />
+                                            </div>
+                                        )}
                                     </div>
-                                    {this.renderFormField(field)}
+                                    {this.renderFormField(field, initialValues)}
                                 </div>
                             );
                         })}
                     {formFields
-                        .filter(field => field.type === 'hidden')
+                        .filter((field) => {
+                            return field.hiddenFunction
+                                ? field.hiddenFunction(initialValues)
+                                : field.hidden;
+                        })
                         .map(this.renderHiddenField)}
                 </div>
             </form>
@@ -197,7 +225,7 @@ class Form extends Component {
     render() {
         const header = this.isEditMode() ? this.props.formData.name : 'New Integration';
         const buttons = (
-            <React.Fragment>
+            <>
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
                     className="btn btn-success mx-1"
@@ -228,7 +256,7 @@ class Form extends Component {
                         Test
                     </PanelButton>
                 )}
-            </React.Fragment>
+            </>
         );
 
         return (
@@ -247,12 +275,12 @@ const getFormFields = createSelector(
 );
 
 const getFormFieldKeys = (source, type) =>
-    formDescriptors[source] ? formDescriptors[source][type].map(obj => obj.jsonpath) : '';
+    formDescriptors[source] ? formDescriptors[source][type].map((obj) => obj.jsonpath) : '';
 
 const getFormDefaultValues = (source, type) => {
     const defaultValues = {};
     if (formDescriptors[source] && formDescriptors[source][type]) {
-        formDescriptors[source][type].forEach(field => {
+        formDescriptors[source][type].forEach((field) => {
             if (field.default) {
                 set(defaultValues, field.jsonpath, field.default);
             }
@@ -267,31 +295,25 @@ const formFieldKeys = (state, props) => {
         ...getFormFieldKeys(props.source, props.type)
     );
     const defaultValues = getFormDefaultValues(props.source, props.type);
-    const initialValues = Object.assign({}, defaultValues, values);
+    const initialValues = { ...defaultValues, ...values };
     return initialValues;
 };
 
-const getFormData = createSelector(
-    [formFieldKeys],
-    formData => formData
-);
+const getFormData = createSelector([formFieldKeys], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
     formFields: getFormFields,
-    formData: getFormData
+    formData: getFormData,
 });
 
-const mapDispatchToProps = dispatch => ({
-    saveIntegration: (source, sourceType, integration) =>
-        dispatch(actions.saveIntegration.request({ source, sourceType, integration })),
-    testIntegration: (source, integration) =>
-        dispatch(actions.testIntegration(source, integration)),
-    triggerBackup: (source, id) => dispatch(actions.triggerBackup(source, id))
+const mapDispatchToProps = (dispatch) => ({
+    saveIntegration: (source, sourceType, integration, options) =>
+        dispatch(actions.saveIntegration.request({ source, sourceType, integration, options })),
+    testIntegration: (source, integration, options) =>
+        dispatch(actions.testIntegration(source, integration, options)),
+    triggerBackup: (source, id) => dispatch(actions.triggerBackup(source, id)),
 });
 
 export default reduxForm({ form: 'integrationForm' })(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(Form)
+    connect(mapStateToProps, mapDispatchToProps)(Form)
 );

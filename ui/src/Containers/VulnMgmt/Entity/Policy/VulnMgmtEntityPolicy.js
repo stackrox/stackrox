@@ -9,7 +9,7 @@ import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { DEPLOYMENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import VulnMgmtPolicyOverview from './VulnMgmtPolicyOverview';
 import VulnMgmtList from '../../List/VulnMgmtList';
 import { getScopeQuery, vulMgmtPolicyQuery } from '../VulnMgmtPolicyQueryUtil';
@@ -21,7 +21,7 @@ const VulmMgmtEntityPolicy = ({
     entityContext,
     sort,
     page,
-    setRefreshTrigger
+    setRefreshTrigger,
 }) => {
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
     const queryVarConcat = entityContext[entityTypes.POLICY] ? '' : ', query: $scopeQuery';
@@ -43,6 +43,17 @@ const VulmMgmtEntityPolicy = ({
                 lastUpdated
                 enforcementActions
                 lifecycleStages
+                policySections {
+                    sectionName
+                    policyGroups {
+                      booleanOperator
+                      fieldName
+                      negate
+                      values {
+                        value
+                      }
+                    }
+                  }
                 fields {
                     addCapabilities
                     args
@@ -109,6 +120,7 @@ const VulmMgmtEntityPolicy = ({
                         port
                         protocol
                     }
+                    privileged
                     processPolicy {
                         ancestor
                         args
@@ -200,8 +212,8 @@ const VulmMgmtEntityPolicy = ({
             id: entityId,
             query: queryService.objectToWhereClause({ ...search }),
             ...vulMgmtPolicyQuery,
-            scopeQuery: getScopeQuery(fullEntityContext)
-        }
+            scopeQuery: getScopeQuery(fullEntityContext),
+        },
     };
 
     return (
@@ -226,7 +238,7 @@ const VulmMgmtEntityPolicy = ({
 
 VulmMgmtEntityPolicy.propTypes = {
     ...workflowEntityPropTypes,
-    setRefreshTrigger: PropTypes.func
+    setRefreshTrigger: PropTypes.func,
 };
 VulmMgmtEntityPolicy.defaultProps = workflowEntityDefaultProps;
 

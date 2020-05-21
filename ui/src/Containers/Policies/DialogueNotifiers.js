@@ -19,22 +19,22 @@ class DialogueNotifiers extends Component {
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired
+                id: PropTypes.string.isRequired,
             })
         ).isRequired,
         selectedNotifiers: PropTypes.arrayOf(PropTypes.string),
-        setPolicyNotifiers: PropTypes.func.isRequired
+        setPolicyNotifiers: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
-        selectedNotifiers: []
+        selectedNotifiers: [],
     };
 
-    toggleRow = id => {
+    toggleRow = (id) => {
         const { selectedNotifiers } = this.props;
         if (selectedNotifiers.indexOf(id) > -1) {
             this.props.setPolicyNotifiers(
-                selectedNotifiers.filter(notifierId => notifierId !== id)
+                selectedNotifiers.filter((notifierId) => notifierId !== id)
             );
         } else if (selectedNotifiers.length === 0) {
             this.props.setPolicyNotifiers([id]);
@@ -46,7 +46,7 @@ class DialogueNotifiers extends Component {
     toggleSelectAll = () => {
         const { notifiers, selectedNotifiers } = this.props;
         if (notifiers.length > selectedNotifiers.length) {
-            this.props.setPolicyNotifiers(notifiers.map(notifier => notifier.id));
+            this.props.setPolicyNotifiers(notifiers.map((notifier) => notifier.id));
         } else {
             this.props.setPolicyNotifiers([]);
         }
@@ -61,14 +61,14 @@ class DialogueNotifiers extends Component {
         const policyNotifiers = uniq(
             this.props.policies
                 .filter(
-                    policy =>
-                        this.props.selectedPolicyIds.find(id => id === policy.id) &&
+                    (policy) =>
+                        this.props.selectedPolicyIds.find((id) => id === policy.id) &&
                         policy.notifiers.length > 0
                 )
-                .flatMap(policy => policy.notifiers)
+                .flatMap((policy) => policy.notifiers)
         );
 
-        return notifiers.filter(notifier => policyNotifiers.find(o => o === notifier.id));
+        return notifiers.filter((notifier) => policyNotifiers.find((o) => o === notifier.id));
     };
 
     render() {
@@ -89,8 +89,8 @@ class DialogueNotifiers extends Component {
         const columns = [
             {
                 accessor: 'name',
-                Header: 'Select Notifiers'
-            }
+                Header: 'Select Notifiers',
+            },
         ];
 
         const { selectedNotifiers } = this.props;
@@ -114,14 +114,11 @@ const mapStateToProps = createStructuredSelector({
     selectedPolicyIds: selectors.getSelectedPolicyIds,
 
     notifiers: selectors.getNotifiers,
-    selectedNotifiers: selectors.getPolicyNotifiers
+    selectedNotifiers: selectors.getPolicyNotifiers,
 });
 
 const mapDispatchToProps = {
-    setPolicyNotifiers: dialogueActions.setPolicyNotifiers
+    setPolicyNotifiers: dialogueActions.setPolicyNotifiers,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(DialogueNotifiers);
+export default connect(mapStateToProps, mapDispatchToProps)(DialogueNotifiers);

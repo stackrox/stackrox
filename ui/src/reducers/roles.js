@@ -6,7 +6,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const ACCESS_LEVEL = Object.freeze({
     READ_WRITE_ACCESS: 'READ_WRITE_ACCESS',
     READ_ACCESS: 'READ_ACCESS',
-    NO_ACCESS: 'NO_ACCESS'
+    NO_ACCESS: 'NO_ACCESS',
 });
 
 export const types = {
@@ -15,25 +15,25 @@ export const types = {
     SELECTED_ROLE: 'roles/SELECTED_ROLE',
     SAVE_ROLE: 'roles/SAVE_ROLE',
     DELETE_ROLE: 'roles/DELETE_ROLE',
-    FETCH_RESOURCES: createFetchingActionTypes('roles/FETCH_RESOURCES')
+    FETCH_RESOURCES: createFetchingActionTypes('roles/FETCH_RESOURCES'),
 };
 
 export const actions = {
     fetchUserRolePermissions: createFetchingActions(types.FETCH_USER_ROLE_PERMISSIONS),
     fetchRoles: createFetchingActions(types.FETCH_ROLES),
-    selectRole: role => ({
+    selectRole: (role) => ({
         type: types.SELECTED_ROLE,
-        role
+        role,
     }),
-    saveRole: role => ({
+    saveRole: (role) => ({
         type: types.SAVE_ROLE,
-        role
+        role,
     }),
-    deleteRole: id => ({
+    deleteRole: (id) => ({
         type: types.DELETE_ROLE,
-        id
+        id,
     }),
-    fetchResources: createFetchingActions(types.FETCH_RESOURCES)
+    fetchResources: createFetchingActions(types.FETCH_RESOURCES),
 };
 
 const roles = (state = [], action) => {
@@ -74,12 +74,12 @@ const reducer = combineReducers({
     roles,
     resources,
     selectedRole,
-    userRolePermissions
+    userRolePermissions,
 });
 
-const getRoles = state => state.roles;
-const getResources = state => state.resources;
-const getSelectedRole = state => state.selectedRole;
+const getRoles = (state) => state.roles;
+const getResources = (state) => state.resources;
+const getSelectedRole = (state) => state.selectedRole;
 
 const getAccessForPermission = (state, permission) => {
     if (!state.userRolePermissions) return true;
@@ -88,11 +88,11 @@ const getAccessForPermission = (state, permission) => {
     return access;
 };
 
-const shouldHaveReadPermission = state => permission => {
+const shouldHaveReadPermission = (state) => (permission) => {
     const access = getAccessForPermission(state, permission);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS;
 };
-const shouldHaveReadWritePermission = state => permission => {
+const shouldHaveReadWritePermission = (state) => (permission) => {
     const access = getAccessForPermission(state, permission);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS;
 };
@@ -102,7 +102,7 @@ export const selectors = {
     getResources,
     getSelectedRole,
     shouldHaveReadPermission,
-    shouldHaveReadWritePermission
+    shouldHaveReadWritePermission,
 };
 
 export default reducer;

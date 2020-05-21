@@ -55,4 +55,14 @@ class ProcessService extends BaseService {
 
         return response.getProcessesList()
     }
+
+    static getGroupedProcessByDeploymentAndContainer(String deploymentId) {
+        def response = getClient().getGroupedProcessByDeploymentAndContainer(
+            ProcessServiceOuterClass.GetProcessesByDeploymentRequest.newBuilder()
+                .setDeploymentId(deploymentId)
+                .build()
+        )
+
+        return response.groupsList
+    }
 }

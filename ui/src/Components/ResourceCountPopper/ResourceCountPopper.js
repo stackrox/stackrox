@@ -5,7 +5,7 @@ import { ArrowRightCircle } from 'react-feather';
 
 import Popper from 'Components/Popper';
 
-const renderKeyValuePairs = data => {
+const renderKeyValuePairs = (data) => {
     return data.map(({ key, value }) => (
         <div className="mt-2" key={key}>
             {key} : {value}
@@ -26,8 +26,9 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             disabled={!length}
             placement="bottom"
             reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`uppercase w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-xs ${length &&
-                'hover:bg-base-200'}`}
+            buttonClass={`uppercase w-full rounded border border-base-400 bg-base-100 p-1 px-2 text-left text-xs ${
+                length && 'hover:bg-base-200'
+            }`}
             buttonContent={buttonContent}
             popperContent={
                 <div className="border border-base-300 p-4 shadow bg-base-100 whitespace-no-wrap">
@@ -43,17 +44,17 @@ ResourceCountPopper.propTypes = {
         PropTypes.shape({
             key: PropTypes.string.isRequired,
             value: PropTypes.oneOfType([PropTypes.string, PropTypes.number, PropTypes.bool])
-                .isRequired
+                .isRequired,
         })
     ).isRequired,
     label: PropTypes.string.isRequired,
     reactOutsideClassName: PropTypes.string,
-    renderContent: PropTypes.func
+    renderContent: PropTypes.func,
 };
 
 ResourceCountPopper.defaultProps = {
     reactOutsideClassName: null,
-    renderContent: renderKeyValuePairs
+    renderContent: renderKeyValuePairs,
 };
 
 export default ResourceCountPopper;

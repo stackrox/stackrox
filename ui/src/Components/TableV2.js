@@ -24,7 +24,7 @@ class TableV2 extends Component {
         noDataText: ReactTablePropTypes.noDataText,
         setTableRef: PropTypes.func,
         trClassName: PropTypes.string,
-        showThead: PropTypes.bool
+        showThead: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -34,13 +34,13 @@ class TableV2 extends Component {
         onRowClick: null,
         setTableRef: null,
         trClassName: '',
-        showThead: true
+        showThead: true,
     };
 
     getTheadProps = () => {
         if (!this.props.showThead) {
             return {
-                style: { display: 'none' }
+                style: { display: 'none' },
             };
         }
         // returns an object, if there are no styles to override
@@ -48,7 +48,7 @@ class TableV2 extends Component {
     };
 
     getTrGroupProps = (state, rowInfo) => ({
-        className: rowInfo && rowInfo.original ? this.props.trClassName : 'hidden'
+        className: rowInfo && rowInfo.original ? this.props.trClassName : 'hidden',
     });
 
     getTrProps = (state, rowInfo) => {
@@ -67,21 +67,21 @@ class TableV2 extends Component {
             onClick: () => {
                 if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
             },
-            className: classes.join(' ')
+            className: classes.join(' '),
         };
     };
 
-    getColumnClassName = column => column.className || defaultColumnClassName;
+    getColumnClassName = (column) => column.className || defaultColumnClassName;
 
-    getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
+    getHeaderClassName = (column) => column.headerClassName || defaultHeaderClassName;
 
     render() {
         const { rows, columns, ...rest } = this.props;
         if (!columns || !columns.length) return null;
-        columns.forEach(column =>
+        columns.forEach((column) =>
             Object.assign(column, {
                 className: this.getColumnClassName(column),
-                headerClassName: this.getHeaderClassName(column)
+                headerClassName: this.getHeaderClassName(column),
             })
         );
         return (

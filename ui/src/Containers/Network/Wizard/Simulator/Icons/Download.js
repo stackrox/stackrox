@@ -12,8 +12,8 @@ class Download extends Component {
     static propTypes = {
         modificationName: PropTypes.string.isRequired,
         modification: PropTypes.shape({
-            applyYaml: PropTypes.string.isRequired
-        }).isRequired
+            applyYaml: PropTypes.string.isRequired,
+        }).isRequired,
     };
 
     onClick = () => {
@@ -42,7 +42,7 @@ class Download extends Component {
 
 const mapStateToProps = createStructuredSelector({
     modificationName: selectors.getNetworkPolicyModificationName,
-    modification: selectors.getNetworkPolicyModification
+    modification: selectors.getNetworkPolicyModification,
 });
 
 export default connect(mapStateToProps)(Download);

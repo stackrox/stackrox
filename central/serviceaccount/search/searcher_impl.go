@@ -58,7 +58,7 @@ func (ds *searcherImpl) searchServiceAccounts(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, nil, err
 	}
-	serviceAccounts, missingIndices, err := ds.storage.GetServiceAccounts(search.ResultsToIDs(results))
+	serviceAccounts, missingIndices, err := ds.storage.GetMany(search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}

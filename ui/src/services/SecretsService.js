@@ -17,8 +17,8 @@ export function fetchSecrets(options) {
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios.get(`${secretsUrl}?${params}`).then(response => ({
-        response: normalize(response.data.secrets, [secretSchema])
+    return axios.get(`${secretsUrl}?${params}`).then((response) => ({
+        response: normalize(response.data.secrets, [secretSchema]),
     }));
 }
 
@@ -26,5 +26,5 @@ export function fetchSecret(id) {
     if (!id) throw new Error('Secret ID must be specified');
     return axios
         .get(`${secretsUrl}/${id}`)
-        .then(response => ({ response: normalize(response.data, secretSchema) }));
+        .then((response) => ({ response: normalize(response.data, secretSchema) }));
 }

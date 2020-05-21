@@ -4,7 +4,7 @@ import {
     fetchProcesses,
     fetchProcessesWhiteList,
     addDeleteProcesses,
-    lockUnlockProcesses
+    lockUnlockProcesses,
 } from 'services/ProcessesService';
 import { actions, types } from 'reducers/processes';
 import { getDeploymentAndProcessIdFromGroupedProcesses } from 'utils/processUtils';
@@ -18,7 +18,7 @@ export function* getProcesses(id) {
         yield put(actions.fetchProcesses.success(result.response));
         const promises = [];
         const uniqueContainerNames = uniqBy(result.response.groups, 'containerName').map(
-            x => x.containerName
+            (x) => x.containerName
         );
 
         const { clusterId, namespace } = getDeploymentAndProcessIdFromGroupedProcesses(
@@ -26,7 +26,7 @@ export function* getProcesses(id) {
         );
 
         if (clusterId && namespace && uniqueContainerNames && uniqueContainerNames.length) {
-            uniqueContainerNames.forEach(containerName => {
+            uniqueContainerNames.forEach((containerName) => {
                 const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${id}&key.containerName=${containerName}`;
                 promises.push(call(fetchProcessesWhiteList, queryStr));
             });
@@ -85,6 +85,6 @@ export default function* processes() {
     yield all([
         takeEveryLocation(riskPath, getProcessesByDeployment),
         fork(watchAddDeleteProcesses),
-        fork(watchLockUnlockProcesses)
+        fork(watchLockUnlockProcesses),
     ]);
 }

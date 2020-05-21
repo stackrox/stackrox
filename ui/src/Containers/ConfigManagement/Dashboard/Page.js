@@ -23,7 +23,7 @@ const ConfigManagementDashboardPage = () => {
                 isConfigMangement="true"
                 standardOptions={[
                     standardTypes.CIS_Docker_v1_2_0,
-                    standardTypes.CIS_Kubernetes_v1_5
+                    standardTypes.CIS_Kubernetes_v1_5,
                 ]}
             />
             <UsersWithMostClusterAdminRoles />

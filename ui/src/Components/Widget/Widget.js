@@ -12,7 +12,7 @@ function Widget({
     pages,
     onPageChange,
     id,
-    titleComponents
+    titleComponents,
 }) {
     const [currentPage, setCurrentPage] = useState(0);
 
@@ -57,15 +57,17 @@ function Widget({
                     currentPage={currentPage}
                     className="hidden"
                 />
-            )
+            ),
         };
     }
 
     const childrenWithPageProp =
         pages && pages > 1 ? (
-            <React.Fragment>
-                {React.Children.map(children, child => React.cloneElement(child, { currentPage }))}
-            </React.Fragment>
+            <>
+                {React.Children.map(children, (child) =>
+                    React.cloneElement(child, { currentPage })
+                )}
+            </>
         ) : (
             children
         );
@@ -108,7 +110,7 @@ Widget.propTypes = {
     headerComponents: PropTypes.element,
     pages: PropTypes.number,
     onPageChange: PropTypes.func,
-    id: PropTypes.string
+    id: PropTypes.string,
 };
 
 Widget.defaultProps = {
@@ -119,7 +121,7 @@ Widget.defaultProps = {
     headerComponents: null,
     pages: 0,
     onPageChange: null,
-    id: 'widget'
+    id: 'widget',
 };
 
 export default Widget;

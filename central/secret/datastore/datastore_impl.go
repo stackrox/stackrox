@@ -28,7 +28,12 @@ type datastoreImpl struct {
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing secrets")
-	secrets, err := d.storage.GetAllSecrets()
+
+	var secrets []*storage.Secret
+	err := d.storage.Walk(func(secret *storage.Secret) error {
+		secrets = append(secrets, secret)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -40,7 +45,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
-	secret, exists, err := d.storage.GetSecret(id)
+	secret, exists, err := d.storage.Get(id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -68,7 +73,7 @@ func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
 	if ok, err := secretSAC.ReadAllowed(ctx); err != nil {
 		return 0, err
 	} else if ok {
-		return d.storage.CountSecrets()
+		return d.storage.Count()
 	}
 
 	searchResults, err := d.Search(ctx, searchPkg.EmptyQuery())
@@ -85,7 +90,7 @@ func (d *datastoreImpl) UpsertSecret(ctx context.Context, request *storage.Secre
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.UpsertSecret(request); err != nil {
+	if err := d.storage.Upsert(request); err != nil {
 		return err
 	}
 	return d.indexer.AddSecret(request)
@@ -98,7 +103,7 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.RemoveSecret(id); err != nil {
+	if err := d.storage.Delete(id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteSecret(id)

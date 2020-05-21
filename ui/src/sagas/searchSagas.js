@@ -9,7 +9,7 @@ import {
     policiesPath,
     imagesPath,
     secretsPath,
-    networkPath
+    networkPath,
 } from 'routePaths';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { actions as alertActions } from 'reducers/alerts';
@@ -24,7 +24,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';
 
-const getParams = url => {
+const getParams = (url) => {
     const params = {};
     const parser = document.createElement('a');
     parser.href = url;
@@ -45,17 +45,17 @@ const getQuery = () => {
     const queryOptions = [];
 
     if (keys.length) {
-        keys.forEach(key => {
+        keys.forEach((key) => {
             queryOptions.push(
                 {
                     label: `${capitalize(key)}:`,
                     type: 'categoryOption',
-                    value: `${capitalize(key)}:`
+                    value: `${capitalize(key)}:`,
                 },
                 {
                     className: 'Select-create-option-placeholder',
                     label: searchParams[key],
-                    value: searchParams[key]
+                    value: searchParams[key],
                 }
             );
         });
@@ -152,6 +152,6 @@ export default function* searches() {
             networkActions.setNetworkSearchSuggestions,
             networkActions.setNetworkSearchOptions,
             'categories=DEPLOYMENTS'
-        )
+        ),
     ]);
 }

@@ -9,7 +9,7 @@ import generate from 'images/generate.svg';
 
 class Generate extends Component {
     static propTypes = {
-        generatePolicyModification: PropTypes.func.isRequired
+        generatePolicyModification: PropTypes.func.isRequired,
     };
 
     onClick = () => {
@@ -36,10 +36,7 @@ class Generate extends Component {
 }
 
 const mapDispatchToProps = {
-    generatePolicyModification: wizardActions.generateNetworkPolicyModification
+    generatePolicyModification: wizardActions.generateNetworkPolicyModification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(Generate);
+export default connect(null, mapDispatchToProps)(Generate);

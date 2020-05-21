@@ -5,7 +5,7 @@ import { mainPath, loginPath, systemConfigPath } from 'routePaths';
 import {
     fetchSystemConfig,
     fetchPublicConfig,
-    saveSystemConfig
+    saveSystemConfig,
 } from 'services/SystemConfigService';
 import { actions, types } from 'reducers/systemConfig';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -55,6 +55,6 @@ export default function* systemConfig() {
         takeEveryNewlyMatchedLocation(systemConfigPath, getSystemConfig),
         takeEveryNewlyMatchedLocation(loginPath, getPublicConfig),
         takeEveryNewlyMatchedLocation(mainPath, getPublicConfig),
-        fork(watchSaveSystemConfig)
+        fork(watchSaveSystemConfig),
     ]);
 }

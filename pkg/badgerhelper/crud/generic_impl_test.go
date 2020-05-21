@@ -180,7 +180,7 @@ func (s *CRUDTestSuite) TestReadAll() {
 func (s *CRUDTestSuite) TestUpsert() {
 	s.NoError(s.crud.Upsert(alert1))
 
-	localAlert := proto.Clone(alert1).(*storage.Alert)
+	localAlert := alert1.Clone()
 	localAlert.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.Upsert(localAlert))
@@ -195,10 +195,10 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1}))
 	s.NoError(s.crud.UpsertBatch([]proto.Message{alert1, alert2}))
 
-	localAlert1 := proto.Clone(alert1).(*storage.Alert)
+	localAlert1 := alert1.Clone()
 	localAlert1.State = storage.ViolationState_RESOLVED
 
-	localAlert2 := proto.Clone(alert2).(*storage.Alert)
+	localAlert2 := alert2.Clone()
 	localAlert2.State = storage.ViolationState_RESOLVED
 
 	s.NoError(s.crud.UpsertBatch([]proto.Message{localAlert1, localAlert2}))

@@ -16,5 +16,5 @@ export default function Descriptor({ header, description }) {
 
 Descriptor.propTypes = {
     header: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired
+    description: PropTypes.string.isRequired,
 };

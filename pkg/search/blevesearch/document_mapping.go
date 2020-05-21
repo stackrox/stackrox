@@ -23,7 +23,12 @@ func DocumentMappingFromOptionsMap(optionsMap map[search.FieldLabel]*v1.SearchFi
 	// searchable type. It is necessary to index this field since we store all documents in the same
 	// index, so we can add a query matching the "type" field to the document type if we want to restrict
 	// results to documents of that type.
-	rootDocumentMapping.AddFieldMappingsAt("type", mapping.NewTextFieldMapping())
+
+	typeTextField := mapping.NewTextFieldMapping()
+	typeTextField.Store = false
+	typeTextField.DocValues = false
+	typeTextField.IncludeInAll = false
+	rootDocumentMapping.AddFieldMappingsAt("type", typeTextField)
 	return rootDocumentMapping
 }
 

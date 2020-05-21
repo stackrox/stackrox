@@ -1,29 +1,28 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/policies/backend';
-import { actions as pageActions } from 'reducers/policies/page';
 import { actions as tableActions } from 'reducers/policies/table';
 import { actions as wizardActions } from 'reducers/policies/wizard';
-import { createStructuredSelector } from 'reselect';
-import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 
-import * as Icon from 'react-feather';
+import wizardStages from 'Containers/Policies/Wizard/wizardStages';
 import CheckboxTable from 'Components/CheckboxTable';
 import SeverityLabel from 'Components/SeverityLabel';
 import RowActionButton from 'Components/RowActionButton';
-import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import {
     defaultColumnClassName,
     defaultHeaderClassName,
     wrapClassName,
-    rtTrActionsClassName
+    rtTrActionsClassName,
 } from 'Components/Table';
 import { lifecycleStageLabels } from 'messages/common';
 import { sortAscii, sortSeverity, sortLifecycle } from 'sorters/sorters';
+import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 
 // TableContents are the policy rows.
 class TableContents extends Component {
@@ -36,46 +35,31 @@ class TableContents extends Component {
         wizardStage: PropTypes.string.isRequired,
         wizardPolicy: PropTypes.shape({}),
 
+        setSelectedPolicy: PropTypes.func.isRequired,
         updatePolicyDisabledState: PropTypes.func.isRequired,
-        selectPolicyId: PropTypes.func.isRequired,
         selectPolicyIds: PropTypes.func.isRequired,
-        openWizard: PropTypes.func.isRequired,
-        setWizardStage: PropTypes.func.isRequired,
         setWizardPolicyDisabled: PropTypes.func.isRequired,
         deletePolicies: PropTypes.func.isRequired,
-
-        history: ReactRouterPropTypes.history.isRequired
     };
 
     static defaultProps = {
-        wizardPolicy: null
+        wizardPolicy: null,
     };
 
-    setSelectedPolicy = policy => {
-        // Add policy to history.
-        const urlSuffix = `/${policy.id}`;
-        this.props.history.push({
-            pathname: `/main/policies${urlSuffix}`
-        });
-
-        // Select the policy so that it is highlighted in the table.
-        this.props.selectPolicyId(policy.id);
-
-        // Bring up the wizard with that policy.
-        this.props.setWizardStage(wizardStages.details);
-        this.props.openWizard();
+    setSelectedPolicy = (policy) => {
+        this.props.setSelectedPolicy(policy.id);
     };
 
-    toggleEnabledDisabledPolicy = ({ id, disabled }) => e => {
+    toggleEnabledDisabledPolicy = ({ id, disabled }) => (e) => {
         e.stopPropagation();
         this.props.updatePolicyDisabledState({
             policyId: id,
-            disabled: !disabled
+            disabled: !disabled,
         });
         this.props.setWizardPolicyDisabled(!disabled);
     };
 
-    toggleRow = id => {
+    toggleRow = (id) => {
         const selection = toggleRow(id, this.props.selectedPolicyIds);
         this.props.selectPolicyIds(selection);
     };
@@ -87,12 +71,12 @@ class TableContents extends Component {
         this.props.selectPolicyIds(selection);
     };
 
-    onDeletePolicy = ({ id }) => e => {
+    onDeletePolicy = ({ id }) => (e) => {
         e.stopPropagation();
         this.props.deletePolicies([id]);
     };
 
-    renderRowActionButtons = policy => {
+    renderRowActionButtons = (policy) => {
         const enableTooltip = `${policy.disabled ? 'Enable' : 'Disable'} policy`;
         const enableIconColor = policy.disabled ? 'text-primary-600' : 'text-success-600';
         const enableIconHoverColor = policy.disabled ? 'text-primary-700' : 'text-success-700';
@@ -151,13 +135,13 @@ class TableContents extends Component {
                 ),
                 sortMethod: sortAscii,
                 className: `w-1/5 left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,
-                headerClassName: `w-1/5 left-checkbox-offset ${defaultHeaderClassName}`
+                headerClassName: `w-1/5 left-checkbox-offset ${defaultHeaderClassName}`,
             },
             {
                 Header: 'Description',
                 accessor: 'description',
                 className: `w-1/3 ${wrapClassName} ${defaultColumnClassName}`,
-                headerClassName: `w-1/3 ${defaultHeaderClassName}`
+                headerClassName: `w-1/3 ${defaultHeaderClassName}`,
             },
             {
                 Header: 'Lifecycle',
@@ -166,27 +150,27 @@ class TableContents extends Component {
                 headerClassName: `${defaultHeaderClassName}`,
                 Cell: ({ original }) => {
                     const { lifecycleStages } = original;
-                    return lifecycleStages.map(stage => lifecycleStageLabels[stage]).join(', ');
+                    return lifecycleStages.map((stage) => lifecycleStageLabels[stage]).join(', ');
                 },
-                sortMethod: sortLifecycle
+                sortMethod: sortLifecycle,
             },
             {
                 Header: 'Severity',
                 accessor: 'severity',
-                Cell: ci => {
+                Cell: (ci) => {
                     const severity = ci.value;
                     return <SeverityLabel severity={severity} />;
                 },
                 width: 100,
-                sortMethod: sortSeverity
+                sortMethod: sortSeverity,
             },
             {
                 Header: '',
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original)
-            }
+                Cell: ({ original }) => this.renderRowActionButtons(original),
+            },
         ];
 
         const id = this.props.selectedPolicyId;
@@ -214,8 +198,8 @@ class TableContents extends Component {
                     defaultSorted={[
                         {
                             id: 'name',
-                            desc: false
-                        }
+                            desc: false,
+                        },
                     ]}
                 />
             </div>
@@ -230,22 +214,14 @@ const mapStateToProps = createStructuredSelector({
     selectedPolicyIds: selectors.getSelectedPolicyIds,
     wizardOpen: selectors.getWizardOpen,
     wizardStage: selectors.getWizardStage,
-    wizardPolicy: selectors.getWizardPolicy
+    wizardPolicy: selectors.getWizardPolicy,
 });
 
 const mapDispatchToProps = {
-    selectPolicyId: tableActions.selectPolicyId,
     selectPolicyIds: tableActions.selectPolicyIds,
     updatePolicyDisabledState: tableActions.updatePolicyDisabledState,
     deletePolicies: backendActions.deletePolicies,
-    openWizard: pageActions.openWizard,
-    setWizardStage: wizardActions.setWizardStage,
-    setWizardPolicyDisabled: wizardActions.setWizardPolicyDisabled
+    setWizardPolicyDisabled: wizardActions.setWizardPolicyDisabled,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(TableContents)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(TableContents));

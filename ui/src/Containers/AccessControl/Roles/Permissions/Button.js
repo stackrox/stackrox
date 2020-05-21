@@ -23,7 +23,7 @@ function Button(props) {
 Button.propTypes = {
     isEditing: PropTypes.bool.isRequired,
     onEdit: PropTypes.func.isRequired,
-    onCancel: PropTypes.func.isRequired
+    onCancel: PropTypes.func.isRequired,
 };
 
 export default Button;

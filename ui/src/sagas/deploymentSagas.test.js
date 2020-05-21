@@ -19,7 +19,7 @@ describe('Deployment Sagas', () => {
                 [select(selectors.getDeploymentsSearchOptions), []],
                 [select(selectors.getDashboardSearchOptions), []],
                 [select(selectors.getPoliciesSearchOptions), []],
-                [call(fetchDeployments, []), dynamic(fetchMock)]
+                [call(fetchDeployments, []), dynamic(fetchMock)],
             ])
             .dispatch(createLocationChange('/main/dashboard'))
             .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })

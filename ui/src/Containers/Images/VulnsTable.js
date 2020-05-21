@@ -9,7 +9,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
         {
             Header: 'CVE',
             accessor: 'cve',
-            Cell: ci => (
+            Cell: (ci) => (
                 <div>
                     <a
                         href={ci.original.link}
@@ -23,13 +23,13 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
                 </div>
             ),
             headerClassName: 'font-600 border-b border-base-300 flex items-end bg-primary-300',
-            className: 'pointer-events-none flex items-center justify-left italic'
+            className: 'pointer-events-none flex items-center justify-left italic',
         },
         {
             Header: 'CVSS',
             accessor: 'cvss',
             width: 100,
-            Cell: ci => {
+            Cell: (ci) => {
                 const cvss = ci.original && ci.original.cvss && ci.original.cvss.toFixed(1);
                 if (!cvss) {
                     return (
@@ -49,8 +49,8 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             },
             headerClassName:
                 'font-600 border-b border-base-300 flex items-end justify-end bg-primary-300',
-            className: 'flex items-center justify-end italic'
-        }
+            className: 'flex items-center justify-end italic',
+        },
     ];
     if (containsFixableCVEs) {
         columns.push({
@@ -59,7 +59,7 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             width: 130,
             headerClassName: 'font-600 border-b border-base-300 flex items-end',
             className: 'pointer-events-none flex items-center justify-end italic',
-            Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value)
+            Cell: ({ value }) => (value === '' && !isOSPkg ? 'Unknown' : value),
         });
     }
 
@@ -73,11 +73,11 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             defaultSorted={[
                 {
                     id: 'cvss',
-                    desc: true
+                    desc: true,
                 },
                 {
-                    id: 'name'
-                }
+                    id: 'name',
+                },
             ]}
         />
     );
@@ -86,12 +86,12 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
 VulnsTable.propTypes = {
     vulns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     containsFixableCVEs: PropTypes.bool,
-    isOSPkg: PropTypes.bool
+    isOSPkg: PropTypes.bool,
 };
 
 VulnsTable.defaultProps = {
     containsFixableCVEs: false,
-    isOSPkg: false
+    isOSPkg: false,
 };
 
 export default VulnsTable;

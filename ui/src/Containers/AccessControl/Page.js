@@ -13,7 +13,7 @@ function Page({ fetchResources }) {
     fetchResources();
     const tabHeaders = [
         { text: 'Auth Provider Rules', disabled: false },
-        { text: 'Roles and Permissions', disabled: false }
+        { text: 'Roles and Permissions', disabled: false },
     ];
     return (
         <section className="flex flex-col h-full">
@@ -35,14 +35,11 @@ function Page({ fetchResources }) {
 }
 
 Page.propTypes = {
-    fetchResources: PropTypes.func.isRequired
+    fetchResources: PropTypes.func.isRequired,
 };
 
 const mapDispatchToProps = {
-    fetchResources: actions.fetchResources.request
+    fetchResources: actions.fetchResources.request,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(Page);
+export default connect(null, mapDispatchToProps)(Page);

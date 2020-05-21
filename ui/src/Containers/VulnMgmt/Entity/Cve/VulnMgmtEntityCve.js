@@ -12,7 +12,7 @@ import VulnMgmtList from '../../List/VulnMgmtList';
 import {
     vulMgmtPolicyQuery,
     tryUpdateQueryWithVulMgmtPolicyClause,
-    getScopeQuery
+    getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, page }) => {
@@ -74,8 +74,8 @@ const VulmMgmtCve = ({ entityId, entityListType, search, entityContext, sort, pa
             id: entityId,
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
-            scopeQuery: getScopeQuery(fullEntityContext)
-        }
+            scopeQuery: getScopeQuery(fullEntityContext),
+        },
     };
 
     return (

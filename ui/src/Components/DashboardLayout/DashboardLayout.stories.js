@@ -4,7 +4,7 @@ import DashboardLayout from './DashboardLayout';
 
 export default {
     title: 'DashboardLayout',
-    component: DashboardLayout
+    component: DashboardLayout,
 };
 
 export const withHeaderText = () => <DashboardLayout headerText="Storybook" />;

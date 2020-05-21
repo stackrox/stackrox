@@ -27,12 +27,12 @@ NextPaginationButton.propTypes = {
     currentPage: PropTypes.number.isRequired,
     totalSize: PropTypes.number.isRequired,
     onChange: PropTypes.func.isRequired,
-    pageSize: PropTypes.number
+    pageSize: PropTypes.number,
 };
 
 NextPaginationButton.defaultProps = {
     className: '',
-    pageSize: 10
+    pageSize: 10,
 };
 
 export default NextPaginationButton;

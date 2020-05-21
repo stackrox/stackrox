@@ -26,6 +26,7 @@ message S3Config {
     bool   use_iam           = 2;
     string access_key_id     = 3;
     string secret_access_key = 4 [(gogoproto.moretags) = "scrub:\"always\""];
-    string region            = 5;
+    string region           = 5;
     string object_prefix     = 6;
+    string endpoint          = 7;
 }

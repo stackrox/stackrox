@@ -7,7 +7,7 @@ class Select extends Component {
         options: PropTypes.arrayOf(
             PropTypes.shape({
                 label: PropTypes.string,
-                value: PropTypes.string
+                value: PropTypes.string,
             })
         ).isRequired,
         onChange: PropTypes.func.isRequired,
@@ -15,7 +15,7 @@ class Select extends Component {
         className: PropTypes.string,
         wrapperClass: PropTypes.string,
         triggerClass: PropTypes.string,
-        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+        value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     };
 
     static defaultProps = {
@@ -24,12 +24,12 @@ class Select extends Component {
             'block w-full border bg-base-200 border-base-400 text-base-600 p-3 pr-8 rounded-sm z-1 focus:border-base-500',
         wrapperClass: '',
         triggerClass: '',
-        value: ''
+        value: '',
     };
 
-    onClick = event => {
+    onClick = (event) => {
         const selectedOption = this.props.options.find(
-            option => option.value === event.target.value
+            (option) => option.value === event.target.value
         );
         if (!selectedOption) {
             throw new Error('Selected ID does not match any known option in Select control.');
@@ -53,7 +53,7 @@ class Select extends Component {
                             {placeholder}
                         </option>
                     )}
-                    {options.map(option => (
+                    {options.map((option) => (
                         <option key={option.label} value={option.value}>
                             {option.label}
                         </option>

@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
@@ -49,7 +48,7 @@ type storeImpl struct {
 }
 
 // GetProcessIndicator returns indicator with given id.
-func (b *storeImpl) GetProcessIndicator(id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
+func (b *storeImpl) Get(id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "ProcessIndicator")
 	msg, exists, err := b.crud.Read(id)
 	if err != nil || !exists {
@@ -59,7 +58,7 @@ func (b *storeImpl) GetProcessIndicator(id string) (indicator *storage.ProcessIn
 	return
 }
 
-func (b *storeImpl) GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error) {
+func (b *storeImpl) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
 	msgs, missingIndices, err := b.crud.ReadBatch(ids)
@@ -87,28 +86,7 @@ func (b *storeImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) 
 	return indicators, nil
 }
 
-func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
-	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetGrouped, "ProcessIndicator")
-	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
-	err := b.WalkAll(func(pi *storage.ProcessIndicator) error {
-		info := processindicator.ProcessWithContainerInfo{
-			ContainerName: pi.GetContainerName(),
-			PodID:         pi.GetPodId(),
-			ProcessName:   pi.GetSignal().GetName(),
-		}
-		processNamesToArgs[info] = append(processNamesToArgs[info], processindicator.IDAndArgs{
-			ID:   pi.GetId(),
-			Args: pi.GetSignal().GetArgs(),
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return processNamesToArgs, nil
-}
-
-func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) error {
+func (b *storeImpl) UpsertMany(indicators []*storage.ProcessIndicator) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 
 	msgs := make([]proto.Message, 0, len(indicators))
@@ -118,7 +96,7 @@ func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator
 	return b.crud.UpsertBatch(msgs)
 }
 
-func (b *storeImpl) RemoveProcessIndicators(ids []string) error {
+func (b *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "ProcessIndicators")
 
 	if err := b.crud.DeleteBatch(ids); err != nil {
@@ -135,7 +113,7 @@ func (b *storeImpl) GetKeysToIndex() ([]string, error) {
 	return b.crud.GetKeysToIndex()
 }
 
-func (b *storeImpl) WalkAll(fn func(pi *storage.ProcessIndicator) error) error {
+func (b *storeImpl) Walk(fn func(pi *storage.ProcessIndicator) error) error {
 	opts := badgerhelper.ForEachOptions{
 		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
 	}

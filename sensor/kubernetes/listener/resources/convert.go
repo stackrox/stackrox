@@ -10,12 +10,10 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -272,30 +270,6 @@ func (w *deploymentWrap) getPods(hierarchy references.ParentHierarchy, labelSele
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.pods = pods
 	w.populateImageIDs(pods...)
-	if !features.PodDeploymentSeparation.Enabled() {
-		w.populateContainerInstances(pods...)
-	}
-}
-
-// Deprecated: Once Pods and Deployments are separated, there will no longer be a need for this.
-func (w *deploymentWrap) populateContainerInstances(pods ...*v1.Pod) {
-	w.mutex.Lock()
-	defer w.mutex.Unlock()
-
-	for _, p := range pods {
-		for i, instance := range containerInstances(p) {
-			// This check that the size is not greater is necessary, because pods can be in terminating as a deployment is updated
-			// The deployment will still be managing the pods, but we want to take the new pod(s) as the source of truth
-			if i >= len(w.Containers) {
-				break
-			}
-			w.Containers[i].Instances = append(w.Containers[i].Instances, instance)
-		}
-	}
-	// Create a stable ordering
-	for _, c := range w.Containers {
-		sort.SliceStable(c.Instances, func(i, j int) bool { return c.Instances[i].InstanceId.Id < c.Instances[j].InstanceId.Id })
-	}
 }
 
 func (w *deploymentWrap) populateImageIDs(pods ...*v1.Pod) {
@@ -408,7 +382,7 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 		Id:     w.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: protoutils.CloneStorageDeployment(w.Deployment),
+			Deployment: w.Deployment.Clone(),
 		},
 	}
 }

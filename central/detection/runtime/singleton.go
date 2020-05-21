@@ -40,7 +40,7 @@ func SingletonPolicySet() detection.PolicySet {
 }
 
 func initialize() {
-	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detectionPkg.NewPolicyCompiler(searchbasedpolicies.DeploymentBuilderSingleton()))
+	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detectionPkg.NewLegacyPolicyCompiler(searchbasedpolicies.DeploymentBuilderSingleton()))
 	policies, err := policyDataStore.Singleton().GetAllPolicies(policyCtx)
 	utils.Must(err)
 

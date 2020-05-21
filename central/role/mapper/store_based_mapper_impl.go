@@ -25,11 +25,11 @@ type storeBasedMapperImpl struct {
 	users          userDataStore.DataStore
 }
 
-func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) FromUserDescriptor(ctx context.Context, user *permissions.UserDescriptor) ([]*storage.Role, error) {
 	// Record the user we are creating a role for.
 	rm.recordUser(ctx, user)
 	// Determine the role.
-	return rm.getRole(ctx, user)
+	return rm.getRoles(ctx, user)
 }
 
 func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *permissions.UserDescriptor) {
@@ -40,14 +40,14 @@ func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, descriptor *perm
 	}
 }
 
-func (rm *storeBasedMapperImpl) getRole(ctx context.Context, user *permissions.UserDescriptor) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) getRoles(ctx context.Context, user *permissions.UserDescriptor) ([]*storage.Role, error) {
 	// Get the groups for the user.
 	groups, err := rm.groups.Walk(ctx, rm.authProviderID, user.Attributes)
 	if err != nil {
 		return nil, err
 	}
 	if len(groups) == 0 {
-		return &storage.Role{}, nil
+		return nil, nil
 	}
 
 	// Load the roles that apply to the user based on their groups.
@@ -56,8 +56,7 @@ func (rm *storeBasedMapperImpl) getRole(ctx context.Context, user *permissions.U
 		return nil, errors.Wrap(err, "failure to load roles")
 	}
 
-	// Generate a role that has the highest permissions of all roles the user has.
-	return permissions.NewUnionRole(roles), nil
+	return roles, nil
 }
 
 func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*storage.Group) ([]*storage.Role, error) {

@@ -16,19 +16,19 @@ describe('VulnMgmtComponentCveOverview', () => {
             vectors: {
                 impactScore: 3.5999999046325684,
                 exploitabilityScore: 3.9000000953674316,
-                vector: 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H'
+                vector: 'CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H',
             },
             publishedOn: '2019-03-22T08:29:00Z',
             lastModified: '2019-04-24T19:02:00Z',
             summary:
                 'pax_decode_header in sparse.c in GNU Tar before 1.32 had a NULL pointer dereference when parsing certain archives that have malformed extended headers.',
             fixedByVersion: '',
-            isFixable: false
+            isFixable: false,
         };
 
         // act
         const { getByTestId } = renderWithRouter(<VulnMgmtCveOverview data={data} />, {
-            route: `/cve/${data.cve}`
+            route: `/cve/${data.cve}`,
         });
 
         // assert

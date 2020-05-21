@@ -11,7 +11,7 @@ import { actions as wizardActions } from 'reducers/network/wizard';
 class Undo extends Component {
     static propTypes = {
         applicationState: PropTypes.string.isRequired,
-        undoModification: PropTypes.func.isRequired
+        undoModification: PropTypes.func.isRequired,
     };
 
     onClick = () => {
@@ -36,14 +36,11 @@ class Undo extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    applicationState: selectors.getNetworkPolicyApplicationState
+    applicationState: selectors.getNetworkPolicyApplicationState,
 });
 
 const mapDispatchToProps = {
-    undoModification: wizardActions.loadUndoNetworkPolicyModification
+    undoModification: wizardActions.loadUndoNetworkPolicyModification,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Undo);
+export default connect(mapStateToProps, mapDispatchToProps)(Undo);

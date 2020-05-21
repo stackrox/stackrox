@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -449,31 +450,31 @@ var (
 
 // CheckSecretsInEnv check if any policy is configured to alert on the string secret contained in env vars
 func CheckSecretsInEnv(ctx framework.ComplianceContext) {
-	policiesEnabledNotEnforced := []string{}
-	policies := ctx.Data().Policies()
-	passed := 0
-	for _, policy := range policies {
-		matchSecret := secretRegexp.MatchString(policy.GetFields().GetEnv().GetKey())
-		enabled := false
-		if matchSecret && policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() {
-			enabled = true
-		}
-
-		enforced := false
-		if matchSecret && policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() && IsPolicyEnforced(policy) {
-			enforced = true
-		}
-
-		if enabled && !enforced {
-			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, policy.GetName())
+	var atLeastOnePassed bool
+	var policiesEnabledNotEnforced []string
+	for _, policy := range ctx.Data().Policies() {
+		envKeyValues := policyfields.GetEnvKeyValues(policy)
+		if policy.GetDisabled() {
 			continue
 		}
-
-		if enabled && enforced {
-			passed++
+		enforced := IsPolicyEnforced(policy)
+		var matchingPairFoundInPolicy bool
+		for _, kvPair := range envKeyValues {
+			if secretRegexp.MatchString(kvPair.Key) && kvPair.Value != "" {
+				matchingPairFoundInPolicy = true
+				break
+			}
+		}
+		if !matchingPairFoundInPolicy {
+			continue
+		}
+		if enforced {
+			atLeastOnePassed = true
+		} else {
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, policy.GetName())
 		}
 	}
-	if passed >= 1 {
+	if atLeastOnePassed {
 		framework.Pass(ctx, "At least one policy is enabled and enforced that detects secrets in environment variables")
 	} else if len(policiesEnabledNotEnforced) > 0 {
 		framework.Failf(ctx, "Enforcement is not set on at least one policy that detects secrets in environment variables (%v)", policiesEnabledNotEnforced)

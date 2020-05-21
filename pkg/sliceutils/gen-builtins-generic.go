@@ -5,6 +5,10 @@
 
 package sliceutils
 
+import (
+	"github.com/pkg/errors"
+)
+
 // BoolDiff returns, given two sorted bool slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func BoolDiff(a, b []bool, lessFunc func(a, b bool) bool) (aOnly, bOnly []bool) {
@@ -146,6 +150,19 @@ func BoolEqual(a, b []bool) bool {
 		}
 	}
 	return true
+}
+
+// BoolSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func BoolSelect(a []bool, indices ...int) []bool {
+	result := make([]bool, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
@@ -291,6 +308,19 @@ func ByteEqual(a, b []byte) bool {
 	return true
 }
 
+// ByteSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func ByteSelect(a []byte, indices ...int) []byte {
+	result := make([]byte, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex128Diff(a, b []complex128, lessFunc func(a, b complex128) bool) (aOnly, bOnly []complex128) {
@@ -432,6 +462,19 @@ func Complex128Equal(a, b []complex128) bool {
 		}
 	}
 	return true
+}
+
+// Complex128Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Complex128Select(a []complex128, indices ...int) []complex128 {
+	result := make([]complex128, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
@@ -577,6 +620,19 @@ func Complex64Equal(a, b []complex64) bool {
 	return true
 }
 
+// Complex64Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Complex64Select(a []complex64, indices ...int) []complex64 {
+	result := make([]complex64, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ErrorDiff(a, b []error, lessFunc func(a, b error) bool) (aOnly, bOnly []error) {
@@ -718,6 +774,19 @@ func ErrorEqual(a, b []error) bool {
 		}
 	}
 	return true
+}
+
+// ErrorSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func ErrorSelect(a []error, indices ...int) []error {
+	result := make([]error, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
@@ -863,6 +932,19 @@ func Float32Equal(a, b []float32) bool {
 	return true
 }
 
+// Float32Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Float32Select(a []float32, indices ...int) []float32 {
+	result := make([]float32, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float64Diff(a, b []float64, lessFunc func(a, b float64) bool) (aOnly, bOnly []float64) {
@@ -1004,6 +1086,19 @@ func Float64Equal(a, b []float64) bool {
 		}
 	}
 	return true
+}
+
+// Float64Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Float64Select(a []float64, indices ...int) []float64 {
+	result := make([]float64, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
@@ -1149,6 +1244,19 @@ func IntEqual(a, b []int) bool {
 	return true
 }
 
+// IntSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func IntSelect(a []int, indices ...int) []int {
+	result := make([]int, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int16Diff(a, b []int16, lessFunc func(a, b int16) bool) (aOnly, bOnly []int16) {
@@ -1290,6 +1398,19 @@ func Int16Equal(a, b []int16) bool {
 		}
 	}
 	return true
+}
+
+// Int16Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Int16Select(a []int16, indices ...int) []int16 {
+	result := make([]int16, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
@@ -1435,6 +1556,19 @@ func Int32Equal(a, b []int32) bool {
 	return true
 }
 
+// Int32Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Int32Select(a []int32, indices ...int) []int32 {
+	result := make([]int32, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int64Diff(a, b []int64, lessFunc func(a, b int64) bool) (aOnly, bOnly []int64) {
@@ -1576,6 +1710,19 @@ func Int64Equal(a, b []int64) bool {
 		}
 	}
 	return true
+}
+
+// Int64Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Int64Select(a []int64, indices ...int) []int64 {
+	result := make([]int64, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
@@ -1721,6 +1868,19 @@ func Int8Equal(a, b []int8) bool {
 	return true
 }
 
+// Int8Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Int8Select(a []int8, indices ...int) []int8 {
+	result := make([]int8, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func RuneDiff(a, b []rune, lessFunc func(a, b rune) bool) (aOnly, bOnly []rune) {
@@ -1862,6 +2022,19 @@ func RuneEqual(a, b []rune) bool {
 		}
 	}
 	return true
+}
+
+// RuneSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func RuneSelect(a []rune, indices ...int) []rune {
+	result := make([]rune, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
@@ -2007,6 +2180,19 @@ func StringEqual(a, b []string) bool {
 	return true
 }
 
+// StringSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func StringSelect(a []string, indices ...int) []string {
+	result := make([]string, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintDiff(a, b []uint, lessFunc func(a, b uint) bool) (aOnly, bOnly []uint) {
@@ -2148,6 +2334,19 @@ func UintEqual(a, b []uint) bool {
 		}
 	}
 	return true
+}
+
+// UintSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func UintSelect(a []uint, indices ...int) []uint {
+	result := make([]uint, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
@@ -2293,6 +2492,19 @@ func Uint16Equal(a, b []uint16) bool {
 	return true
 }
 
+// Uint16Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Uint16Select(a []uint16, indices ...int) []uint16 {
+	result := make([]uint16, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint32Diff(a, b []uint32, lessFunc func(a, b uint32) bool) (aOnly, bOnly []uint32) {
@@ -2434,6 +2646,19 @@ func Uint32Equal(a, b []uint32) bool {
 		}
 	}
 	return true
+}
+
+// Uint32Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Uint32Select(a []uint32, indices ...int) []uint32 {
+	result := make([]uint32, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
@@ -2579,6 +2804,19 @@ func Uint64Equal(a, b []uint64) bool {
 	return true
 }
 
+// Uint64Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Uint64Select(a []uint64, indices ...int) []uint64 {
+	result := make([]uint64, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint8Diff(a, b []uint8, lessFunc func(a, b uint8) bool) (aOnly, bOnly []uint8) {
@@ -2722,6 +2960,19 @@ func Uint8Equal(a, b []uint8) bool {
 	return true
 }
 
+// Uint8Select returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func Uint8Select(a []uint8, indices ...int) []uint8 {
+	result := make([]uint8, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -2863,4 +3114,17 @@ func UintptrEqual(a, b []uintptr) bool {
 		}
 	}
 	return true
+}
+
+// UintptrSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func UintptrSelect(a []uintptr, indices ...int) []uintptr {
+	result := make([]uintptr, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }

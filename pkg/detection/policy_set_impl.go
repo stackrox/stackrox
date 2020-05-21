@@ -12,26 +12,22 @@ type setImpl struct {
 	policyIDToCompiled StringCompiledPolicyFastRMap
 }
 
-func (p *setImpl) Compiler() PolicyCompiler {
-	return p.compiler
-}
-
-func (p *setImpl) ForEach(pt PolicyExecutor) error {
+func (p *setImpl) ForEach(f func(policy CompiledPolicy) error) error {
 	m := p.policyIDToCompiled.GetMap()
 
 	errList := errorhelpers.NewErrorList("policy evaluation")
 	for _, compiled := range m {
-		if err := pt.Execute(compiled); err != nil {
+		if err := f(compiled); err != nil {
 			errList.AddError(err)
 		}
 	}
 	return errList.ToError()
 }
 
-func (p *setImpl) ForOne(pID string, pt PolicyExecutor) error {
+func (p *setImpl) ForOne(pID string, f func(CompiledPolicy) error) error {
 	compiled, exists := p.policyIDToCompiled.Get(pID)
 	if exists {
-		return pt.Execute(compiled)
+		return f(compiled)
 	}
 	return fmt.Errorf("policy with ID not found in set: %s", pID)
 }

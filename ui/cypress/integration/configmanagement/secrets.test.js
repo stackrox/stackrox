@@ -7,7 +7,7 @@ import {
     hasTabsFor,
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows
+    sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import { url, selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
@@ -26,7 +26,7 @@ describe('Config Management Entities (Secrets)', () => {
             .eq(0)
             .click({ force: true })
             .invoke('text')
-            .then(expectedText => {
+            .then((expectedText) => {
                 cy.get('[data-testid="side-panel"] [data-testid="panel-header"]').contains(
                     expectedText.toLowerCase()
                 );

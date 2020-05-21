@@ -7,9 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	badgerTxns "github.com/stackrox/rox/pkg/dackbox/transactions/badger"
+	"github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/tecbot/gorocksdb"
 )
 
 func newDackBox(dbFactory transactions.DBTransactionFactory, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
@@ -33,6 +35,11 @@ func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirty
 	return newDackBox(badgerTxns.NewBadgerWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
 }
 
+// NewRocksDBDackBox creates an instance of dackbox based on RocksDB
+func NewRocksDBDackBox(db *gorocksdb.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
+	return newDackBox(rocksdb.NewRocksDBWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
+}
+
 // DackBox is the StackRox DB layer. It provides transactions consisting of both a KV layer, and an ID->[]ID map layer.
 type DackBox struct {
 	lock sync.RWMutex
@@ -51,10 +58,18 @@ func (rc *DackBox) NewTransaction() *Transaction {
 	rc.lock.RLock()
 	defer rc.lock.RUnlock()
 
+	// Hold the current state of the graph for the transaction.
 	ts := rc.history.Hold()
+	// Create a read-write DB transaction.
 	txn := rc.db.NewTransaction(true)
+
+	// Create a graph modification. This will record changes made to a new, empty, underlying graph.
 	modification := graph.NewModifiedGraph(graph.NewGraph())
+	// Wrap the modification with a remote graph, this will pull the data from the graph history when values are read or
+	// written, and push any changes made into the modification where they will be recorded.
 	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
+
+	// Return the constructed transaction.
 	return &Transaction{
 		ts:            ts,
 		DBTransaction: txn,
@@ -72,15 +87,20 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 	rc.lock.RLock()
 	defer rc.lock.RUnlock()
 
+	// Hold the current state of the graph for the transaction.
 	ts := rc.history.Hold()
+	// Create a read-only DB transaction.
 	txn := rc.db.NewTransaction(false)
-	modification := graph.NewModifiedGraph(graph.NewGraph())
-	remote := graph.NewRemoteGraph(modification, rc.readerAt(ts))
+
+	// Wrap an empty graph with a remote graph. It will serve as a cache to store values read from the history.
+	remote := graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts))
+
+	// Return the constructed transaction.
 	return &Transaction{
 		ts:            ts,
 		DBTransaction: txn,
 		graph:         remote,
-		modification:  modification,
+		modification:  nil,
 		discard:       rc.discard,
 		commit:        rc.commit,
 	}
@@ -142,6 +162,11 @@ func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modif
 
 	// Release the held history no matter what.
 	rc.history.Release(openedAt)
+
+	// return early if there is no modification associated with the transaction.
+	if modification == nil {
+		return nil
+	}
 
 	// Try to commit the disk changes. Do nothing to the in-memory state if that fails.
 	if txn != nil {

@@ -23,6 +23,7 @@ var (
 	whitelist = set.NewFrozenStringSet(
 		"v1.SearchResult",
 		"v1.HostResults",
+		"v1.ImportPolicyResponse",
 	)
 )
 

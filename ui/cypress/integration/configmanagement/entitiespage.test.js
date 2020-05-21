@@ -1,6 +1,6 @@
 import {
     renderListAndSidePanel,
-    navigateToSingleEntityPage
+    navigateToSingleEntityPage,
 } from '../../helpers/configWorkflowUtils';
 import selectors from '../../selectors/index';
 import withAuth from '../../helpers/basicAuth';
@@ -12,9 +12,7 @@ describe('Config Management Entity Page', () => {
         renderListAndSidePanel('controls');
         navigateToSingleEntityPage('control');
 
-        cy.get(selectors.tab.activeTab)
-            .contains('Overview')
-            .click();
+        cy.get(selectors.tab.activeTab).contains('Overview').click();
 
         cy.get(selectors.tab.activeTab).contains('Overview');
     });

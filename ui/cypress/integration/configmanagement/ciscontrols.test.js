@@ -5,12 +5,12 @@ import {
     clickOnCountWidget,
     hasTabsFor,
     pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows
+    sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import {
     url,
     selectors as configManagementSelectors,
-    controlStatus
+    controlStatus,
 } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
 

@@ -7,7 +7,7 @@ import CollapsibleCountsButton from './CollapsibleCountsButton';
 
 export default {
     title: 'CollapsibleCountsButton',
-    component: CollapsibleCountsButton
+    component: CollapsibleCountsButton,
 };
 
 export const withNoCounts = () => {

@@ -3,7 +3,6 @@ package runtime
 import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -15,8 +14,6 @@ var (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	AlertsForDeployments(deploymentIDs ...string) ([]*storage.Alert, error)
-	AlertsForPolicy(policyID string) ([]*storage.Alert, error)
 	DeploymentWhitelistedForPolicy(deploymentID, policyID string) bool
 	DeploymentInactive(deploymentID string) bool
 }

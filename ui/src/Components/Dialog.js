@@ -3,15 +3,13 @@ import PropTypes from 'prop-types';
 import ReactModal from 'react-modal';
 import { ClipLoader as Loader } from 'react-spinners';
 
-const Dialog = props => (
+const Dialog = (props) => (
     <ReactModal
         isOpen={props.isOpen}
         contentLabel="Modal"
         ariaHideApp={false}
         overlayClassName="ReactModal__Overlay react-modal-overlay p-4 flex"
-        className={`ReactModal__Content dialog mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition p-4 ${
-            props.className
-        }`}
+        className={`ReactModal__Content dialog mx-auto my-0 flex flex-col self-center bg-primary-100 overflow-hidden max-h-full transition p-4 ${props.className}`}
     >
         {props.isLoading ? (
             <div className="flex">
@@ -54,7 +52,7 @@ Dialog.propTypes = {
     confirmText: PropTypes.string,
     isDestructive: PropTypes.bool,
     isLoading: PropTypes.bool,
-    loadingText: PropTypes.string
+    loadingText: PropTypes.string,
 };
 
 Dialog.defaultProps = {
@@ -65,7 +63,7 @@ Dialog.defaultProps = {
     confirmText: 'Confirm',
     isDestructive: false,
     isLoading: false,
-    loadingText: null
+    loadingText: null,
 };
 
 export default Dialog;

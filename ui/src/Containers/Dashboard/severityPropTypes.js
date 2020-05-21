@@ -4,7 +4,7 @@ const severityPropType = PropTypes.oneOf([
     'CRITICAL_SEVERITY',
     'HIGH_SEVERITY',
     'MEDIUM_SEVERITY',
-    'LOW_SEVERITY'
+    'LOW_SEVERITY',
 ]);
 
 export default severityPropType;

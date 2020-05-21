@@ -319,7 +319,7 @@ ruleset {
     PackageName 
     PackageNameMatchesFilePath 
     ParameterName 
-    PropertyName 
+    //PropertyName
     VariableName 
     
     // rulesets/security.xml

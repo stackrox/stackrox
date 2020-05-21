@@ -32,6 +32,7 @@ type DeploymentIndexTestSuite struct {
 	suite.Suite
 
 	bleveIndex   bleve.Index
+	processIndex bleve.Index
 	indexer      Indexer
 	imageIndexer imageIndex.Indexer
 }
@@ -41,7 +42,10 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 	suite.bleveIndex, err = globalindex.MemOnlyIndex()
 	suite.Require().NoError(err)
 
-	suite.indexer = New(suite.bleveIndex)
+	suite.processIndex, err = globalindex.MemOnlyIndex()
+	suite.Require().NoError(err)
+
+	suite.indexer = New(suite.bleveIndex, suite.processIndex)
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 }
 
@@ -749,7 +753,7 @@ func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
 func TestEnumComparisonSearch(t *testing.T) {
 	bleveIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(t, err)
-	indexer := New(bleveIndex)
+	indexer := New(bleveIndex, bleveIndex)
 
 	cases := []struct {
 		prefix          string

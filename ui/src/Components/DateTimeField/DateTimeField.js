@@ -22,12 +22,12 @@ const DateTimeField = ({ date, asString }) => {
 
 DateTimeField.propTypes = {
     date: PropTypes.string,
-    asString: PropTypes.bool
+    asString: PropTypes.bool,
 };
 
 DateTimeField.defaultProps = {
     date: '',
-    asString: false
+    asString: false,
 };
 
 export default DateTimeField;

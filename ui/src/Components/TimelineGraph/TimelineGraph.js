@@ -7,6 +7,8 @@ import Minimap from 'Components/TimelineGraph/Minimap';
 import Pagination from 'Components/TimelineGraph/Pagination';
 
 const absoluteMinTimeRange = 0;
+const defaultAbsoluteMaxTimeRange = 10;
+const MARGIN = 20;
 
 const TimelineGraph = ({
     data,
@@ -15,35 +17,49 @@ const TimelineGraph = ({
     totalSize,
     pageSize,
     onPageChange,
-    absoluteMaxTimeRange
+    absoluteMaxTimeRange,
 }) => {
+    const adjustedAbsoluteMaxTimeRange =
+        absoluteMaxTimeRange === 0 ? defaultAbsoluteMaxTimeRange : absoluteMaxTimeRange; // we don't want to show a range of 0 to 0
     const [minTimeRange, setMinTimeRange] = useState(absoluteMinTimeRange);
-    const [maxTimeRange, setMaxTimeRange] = useState(absoluteMaxTimeRange);
+    const [maxTimeRange, setMaxTimeRange] = useState(adjustedAbsoluteMaxTimeRange);
 
-    const names = data.map(({ type, id, name, subText, hasChildren }) => ({
+    const names = data.map(({ type, id, name, subText, hasChildren, drillDownButtonTooltip }) => ({
         type,
         id,
         name,
         subText,
-        hasChildren
+        hasChildren,
+        drillDownButtonTooltip,
     }));
+
+    function onSelectionChange(selection) {
+        if (!selection) return;
+        setMinTimeRange(selection.start);
+        setMaxTimeRange(selection.end);
+    }
+
     return (
-        <div className="flex flex-1 flex-col h-full" data-testid="timeline-graph">
-            <div className="flex h-full w-full">
-                <div className="w-1/4 border-r border-base-300">
+        <div className="flex flex-1 flex-col" data-testid="timeline-graph">
+            <div className="flex w-full" id="capture-timeline">
+                <div className="w-1/4 min-w-55 border-r border-base-300">
                     <NameList names={names} onClick={goToNextView} />
                 </div>
-                <div className="w-3/4">
+                <div>
                     <MainView
                         data={data}
                         minTimeRange={minTimeRange}
                         maxTimeRange={maxTimeRange}
+                        absoluteMinTimeRange={absoluteMinTimeRange}
+                        absoluteMaxTimeRange={adjustedAbsoluteMaxTimeRange}
                         numRows={pageSize}
+                        margin={MARGIN}
+                        onZoomChange={onSelectionChange}
                     />
                 </div>
             </div>
             <div className="flex border-t border-base-300">
-                <div className="w-1/4 p-3 border-r border-base-300 font-700">
+                <div className="w-1/4 min-w-55 p-3 border-r border-base-300 font-700">
                     <Pagination
                         currentPage={currentPage}
                         totalSize={totalSize}
@@ -51,12 +67,13 @@ const TimelineGraph = ({
                         onChange={onPageChange}
                     />
                 </div>
-                <div className="w-3/4 font-700">
+                <div className="font-700">
                     <Minimap
                         minTimeRange={absoluteMinTimeRange}
-                        setMinTimeRange={setMinTimeRange}
-                        maxTimeRange={absoluteMaxTimeRange}
-                        setMaxTimeRange={setMaxTimeRange}
+                        maxTimeRange={adjustedAbsoluteMaxTimeRange}
+                        minBrushTimeRange={minTimeRange}
+                        maxBrushTimeRange={maxTimeRange}
+                        onBrushSelectionChange={onSelectionChange}
                         data={data}
                         numRows={pageSize}
                     />
@@ -78,9 +95,9 @@ TimelineGraph.propTypes = {
                     id: PropTypes.string.isRequired,
                     differenceInMilliseconds: PropTypes.number.isRequired,
                     edges: PropTypes.arrayOf(PropTypes.shape({})),
-                    type: PropTypes.string.isRequired
+                    type: PropTypes.string.isRequired,
                 })
-            )
+            ),
         })
     ),
     goToNextView: PropTypes.func.isRequired,
@@ -88,12 +105,12 @@ TimelineGraph.propTypes = {
     pageSize: PropTypes.number.isRequired,
     totalSize: PropTypes.number.isRequired,
     onPageChange: PropTypes.func.isRequired,
-    absoluteMaxTimeRange: PropTypes.number
+    absoluteMaxTimeRange: PropTypes.number,
 };
 
 TimelineGraph.defaultProps = {
     data: [],
-    absoluteMaxTimeRange: 3600000 * 24 // default to 24 hours
+    absoluteMaxTimeRange: defaultAbsoluteMaxTimeRange,
 };
 
 export default TimelineGraph;

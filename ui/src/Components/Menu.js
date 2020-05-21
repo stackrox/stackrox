@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { ChevronDown } from 'react-feather';
 
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
@@ -10,14 +11,17 @@ const optionsClass =
 
 const Menu = ({
     buttonClass,
-    buttonContent,
+    buttonText,
+    buttonIcon,
     menuClassName,
     className,
     options,
     disabled,
     grouped,
     tooltip,
-    dataTestId
+    dataTestId,
+    hideCaret,
+    buttonTextClassName,
 }) => {
     const [isMenuOpen, setMenuState] = useState(false);
 
@@ -29,7 +33,7 @@ const Menu = ({
         setMenuState(true);
         document.addEventListener('click', hideMenu);
     };
-    const onClickHandler = () => e => {
+    const onClickHandler = () => (e) => {
         e.stopPropagation();
         if (!isMenuOpen) showMenu();
         else hideMenu();
@@ -38,7 +42,7 @@ const Menu = ({
     function renderOptions(formattedOptions) {
         // TO DO: use accessibility friendly semantic HTML elements (<li>, <ul>)
         return formattedOptions.map(
-            ({ className: optionClassName, link, label, icon, onClick }) => {
+            ({ className: optionClassName, link, label, component, icon, onClick }) => {
                 if (link) {
                     return (
                         <Link
@@ -49,6 +53,7 @@ const Menu = ({
                         >
                             {icon}
                             {label && <span className="pl-2">{label}</span>}
+                            {component}
                         </Link>
                     );
                 }
@@ -70,7 +75,7 @@ const Menu = ({
     }
 
     function renderGroupedOptions(formattedOptions) {
-        return Object.keys(formattedOptions).map(group => {
+        return Object.keys(formattedOptions).map((group) => {
             return (
                 <React.Fragment key={group}>
                     <div className="uppercase font-condensed p-3 border-b border-primary-300 text-lg">
@@ -93,11 +98,15 @@ const Menu = ({
                     disabled={disabled}
                     data-testid={dataTestId}
                 >
-                    {buttonContent}
+                    <div className="flex flex-1 justify-center items-center text-left">
+                        {buttonIcon}
+                        {buttonText && <span className={buttonTextClassName}>{buttonText}</span>}
+                        {!hideCaret && <ChevronDown className="h-4 ml-1 pointer-events-none w-4" />}
+                    </div>
                 </button>
                 {isMenuOpen && (
                     <div
-                        className={`absolute bg-white flex flex-col flex-no-wrap menu right-0 z-10 min-w-32 bg-base-100 shadow ${menuClassName}`}
+                        className={`absolute flex flex-col flex-no-wrap menu right-0 z-10 min-w-32 bg-base-100 shadow border border-base-400 ${menuClassName}`}
                         data-testid="menu-list"
                     >
                         {grouped ? renderGroupedOptions(options) : renderOptions(options)}
@@ -110,7 +119,9 @@ const Menu = ({
 
 Menu.propTypes = {
     buttonClass: PropTypes.string,
-    buttonContent: PropTypes.node.isRequired,
+    buttonText: PropTypes.string.isRequired,
+    buttonTextClassName: PropTypes.string,
+    buttonIcon: PropTypes.node,
     menuClassName: PropTypes.string,
     className: PropTypes.string,
     options: PropTypes.oneOfType([
@@ -120,25 +131,29 @@ Menu.propTypes = {
                 icon: PropTypes.object,
                 label: PropTypes.string.isRequired,
                 link: PropTypes.string,
-                onClick: PropTypes.func
+                onClick: PropTypes.func,
             })
         ).isRequired,
-        PropTypes.shape({})
+        PropTypes.shape({}),
     ]).isRequired,
     disabled: PropTypes.bool,
     grouped: PropTypes.bool,
     tooltip: PropTypes.string,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
+    hideCaret: PropTypes.bool,
 };
 
 Menu.defaultProps = {
     buttonClass: '',
+    buttonTextClassName: '',
+    buttonIcon: null,
     disabled: false,
     menuClassName: '',
     className: '',
     grouped: false,
     tooltip: '',
-    dataTestId: 'menu-button'
+    dataTestId: 'menu-button',
+    hideCaret: false,
 };
 
 export default Menu;

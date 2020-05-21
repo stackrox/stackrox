@@ -12,7 +12,7 @@ import * as Icon from 'react-feather';
 class NetworkPoliciesDetails extends Component {
     static propTypes = {
         networkPolicies: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string.isRequired }))
-            .isRequired
+            .isRequired,
     };
 
     downloadYamlFile = (name, content, type) => () => {
@@ -25,7 +25,7 @@ class NetworkPoliciesDetails extends Component {
             return <NoResultsMessage message="No network policies have been applied" />;
         return (
             <div>
-                {networkPolicies.map(networkPolicy => {
+                {networkPolicies.map((networkPolicy) => {
                     const { id, name, yaml } = networkPolicy;
                     return (
                         <div className="px-3 py-5" key={id}>
@@ -62,7 +62,7 @@ class NetworkPoliciesDetails extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    networkPolicies: selectors.getNetworkPolicies
+    networkPolicies: selectors.getNetworkPolicies,
 });
 
 export default connect(mapStateToProps)(NetworkPoliciesDetails);

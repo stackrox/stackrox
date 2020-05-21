@@ -8,20 +8,17 @@ import TooltipOverlay from 'Components/TooltipOverlay';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as notificationActions } from 'reducers/notifications';
 
-const Upload = props => {
-    const showToast = useCallback(
-        () => {
-            const errorMessage = 'Invalid file type. Try again.';
-            props.addToast(errorMessage);
-            setTimeout(props.removeToast, 500);
-        },
-        [props]
-    );
+const Upload = (props) => {
+    const showToast = useCallback(() => {
+        const errorMessage = 'Invalid file type. Try again.';
+        props.addToast(errorMessage);
+        setTimeout(props.removeToast, 500);
+    }, [props]);
 
     const onDrop = useCallback(
-        acceptedFiles => {
+        (acceptedFiles) => {
             props.setNetworkPolicyModificationState('REQUEST');
-            acceptedFiles.forEach(file => {
+            acceptedFiles.forEach((file) => {
                 // check file type.
                 if (file && !file.name.includes('.yaml')) {
                     showToast();
@@ -67,7 +64,7 @@ Upload.propTypes = {
     setNetworkPolicyModificationName: PropTypes.func.isRequired,
 
     addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired
+    removeToast: PropTypes.func.isRequired,
 };
 
 const mapDispatchToProps = {
@@ -77,10 +74,7 @@ const mapDispatchToProps = {
     setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
 
     addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification
+    removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(Upload);
+export default connect(null, mapDispatchToProps)(Upload);

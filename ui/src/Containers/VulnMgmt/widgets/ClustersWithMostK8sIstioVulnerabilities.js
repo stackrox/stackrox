@@ -5,7 +5,7 @@ import gql from 'graphql-tag';
 import { HelpCircle, AlertCircle } from 'react-feather';
 import sortBy from 'lodash/sortBy';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
@@ -41,7 +41,7 @@ const CLUSTER_WITH_MOST_K8S_ISTIO_VULNERABILTIES = gql`
 
 const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
     const cveCount = vulns.length;
-    const fixableCount = vulns.filter(vuln => vuln.isFixable).length;
+    const fixableCount = vulns.filter((vuln) => vuln.isFixable).length;
     const targetState = workflowState
         .resetPage(entityTypes.CLUSTER, clusterId)
         .pushList(entityTypes.CVE)
@@ -51,7 +51,7 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
     const fixableUrl = targetState
         .setSearch({
             Fixable: true,
-            'CVE Type': vulnType
+            'CVE Type': vulnType,
         })
         .toUrl();
 
@@ -59,7 +59,7 @@ const getVulnDataByType = (workflowState, clusterId, vulnType, vulns) => {
         cveCount,
         fixableCount,
         url,
-        fixableUrl
+        fixableUrl,
     };
 };
 
@@ -72,13 +72,13 @@ const processData = (data, workflowState, limit) => {
                 cveCount: k8sCveCount,
                 fixableCount: k8sFixableCount,
                 url: k8sUrl,
-                fixableUrl: k8sFixableUrl
+                fixableUrl: k8sFixableUrl,
             } = getVulnDataByType(workflowState, id, 'K8S_CVE', k8sVulns);
             const {
                 cveCount: istioCveCount,
                 fixableCount: istioFixableCount,
                 url: istioUrl,
-                fixableUrl: istioFixableUrl
+                fixableUrl: istioFixableUrl,
             } = getVulnDataByType(workflowState, id, 'ISTIO_CVE', istioVulns);
             const clusterUrl = workflowState.resetPage(entityTypes.CLUSTER, id).toUrl();
             const indicationTooltipText = isGKECluster
@@ -86,9 +86,9 @@ const processData = (data, workflowState, limit) => {
                 : 'These CVEs were not patched in the current Kubernetes version of this cluster.';
 
             const indicatorIcon = isGKECluster ? (
-                <HelpCircle className="w-4 h-4 text-warning-700" />
+                <HelpCircle className="w-4 h-4 text-warning-700 ml-2" />
             ) : (
-                <AlertCircle className="w-4 h-4 text-alert-700" />
+                <AlertCircle className="w-4 h-4 text-alert-700 ml-2" />
             );
 
             const k8sIstioContent = (
@@ -110,8 +110,7 @@ const processData = (data, workflowState, limit) => {
                             </div>
                         </Tooltip>
                         <Tooltip content={<TooltipOverlay>{indicationTooltipText}</TooltipOverlay>}>
-                            {/* https://github.com/feathericons/react-feather/issues/56 */}
-                            <div className="ml-2">{indicatorIcon}</div>
+                            {indicatorIcon}
                         </Tooltip>
                     </div>
                     <Tooltip content={<TooltipOverlay>Istio Vulnerabilities</TooltipOverlay>}>
@@ -133,7 +132,7 @@ const processData = (data, workflowState, limit) => {
             return {
                 text: name,
                 url: clusterUrl,
-                component: k8sIstioContent
+                component: k8sIstioContent,
             };
         });
     return results.slice(0, 8); // @TODO: Remove and add pagination when available
@@ -142,8 +141,8 @@ const processData = (data, workflowState, limit) => {
 const ClustersWithMostK8sVulnerabilities = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(CLUSTER_WITH_MOST_K8S_ISTIO_VULNERABILTIES, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext)
-        }
+            query: queryService.entityContextToQueryString(entityContext),
+        },
     });
 
     let content = <Loader />;
@@ -178,12 +177,12 @@ const ClustersWithMostK8sVulnerabilities = ({ entityContext, limit }) => {
 
 ClustersWithMostK8sVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 ClustersWithMostK8sVulnerabilities.defaultProps = {
     entityContext: {},
-    limit: 8
+    limit: 8,
 };
 
 export default ClustersWithMostK8sVulnerabilities;

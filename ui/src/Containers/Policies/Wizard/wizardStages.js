@@ -5,7 +5,7 @@ const wizardStages = {
     preview: 'PREVIEW',
     enforcement: 'ENFORCEMENT',
     create: 'CREATE',
-    save: 'SAVE'
+    save: 'SAVE',
 };
 
 export default wizardStages;

@@ -44,7 +44,7 @@ func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on policy violations.
-func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
+func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 
 	alerts, err := v.getter.ListAlerts(ctx, &v1.ListAlertsRequest{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,7 @@ var commandsToRetrieve = []string{
 
 	"federation-apiserver",
 	"federation-controller-manager",
+	"kube-controller-manager",
 	"kube-apiserver",
 	"etcd",
 	"kube-scheduler",
@@ -35,6 +37,8 @@ var flagsWithFiles = set.NewStringSet(
 	"tlscacert",
 	"tlscert",
 	"tlskey",
+	"tls-cert-file",
+	"tls-private-key-file",
 )
 
 // RetrieveCommands returns the commandlines of the services to be evaluated
@@ -72,6 +76,18 @@ func parseCommandline(processes ...string) (*compliance.CommandLine, bool, error
 	}, true, nil
 }
 
+func getProcessFromCmdLineBytes(cmdlineBytes []byte) string {
+	if len(cmdlineBytes) == 0 {
+		return ""
+	}
+	processBytes := cmdlineBytes
+	index := bytes.Index(cmdlineBytes, []byte("\x00"))
+	if index != -1 {
+		processBytes = cmdlineBytes[:index]
+	}
+	return filepath.Base(string(processBytes))
+}
+
 func findProcess(process string) (string, error) {
 	files, err := ioutil.ReadDir("/host/proc")
 	if err != nil {
@@ -87,23 +103,19 @@ func findProcess(process string) (string, error) {
 			continue
 		}
 
-		commandBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/comm", pid))
+		cmdlineBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/cmdline", pid))
 		if err != nil {
 			if os.IsNotExist(err) {
 				continue
 			}
 			return "", err
 		}
-		if string(bytes.TrimSpace(commandBytes)) == process {
-			cmdlineBytes, err := ioutil.ReadFile(fmt.Sprintf("/host/proc/%d/cmdline", pid))
-			if err != nil {
-				if os.IsNotExist(err) {
-					continue
-				}
-				return "", err
-			}
-			return string(cmdlineBytes), nil
+
+		currProcess := getProcessFromCmdLineBytes(cmdlineBytes)
+		if currProcess != process {
+			continue
 		}
+		return string(cmdlineBytes), nil
 	}
 	return "", nil
 }
@@ -165,8 +177,8 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		arg := newArg(key, values...)
 
 		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
-		if flagsWithFiles.Contains(key) {
-			f, exists, err := file.EvaluatePath(key, false, true)
+		if flagsWithFiles.Contains(arg.Key) && len(arg.Values) > 0 {
+			f, exists, err := file.EvaluatePath(arg.Values[0], false, true)
 			if exists && err == nil {
 				arg.File = f
 			}

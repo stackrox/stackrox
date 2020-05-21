@@ -2,7 +2,7 @@ const relationshipTypes = {
     CONTAINS: 'CONTAINS',
     MATCHES: 'MATCHES',
     PARENTS: 'PARENTS',
-    CHILDREN: 'CHILDREN'
+    CHILDREN: 'CHILDREN',
 };
 
 export default relationshipTypes;

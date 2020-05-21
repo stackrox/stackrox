@@ -25,11 +25,11 @@ function RuntimeMessages({ processViolation }) {
         return null;
     }
 
-    const timestamps = processes.map(process => getTime(process.signal.time));
+    const timestamps = processes.map((process) => getTime(process.signal.time));
     const firstOccurrenceTimestamp = Math.min(...timestamps);
     const lastOccurrenceTimestamp = Math.max(...timestamps);
 
-    const processesList = processes.map(process => {
+    const processesList = processes.map((process) => {
         const { id } = process;
         return (
             <ProcessMessage
@@ -73,12 +73,12 @@ function RuntimeMessages({ processViolation }) {
 RuntimeMessages.propTypes = {
     processViolation: PropTypes.shape({
         message: PropTypes.string.isRequired,
-        processes: PropTypes.array.isRequired
-    })
+        processes: PropTypes.array.isRequired,
+    }),
 };
 
 RuntimeMessages.defaultProps = {
-    processViolation: null
+    processViolation: null,
 };
 
 export default RuntimeMessages;

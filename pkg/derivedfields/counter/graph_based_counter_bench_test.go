@@ -6,15 +6,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search/filtered"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tecbot/gorocksdb"
 )
 
 const (
@@ -103,11 +103,11 @@ func getExpectedCounts(froms []string, linkFactor, graphDepth int) map[string]in
 	return expectedCounts
 }
 
-func setupTest(t require.TestingT) (*badger.DB, *dackbox.DackBox, string) {
-	db, dir, err := badgerhelper.NewTemp("reference")
+func setupTest(t require.TestingT) (*gorocksdb.DB, *dackbox.DackBox, string) {
+	db, dir, err := rocksdb.NewTemp("reference")
 	require.NoErrorf(t, err, "failed to create DB")
 
-	dacky, err := dackbox.NewDackBox(db, nil, []byte{}, []byte{}, []byte{})
+	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte{}, []byte{}, []byte{})
 	require.NoErrorf(t, err, "failed to create counter")
 
 	return db, dacky, dir
@@ -155,7 +155,7 @@ func addLink(t require.TestingT, dacky *dackbox.DackBox, from []byte, to []byte)
 	require.NoError(t, err, "commit should have succeeded")
 }
 
-func tearDown(db *badger.DB, dir string) {
-	_ = db.Close()
+func tearDown(db *gorocksdb.DB, dir string) {
+	db.Close()
 	_ = os.RemoveAll(dir)
 }

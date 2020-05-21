@@ -54,11 +54,11 @@ const ClusterVersion = ({ clusterId }) => {
 };
 
 ClusterVersion.propTypes = {
-    clusterId: PropTypes.string
+    clusterId: PropTypes.string,
 };
 
 ClusterVersion.defaultProps = {
-    clusterId: null
+    clusterId: null,
 };
 
 export default ClusterVersion;

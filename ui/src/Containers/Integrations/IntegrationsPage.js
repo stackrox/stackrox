@@ -18,23 +18,23 @@ class IntegrationsPage extends Component {
     static propTypes = {
         authPlugins: PropTypes.arrayOf(
             PropTypes.shape({
-                endpoint: PropTypes.string.isRequired
+                endpoint: PropTypes.string.isRequired,
             })
         ).isRequired,
         authProviders: PropTypes.arrayOf(
             PropTypes.shape({
-                name: PropTypes.string.isRequired
+                name: PropTypes.string.isRequired,
             })
         ).isRequired,
         apiTokens: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
-                role: PropTypes.string.isRequired
+                role: PropTypes.string.isRequired,
             })
         ).isRequired,
         backups: PropTypes.arrayOf(
             PropTypes.shape({
-                name: PropTypes.string.isRequired
+                name: PropTypes.string.isRequired,
             })
         ).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -48,17 +48,21 @@ class IntegrationsPage extends Component {
         featureFlags: PropTypes.arrayOf(
             PropTypes.shape({
                 envVar: PropTypes.string.isRequired,
-                enabled: PropTypes.bool.isRequired
+                enabled: PropTypes.bool.isRequired,
             })
-        ).isRequired
+        ).isRequired,
     };
 
-    state = {
-        modalOpen: false,
-        selectedSource: '',
-        selectedType: '',
-        selectedLabel: ''
-    };
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            modalOpen: false,
+            selectedSource: '',
+            selectedType: '',
+            selectedLabel: '',
+        };
+    }
 
     getEntities = (source, type) => {
         switch (source) {
@@ -86,12 +90,12 @@ class IntegrationsPage extends Component {
         }
     };
 
-    openIntegrationModal = integrationCategory => {
+    openIntegrationModal = (integrationCategory) => {
         this.setState({
             modalOpen: true,
             selectedSource: integrationCategory.source,
             selectedType: integrationCategory.type,
-            selectedLabel: integrationCategory.label
+            selectedLabel: integrationCategory.label,
         });
     };
 
@@ -101,12 +105,12 @@ class IntegrationsPage extends Component {
             modalOpen: false,
             selectedSource: '',
             selectedType: '',
-            selectedLabel: ''
+            selectedLabel: '',
         });
     };
 
     findIntegrations = (source, type) => {
-        const typeLowerMatches = integration => integration.type === type.toLowerCase();
+        const typeLowerMatches = (integration) => integration.type === type.toLowerCase();
 
         switch (source) {
             case 'authPlugins':
@@ -156,8 +160,8 @@ class IntegrationsPage extends Component {
         );
     }
 
-    renderIntegrationTiles = source =>
-        integrationsList[source].map(tile => {
+    renderIntegrationTiles = (source) =>
+        integrationsList[source].map((tile) => {
             if (tile.featureFlagDependency) {
                 if (
                     isBackendFeatureFlagEnabled(
@@ -252,10 +256,10 @@ const mapStateToProps = createStructuredSelector({
     notifiers: selectors.getNotifiers,
     imageIntegrations: selectors.getImageIntegrations,
     backups: selectors.getBackups,
-    featureFlags: selectors.getFeatureFlags
+    featureFlags: selectors.getFeatureFlags,
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
     fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
     fetchBackups: () => dispatch(integrationActions.fetchBackups.request()),
@@ -263,10 +267,7 @@ const mapDispatchToProps = dispatch => ({
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),
     fetchScanners: () => dispatch(integrationActions.fetchScanners.request()),
-    fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request())
+    fetchAuthPlugins: () => dispatch(integrationActions.fetchAuthPlugins.request()),
 });
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(IntegrationsPage);
+export default connect(mapStateToProps, mapDispatchToProps)(IntegrationsPage);

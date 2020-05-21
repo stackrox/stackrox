@@ -17,13 +17,7 @@ const BackLink = ({ workflowState, enabled }) => {
     // if the link for this particular crumb is enabled, calculate the URL
     //   necessary to go back up the stack,
     //   and remove any existing sort and search on a sublist (fixes https://stack-rox.atlassian.net/browse/ROX-4449)
-    const url = !enabled
-        ? null
-        : workflowState
-              .pop()
-              .clearSort()
-              .clearSearch()
-              .toUrl();
+    const url = !enabled ? null : workflowState.pop().clearSort().clearSearch().toUrl();
 
     return url ? (
         <Link
@@ -47,10 +41,7 @@ const getUrl = (workflowState, steps) => {
     // TODO: do this with .call
     let newState = workflowState;
     for (let x = 1; x < steps; x += 1) {
-        newState = newState
-            .pop()
-            .clearSort()
-            .clearSearch();
+        newState = newState.pop().clearSort().clearSearch();
     }
     const newURL = newState.toUrl();
     const currentURL = workflowState.toUrl();
@@ -89,7 +80,7 @@ const BreadCrumbLinks = ({ workflowEntities }) => {
 };
 
 BreadCrumbLinks.propTypes = {
-    workflowEntities: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    workflowEntities: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default BreadCrumbLinks;

@@ -20,7 +20,7 @@ export function fetchImagesById(options) {
     );
     return axios
         .get(`${imagesUrl}?${params}`)
-        .then(response => ({ response: normalize(response.data.images, [imageSchema]) }));
+        .then((response) => ({ response: normalize(response.data.images, [imageSchema]) }));
 }
 
 /**
@@ -37,15 +37,15 @@ export function fetchImages(options, sortOption, page, pageSize) {
             pagination: {
                 offset,
                 limit: pageSize,
-                sortOption
-            }
+                sortOption,
+            },
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
     return axios
         .get(`${imagesUrl}?${params}`)
-        .then(response => ({ response: normalize(response.data.images, [imageSchema]) }))
-        .then(obj => {
+        .then((response) => ({ response: normalize(response.data.images, [imageSchema]) }))
+        .then((obj) => {
             if (obj.response.entities.image === undefined) {
                 return [];
             }
@@ -63,7 +63,7 @@ export function fetchImageCount(options) {
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios.get(`${imagesCountUrl}?${params}`).then(response => response.data.count);
+    return axios.get(`${imagesCountUrl}?${params}`).then((response) => response.data.count);
 }
 
 /**
@@ -73,8 +73,8 @@ export function fetchImageCount(options) {
  */
 export function fetchImage(id) {
     if (!id) throw new Error('Image ID must be specified');
-    return axios.get(`${imagesUrl}/${id}`).then(response => {
-        const image = Object.assign({}, response.data);
+    return axios.get(`${imagesUrl}/${id}`).then((response) => {
+        const image = { ...response.data };
         const { name } = response.data;
         image.name = name.fullName;
         return image;

@@ -12,10 +12,13 @@ import (
 	installation "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"github.com/stackrox/rox/pkg/telemetry/gatherers"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestGatherers(t *testing.T) {
@@ -25,10 +28,13 @@ func TestGatherers(t *testing.T) {
 type gathererTestSuite struct {
 	suite.Suite
 
-	bolt     *bbolt.DB
-	badger   *badger.DB
-	index    bleve.Index
-	dir      string
+	bolt      *bbolt.DB
+	badger    *badger.DB
+	badgerDir string
+	rocks     *gorocksdb.DB
+	rocksDir  string
+	index     bleve.Index
+
 	gatherer *CentralGatherer
 }
 
@@ -40,7 +46,12 @@ func (s *gathererTestSuite) SetupSuite() {
 	badgerDB, dir, err := badgerhelper.NewTemp(s.T().Name() + ".db")
 	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
 	s.badger = badgerDB
-	s.dir = dir
+	s.badgerDir = dir
+
+	rocksDB, dir, err := rocksdb.NewTemp(s.T().Name() + ".db")
+	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
+	s.rocks = rocksDB
+	s.rocksDir = dir
 
 	index, err := globalindex.MemOnlyIndex()
 	s.Require().NoError(err, "Failed to make in-memory Bleve: %s", err)
@@ -49,7 +60,7 @@ func (s *gathererTestSuite) SetupSuite() {
 	installationStore := installation.New(s.bolt)
 	s.Require().NoError(err, "Failed to make installation store")
 
-	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newBadgerGatherer(s.badger), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
+	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newBadgerGatherer(s.badger), newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
 }
 
 func (s *gathererTestSuite) TearDownSuite() {
@@ -57,7 +68,10 @@ func (s *gathererTestSuite) TearDownSuite() {
 		testutils.TearDownDB(s.bolt)
 	}
 	if s.badger != nil {
-		testutils.TearDownBadger(s.badger, s.dir)
+		testutils.TearDownBadger(s.badger, s.badgerDir)
+	}
+	if s.rocks != nil {
+		rocksdbtest.TearDownRocksDB(s.rocks, s.rocksDir)
 	}
 }
 

@@ -53,12 +53,12 @@ const ComplianceDashboardHeader = ({ classes, bgStyle }) => {
 
 ComplianceDashboardHeader.propTypes = {
     classes: PropTypes.string,
-    bgStyle: PropTypes.shape({})
+    bgStyle: PropTypes.shape({}),
 };
 
 ComplianceDashboardHeader.defaultProps = {
     classes: null,
-    bgStyle: null
+    bgStyle: null,
 };
 
 export default ComplianceDashboardHeader;

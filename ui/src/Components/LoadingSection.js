@@ -10,11 +10,11 @@ const LoadingSection = ({ message }) => (
 );
 
 LoadingSection.propTypes = {
-    message: PropTypes.string
+    message: PropTypes.string,
 };
 
 LoadingSection.defaultProps = {
-    message: 'Loading...'
+    message: 'Loading...',
 };
 
 export default LoadingSection;

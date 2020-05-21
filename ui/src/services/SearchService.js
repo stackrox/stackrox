@@ -11,11 +11,11 @@ const autoCompleteURL = `${baseUrl}/autocomplete`;
  * @returns {Promise<Object, Error>} fulfilled with options response
  */
 export function fetchOptions(query = '') {
-    return axios.get(`${baseUrl}/metadata/options?${query}`).then(response => {
-        const options = response.data.options.map(option => ({
+    return axios.get(`${baseUrl}/metadata/options?${query}`).then((response) => {
+        const options = response.data.options.map((option) => ({
             value: `${option}:`,
             label: `${option}:`,
-            type: 'categoryOption'
+            type: 'categoryOption',
         }));
         return { options };
     });
@@ -29,13 +29,13 @@ export function fetchOptions(query = '') {
  */
 export function fetchGlobalSearchResults(filters) {
     const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
-    return axios.get(`${baseUrl}?${params}`).then(response => ({
-        response: response.data
+    return axios.get(`${baseUrl}?${params}`).then((response) => ({
+        response: response.data,
     }));
 }
 
 // Fetches the autocomplete response.
 export function fetchAutoCompleteResults({ query, categories }) {
     const params = queryString.stringify({ query, categories }, { arrayFormat: 'repeat' });
-    return axios.get(`${autoCompleteURL}?${params}`).then(response => response.data.values || []);
+    return axios.get(`${autoCompleteURL}?${params}`).then((response) => response.data.values || []);
 }

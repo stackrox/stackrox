@@ -6,19 +6,22 @@ import NameListItem from './NameListItem';
 const NameList = ({ names, onClick }) => {
     return (
         <ul className="h-full mt-3 border-t border-base-300" data-testid="timeline-names-list">
-            {names.map(({ type, id, name, subText, hasChildren = false }) => {
-                return (
-                    <NameListItem
-                        key={id}
-                        id={id}
-                        type={type}
-                        name={name}
-                        subText={subText}
-                        hasChildren={hasChildren}
-                        onClick={onClick}
-                    />
-                );
-            })}
+            {names.map(
+                ({ type, id, name, subText, hasChildren = false, drillDownButtonTooltip }) => {
+                    return (
+                        <NameListItem
+                            key={id}
+                            id={id}
+                            type={type}
+                            name={name}
+                            subText={subText}
+                            hasChildren={hasChildren}
+                            onClick={onClick}
+                            drillDownButtonTooltip={drillDownButtonTooltip}
+                        />
+                    );
+                }
+            )}
         </ul>
     );
 };
@@ -30,15 +33,15 @@ NameList.propTypes = {
             id: PropTypes.string.isRequired,
             name: PropTypes.string.isRequired,
             subText: PropTypes.string.isRequired,
-            hasChildren: PropTypes.bool.isRequired
+            hasChildren: PropTypes.bool.isRequired,
         })
     ),
-    onClick: PropTypes.func // @TODO: Make this required when we start working with changing views
+    onClick: PropTypes.func, // @TODO: Make this required when we start working with changing views
 };
 
 NameList.defaultProps = {
     names: [],
-    onClick: () => {}
+    onClick: () => {},
 };
 
 export default NameList;

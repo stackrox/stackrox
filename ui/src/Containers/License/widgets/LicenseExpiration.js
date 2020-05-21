@@ -6,7 +6,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import {
     createExpirationMessageWithoutLink,
-    getExpirationMessageType
+    getExpirationMessageType,
 } from 'Containers/License/helpers';
 
 import * as Icon from 'react-feather';
@@ -50,19 +50,16 @@ const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) =>
 
 LicenseExpiration.propTypes = {
     expirationDate: PropTypes.string,
-    shouldHaveReadWritePermission: PropTypes.func.isRequired
+    shouldHaveReadWritePermission: PropTypes.func.isRequired,
 };
 
 LicenseExpiration.defaultProps = {
-    expirationDate: null
+    expirationDate: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     expirationDate: selectors.getLicenseExpirationDate,
-    shouldHaveReadWritePermission: selectors.shouldHaveReadWritePermission
+    shouldHaveReadWritePermission: selectors.shouldHaveReadWritePermission,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(LicenseExpiration);
+export default connect(mapStateToProps, null)(LicenseExpiration);

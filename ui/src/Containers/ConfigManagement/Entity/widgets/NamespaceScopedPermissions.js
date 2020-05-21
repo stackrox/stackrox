@@ -10,7 +10,7 @@ const PermissionsCounts = ({ permissions }) => {
         acc[curr.key] = (acc[curr.key] || 0) + curr.values.length;
         return acc;
     }, {});
-    const result = Object.keys(permissionsCounts).map(key => {
+    const result = Object.keys(permissionsCounts).map((key) => {
         const value = permissionsCounts[key];
         return (
             <li className="flex mr-2" key={key}>
@@ -25,14 +25,14 @@ PermissionsCounts.propTypes = {
     permissions: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string,
-            values: PropTypes.arrayOf(PropTypes.string)
+            values: PropTypes.arrayOf(PropTypes.string),
         })
-    ).isRequired
+    ).isRequired,
 };
 
-const filterNamespaceScopePermissions = datum => datum.scope !== 'Cluster';
+const filterNamespaceScopePermissions = (datum) => datum.scope !== 'Cluster';
 
-const getContent = scopedPermissions => {
+const getContent = (scopedPermissions) => {
     const namespaceScopePermissions = scopedPermissions.filter(filterNamespaceScopePermissions);
     const namespaceGroups = namespaceScopePermissions.map(({ scope, permissions }) => {
         const groupHeader = (
@@ -55,7 +55,7 @@ const getContent = scopedPermissions => {
     return content;
 };
 
-const getGroupedContent = scopedPermissionsByCluster => {
+const getGroupedContent = (scopedPermissionsByCluster) => {
     return scopedPermissionsByCluster
         .filter(
             ({ scopedPermissions }) =>
@@ -92,8 +92,9 @@ const NamespaceScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => 
     const header =
         scopedPermissionsByCluster.length > 1
             ? 'Namespace Permissions across all clusters'
-            : `Namespace Permissions in "${scopedPermissionsByCluster[0] &&
-                  scopedPermissionsByCluster[0].clusterName}" cluster`;
+            : `Namespace Permissions in "${
+                  scopedPermissionsByCluster[0] && scopedPermissionsByCluster[0].clusterName
+              }" cluster`;
 
     return (
         <Widget header={header} {...rest}>
@@ -107,13 +108,13 @@ NamespaceScopedPermissions.propTypes = {
         PropTypes.shape({
             clusterId: PropTypes.string.isRequired,
             clusterName: PropTypes.string.isRequired,
-            scopedPermissions: PropTypes.arrayOf(PropTypes.shape({}))
+            scopedPermissions: PropTypes.arrayOf(PropTypes.shape({})),
         })
-    )
+    ),
 };
 
 NamespaceScopedPermissions.defaultProps = {
-    scopedPermissionsByCluster: []
+    scopedPermissionsByCluster: [],
 };
 
 export default NamespaceScopedPermissions;

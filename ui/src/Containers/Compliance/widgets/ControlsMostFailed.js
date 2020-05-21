@@ -1,14 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { AGGREGATED_RESULTS_WITH_CONTROLS as QUERY } from 'queries/controls';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 
 const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmpty }) => {
     const whereClauseValues = { ...query };
@@ -20,7 +20,7 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
     const variables = {
         groupBy,
         unit: entityTypes.CONTROL,
-        where: queryService.objectToWhereClause(whereClauseValues)
+        where: queryService.objectToWhereClause(whereClauseValues),
     };
 
     function processData(data) {
@@ -31,12 +31,12 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
         const { complianceStandards } = data;
         const controls = complianceStandards.reduce((acc, standard) => {
             const standardName = standard.name;
-            const standardControls = standard.controls.map(control => ({
+            const standardControls = standard.controls.map((control) => ({
                 id: control.id,
                 label:
                     entityType !== entityTypes.CONTROL
                         ? `${standardName} - ${control.name}: ${control.description}`
-                        : `${control.name}: ${control.description}`
+                        : `${control.name}: ${control.description}`,
             }));
 
             return acc.concat(standardControls);
@@ -51,7 +51,7 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
         });
 
         const totals = results
-            .filter(item => item.numPassing > 0 || item.numFailing > 0)
+            .filter((item) => item.numPassing > 0 || item.numFailing > 0)
             .reduce((acc, { aggregationKeys, numFailing }) => {
                 const ctrlId = aggregationKeys[ctrlIndex].id;
                 const standardId = aggregationKeys[standardIndex].id;
@@ -60,7 +60,7 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
                 } else {
                     acc[ctrlId] = {
                         totalFailing: numFailing,
-                        standardId
+                        standardId,
                     };
                 }
                 return acc;
@@ -68,8 +68,8 @@ const ControlsMostFailed = ({ match, location, entityType, query, limit, showEmp
 
         return Object.entries(totals)
             .sort((a, b) => b[1].totalFailing - a[1].totalFailing)
-            .map(entry => {
-                const control = controls.find(ctrl => ctrl.id === entry[0]);
+            .map((entry) => {
+                const control = controls.find((ctrl) => ctrl.id === entry[0]);
                 const label = control ? control.label : '';
 
                 // TODO: Shouldn't this have some query params?
@@ -106,14 +106,14 @@ ControlsMostFailed.propTypes = {
     entityType: PropTypes.string,
     query: PropTypes.shape({}),
     limit: PropTypes.number,
-    showEmpty: PropTypes.bool
+    showEmpty: PropTypes.bool,
 };
 
 ControlsMostFailed.defaultProps = {
     limit: 10,
     showEmpty: false,
     entityType: null,
-    query: null
+    query: null,
 };
 
 export default withRouter(ControlsMostFailed);

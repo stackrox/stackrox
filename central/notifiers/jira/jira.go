@@ -194,10 +194,8 @@ func newJira(notifier *storage.Notifier) (*jira, error) {
 		return nil, err
 	}
 
-	url, err := urlfmt.FormatURL(conf.GetUrl(), urlfmt.HTTPS, urlfmt.TrailingSlash)
-	if err != nil {
-		return nil, err
-	}
+	url := urlfmt.FormatURL(conf.GetUrl(), urlfmt.HTTPS, urlfmt.TrailingSlash)
+
 	bat := &jiraLib.BasicAuthTransport{
 		Username:  conf.GetUsername(),
 		Password:  conf.GetPassword(),

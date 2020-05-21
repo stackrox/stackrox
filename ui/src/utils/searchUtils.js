@@ -30,7 +30,7 @@ export function addSearchKeyword(searchOptions, keyword) {
  */
 export function hasSearchModifier(searchOptions, modifier) {
     return !!searchOptions.find(
-        option => option.type === 'categoryOption' && option.value === modifier
+        (option) => option.type === 'categoryOption' && option.value === modifier
     );
 }
 
@@ -38,7 +38,8 @@ export function getViewStateFromSearch(search, key) {
     return !!(
         key &&
         search &&
-        Object.keys(search).find(searchItem => searchItem === key) && // key has to be present in current search criteria
-        (search[key] !== false && search[key] !== 'false')
+        Object.keys(search).find((searchItem) => searchItem === key) && // key has to be present in current search criteria
+        search[key] !== false &&
+        search[key] !== 'false'
     ); // and the value of the search for that key cannot be false or the string "false", see https://stack-rox.atlassian.net/browse/ROX-4278
 }

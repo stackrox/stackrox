@@ -1,0 +1,104 @@
+{
+    "data": {
+        "pod": {
+            "id": "3944272f-a1e2-5d5c-a587-91d17e6440d7",
+            "name": "nginx-7db9fccd9b-7l8cp",
+            "startTime": "2020-04-20T10:00:00Z",
+            "containerCount": 1,
+            "__typename": "Pod"
+        },
+        "containers": [
+            {
+                "id": "nginx-7db9fccd9b-7l8cp.default@3944272f-a1e2-5d5c-a587-91d17e6440d7:nginx",
+                "name": "nginx",
+                "startTime": "2020-04-20T10:00:00Z",
+                "events": [
+                    {
+                        "type": "PolicyViolationEvent",
+                        "id": "d7a275e1-1bba-47e7-92a1-42340c759883",
+                        "name": "Ubuntu Package Manager Execution",
+                        "timestamp": "2020-04-20T10:10:00Z",
+                        "__typename": "PolicyViolationEvent"
+                    },
+                    {
+                        "type": "ContainerTerminationEvent",
+                        "id": "016963e1050fec95a53862373a6b5f0bff2a003cb9796ecfda492a9f7ce3214d",
+                        "name": "nginx",
+                        "timestamp": "2020-04-20T10:15:00Z",
+                        "exitCode": 137,
+                        "reason": "OOMKilled",
+                        "__typename": "ContainerTerminationEvent"
+                    },
+                    {
+                        "type": "ContainerRestartEvent",
+                        "id": "abd2f41e72e825a76c2ab8898e538aa046872dd95a77a6c7d715881174f9e013",
+                        "name": "nginx",
+                        "timestamp": "2020-04-20T10:20:00Z",
+                        "__typename": "ContainerRestartEvent"
+                    },
+                    {
+                        "type": "ProcessActivityEvent",
+                        "id": "e7519642-958a-534b-8297-59de4560d4ab",
+                        "name": "/usr/sbin/nginx",
+                        "args": "-g daemon off;",
+                        "timestamp": "2020-04-20T10:25:00Z",
+                        "parentName": null,
+                        "parentUid": -1,
+                        "uid": 1000,
+                        "whitelisted": false,
+                        "__typename": "ProcessActivityEvent"
+                    },
+                    {
+                        "type": "ProcessActivityEvent",
+                        "id": "e7519642-958a-534b-8246-59de4560d4ab",
+                        "name": "/usr/sbin/nginx",
+                        "args": "-g daemon off;",
+                        "timestamp": "2020-04-20T10:30:00Z",
+                        "parentName": "/usr/sbin/nginx",
+                        "parentUid": -1,
+                        "uid": 2000,
+                        "whitelisted": false,
+                        "__typename": "ProcessActivityEvent"
+                    },
+                    {
+                        "type": "ProcessActivityEvent",
+                        "id": "e7519642-958a-534b-8296-59de5560d4ab",
+                        "name": "/usr/sbin/nginx",
+                        "args": "-g daemon off;",
+                        "timestamp": "2020-04-20T10:35:00Z",
+                        "parentName": "/usr/sbin/nginx",
+                        "parentUid": 1000,
+                        "uid": 3000,
+                        "whitelisted": false,
+                        "__typename": "ProcessActivityEvent"
+                    },
+                    {
+                        "type": "ProcessActivityEvent",
+                        "id": "e7519642-959a-534b-8296-59de4560d4ab",
+                        "name": "/usr/sbin/nginx",
+                        "args": "-g daemon off;",
+                        "timestamp": "2020-04-20T10:40:00Z",
+                        "parentName": "/usr/sbin/nginx",
+                        "parentUid": 4000,
+                        "uid": 4000,
+                        "whitelisted": false,
+                        "__typename": "ProcessActivityEvent"
+                    },
+                    {
+                        "type": "ProcessActivityEvent",
+                        "id": "fafd4c56-a4e0-5fd9-aed2-c77b462ca637",
+                        "name": "/bin/bash",
+                        "args": "",
+                        "timestamp": "2020-04-20T10:45:00Z",
+                        "parentName": "/bin/bash",
+                        "parentUid": 0,
+                        "uid": 0,
+                        "whitelisted": true,
+                        "__typename": "ProcessActivityEvent"
+                    }
+                ],
+                "__typename": "ContainerNameGroup"
+            }
+        ]
+    }
+}

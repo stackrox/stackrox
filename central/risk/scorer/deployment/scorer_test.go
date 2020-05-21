@@ -13,10 +13,24 @@ import (
 	deploymentMultiplier "github.com/stackrox/rox/central/risk/multipliers/deployment"
 	imageMultiplier "github.com/stackrox/rox/central/risk/multipliers/image"
 	pkgScorer "github.com/stackrox/rox/central/risk/scorer"
+	"github.com/stackrox/rox/central/risk/scorer/image"
 	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
+
+// GetMockImagesRisk returns a slice of mock image risk
+func getMockImagesRisk() []*storage.Risk {
+	return []*storage.Risk{
+		GetMockImageRisk(),
+	}
+}
+
+// GetMockImageRisk returns the risk for the mock image
+func GetMockImageRisk() *storage.Risk {
+	scorer := image.NewImageScorer()
+	return scorer.Score(context.Background(), pkgScorer.GetMockImage())
+}
 
 func TestScore(t *testing.T) {
 	ctx := context.Background()
@@ -51,7 +65,7 @@ func TestScore(t *testing.T) {
 			Score:   1.96,
 		},
 		{
-			Name: deploymentMultiplier.VulnsHeading,
+			Name: imageMultiplier.ImageVulnerabilitiesHeading,
 			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image \"docker.io/library/nginx:1.10\" contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
@@ -88,7 +102,7 @@ func TestScore(t *testing.T) {
 
 	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 
-	actualRisk := scorer.Score(ctx, deployment, pkgScorer.GetMockImages())
+	actualRisk := scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 
@@ -96,7 +110,7 @@ func TestScore(t *testing.T) {
 
 	mockServiceAccounts.EXPECT().SearchRawServiceAccounts(ctx, gomock.Any()).Return(nil, nil)
 
-	actualRisk = scorer.Score(ctx, deployment, pkgScorer.GetMockImages())
+	actualRisk = scorer.Score(ctx, deployment, getMockImagesRisk())
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 

@@ -48,18 +48,6 @@ func (mr *MockFilterMockRecorder) Add(indicator interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockFilter)(nil).Add), indicator)
 }
 
-// Update mocks base method
-func (m *MockFilter) Update(deployment *storage.Deployment) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Update", deployment)
-}
-
-// Update indicates an expected call of Update
-func (mr *MockFilterMockRecorder) Update(deployment interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockFilter)(nil).Update), deployment)
-}
-
 // UpdateByPod mocks base method
 func (m *MockFilter) UpdateByPod(pod *storage.Pod) {
 	m.ctrl.T.Helper()

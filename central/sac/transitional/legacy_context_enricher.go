@@ -17,22 +17,14 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 		return sac.AllowAllAccessScopeChecker()
 	}
 
-	var globalAccessModes []storage.Access
-	switch id.Role().GlobalAccess {
-	case storage.Access_READ_WRITE_ACCESS:
-		globalAccessModes = append(globalAccessModes, storage.Access_READ_WRITE_ACCESS)
-		fallthrough
-	case storage.Access_READ_ACCESS:
-		globalAccessModes = append(globalAccessModes, storage.Access_READ_ACCESS)
-	}
-	if len(globalAccessModes) > 0 {
-		return sac.AllowFixedScopes(sac.AccessModeScopeKeys(globalAccessModes...))
+	if id.Permissions().GetGlobalAccess() == storage.Access_READ_WRITE_ACCESS {
+		return sac.AllowAllAccessScopeChecker()
 	}
 
 	var readResources []permissions.ResourceHandle
 	var writeResources []permissions.ResourceHandle
 
-	for resourceName, access := range id.Role().GetResourceToAccess() {
+	for resourceName, access := range id.Permissions().GetResourceToAccess() {
 		resource := permissions.Resource(resourceName)
 		switch access {
 		case storage.Access_READ_WRITE_ACCESS:
@@ -43,8 +35,15 @@ func scopeCheckerForIdentity(id authn.Identity) sac.ScopeCheckerCore {
 		}
 	}
 
+	var readAccessSCC sac.ScopeCheckerCore
+	if id.Permissions().GetGlobalAccess() == storage.Access_READ_ACCESS {
+		readAccessSCC = sac.AllowAllAccessScopeChecker()
+	} else {
+		readAccessSCC = sac.AllowFixedScopes(sac.ResourceScopeKeys(readResources...))
+	}
+
 	return sac.OneStepSCC{
-		sac.AccessModeScopeKey(storage.Access_READ_ACCESS):       sac.AllowFixedScopes(sac.ResourceScopeKeys(readResources...)),
+		sac.AccessModeScopeKey(storage.Access_READ_ACCESS):       readAccessSCC,
 		sac.AccessModeScopeKey(storage.Access_READ_WRITE_ACCESS): sac.AllowFixedScopes(sac.ResourceScopeKeys(writeResources...)),
 	}
 }

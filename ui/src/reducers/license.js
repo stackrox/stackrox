@@ -4,14 +4,14 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 import { types as metadataTypes, METADATA_LICENSE_STATUS } from './metadata';
 
 export const LICENSE_STATUS = Object.freeze({
-    ...METADATA_LICENSE_STATUS
+    ...METADATA_LICENSE_STATUS,
 });
 
 export const LICENSE_UPLOAD_STATUS = Object.freeze({
     VERIFYING: 'VERIFYING',
     VALID: 'VALID',
     INVALID: 'INVALID',
-    EXPIRED: 'EXPIRED'
+    EXPIRED: 'EXPIRED',
 });
 
 // Action types
@@ -19,7 +19,7 @@ export const LICENSE_UPLOAD_STATUS = Object.freeze({
 export const types = {
     FETCH_LICENSES: createFetchingActionTypes('license/FETCH_LICENSES'),
     SET_LICENSE_UPLOAD_STATUS: 'license/SET_LICENSE_UPLOAD_STATUS',
-    ACTIVATE_LICENSE: 'license/ACTIVATE_LICENSE'
+    ACTIVATE_LICENSE: 'license/ACTIVATE_LICENSE',
 };
 
 // Actions
@@ -30,13 +30,13 @@ export const actions = {
         type: types.SET_LICENSE_UPLOAD_STATUS,
         data: {
             status,
-            message
-        }
+            message,
+        },
     }),
-    activateLicense: licenseKey => ({
+    activateLicense: (licenseKey) => ({
         type: types.ACTIVATE_LICENSE,
-        licenseKey
-    })
+        licenseKey,
+    }),
 };
 
 // Reducers
@@ -49,7 +49,7 @@ const license = (state = null, action) => {
         const { licenseStatus } = action.response;
         const newState = {
             ...state,
-            status: licenseStatus
+            status: licenseStatus,
         };
 
         return isEqual(newState, state) ? state : newState;
@@ -60,7 +60,7 @@ const license = (state = null, action) => {
             const data = licenses[0];
             const newState = {
                 ...state,
-                ...data
+                ...data,
             };
             return isEqual(newState, state) ? state : newState;
         }
@@ -77,28 +77,28 @@ const licenseUploadStatus = (state = null, action) => {
 
 const reducer = combineReducers({
     license,
-    licenseUploadStatus
+    licenseUploadStatus,
 });
 
 export default reducer;
 
 // Selectors
 
-const getLicense = state => state.license;
-const getLicenseExpirationDate = state => {
+const getLicense = (state) => state.license;
+const getLicenseExpirationDate = (state) => {
     if (!state.license || !state.license.license || !state.license.license.restrictions)
         return null;
     return state.license.license.restrictions.notValidAfter;
 };
-const getLicenseStatus = state => {
+const getLicenseStatus = (state) => {
     if (!state.license) return null;
     return state.license.status;
 };
-const getLicenseUploadStatus = state => state.licenseUploadStatus;
+const getLicenseUploadStatus = (state) => state.licenseUploadStatus;
 
 export const selectors = {
     getLicense,
     getLicenseExpirationDate,
     getLicenseStatus,
-    getLicenseUploadStatus
+    getLicenseUploadStatus,
 };

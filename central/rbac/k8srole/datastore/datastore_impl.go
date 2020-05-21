@@ -29,7 +29,12 @@ func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 
 	log.Info("[STARTUP] Indexing roles")
-	roles, err := d.storage.ListRoles()
+
+	var roles []*storage.K8SRole
+	err := d.storage.Walk(func(role *storage.K8SRole) error {
+		roles = append(roles, role)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -41,7 +46,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
-	role, found, err := d.storage.GetRole(id)
+	role, found, err := d.storage.Get(id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -67,7 +72,7 @@ func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.UpsertRole(request); err != nil {
+	if err := d.storage.Upsert(request); err != nil {
 		return err
 	}
 	return d.indexer.AddK8SRole(request)
@@ -80,7 +85,7 @@ func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.DeleteRole(id); err != nil {
+	if err := d.storage.Delete(id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteK8SRole(id)

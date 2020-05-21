@@ -3,6 +3,7 @@ package tokenbased
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -67,9 +69,17 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	// identity.
 	ctx = sac.WithAllAccess(ctx)
 
-	// Anonymous role-based tokens.
+	roleNames := token.RoleNames
 	if token.RoleName != "" {
-		return e.withRoleName(ctx, token, authProviderSrc)
+		if len(roleNames) != 0 {
+			return nil, errors.New("malformed token: uses both 'roles' and deprecated 'role' claims")
+		}
+		roleNames = []string{token.RoleName}
+	}
+
+	// Anonymous role-based tokens.
+	if len(roleNames) > 0 {
+		return e.withRoleNames(ctx, token, roleNames, authProviderSrc)
 	}
 
 	// External user token
@@ -82,12 +92,15 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
 	attributes := map[string][]string{"name": {token.Name}}
+
+	pseudoRole := permissions.NewRoleWithPermissions("", token.Permissions...)
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
 		username:     token.ExternalUser.Email,
 		friendlyName: token.Subject,
 		fullName:     token.ExternalUser.FullName,
-		role:         permissions.NewRoleWithPermissions("unnamed", token.Permissions...),
+		perms:        pseudoRole,
+		roles:        []*storage.Role{pseudoRole},
 		expiry:       token.Expiry(),
 		authProvider: authProvider,
 		attributes:   attributes,
@@ -98,31 +111,34 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo, authProvider authpr
 	return id, nil
 }
 
-func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
-	role, err := e.roleStore.GetRole(ctx, token.RoleName)
+func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, roleNames []string, authProvider authproviders.Provider) (authn.Identity, error) {
+	roles, _, err := permissions.GetRolesFromStore(ctx, e.roleStore, roleNames)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read role role %q", token.RoleName)
+		return nil, errors.Wrap(err, "failed to read roles")
 	}
-	if role == nil {
-		return nil, fmt.Errorf("token referenced invalid role %q", token.RoleName)
+	if len(roles) == 0 {
+		return nil, utils.Should(errors.New("none of the roles referenced by the token were found"))
 	}
+
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
-	attributes := map[string][]string{"role": {role.GetName()}, "name": {token.Name}}
+
+	attributes := map[string][]string{"role": permissions.RoleNames(roles), "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
 		username:     email,
 		friendlyName: token.Subject,
 		fullName:     token.Name,
-		role:         role,
+		perms:        permissions.NewUnionRole(roles),
+		roles:        roles,
 		expiry:       token.Expiry(),
 		attributes:   attributes,
 		authProvider: authProvider,
 	}
 	if id.friendlyName == "" {
-		id.friendlyName = fmt.Sprintf("anonymous bearer token with role %s (expires %v)", role.GetName(), token.Expiry())
+		id.friendlyName = fmt.Sprintf("anonymous bearer token with roles %s (expires %v)", strings.Join(roleNames, ","), token.Expiry())
 	}
 	return id, nil
 }
@@ -142,27 +158,28 @@ func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInf
 		Attributes: token.Claims.ExternalUser.Attributes,
 	}
 
-	role, err := roleMapper.FromUserDescriptor(ctx, ud)
+	roles, err := roleMapper.FromUserDescriptor(ctx, ud)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}
-	if role == nil {
+	if len(roles) == 0 {
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)
 	}
 	if err := authProvider.MarkAsActive(); err != nil {
 		return nil, errors.Wrapf(err, "unable to mark provider %q as validated", authProvider.Name())
 	}
-	id := createRoleBasedIdentity(role, token, authProvider)
+	id := createRoleBasedIdentity(roles, token, authProvider)
 	return id, nil
 }
 
-func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
+func createRoleBasedIdentity(roles []*storage.Role, token *tokens.TokenInfo, authProvider authproviders.Provider) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		username:     token.ExternalUser.Email,
 		friendlyName: token.ExternalUser.FullName,
 		fullName:     token.ExternalUser.FullName,
-		role:         role,
+		perms:        permissions.NewUnionRole(roles),
+		roles:        roles,
 		expiry:       token.Expiry(),
 		attributes:   token.Claims.ExternalUser.Attributes,
 		authProvider: authProvider,

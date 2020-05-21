@@ -1,0 +1,43 @@
+package violations
+
+import (
+	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+func resourcePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+	msgTemplate := `{{.Name}} of {{.Value}} {{.Unit}}{{if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+	type resultFields struct {
+		ContainerName string
+		Name          string
+		Value         string
+		Unit          string
+	}
+	r := make([]resultFields, 0)
+	if cpuCoresLimit, err := getSingleValueFromFieldMap(search.CPUCoresLimit.String(), fieldMap); err == nil {
+		r = append(r, resultFields{Name: "CPU limit", Value: cpuCoresLimit, Unit: "cores"})
+	}
+	if cpuCoresRequest, err := getSingleValueFromFieldMap(search.CPUCoresRequest.String(), fieldMap); err == nil {
+		r = append(r, resultFields{Name: "CPU request", Value: cpuCoresRequest, Unit: "cores"})
+	}
+	if memRequest, err := getSingleValueFromFieldMap(search.MemoryRequest.String(), fieldMap); err == nil {
+		r = append(r, resultFields{Name: "Memory request", Value: memRequest, Unit: "MB"})
+	}
+	if memLimit, err := getSingleValueFromFieldMap(search.MemoryLimit.String(), fieldMap); err == nil {
+		r = append(r, resultFields{Name: "Memory limit", Value: memLimit, Unit: "MB"})
+	}
+	if containerName, err := getSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap); err == nil {
+		for _, templateFields := range r {
+			templateFields.ContainerName = containerName
+		}
+	}
+	messages := make([]string, 0, len(r))
+	for _, values := range r {
+		msg, err := executeTemplate(msgTemplate, values)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg...)
+	}
+	return messages, nil
+}

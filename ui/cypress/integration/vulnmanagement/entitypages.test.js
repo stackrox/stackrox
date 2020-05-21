@@ -27,7 +27,7 @@ describe('Entities single views', () => {
         cy.get(selectors.deploymentTileLink, { timeout: 1000 })
             .find(selectors.tileLinkSuperText)
             .invoke('text')
-            .then(numDeployments => {
+            .then((numDeployments) => {
                 cy.log('numDeployments', numDeployments);
                 cy.get(selectors.deploymentTileLink)
                     // force: true option needed because this open issue for cypress
@@ -36,7 +36,7 @@ describe('Entities single views', () => {
 
                 cy.get(`[data-testid="side-panel"] [data-testid="panel-header"]`)
                     .invoke('text')
-                    .then(panelHeaderText => {
+                    .then((panelHeaderText) => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(
                             parseInt(numDeployments, 10)
                         );
@@ -49,22 +49,20 @@ describe('Entities single views', () => {
     it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', () => {
         cy.visit(url.list.policies);
 
-        cy.get(selectors.deploymentCountLink)
-            .eq(0)
-            .click({ force: true });
+        cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
 
-        cy.get(selectors.sidePanelTableBodyRows, { timeout: 9000 }).then(value => {
+        cy.get(selectors.sidePanelTableBodyRows, { timeout: 9000 }).then((value) => {
             const { length: numRows } = value;
             if (numRows) {
                 cy.get(selectors.entityRowHeader)
                     .invoke('text')
-                    .then(headerText => {
+                    .then((headerText) => {
                         expect(headerText).not.to.equal('0 deployments');
                     });
 
                 cy.get(`${selectors.sidePanel} ${selectors.paginationHeader}`)
                     .invoke('text')
-                    .then(paginationText => {
+                    .then((paginationText) => {
                         expect(paginationText).not.to.contain('of 0');
                     });
             }
@@ -79,26 +77,22 @@ describe('Entities single views', () => {
         cy.get(selectors.statusChips)
             .eq(0)
             .invoke('text')
-            .then(firstPolicyStatus => {
-                cy.get(selectors.tableBodyRows)
-                    .eq(0)
-                    .click();
+            .then((firstPolicyStatus) => {
+                cy.get(selectors.tableBodyRows).eq(0).click();
 
                 cy.get(`${selectors.sidePanel} ${selectors.statusChips}`, { timeout: 9000 })
                     .eq(0)
                     .invoke('text')
-                    .then(selectedPolicyStatus => {
+                    .then((selectedPolicyStatus) => {
                         expect(firstPolicyStatus).to.equal(selectedPolicyStatus);
                     });
 
                 if (firstPolicyStatus === 'pass') {
-                    cy.get(selectors.emptyFindingsSection).then(sectionElm => {
+                    cy.get(selectors.emptyFindingsSection).then((sectionElm) => {
                         expect(sectionElm).to.have.length(1);
                     });
 
-                    cy.get(selectors.deploymentTileLink)
-                        .eq(0)
-                        .click({ force: true });
+                    cy.get(selectors.deploymentTileLink).eq(0).click({ force: true });
 
                     cy.get(
                         `${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`
@@ -113,14 +107,12 @@ describe('Entities single views', () => {
         cy.get(selectors.statusChips)
             .eq(0)
             .invoke('text')
-            .then(selectedPolicyStatus => {
-                cy.get(selectors.deploymentCountLink)
-                    .eq(0)
-                    .click({ force: true });
+            .then((selectedPolicyStatus) => {
+                cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
 
                 if (selectedPolicyStatus === 'pass') {
                     cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`, {
-                        timeout: 1000
+                        timeout: 1000,
                     }).should('not.exist');
                 }
             });
@@ -132,15 +124,13 @@ describe('Entities single views', () => {
         cy.get(selectors.statusChips)
             .eq(0)
             .invoke('text')
-            .then(selectedPolicyStatus => {
-                cy.get(selectors.deploymentCountLink)
-                    .eq(0)
-                    .click({ force: true });
+            .then((selectedPolicyStatus) => {
+                cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
 
                 cy.get(selectors.sidePanelExpandButton, { timeout: 5000 }).click();
                 if (selectedPolicyStatus === 'pass') {
                     cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`, {
-                        timeout: 1500
+                        timeout: 1500,
                     }).should('not.exist');
                 }
             });
@@ -153,13 +143,11 @@ describe('Entities single views', () => {
         cy.get(selectors.policyCountLink)
             .eq(2)
             .invoke('text')
-            .then(policyCountText => {
-                cy.get(selectors.tableBodyRows)
-                    .eq(2)
-                    .click();
+            .then((policyCountText) => {
+                cy.get(selectors.tableBodyRows).eq(2).click();
                 cy.get(selectors.policyTileLink, { timeout: 1000 })
                     .invoke('text')
-                    .then(relatedPolicyCountText => {
+                    .then((relatedPolicyCountText) => {
                         expect(relatedPolicyCountText.toLowerCase().trim()).to.equal(
                             policyCountText.replace(' ', '')
                         );
@@ -167,7 +155,7 @@ describe('Entities single views', () => {
                 cy.get(selectors.policyTileLink).click({ force: true });
                 cy.get(selectors.entityRowHeader, { timeout: 1000 })
                     .invoke('text')
-                    .then(paginationText => {
+                    .then((paginationText) => {
                         expect(paginationText).to.equal(policyCountText);
                     });
             });
@@ -176,9 +164,7 @@ describe('Entities single views', () => {
     it('should have filtered deployments list in 3rd level of side panel (namespaces -> policies -> deployments)', () => {
         cy.visit(url.list.namespaces);
 
-        cy.get(selectors.deploymentCountLink, { timeout: 10000 })
-            .eq(0)
-            .as('firstDeploymentCountLink');
+        cy.get(`${selectors.deploymentCountLink}:eq(0)`).as('firstDeploymentCountLink');
 
         cy.get('@firstDeploymentCountLink').click({ force: true });
         cy.get(selectors.parentEntityInfoHeader).click({ force: true });
@@ -186,14 +172,12 @@ describe('Entities single views', () => {
 
         cy.get('@firstDeploymentCountLink')
             .invoke('text')
-            .then(deploymentCountText => {
-                cy.get(selectors.sidePanelTableBodyRows)
-                    .eq(0)
-                    .click();
+            .then((deploymentCountText) => {
+                cy.get(selectors.sidePanelTableBodyRows).eq(0).click();
 
                 cy.get(selectors.deploymentTileLink, { timeout: 10000 })
                     .invoke('text')
-                    .then(relatedDeploymentCountText => {
+                    .then((relatedDeploymentCountText) => {
                         expect(relatedDeploymentCountText.toLowerCase().trim()).to.equal(
                             deploymentCountText.replace(' ', '')
                         );
@@ -202,7 +186,7 @@ describe('Entities single views', () => {
 
                 cy.get(selectors.entityRowHeader, { timeout: 8000 })
                     .invoke('text')
-                    .then(paginationText => {
+                    .then((paginationText) => {
                         expect(paginationText).to.equal(deploymentCountText);
                     });
             });
@@ -212,14 +196,12 @@ describe('Entities single views', () => {
     it.skip('should filter deployment count in failing policies section in namespace findings by namespace', () => {
         cy.visit(url.list.namespaces);
 
-        cy.get(selectors.deploymentCountLink, { timeout: 10000 })
-            .eq(0)
-            .as('firstDeploymentCountLink');
+        cy.get(`${selectors.deploymentCountLink}:eq(0)`).as('firstDeploymentCountLink');
 
         // in side panel
         cy.get('@firstDeploymentCountLink')
             .invoke('text')
-            .then(listDeploymentCountText => {
+            .then((listDeploymentCountText) => {
                 cy.get('@firstDeploymentCountLink').click({ force: true });
 
                 cy.get(selectors.parentEntityInfoHeader, { timeout: 5000 }).click({ force: true });
@@ -227,7 +209,7 @@ describe('Entities single views', () => {
                 cy.get(selectors.deploymentCountText, { timeout: 16000 })
                     .eq(0)
                     .invoke('text')
-                    .then(sidePanelDeploymentCountText => {
+                    .then((sidePanelDeploymentCountText) => {
                         expect(listDeploymentCountText).to.equal(sidePanelDeploymentCountText);
 
                         // in entity page
@@ -235,7 +217,7 @@ describe('Entities single views', () => {
                         cy.get(selectors.deploymentCountText, { timeout: 16000 })
                             .eq(0)
                             .invoke('text')
-                            .then(entityDeploymentCountText => {
+                            .then((entityDeploymentCountText) => {
                                 expect(sidePanelDeploymentCountText).to.equal(
                                     entityDeploymentCountText
                                 );
@@ -247,22 +229,18 @@ describe('Entities single views', () => {
     it('should filter component count in images list and image overview by cve when coming from cve list', () => {
         cy.visit(url.list.cves);
 
-        cy.get(selectors.imageCountLink, { timeout: 5000 })
-            .eq(0)
-            .click({ force: true });
+        cy.get(selectors.imageCountLink, { timeout: 5000 }).eq(0).click({ force: true });
         cy.get(selectors.parentEntityInfoHeader).click();
         cy.get(selectors.imageTileLink).click({ force: true });
 
         cy.get(`${selectors.sidePanel} ${selectors.componentCountLink}`)
             .eq(0)
             .invoke('text')
-            .then(componentCountText => {
-                cy.get(selectors.sidePanelTableBodyRows)
-                    .eq(0)
-                    .click();
+            .then((componentCountText) => {
+                cy.get(selectors.sidePanelTableBodyRows).eq(0).click();
                 cy.get(selectors.componentTileLink, { timeout: 5000 })
                     .invoke('text')
-                    .then(relatedComponentCountText => {
+                    .then((relatedComponentCountText) => {
                         expect(relatedComponentCountText.toLowerCase().trim()).to.equal(
                             componentCountText.replace(' ', '')
                         );
@@ -273,13 +251,11 @@ describe('Entities single views', () => {
     it('should show a CVE description in overview when coming from cve list', () => {
         cy.visit(url.list.cves);
 
-        cy.get(selectors.tableRows, { timeout: 5000 })
-            .eq(1)
-            .click();
+        cy.get(selectors.tableRows, { timeout: 5000 }).eq(1).click();
         cy.get(selectors.entityOverview)
             .find(selectors.cveDescription)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 expect(value.length).to.be.greaterThan(2);
                 expect(value).not.to.include('No description available');
             });
@@ -288,9 +264,7 @@ describe('Entities single views', () => {
     it('should not filter cluster entity page regardless of entity context', () => {
         cy.visit(url.list.namespaces);
 
-        cy.get(`${selectors.tableRows}:contains(No deployments)`, { timeout: 10000 })
-            .eq(0)
-            .click();
+        cy.get(`${selectors.tableRows}:contains(No deployments)`, { timeout: 10000 }).eq(0).click();
         cy.get(selectors.metadataClusterValue).click();
         cy.wait(1000);
         cy.get(`${selectors.sidePanel} ${selectors.tableRows}:contains(No deployments)`).should(

@@ -16,11 +16,9 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -36,13 +34,14 @@ func GetPipeline() pipeline.Fragment {
 		deploymentDataStore.Singleton(),
 		imageDataStore.Singleton(),
 		lifecycle.SingletonManager(),
-		graph.Singleton())
+		graph.Singleton(),
+		reprocessor.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
 	images imageDataStore.DataStore, manager lifecycle.Manager,
-	graphEvaluator graph.Evaluator) pipeline.Fragment {
+	graphEvaluator graph.Evaluator, reprocessor reprocessor.Loop) pipeline.Fragment {
 	return &pipelineImpl{
 		validateInput:     newValidateInput(),
 		clusterEnrichment: newClusterEnrichment(clusters),
@@ -53,7 +52,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		deployments:    deployments,
 		clusters:       clusters,
 
-		reprocessor: reprocessor.Singleton(),
+		reprocessor: reprocessor,
 	}
 }
 
@@ -80,7 +79,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 
 	store := storeMap.Get((*central.SensorEvent_Deployment)(nil))
 	return reconciliation.Perform(store, search.ResultsToIDSet(results), "deployments", func(id string) error {
-		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id})
+		return s.runRemovePipeline(ctx, &storage.Deployment{Id: id}, true)
 	})
 }
 
@@ -99,7 +98,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	var err error
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		err = s.runRemovePipeline(ctx, deployment)
+		err = s.runRemovePipeline(ctx, deployment, false)
 	default:
 		err = s.runGeneralPipeline(ctx, deployment)
 	}
@@ -107,7 +106,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment) error {
+func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storage.Deployment, reconciliation bool) error {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return err
@@ -119,10 +118,12 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 	}
 
 	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
-
-	// Process the deployment (enrichment, alert generation, enforcement action generation.)
-	if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
-		return err
+	if reconciliation {
+		// Only remove the alerts during reconciliation as the sensor will naturally send an empty AlertResults
+		// struct which will properly clean up the existing deploy time alerts
+		if err := s.lifecycleManager.DeploymentRemoved(deployment); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -137,33 +138,6 @@ func compareMap(m1, m2 map[string]string) bool {
 		}
 	}
 	return true
-}
-
-func hasNewImageReferences(oldDeployment, newDeployment *storage.Deployment) bool {
-	oldImages := set.NewStringSet()
-	for _, c := range oldDeployment.GetContainers() {
-		for _, i := range c.GetInstances() {
-			if i.GetImageDigest() != "" {
-				oldImages.Add(i.GetImageDigest())
-			}
-		}
-	}
-	newImages := set.NewStringSet()
-	for _, c := range newDeployment.GetContainers() {
-		for _, i := range c.GetInstances() {
-			if i.GetImageDigest() != "" {
-				newImages.Add(i.GetImageDigest())
-			}
-		}
-	}
-	return !newImages.Equal(oldImages)
-}
-
-func (s *pipelineImpl) rewriteInstancesAndPersist(ctx context.Context, oldDeployment *storage.Deployment, newDeployment *storage.Deployment) error {
-	if hasNewImageReferences(oldDeployment, newDeployment) {
-		return s.deployments.UpsertDeployment(ctx, newDeployment)
-	}
-	return s.deployments.UpsertDeploymentIntoStoreOnly(ctx, newDeployment)
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -191,26 +165,13 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	}
 	incrementNetworkGraphEpoch := true
 
-	needsRiskReprocessing := true
 	// If it exists, check to see if we can dedupe it
 	if exists {
 		if oldDeployment.GetHash() == deployment.GetHash() {
-			if features.PodDeploymentSeparation.Enabled() {
-				// There is a separate handler for ContainerInstances,
-				// so there is no longer a need to continue from this point.
-				// This will only be reached upon a re-sync event from k8s
-				// and the flag is enabled.
-				return nil
-			}
-			hasUnsavedImages, err := s.updateImages.HasUnsavedImages(ctx, deployment)
-			if err != nil {
-				return err
-			}
-			if !hasUnsavedImages {
-				return s.rewriteInstancesAndPersist(ctx, oldDeployment, deployment)
-			}
-			// The hash is the same and only instances have changed, so don't reprocess risk
-			needsRiskReprocessing = false
+			// There is a separate handler for ContainerInstances,
+			// so there is no longer a need to continue from this point.
+			// This will only be reached upon a re-sync event from k8s.
+			return nil
 		}
 		incrementNetworkGraphEpoch = !compareMap(oldDeployment.GetPodLabels(), deployment.GetPodLabels())
 	}
@@ -221,9 +182,7 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, deployment *stora
 	}
 
 	// Update risk asynchronously
-	if needsRiskReprocessing {
-		s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
-	}
+	s.reprocessor.ReprocessRiskForDeployments(deployment.GetId())
 
 	if incrementNetworkGraphEpoch {
 		s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())

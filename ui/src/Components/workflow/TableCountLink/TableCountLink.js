@@ -15,10 +15,7 @@ const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityType
     const text = `${count} ${pluralize(type, count)}`;
     if (textOnly) return <span data-testid={`${type}CountText`}>{text}</span>;
 
-    const url = workflowState
-        .pushListItem(selectedRowId)
-        .pushList(entityType)
-        .toUrl();
+    const url = workflowState.pushListItem(selectedRowId).pushList(entityType).toUrl();
     return <TableCellLink pdf={textOnly} url={url} text={text} dataTestId={`${type}CountLink`} />;
 };
 
@@ -27,12 +24,12 @@ TableCountLink.propTypes = {
     selectedRowId: PropTypes.string.isRequired,
     textOnly: PropTypes.bool,
     count: PropTypes.number.isRequired,
-    entityTypeText: PropTypes.string
+    entityTypeText: PropTypes.string,
 };
 
 TableCountLink.defaultProps = {
     textOnly: false,
-    entityTypeText: null
+    entityTypeText: null,
 };
 
 export default TableCountLink;

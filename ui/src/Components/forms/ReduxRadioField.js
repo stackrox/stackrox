@@ -10,7 +10,7 @@ const ReduxRadioField = ({ name, value, id, disabled, onChange }) => (
         onChange={onChange}
         component="input"
         type="radio"
-        className="form-radio"
+        className="form-radio border-base-600 text-base-600"
         value={value}
         disabled={disabled}
     />
@@ -21,13 +21,13 @@ ReduxRadioField.propTypes = {
     value: PropTypes.string.isRequired,
     id: PropTypes.string,
     disabled: PropTypes.bool,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
 };
 
 ReduxRadioField.defaultProps = {
     id: null,
     disabled: false,
-    onChange: null
+    onChange: null,
 };
 
 export default ReduxRadioField;

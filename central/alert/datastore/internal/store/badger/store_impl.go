@@ -83,7 +83,7 @@ func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
 }
 
 // GetAlert returns an alert with given id.
-func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err error) {
+func (b *storeImpl) Get(id string) (alert *storage.Alert, exists bool, err error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	msg, exists, err := b.alertCRUD.Read(id)
@@ -94,7 +94,7 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 	return
 }
 
-func (b *storeImpl) GetAlertIDs() ([]string, error) {
+func (b *storeImpl) GetIDs() ([]string, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "AlertIDs")
 
 	var keys []string
@@ -121,7 +121,7 @@ func (b *storeImpl) GetListAlerts(ids []string) ([]*storage.ListAlert, []int, er
 	return alerts, indices, nil
 }
 
-func (b *storeImpl) GetAlerts(ids []string) ([]*storage.Alert, []int, error) {
+func (b *storeImpl) GetMany(ids []string) ([]*storage.Alert, []int, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
 	msgs, missingIndices, err := b.alertCRUD.ReadBatch(ids)
@@ -135,24 +135,24 @@ func (b *storeImpl) GetAlerts(ids []string) ([]*storage.Alert, []int, error) {
 	return alerts, missingIndices, nil
 }
 
-// AddAlert adds an alert into Badger
-func (b *storeImpl) UpsertAlert(alert *storage.Alert) error {
+// Upsert adds an alert into Badger
+func (b *storeImpl) Upsert(alert *storage.Alert) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Add, "Alert")
 	return b.alertCRUD.Upsert(alert)
 }
 
-// DeleteAlert removes an alert
-func (b *storeImpl) DeleteAlert(id string) error {
+// Delete removes an alert
+func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "Alert")
 	return b.alertCRUD.Delete(id)
 }
 
-func (b *storeImpl) DeleteAlerts(ids ...string) error {
+func (b *storeImpl) DeleteMany(ids []string) error {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.RemoveMany, "Alert")
 	return b.alertCRUD.DeleteBatch(ids)
 }
 
-func (b *storeImpl) WalkAll(fn func(*storage.ListAlert) error) error {
+func (b *storeImpl) Walk(fn func(*storage.ListAlert) error) error {
 	opts := badgerhelper.ForEachOptions{
 		IteratorOptions: badgerhelper.DefaultIteratorOptions(),
 	}

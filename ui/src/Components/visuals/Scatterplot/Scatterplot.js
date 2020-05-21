@@ -11,7 +11,7 @@ import {
     HorizontalGridLines,
     MarkSeries,
     DiscreteColorLegend,
-    ChartLabel
+    ChartLabel,
 } from 'react-vis';
 import useGraphHoverHint from 'hooks/useGraphHoverHint';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
@@ -33,7 +33,7 @@ const Scatterplot = ({
     yAxisTitle,
     xAxisTitle,
     legendData,
-    history
+    history,
 }) => {
     const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
@@ -108,7 +108,7 @@ Scatterplot.propTypes = {
             color: PropTypes.string,
             x: PropTypes.number.isRequired,
             y: PropTypes.number.isRequired,
-            url: PropTypes.string
+            url: PropTypes.string,
         })
     ),
     lowerX: PropTypes.number,
@@ -125,7 +125,7 @@ Scatterplot.propTypes = {
     legendData: PropTypes.arrayOf(
         PropTypes.shape({ title: PropTypes.string, color: PropTypes.string })
     ),
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 Scatterplot.defaultProps = {
@@ -141,7 +141,7 @@ Scatterplot.defaultProps = {
     plotProps: null,
     yAxisTitle: null,
     xAxisTitle: null,
-    legendData: null
+    legendData: null,
 };
 
 export default withRouter(Scatterplot);

@@ -5,7 +5,7 @@ const networkStatuses = {
     REFETCH: 4,
     POLL: 6,
     READY: 7,
-    ERROR: 8
+    ERROR: 8,
 };
 
 export default networkStatuses;

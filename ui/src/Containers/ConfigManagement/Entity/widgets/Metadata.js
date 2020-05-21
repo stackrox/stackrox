@@ -11,8 +11,9 @@ const ResourceCountPopper = ({ data, label, renderContent, reactOutsideClassName
             disabled={!length}
             placement="bottom"
             reactOutsideClassName={reactOutsideClassName}
-            buttonClass={`rounded border border-base-400 p-1 px-4 text-center text-sm ${length &&
-                'hover:bg-base-200'}`}
+            buttonClass={`rounded border border-base-400 p-1 px-4 text-center text-sm ${
+                length && 'hover:bg-base-200'
+            }`}
             buttonContent={
                 <div>
                     {length} {pluralize(label, length)}
@@ -31,21 +32,21 @@ ResourceCountPopper.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
     label: PropTypes.string.isRequired,
     reactOutsideClassName: PropTypes.string,
-    renderContent: PropTypes.func.isRequired
+    renderContent: PropTypes.func.isRequired,
 };
 
 ResourceCountPopper.defaultProps = {
-    reactOutsideClassName: null
+    reactOutsideClassName: null,
 };
 
-const renderKeyValuePairs = data => {
+const renderKeyValuePairs = (data) => {
     return data.map(({ key, value }) => (
         <div className="mt-2" key={key}>
             {key} : {value}
         </div>
     ));
 };
-const renderName = data => {
+const renderName = (data) => {
     return data.map(({ name }) => (
         <div className="mt-2" key={name}>
             {name}
@@ -115,13 +116,13 @@ Metadata.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired])
+            value: PropTypes.oneOf([PropTypes.string.isRequired, PropTypes.element.isRequired]),
         })
     ).isRequired,
     labels: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     annotations: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     whitelists: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    secrets: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    secrets: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default Metadata;

@@ -26,8 +26,8 @@ const integrationsList = {
             label: 'API Token',
             type: 'apitoken',
             source: 'authProviders',
-            image: logo
-        }
+            image: logo,
+        },
     ],
     imageIntegrations: [
         {
@@ -36,7 +36,7 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: logo,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Generic Docker Registry',
@@ -44,7 +44,7 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: docker,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Anchore Scanner',
@@ -52,15 +52,15 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: anchore,
-            disabled: false
+            disabled: false,
         },
         {
-            label: 'AWS ECR',
+            label: 'Amazon ECR',
             type: 'ecr',
             categories: 'Registry',
             source: 'imageIntegrations',
             image: aws,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Google Cloud',
@@ -68,7 +68,7 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: google,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Microsoft ACR',
@@ -76,7 +76,7 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: azure,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'JFrog Artifactory',
@@ -84,7 +84,7 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: artifactory,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Docker Trusted Registry',
@@ -92,7 +92,7 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: docker,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Quay.io',
@@ -100,7 +100,7 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: quay,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'CoreOS Clair',
@@ -108,7 +108,7 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Sonatype Nexus',
@@ -116,7 +116,7 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: nexus,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Tenable.io',
@@ -124,7 +124,7 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: tenable,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'IBM Cloud',
@@ -132,7 +132,7 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: ibm,
-            disabled: false
+            disabled: false,
         },
         {
             label: 'Red Hat',
@@ -140,81 +140,81 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: redhat,
-            disabled: false
-        }
+            disabled: false,
+        },
     ],
     plugins: [
         {
             label: 'Slack',
             type: 'slack',
             source: 'notifiers',
-            image: slack
+            image: slack,
         },
         {
             label: 'Generic Webhook',
             type: 'generic',
             source: 'notifiers',
-            image: logo
+            image: logo,
         },
         {
             label: 'Jira',
             type: 'jira',
             source: 'notifiers',
-            image: jira
+            image: jira,
         },
         {
             label: 'Email',
             type: 'email',
             source: 'notifiers',
-            image: email
+            image: email,
         },
         {
             label: 'Google Cloud SCC',
             type: 'cscc',
             source: 'notifiers',
-            image: google
+            image: google,
         },
         {
             label: 'Splunk',
             type: 'splunk',
             source: 'notifiers',
-            image: splunk
+            image: splunk,
         },
         {
             label: 'PagerDuty',
             type: 'pagerduty',
             source: 'notifiers',
-            image: pagerduty
+            image: pagerduty,
         },
         {
             label: 'Sumo Logic',
             type: 'sumologic',
             source: 'notifiers',
-            image: sumologic
+            image: sumologic,
         },
         {
             label: 'Microsoft Teams',
             type: 'teams',
             source: 'notifiers',
-            image: teams
-        }
+            image: teams,
+        },
     ],
     backups: [
         {
-            label: 'S3',
+            label: 'Amazon S3',
             type: 's3',
             source: 'backups',
-            image: s3
-        }
+            image: s3,
+        },
     ],
     authPlugins: [
         {
             label: 'Scoped Access Plugin',
             type: 'scopedAccess',
             source: 'authPlugins',
-            image: logo
-        }
-    ]
+            image: logo,
+        },
+    ],
 };
 
 export default integrationsList;

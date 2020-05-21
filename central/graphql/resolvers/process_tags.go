@@ -25,7 +25,7 @@ func (resolver *Resolver) ProcessTags(ctx context.Context, args struct {
 	Key analystnotes.ProcessNoteKey
 }) ([]string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessTags")
-	if err := writeIndicators(ctx); err != nil {
+	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
 	tags, err := resolver.DeploymentDataStore.GetTagsForProcessKey(ctx, &args.Key)
@@ -40,7 +40,7 @@ func (resolver *Resolver) ProcessTagsCount(ctx context.Context, args struct {
 	Key analystnotes.ProcessNoteKey
 }) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ProcessTagsCount")
-	if err := writeIndicators(ctx); err != nil {
+	if err := readIndicators(ctx); err != nil {
 		return 0, err
 	}
 	tags, err := resolver.DeploymentDataStore.GetTagsForProcessKey(ctx, &args.Key)

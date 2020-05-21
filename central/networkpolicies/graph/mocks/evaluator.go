@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -112,16 +113,16 @@ func (m *MocknamespaceProvider) EXPECT() *MocknamespaceProviderMockRecorder {
 }
 
 // GetNamespaces mocks base method
-func (m *MocknamespaceProvider) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
+func (m *MocknamespaceProvider) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaces")
+	ret := m.ctrl.Call(m, "GetNamespaces", ctx)
 	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNamespaces indicates an expected call of GetNamespaces
-func (mr *MocknamespaceProviderMockRecorder) GetNamespaces() *gomock.Call {
+func (mr *MocknamespaceProviderMockRecorder) GetNamespaces(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MocknamespaceProvider)(nil).GetNamespaces))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MocknamespaceProvider)(nil).GetNamespaces), ctx)
 }

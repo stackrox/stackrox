@@ -4,11 +4,11 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 import isEqual from 'lodash/isEqual';
 
 export const types = {
-    FETCH_USERS_ATTRIBUTES: createFetchingActionTypes('groups/FETCH_USERS_ATTRIBUTES')
+    FETCH_USERS_ATTRIBUTES: createFetchingActionTypes('groups/FETCH_USERS_ATTRIBUTES'),
 };
 
 export const actions = {
-    fetchUsersAttributes: createFetchingActions(types.FETCH_USERS_ATTRIBUTES)
+    fetchUsersAttributes: createFetchingActions(types.FETCH_USERS_ATTRIBUTES),
 };
 
 const usersAttributes = (state = [], action) => {
@@ -20,13 +20,13 @@ const usersAttributes = (state = [], action) => {
     return state;
 };
 const reducer = combineReducers({
-    usersAttributes
+    usersAttributes,
 });
 
-const getUsersAttributes = state => state.usersAttributes;
+const getUsersAttributes = (state) => state.usersAttributes;
 
 export const selectors = {
-    getUsersAttributes
+    getUsersAttributes,
 };
 
 export default reducer;

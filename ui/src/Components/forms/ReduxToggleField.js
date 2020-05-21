@@ -30,13 +30,13 @@ ReduxToggleField.propTypes = {
     name: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
     reverse: PropTypes.bool,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 ReduxToggleField.defaultProps = {
     disabled: false,
     reverse: false,
-    className: 'mb-2'
+    className: 'mb-2',
 };
 
 export default ReduxToggleField;

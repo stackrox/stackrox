@@ -3,7 +3,6 @@ package paginated
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -26,7 +25,7 @@ func Paginated(searcher search.Searcher) search.Searcher {
 		}
 
 		// Local copy to avoid changing input.
-		local := proto.Clone(q).(*v1.Query)
+		local := q.Clone()
 
 		// Record used settings.
 		offset := int(local.GetPagination().GetOffset())
@@ -101,7 +100,7 @@ func FillDefaultSortOption(q *v1.Query, defaultSortOption *v1.QuerySortOption) *
 		q = search.EmptyQuery()
 	}
 	// Add pagination sort order if needed.
-	local := proto.Clone(q).(*v1.Query)
+	local := q.Clone()
 	if local.GetPagination() == nil {
 		local.Pagination = new(v1.QueryPagination)
 	}

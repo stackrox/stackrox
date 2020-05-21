@@ -78,7 +78,7 @@ func (ds *searcherImpl) searchAlerts(ctx context.Context, q *v1.Query) ([]*stora
 	if err != nil {
 		return nil, err
 	}
-	alerts, _, err := ds.storage.GetAlerts(search.ResultsToIDs(results))
+	alerts, _, err := ds.storage.GetMany(search.ResultsToIDs(results))
 	if err != nil {
 		return nil, err
 	}

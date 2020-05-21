@@ -13,7 +13,7 @@ import slickSettings from 'constants/slickSettings';
 import cloneDeep from 'lodash/cloneDeep';
 import { format, subDays } from 'date-fns';
 
-const formatTimeseriesData = clusterData => {
+const formatTimeseriesData = (clusterData) => {
     if (!clusterData) return null;
     // set a baseline zero'd object for the past week
     const baselineData = {};
@@ -26,15 +26,15 @@ const formatTimeseriesData = clusterData => {
     // set severities in timeAlertMap to have this zero'd data
     const timeAlertMap = {};
     const timeAlertInitialMap = {}; // this is the number of initial alerts that have come before
-    Object.keys(severityColorMap).forEach(severity => {
+    Object.keys(severityColorMap).forEach((severity) => {
         timeAlertMap[severity] = cloneDeep(baselineData);
         timeAlertInitialMap[severity] = 0;
     });
 
     // populate actual data into timeAlertMap
-    clusterData.severities.forEach(severityObj => {
+    clusterData.severities.forEach((severityObj) => {
         const { severity, events } = severityObj;
-        events.forEach(alert => {
+        events.forEach((alert) => {
             const time = format(parseInt(alert.time, 10), 'MMM DD');
             const alerts = timeAlertMap[severity][time];
             if (alerts !== undefined) {
@@ -54,9 +54,9 @@ const formatTimeseriesData = clusterData => {
         });
     });
 
-    Object.keys(severityColorMap).forEach(severity => {
+    Object.keys(severityColorMap).forEach((severity) => {
         let runningSum = timeAlertInitialMap[severity];
-        Object.keys(baselineData).forEach(time => {
+        Object.keys(baselineData).forEach((time) => {
             const prevVal = timeAlertMap[severity][time];
             timeAlertMap[severity][time] += runningSum;
             runningSum += prevVal;
@@ -65,12 +65,12 @@ const formatTimeseriesData = clusterData => {
 
     // set data format for line chart
     const cluster = {};
-    cluster.data = Object.keys(baselineData).map(time => ({
+    cluster.data = Object.keys(baselineData).map((time) => ({
         time,
         low: timeAlertMap.LOW_SEVERITY[time],
         medium: timeAlertMap.MEDIUM_SEVERITY[time],
         high: timeAlertMap.HIGH_SEVERITY[time],
-        critical: timeAlertMap.CRITICAL_SEVERITY[time]
+        critical: timeAlertMap.CRITICAL_SEVERITY[time],
     }));
     cluster.name = clusterData.cluster;
 
@@ -86,7 +86,7 @@ const AlertsByTimeseriesChart = ({ alertsByTimeseries }) => {
     return (
         <div className="p-0 h-64 w-full overflow-hidden">
             <Slider {...slickSettings}>
-                {alertsByTimeseries.map(cluster => {
+                {alertsByTimeseries.map((cluster) => {
                     const { data, name } = formatTimeseriesData(cluster);
                     return (
                         <div className="h-64" key={name}>
@@ -136,24 +136,21 @@ AlertsByTimeseriesChart.propTypes = {
                         PropTypes.shape({
                             id: PropTypes.string.isRequired,
                             time: PropTypes.string.isRequired,
-                            type: PropTypes.string.isRequired
+                            type: PropTypes.string.isRequired,
                         })
-                    )
+                    ),
                 })
-            )
+            ),
         })
-    )
+    ),
 };
 
 AlertsByTimeseriesChart.defaultProps = {
-    alertsByTimeseries: []
+    alertsByTimeseries: [],
 };
 
 const mapStateToProps = createStructuredSelector({
-    alertsByTimeseries: selectors.getAlertsByTimeseries
+    alertsByTimeseries: selectors.getAlertsByTimeseries,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(AlertsByTimeseriesChart);
+export default connect(mapStateToProps, null)(AlertsByTimeseriesChart);

@@ -26,7 +26,11 @@ type datastoreImpl struct {
 
 func (d *datastoreImpl) buildIndex() error {
 	log.Info("[STARTUP] Indexing process whitelists")
-	serviceAccounts, err := d.storage.ListServiceAccounts()
+	var serviceAccounts []*storage.ServiceAccount
+	err := d.storage.Walk(func(sa *storage.ServiceAccount) error {
+		serviceAccounts = append(serviceAccounts, sa)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -38,7 +42,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error) {
-	acc, found, err := d.storage.GetServiceAccount(id)
+	acc, found, err := d.storage.Get(id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -65,7 +69,7 @@ func (d *datastoreImpl) UpsertServiceAccount(ctx context.Context, request *stora
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.UpsertServiceAccount(request); err != nil {
+	if err := d.storage.Upsert(request); err != nil {
 		return err
 	}
 	return d.indexer.AddServiceAccount(request)
@@ -78,7 +82,7 @@ func (d *datastoreImpl) RemoveServiceAccount(ctx context.Context, id string) err
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.DeleteServiceAccount(id); err != nil {
+	if err := d.storage.Delete(id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteServiceAccount(id)

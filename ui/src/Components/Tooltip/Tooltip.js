@@ -5,7 +5,7 @@ import React from 'react';
 import Tippy from '@tippy.js/react';
 
 export const defaultTippyTooltipProps = {
-    arrow: true
+    arrow: true,
 };
 
 /**
@@ -16,6 +16,6 @@ export const defaultTippyTooltipProps = {
  * @see {@link Components/TooltipOverlay} for a preferred content component to use for tooltip
  * @see {@link Components/HoverHint} for adding tooltip to any DOM element in cases this component cannot be used
  */
-const Tooltip = props => <Tippy {...defaultTippyTooltipProps} {...props} />;
+const Tooltip = (props) => <Tippy {...defaultTippyTooltipProps} {...props} />;
 
 export default Tooltip;

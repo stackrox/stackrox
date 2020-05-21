@@ -4,7 +4,7 @@ import SeverityStackedPill from './SeverityStackedPill';
 
 export default {
     title: 'SeverityStackedPill',
-    component: SeverityStackedPill
+    component: SeverityStackedPill,
 };
 
 export const withData = () => {

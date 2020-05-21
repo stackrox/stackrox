@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -242,7 +241,7 @@ func (p *providerImpl) MergeConfigInto(newCfg map[string]string) map[string]stri
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.
 func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 	return &providerImpl{
-		storedInfo:     *proto.Clone(&pr.storedInfo).(*storage.AuthProvider),
+		storedInfo:     *pr.storedInfo.Clone(),
 		backendFactory: pr.backendFactory,
 		backend:        pr.backend,
 		roleMapper:     pr.roleMapper,

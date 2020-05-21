@@ -2,7 +2,7 @@ import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 
 import NodePage from './Node';
@@ -23,7 +23,7 @@ const ComplianceEntityPage = ({ match, location }) => {
         entityType2: params.entityType2,
         entityListType2: params.entityListType2,
         entityId2: params.entityId2,
-        query: params.query
+        query: params.query,
     };
 
     const pageTypeMap = {
@@ -32,7 +32,7 @@ const ComplianceEntityPage = ({ match, location }) => {
         [entityTypes.NAMESPACE]: <NamespacePage {...pageProps} />,
         [entityTypes.CONTROL]: <ControlPage {...pageProps} />,
         [entityTypes.DEPLOYMENT]: <DeploymentPage {...pageProps} />,
-        [entityTypes.STANDARD]: <StandardPage {...pageProps} />
+        [entityTypes.STANDARD]: <StandardPage {...pageProps} />,
     };
 
     return pageTypeMap[params.pageEntityType];
@@ -43,14 +43,14 @@ ComplianceEntityPage.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     params: PropTypes.shape({
         entityId: PropTypes.string,
-        entityType: PropTypes.string
+        entityType: PropTypes.string,
     }),
-    sidePanelMode: PropTypes.bool
+    sidePanelMode: PropTypes.bool,
 };
 
 ComplianceEntityPage.defaultProps = {
     params: null,
-    sidePanelMode: false
+    sidePanelMode: false,
 };
 
 export default withRouter(ComplianceEntityPage);

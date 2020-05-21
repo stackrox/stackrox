@@ -27,5 +27,5 @@ export default function GettingStarted({ onClick }) {
 }
 
 GettingStarted.propTypes = {
-    onClick: PropTypes.func.isRequired
+    onClick: PropTypes.func.isRequired,
 };

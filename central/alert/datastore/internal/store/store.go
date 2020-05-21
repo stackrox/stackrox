@@ -8,16 +8,15 @@ import (
 //go:generate mockgen-wrapper
 type Store interface {
 	ListAlert(id string) (*storage.ListAlert, bool, error)
-	ListAlerts() ([]*storage.ListAlert, error)
 	GetListAlerts([]string) ([]*storage.ListAlert, []int, error)
 
-	WalkAll(fn func(*storage.ListAlert) error) error
-	GetAlertIDs() ([]string, error)
-	GetAlert(id string) (*storage.Alert, bool, error)
-	GetAlerts(ids []string) ([]*storage.Alert, []int, error)
-	UpsertAlert(alert *storage.Alert) error
-	DeleteAlert(id string) error
-	DeleteAlerts(ids ...string) error
+	Walk(fn func(*storage.ListAlert) error) error
+	GetIDs() ([]string, error)
+	Get(id string) (*storage.Alert, bool, error)
+	GetMany(ids []string) ([]*storage.Alert, []int, error)
+	Upsert(alert *storage.Alert) error
+	Delete(id string) error
+	DeleteMany(ids []string) error
 
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)

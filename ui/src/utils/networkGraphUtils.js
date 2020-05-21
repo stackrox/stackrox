@@ -1,11 +1,11 @@
 import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
 
-export const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
+export const nonIsolated = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
-export const isDeployment = node => node && node.type === entityTypes.DEPLOYMENT;
+export const isDeployment = (node) => node && node.type === entityTypes.DEPLOYMENT;
 
-export const isNamespace = node => node && node.type === entityTypes.NAMESPACE;
+export const isNamespace = (node) => node && node.type === entityTypes.NAMESPACE;
 
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
@@ -16,15 +16,15 @@ export const isNamespace = node => node && node.type === entityTypes.NAMESPACE;
 export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
     const filteredLinks = [];
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
         if (!node.entity || node.entity.type !== 'DEPLOYMENT' || !networkEdgeMap) {
             return;
         }
         const { id: srcDeploymentId, deployment: srcDeployment } = node.entity;
         const sourceNS = srcDeployment && srcDeployment.namespace;
 
-        const isActive = key => !!(networkEdgeMap[key] && networkEdgeMap[key].active);
-        const isNonIsolated = id => !!(networkNodeMap[id] && networkNodeMap[id].nonIsolated);
+        const isActive = (key) => !!(networkEdgeMap[key] && networkEdgeMap[key].active);
+        const isNonIsolated = (id) => !!(networkNodeMap[id] && networkNodeMap[id].nonIsolated);
         const isBetweenNonIsolated = (srcId, tgtId) => isNonIsolated(srcId) && isNonIsolated(tgtId);
         const isAllowed = (key, { source, target, targetNS }) =>
             sourceNS === 'stackrox' ||
@@ -40,7 +40,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
         // treat both phenomena separately and omit edges from a egress non-isolated to an ingress non-isolated
         // deployment, but that would be to confusing in the UI).
         if (node.nonIsolatedEgress) {
-            nodes.forEach(targetNode => {
+            nodes.forEach((targetNode) => {
                 if (
                     Object.is(node, targetNode) ||
                     !targetNode.entity ||
@@ -60,7 +60,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
                     sourceName: srcDeployment.name,
                     targetName: tgtDeployment.name,
                     sourceNS,
-                    targetNS
+                    targetNS,
                 };
 
                 link.isActive = isActive(key);
@@ -75,7 +75,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
             });
         }
 
-        Object.keys(node.outEdges).forEach(targetIndex => {
+        Object.keys(node.outEdges).forEach((targetIndex) => {
             const tgtNode = nodes[targetIndex];
             if (!tgtNode || !tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                 return;
@@ -89,7 +89,7 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
                 sourceName: node.entity.deployment.name,
                 targetName: tgtDeployment.name,
                 sourceNS,
-                targetNS
+                targetNS,
             };
 
             link.isActive = isActive(key);

@@ -8,8 +8,8 @@ const WhitelistScope = ({ fields }) => {
 
 WhitelistScope.propTypes = {
     fields: PropTypes.shape({
-        map: PropTypes.func.isRequired
-    }).isRequired
+        map: PropTypes.func.isRequired,
+    }).isRequired,
 };
 
 export default WhitelistScope;

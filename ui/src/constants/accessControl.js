@@ -8,31 +8,31 @@ export const defaultRoles = {
     Analyst: true,
     'Continuous Integration': true,
     None: true,
-    'Sensor Creator': true
+    'Sensor Creator': true,
 };
 
 /* constants specific to Auth Providers */
 export const availableAuthProviders = [
     {
         label: 'Auth0',
-        value: 'auth0'
+        value: 'auth0',
     },
     {
         label: 'OpenID Connect',
-        value: 'oidc'
+        value: 'oidc',
     },
     {
         label: 'SAML 2.0',
-        value: 'saml'
+        value: 'saml',
     },
     {
         label: 'User Certificates',
-        value: 'userpki'
-    }
+        value: 'userpki',
+    },
 ];
 
 export function getAuthProviderLabelByValue(value) {
-    return availableAuthProviders.find(e => e.value === value).label;
+    return availableAuthProviders.find((e) => e.value === value).label;
 }
 
 export const defaultMinimalReadAccessResources = [
@@ -44,7 +44,7 @@ export const defaultMinimalReadAccessResources = [
     'NetworkPolicy',
     'NetworkGraph',
     'Policy',
-    'Secret'
+    'Secret',
 ];
 
 // Default to giving new roles read access to specific resources.
@@ -60,5 +60,5 @@ export const defaultNewRolePermissions = defaultMinimalReadAccessResources.reduc
 export const defaultSelectedRole = {
     name: '',
     globalAccess: 'NO_ACCESS',
-    resourceToAccess: defaultNewRolePermissions
+    resourceToAccess: defaultNewRolePermissions,
 };

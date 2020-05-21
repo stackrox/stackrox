@@ -6,7 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/central/globaldb/metrics"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,13 +34,16 @@ type registeredBucket struct {
 func RegisterBucket(bucketName []byte, objType string) {
 	registeredBuckets = append(registeredBuckets, registeredBucket{
 		prefixString: string(bucketName),
-		badgerPrefix: dbhelper.GetBucketKey(bucketName, nil),
+		badgerPrefix: bucketName,
 		objType:      objType,
 	})
 }
 
 // GetGlobalBadgerDB returns the global BadgerDB instance.
 func GetGlobalBadgerDB() *badger.DB {
+	if features.RocksDB.Enabled() {
+		return nil
+	}
 	badgerDBInit.Do(func() {
 		var err error
 		badgerDB, err = badgerhelper.NewWithDefaults()

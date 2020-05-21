@@ -21,10 +21,10 @@ class Header extends Component {
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
         isViewFiltered: PropTypes.bool.isRequired,
-        closeWizard: PropTypes.func.isRequired
+        closeWizard: PropTypes.func.isRequired,
     };
 
-    onSearch = searchOptions => {
+    onSearch = (searchOptions) => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             this.props.closeWizard();
         }
@@ -55,24 +55,21 @@ class Header extends Component {
 
 const isViewFiltered = createSelector(
     [selectors.getNetworkSearchOptions],
-    searchOptions => searchOptions.length !== 0
+    (searchOptions) => searchOptions.length !== 0
 );
 
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getNetworkSearchOptions,
     searchModifiers: selectors.getNetworkSearchModifiers,
     searchSuggestions: selectors.getNetworkSearchSuggestions,
-    isViewFiltered
+    isViewFiltered,
 });
 
 const mapDispatchToProps = {
     setSearchOptions: searchActions.setNetworkSearchOptions,
     setSearchModifiers: searchActions.setNetworkSearchModifiers,
     setSearchSuggestions: searchActions.setNetworkSearchSuggestions,
-    closeWizard: pageActions.closeNetworkWizard
+    closeWizard: pageActions.closeNetworkWizard,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Header);
+export default connect(mapStateToProps, mapDispatchToProps)(Header);

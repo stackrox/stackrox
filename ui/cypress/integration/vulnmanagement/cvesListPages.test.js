@@ -22,9 +22,9 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             'Impact Score',
             'Discovered Time',
             'Published',
-            'Deployments'
+            'Deployments',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
                 allChecksForEntities(url.list.cves, 'Deployment');
@@ -38,7 +38,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
         cy.get(selectors.cveDescription, { timeout: 6000 })
             .eq(0)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 expect(value).not.to.include('No description available');
             });
     });
@@ -52,7 +52,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             .first()
             .find(`.rt-td`)
             .eq(2)
-            .then(value => {
+            .then((value) => {
                 const cve = value.text();
 
                 cy.get(selectors.tableBodyRows)
@@ -61,7 +61,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
                     .check({ force: true });
                 cy.get(selectors.cveSuppressPanelButton)
                     .click()
-                    .get(selectors.suppressOneHourOption)
+                    .get(selectors.suppressOneDayOption)
                     .click({ force: true });
 
                 // toggle to suppressed view
@@ -81,7 +81,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             .first()
             .find(`.rt-td`)
             .eq(2)
-            .then(value => {
+            .then((value) => {
                 const cve = value.text();
 
                 cy.get(selectors.tableBodyRows)

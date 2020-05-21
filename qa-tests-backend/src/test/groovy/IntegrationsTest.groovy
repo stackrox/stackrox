@@ -1,4 +1,5 @@
 import groups.Notifiers
+import io.fabric8.kubernetes.client.LocalPortForward
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 import groups.BAT
@@ -14,15 +15,17 @@ import objects.PagerDutyNotifier
 import objects.SlackNotifier
 import objects.SplunkNotifier
 import objects.TeamsNotifier
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.CreatePolicyService
+import services.ExternalBackupService
+import services.ImageIntegrationService
 import services.NetworkPolicyService
 import spock.lang.Unroll
 import objects.Deployment
 import objects.Service
 import util.Env
-import org.junit.Assume
-import orchestratormanager.OrchestratorTypes
 import common.Constants
 
 class IntegrationsTest extends BaseSpecification {
@@ -151,48 +154,54 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
     @Category(Integration)
     def "Verify Splunk Integration (legacy mode: #legacy)"() {
         given:
-        "Only run on non-OpenShift until we can fix the route issue in CI"
+        "Assume cluster is not OS"
         Assume.assumeTrue(Env.mustGetOrchestratorType() != OrchestratorTypes.OPENSHIFT)
+
+        and:
         "the integration is tested"
+        def uid = UUID.randomUUID()
+        def deploymentName = "splunk-${uid}"
         orchestrator.createImagePullSecret("qa-stackrox", Env.mustGetDockerIOUserName(),
                  Env.mustGetDockerIOPassword(), Constants.ORCHESTRATOR_NAMESPACE)
         Deployment deployment =
             new Deployment()
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-                .setName("splunk")
+                .setName(deploymentName)
                 .setImage("stackrox/splunk-test-repo:6.6.0")
                 .addPort (8000)
                 .addPort (8088)
                 .addPort(8089)
                 .addAnnotation("test", "annotation")
                 .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
-                .addLabel("app", "splunk")
+                .addLabel("app", deploymentName)
                 .setPrivilegedFlag(true)
                 .addVolume("test", "/tmp")
                 .addImagePullSecret("qa-stackrox")
         orchestrator.createDeployment(deployment)
 
-        Service httpSvc = new Service("splunk-http", Constants.ORCHESTRATOR_NAMESPACE)
-                 .addLabel("app", "splunk")
+        Service httpSvc = new Service("splunk-http-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                 .addLabel("app", deploymentName)
                  .addPort(8000, "TCP")
                  .setType(Service.Type.CLUSTERIP)
         orchestrator.createService(httpSvc)
 
-        Service  collectorSvc = new Service("splunk-collector", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", "splunk")
+        Service  collectorSvc = new Service("splunk-collector-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
                 .addPort(8088, "TCP")
                 .setType(Service.Type.CLUSTERIP)
         orchestrator.createService(collectorSvc)
 
-        Service httpsSvc = new Service("splunk-https", Constants.ORCHESTRATOR_NAMESPACE)
-                .addLabel("app", "splunk")
+        Service httpsSvc = new Service("splunk-https-${uid}", Constants.ORCHESTRATOR_NAMESPACE)
+                .addLabel("app", deploymentName)
                 .addPort(8089, "TCP")
-                .setType(Service.Type.LOADBALANCER)
+                .setType(Service.Type.CLUSTERIP)
         orchestrator.createService(httpsSvc)
+
+        LocalPortForward splunkPortForward = orchestrator.createPortForward(8089, deployment)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, httpsSvc.loadBalancerIP)
+        SplunkNotifier notifier = new SplunkNotifier(legacy, collectorSvc.name, splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -200,7 +209,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         PolicyOuterClass.Policy.Builder policy = Services.getPolicyByName("Latest tag").toBuilder()
 
         def nginxName = "nginx-spl-violation"
-        policy.setName(policy.name + " ")
+        policy.setName("${policy.name} ${uid}")
               .setId("") // set ID to empty so that a new policy is created and not overwrite the original latest tag
               .addScope(ScopeOuterClass.Scope.newBuilder()
                 .setLabel(ScopeOuterClass.Scope.Label.newBuilder()
@@ -221,7 +230,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
         then:
         "Verify the messages are seen in the json"
-        notifier.validateViolationNotification(policy.build(), nginxdeployment)
+        notifier.validateViolationNotification(policy.build(), nginxdeployment, strictIntegrationTesting)
 
         cleanup:
         "remove Deployment and services"
@@ -229,9 +238,9 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
             orchestrator.deleteDeployment(deployment)
             orchestrator.deleteDeployment(nginxdeployment)
         }
-        orchestrator.deleteService("splunk-collector", Constants.ORCHESTRATOR_NAMESPACE)
-        orchestrator.deleteService("splunk-http", Constants.ORCHESTRATOR_NAMESPACE)
-        orchestrator.deleteService("splunk-https", Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.deleteService(httpSvc.name, httpSvc.namespace)
+        orchestrator.deleteService(collectorSvc.name, collectorSvc.namespace)
+        orchestrator.deleteService(httpsSvc.name, httpsSvc.namespace)
         orchestrator.deleteSecret("qa-stackrox", Constants.ORCHESTRATOR_NAMESPACE)
         if (policy != null) {
             CreatePolicyService.deletePolicy(policyId)
@@ -271,7 +280,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         and:
         "validate notification"
         for (Notifier notifier : notifierTypes) {
-            notifier.validateNetpolNotification(orchestrator.generateYaml(policy))
+            notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
         }
 
         cleanup:
@@ -330,7 +339,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         then:
         "Validate Notification details"
         for (Notifier notifier : notifierTypes) {
-            notifier.validateViolationNotification(policy.build(), deployment)
+            notifier.validateViolationNotification(policy.build(), deployment, strictIntegrationTesting)
         }
 
         cleanup:
@@ -368,5 +377,57 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
                         .setName("policy-violation-generic-notification")
                         .addLabel("app", "policy-violation-generic-notification")
                         .setImage("nginx:latest")
+    }
+
+    @Unroll
+    @Category(Integration)
+    def "Verify AWS S3 Integration: #integrationName"() {
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getS3IntegrationConfig(integrationName, bucket, region, endpoint,
+                accessKeyId, accesskey)
+
+        then:
+        "verify test integration"
+        // Test integration for S3 performs test backup (and rollback).
+        assert ExternalBackupService.testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        integrationName       | bucket                       | region                         |
+                endpoint                                             | accessKeyId            |
+                accesskey
+        "S3 with endpoint"    | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
+                "s3.${Env.mustGetAWSS3BucketRegion()}.amazonaws.com" | Env.mustGetAWSAccessKeyID() |
+                Env.mustGetAWSSecretAccessKey()
+        "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
+                ""                                                   | Env.mustGetAWSAccessKeyID() |
+                Env.mustGetAWSSecretAccessKey()
+        "GCS"                 | Env.mustGetGCSBucketName()   | Env.mustGetGCSBucketRegion()   |
+                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
+                Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Category(Integration)
+    def "Verify AWS ECR Integration: #integrationName"() {
+        when:
+        "the integration is tested"
+        def registry = ImageIntegrationService.getECRIntegrationConfig(integrationName, registryID, region, endpoint)
+
+        then:
+        "verify test integration"
+        assert ImageIntegrationService.testImageIntegration(registry)
+
+        where:
+        "configurations are:"
+
+        integrationName        | registryID                    | region                            |
+                endpoint
+        "ECR with endpoint"    | Env.mustGetAWSECRRegistryID() | Env.mustGetAWSECRRegistryRegion() |
+                "ecr.${Env.mustGetAWSECRRegistryRegion()}.amazonaws.com"
+        "ECR without endpoint" | Env.mustGetAWSECRRegistryID() | Env.mustGetAWSECRRegistryRegion() |
+                ""
     }
 }

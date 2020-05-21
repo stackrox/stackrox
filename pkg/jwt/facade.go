@@ -22,3 +22,9 @@ func CreateRS256SignerAndValidator(issuerID string, audience jwt.Audience, key *
 	}
 	return signer, validator, nil
 }
+
+// CreateES256Validator creates a token validator pair with the given properties and jwks public key url
+func CreateES256Validator(issuerID string, audience jwt.Audience, publicKeyURL string) (Validator, error) {
+	keyStore := NewJWKSGetter(publicKeyURL)
+	return NewES256Validator(keyStore, issuerID, audience), nil
+}

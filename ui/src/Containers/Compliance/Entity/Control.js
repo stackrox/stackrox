@@ -26,7 +26,7 @@ const ControlPage = ({
     entityListType2,
     entityId2,
     query,
-    sidePanelMode
+    sidePanelMode,
 }) => {
     const searchParam = useContext(searchContext);
 
@@ -39,7 +39,7 @@ const ControlPage = ({
                     return <PageNotFound resourceType={entityTypes.CONTROL} />;
 
                 const { results: control, complianceStandards: standards } = data;
-                const standard = standards.find(item => item.id === control.standardId);
+                const standard = standards.find((item) => item.id === control.standardId);
                 const { name, standardId, interpretationText, description } = control;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 const standardName = standard ? standard.name : '';
@@ -48,7 +48,7 @@ const ControlPage = ({
                 if (listEntityType1 && !sidePanelMode) {
                     const listQuery = {
                         control: name,
-                        ...query[searchParam]
+                        ...query[searchParam],
                     };
 
                     contents = (
@@ -154,7 +154,7 @@ const ControlPage = ({
                                     resourceTabs={[
                                         entityTypes.NODE,
                                         entityTypes.DEPLOYMENT,
-                                        entityTypes.CLUSTER
+                                        entityTypes.CLUSTER,
                                     ]}
                                 />
                             </>

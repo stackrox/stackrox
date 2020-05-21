@@ -11,7 +11,7 @@ metadata:
 users:
   - system:serviceaccount:stackrox:sensor
   - system:serviceaccount:stackrox:sensor-upgrader
-priority: 100
+priority: 0
 runAsUser:
   type: RunAsAny
 seLinuxContext:
@@ -31,6 +31,9 @@ allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: true
 allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
 volumes:
   - configMap
   - downwardAPI
@@ -69,6 +72,9 @@ allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
 allowPrivilegeEscalation: true
+allowedCapabilities: []
+defaultAddCapabilities: []
+requiredDropCapabilities: []
 volumes:
   - configMap
   - downwardAPI

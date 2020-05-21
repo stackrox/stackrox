@@ -24,7 +24,7 @@ function* saveRuleGroup(action) {
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
         yield call(service.updateOrAddGroup, {
             newGroups: getGroupsWithDefault(group, selectedAuthProvider.id || id, defaultRole),
-            oldGroups: getExistingGroupsWithDefault(existingGroups, selectedAuthProvider.id || id)
+            oldGroups: getExistingGroupsWithDefault(existingGroups, selectedAuthProvider.id || id),
         });
         yield call(getRuleGroups);
     } catch (error) {
@@ -55,6 +55,6 @@ export default function* groups() {
         takeEveryNewlyMatchedLocation(accessControlPath, getRuleGroups),
         takeLatest(types.FETCH_RULE_GROUPS.REQUEST, getRuleGroups),
         fork(watchSaveRuleGroup),
-        fork(watchDeleteRuleGroup)
+        fork(watchDeleteRuleGroup),
     ]);
 }

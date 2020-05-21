@@ -4,10 +4,10 @@ import { waitForElement } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import parseURL from 'modules/URLParser';
+import parseURL from 'utils/URLParser';
 import renderWithRouter from 'test-utils/renderWithRouter';
 import RecentlyDetectedVulnerabilities, {
-    RECENTLY_DETECTED_VULNERABILITIES
+    RECENTLY_DETECTED_VULNERABILITIES,
 } from './RecentlyDetectedVulnerabilities';
 
 const mocks = [
@@ -15,15 +15,15 @@ const mocks = [
         request: {
             query: RECENTLY_DETECTED_VULNERABILITIES,
             variables: {
-                query: ''
-            }
+                query: '',
+            },
         },
         result: {
             data: {
-                results: []
-            }
-        }
-    }
+                results: [],
+            },
+        },
+    },
 ];
 
 // ensure you're resetting modules before each test
@@ -35,7 +35,7 @@ describe('RecentlyDetectedVulnerabilities', () => {
     it('should render No vulnerabilities found when the query returns an empty result set', async () => {
         const location = {
             search: '',
-            pathname: '/main/vulnerability-management'
+            pathname: '/main/vulnerability-management',
         };
         const dateTestId = 'results-message';
         const expectedMessage = 'No vulnerabilities found';

@@ -14,7 +14,7 @@ import {
     CartesianGrid,
     Tooltip,
     Legend,
-    ResponsiveContainer
+    ResponsiveContainer,
 } from 'recharts';
 import Slider from 'react-slick';
 import slickSettings from 'constants/slickSettings';
@@ -51,7 +51,7 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
                                     top: 5,
                                     right: 10,
                                     left: -30,
-                                    bottom: 5
+                                    bottom: 5,
                                 }}
                             >
                                 <XAxis dataKey="name" />
@@ -63,7 +63,7 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
                                         value: '',
                                         angle: -90,
                                         position: 'insideLeft',
-                                        textAnchor: 'end'
+                                        textAnchor: 'end',
                                     }}
                                 />
                                 <CartesianGrid strokeDasharray="1 1" />
@@ -72,7 +72,7 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
                                     contentStyle={{ backgroundColor: 'var(--base-100)' }}
                                 />
                                 <Legend wrapperStyle={{ left: 0, width: '100%' }} />
-                                {Object.keys(severityLabels).map(severity => {
+                                {Object.keys(severityLabels).map((severity) => {
                                     const arr = [];
                                     const bar = (
                                         <Bar
@@ -81,7 +81,7 @@ const ViolationsByClusterChart = ({ history, violationsByCluster }) => {
                                             dataKey={severityLabels[severity]}
                                             fill={severityColorMap[severity]}
                                         >
-                                            {data.map(entry => (
+                                            {data.map((entry) => (
                                                 <Cell
                                                     key={entry.name}
                                                     className="cursor-pointer"
@@ -113,23 +113,23 @@ ViolationsByClusterChart.propTypes = {
                 Critical: PropTypes.number.isRequired,
                 High: PropTypes.number.isRequired,
                 Medium: PropTypes.number.isRequired,
-                Low: PropTypes.number.isRequired
+                Low: PropTypes.number.isRequired,
             })
         )
     ),
     history: PropTypes.shape({
-        push: PropTypes.func.isRequired
-    })
+        push: PropTypes.func.isRequired,
+    }),
 };
 
 ViolationsByClusterChart.defaultProps = {
     violationsByCluster: [],
-    history: null
+    history: null,
 };
 
 const formatViolationsByCluster = createSelector(
     [selectors.getAlertCountsByCluster],
-    violationsByCluster => {
+    (violationsByCluster) => {
         const clusterCharts = [];
 
         let i = 0;
@@ -145,9 +145,9 @@ const formatViolationsByCluster = createSelector(
                     Critical: 0,
                     High: 0,
                     Medium: 0,
-                    Low: 0
+                    Low: 0,
                 };
-                cluster.counts.forEach(d => {
+                cluster.counts.forEach((d) => {
                     dataPoint[severityLabels[d.severity]] = parseInt(d.count, 10);
                 });
                 barCharts.push(dataPoint);
@@ -162,12 +162,7 @@ const formatViolationsByCluster = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    violationsByCluster: formatViolationsByCluster
+    violationsByCluster: formatViolationsByCluster,
 });
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        null
-    )(ViolationsByClusterChart)
-);
+export default withRouter(connect(mapStateToProps, null)(ViolationsByClusterChart));

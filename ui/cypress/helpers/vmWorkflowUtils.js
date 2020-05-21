@@ -1,7 +1,7 @@
 import { selectors as vulnManagementSelectors } from '../constants/VulnManagementPage';
 
-export const hasExpectedHeaderColumns = colNames => {
-    colNames.forEach(col => {
+export const hasExpectedHeaderColumns = (colNames) => {
+    colNames.forEach((col) => {
         cy.get(`${vulnManagementSelectors.tableColumn}:contains('${col}')`);
     });
 };
@@ -9,7 +9,7 @@ export const hasExpectedHeaderColumns = colNames => {
 function validateDataInEntityListPage(entityCountAndName, entityURL) {
     cy.get(vulnManagementSelectors.entityRowHeader)
         .invoke('text')
-        .then(entityCountFromHeader => {
+        .then((entityCountFromHeader) => {
             if (entityCountAndName.includes('CVE') && !entityCountAndName.includes('0')) {
                 const numEntitiesListPage = parseInt(entityCountFromHeader, 10);
                 const numEntitiesParentPage = parseInt(entityCountAndName, 10);
@@ -28,11 +28,11 @@ function validateDataInEntityListPage(entityCountAndName, entityURL) {
 function validateLinksInListPage(col, parentUrl) {
     cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             cy.get(
                 `${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`
             ).click({
-                force: true
+                force: true,
             });
             validateDataInEntityListPage(value, parentUrl);
         });
@@ -41,10 +41,8 @@ function validateLinksInListPage(col, parentUrl) {
 function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
     cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
-        .then(value => {
-            cy.get(colSelector)
-                .eq(0)
-                .click({ force: true });
+        .then((value) => {
+            cy.get(colSelector).eq(0).click({ force: true });
             let entitySelector;
             const col1 = col.toLowerCase();
             if (col1.includes('image')) entitySelector = vulnManagementSelectors.imageTileLink;
@@ -69,13 +67,11 @@ function validateTileLinksInSidePanel(colSelector, col, parentUrl) {
 function validateTabsInEntityPage(parentUrl, colSelector, col) {
     cy.get(`${vulnManagementSelectors.tableColumnLinks}:contains('${col.toLowerCase()}')`)
         .invoke('text')
-        .then(value => {
-            cy.get(colSelector)
-                .eq(0)
-                .click({ force: true });
+        .then((value) => {
+            cy.get(colSelector).eq(0).click({ force: true });
             cy.get(vulnManagementSelectors.sidePanelExpandButton).click({ force: true });
             cy.get(vulnManagementSelectors.getSidePanelTabLink(col.toLowerCase())).click({
-                force: true
+                force: true,
             });
             expect(cy.get(vulnManagementSelectors.tabHeader).contains(parseInt(value, 10)));
             cy.visit(parentUrl);
@@ -83,14 +79,12 @@ function validateTabsInEntityPage(parentUrl, colSelector, col) {
 }
 
 function validateCVETileLinksInSidePanel(parentUrl) {
-    cy.get(vulnManagementSelectors.tableBodyColumn).each($el => {
+    cy.get(vulnManagementSelectors.tableBodyColumn).each(($el) => {
         const value = $el.text();
         let cveCount = 0;
         if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
         if (cveCount > 0) {
-            cy.get(vulnManagementSelectors.tableBodyColumn)
-                .eq(0)
-                .click({ force: true });
+            cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             // not reusing a predefined selector below, because we had made this function so DRY,
             //   we created a false positive that was labyrinthine to track down
             //   see: https://engblog.nextdoor.com/how-to-dry-up-your-tests-without-making-mummies-of-them-7de79a8e3df1
@@ -106,10 +100,8 @@ function validateAllCVELinks(prevUrl) {
     cy.get(`${vulnManagementSelectors.allCVEColumnLink}`)
         .eq(0)
         .invoke('text')
-        .then(value => {
-            cy.get(`${vulnManagementSelectors.allCVEColumnLink}`)
-                .eq(0)
-                .click({ force: true });
+        .then((value) => {
+            cy.get(`${vulnManagementSelectors.allCVEColumnLink}`).eq(0).click({ force: true });
             validateDataInEntityListPage(value.toUpperCase(), prevUrl);
         });
 }
@@ -118,10 +110,8 @@ function validateFixableCVELinks(urlBack) {
     cy.get(`${vulnManagementSelectors.fixableCVELink}`)
         .eq(0)
         .invoke('text')
-        .then(value => {
-            cy.get(`${vulnManagementSelectors.fixableCVELink}`)
-                .eq(0)
-                .click({ force: true });
+        .then((value) => {
+            cy.get(`${vulnManagementSelectors.fixableCVELink}`).eq(0).click({ force: true });
             if (parseInt(value, 10) === 1)
                 validateDataInEntityListPage(`${parseInt(value, 10)} CVE`, urlBack);
             if (parseInt(value, 10) > 1)
@@ -130,20 +120,18 @@ function validateFixableCVELinks(urlBack) {
 }
 
 function validateCVETabsInSidePanel(parentUrl, colSelector, col) {
-    cy.get(vulnManagementSelectors.tableBodyColumn).each($el => {
+    cy.get(vulnManagementSelectors.tableBodyColumn).each(($el) => {
         const value = $el.text();
         let cveCount = 0;
         if (value.toLowerCase().includes('cve')) cveCount = parseInt(value.split(' ')[0], 10);
         if (cveCount > 0) {
-            cy.get(vulnManagementSelectors.tableBodyColumn)
-                .eq(0)
-                .click({ force: true });
+            cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             cy.get(vulnManagementSelectors.sidePanelExpandButton).click({
                 force: true,
-                timeout: 6000
+                timeout: 6000,
             });
             cy.get(vulnManagementSelectors.getSidePanelTabLink(col.toUpperCase())).click({
-                force: true
+                force: true,
             });
             expect(cy.get(vulnManagementSelectors.tabHeader).contains(cveCount));
             cy.visit(parentUrl);
@@ -152,16 +140,14 @@ function validateCVETabsInSidePanel(parentUrl, colSelector, col) {
 }
 
 function validateFixableTabLinksInEntityPage(parentUrl) {
-    cy.get(vulnManagementSelectors.tableBodyColumn).each($el => {
+    cy.get(vulnManagementSelectors.tableBodyColumn).each(($el) => {
         const value = $el.text();
         let fixableCount = 0;
         if (value.toLowerCase().includes('fixable')) {
             fixableCount = parseInt(value.split(' ')[2], 10);
         }
         if (fixableCount > 0) {
-            cy.get(vulnManagementSelectors.tableBodyColumn)
-                .eq(0)
-                .click({ force: true });
+            cy.get(vulnManagementSelectors.tableBodyColumn).eq(0).click({ force: true });
             if (!parentUrl.includes('components')) {
                 cy.get(vulnManagementSelectors.tabButton, { timeout: 6000 })
                     .contains('Fixable CVEs')
@@ -209,13 +195,13 @@ export const allChecksForEntities = (parentUrl, entity) => {
     validateTabsInEntityPage(parentUrl, vulnManagementSelectors.tableBodyColumn, entity);
 };
 
-export const allCVECheck = parentUrl => {
+export const allCVECheck = (parentUrl) => {
     validateCVETileLinksInSidePanel(parentUrl);
     validateCVETabsInSidePanel(parentUrl, vulnManagementSelectors.tableBodyColumn, 'CVEs');
     validateAllCVELinks(parentUrl);
 };
 
-export const allFixableCheck = parentUrl => {
+export const allFixableCheck = (parentUrl) => {
     validateFixableCVELinks(parentUrl);
     validateFixableTabLinksInEntityPage(parentUrl);
 };

@@ -3,7 +3,6 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -93,54 +92,29 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 		m.addEndpointDataForService(w, svc, result)
 	}
 
-	if features.PodDeploymentSeparation.Enabled() {
-		m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
-			for _, inst := range p.GetLiveInstances() {
-				id := containerid.ShortContainerIDFromInstance(inst)
-				if id == "" {
-					continue
-				}
-				podID := inst.GetContainingPodId()
-				if id, err := podUtils.ParsePodID(podID); err == nil {
-					podID = id.Name
-				}
-
-				result.AddContainerID(id, clusterentities.ContainerMetadata{
-					DeploymentID:  w.GetId(),
-					DeploymentTS:  w.GetStateTimestamp(),
-					PodID:         podID,
-					PodUID:        p.GetId(),
-					ContainerName: inst.GetContainerName(),
-					ContainerID:   id,
-					Namespace:     w.GetNamespace(),
-					StartTime:     inst.GetStarted(),
-				})
+	m.podStore.forEach(w.GetNamespace(), w.GetId(), func(p *storage.Pod) {
+		for _, inst := range p.GetLiveInstances() {
+			id := containerid.ShortContainerIDFromInstance(inst)
+			if id == "" {
+				continue
 			}
-		})
-	} else {
-		for _, c := range w.GetContainers() {
-			for _, inst := range c.GetInstances() {
-				id := containerid.ShortContainerIDFromInstance(inst)
-				if id == "" {
-					continue
-				}
-				podID := inst.GetContainingPodId()
-				if id, err := podUtils.ParsePodID(podID); err == nil {
-					podID = id.Name
-				}
-
-				result.AddContainerID(id, clusterentities.ContainerMetadata{
-					DeploymentID:  w.GetId(),
-					DeploymentTS:  w.GetStateTimestamp(),
-					PodID:         podID,
-					ContainerName: c.GetName(),
-					ContainerID:   id,
-					Namespace:     w.GetNamespace(),
-					StartTime:     inst.GetStarted(),
-				})
+			podID := inst.GetContainingPodId()
+			if id, err := podUtils.ParsePodID(podID); err == nil {
+				podID = id.Name
 			}
+
+			result.AddContainerID(id, clusterentities.ContainerMetadata{
+				DeploymentID:  w.GetId(),
+				DeploymentTS:  w.GetStateTimestamp(),
+				PodID:         podID,
+				PodUID:        p.GetId(),
+				ContainerName: inst.GetContainerName(),
+				ContainerID:   id,
+				Namespace:     w.GetNamespace(),
+				StartTime:     inst.GetStarted(),
+			})
 		}
-	}
+	})
 
 	return result
 }

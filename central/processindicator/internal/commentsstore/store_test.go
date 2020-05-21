@@ -7,7 +7,6 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/analystnotes"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -85,7 +84,7 @@ func (suite *StoreTestSuite) checkCommentIsHydratedVersionOf(
 	gotComment, expectedBaseComment *storage.Comment,
 	earliestCreated, latestCreated, earliestModifed, latestModified time.Time) {
 
-	clonedGotComment := proto.Clone(gotComment).(*storage.Comment)
+	clonedGotComment := gotComment.Clone()
 	testutils.ValidateTSInWindow(clonedGotComment.GetCreatedAt(), earliestCreated, latestCreated, suite.T())
 	testutils.ValidateTSInWindow(clonedGotComment.GetLastModified(), earliestModifed, latestModified, suite.T())
 	clonedGotComment.CreatedAt = nil

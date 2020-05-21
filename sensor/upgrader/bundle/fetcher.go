@@ -37,7 +37,7 @@ func (f *fetcher) FetchBundle() (Contents, error) {
 		return nil, utils.Should(err)
 	}
 
-	resp, err := f.ctx.DoHTTPRequest(req)
+	resp, err := f.ctx.DoCentralHTTPRequest(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "making HTTP request to central for cluster bundle download")
 	}

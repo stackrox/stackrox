@@ -73,9 +73,13 @@ func initializeDackBox() {
 		globalKeyLock = concurrency.NewKeyFence()
 
 		var err error
-		duckBox, err = dackbox.NewDackBox(globaldb.GetGlobalBadgerDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
+		if features.RocksDB.Enabled() {
+			duckBox, err = dackbox.NewRocksDBDackBox(globaldb.GetRocksDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
+		} else {
+			duckBox, err = dackbox.NewDackBox(globaldb.GetGlobalBadgerDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
+		}
 		if err != nil {
-			log.Panicf("Could not load stored indices: %v", err)
+			log.Panicf("could not load stored indices: %v", err)
 		}
 
 		lazy = indexer.NewLazy(toIndex, registry, globalindex.GetGlobalIndex(), duckBox.AckIndexed)

@@ -33,19 +33,19 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetKeys mocks base method
-func (m *MockStore) GetKeys() ([]string, error) {
+// GetIDs mocks base method
+func (m *MockStore) GetIDs() ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeys")
+	ret := m.ctrl.Call(m, "GetIDs")
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetKeys indicates an expected call of GetKeys
-func (mr *MockStoreMockRecorder) GetKeys() *gomock.Call {
+// GetIDs indicates an expected call of GetIDs
+func (mr *MockStoreMockRecorder) GetIDs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockStore)(nil).GetKeys))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs))
 }
 
 // Get mocks base method

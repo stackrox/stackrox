@@ -16,10 +16,10 @@ const EnvironmentRisk = ({ globalViolationsCounts }) => {
         CRITICAL_SEVERITY: 0,
         HIGH_SEVERITY: 0,
         MEDIUM_SEVERITY: 0,
-        LOW_SEVERITY: 0
+        LOW_SEVERITY: 0,
     };
-    globalViolationsCounts.forEach(group => {
-        group.counts.forEach(d => {
+    globalViolationsCounts.forEach((group) => {
+        group.counts.forEach((d) => {
             const count = parseInt(d.count, 10);
             counts[d.severity] += count;
         });
@@ -66,19 +66,16 @@ EnvironmentRisk.propTypes = {
             counts: PropTypes.arrayOf(
                 PropTypes.shape({
                     count: PropTypes.string.isRequired,
-                    severity: severityPropType
+                    severity: severityPropType,
                 })
             ),
-            group: PropTypes.string.isRequired
+            group: PropTypes.string.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    globalViolationsCounts: selectors.getAlertCountsByCluster
+    globalViolationsCounts: selectors.getAlertCountsByCluster,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(EnvironmentRisk);
+export default connect(mapStateToProps, null)(EnvironmentRisk);

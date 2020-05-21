@@ -13,21 +13,21 @@ function getDataFromValue(value) {
             angle: (FULL_ANGLE * value) / 100,
             radius0: RADIUS - VALUE_THICKNESS,
             radius: RADIUS,
-            color: 'var(--success-500)'
+            color: 'var(--success-500)',
         },
         {
             angle0: (FULL_ANGLE * value) / 100,
             angle: FULL_ANGLE,
             radius0: RADIUS - VALUE_THICKNESS * 0.8,
             radius: RADIUS - VALUE_THICKNESS * 0.2,
-            color: 'var(--base-400)'
-        }
+            color: 'var(--base-400)',
+        },
     ];
 }
 const LABEL_STYLE = {
     fontSize: '36px',
     fill: 'var(--primary-800)',
-    fontWeight: 500
+    fontWeight: 500,
 };
 
 const ArcSingle = ({ value }) => {
@@ -53,7 +53,7 @@ const ArcSingle = ({ value }) => {
 };
 
 ArcSingle.propTypes = {
-    value: PropTypes.number.isRequired
+    value: PropTypes.number.isRequired,
 };
 
 export default ArcSingle;

@@ -5,7 +5,7 @@ import Raven from 'raven-js';
 import { policiesPath, violationsPath } from 'routePaths';
 import * as service from 'services/PoliciesService';
 import { actions as backendActions, types as backendTypes } from 'reducers/policies/backend';
-import { actions as pageActions } from 'reducers/policies/page';
+import { actions as pageActions, types as pageTypes } from 'reducers/policies/page';
 import { types as searchTypes } from 'reducers/policies/search';
 import { actions as tableActions, types as tableTypes } from 'reducers/policies/table';
 import { actions as wizardActions, types as wizardTypes } from 'reducers/policies/wizard';
@@ -24,7 +24,10 @@ export function* getPolicies(filters) {
         const fetchedPolicIds = result.response.result.policies;
         if (fetchedPolicIds) {
             const policy = yield select(selectors.getWizardPolicy);
-            if (policy && fetchedPolicIds.find(id => id === policy.id) === undefined) {
+            if (
+                policy?.id && // needed for policy-from-Risk-page-search, to prevent wizard from closing
+                fetchedPolicIds.find((id) => id === policy.id) === undefined
+            ) {
                 yield put(pageActions.closeWizard());
             }
         }
@@ -47,7 +50,7 @@ export function* getPolicy(policyId, command) {
     try {
         const [policyResult] = yield all([
             call(service.fetchPolicy, policyId),
-            call(getPolicyCategories) // make sure we have latest categories for the wizard
+            call(getPolicyCategories), // make sure we have latest categories for the wizard
         ]);
         yield put(backendActions.fetchPolicy.success(policyResult.response));
 
@@ -74,7 +77,7 @@ export function* filterPoliciesPageBySearch() {
         return;
     }
     const filters = {
-        query: searchOptionsToQuery(searchOptions)
+        query: searchOptionsToQuery(searchOptions),
     };
     yield fork(getPolicies, filters);
 }
@@ -133,6 +136,16 @@ function* deletePolicies({ policyIds }) {
     } catch (error) {
         // TODO-ivan: use global user notification system to display the problem to the user as well
         Raven.captureException(error);
+    }
+}
+
+function* importPolicySuccess({ policyId }) {
+    if (policyId) {
+        yield put(wizardActions.setWizardStage(wizardStages.details));
+        yield put(push(`/main/policies/${policyId}`));
+        yield fork(filterPoliciesPageBySearch);
+    } else {
+        Raven.captureException({ message: 'importPolicySuccess saga called with no policy ID' });
     }
 }
 
@@ -230,6 +243,13 @@ function* checkDryRun() {
     }
 }
 
+function* cancelDryRun() {
+    const { jobId } = yield select(selectors.getWizardDryRun);
+    if (jobId) {
+        yield call(service.cancelDryRun, jobId);
+    }
+}
+
 export function* loadPoliciesPage() {
     yield all([fork(filterPoliciesPageBySearch), fork(getPolicyCategories)]);
 }
@@ -266,6 +286,10 @@ function* watchDeletePolicies() {
     yield takeLatest(backendTypes.DELETE_POLICIES, deletePolicies);
 }
 
+function* watchImportPolicy() {
+    yield takeLatest(pageTypes.IMPORT_POLICY_SUCCESS, importPolicySuccess);
+}
+
 function* watchEnableNotificationsForPolicies() {
     yield takeLatest(backendTypes.ENABLE_POLICIES_NOTIFICATION, enableNotificationsForPolicies);
 }
@@ -279,6 +303,10 @@ function* watchWizardState() {
         const { stage } = yield take(wizardTypes.SET_WIZARD_STAGE);
         const policy = yield select(selectors.getWizardPolicy);
         switch (stage) {
+            case wizardStages.details:
+            case wizardStages.edit:
+                yield fork(cancelDryRun);
+                break;
             case wizardStages.prepreview:
                 yield fork(startDryRun, policy);
                 break;
@@ -316,10 +344,11 @@ export default function* policies() {
         fork(watchWizardState),
         fork(watchReassessPolicies),
         fork(watchDeletePolicies),
+        fork(watchImportPolicy),
         fork(watchEnableNotificationsForPolicies),
         fork(watchDisableNotificationsForPolicies),
         fork(watchUpdateRequest),
         fork(watchPoliciesSearchOptions),
-        takeEvery(tableTypes.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabled)
+        takeEvery(tableTypes.UPDATE_POLICY_DISABLED_STATE, updatePolicyDisabled),
     ]);
 }

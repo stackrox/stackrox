@@ -19,7 +19,7 @@ const reducer = combineReducers({
     page: pageReducer,
     search: searchReducer,
     table: tableReducer,
-    wizard: wizardReducer
+    wizard: wizardReducer,
 });
 
 export default reducer;
@@ -27,12 +27,12 @@ export default reducer;
 // Selectors
 //----------
 
-const getBackend = state => state.backend;
-const getNotifier = state => state.notifier;
-const getPage = state => state.page;
-const getSearch = state => state.search;
-const getTable = state => state.table;
-const getWizard = state => state.wizard;
+const getBackend = (state) => state.backend;
+const getNotifier = (state) => state.notifier;
+const getPage = (state) => state.page;
+const getSearch = (state) => state.search;
+const getTable = (state) => state.table;
+const getWizard = (state) => state.wizard;
 
 export const selectors = {
     ...bindSelectors(getBackend, backendSelectors),
@@ -40,5 +40,5 @@ export const selectors = {
     ...bindSelectors(getPage, pageSelectors),
     ...bindSelectors(getSearch, searchSelectors),
     ...bindSelectors(getTable, tableSelectors),
-    ...bindSelectors(getWizard, wizardSelectors)
+    ...bindSelectors(getWizard, wizardSelectors),
 };

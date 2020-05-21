@@ -24,12 +24,12 @@ export function fetchDeployments(options, sortOption, page, pageSize) {
             pagination: {
                 offset,
                 limit: pageSize,
-                sortOption
-            }
+                sortOption,
+            },
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
-    return axios.get(`${deploymentsUrl}?${params}`).then(response => response.data.deployments);
+    return axios.get(`${deploymentsUrl}?${params}`).then((response) => response.data.deployments);
 }
 
 /**
@@ -42,7 +42,7 @@ export function fetchDeploymentsCount(options) {
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios.get(`${deploymentsCountUrl}?${params}`).then(response => response.data.count);
+    return axios.get(`${deploymentsCountUrl}?${params}`).then((response) => response.data.count);
 }
 
 /**
@@ -52,7 +52,7 @@ export function fetchDeploymentsCount(options) {
  */
 export function fetchDeployment(id) {
     if (!id) throw new Error('Deployment ID must be specified');
-    return axios.get(`${deploymentByIdUrl}/${id}`).then(response => response.data);
+    return axios.get(`${deploymentByIdUrl}/${id}`).then((response) => response.data);
 }
 
 /**
@@ -62,7 +62,7 @@ export function fetchDeployment(id) {
  */
 export function fetchDeploymentWithRisk(id) {
     if (!id) throw new Error('Deployment ID must be specified');
-    return axios.get(`${deploymentWithRiskUrl}/${id}`).then(response => response.data);
+    return axios.get(`${deploymentWithRiskUrl}/${id}`).then((response) => response.data);
 }
 
 /**
@@ -75,9 +75,9 @@ export function fetchDeploymentsLegacy(options) {
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios
-        .get(`${deploymentsUrl}?${params}`)
-        .then(response => ({ response: normalize(response.data.deployments, [deploymentSchema]) }));
+    return axios.get(`${deploymentsUrl}?${params}`).then((response) => ({
+        response: normalize(response.data.deployments, [deploymentSchema]),
+    }));
 }
 
 /**
@@ -87,7 +87,7 @@ export function fetchDeploymentsLegacy(options) {
  */
 export function fetchDeploymentLegacy(id) {
     if (!id) throw new Error('Deployment ID must be specified');
-    return axios.get(`${deploymentByIdUrl}/${id}`).then(response => ({
-        response: normalize({ deployment: response.data }, deploymentDetail)
+    return axios.get(`${deploymentByIdUrl}/${id}`).then((response) => ({
+        response: normalize({ deployment: response.data }, deploymentDetail),
     }));
 }

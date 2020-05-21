@@ -6,7 +6,7 @@ class OnOffSwitch extends Component {
         enabled: PropTypes.bool.isRequired,
         applied: PropTypes.bool.isRequired,
         onAction: PropTypes.func.isRequired,
-        offAction: PropTypes.func.isRequired
+        offAction: PropTypes.func.isRequired,
     };
 
     renderSwitch = () => {

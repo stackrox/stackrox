@@ -18,7 +18,7 @@ describe('Integrations Sagas', () => {
                 [call(fetchIntegration, 'authPlugins'), { response: authPlugin }],
                 [call(fetchIntegration, 'imageIntegrations'), { response: imageIntegrations }],
                 [call(fetchIntegration, 'backups'), { response: backups }],
-                [call(fetchIntegration, 'notifiers'), { response: notifiers }]
+                [call(fetchIntegration, 'notifiers'), { response: notifiers }],
             ])
             .put(actions.fetchImageIntegrations.success(imageIntegrations))
             .put(actions.fetchNotifiers.success(notifiers))
@@ -52,7 +52,7 @@ describe('Integrations Sagas', () => {
                 [call(fetchIntegration, 'authPlugins'), dynamic(fetchBackupsMock)],
                 [call(fetchIntegration, 'imageIntegrations'), dynamic(fetchImageIntegrationsMock)],
                 [call(fetchIntegration, 'notifiers'), dynamic(fetchNotifiersMock)],
-                [call(fetchIntegration, 'backups'), dynamic(fetchBackupsMock)]
+                [call(fetchIntegration, 'backups'), dynamic(fetchBackupsMock)],
             ])
             .dispatch(createLocationChange('/main/violations'))
             .dispatch(createLocationChange('/main/compliance'))

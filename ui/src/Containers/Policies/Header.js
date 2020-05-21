@@ -25,10 +25,10 @@ class Header extends Component {
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
 
-        isViewFiltered: PropTypes.bool.isRequired
+        isViewFiltered: PropTypes.bool.isRequired,
     };
 
-    onSearch = searchOptions => {
+    onSearch = (searchOptions) => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             // reset table selection on search.
             this.props.selectPolicyIds([]);
@@ -38,7 +38,7 @@ class Header extends Component {
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
-        const defaultOption = this.props.searchModifiers.find(x => x.value === 'Policy:');
+        const defaultOption = this.props.searchModifiers.find((x) => x.value === 'Policy:');
         return (
             <PageHeader header="Policies" subHeader={subHeader}>
                 <SearchInput
@@ -61,26 +61,21 @@ class Header extends Component {
 
 const isViewFiltered = createSelector(
     [selectors.getPoliciesSearchOptions],
-    searchOptions => searchOptions.length !== 0
+    (searchOptions) => searchOptions.length !== 0
 );
 
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getPoliciesSearchOptions,
     searchModifiers: selectors.getPoliciesSearchModifiers,
     searchSuggestions: selectors.getPoliciesSearchSuggestions,
-    isViewFiltered
+    isViewFiltered,
 });
 
 const mapDispatchToProps = {
     selectPolicyIds: tableActions.selectPolicyIds,
     setSearchOptions: searchActions.setPoliciesSearchOptions,
     setSearchModifiers: searchActions.setPoliciesSearchModifiers,
-    setSearchSuggestions: searchActions.setPoliciesSearchSuggestions
+    setSearchSuggestions: searchActions.setPoliciesSearchSuggestions,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(Header)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Header));

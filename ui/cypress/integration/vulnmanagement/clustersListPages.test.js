@@ -5,7 +5,7 @@ import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
-    allFixableCheck
+    allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 
 describe('Clusters list Page and its single entity detail page, and sub list validations ', () => {
@@ -27,9 +27,9 @@ describe('Clusters list Page and its single entity detail page, and sub list val
             'Deployments',
             'Policy Status',
             'Latest Violation',
-            'Risk Priority'
+            'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no namespaces' && columnValue.includes('namespace')) {
                 allChecksForEntities(url.list.clusters, 'namespaces');

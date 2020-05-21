@@ -5,7 +5,7 @@ import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
-    allFixableCheck
+    allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 
 describe('Images list page and its entity detail page, related entities sub list validations ', () => {
@@ -28,9 +28,9 @@ describe('Images list page and its entity detail page, related entities sub list
             'Image Status',
             'Deployments',
             'Components',
-            'Risk Priority'
+            'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no deployments' && columnValue.includes('Deployment'))
                 allChecksForEntities(url.list.images, 'deployment');
@@ -48,9 +48,7 @@ describe('Images list page and its entity detail page, related entities sub list
     it('should show entity icon, not back button, if there is only one item on the side panel stack', () => {
         cy.visit(url.list.images);
 
-        cy.get(selectors.deploymentCountLink)
-            .eq(0)
-            .click({ force: true });
+        cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
         cy.wait(1000);
         cy.get(selectors.backButton).should('exist');
         cy.get(selectors.entityIcon).should('not.exist');

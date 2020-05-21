@@ -5,20 +5,21 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/central/globalindex"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
-	processIndicatorBadgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
+	processIndicatorBadgerStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestDisallowedMapValueWithRegexKey(t *testing.T) {
@@ -29,7 +30,7 @@ type DisallowedMapValueWithRegexKeyTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
-	db         *badger.DB
+	db         *gorocksdb.DB
 	dir        string
 
 	testCtx context.Context
@@ -48,7 +49,7 @@ func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
 	s.bleveIndex, err = globalindex.TempInitializeIndices("")
 	s.Require().NoError(err)
 
-	s.db, s.dir, err = badgerhelper.NewTemp("default_policies_test.db")
+	s.db, s.dir, err = rocksdb.NewTemp("default_policies_test.db")
 	s.Require().NoError(err)
 
 	processStore := processIndicatorBadgerStore.New(s.db)
@@ -81,7 +82,7 @@ func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
 
 func (s *DisallowedMapValueWithRegexKeyTestSuite) TearDownSuite() {
 	s.NoError(s.bleveIndex.Close())
-	testutils.TearDownBadger(s.db, s.dir)
+	rocksdbtest.TearDownRocksDB(s.db, s.dir)
 }
 
 func (s *DisallowedMapValueWithRegexKeyTestSuite) TestMatches() {

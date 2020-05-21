@@ -27,15 +27,12 @@ const GenerateButton = ({ setWizardStage, loadActivePolicies }) => {
 
 GenerateButton.propTypes = {
     loadActivePolicies: PropTypes.func.isRequired,
-    setWizardStage: PropTypes.func.isRequired
+    setWizardStage: PropTypes.func.isRequired,
 };
 
 const mapDispatchToProps = {
     loadActivePolicies: wizardActions.loadActiveNetworkPolicyModification,
-    setWizardStage: wizardActions.setNetworkWizardStage
+    setWizardStage: wizardActions.setNetworkWizardStage,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(GenerateButton);
+export default connect(null, mapDispatchToProps)(GenerateButton);

@@ -12,6 +12,6 @@ import { types as locationActionTypes } from '../reducers/routes';
 export default function createLocationChange(pathname, from, hash) {
     return {
         type: locationActionTypes.LOCATION_CHANGE,
-        payload: { pathname, hash, state: { from } }
+        payload: { pathname, hash, state: { from } },
     };
 }

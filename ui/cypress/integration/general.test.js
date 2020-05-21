@@ -32,7 +32,7 @@ describe('General sanity checks', () => {
         cy.get('@otherNavItems').should('not.have.class', 'bg-primary-700');
 
         cy.get(selectors.navLinks.list).as('topNavItems');
-        cy.get('@topNavItems').should($lis => {
+        cy.get('@topNavItems').should(($lis) => {
             expect($lis).to.have.length(6);
             expect($lis.eq(0)).to.contain('Cluster');
             expect($lis.eq(1)).to.contain('Node');
@@ -48,7 +48,7 @@ describe('General sanity checks', () => {
         cy.get(selectors.navLinks.apidocs).as('apidocs');
         cy.get('@apidocs').click();
         cy.get(selectors.navLinks.apiDocsMenuLinks).as('apiDocsLinks');
-        cy.get('@apiDocsLinks').should($lis => {
+        cy.get('@apiDocsLinks').should(($lis) => {
             expect($lis).to.have.length(2);
             expect($lis.eq(0)).to.contain('Documentation');
             expect($lis.eq(1)).to.contain('API Reference');

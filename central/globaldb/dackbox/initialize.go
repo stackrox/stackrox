@@ -1,6 +1,9 @@
 package dackbox
 
 import (
+	"bytes"
+
+	"github.com/blevesearch/bleve"
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	clusterCVEEdgeDackBox "github.com/stackrox/rox/central/clustercveedge/dackbox"
@@ -26,7 +29,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/debug"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 var (
@@ -101,13 +103,7 @@ func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.W
 		// Register the wrapper to index the objects.
 		registry.RegisterWrapper(initialized.bucket, initialized.wrapper)
 
-		// Reindex objects that need reindexing.
-		needsReindex, err := readNeedsReindex(dacky, reindexBucket, initialized.bucket)
-		if err != nil {
-			return errors.Wrap(err, "unable to read dackbox backup state")
-		}
-
-		if err := queueBucketForIndexing(dacky, indexQ, needsReindex, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
+		if err := queueBucketForIndexing(dacky, indexQ, initialized.category, dirtyBucket, initialized.bucket, initialized.reader); err != nil {
 			return errors.Wrap(err, "unable to initialize dackbox, initialization function failed")
 		}
 
@@ -116,26 +112,26 @@ func Init(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, registry indexer.W
 		indexQ.PushSignal(&synchronized)
 		synchronized.Wait()
 
-		if err := setDoesNotNeedReindex(dacky, reindexBucket, initialized.bucket, reindexValue); err != nil {
-			return errors.Wrap(err, "unable to set dackbox backup state")
+		if err := markInitialIndexingComplete(globalindex.GetGlobalIndex(), []byte(initialized.category.String())); err != nil {
+			return errors.Wrap(err, "setting initial indexing complete")
 		}
 	}
 	return nil
 }
 
-func readNeedsReindex(dacky *dackbox.DackBox, reindexBucket, bucket []byte) (bool, error) {
-	txn := dacky.NewReadOnlyTransaction()
-	defer txn.Discard()
-
-	// If the key is missing from the reindexing bucket, it means we need to do a full re-index.
-	_, exists, err := txn.Get(dbhelper.GetBucketKey(reindexBucket, bucket))
-	if err != nil {
-		return true, err
-	}
-	return !exists, nil
+func markInitialIndexingComplete(index bleve.Index, bucket []byte) error {
+	return index.SetInternal(bucket, []byte("old"))
 }
 
-func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, needsReindex bool, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
+func needsInitialIndexing(index bleve.Index, bucket []byte) (bool, error) {
+	data, err := index.GetInternal(bucket)
+	if err != nil {
+		return false, err
+	}
+	return !bytes.Equal([]byte("old"), data), nil
+}
+
+func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
 	defer debug.FreeOSMemory()
 
 	txn := dacky.NewReadOnlyTransaction()
@@ -143,13 +139,15 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 
 	// Read all keys that need re-indexing.
 	var keys [][]byte
-	var err error
+
+	index := globalindex.GetGlobalIndex()
+	needsReindex, err := needsInitialIndexing(index, []byte(category.String()))
+	if err != nil {
+		return err
+	}
+
 	if needsReindex {
 		log.Infof("re-indexing all keys in bucket: %s", bucket)
-		err = blevesearch.ResetIndex(category, globalindex.GetGlobalIndex())
-		if err != nil {
-			return err
-		}
 		keys, err = reader.ReadKeysIn(bucket, txn)
 		if err != nil {
 			return err
@@ -179,14 +177,4 @@ func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, 
 	}
 
 	return nil
-}
-
-func setDoesNotNeedReindex(dacky *dackbox.DackBox, reindexBucket, bucket, reIndexValue []byte) error {
-	txn := dacky.NewTransaction()
-	defer txn.Discard()
-
-	if err := txn.Set(dbhelper.GetBucketKey(reindexBucket, bucket), reIndexValue); err != nil {
-		return err
-	}
-	return txn.Commit()
 }

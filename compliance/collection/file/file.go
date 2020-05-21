@@ -41,6 +41,8 @@ var files = []fileEntry{
 	newFileEntry("/proc/mounts", true, true),
 
 	// Directories without contents
+	newFileEntry("/var/lib/kubelet/kubeconfig", false, false),
+	newFileEntry("/srv/kubernetes/ca.crt", false, false),
 	newFileEntry("/etc/kubernetes", false, true),
 	newFileEntry("/etc/cni", false, true),
 	newFileEntry("/opt/cni", false, true),

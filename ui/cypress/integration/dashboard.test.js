@@ -3,7 +3,7 @@ import { url as dashboardUrl, selectors } from '../constants/DashboardPage';
 import { url as violationsUrl } from '../constants/ViolationsPage';
 import {
     url as complianceUrl,
-    selectors as complianceSelectors
+    selectors as complianceSelectors,
 } from '../constants/CompliancePage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -24,10 +24,7 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
 
-        cy.get(selectors.sectionHeaders.systemViolations)
-            .next('div')
-            .children()
-            .as('riskTiles');
+        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
         cy.get('@riskTiles').spread((aCritical, aHigh, aMedium, aLow) => {
             cy.wrap(aLow).should('have.text', '2Low');
@@ -38,29 +35,19 @@ describe('Dashboard page', () => {
     });
 
     it('should not navigate to the violations page when clicking the critical severity risk tile', () => {
-        cy.get(selectors.sectionHeaders.systemViolations)
-            .next('div')
-            .children()
-            .as('riskTiles');
+        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
-        cy.get('@riskTiles')
-            .first()
-            .click();
-        cy.location().should(location => {
+        cy.get('@riskTiles').first().click();
+        cy.location().should((location) => {
             expect(location.pathname).to.eq(dashboardUrl);
         });
     });
 
     it('should navigate to violations page when clicking the low severity tile', () => {
-        cy.get(selectors.sectionHeaders.systemViolations)
-            .next('div')
-            .children()
-            .as('riskTiles');
+        cy.get(selectors.sectionHeaders.systemViolations).next('div').children().as('riskTiles');
 
-        cy.get('@riskTiles')
-            .last()
-            .click();
-        cy.location().should(location => {
+        cy.get('@riskTiles').last().click();
+        cy.location().should((location) => {
             expect(location.pathname).to.eq(violationsUrl);
             expect(location.search).to.eq('?severity=LOW_SEVERITY');
         });
@@ -70,7 +57,7 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.get(selectors.sectionHeaders.compliance).should('exist');
         cy.get(selectors.chart.legendLink).click();
-        cy.location().should(location => {
+        cy.location().should((location) => {
             expect(location.href).to.include(complianceUrl.list.standards.CIS_Docker_v1_2_0);
         });
         cy.get(complianceSelectors.list.table.header).should('exist');
@@ -84,13 +71,11 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCluster');
 
-        cy.get(selectors.sectionHeaders.violationsByClusters)
-            .next()
-            .as('chart');
+        cy.get(selectors.sectionHeaders.violationsByClusters).next().as('chart');
 
         cy.get('@chart').within(() => {
             cy.get(selectors.chart.xAxis).should('contain', 'Kubernetes Cluster 0');
-            cy.get(selectors.chart.grid).spread(grid => {
+            cy.get(selectors.chart.grid).spread((grid) => {
                 // from alerts fixture : low = 2, medium = 1, therefore medium's height should be twice less
                 const { height } = grid.getBBox();
                 cy.get(selectors.chart.lowSeverityBar).should('have.attr', 'height', `${height}`);
@@ -125,9 +110,7 @@ describe('Dashboard page', () => {
         cy.route('GET', api.dashboard.timeseries, '@alertsByTimeseries').as('alertsByTimeseries');
         cy.visit(dashboardUrl);
         cy.wait('@alertsByTimeseries');
-        cy.get(selectors.sectionHeaders.eventsByTime)
-            .next()
-            .find(selectors.timeseries);
+        cy.get(selectors.sectionHeaders.eventsByTime).next().find(selectors.timeseries);
     });
 
     it('should display violations category chart', () => {
@@ -138,12 +121,8 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@alertsByCategory');
 
-        cy.get(selectors.sectionHeaders.securityBestPractices)
-            .next()
-            .as('chart');
-        cy.get('@chart')
-            .find(selectors.chart.legendItem)
-            .should('have.text', 'Low');
+        cy.get(selectors.sectionHeaders.securityBestPractices).next().as('chart');
+        cy.get('@chart').find(selectors.chart.legendItem).should('have.text', 'Low');
 
         // TODO: validate clicking on any sector (for some reason '.click()' isn't stable for D3 chart)
     });
@@ -156,14 +135,10 @@ describe('Dashboard page', () => {
         cy.visit(dashboardUrl);
         cy.wait('@riskyDeployments');
 
-        cy.get(selectors.sectionHeaders.topRiskyDeployments)
-            .next()
-            .as('list');
+        cy.get(selectors.sectionHeaders.topRiskyDeployments).next().as('list');
 
         // Should only display the top 5 risky deployments
-        cy.get('@list')
-            .find('li')
-            .should('have.length', 5);
+        cy.get('@list').find('li').should('have.length', 5);
 
         cy.get(selectors.buttons.viewAll).click();
         cy.url().should('match', /\/main\/risk/);

@@ -7,7 +7,7 @@ import CollapsibleSection from './CollapsibleSection';
 
 export default {
     title: 'CollapsibleSection',
-    component: CollapsibleSection
+    component: CollapsibleSection,
 };
 
 export const withTitleOnly = () => {

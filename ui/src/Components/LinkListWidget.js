@@ -27,7 +27,7 @@ function getLI(item) {
             className="border-b border-base-300"
             style={{
                 columnBreakInside: 'avoid',
-                pageBreakInside: 'avoid'
+                pageBreakInside: 'avoid',
             }}
         >
             {content}
@@ -44,7 +44,7 @@ const LinkListWidget = ({
     headerComponents,
     limit,
     id,
-    showEmpty
+    showEmpty,
 }) => (
     <Query query={query} variables={variables}>
         {({ loading, data, error }) => {
@@ -71,7 +71,7 @@ const LinkListWidget = ({
                                 items.length > 5 ? `columns-2` : `columns-1`
                             } p-3 py-1 w-full leading-normal overflow-hidden`}
                         >
-                            {items.slice(0, limit).map(item => getLI(item))}
+                            {items.slice(0, limit).map((item) => getLI(item))}
                         </ul>
                     );
                 }
@@ -100,7 +100,7 @@ LinkListWidget.propTypes = {
     headerComponents: PropTypes.node,
     limit: PropTypes.number,
     showEmpty: PropTypes.bool,
-    id: PropTypes.string
+    id: PropTypes.string,
 };
 
 LinkListWidget.defaultProps = {
@@ -115,7 +115,7 @@ LinkListWidget.defaultProps = {
     headerComponents: null,
     limit: 10,
     showEmpty: false,
-    id: 'link-list-widget'
+    id: 'link-list-widget',
 };
 
 export default LinkListWidget;

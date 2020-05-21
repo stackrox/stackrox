@@ -35,16 +35,16 @@ class RuleGroups extends Component {
             groups: PropTypes.arrayOf(
                 PropTypes.shape({
                     props: PropTypes.shape({
-                        key: PropTypes.any
-                    })
+                        key: PropTypes.any,
+                    }),
                 })
-            )
+            ),
         }),
         groups: PropTypes.arrayOf(
             PropTypes.shape({
                 props: PropTypes.shape({
-                    key: PropTypes.any
-                })
+                    key: PropTypes.any,
+                }),
             })
         ).isRequired,
         fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -52,31 +52,33 @@ class RuleGroups extends Component {
         roles: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
-                globalAccess: PropTypes.string
+                globalAccess: PropTypes.string,
             })
         ).isRequired,
         usersAttributes: PropTypes.arrayOf(
             PropTypes.shape({
                 authProviderId: PropTypes.string,
                 key: PropTypes.string,
-                value: PropTypes.string
+                value: PropTypes.string,
             })
-        ).isRequired
+        ).isRequired,
     };
 
     static defaultProps = {
         initialValues: {
-            id: ''
-        }
+            id: '',
+        },
     };
 
-    renderMenuListComponent = props => <MenuList toggleModal={this.props.toggleModal} {...props} />;
+    renderMenuListComponent = (props) => (
+        <MenuList toggleModal={this.props.toggleModal} {...props} />
+    );
 
     getFilteredValueOptions = (valueOptions, idx) => {
         const { key } = this.props.groups[idx].props;
         const result = valueOptions
-            .filter(option => option.key === key)
-            .map(option => ({ label: option.label, value: option.value }));
+            .filter((option) => option.key === key)
+            .map((option) => ({ label: option.label, value: option.value }));
         return result;
     };
 
@@ -86,20 +88,20 @@ class RuleGroups extends Component {
             ...defaultKeyOptions,
             ...usersAttributes
                 .filter(({ authProviderId }) => authProviderId === initialValues.id)
-                .map(({ key }) => key)
-        ]).map(v => ({ value: v, label: v }));
+                .map(({ key }) => key),
+        ]).map((v) => ({ value: v, label: v }));
 
         let valueOptions = initialValues.groups.map(({ props: { key, value } }) => ({
             key,
             label: value,
-            value
+            value,
         }));
         valueOptions = uniqBy(
             usersAttributes
                 .map(({ key, value }) => ({
                     key,
                     label: value,
-                    value
+                    value,
                 }))
                 .concat(valueOptions),
             'value'
@@ -139,7 +141,7 @@ class RuleGroups extends Component {
                                     name={`${group}.roleName`}
                                     options={roles}
                                     customComponents={{
-                                        MenuList: this.renderMenuListComponent
+                                        MenuList: this.renderMenuListComponent,
                                     }}
                                     styles={selectMenuOnTopStyles}
                                 />
@@ -164,19 +166,15 @@ class RuleGroups extends Component {
     }
 }
 
-const getRoleOptions = createSelector(
-    [selectors.getRoles],
-    roles => roles.map(role => ({ value: role.name, label: role.name }))
+const getRoleOptions = createSelector([selectors.getRoles], (roles) =>
+    roles.map((role) => ({ value: role.name, label: role.name }))
 );
 
 const mapStateToProps = createStructuredSelector({
     usersAttributes: selectors.getUsersAttributes,
-    roles: getRoleOptions
+    roles: getRoleOptions,
 });
 
 const mapDispatchToProps = {};
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(formValues('groups')(RuleGroups));
+export default connect(mapStateToProps, mapDispatchToProps)(formValues('groups')(RuleGroups));

@@ -10,7 +10,7 @@ import WorkflowEntityPage from 'Containers/Workflow/WorkflowEntityPage';
 import {
     vulMgmtPolicyQuery,
     getScopeQuery,
-    tryUpdateQueryWithVulMgmtPolicyClause
+    tryUpdateQueryWithVulMgmtPolicyClause,
 } from '../VulnMgmtPolicyQueryUtil';
 import VulnMgmtClusterOverview from './VulnMgmtClusterOverview';
 import EntityList from '../../List/VulnMgmtList';
@@ -23,7 +23,7 @@ const VulmMgmtEntityCluster = ({
     page,
     entityContext,
     refreshTrigger,
-    setRefreshTrigger
+    setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -96,8 +96,8 @@ const VulmMgmtEntityCluster = ({
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search, entityContext),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(fullEntityContext)
-        }
+            scopeQuery: getScopeQuery(fullEntityContext),
+        },
     };
 
     return (

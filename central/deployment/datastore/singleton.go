@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkflow/datastore"
-	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	pwDS "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/ranking"
@@ -34,8 +33,8 @@ func initialize() {
 		globaldb.GetGlobalBadgerDB(),
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		globalindex.GetGlobalIndex(),
+		globalindex.GetProcessIndex(),
 		imageDatastore.Singleton(),
-		piDS.Singleton(),
 		pwDS.Singleton(),
 		nfDS.Singleton(),
 		riskDS.Singleton(),

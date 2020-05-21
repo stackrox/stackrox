@@ -18,10 +18,10 @@ const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClus
     if (!clusters.length) return null;
     // network policies are only applicable on k8s-based clusters
     const options = clusters
-        .filter(cluster => networkGraphClusters[cluster.type])
-        .map(cluster => ({
+        .filter((cluster) => networkGraphClusters[cluster.type])
+        .map((cluster) => ({
             value: cluster.id,
-            label: cluster.name
+            label: cluster.name,
         }));
     const clustersProps = {
         className: 'min-w-48',
@@ -29,7 +29,7 @@ const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClus
         value: selectedClusterId,
         placeholder: 'Select a cluster',
         onChange: changeCluster,
-        autoFocus: true
+        autoFocus: true,
     };
     return <Select {...clustersProps} />;
 };
@@ -39,25 +39,22 @@ ClusterSelect.propTypes = {
     selectedClusterId: PropTypes.string,
     selectClusterId: PropTypes.func.isRequired,
     fetchClusters: PropTypes.func.isRequired,
-    closeSidePanel: PropTypes.func.isRequired
+    closeSidePanel: PropTypes.func.isRequired,
 };
 
 ClusterSelect.defaultProps = {
-    selectedClusterId: ''
+    selectedClusterId: '',
 };
 
 const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters,
-    selectedClusterId: selectors.getSelectedNetworkClusterId
+    selectedClusterId: selectors.getSelectedNetworkClusterId,
 });
 
 const mapDispatchToProps = {
     fetchClusters: clusterActions.fetchClusters.request,
     selectClusterId: graphActions.selectNetworkClusterId,
-    closeSidePanel: pageActions.closeNetworkWizard
+    closeSidePanel: pageActions.closeNetworkWizard,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ClusterSelect);
+export default connect(mapStateToProps, mapDispatchToProps)(ClusterSelect);

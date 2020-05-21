@@ -251,7 +251,7 @@ func (suite *PodDataStoreTestSuite) TestReconciliationFullReindex() {
 	pod2 := fixtures.GetPod()
 	pod2.Id = "B"
 
-	suite.storage.EXPECT().GetKeys().Return([]string{"A", "B", "C"}, nil)
+	suite.storage.EXPECT().GetIDs().Return([]string{"A", "B", "C"}, nil)
 	suite.storage.EXPECT().GetMany([]string{"A", "B", "C"}).Return([]*storage.Pod{pod1, pod2}, nil, nil)
 	suite.indexer.EXPECT().AddPods([]*storage.Pod{pod1, pod2}).Return(nil)
 

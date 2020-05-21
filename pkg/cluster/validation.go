@@ -8,7 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 // Validate validates a cluster object
@@ -40,5 +42,13 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	if stringutils.ContainsWhitespace(cluster.GetCentralApiEndpoint()) {
 		errorList.AddString("Central API endpoint cannot contain whitespace")
 	}
+
+	centralEndpoint := urlfmt.FormatURL(cluster.GetCentralApiEndpoint(), urlfmt.NONE, urlfmt.NoTrailingSlash)
+	_, _, _, err := netutil.ParseEndpoint(centralEndpoint)
+	if err != nil {
+		errorList.AddString(fmt.Sprintf("Central API Endpoint must be a valid endpoint. Error: %s", err))
+	}
+	cluster.CentralApiEndpoint = centralEndpoint
+
 	return errorList
 }

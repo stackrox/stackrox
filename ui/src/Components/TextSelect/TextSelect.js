@@ -13,11 +13,11 @@ const TextSelect = ({ ...rest }) => {
     const { options } = { ...rest };
     if (options.length === 1) return options[0].label;
     const selectStyles = {
-        valueContainer: base => ({
+        valueContainer: (base) => ({
             ...base,
-            'padding-left': '0'
+            'padding-left': '0',
         }),
-        control: base => ({
+        control: (base) => ({
             ...base,
             border: 'none',
             'letter-spacing': '.03125rem',
@@ -25,12 +25,12 @@ const TextSelect = ({ ...rest }) => {
             'font-weight': '700!important',
             color: 'var(--base-600)',
             'font-size': '.6875rem',
-            cursor: 'pointer !important'
+            cursor: 'pointer !important',
         }),
-        indicatorSeparator: base => ({ ...base, display: 'none' })
+        indicatorSeparator: (base) => ({ ...base, display: 'none' }),
     };
     const components = {
-        DropdownIndicator
+        DropdownIndicator,
     };
     return <Select styles={selectStyles} isSearchable={false} {...rest} components={components} />;
 };

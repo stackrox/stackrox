@@ -10,8 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/migrations"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestEnsurer(t *testing.T) {
@@ -23,6 +25,7 @@ type EnsurerTestSuite struct {
 
 	boltDB       *bolt.DB
 	badgerDB     *badger.DB
+	rocksDB      *gorocksdb.DB
 	versionStore store.Store
 }
 
@@ -33,9 +36,13 @@ func (suite *EnsurerTestSuite) SetupTest() {
 	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err, "Failed to create BadgerDB")
 
+	rocksDB, _, err := rocksdb.NewTemp(suite.T().Name())
+	suite.Require().NoError(err, "Failed to create RocksDB")
+
 	suite.boltDB = boltDB
 	suite.badgerDB = badgerDB
-	suite.versionStore = store.New(boltDB, badgerDB)
+	suite.rocksDB = rocksDB
+	suite.versionStore = store.New(boltDB, badgerDB, rocksDB)
 }
 
 func (suite *EnsurerTestSuite) TearDownTest() {
@@ -43,7 +50,7 @@ func (suite *EnsurerTestSuite) TearDownTest() {
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-	suite.NoError(Ensure(suite.boltDB, suite.badgerDB))
+	suite.NoError(Ensure(suite.boltDB, suite.badgerDB, suite.rocksDB))
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
 	suite.Equal(migrations.CurrentDBVersionSeqNum, int(version.GetSeqNum()))
@@ -51,7 +58,7 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum}))
-	suite.NoError(Ensure(suite.boltDB, suite.badgerDB))
+	suite.NoError(Ensure(suite.boltDB, suite.badgerDB, suite.rocksDB))
 
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
@@ -60,5 +67,5 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum - 2}))
-	suite.Error(Ensure(suite.boltDB, suite.badgerDB))
+	suite.Error(Ensure(suite.boltDB, suite.badgerDB, suite.rocksDB))
 }

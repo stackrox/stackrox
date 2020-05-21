@@ -6,12 +6,12 @@ import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
 import searchContext from 'Containers/searchContext';
@@ -22,11 +22,11 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
 
     function getBarData(results) {
         return results
-            .filter(item => item.numPassing + item.numFailing)
-            .map(item => ({
+            .filter((item) => item.numPassing + item.numFailing)
+            .map((item) => ({
                 x: standardBaseTypes[item.aggregationKeys[0].id],
                 y: (item.numPassing / (item.numPassing + item.numFailing)) * 100,
-                standard: item.aggregationKeys[0].id
+                standard: item.aggregationKeys[0].id,
             }));
     }
 
@@ -47,8 +47,8 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
                 [searchParam]: {
                     [entityType]: entityName,
                     [entityTypes.CLUSTER]: clusterName,
-                    standard: standardLabels[datum.standard]
-                }
+                    standard: standardLabels[datum.standard],
+                },
             })
             .url();
 
@@ -59,7 +59,7 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
     const variables = {
         unit: entityTypes.CHECK,
         groupBy: [entityTypes.STANDARD, entityType],
-        where: queryService.objectToWhereClause(whereClause)
+        where: queryService.objectToWhereClause(whereClause),
     };
     return (
         <Query query={AGGREGATED_RESULTS} variables={variables}>
@@ -79,7 +79,7 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
                                 ? Math.round((totals.numPassing / totals.total) * 100)
                                 : 0;
                         contents = (
-                            <React.Fragment>
+                            <>
                                 <div className="flex w-full items-center">
                                     <div className="px-2">
                                         <ArcSingle value={pct} />
@@ -96,7 +96,7 @@ const EntityCompliance = ({ match, location, entityType, entityName, clusterName
                                         />
                                     </div>
                                 </div>
-                            </React.Fragment>
+                            </>
                         );
                     }
                 }
@@ -111,12 +111,12 @@ EntityCompliance.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
     clusterName: PropTypes.string,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 EntityCompliance.defaultProps = {
     entityName: null,
-    clusterName: null
+    clusterName: null,
 };
 
 export default withRouter(EntityCompliance);

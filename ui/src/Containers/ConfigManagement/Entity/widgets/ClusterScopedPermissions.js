@@ -5,8 +5,8 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import ScopedPermissions from './ScopedPermissions';
 
-const getContent = scopedPermissions => {
-    const clusterScopePermissions = scopedPermissions.filter(datum => datum.scope === 'Cluster');
+const getContent = (scopedPermissions) => {
+    const clusterScopePermissions = scopedPermissions.filter((datum) => datum.scope === 'Cluster');
     let content = null;
     const permissions = clusterScopePermissions.reduce((acc, curr) => {
         return [...acc, ...curr.permissions];
@@ -17,7 +17,7 @@ const getContent = scopedPermissions => {
     return content;
 };
 
-const getGroupedContent = scopedPermissionsByCluster => {
+const getGroupedContent = (scopedPermissionsByCluster) => {
     return scopedPermissionsByCluster.map(({ clusterId, clusterName, scopedPermissions }) => {
         const groupHeader = clusterName;
         const scopedPermissionsContent = getContent(scopedPermissions);
@@ -45,8 +45,9 @@ const ClusterScopedPermissions = ({ scopedPermissionsByCluster, ...rest }) => {
     const header =
         scopedPermissionsByCluster.length > 1
             ? 'Cluster Permissions across all clusters'
-            : `Cluster Permissions in "${scopedPermissionsByCluster[0] &&
-                  scopedPermissionsByCluster[0].clusterName}" cluster`;
+            : `Cluster Permissions in "${
+                  scopedPermissionsByCluster[0] && scopedPermissionsByCluster[0].clusterName
+              }" cluster`;
 
     return (
         <Widget header={header} {...rest}>
@@ -60,13 +61,13 @@ ClusterScopedPermissions.propTypes = {
         PropTypes.shape({
             clusterId: PropTypes.string.isRequired,
             clusterName: PropTypes.string.isRequired,
-            scopedPermissions: PropTypes.arrayOf(PropTypes.shape({}))
+            scopedPermissions: PropTypes.arrayOf(PropTypes.shape({})),
         })
-    )
+    ),
 };
 
 ClusterScopedPermissions.defaultProps = {
-    scopedPermissionsByCluster: []
+    scopedPermissionsByCluster: [],
 };
 
 export default ClusterScopedPermissions;

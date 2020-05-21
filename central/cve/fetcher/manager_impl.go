@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
+	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	imageMappings "github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -376,4 +378,20 @@ func filterCVEs(ctx context.Context, query *v1.Query, clusters []*storage.Cluste
 		}
 	}
 	return ret, nil
+}
+
+func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, cveType storage.CVE_CVEType, newCVEs set.StringSet) error {
+	results, err := cveDataStore.Search(cveElevatedCtx,
+		pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVEType, cveType.String()).ProtoQuery())
+	if err != nil {
+		return err
+	}
+
+	// Identify the cluster cves that do not affect the infra
+	discardCVEs := pkgSearch.ResultsToIDSet(results).Difference(newCVEs)
+	if len(discardCVEs) == 0 {
+		return nil
+	}
+	// delete all the cluster cves that do not affect the infra
+	return cveDataStore.Delete(cveElevatedCtx, discardCVEs.AsSlice()...)
 }

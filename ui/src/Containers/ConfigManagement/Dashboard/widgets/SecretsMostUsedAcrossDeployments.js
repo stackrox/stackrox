@@ -3,7 +3,7 @@ import Loader from 'Components/Loader';
 import { Link, withRouter } from 'react-router-dom';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
@@ -43,9 +43,9 @@ const QUERY = gql`
     }
 `;
 
-const getCertificateStatus = files => {
+const getCertificateStatus = (files) => {
     let status = 'no';
-    files.forEach(file => {
+    files.forEach((file) => {
         if (file.metadata) {
             const { startDate, endDate } = file.metadata;
             if (!startDate && !endDate) return;
@@ -72,7 +72,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
         if (!data || !data.secrets) return [];
 
         return data.secrets
-            .filter(secret => secret.deployments.length !== 0)
+            .filter((secret) => secret.deployments.length !== 0)
             .sort((a, b) => b.deployments.length - a.deployments.length)
             .slice(0, 10);
     }
@@ -173,7 +173,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
 
 SecretsMostUsedAcrossDeployments.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
 };
 
 export default withRouter(SecretsMostUsedAcrossDeployments);

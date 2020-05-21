@@ -12,7 +12,7 @@ export const CarouselNextArrow = ({ onClick }) => (
     </button>
 );
 CarouselNextArrow.propTypes = {
-    onClick: PropTypes.func.isRequired
+    onClick: PropTypes.func.isRequired,
 };
 
 export const CarouselPrevArrow = ({ onClick }) => (
@@ -25,5 +25,5 @@ export const CarouselPrevArrow = ({ onClick }) => (
     </button>
 );
 CarouselPrevArrow.propTypes = {
-    onClick: PropTypes.func.isRequired
+    onClick: PropTypes.func.isRequired,
 };

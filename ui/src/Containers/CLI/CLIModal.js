@@ -11,7 +11,7 @@ const downloadBtnClass =
 class CLIModal extends Component {
     static propTypes = {
         onClose: PropTypes.func.isRequired,
-        onDownload: PropTypes.func.isRequired
+        onDownload: PropTypes.func.isRequired,
     };
 
     componentDidMount() {
@@ -22,7 +22,7 @@ class CLIModal extends Component {
         document.removeEventListener('keydown', this.handleKeyDown);
     }
 
-    handleKeyDown = event => {
+    handleKeyDown = (event) => {
         // 'escape' key maps to keycode '27'
         if (event.keyCode === 27) {
             this.props.onClose();
@@ -76,7 +76,7 @@ class CLIModal extends Component {
     }
 }
 
-const CLIModalContainer = props => {
+const CLIModalContainer = (props) => {
     const EnhancedCLIModal = onClickOutside(CLIModal);
     return (
         <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-60 absolute">
@@ -88,10 +88,7 @@ const CLIModalContainer = props => {
 const mapStateToProps = createStructuredSelector({});
 
 const mapDispatchToProps = {
-    onDownload: actions.downloadCLI
+    onDownload: actions.downloadCLI,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(CLIModalContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(CLIModalContainer);

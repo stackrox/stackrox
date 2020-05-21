@@ -10,7 +10,7 @@ function ProcessesDiscoveryCard({
     process,
     processEpoch,
     setProcessEpoch,
-    children
+    children,
 }) {
     function renderWhenOpened() {
         return (
@@ -55,11 +55,11 @@ ProcessesDiscoveryCard.propTypes = {
         name: PropTypes.string.isRequired,
         containerName: PropTypes.string.isRequired,
         suspicious: PropTypes.bool.isRequired,
-        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     }).isRequired,
     processEpoch: PropTypes.number.isRequired,
     setProcessEpoch: PropTypes.func.isRequired,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export default ProcessesDiscoveryCard;

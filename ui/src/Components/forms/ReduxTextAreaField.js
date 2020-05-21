@@ -19,12 +19,12 @@ ReduxTextAreaField.propTypes = {
     name: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
     placeholder: PropTypes.string.isRequired,
-    maxLength: PropTypes.string
+    maxLength: PropTypes.string,
 };
 
 ReduxTextAreaField.defaultProps = {
     disabled: false,
-    maxLength: null
+    maxLength: null,
 };
 
 export default ReduxTextAreaField;

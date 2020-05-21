@@ -3,34 +3,34 @@ import capitalize from 'lodash/capitalize';
 
 // Action types
 
-export const types = prefix => ({
+export const types = (prefix) => ({
     SET_SEARCH_OPTIONS: `${prefix}/SET_SEARCH_OPTIONS`,
     SET_SEARCH_MODIFIERS: `${prefix}/SET_SEARCH_MODIFIERS`,
-    SET_SEARCH_SUGGESTIONS: `${prefix}/SET_SEARCH_SUGGESTIONS`
+    SET_SEARCH_SUGGESTIONS: `${prefix}/SET_SEARCH_SUGGESTIONS`,
 });
 
 // Actions
 
-export const getActions = prefix => {
+export const getActions = (prefix) => {
     const actions = {};
-    actions[`set${capitalize(prefix)}SearchOptions`] = options => ({
+    actions[`set${capitalize(prefix)}SearchOptions`] = (options) => ({
         type: `${prefix}/SET_SEARCH_OPTIONS`,
-        options
+        options,
     });
-    actions[`set${capitalize(prefix)}SearchModifiers`] = modifiers => ({
+    actions[`set${capitalize(prefix)}SearchModifiers`] = (modifiers) => ({
         type: `${prefix}/SET_SEARCH_MODIFIERS`,
-        modifiers
+        modifiers,
     });
-    actions[`set${capitalize(prefix)}SearchSuggestions`] = suggestions => ({
+    actions[`set${capitalize(prefix)}SearchSuggestions`] = (suggestions) => ({
         type: `${prefix}/SET_SEARCH_SUGGESTIONS`,
-        suggestions
+        suggestions,
     });
     return actions;
 };
 
 // Reducers
 
-export const reducers = prefix => ({
+export const reducers = (prefix) => ({
     searchOptions: (state = [], action) => {
         if (action.type === `${prefix}/SET_SEARCH_OPTIONS`) {
             const { options } = action;
@@ -51,15 +51,15 @@ export const reducers = prefix => ({
             return isEqual(suggestions, state) ? state : suggestions;
         }
         return state;
-    }
+    },
 });
 
 // Selectors
 
-export const getSelectors = prefix => {
+export const getSelectors = (prefix) => {
     const selectors = {};
-    selectors[`get${capitalize(prefix)}SearchOptions`] = state => state.searchOptions;
-    selectors[`get${capitalize(prefix)}SearchModifiers`] = state => state.searchModifiers;
-    selectors[`get${capitalize(prefix)}SearchSuggestions`] = state => state.searchSuggestions;
+    selectors[`get${capitalize(prefix)}SearchOptions`] = (state) => state.searchOptions;
+    selectors[`get${capitalize(prefix)}SearchModifiers`] = (state) => state.searchModifiers;
+    selectors[`get${capitalize(prefix)}SearchSuggestions`] = (state) => state.searchSuggestions;
     return selectors;
 };

@@ -19,12 +19,12 @@ const ReduxPasswordField = ({ name, placeholder, disabled }) => (
 ReduxPasswordField.propTypes = {
     name: PropTypes.string.isRequired,
     placeholder: PropTypes.string,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
 };
 
 ReduxPasswordField.defaultProps = {
     placeholder: '',
-    disabled: false
+    disabled: false,
 };
 
 export default ReduxPasswordField;

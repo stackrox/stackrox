@@ -14,9 +14,9 @@ const Tags = ({
     isCollapsible,
     isLoading,
     autoComplete,
-    onInputChange
+    onInputChange,
 }) => {
-    const options = autoComplete.map(option => ({ label: option, value: option }));
+    const options = autoComplete.map((option) => ({ label: option, value: option }));
 
     let content = <Loader />;
     if (!isLoading) {
@@ -61,7 +61,7 @@ Tags.propTypes = {
     isCollapsible: PropTypes.bool,
     isLoading: PropTypes.bool,
     isDisabled: PropTypes.bool,
-    autoComplete: PropTypes.arrayOf(PropTypes.string)
+    autoComplete: PropTypes.arrayOf(PropTypes.string),
 };
 
 Tags.defaultProps = {
@@ -71,7 +71,7 @@ Tags.defaultProps = {
     isCollapsible: true,
     isLoading: false,
     isDisabled: false,
-    autoComplete: []
+    autoComplete: [],
 };
 
 export default Tags;

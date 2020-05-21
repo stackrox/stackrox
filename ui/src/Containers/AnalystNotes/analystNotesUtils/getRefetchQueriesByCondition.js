@@ -15,10 +15,10 @@
     ])
  */
 function getRefetchQueriesByCondition(queries) {
-    const refetchQueries = queries.filter(query => !query.exclude);
+    const refetchQueries = queries.filter((query) => !query.exclude);
     return {
         refetchQueries: () => refetchQueries,
-        awaitRefetchQueries: true
+        awaitRefetchQueries: true,
     };
 }
 

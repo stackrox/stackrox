@@ -2,7 +2,7 @@ import {
     filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
-    convertSortToRestFormat
+    convertSortToRestFormat,
 } from './riskPageUtils';
 
 describe('riskPageUtils', () => {
@@ -17,7 +17,7 @@ describe('riskPageUtils', () => {
                 'Namespace',
                 'Priority',
                 'Secret',
-                'Service Account'
+                'Service Account',
             ];
             const pageSearch = {};
 
@@ -36,12 +36,12 @@ describe('riskPageUtils', () => {
                 'Namespace',
                 'Priority',
                 'Secret',
-                'Service Account'
+                'Service Account',
             ];
             const pageSearch = {
                 Deployment: 'nginx',
                 Label: 'web',
-                Namespace: 'production'
+                Namespace: 'production',
             };
 
             const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
@@ -59,13 +59,13 @@ describe('riskPageUtils', () => {
                 'Namespace',
                 'Priority',
                 'Secret',
-                'Service Account'
+                'Service Account',
             ];
             const pageSearch = {
                 Deployment: 'nginx',
                 Label: 'web',
                 Marco: 'polo',
-                Namespace: 'production'
+                Namespace: 'production',
             };
 
             const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
@@ -73,12 +73,20 @@ describe('riskPageUtils', () => {
             expect(allowedSearch).toEqual({
                 Deployment: 'nginx',
                 Label: 'web',
-                Namespace: 'production'
+                Namespace: 'production',
             });
         });
     });
 
     describe('convertToRestSearch', () => {
+        it('should return an empty array when passed null', () => {
+            const pageSearch = null;
+
+            const restSearch = convertToRestSearch(pageSearch);
+
+            expect(restSearch).toEqual([]);
+        });
+
         it('should return an empty array for an empty object', () => {
             const pageSearch = {};
 
@@ -96,12 +104,12 @@ describe('riskPageUtils', () => {
                 {
                     value: 'Namespace:',
                     label: 'Namespace:',
-                    type: 'categoryOption'
+                    type: 'categoryOption',
                 },
                 {
                     value: 'docker',
-                    label: 'docker'
-                }
+                    label: 'docker',
+                },
             ]);
         });
 
@@ -109,7 +117,7 @@ describe('riskPageUtils', () => {
             const pageSearch = {
                 Namespace: 'docker',
                 Cluster: 'remote',
-                Deployment: 'compose-api'
+                Deployment: 'compose-api',
             };
 
             const restSearch = convertToRestSearch(pageSearch);
@@ -118,30 +126,30 @@ describe('riskPageUtils', () => {
                 {
                     value: 'Namespace:',
                     label: 'Namespace:',
-                    type: 'categoryOption'
+                    type: 'categoryOption',
                 },
                 {
                     value: 'docker',
-                    label: 'docker'
+                    label: 'docker',
                 },
                 {
                     value: 'Cluster:',
                     label: 'Cluster:',
-                    type: 'categoryOption'
+                    type: 'categoryOption',
                 },
                 {
                     value: 'remote',
-                    label: 'remote'
+                    label: 'remote',
                 },
                 {
                     value: 'Deployment:',
                     label: 'Deployment:',
-                    type: 'categoryOption'
+                    type: 'categoryOption',
                 },
                 {
                     value: 'compose-api',
-                    label: 'compose-api'
-                }
+                    label: 'compose-api',
+                },
             ]);
         });
 
@@ -162,12 +170,12 @@ describe('riskPageUtils', () => {
                 {
                     value: 'Cluster:',
                     label: 'Cluster:',
-                    type: 'categoryOption'
+                    type: 'categoryOption',
                 },
                 {
                     value: 'security',
-                    label: 'security'
-                }
+                    label: 'security',
+                },
             ]);
         });
     });
@@ -176,14 +184,14 @@ describe('riskPageUtils', () => {
         it('should return an object the keys of the other object converted', () => {
             const restSort = {
                 field: 'Priority',
-                reversed: true
+                reversed: true,
             };
 
             const graphQLSort = convertSortToGraphQLFormat(restSort);
 
             expect(graphQLSort).toEqual({
                 id: 'Priority',
-                desc: true
+                desc: true,
             });
         });
     });
@@ -193,15 +201,15 @@ describe('riskPageUtils', () => {
             const restSort = [
                 {
                     id: 'Priority',
-                    desc: true
-                }
+                    desc: true,
+                },
             ];
 
             const graphQLSort = convertSortToRestFormat(restSort);
 
             expect(graphQLSort).toEqual({
                 field: 'Priority',
-                reversed: true
+                reversed: true,
             });
         });
     });

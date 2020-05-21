@@ -43,17 +43,17 @@ func (s *storeImpl) Delete(id string) error {
 	return err
 }
 
-func (s *storeImpl) Get(id string) (*storage.Risk, error) {
+func (s *storeImpl) Get(id string) (*storage.Risk, bool, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Risk")
 	msg, err := s.crud.Read(id)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if msg == nil {
-		return nil, nil
+		return nil, false, nil
 	}
 	risk := msg.(*storage.Risk)
-	return risk, nil
+	return risk, true, nil
 }
 
 func (s *storeImpl) GetMany(ids []string) ([]*storage.Risk, []int, error) {

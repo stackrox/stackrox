@@ -10,7 +10,7 @@ import InfoList from 'Components/InfoList';
 import Loader from 'Components/Loader';
 import Message from 'Components/Message';
 import { POLICY_ENTITY_ALL_FIELDS_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { truncate } from 'utils/textUtils';
 import { splitCvesByType } from 'utils/vulnerabilityUtils';
@@ -44,12 +44,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         }
     `;
     const cvesObj = {
-        cve: cvesStr
+        cve: cvesStr,
     };
     const cveQueryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(cvesObj)
-        }
+            query: queryService.objectToWhereClause(cvesObj),
+        },
     };
     const { loading: cveLoading, data: cveData } = useQuery(CVES_QUERY, cveQueryOptions);
     const cveItems =
@@ -58,7 +58,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const { IMAGE_CVE: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
 
     // only the allowed CVEs are combined for use in the policy
-    const allowedCvesStr = allowedCves.map(cve => cve.cve).join(',');
+    const allowedCvesStr = allowedCves.map((cve) => cve.cve).join(',');
 
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
@@ -73,10 +73,10 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const policyQueryOptions = {
         variables: {
             policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
+                Category: 'Vulnerability Management',
             }),
-            scopeQuery: ''
-        }
+            scopeQuery: '',
+        },
     };
     const { loading: policyLoading, data: policyData } = useQuery(
         POLICIES_QUERY,
@@ -93,7 +93,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
         const existingPolicies = policyData.results.map((pol, idx) => ({
             ...pol,
             value: idx,
-            label: pol.name
+            label: pol.name,
         }));
         setPolicies(existingPolicies);
     }
@@ -110,7 +110,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
     function setSelectedPolicy(selectedPolicy) {
         // checking if the policy already exists or has already been added to the policy list
-        const policyExists = policies && policies.find(pol => pol.value === selectedPolicy.value);
+        const policyExists = policies && policies.find((pol) => pol.value === selectedPolicy.value);
         let newPolicy = selectedPolicy;
 
         if (policyExists) {
@@ -156,10 +156,10 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                 dialogueRef.current.scrollTo({ top: 0, behavior: 'smooth' });
                 setTimeout(handleClose, 3000);
             })
-            .catch(error => {
+            .catch((error) => {
                 setMessageObj({
                     type: 'error',
-                    message: `Policy could not be saved. Please try again. (${error})`
+                    message: `Policy could not be saved. Please try again. (${error})`,
                 });
 
                 // hide the error message after giving the user time to read it
@@ -214,9 +214,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                             setSelectedPolicy={setSelectedPolicy}
                         />
                         <div className="pt-2">
-                            <h3 className="mb-2">{`${
-                                allowedCves.length
-                            } CVEs listed below will be added to this policy:`}</h3>
+                            <h3 className="mb-2">{`${allowedCves.length} CVEs listed below will be added to this policy:`}</h3>
                             {cveLoading && <Loader />}
                             {!cveLoading && (
                                 <InfoList
@@ -229,9 +227,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
                         {!cveLoading && disallowedCves.length > 0 && (
                             <div className="pt-2">
                                 <h3 className="mb-2">
-                                    {`The following ${
-                                        disallowedCves.length
-                                    } CVEs cannot be added to a policy.`}
+                                    {`The following ${disallowedCves.length} CVEs cannot be added to a policy.`}
                                 </h3>
                                 <InfoList
                                     items={disallowedCves}
@@ -249,7 +245,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
 
 CveBulkActionDialogue.propTypes = {
     closeAction: PropTypes.func.isRequired,
-    bulkActionCveIds: PropTypes.arrayOf(PropTypes.string).isRequired
+    bulkActionCveIds: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default CveBulkActionDialogue;

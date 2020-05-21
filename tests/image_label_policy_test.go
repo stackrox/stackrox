@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
@@ -24,7 +23,7 @@ func TestRequiredImageLabelPolicy(t *testing.T) {
 	// Make sure image label policy is enabled
 	policyService := v1.NewPolicyServiceClient(conn)
 	originalState := getPolicy(t, policyService, reqLabelPolicyID)
-	enabledPolicy := proto.Clone(originalState).(*storage.Policy)
+	enabledPolicy := originalState.Clone()
 	enabledPolicy.Disabled = false
 	setPolicy(t, policyService, enabledPolicy)
 	defer setPolicy(t, policyService, originalState)

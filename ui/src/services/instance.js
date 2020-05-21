@@ -4,7 +4,7 @@
 import axios from 'axios';
 
 export default axios.create({
-    timeout: 10000
+    timeout: 10000,
 });
 
 // THE FOLLOWING CODE SNIPPET CAN BE USED TO DEBUG UNIT TESTS,

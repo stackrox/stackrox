@@ -10,7 +10,7 @@ import { nonIsolated } from 'utils/networkGraphUtils';
 
 export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
-    OPENSHIFT_CLUSTER: true
+    OPENSHIFT_CLUSTER: true,
 };
 
 let networkFlowGraphEnabled = false;
@@ -28,50 +28,50 @@ export const types = {
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
     NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE',
-    NETWORK_GRAPH_LOADING: 'network/NETWORK_GRAPH_LOADING'
+    NETWORK_GRAPH_LOADING: 'network/NETWORK_GRAPH_LOADING',
 };
 
 // Actions
 
 export const actions = {
-    setNetworkGraphRef: networkGraphRef => ({
+    setNetworkGraphRef: (networkGraphRef) => ({
         type: types.SET_NETWORK_GRAPH_REF,
-        networkGraphRef
+        networkGraphRef,
     }),
-    setNetworkGraphFilterMode: mode => ({
+    setNetworkGraphFilterMode: (mode) => ({
         type: types.SET_NETWORK_GRAPH_FILTER_MODE,
-        mode
+        mode,
     }),
     setNetworkEdgeMap: (flowGraph, policyGraph) => ({
         type: types.SET_NETWORK_EDGE_MAP,
         flowGraph,
-        policyGraph
+        policyGraph,
     }),
-    setNetworkNodeMap: policyGraph => ({
+    setNetworkNodeMap: (policyGraph) => ({
         type: types.SET_NETWORK_NODE_MAP,
-        policyGraph
+        policyGraph,
     }),
-    setSelectedNode: node => ({ type: types.SET_SELECTED_NODE, node }),
-    setSelectedNamespace: namespace => ({ type: types.SET_SELECTED_NAMESPACE, namespace }),
-    selectDefaultNetworkClusterId: response => ({
+    setSelectedNode: (node) => ({ type: types.SET_SELECTED_NODE, node }),
+    setSelectedNamespace: (namespace) => ({ type: types.SET_SELECTED_NAMESPACE, namespace }),
+    selectDefaultNetworkClusterId: (response) => ({
         type: types.SELECT_DEFAULT_NETWORK_CLUSTER_ID,
-        response
+        response,
     }),
-    selectNetworkClusterId: clusterId => ({
+    selectNetworkClusterId: (clusterId) => ({
         type: types.SELECT_NETWORK_CLUSTER_ID,
-        clusterId
+        clusterId,
     }),
-    updateNetworkGraphTimestamp: lastUpdatedTimestamp => ({
+    updateNetworkGraphTimestamp: (lastUpdatedTimestamp) => ({
         type: types.UPDATE_NETWORK_GRAPH_TIMESTAMP,
-        lastUpdatedTimestamp
+        lastUpdatedTimestamp,
     }),
     networkNodesUpdate: () => ({
-        type: types.NETWORK_NODES_UPDATE
+        type: types.NETWORK_NODES_UPDATE,
     }),
-    setNetworkGraphLoading: isNetworkGraphLoading => ({
+    setNetworkGraphLoading: (isNetworkGraphLoading) => ({
         type: types.NETWORK_GRAPH_LOADING,
-        isNetworkGraphLoading
-    })
+        isNetworkGraphLoading,
+    }),
 };
 
 // Reducers
@@ -92,18 +92,18 @@ const networkGraphFilterMode = (state = filterModes.active, action) => {
 const networkEdgeMap = (state = null, action) => {
     if (action.type === types.SET_NETWORK_EDGE_MAP) {
         const { flowGraph, policyGraph } = action;
-        const allGraph = Object.assign({}, flowGraph, policyGraph);
+        const allGraph = { ...flowGraph, ...policyGraph };
         const mappingEquals = isEqual(allGraph, state);
         if (mappingEquals) {
             return state;
         }
         const newState = {};
-        flowGraph.nodes.forEach(node => {
+        flowGraph.nodes.forEach((node) => {
             if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
                 return;
             }
             const { id: srcDeploymentId } = node.entity;
-            Object.keys(node.outEdges).forEach(tgtIndex => {
+            Object.keys(node.outEdges).forEach((tgtIndex) => {
                 const tgtNode = flowGraph.nodes[tgtIndex];
                 if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                     return;
@@ -114,12 +114,12 @@ const networkEdgeMap = (state = null, action) => {
                 newState[mapKey].active = true;
             });
         });
-        policyGraph.nodes.forEach(node => {
+        policyGraph.nodes.forEach((node) => {
             if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
                 return;
             }
             const { id: srcDeploymentId } = node.entity;
-            Object.keys(node.outEdges).forEach(tgtIndex => {
+            Object.keys(node.outEdges).forEach((tgtIndex) => {
                 const tgtNode = policyGraph.nodes[tgtIndex];
                 if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                     return;
@@ -140,7 +140,7 @@ const networkNodeMap = (state = {}, action) => {
     if (action.type === types.SET_NETWORK_NODE_MAP) {
         const { policyGraph } = action;
         const newState = {};
-        policyGraph.nodes.forEach(node => {
+        policyGraph.nodes.forEach((node) => {
             if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
                 return;
             }
@@ -172,7 +172,7 @@ const selectedNamespace = (state = null, action) => {
 const selectedNetworkClusterId = (state = null, action) => {
     if (!state && action.type === types.SELECT_DEFAULT_NETWORK_CLUSTER_ID) {
         const { cluster } = action.response.entities;
-        const filteredClusters = Object.values(cluster).filter(c => networkGraphClusters[c.type]);
+        const filteredClusters = Object.values(cluster).filter((c) => networkGraphClusters[c.type]);
         if (filteredClusters && filteredClusters.length) {
             const clusterId = filteredClusters[0].id;
             return isEqual(clusterId, state) ? state : clusterId;
@@ -235,21 +235,21 @@ const reducer = combineReducers({
     selectedNetworkClusterId,
     networkFlowGraphUpdateKey,
     lastUpdatedTimestamp,
-    isNetworkGraphLoading
+    isNetworkGraphLoading,
 });
 
 // Selectors
 
-const getNetworkGraphRef = state => state.networkGraphRef;
-const getNetworkGraphFilterMode = state => state.networkGraphFilterMode;
-const getNetworkEdgeMap = state => state.networkEdgeMap;
-const getNetworkNodeMap = state => state.networkNodeMap;
-const getSelectedNode = state => state.selectedNode;
-const getSelectedNamespace = state => state.selectedNamespace;
-const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
-const getNetworkFlowGraphUpdateKey = state => state.networkFlowGraphUpdateKey.key;
-const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
-const getNetworkGraphLoading = state => state.isNetworkGraphLoading;
+const getNetworkGraphRef = (state) => state.networkGraphRef;
+const getNetworkGraphFilterMode = (state) => state.networkGraphFilterMode;
+const getNetworkEdgeMap = (state) => state.networkEdgeMap;
+const getNetworkNodeMap = (state) => state.networkNodeMap;
+const getSelectedNode = (state) => state.selectedNode;
+const getSelectedNamespace = (state) => state.selectedNamespace;
+const getSelectedNetworkClusterId = (state) => state.selectedNetworkClusterId;
+const getNetworkFlowGraphUpdateKey = (state) => state.networkFlowGraphUpdateKey.key;
+const getLastUpdatedTimestamp = (state) => state.lastUpdatedTimestamp;
+const getNetworkGraphLoading = (state) => state.isNetworkGraphLoading;
 
 export const selectors = {
     getNetworkGraphRef,
@@ -261,7 +261,7 @@ export const selectors = {
     getSelectedNetworkClusterId,
     getNetworkFlowGraphUpdateKey,
     getLastUpdatedTimestamp,
-    getNetworkGraphLoading
+    getNetworkGraphLoading,
 };
 
 export default reducer;

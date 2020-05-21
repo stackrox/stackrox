@@ -15,12 +15,12 @@ function ProcessingView(props) {
 
 ProcessingView.propTypes = {
     modificationState: PropTypes.string.isRequired,
-    policyGraphState: PropTypes.string.isRequired
+    policyGraphState: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     modificationState: selectors.getNetworkPolicyModificationState,
-    policyGraphState: selectors.getNetworkPolicyGraphState
+    policyGraphState: selectors.getNetworkPolicyGraphState,
 });
 
 export default connect(mapStateToProps)(ProcessingView);

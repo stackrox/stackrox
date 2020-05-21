@@ -7,7 +7,7 @@ const ReduxSelectCreatable = ({
     input: { name, value, onChange },
     options,
     placeholder,
-    styles
+    styles,
 }) => (
     <Creatable
         key={name}
@@ -24,16 +24,16 @@ ReduxSelectCreatable.propTypes = {
     input: PropTypes.shape({
         name: PropTypes.string,
         value: PropTypes.string,
-        onChange: PropTypes.func
+        onChange: PropTypes.func,
     }).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     placeholder: PropTypes.string,
-    styles: PropTypes.shape({})
+    styles: PropTypes.shape({}),
 };
 
 ReduxSelectCreatable.defaultProps = {
     placeholder: 'Select options',
-    styles: {}
+    styles: {},
 };
 
 const ReduxSelectCreatableField = ({ name, options, styles }) => (
@@ -50,11 +50,11 @@ const ReduxSelectCreatableField = ({ name, options, styles }) => (
 ReduxSelectCreatableField.propTypes = {
     name: PropTypes.string.isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    styles: PropTypes.shape({})
+    styles: PropTypes.shape({}),
 };
 
 ReduxSelectCreatableField.defaultProps = {
-    styles: {}
+    styles: {},
 };
 
 export default ReduxSelectCreatableField;

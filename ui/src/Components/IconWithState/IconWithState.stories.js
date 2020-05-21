@@ -6,7 +6,7 @@ import IconWithState from './IconWithState';
 
 export default {
     title: 'IconWithState',
-    component: IconWithState
+    component: IconWithState,
 };
 
 export const disabled = () => {

@@ -4,16 +4,16 @@ import { combineReducers } from 'redux';
 
 export const types = {
     TOGGLE_CLI_DOWNLOAD_VIEW: 'cli/TOGGLE_CLI_DOWNLOAD_VIEW',
-    CLI_DOWNLOAD: 'cli/CLI_DOWNLOAD'
+    CLI_DOWNLOAD: 'cli/CLI_DOWNLOAD',
 };
 
 // Actions
 
 export const actions = {
     toggleCLIDownloadView: () => ({
-        type: types.TOGGLE_CLI_DOWNLOAD_VIEW
+        type: types.TOGGLE_CLI_DOWNLOAD_VIEW,
     }),
-    downloadCLI: os => ({ type: types.CLI_DOWNLOAD, os })
+    downloadCLI: (os) => ({ type: types.CLI_DOWNLOAD, os }),
 };
 
 // Reducers
@@ -26,15 +26,15 @@ const CLIDownloadView = (state = false, action) => {
 };
 
 const reducer = combineReducers({
-    CLIDownloadView
+    CLIDownloadView,
 });
 
 // Selectors
 
-const getCLIDownloadView = state => state.CLIDownloadView;
+const getCLIDownloadView = (state) => state.CLIDownloadView;
 
 export const selectors = {
-    getCLIDownloadView
+    getCLIDownloadView,
 };
 
 export default reducer;

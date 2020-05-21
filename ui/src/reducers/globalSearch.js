@@ -7,7 +7,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
@@ -19,7 +19,7 @@ export const types = {
     TOGGLE_GLOBAL_SEARCH_VIEW: 'globalsearch/TOGGLE_GLOBAL_SEARCH_VIEW',
     SET_GLOBAL_SEARCH_CATEGORY: 'globalsearch/SET_GLOBAL_SEARCH_CATEGORY',
     PASSTHROUGH_GLOBAL_SEARCH_OPTIONS: 'globalsearch/PASSTHROUGH_GLOBAL_SEARCH_OPTIONS',
-    ...searchTypes('global')
+    ...searchTypes('global'),
 };
 
 // Actions
@@ -27,18 +27,18 @@ export const types = {
 export const actions = {
     fetchGlobalSearchResults: createFetchingActions(types.FETCH_GLOBAL_SEARCH_RESULTS),
     toggleGlobalSearchView: () => ({
-        type: types.TOGGLE_GLOBAL_SEARCH_VIEW
+        type: types.TOGGLE_GLOBAL_SEARCH_VIEW,
     }),
-    setGlobalSearchCategory: category => ({
+    setGlobalSearchCategory: (category) => ({
         type: types.SET_GLOBAL_SEARCH_CATEGORY,
-        category
+        category,
     }),
     passthroughGlobalSearchOptions: (searchOptions, category) => ({
         type: types.PASSTHROUGH_GLOBAL_SEARCH_OPTIONS,
         searchOptions,
-        category
+        category,
     }),
-    ...getSearchActions('global')
+    ...getSearchActions('global'),
 };
 
 // Reducers
@@ -87,22 +87,22 @@ const reducer = combineReducers({
     globalSearchCounts,
     globalSearchView,
     globalSearchCategory,
-    ...searchReducers('global')
+    ...searchReducers('global'),
 });
 
 // Selectors
 
-const getGlobalSearchResults = state => state.globalSearchResults;
-const getGlobalSearchCounts = state => state.globalSearchCounts;
-const getGlobalSearchView = state => state.globalSearchView;
-const getGlobalSearchCategory = state => state.globalSearchCategory;
+const getGlobalSearchResults = (state) => state.globalSearchResults;
+const getGlobalSearchCounts = (state) => state.globalSearchCounts;
+const getGlobalSearchView = (state) => state.globalSearchView;
+const getGlobalSearchCategory = (state) => state.globalSearchCategory;
 
 export const selectors = {
     getGlobalSearchResults,
     getGlobalSearchCounts,
     getGlobalSearchView,
     getGlobalSearchCategory,
-    ...getSearchSelectors('global')
+    ...getSearchSelectors('global'),
 };
 
 export default reducer;

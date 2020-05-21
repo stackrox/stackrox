@@ -4,7 +4,7 @@ import { dashboardPath, policiesPath } from 'routePaths';
 import {
     fetchDeploymentsLegacy as fetchDeployments,
     fetchDeploymentLegacy as fetchDeployment,
-    fetchDeploymentWithRisk
+    fetchDeploymentWithRisk,
 } from 'services/DeploymentsService';
 import { actions } from 'reducers/deployments';
 import { types as dashboardTypes } from 'reducers/dashboard';
@@ -62,6 +62,6 @@ export default function* deployments() {
     yield all([
         takeEveryNewlyMatchedLocation(dashboardPath, filterDashboardPageBySearch),
         takeEveryNewlyMatchedLocation(policiesPath, filterPoliciesPageBySearch),
-        fork(watchDashboardSearchOptions)
+        fork(watchDashboardSearchOptions),
     ]);
 }

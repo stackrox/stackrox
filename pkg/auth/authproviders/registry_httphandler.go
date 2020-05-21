@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 )
@@ -72,10 +71,8 @@ func (r *registryImpl) logoutPath() string {
 func (r *registryImpl) initHTTPMux() {
 	r.HandleFunc(r.providersURLPrefix(), r.providersHTTPHandler)
 	r.HandleFunc(r.loginURLPrefix(), r.loginHTTPHandler)
-	if features.RefreshTokens.Enabled() {
-		r.HandleFunc(r.tokenRefreshPath(), httputil.RESTHandler(r.tokenRefreshEndpoint))
-		r.HandleFunc(r.logoutPath(), httputil.RESTHandler(r.logoutEndpoint))
-	}
+	r.HandleFunc(r.tokenRefreshPath(), httputil.RESTHandler(r.tokenRefreshEndpoint))
+	r.HandleFunc(r.logoutPath(), httputil.RESTHandler(r.logoutEndpoint))
 }
 
 func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request) {
@@ -239,7 +236,7 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	w.Header().Set("Location", r.tokenURL(tokenInfo.Token, typ, clientState).String())
-	if refreshToken != "" && features.RefreshTokens.Enabled() {
+	if refreshToken != "" {
 		cookieData := refreshTokenCookieData{
 			ProviderType: typ,
 			ProviderID:   providerID,

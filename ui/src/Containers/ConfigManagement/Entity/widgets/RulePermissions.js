@@ -10,12 +10,12 @@ const RulePermissions = ({ rules, ...rest }) => {
     let header = 'Permissions across this cluster';
     if (rules && rules.length) {
         const permissionsMap = rules.reduce((acc, curr) => {
-            curr.verbs.forEach(verb => {
+            curr.verbs.forEach((verb) => {
                 acc[verb] = [...(acc[verb] || []), ...curr.resources, ...curr.nonResourceUrls];
             });
             return acc;
         }, {});
-        const permissions = Object.keys(permissionsMap).map(key => {
+        const permissions = Object.keys(permissionsMap).map((key) => {
             const values = permissionsMap[key];
             return { key, values };
         });
@@ -34,11 +34,11 @@ const RulePermissions = ({ rules, ...rest }) => {
 };
 
 RulePermissions.propTypes = {
-    rules: PropTypes.arrayOf({})
+    rules: PropTypes.arrayOf({}),
 };
 
 RulePermissions.defaultProps = {
-    rules: null
+    rules: null,
 };
 
 export default RulePermissions;

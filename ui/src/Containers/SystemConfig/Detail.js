@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import ConfigBannerDetailWidget from './ConfigBannerDetailWidget';
 import ConfigLoginDetailWidget from './ConfigLoginDetailWidget';
 import ConfigDataRetentionDetailWidget from './ConfigDataRetentionDetailWidget';
@@ -23,19 +21,15 @@ const Detail = ({ config, telemetryConfig }) => (
             <ConfigLoginDetailWidget config={config} />
         </div>
         <div className="flex flex-col justify-between md:flex-row pb-5 w-full">
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_DIAGNOSTIC_BUNDLE}>
-                <DownloadTelemetryDetailWidget />
-            </FeatureEnabled>
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_TELEMETRY}>
-                <ConfigTelemetryDetailWidget config={telemetryConfig} editable={false} />
-            </FeatureEnabled>
+            <DownloadTelemetryDetailWidget />
+            <ConfigTelemetryDetailWidget config={telemetryConfig} editable={false} />
         </div>
     </div>
 );
 
 Detail.propTypes = {
     config: PropTypes.shape({}).isRequired,
-    telemetryConfig: PropTypes.shape({}).isRequired
+    telemetryConfig: PropTypes.shape({}).isRequired,
 };
 
 export default Detail;

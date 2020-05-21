@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command defines the cert command tree
@@ -22,9 +23,9 @@ func Command() *cobra.Command {
 		Use:   "cert",
 		Short: "Download Central's TLS certificate",
 		Long:  "Downloads the public certificate used by Central",
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return certs(filename)
-		},
+		}),
 	}
 
 	cmd.Flags().StringVar(&filename, "output", "-", "Filename to output PEM certificate to (default: - for stdout)")

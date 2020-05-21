@@ -5,7 +5,7 @@ import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
 
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import ViewAllButton from 'Components/ViewAllButton';
 import Loader from 'Components/Loader';
@@ -37,7 +37,7 @@ export const RECENTLY_DETECTED_VULNERABILITIES = gql`
 `;
 
 const processData = (data, workflowState) => {
-    let results = data && data.results && data.results.filter(datum => datum.createdAt);
+    let results = data && data.results && data.results.filter((datum) => datum.createdAt);
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     results = sortBy(results, ['createdAt', 'cvss', 'envImpact']).reverse();
 
@@ -51,7 +51,7 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
     const queryObject = {
         ...entityContextObject,
         ...search,
-        [cveSortFields.CVE_TYPE]: 'IMAGE_CVE'
+        [cveSortFields.CVE_TYPE]: 'IMAGE_CVE',
     }; // Combine entity context and search
     const query = queryService.objectToWhereClause(queryObject); // get final gql query string
 
@@ -62,12 +62,12 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
             pagination: queryService.getPagination(
                 {
                     id: cveSortFields.CVE_CREATED_TIME,
-                    desc: true
+                    desc: true,
                 },
                 0,
                 limit
-            )
-        }
+            ),
+        },
     });
 
     let content = <Loader />;
@@ -108,13 +108,13 @@ const RecentlyDetectedVulnerabilities = ({ entityContext, search, limit }) => {
 RecentlyDetectedVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 RecentlyDetectedVulnerabilities.defaultProps = {
     entityContext: {},
     search: {},
-    limit: 5
+    limit: 5,
 };
 
 export default RecentlyDetectedVulnerabilities;

@@ -5,7 +5,10 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
+	"github.com/stackrox/rox/central/secret/internal/store/bolt"
+	"github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/secret/search"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -19,10 +22,15 @@ var (
 )
 
 func initialize() {
-	store := store.New(globaldb.GetGlobalDB())
+	var storage store.Store
+	if features.RocksDB.Enabled() {
+		storage = rocksdb.New(globaldb.GetRocksDB())
+	} else {
+		storage = bolt.New(globaldb.GetGlobalDB())
+	}
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 	var err error
-	ad, err = New(store, indexer, search.New(store, indexer))
+	ad, err = New(storage, indexer, search.New(storage, indexer))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

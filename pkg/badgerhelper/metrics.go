@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
+	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -39,7 +40,7 @@ func UpdateBadgerPrefixSizeMetric(db *badger.DB, prefix []byte, metricPrefix, ob
 	)
 	err := db.View(func(txn *badger.Txn) error {
 		var err error
-		count, bytes, err = CountWithBytes(txn, prefix)
+		count, bytes, err = CountWithBytes(txn, dbhelper.GetBucketKey(prefix, nil))
 		return err
 	})
 	if err != nil {
@@ -52,25 +53,9 @@ func UpdateBadgerPrefixSizeMetric(db *badger.DB, prefix []byte, metricPrefix, ob
 // GetBadgerMetrics returns a list of cardinality metrics per prefix and a list of size-in-bytes metrics per prefix
 func GetBadgerMetrics() ([]*dto.Metric, []*dto.Metric, error) {
 	errList := errorhelpers.NewErrorList("errors collecting badger metrics")
-	cardinality, err := collectToSlice(badgerPrefixSize)
+	cardinality, err := metrics.CollectToSlice(badgerPrefixSize)
 	errList.AddError(errors.Wrap(err, "cardinality"))
-	bytes, err := collectToSlice(badgerPrefixBytes)
+	bytes, err := metrics.CollectToSlice(badgerPrefixBytes)
 	errList.AddError(errors.Wrap(err, "bytes"))
 	return cardinality, bytes, errList.ToError()
-}
-
-func collectToSlice(vec *prometheus.GaugeVec) ([]*dto.Metric, error) {
-	metricC := make(chan prometheus.Metric)
-	go func() {
-		defer close(metricC)
-		vec.Collect(metricC)
-	}()
-	errList := errorhelpers.NewErrorList("errors collecting metrics for vector")
-	var metricSlice []*dto.Metric
-	for metric := range metricC {
-		dtoMetric := &dto.Metric{}
-		errList.AddError(metric.Write(dtoMetric))
-		metricSlice = append(metricSlice, dtoMetric)
-	}
-	return metricSlice, errList.ToError()
 }

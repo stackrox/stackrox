@@ -1,7 +1,9 @@
 import { normalize } from 'normalizr';
 import queryString from 'qs';
-import axios from './instance';
+import FileSaver from 'file-saver';
 
+import { addBrandedTimestampToString } from 'utils/dateUtils';
+import axios from './instance';
 import { policy as policySchema } from './schemas';
 
 const baseUrl = '/v1/policies';
@@ -22,32 +24,32 @@ const policyCategoriesUrl = '/v1/policyCategories';
 //         {
 //             section_name: 'Docker Registries',
 //             policy_groups: [
-//                 {
-//                     field_name: 'Dockerfile Line',
-//                     boolean_operator: 'OR',
-//                     negate: false,
-//                     values: [{ value: 'FROM=.*example.*' }]
-//                 },
-//                 {
-//                     field_name: 'Environment Variable',
-//                     boolean_operator: 'OR',
-//                     negate: false,
-//                     values: [{ value: 'SECRET_KEY=sampleKey=sampleValue' }]
-//                 },
-//                 {
-//                     field_name: 'CVSS',
-//                     boolean_operator: 'OR',
-//                     negate: false,
-//                     values: [{ value: '>=5' }]
-//                 },
-//                 {
-//                     field_name: 'Image Registry',
-//                     boolean_operator: 'OR',
-//                     negate: false,
-//                     values: [{ value: 'docker.io' }]
-//                 }
-//             ]
+// {
+//     field_name: 'Dockerfile Line',
+//     boolean_operator: 'OR',
+//     negate: false,
+//     values: [{ value: 'FROM=.*example.*' }]
+// },
+// {
+//     field_name: 'Environment Variable',
+//     boolean_operator: 'OR',
+//     negate: false,
+//     values: [{ value: 'SECRET_KEY=sampleKey=sampleValue' }]
+// },
+// {
+//     field_name: 'CVSS',
+//     boolean_operator: 'OR',
+//     negate: false,
+//     values: [{ value: '>=5' }]
+// },
+//         {
+//             field_name: 'Image Registry',
+//             boolean_operator: 'OR',
+//             negate: false,
+//             values: [{ value: 'docker.io' }],
 //         },
+//     ],
+// },
 //         {
 //             section_name: 'Other Registries',
 //             policy_groups: [
@@ -82,7 +84,7 @@ const policyCategoriesUrl = '/v1/policyCategories';
 //                 }
 //             ]
 //         }
-//     ]
+//     ],
 // };
 
 /**
@@ -93,8 +95,8 @@ const policyCategoriesUrl = '/v1/policyCategories';
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchPolicy(policyId) {
-    return axios.get(`${baseUrl}/${policyId}`).then(response => ({
-        response: normalize(response.data, policySchema)
+    return axios.get(`${baseUrl}/${policyId}`).then((response) => ({
+        response: normalize(response.data, policySchema),
     }));
 }
 
@@ -106,8 +108,8 @@ export function fetchPolicy(policyId) {
  */
 export function fetchPolicies(filters) {
     const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
-    return axios.get(`${baseUrl}?${params}`).then(response => ({
-        response: normalize(response.data, { policies: [policySchema] })
+    return axios.get(`${baseUrl}?${params}`).then((response) => ({
+        response: normalize(response.data, { policies: [policySchema] }),
     }));
 }
 
@@ -117,8 +119,8 @@ export function fetchPolicies(filters) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchPolicyCategories() {
-    return axios.get(policyCategoriesUrl).then(response => ({
-        response: response.data
+    return axios.get(policyCategoriesUrl).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -148,7 +150,7 @@ export function deletePolicy(policyId) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function deletePolicies(policyIds = []) {
-    return Promise.all(policyIds.map(policyId => deletePolicy(policyId)));
+    return Promise.all(policyIds.map((policyId) => deletePolicy(policyId)));
 }
 
 /**
@@ -172,7 +174,9 @@ export function enableDisablePolicyNotifications(policyId, data) {
  */
 export function enableDisableNotificationsForPolicies(policyIds, notifierIds, disable) {
     const data = { notifierIds, disable };
-    return Promise.all(policyIds.map(policyId => enableDisablePolicyNotifications(policyId, data)));
+    return Promise.all(
+        policyIds.map((policyId) => enableDisablePolicyNotifications(policyId, data))
+    );
 }
 
 /**
@@ -207,13 +211,23 @@ export function startDryRun(policy) {
 }
 
 /**
- * Gets a dry run for a given policy.
+ * Gets a dry run for a given job ID.
  *
- * @param {!object} policy
+ * @param {!string} jobId
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function checkDryRun(jobId) {
     return axios.get(`${baseUrl}/dryrunjob/${jobId}`);
+}
+
+/**
+ * Cancels a dry run for a given job ID.
+ *
+ * @param {!string} jobId
+ * @returns {Promise<AxiosResponse, Error>}
+ */
+export function cancelDryRun(jobId) {
+    return axios.delete(`${baseUrl}/dryrunjob/${jobId}`);
 }
 
 /**
@@ -227,8 +241,8 @@ export async function whitelistDeployments(policyId, deploymentNames) {
     const { response } = await fetchPolicy(policyId);
     const policy = response.entities.policy[policyId];
 
-    const deploymentEntries = deploymentNames.map(name => ({
-        deployment: { name }
+    const deploymentEntries = deploymentNames.map((name) => ({
+        deployment: { name },
     }));
     policy.whitelists = [...policy.whitelists, ...deploymentEntries];
     return axios.put(`${baseUrl}/${policy.id}`, policy);
@@ -243,4 +257,56 @@ export async function whitelistDeployments(policyId, deploymentNames) {
  */
 export function updatePolicyDisabledState(policyId, disabled) {
     return axios.patch(`${baseUrl}/${policyId}`, { disabled });
+}
+
+/**
+ * Request policies as JSON for the given policy IDs.
+ *
+ * @param {!array} array of policyIds
+ * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
+ */
+export function exportPolicies(policyIds) {
+    return axios.post(`${baseUrl}/export`, { policyIds }).then((response) => {
+        if (response?.data && response?.data?.policies?.length > 0) {
+            try {
+                const numSpaces = 4;
+                const stringData = JSON.stringify(response.data, null, numSpaces);
+                const filename = addBrandedTimestampToString('Exported_Policies');
+
+                const file = new Blob([stringData], {
+                    type: 'application/json',
+                });
+
+                FileSaver.saveAs(file, `${filename}.json`);
+            } catch (error) {
+                throw new Error(`Problem saving policy data: ${error}`);
+            }
+        } else {
+            throw new Error('No policy data returned for the specified ID');
+        }
+    });
+}
+
+/**
+ * Request policies as JSON for the given policy IDs.
+ *
+ * @param {!array} array of policies
+ * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
+ */
+export function importPolicies(policies, metadata = {}) {
+    return axios
+        .post(`${baseUrl}/import`, { policies, metadata })
+        .then((response) => response?.data);
+}
+
+/**
+ * Create an unsaved policy object from a query string
+ *
+ * @param {!string}                         query string of search params
+ * @returns {Promise<AxiosResponse, Error>} fulfilled in case of success or rejected with an error
+ */
+export function generatePolicyFromSearch(searchStr) {
+    return axios
+        .post(`${baseUrl}/from-search`, { searchParams: searchStr })
+        .then((response) => response?.data);
 }

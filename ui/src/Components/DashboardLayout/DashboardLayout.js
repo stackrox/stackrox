@@ -12,7 +12,7 @@ const DashboardLayout = ({ headerText, headerComponents, children }) => {
         ? {}
         : {
               '--start': 'hsl(240, 100%, 97%)',
-              '--end': 'hsl(215, 92%, 95%)'
+              '--end': 'hsl(215, 92%, 95%)',
           };
     return (
         <section className="flex flex-col relative min-h-full">
@@ -61,7 +61,7 @@ DashboardLayout.propTypes = {
     headerText: PropTypes.string.isRequired,
     headerComponents: PropTypes.element.isRequired,
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)])
-        .isRequired
+        .isRequired,
 };
 
 export default DashboardLayout;

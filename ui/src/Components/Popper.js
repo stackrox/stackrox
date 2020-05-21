@@ -9,14 +9,14 @@ class CustomPopper extends Component {
         super(props);
 
         this.state = {
-            isOpen: false
+            isOpen: false,
         };
 
         this.onClick = this.onClick.bind(this);
     }
 
     onClick() {
-        this.setState(prevState => ({ isOpen: !prevState.isOpen }));
+        this.setState((prevState) => ({ isOpen: !prevState.isOpen }));
     }
 
     handleClickOutside() {
@@ -31,7 +31,7 @@ class CustomPopper extends Component {
             buttonClass,
             buttonContent,
             popperContent,
-            reactOutsideClassName
+            reactOutsideClassName,
         } = this.props;
 
         return (
@@ -62,17 +62,17 @@ CustomPopper.propTypes = {
     reactOutsideClassName: PropTypes.string,
     buttonClass: PropTypes.string,
     buttonContent: PropTypes.oneOfType([PropTypes.string, PropTypes.node]).isRequired,
-    popperContent: PropTypes.element.isRequired
+    popperContent: PropTypes.element.isRequired,
 };
 
 CustomPopper.defaultProps = {
     disabled: false,
     reactOutsideClassName: 'ignore-react-onclickoutside',
     placement: 'right',
-    buttonClass: ''
+    buttonClass: '',
 };
 
-const CustomPopperContainer = props => {
+const CustomPopperContainer = (props) => {
     const EnhancedCustomPopper = onClickOutside(CustomPopper);
     return (
         <EnhancedCustomPopper outsideClickIgnoreClass={props.reactOutsideClassName} {...props} />

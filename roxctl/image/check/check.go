@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command checks the image against image build lifecycle policies
@@ -25,12 +26,12 @@ func Command() *cobra.Command {
 		Use:   "check",
 		Short: "Check images for build time policy violations.",
 		Long:  "Check images for build time policy violations.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
 			return checkImage(image, json, flags.Timeout(c))
-		},
+		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")

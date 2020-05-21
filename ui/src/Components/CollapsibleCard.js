@@ -13,7 +13,7 @@ class CollapsibleCard extends Component {
         renderWhenClosed: PropTypes.func,
         cardClassName: PropTypes.string,
         headerComponents: PropTypes.element,
-        isCollapsible: PropTypes.bool
+        isCollapsible: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -24,13 +24,13 @@ class CollapsibleCard extends Component {
         renderWhenClosed: null,
         cardClassName: 'border border-base-400',
         headerComponents: null,
-        isCollapsible: true
+        isCollapsible: true,
     };
 
-    renderTriggerElement = cardState => {
+    renderTriggerElement = (cardState) => {
         const icons = {
             opened: <Icon.ChevronUp className="h-4 w-4" />,
-            closed: <Icon.ChevronDown className="h-4 w-4" />
+            closed: <Icon.ChevronDown className="h-4 w-4" />,
         };
         const { title, titleClassName, headerComponents, isCollapsible } = this.props;
         const className = isCollapsible ? titleClassName : `${titleClassName} pointer-events-none`;
@@ -53,7 +53,7 @@ class CollapsibleCard extends Component {
             renderWhenOpened,
             renderWhenClosed,
             cardClassName,
-            isCollapsible
+            isCollapsible,
         } = this.props;
         return (
             <div className={`bg-base-100 text-base-600 rounded ${cardClassName}`}>

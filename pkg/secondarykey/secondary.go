@@ -16,6 +16,12 @@ func GetCurrentUniqueKey(tx *bolt.Tx, bucket []byte, id string) (string, bool) {
 	return string(val), true
 }
 
+// CheckUniqueKeyExists checks whether a given name exists
+func CheckUniqueKeyExists(tx *bolt.Tx, bucket []byte, k string) bool {
+	b := tx.Bucket(getUniqueBucket(bucket))
+	return b.Get([]byte(k)) != nil
+}
+
 // CheckUniqueKeyExistsAndInsert checks if the name exists within the context of a transaction which means
 // if the transaction fails then this will be rolled back
 func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket []byte, id, k string) error {

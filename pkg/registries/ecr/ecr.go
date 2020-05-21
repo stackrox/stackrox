@@ -132,11 +132,16 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 		return nil, err
 	}
 
-	endpoint := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion())
+	endpoint := conf.GetEndpoint()
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("ecr.%s.amazonaws.com", conf.GetRegion())
+	}
 
 	awsConfig := &aws.Config{
-		Region: aws.String(conf.GetRegion()),
+		Endpoint: aws.String(endpoint),
+		Region:   aws.String(conf.GetRegion()),
 	}
+
 	if !conf.GetUseIam() {
 		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
 	}
@@ -148,8 +153,8 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 	reg := &ecr{
 		config:      conf,
 		integration: integration,
-
-		endpoint: endpoint,
+		// docker endpoint
+		endpoint: fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion()),
 		service:  service,
 	}
 	if err := reg.refreshDockerClient(); err != nil {

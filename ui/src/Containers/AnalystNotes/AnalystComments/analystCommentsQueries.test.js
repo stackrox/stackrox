@@ -7,7 +7,7 @@ import {
     UPDATE_ALERT_COMMENT,
     UPDATE_PROCESS_COMMENT,
     REMOVE_ALERT_COMMENT,
-    REMOVE_PROCESS_COMMENT
+    REMOVE_PROCESS_COMMENT,
 } from './analystCommentsQueries';
 
 describe('analystCommentsQueries.getQueriesByType()', () => {

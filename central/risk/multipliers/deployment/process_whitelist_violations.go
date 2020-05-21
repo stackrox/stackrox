@@ -64,7 +64,7 @@ func formatProcess(process *storage.ProcessIndicator) string {
 	return sb.String()
 }
 
-func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ []*storage.Image) *storage.Risk_Result {
+func (p *processWhitelistMultiplier) Score(_ context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	violatingProcesses, err := p.evaluator.EvaluateWhitelistsAndPersistResult(deployment)
 	if err != nil {
 		log.Errorf("Couldn't evaluate whitelist: %v", err)

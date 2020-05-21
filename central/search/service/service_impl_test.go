@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -25,7 +24,6 @@ import (
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/store/mocks"
-	"github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
@@ -39,13 +37,12 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/fixtures"
-	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestSearchCategoryToResourceMap(t *testing.T) {
@@ -107,21 +104,15 @@ func TestAutocomplete(t *testing.T) {
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	testDB := testutils.BadgerDBForT(t)
-	defer utils.IgnoreError(testDB.Close)
+	testDB := rocksdbtest.RocksDBForT(t)
+	defer testDB.Close()
 
 	dacky, registry, indexingQ := testDackBoxInstance(t, testDB, idx)
 	registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-	mockIndicators := mocks.NewMockDataStore(mockCtrl)
-	// This gets called as a side effect of `UpsertDeployment`.
-	mockIndicators.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).AnyTimes()
-
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 
-	mockFilter := filterMocks.NewMockFilter(mockCtrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), testDB, nil, idx, nil, mockIndicators, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())
@@ -230,7 +221,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 	require.NoError(t, policyIndexer.AddPolicy(fixtures.GetPolicy()))
 	policySearcher, err := policySearcher.New(policyStore, policyIndexer)
 	require.NoError(t, err)
-	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher)
+	ds := policyDatastore.New(policyStore, policyIndexer, policySearcher, nil, nil)
 
 	service := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
@@ -256,9 +247,9 @@ func TestAutocompleteForEnums(t *testing.T) {
 	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
 }
 
-func testDackBoxInstance(t *testing.T, db *badger.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
+func testDackBoxInstance(t *testing.T, db *gorocksdb.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
 	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
 	reg := indexer.NewWrapperRegistry()

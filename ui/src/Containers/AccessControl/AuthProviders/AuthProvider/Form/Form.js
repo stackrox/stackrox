@@ -19,21 +19,21 @@ class Form extends Component {
         onSubmit: PropTypes.func.isRequired,
         initialValues: PropTypes.shape({
             type: PropTypes.string,
-            active: PropTypes.bool
+            active: PropTypes.bool,
         }).isRequired,
         change: PropTypes.func.isRequired,
         roles: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string,
-                globalAccess: PropTypes.string
+                globalAccess: PropTypes.string,
             })
-        ).isRequired
+        ).isRequired,
     };
 
     constructor(props) {
         super(props);
         this.state = {
-            modalOpen: false
+            modalOpen: false,
         };
     }
 
@@ -48,7 +48,7 @@ class Form extends Component {
         return <CreateRoleModal onClose={this.toggleModal} />;
     };
 
-    renderRuleGroupsComponent = props => <RuleGroups toggleModal={this.toggleModal} {...props} />;
+    renderRuleGroupsComponent = (props) => <RuleGroups toggleModal={this.toggleModal} {...props} />;
 
     render() {
         const { handleSubmit, onSubmit, initialValues, roles, change } = this.props;
@@ -112,20 +112,14 @@ class Form extends Component {
     }
 }
 
-const getRoleOptions = createSelector(
-    [selectors.getRoles],
-    roles => roles.map(role => ({ value: role.name, label: role.name }))
+const getRoleOptions = createSelector([selectors.getRoles], (roles) =>
+    roles.map((role) => ({ value: role.name, label: role.name }))
 );
 
 const mapStateToProps = createStructuredSelector({
-    roles: getRoleOptions
+    roles: getRoleOptions,
 });
 
 export default reduxForm({
-    form: 'auth-provider-form'
-})(
-    connect(
-        mapStateToProps,
-        null
-    )(Form)
-);
+    form: 'auth-provider-form',
+})(connect(mapStateToProps, null)(Form));

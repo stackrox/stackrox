@@ -4,7 +4,7 @@ import { lifecycleStageLabels } from 'messages/common';
 
 const labelClassName = 'px-2 rounded-full border-2';
 
-const getLifecycleClassName = lifecycleStage => {
+const getLifecycleClassName = (lifecycleStage) => {
     switch (lifecycleStage) {
         case 'BUILD':
             return `${labelClassName} bg-primary-200 border-primary-300 text-primary-800`;
@@ -27,11 +27,11 @@ const LifecycleStageLabel = ({ className, lifecycleStage }) => {
 
 LifecycleStageLabel.propTypes = {
     className: PropTypes.string,
-    lifecycleStage: PropTypes.string.isRequired
+    lifecycleStage: PropTypes.string.isRequired,
 };
 
 LifecycleStageLabel.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default LifecycleStageLabel;

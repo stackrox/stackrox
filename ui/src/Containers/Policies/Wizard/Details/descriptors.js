@@ -3,85 +3,33 @@ import {
     lifecycleStageLabels,
     portExposureLabels,
     rbacPermissionLabels,
-    envVarSrcLabels
+    envVarSrcLabels,
 } from 'messages/common';
 
-const comparatorOp = {
-    GREATER_THAN: '>',
-    GREATER_THAN_OR_EQUALS: '>=',
-    EQUALS: '=',
-    LESS_THAN_OR_EQUALS: '<=',
-    LESS_THAN: '<'
-};
-
-const formatResourceValue = (prefix, value, suffix) =>
-    `${prefix} ${comparatorOp[value.op]} ${value.value} ${suffix}`;
-
-const formatResources = resource => {
-    const output = [];
-    if (resource.memoryResourceRequest) {
-        output.push(formatResourceValue('Memory request', resource.memoryResourceRequest, 'MB'));
-    }
-    if (resource.memoryResourceLimit) {
-        output.push(formatResourceValue('Memory limit', resource.memoryResourceLimit, 'MB'));
-    }
-    if (resource.cpuResourceRequest) {
-        output.push(formatResourceValue('CPU request', resource.cpuResourceRequest, 'Cores'));
-    }
-    if (resource.cpuResourceLimit) {
-        output.push(formatResourceValue('CPU limit', resource.cpuResourceLimit, 'Cores'));
-    }
-    return output.join(', ');
-};
-
-const formatScope = (scope, props) => {
-    if (!scope) return '';
-    const values = [];
-    if (scope.cluster !== '') {
-        let { cluster } = scope;
-        if (props.clustersById[scope.cluster]) {
-            cluster = props.clustersById[scope.cluster].name;
-        }
-        values.push(`Cluster:${cluster}`);
-    }
-    if (scope.namespace !== '') {
-        values.push(`Namespace:${scope.namespace}`);
-    }
-    if (scope.label) {
-        values.push(`Label:${scope.label.key}=${scope.label.value}`);
-    }
-    return values.join('; ');
-};
-
-const formatDeploymentWhitelistScope = (whitelistScope, props) => {
-    const values = [];
-    if (whitelistScope.name !== '') {
-        values.push(`Deployment Name:${whitelistScope.name}`);
-    }
-    const scopeVal = formatScope(whitelistScope.scope, props);
-    if (scopeVal !== '') {
-        values.push(scopeVal);
-    }
-    return values.join('; ');
-};
+import {
+    comparatorOp,
+    formatResources,
+    formatScope,
+    formatDeploymentWhitelistScope,
+} from './utils';
 
 // JSON value name mapped to formatting for description page.
 const fieldsMap = {
     id: {
         label: 'ID',
-        formatValue: d => d
+        formatValue: (d) => d,
     },
     name: {
         label: 'Name',
-        formatValue: d => d
+        formatValue: (d) => d,
     },
     lifecycleStages: {
         label: 'Lifecycle Stage',
-        formatValue: d => d.map(v => lifecycleStageLabels[v]).join(', ')
+        formatValue: (d) => d.map((v) => lifecycleStageLabels[v]).join(', '),
     },
     severity: {
         label: 'Severity',
-        formatValue: d => {
+        formatValue: (d) => {
             switch (d) {
                 case 'CRITICAL_SEVERITY':
                     return 'Critical';
@@ -94,153 +42,154 @@ const fieldsMap = {
                 default:
                     return '';
             }
-        }
+        },
     },
     description: {
         label: 'Description',
-        formatValue: d => d
+        formatValue: (d) => d,
     },
     rationale: {
         label: 'Rationale',
-        formatValue: r => r
+        formatValue: (r) => r,
     },
     remediation: {
         label: 'Remediation',
-        formatValue: r => r
+        formatValue: (r) => r,
     },
     notifiers: {
         label: 'Notifications',
         formatValue: (d, props) =>
             props.notifiers
-                .filter(n => d.includes(n.id))
-                .map(n => n.name)
-                .join(', ')
+                .filter((n) => d.includes(n.id))
+                .map((n) => n.name)
+                .join(', '),
     },
     scope: {
         label: 'Restricted to Scopes',
         formatValue: (d, props) =>
-            d && d.length ? d.map(scope => formatScope(scope, props)) : null
+            d && d.length ? d.map((scope) => formatScope(scope, props)) : null,
     },
     enforcementActions: {
         label: 'Enforcement Action',
-        formatValue: d => d.map(v => enforcementActionLabels[v]).join(', ')
+        formatValue: (d) => d.map((v) => enforcementActionLabels[v]).join(', '),
     },
     disabled: {
         label: 'Enabled',
-        formatValue: d => (d !== true ? 'Yes' : 'No')
+        formatValue: (d) => (d !== true ? 'Yes' : 'No'),
     },
     categories: {
         label: 'Categories',
-        formatValue: d => d.join(', ')
+        formatValue: (d) => d.join(', '),
     },
     whitelists: {
         label: 'Whitelists',
         formatValue: (d, props) => {
             const whitelistObj = {};
             const deploymentWhitelistScopes = d
-                .filter(obj => obj.deployment && (obj.deployment.name || obj.deployment.scope))
-                .map(obj => obj.deployment);
+                .filter((obj) => obj.deployment && (obj.deployment.name || obj.deployment.scope))
+                .map((obj) => obj.deployment);
             if (deploymentWhitelistScopes.length > 0) {
-                whitelistObj['Deployment Whitelists'] = deploymentWhitelistScopes.map(
-                    deploymentWhitelistScope =>
-                        formatDeploymentWhitelistScope(deploymentWhitelistScope, props)
+                whitelistObj[
+                    'Deployment Whitelists'
+                ] = deploymentWhitelistScopes.map((deploymentWhitelistScope) =>
+                    formatDeploymentWhitelistScope(deploymentWhitelistScope, props)
                 );
             }
             const images = d
-                .filter(obj => obj.image && obj.image.name !== '')
-                .map(obj => obj.image.name);
+                .filter((obj) => obj.image && obj.image.name !== '')
+                .map((obj) => obj.image.name);
             if (images.length !== 0) {
                 whitelistObj['Image Whitelists'] = images;
             }
             return whitelistObj;
-        }
+        },
     },
     imageName: {
         label: 'Image',
-        formatValue: d => {
+        formatValue: (d) => {
             const remote = d.remote ? `images named ${d.remote}` : 'any image';
             const tag = d.tag ? `tag ${d.tag}` : 'any tag';
             const registry = d.registry ? `registry ${d.registry}` : 'any registry';
             return `Alert on ${remote} using ${tag} from ${registry}`;
-        }
+        },
     },
     imageAgeDays: {
         label: 'Days since image was created',
-        formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
+        formatValue: (d) => (d !== '0' ? `${Number(d)} Days ago` : ''),
     },
     noScanExists: {
         label: 'Image Scan Status',
-        formatValue: () => 'Verify that the image is scanned'
+        formatValue: () => 'Verify that the image is scanned',
     },
     scanAgeDays: {
         label: 'Days since image was last scanned',
-        formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
+        formatValue: (d) => (d !== '0' ? `${Number(d)} Days ago` : ''),
     },
     lineRule: {
         label: 'Dockerfile Line',
-        formatValue: d => `${d.instruction} ${d.value}`
+        formatValue: (d) => `${d.instruction} ${d.value}`,
     },
     cvss: {
         label: 'CVSS',
-        formatValue: d => `${comparatorOp[d.op]} ${d.value}`
+        formatValue: (d) => `${comparatorOp[d.op]} ${d.value}`,
     },
     cve: {
         label: 'CVE',
-        formatValue: d => d
+        formatValue: (d) => d,
     },
     fixedBy: {
         label: 'Fixed By',
-        formatValue: d => d
+        formatValue: (d) => d,
     },
     component: {
         label: 'Image Component',
-        formatValue: d => {
+        formatValue: (d) => {
             const name = d.name ? `${d.name}` : '';
             const version = d.version ? d.version : '';
             return `"${name}" with version "${version}"`;
-        }
+        },
     },
     env: {
         label: 'Environment Variable',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `${d.key}` : '';
             const value = d.value ? d.value : '';
             const valueFrom = !d.envVarSource
                 ? ''
                 : ` Value From: ${envVarSrcLabels[d.envVarSource]}`;
             return `${key}=${value};${valueFrom}`;
-        }
+        },
     },
     disallowedAnnotation: {
         label: 'Disallowed Annotation',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `key=${d.key}` : '';
             const value = d.value ? `value=${d.value}` : '';
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments with the disallowed annotation ${key}${comma}${value}`;
-        }
+        },
     },
     requiredLabel: {
         label: 'Required Label',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `key=${d.key}` : '';
             const value = d.value ? `value=${d.value}` : '';
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments missing the required label ${key}${comma}${value}`;
-        }
+        },
     },
     requiredAnnotation: {
         label: 'Required Annotation',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `key=${d.key}` : '';
             const value = d.value ? `value=${d.value}` : '';
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments missing the required annotation ${key}${comma}${value}`;
-        }
+        },
     },
     volumePolicy: {
         label: 'Volume Policy',
-        formatValue: d => {
+        formatValue: (d) => {
             const output = [];
             if (d.name) {
                 output.push(`Name: ${d.name}`);
@@ -256,83 +205,83 @@ const fieldsMap = {
             }
             output.push(d.readOnly ? 'Writable: No' : 'Writable: Yes');
             return output.join(', ');
-        }
+        },
     },
     portPolicy: {
         label: 'Port',
-        formatValue: d => {
+        formatValue: (d) => {
             const protocol = d.protocol ? `${d.protocol} ` : '';
             const port = d.port ? d.port : '';
             return `${protocol}${port}`;
-        }
+        },
     },
     dropCapabilities: {
         label: 'Drop Capabilities',
-        formatValue: d => d.join(', ')
+        formatValue: (d) => d.join(', '),
     },
     addCapabilities: {
         label: 'Add Capabilities',
-        formatValue: d => d.join(', ')
+        formatValue: (d) => d.join(', '),
     },
     privileged: {
         label: 'Privileged',
-        formatValue: d => (d === true ? 'Yes' : 'No')
+        formatValue: (d) => (d === true ? 'Yes' : 'No'),
     },
     readOnlyRootFs: {
         label: 'Read Only Root Filesystem',
-        formatValue: d => (d === true ? 'Yes' : 'Not Enabled')
+        formatValue: (d) => (d === true ? 'Yes' : 'Not Enabled'),
     },
     containerResourcePolicy: {
         label: 'Container Resources',
-        formatValue: formatResources
+        formatValue: formatResources,
     },
     processPolicy: {
         label: 'Process Execution',
-        formatValue: d => {
+        formatValue: (d) => {
             const name = d.name ? `Process matches name "${d.name}"` : 'Process';
             const args = d.args ? `and matches args "${d.args}"` : '';
             const ancestor = d.ancestor ? `and has ancestor matching "${d.ancestor}"` : '';
             const uid = d.uid ? `with uid ${d.uid}` : ``;
             return `${name} ${args} ${ancestor} ${uid}`;
-        }
+        },
     },
     portExposurePolicy: {
         label: 'Port Exposure',
-        formatValue: d => {
-            const output = d.exposureLevels.map(element => portExposureLabels[element]);
+        formatValue: (d) => {
+            const output = d.exposureLevels.map((element) => portExposureLabels[element]);
             return output.join(', ');
-        }
+        },
     },
     hostMountPolicy: {
         label: 'Host Mount Policy',
-        formatValue: d => (d.readOnly ? 'Not Enabled' : 'Writable: Yes')
+        formatValue: (d) => (d.readOnly ? 'Not Enabled' : 'Writable: Yes'),
     },
     whitelistEnabled: {
         label: 'Whitelists Enabled',
-        formatValue: d => (d ? 'Yes' : 'No')
+        formatValue: (d) => (d ? 'Yes' : 'No'),
     },
     permissionPolicy: {
         label: 'Minimum RBAC Permissions',
-        formatValue: d => rbacPermissionLabels[d.permissionLevel]
+        formatValue: (d) => rbacPermissionLabels[d.permissionLevel],
     },
     requiredImageLabel: {
         label: 'Required Image Label',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `key=${d.key}` : '';
             const value = d.value ? `value=${d.value}` : '';
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments with images missing the required label ${key}${comma}${value}`;
-        }
+        },
     },
     disallowedImageLabel: {
         label: 'Disallowed Image Label',
-        formatValue: d => {
+        formatValue: (d) => {
             const key = d.key ? `key=${d.key}` : '';
             const value = d.value ? `value=${d.value}` : '';
             const comma = d.key && d.value ? ', ' : '';
             return `Alerts on deployments with disallowed image label ${key}${comma}${value}`;
-        }
-    }
+        },
+    },
 };
 
 export default fieldsMap;

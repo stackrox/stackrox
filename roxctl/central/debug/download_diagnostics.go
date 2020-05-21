@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 )
 
@@ -23,10 +24,10 @@ func DownloadDiagnosticsCommand() *cobra.Command {
 		Use:   "download-diagnostics",
 		Short: `downloads a bundle with extended diagnostic information`,
 		Long:  `downloads a bundle with extended diagnostic information`,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			fmt.Fprintln(os.Stderr, "Downloading diagnostic bundle...")
 			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir)
-		},
+		}),
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "output directory in which to store bundle")

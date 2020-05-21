@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -210,10 +209,6 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	responseType := "id_token"
 	clientSecret := config[clientSecretConfigKey]
 	if clientSecret != "" {
-		if !features.RefreshTokens.Enabled() {
-			return nil, errors.New("setting a client secret is not supported yet")
-		}
-
 		if mode != "post" {
 			return nil, errors.Errorf("mode %q cannot be used with a client secret", mode)
 		}
@@ -232,7 +227,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		Endpoint:     oidcProvider.Endpoint(),
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
-	if features.RefreshTokens.Enabled() && clientSecret != "" && provider.SupportsScope(oidc.ScopeOfflineAccess) {
+	if clientSecret != "" && provider.SupportsScope(oidc.ScopeOfflineAccess) {
 		p.baseOauthConfig.Scopes = append(p.baseOauthConfig.Scopes, oidc.ScopeOfflineAccess)
 	}
 

@@ -26,12 +26,12 @@ class Graph extends Component {
         networkEdgeMap: PropTypes.shape({}),
 
         networkPolicyGraph: PropTypes.shape({
-            nodes: PropTypes.arrayOf(PropTypes.shape({}))
+            nodes: PropTypes.arrayOf(PropTypes.shape({})),
         }).isRequired,
         networkPolicyGraphState: PropTypes.string.isRequired,
 
         networkFlowGraph: PropTypes.shape({
-            nodes: PropTypes.arrayOf(PropTypes.shape({}))
+            nodes: PropTypes.arrayOf(PropTypes.shape({})),
         }),
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
@@ -44,12 +44,12 @@ class Graph extends Component {
         openWizard: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
 
-        isLoading: PropTypes.bool.isRequired
+        isLoading: PropTypes.bool.isRequired,
     };
 
     static defaultProps = {
         networkEdgeMap: null,
-        networkFlowGraph: null
+        networkFlowGraph: null,
     };
 
     shouldComponentUpdate(nextProps) {
@@ -58,7 +58,7 @@ class Graph extends Component {
             filterState,
             isLoading,
             wizardOpen,
-            networkEdgeMap
+            networkEdgeMap,
         } = this.props;
         return (
             !networkEdgeMap ||
@@ -77,14 +77,14 @@ class Graph extends Component {
         return simulatorOn;
     };
 
-    onNamespaceClick = namespace => {
+    onNamespaceClick = (namespace) => {
         if (this.isSimulatorOn()) return;
         this.props.setSelectedNamespace(namespace);
         this.props.setWizardStage(wizardStages.namespaceDetails);
         this.props.openWizard();
     };
 
-    onNodeClick = node => {
+    onNodeClick = (node) => {
         if (this.isSimulatorOn()) return;
         this.props.setSelectedNode(node);
         this.props.fetchDeployment(node.deploymentId);
@@ -93,7 +93,7 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = simulatorOn => {
+    renderGraph = (simulatorOn) => {
         // If we have more than 1100 nodes, display a message instead of the graph.
         const { networkPolicyGraph, networkFlowGraph } = this.props;
         const { nodes: allowedNodes } = networkPolicyGraph;
@@ -163,7 +163,7 @@ const mapStateToProps = createStructuredSelector({
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
     networkFlowGraphState: selectors.getNetworkFlowGraphState,
 
-    isLoading: selectors.getNetworkGraphLoading
+    isLoading: selectors.getNetworkGraphLoading,
 });
 
 const mapDispatchToProps = {
@@ -176,10 +176,7 @@ const mapDispatchToProps = {
     setWizardStage: wizardActions.setNetworkWizardStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setNetworkGraphLoading: graphActions.setNetworkGraphLoading,
-    closeWizard: pageActions.closeNetworkWizard
+    closeWizard: pageActions.closeNetworkWizard,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Graph);
+export default connect(mapStateToProps, mapDispatchToProps)(Graph);

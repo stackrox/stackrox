@@ -1,15 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const flattenPermissions = scopedPermissions => {
+const flattenPermissions = (scopedPermissions) => {
     let permissions = [];
-    scopedPermissions.forEach(datum => {
+    scopedPermissions.forEach((datum) => {
         permissions = [...permissions, ...datum.permissions];
     });
     return permissions;
 };
 
-const createPermissionCountsMapping = permissions => {
+const createPermissionCountsMapping = (permissions) => {
     const permissionsMap = permissions.reduce((acc, curr) => {
         acc[curr.key] = [...(acc[curr.key] || []), ...curr.values];
         return acc;
@@ -17,18 +17,18 @@ const createPermissionCountsMapping = permissions => {
     return permissionsMap;
 };
 
-const getPermissionKey = key => {
+const getPermissionKey = (key) => {
     if (key === '*') return 'all';
     return key;
 };
 
-const getPermissionValues = values => {
+const getPermissionValues = (values) => {
     if (!values || !values.length) return '';
     if (values.length > 1) return `(${values.length})`;
     return values[0];
 };
 
-const getPermissionCounts = scopedPermissions => {
+const getPermissionCounts = (scopedPermissions) => {
     if (!scopedPermissions.length) return 'No Permissions';
     const permissions = flattenPermissions(scopedPermissions);
     const permissionsMap = createPermissionCountsMapping(permissions);
@@ -55,11 +55,11 @@ PermissionCounts.propTypes = {
             permissions: PropTypes.arrayOf(
                 PropTypes.shape({
                     key: PropTypes.string.isRequired,
-                    values: PropTypes.arrayOf(PropTypes.string)
+                    values: PropTypes.arrayOf(PropTypes.string),
                 })
-            )
+            ),
         })
-    ).isRequired
+    ).isRequired,
 };
 
 export default PermissionCounts;

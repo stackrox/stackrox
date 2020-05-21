@@ -9,7 +9,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import dateFns from 'date-fns';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-const renderMoreButton = deployments => {
+const renderMoreButton = (deployments) => {
     if (!deployments.length) return null;
     return (
         <Link to="/main/risk" className="no-underline">
@@ -23,13 +23,13 @@ const renderMoreButton = deployments => {
     );
 };
 
-const renderDeploymentsList = deployments => {
+const renderDeploymentsList = (deployments) => {
     if (!deployments.length) {
         return (
             <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
         );
     }
-    const list = deployments.map(deployment => (
+    const list = deployments.map((deployment) => (
         <li key={deployment.id}>
             <Link
                 to={`/main/risk/${deployment.id}`}
@@ -72,26 +72,20 @@ const TopRiskyDeployments = ({ deployments }) => {
 TopRiskyDeployments.propTypes = {
     deployments: PropTypes.arrayOf(
         PropTypes.shape({
-            deployment: PropTypes.shape({})
+            deployment: PropTypes.shape({}),
         })
-    ).isRequired
+    ).isRequired,
 };
 
-const getTopRiskyDeployments = createSelector(
-    [selectors.getFilteredDeployments],
-    deployments => {
-        const deploymentsOnly = deployments.map(
-            deploymentWithProcessInfo => deploymentWithProcessInfo.deployment
-        );
-        return deploymentsOnly.sort((a, b) => a.priority - b.priority).slice(0, 5);
-    }
-);
-
-const mapStateToProps = createStructuredSelector({
-    deployments: getTopRiskyDeployments
+const getTopRiskyDeployments = createSelector([selectors.getFilteredDeployments], (deployments) => {
+    const deploymentsOnly = deployments.map(
+        (deploymentWithProcessInfo) => deploymentWithProcessInfo.deployment
+    );
+    return deploymentsOnly.sort((a, b) => a.priority - b.priority).slice(0, 5);
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(TopRiskyDeployments);
+const mapStateToProps = createStructuredSelector({
+    deployments: getTopRiskyDeployments,
+});
+
+export default connect(mapStateToProps, null)(TopRiskyDeployments);

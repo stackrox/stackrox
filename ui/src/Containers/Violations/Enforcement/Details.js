@@ -41,9 +41,9 @@ EnforcementDetails.propTypes = {
         processViolation: PropTypes.shape({}),
         enforcement: PropTypes.shape({}),
         policy: PropTypes.shape({
-            id: PropTypes.string.isRequired
-        }).isRequired
-    }).isRequired
+            id: PropTypes.string.isRequired,
+        }).isRequired,
+    }).isRequired,
 };
 
 export default EnforcementDetails;

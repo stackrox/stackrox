@@ -27,7 +27,7 @@ const entityComponentMap = {
     [entityTypes.SECRET]: Secrets,
     [entityTypes.ROLE]: Roles,
     [entityTypes.POLICY]: Policies,
-    [entityTypes.CONTROL]: CISControls
+    [entityTypes.CONTROL]: CISControls,
 };
 
 const EntityList = ({ entityListType, entityId, ...rest }) => {
@@ -38,11 +38,11 @@ const EntityList = ({ entityListType, entityId, ...rest }) => {
 
 EntityList.propTypes = {
     entityListType: PropTypes.string.isRequired,
-    entityId: PropTypes.string
+    entityId: PropTypes.string,
 };
 
 EntityList.defaultProps = {
-    entityId: null
+    entityId: null,
 };
 
 export default withRouter(EntityList);

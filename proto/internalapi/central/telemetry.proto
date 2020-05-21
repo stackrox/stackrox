@@ -5,6 +5,9 @@ option go_package = "central";
 package central;
 
 
+message CancelPullTelemetryDataRequest {
+    string request_id = 1;
+}
 
 message PullTelemetryDataRequest {
     enum TelemetryDataType {
@@ -15,6 +18,7 @@ message PullTelemetryDataRequest {
 
     string request_id           = 1;
     TelemetryDataType data_type = 2;
+    int64 timeout_ms            = 3;
 }
 
 message TelemetryResponsePayload {

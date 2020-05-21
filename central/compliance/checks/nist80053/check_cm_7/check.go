@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -16,17 +17,6 @@ For this control, StackRox validates that at least one policy is enabled and enf
   1) port exposure or service exposure level, and
   2) runtime behavior.`
 )
-
-func isPortExposeOrExposureLevelPolicy(p *storage.Policy) bool {
-	if p.GetFields().GetPortPolicy() != nil {
-		return true
-	}
-	if len(p.GetFields().GetPortExposurePolicy().GetExposureLevels()) > 0 {
-		return true
-	}
-
-	return false
-}
 
 func init() {
 	framework.MustRegisterNewCheck(
@@ -43,7 +33,7 @@ func init() {
 				if !common.IsPolicyEnabled(p) || !common.IsPolicyEnforced(p) {
 					continue
 				}
-				if portExposePolicy == "" && isPortExposeOrExposureLevelPolicy(p) {
+				if portExposePolicy == "" && policyfields.ContainsPortOrPortExposureFields(p) {
 					portExposePolicy = name
 				}
 				if runtimePolicy == "" && common.PolicyIsInLifecycleStage(p, storage.LifecycleStage_RUNTIME) {

@@ -48,8 +48,8 @@ var (
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
 			whitelist: set.NewStringSet(
-				"github.com/stackrox/rox/pkg/bolthelper/" +
-					"crud/proto",
+				"github.com/stackrox/rox/pkg/bolthelper/crud/proto",
+				"github.com/stackrox/rox/sensor/kubernetes/fake/copied",
 			),
 		},
 		"github.com/magiconair/properties/assert": {
@@ -171,7 +171,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	// Please be VERY prudent about adding to this list, since everything that's added to this list
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
-		allowedPackages = append(allowedPackages, "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes")
+		allowedPackages = append(allowedPackages, "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes")
 	}
 
 	// Allow central and roxctl to import "image" (for fixtures)

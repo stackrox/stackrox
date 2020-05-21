@@ -26,6 +26,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.Comparator
 import io.stackrox.proto.storage.PolicyOuterClass.VolumePolicy
 import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import groups.BAT
+import groups.SMOKE
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.ClusterService
@@ -40,8 +41,8 @@ class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
     static final private String DEPLOYMENT_RBAC = "deployment-rbac"
     static final private String SERVICE_ACCOUNT_NAME = "policy-config-sa"
-    static final private String BUSYBOX_LATEST_WITH_DIGEST_NAME = "busybox-1-31-with-tag-and-digest"
-    static final private String BUSYBOX_LATEST_NAME = "busybox-latest"
+    static final private String NGINX_LATEST_WITH_DIGEST_NAME = "nginx-1-17-with-tag-and-digest"
+    static final private String NGINX_LATEST_NAME = "nginx-latest"
     private static final String CLUSTER_ROLE_NAME = "policy-config-role"
 
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
@@ -106,14 +107,14 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setSkipReplicaWait(true),
     ]
 
-    static final private Deployment BUSYBOX_WITH_DIGEST = new Deployment()
-            .setName(BUSYBOX_LATEST_WITH_DIGEST_NAME)
-            .setImage("busybox:1.31@sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+    static final private Deployment NGINX_WITH_DIGEST = new Deployment()
+            .setName(NGINX_LATEST_WITH_DIGEST_NAME)
+            .setImage("nginx:1.17@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
             .setCommand(["sleep", "60000"])
 
-    static final private Deployment BUSYBOX_LATEST = new Deployment()
-            .setName(BUSYBOX_LATEST_NAME)
-            .setImage("busybox:latest@sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+    static final private Deployment NGINX_LATEST = new Deployment()
+            .setName(NGINX_LATEST_NAME)
+            .setImage("nginx:latest@sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
             .setCommand(["sleep", "60000"])
 
     static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
@@ -145,30 +146,30 @@ class PolicyConfigurationTest extends BaseSpecification {
     def "Verify name violations with same ID as existing image are still triggered"() {
         given:
         "Create a busybox deployment has same ID as latest"
-        orchestrator.createDeployment(BUSYBOX_WITH_DIGEST)
+        orchestrator.createDeployment(NGINX_WITH_DIGEST)
 
         when:
         Timer t = new Timer(60, 1)
         def image
         while (image == null && t.IsValid()) {
-            image = ImageService.getImage("sha256:b26cd013274a657b86e706210ddd5cc1f82f50155791199d29b9e86e935ce135")
+            image = ImageService.getImage("sha256:86ae264c3f4acb99b2dee4d0098c40cb8c46dcf9e1148f05d3a51c4df6758c12")
         }
         assert image != null
 
         and:
         "Run busybox latest with same digest as previous image"
-        orchestrator.createDeployment(BUSYBOX_LATEST)
+        orchestrator.createDeployment(NGINX_LATEST)
 
         then:
         "Ensure that the latest tag violation shows up"
-        def hasViolation = waitForViolation(BUSYBOX_LATEST_NAME, "Latest Tag")
+        def hasViolation = waitForViolation(NGINX_LATEST_NAME, "Latest Tag")
         println "Has violation ${hasViolation}"
         assert hasViolation
 
         cleanup:
         "Remove the deployments"
-        orchestrator.deleteDeployment(BUSYBOX_WITH_DIGEST)
-        orchestrator.deleteDeployment(BUSYBOX_LATEST)
+        orchestrator.deleteDeployment(NGINX_WITH_DIGEST)
+        orchestrator.deleteDeployment(NGINX_LATEST)
     }
 
     @Category(BAT)
@@ -204,7 +205,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Category([BAT, SMOKE])
     def "Verify policy configuration #policyName can be triggered"() {
         when:
         "Create a Policy"
@@ -296,7 +297,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                                 .setLineRule(DockerfileLineRuleField.newBuilder()
-                                        .setValue("apt-get")
+                                        .setValue("apt-get.*")
                                         .setInstruction("RUN")
                                         .build()))
                         .build()                       | DEPLOYMENTNGINX

@@ -18,7 +18,7 @@ import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import EntityList from '../List/EntityList';
@@ -29,7 +29,7 @@ const SecretDataMetadata = ({ metadata }) => {
     const {
         commonName: issuerCommonName = 'N/A',
         names: issuerNames,
-        organizationUnit = 'N/A'
+        organizationUnit = 'N/A',
     } = issuer;
     const { commonName: subjectCommonName = 'N/A', names: subjectNames } = subject;
     return (
@@ -97,11 +97,11 @@ const SecretDataMetadata = ({ metadata }) => {
 };
 
 SecretDataMetadata.propTypes = {
-    metadata: PropTypes.shape()
+    metadata: PropTypes.shape(),
 };
 
 SecretDataMetadata.defaultProps = {
-    metadata: null
+    metadata: null,
 };
 
 const SecretValues = ({ files }) => {
@@ -139,7 +139,7 @@ const SecretValues = ({ files }) => {
 };
 
 SecretValues.propTypes = {
-    files: PropTypes.arrayOf(PropTypes.shape).isRequired
+    files: PropTypes.arrayOf(PropTypes.shape).isRequired,
 };
 
 const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
@@ -150,8 +150,8 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Lifecycle Stage': 'DEPLOY'
-        })
+            'Lifecycle Stage': 'DEPLOY',
+        }),
     };
 
     const defaultQuery = gql`
@@ -247,14 +247,14 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                     deploymentCount,
                     clusterName,
                     clusterId,
-                    files = []
+                    files = [],
                 } = secret;
 
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
-                    }
+                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+                    },
                 ];
 
                 return (

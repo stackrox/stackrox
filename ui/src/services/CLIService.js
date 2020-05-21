@@ -15,6 +15,6 @@ export default function downloadCLI(type) {
     return saveFile({
         method: 'get',
         url: `/api/cli/download/roxctl-${suffix}`,
-        name
+        name,
     });
 }

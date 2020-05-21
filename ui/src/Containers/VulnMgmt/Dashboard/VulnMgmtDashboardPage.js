@@ -25,7 +25,7 @@ const entityMenuTypes = [
     entityTypes.NAMESPACE,
     entityTypes.DEPLOYMENT,
     entityTypes.IMAGE,
-    entityTypes.COMPONENT
+    entityTypes.COMPONENT,
 ];
 
 const VulnDashboardPage = ({ history }) => {
@@ -34,22 +34,22 @@ const VulnDashboardPage = ({ history }) => {
 
     const cveFilterButtons = [
         {
-            text: 'Fixable'
+            text: 'Fixable',
         },
         {
-            text: 'All'
-        }
+            text: 'All',
+        },
     ];
 
     function handleCveFilterToggle(value) {
-        const selectedOption = cveFilterButtons.find(button => button.text === value);
+        const selectedOption = cveFilterButtons.find((button) => button.text === value);
         const newValue = selectedOption.text || 'All';
 
         let targetUrl;
         if (newValue === 'Fixable') {
             targetUrl = workflowState
                 .setSearch({
-                    Fixable: 'true'
+                    Fixable: 'true',
                 })
                 .toUrl();
         } else {
@@ -122,7 +122,7 @@ const VulnDashboardPage = ({ history }) => {
 };
 
 VulnDashboardPage.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default withRouter(VulnDashboardPage);

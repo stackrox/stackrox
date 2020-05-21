@@ -14,13 +14,13 @@ export const renderListAndSidePanel = (entity, entityName = null) => {
     cy.get(configManagementSelectors.widgets, { timeout: 7000 });
 };
 
-export const navigateToSingleEntityPage = entity => {
+export const navigateToSingleEntityPage = (entity) => {
     cy.get(configManagementSelectors.externalLink).click();
     cy.url().should('contain', url.single[entity]);
 };
 
-export const hasCountWidgetsFor = entities => {
-    entities.forEach(entity => {
+export const hasCountWidgetsFor = (entities) => {
+    entities.forEach((entity) => {
         cy.get(`${configManagementSelectors.countWidgetTitle}:contains('${entity}')`);
     });
 };
@@ -47,7 +47,7 @@ export const clickOnEntityWidget = (entity, type) => {
     cy.get(`${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(entity)}')`)
         .find(configManagementSelectors.relatedEntityWidgetValue)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             cy.get(
                 `${configManagementSelectors.relatedEntityWidgets}:contains('${capitalize(
                     entity
@@ -84,7 +84,7 @@ export const clickOnSingleEntity = (entity, subEntity) => {
         .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
         .eq(0)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             cy.get(configManagementSelectors.tableRows)
                 .find(`${configManagementSelectors.tableCells} a[href*='/${subEntity}']`)
                 .eq(0)
@@ -96,15 +96,13 @@ export const clickOnSingleEntity = (entity, subEntity) => {
         });
 };
 
-export const hasTabsFor = entities => {
-    entities.forEach(entity => {
-        cy.get(configManagementSelectors.groupedTabs)
-            .find('div')
-            .contains(entity);
+export const hasTabsFor = (entities) => {
+    entities.forEach((entity) => {
+        cy.get(configManagementSelectors.groupedTabs).find('div').contains(entity);
     });
 };
 
-export const hasRelatedEntityFor = entity => {
+export const hasRelatedEntityFor = (entity) => {
     cy.get(`${configManagementSelectors.relatedEntityWidgetTitle}:contains('${entity}')`);
 };
 
@@ -113,7 +111,7 @@ const entityCountMatchesTableRows = (listEntity, context) => {
     cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
         .find(configManagementSelectors.countWidgetValue)
         .invoke('text')
-        .then(count => {
+        .then((count) => {
             if (count === '0') return;
             cy.get(`${configManagementSelectors.countWidgets}:contains('${listEntity}')`)
                 .find('button')
@@ -123,32 +121,30 @@ const entityCountMatchesTableRows = (listEntity, context) => {
             cy.get(`${contextSelector} .rt-tr-group`);
             cy.get(`${contextSelector} [data-testid="panel-header"]`)
                 .invoke('text')
-                .then(panelHeaderText => {
+                .then((panelHeaderText) => {
                     expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(count, 10));
                 });
         });
 };
 
-export const pageEntityCountMatchesTableRows = listEntity => {
+export const pageEntityCountMatchesTableRows = (listEntity) => {
     entityCountMatchesTableRows(listEntity, 'Page');
 };
 
-export const sidePanelEntityCountMatchesTableRows = listEntity => {
+export const sidePanelEntityCountMatchesTableRows = (listEntity) => {
     entityCountMatchesTableRows(listEntity, 'Side Panel');
 };
 
-export const entityListCountMatchesTableLinkCount = entities => {
+export const entityListCountMatchesTableLinkCount = (entities) => {
     cy.get(configManagementSelectors.tableLinks)
         .contains(entities)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             const numEntities = parseInt(value, 10);
-            cy.get(configManagementSelectors.tableLinks)
-                .contains(entities)
-                .click();
+            cy.get(configManagementSelectors.tableLinks).contains(entities).click();
             cy.get('[data-testid="side-panel"] [data-testid="panel-header"]')
                 .invoke('text')
-                .then(panelHeaderText => {
+                .then((panelHeaderText) => {
                     expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numEntities, 10));
                 });
         });

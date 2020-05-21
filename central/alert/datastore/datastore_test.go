@@ -126,7 +126,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts_Error() {
 
 func (s *alertDataStoreTestSuite) TestAddAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().UpsertAlert(fakeAlert).Return(nil)
+	s.storage.EXPECT().Upsert(fakeAlert).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Return(errFake)
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
@@ -137,7 +137,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 
 func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().UpsertAlert(fakeAlert).Return(errFake)
+	s.storage.EXPECT().Upsert(fakeAlert).Return(errFake)
 
 	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alerttest.NewFakeAlert())
 	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
@@ -148,8 +148,8 @@ func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().UpsertAlert(gomock.Any()).Return(nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Upsert(gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlert.GetId()).Return(nil)
 
@@ -163,7 +163,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenStorageFails() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, errFake)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, false, errFake)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
 
@@ -173,7 +173,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenStorageFails() {
 func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenTheAlertWasNotFoundInStorage() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
 
@@ -183,7 +183,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenTheAlertWasNotFoundInSto
 func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
 
 	err := s.dataStore.MarkAlertStale(s.hasWriteCtx, alerttest.FakeAlertID)
 
@@ -236,7 +236,7 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 }
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
-	s.storage.EXPECT().UpsertAlert(alerttest.NewFakeAlert()).Times(0)
+	s.storage.EXPECT().Upsert(alerttest.NewFakeAlert()).Times(0)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(alerttest.NewFakeAlert())).Times(0)
 
 	err := s.dataStore.UpsertAlert(s.hasReadCtx, alerttest.NewFakeAlert())
@@ -247,8 +247,8 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertEnforced() {
 func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
 
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	s.storage.EXPECT().UpsertAlert(gomock.Any()).Times(0)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Upsert(gomock.Any()).Times(0)
 	s.indexer.EXPECT().AddListAlert(gomock.Any()).Times(0)
 
 	err := s.dataStore.MarkAlertStale(s.hasReadCtx, alerttest.FakeAlertID)
@@ -259,7 +259,7 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleEnforced() {
 
 func (s *alertDataStoreTestSuite) TestGetAlertCommentsAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	fakeComment := alerttest.NewFakeAlertComment()
 	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
 
@@ -269,7 +269,7 @@ func (s *alertDataStoreTestSuite) TestGetAlertCommentsAllowed() {
 
 func (s *alertDataStoreWithSACTestSuite) TestGetAlertCommentsEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	fakeComment := alerttest.NewFakeAlertComment()
 	s.commentsStorage.EXPECT().GetCommentsForAlert(alerttest.FakeAlertID).Return([]*storage.Comment{fakeComment}, nil)
 
@@ -280,7 +280,7 @@ func (s *alertDataStoreWithSACTestSuite) TestGetAlertCommentsEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
 
 	_, err := s.dataStore.AddAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
@@ -289,7 +289,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddCommentAllowed() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().AddAlertComment(alerttest.NewFakeAlertComment())
 
 	_, err := s.dataStore.AddAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
@@ -298,9 +298,9 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertCommentEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestUpdateCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 
 	err := s.dataStore.UpdateAlertComment(s.hasWriteCtx, alerttest.NewFakeAlertComment())
@@ -313,14 +313,14 @@ func (s *alertDataStoreTestSuite) ctxWithUIDAndRole(ctx context.Context, userID,
 	identity.EXPECT().FullName().AnyTimes().Return(userID)
 	identity.EXPECT().FriendlyName().AnyTimes().Return(userID)
 	identity.EXPECT().User().AnyTimes().Return(nil)
-	identity.EXPECT().Role().AnyTimes().Return(role.DefaultRolesByName[roleName])
+	identity.EXPECT().Permissions().AnyTimes().Return(role.DefaultRolesByName[roleName])
 
 	return authn.ContextWithIdentity(ctx, identity, s.T())
 }
 
 func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil).AnyTimes()
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil).AnyTimes()
 	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(
 		&storage.Comment{User: &storage.Comment_User{Id: "1"}}, nil,
 	).AnyTimes()
@@ -347,7 +347,7 @@ func (s *alertDataStoreTestSuite) TestAlertAccessControl() {
 
 func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().UpdateAlertComment(alerttest.NewFakeAlertComment()).Return(nil)
 
 	err := s.dataStore.UpdateAlertComment(s.hasReadCtx, alerttest.NewFakeAlertComment())
@@ -356,9 +356,9 @@ func (s *alertDataStoreWithSACTestSuite) TestUpdateAlertCommentEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().GetComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(alerttest.NewFakeAlertComment(), nil)
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
 	err := s.dataStore.RemoveAlertComment(s.hasWriteCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
@@ -367,7 +367,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveCommentAllowed() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	s.commentsStorage.EXPECT().RemoveAlertComment(alerttest.FakeAlertID, alerttest.FakeCommentID).Return(nil)
 
 	err := s.dataStore.RemoveAlertComment(s.hasReadCtx, alerttest.FakeAlertID, alerttest.FakeCommentID)
@@ -376,9 +376,9 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertCommentEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
 	fakeAlertWithNoTags := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithNoTags, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithNoTags, true, nil)
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
-	s.storage.EXPECT().UpsertAlert(fakeAlertWithTwoTags).Return(nil)
+	s.storage.EXPECT().Upsert(fakeAlertWithTwoTags).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithTwoTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithTwoTags.GetId()).Return(nil)
 	expectedResponse := alerttest.NewFakeTwoTags()
@@ -390,9 +390,9 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed2() {
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
-	s.storage.EXPECT().UpsertAlert(fakeAlertWithThreeTags).Return(nil)
+	s.storage.EXPECT().Upsert(fakeAlertWithThreeTags).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithThreeTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithThreeTags.GetId()).Return(nil)
 	expectedResponse := alerttest.NewFakeThreeTags()
@@ -404,7 +404,7 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsAllowed2() {
 
 func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsEnforced() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 
 	_, err := s.dataStore.AddAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.EqualError(err, "permission denied")
@@ -412,9 +412,9 @@ func (s *alertDataStoreWithSACTestSuite) TestAddAlertTagsEnforced() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed() {
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 	fakeAlertWithNoTags := alerttest.NewFakeAlert()
-	s.storage.EXPECT().UpsertAlert(fakeAlertWithNoTags).Return(nil)
+	s.storage.EXPECT().Upsert(fakeAlertWithNoTags).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithNoTags)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithNoTags.GetId()).Return(nil)
 
@@ -424,9 +424,9 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed2() {
 	fakeAlertWithThreeTags := alerttest.NewFakeAlertWithThreeTags()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithThreeTags, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithThreeTags, true, nil)
 	fakeAlertWithOneTag := alerttest.NewFakeAlertWithOneTag()
-	s.storage.EXPECT().UpsertAlert(fakeAlertWithOneTag).Return(nil)
+	s.storage.EXPECT().Upsert(fakeAlertWithOneTag).Return(nil)
 	s.indexer.EXPECT().AddListAlert(convert.AlertToListAlert(fakeAlertWithOneTag)).Return(nil)
 	s.storage.EXPECT().AckKeysIndexed(fakeAlertWithOneTag.GetId()).Return(nil)
 
@@ -436,7 +436,7 @@ func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsAllowed2() {
 
 func (s *alertDataStoreWithSACTestSuite) TestRemoveAlertTagsEnforced() {
 	fakeAlertWithTwoTags := alerttest.NewFakeAlertWithTwoTags()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
+	s.storage.EXPECT().Get(alerttest.FakeAlertID).Return(fakeAlertWithTwoTags, true, nil)
 
 	err := s.dataStore.RemoveAlertTags(s.hasReadCtx, alerttest.FakeAlertID, alerttest.NewFakeTwoTags())
 	s.EqualError(err, "permission denied")
@@ -472,7 +472,7 @@ func (suite *AlertReindexSuite) TestReconciliationFullReindex() {
 
 	listAlerts := []*storage.ListAlert{alert1, alert2}
 
-	suite.storage.EXPECT().GetAlertIDs().Return([]string{"A", "B"}, nil)
+	suite.storage.EXPECT().GetIDs().Return([]string{"A", "B"}, nil)
 	suite.storage.EXPECT().GetListAlerts([]string{"A", "B"}).Return(listAlerts, nil, nil)
 	suite.indexer.EXPECT().AddListAlerts(listAlerts).Return(nil)
 

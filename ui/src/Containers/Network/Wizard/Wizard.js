@@ -29,11 +29,11 @@ function Wizard(props) {
 }
 
 Wizard.propTypes = {
-    wizardOpen: PropTypes.bool.isRequired
+    wizardOpen: PropTypes.bool.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardOpen: selectors.getNetworkWizardOpen
+    wizardOpen: selectors.getNetworkWizardOpen,
 });
 
 export default connect(mapStateToProps)(Wizard);

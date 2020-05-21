@@ -2,6 +2,7 @@ package index
 
 import (
 	"bytes"
+	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve"
@@ -9,18 +10,25 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
+	"github.com/stackrox/rox/pkg/search/options/processindicators"
 )
 
 const batchSize = 5000
 
 const resourceName = "Deployment"
 
+var (
+	log = logging.LoggerForModule()
+)
+
 type indexerImpl struct {
-	index bleve.Index
+	index        bleve.Index
+	processIndex bleve.Index
 }
 
 type deploymentWrapper struct {
@@ -103,5 +111,23 @@ func (b *indexerImpl) NeedsInitialIndexing() (bool, error) {
 
 func (b *indexerImpl) Search(q *v1.Query, opts ...blevesearch.SearchOption) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Deployment")
-	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, b.index, deployments.OptionsMap, opts...)
+
+	// Has process option
+	// if has process option
+	index := b.index
+	var hasProcessComponent bool
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		field, ok := deployments.OptionsMap.Get(matchFieldQuery.MatchFieldQuery.Field)
+		if ok && strings.HasPrefix(field.FieldPath, processindicators.ProcessPrefix) {
+			hasProcessComponent = true
+		}
+	})
+	if hasProcessComponent {
+		index = bleve.NewIndexAlias(b.index, b.processIndex)
+	}
+	return blevesearch.RunSearchRequest(v1.SearchCategory_DEPLOYMENTS, q, index, deployments.OptionsMap, opts...)
 }

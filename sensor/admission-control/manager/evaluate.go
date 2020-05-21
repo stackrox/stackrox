@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -112,6 +114,30 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	return false
 }
 
+// hasNonNoScanAlerts checks if the given alert slice contains any alerts that are NOT
+// due to the absence (or presence) of image scans.
+func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
+	for _, a := range alerts {
+		if !policyfields.ContainsUnscannedImageField(a.GetPolicy()) {
+			return true
+		}
+	}
+	return false
+}
+
+// filterOutNoScanAlerts removes all alerts from the given slice that are due to the absence
+// of image scans. The given slice is modified and should not be used afterwards.
+func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
+	filteredAlerts := alerts[:0]
+	for _, a := range alerts {
+		if policyfields.ContainsUnscannedImageField(a.GetPolicy()) {
+			continue
+		}
+		filteredAlerts = append(filteredAlerts, a)
+	}
+	return filteredAlerts
+}
+
 func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
 	log.Tracef("Evaluating request %+v", req)
 
@@ -162,7 +188,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	if fetchImgCtx != nil {
 		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
 	resultsLoop:
-		for len(alerts) == 0 && err == nil {
+		for !hasNonNoScanAlerts(alerts) && err == nil {
 			select {
 			case nextRes, ok := <-resultChan:
 				if !ok {
@@ -172,12 +198,15 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 					continue
 				}
 				images[nextRes.idx] = nextRes.img
+
 			case <-fetchImgCtx.Done():
 				break resultsLoop
 			}
 
 			alerts, err = s.detector.Detect(detectionCtx, deployment, images)
 		}
+	} else {
+		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
 	}
 
 	if err != nil {

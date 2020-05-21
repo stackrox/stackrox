@@ -4,7 +4,7 @@ import { url, selectors } from '../../constants/VulnManagementPage';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
-    allCVECheck
+    allCVECheck,
     // uncomment after the issue fix  - allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
 
@@ -27,9 +27,9 @@ describe('Deployments list Page and its entity detail page , (related entities) 
             'Deployment',
             'Policy Status',
             'Latest Violation',
-            'Risk Priority'
+            'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no failing policies' && columnValue.includes('polic'))
                 allChecksForEntities(url.list.deployments, 'Polic');

@@ -38,9 +38,9 @@ class AuthProviderService extends BaseService {
         }
     }
 
-    static createAuthProvider(String name, String type, Map<String, String> config) {
+    static createAuthProvider(String name, String type, Map<String, String> config, String defaultRole = null) {
         try {
-            return getAuthProviderService().postAuthProvider(
+            def authProviderId = getAuthProviderService().postAuthProvider(
                     AuthproviderService.PostAuthProviderRequest.newBuilder().setProvider(
                             AuthProviderOuterClass.AuthProvider.newBuilder()
                                     .setName(name)
@@ -49,6 +49,8 @@ class AuthProviderService extends BaseService {
                                     .setEnabled(true)
                     ).build()
             ).id
+
+            return authProviderId
         } catch (Exception e) {
             println "Failed to create auth provider: ${e.toString()}"
         }

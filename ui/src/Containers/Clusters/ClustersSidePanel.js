@@ -23,7 +23,7 @@ import {
     getUpgradeStatusDetail,
     newClusterDefault,
     parseUpgradeStatus,
-    wizardSteps
+    wizardSteps,
 } from './cluster.helpers';
 import CollapsibleCard from '../../Components/CollapsibleCard';
 
@@ -34,7 +34,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
         mainImage: metadata.releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
         collectorImage: metadata.releaseBuild
             ? 'collector.stackrox.io/collector'
-            : 'stackrox/collector'
+            : 'stackrox/collector',
     };
 
     const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
@@ -62,7 +62,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
                 setMessageState(null);
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(clusterIdToRetrieve)
-                    .then(cluster => {
+                    .then((cluster) => {
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);
 
@@ -79,7 +79,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
                         setMessageState({
                             blocking: true,
                             type: 'error',
-                            message: 'There was an error downloading the configuration files.'
+                            message: 'There was an error downloading the configuration files.',
                         });
                     });
             }
@@ -115,7 +115,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
 
     function onClusterTypeChange(newClusterType) {
         if (
-            clusterTypeOptions.find(value => value === newClusterType) !== undefined &&
+            clusterTypeOptions.find((value) => value === newClusterType) !== undefined &&
             selectedCluster.type !== newClusterType
         ) {
             const newClusterSettings = { ...selectedCluster, type: newClusterType.value };
@@ -128,7 +128,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
         if (wizardStep === wizardSteps.FORM) {
             setSubmissionError('');
             saveCluster(selectedCluster)
-                .then(response => {
+                .then((response) => {
                     const newId = response.response.result.cluster; // really is nested like this
                     const clusterWithId = { ...selectedCluster, id: newId };
                     setSelectedCluster(clusterWithId);
@@ -145,7 +145,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
                         setPollingDelay(clusterDetailPollingInterval);
                     }
                 })
-                .catch(error => {
+                .catch((error) => {
                     const serverError = get(
                         error,
                         'response.data.message',
@@ -165,7 +165,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
 
     function onDownload() {
         setSubmissionError('');
-        downloadClusterYaml(selectedCluster.id, createUpgraderSA).catch(error => {
+        downloadClusterYaml(selectedCluster.id, createUpgraderSA).catch((error) => {
             const serverError = get(
                 error,
                 'response.data.message',
@@ -286,16 +286,16 @@ ClustersSidePanel.propTypes = {
         .isRequired,
     setSelectedClusterId: PropTypes.func.isRequired,
     selectedClusterId: PropTypes.string,
-    upgradeStatus: PropTypes.shape({})
+    upgradeStatus: PropTypes.shape({}),
 };
 
 ClustersSidePanel.defaultProps = {
     selectedClusterId: '',
-    upgradeStatus: null
+    upgradeStatus: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    metadata: selectors.getMetadata
+    metadata: selectors.getMetadata,
 });
 
 export default connect(mapStateToProps)(ClustersSidePanel);

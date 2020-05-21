@@ -8,7 +8,7 @@ import wizardStages from '../../wizardStages';
 class GenerateButton extends Component {
     static propTypes = {
         setWizardStage: PropTypes.func.isRequired,
-        requestNetworkPolicyModification: PropTypes.func.isRequired
+        requestNetworkPolicyModification: PropTypes.func.isRequired,
     };
 
     onClick = () => {
@@ -33,10 +33,7 @@ class GenerateButton extends Component {
 
 const mapDispatchToProps = {
     setWizardStage: wizardActions.setNetworkWizardStage,
-    requestNetworkPolicyModification: wizardActions.generateNetworkPolicyModification
+    requestNetworkPolicyModification: wizardActions.generateNetworkPolicyModification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(GenerateButton);
+export default connect(null, mapDispatchToProps)(GenerateButton);

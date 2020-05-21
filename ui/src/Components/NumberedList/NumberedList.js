@@ -86,15 +86,15 @@ NumberedList.propTypes = {
             text: PropTypes.string.isRequired,
             subText: PropTypes.string,
             components: PropTypes.element,
-            url: PropTypes.string
+            url: PropTypes.string,
         })
     ),
-    linkLeftOnly: PropTypes.bool
+    linkLeftOnly: PropTypes.bool,
 };
 
 NumberedList.defaultProps = {
     data: [],
-    linkLeftOnly: false
+    linkLeftOnly: false,
 };
 
 export default NumberedList;

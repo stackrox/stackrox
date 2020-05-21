@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -55,7 +53,7 @@ func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(ctx context.Context, clu
 	if _, ok := f.values[clusterID]; !ok {
 		return errors.Errorf("WRITE TO UNEXPECTED ID %s", clusterID)
 	}
-	f.values[clusterID] = proto.Clone(status).(*storage.ClusterUpgradeStatus)
+	f.values[clusterID] = status.Clone()
 	return nil
 }
 
@@ -89,7 +87,7 @@ func (r *recordingInjector) InjectMessage(ctx concurrency.Waitable, msg *central
 	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.triggers = append(r.triggers, protoutils.CloneCentralSensorUpgradeTrigger(msg.GetSensorUpgradeTrigger()))
+	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().Clone())
 	return nil
 }
 

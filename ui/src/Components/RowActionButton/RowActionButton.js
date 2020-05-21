@@ -23,13 +23,13 @@ RowActionButton.propTypes = {
     border: PropTypes.string,
     className: PropTypes.string,
     onClick: PropTypes.func.isRequired,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 RowActionButton.defaultProps = {
     className: 'hover:bg-primary-200 text-primary-600 hover:text-primary-700',
     border: '',
-    dataTestId: ''
+    dataTestId: '',
 };
 
 export default RowActionButton;

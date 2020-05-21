@@ -13,7 +13,7 @@ import Rules from 'Containers/ConfigManagement/Entity/widgets/Rules';
 import RulePermissions from 'Containers/ConfigManagement/Entity/widgets/RulePermissions';
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
@@ -26,7 +26,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam]),
     };
 
     const defaultQuery = gql`
@@ -93,7 +93,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                 if (!clusters || !clusters.length)
                     return <PageNotFound resourceType={entityTypes.ROLE} />;
 
-                const { k8srole: entity } = clusters.find(cluster => cluster.k8srole);
+                const { k8srole: entity } = clusters.find((cluster) => cluster.k8srole);
 
                 if (entityListType) {
                     return (
@@ -117,7 +117,7 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                     annotations = [],
                     rules,
                     clusterName,
-                    clusterId
+                    clusterId,
                 } = entity;
 
                 let namespaceName;
@@ -131,8 +131,8 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
                     { key: 'Role Type', value: type },
                     {
                         key: 'Created',
-                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
-                    }
+                        value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
+                    },
                 ];
 
                 return (

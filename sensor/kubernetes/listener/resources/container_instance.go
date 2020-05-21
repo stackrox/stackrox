@@ -3,7 +3,6 @@ package resources
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
@@ -33,24 +32,23 @@ func containerInstances(pod *corev1.Pod) []*storage.ContainerInstance {
 			}
 			result[i].Started = startTime
 		}
-		if features.PodDeploymentSeparation.Enabled() {
-			result[i].ContainerName = c.Name
 
-			// Track terminated containers.
-			if terminated := c.State.Terminated; terminated != nil {
-				startTime, err := types.TimestampProto(terminated.StartedAt.Time)
-				if err != nil {
-					log.Errorf("converting start time from Kubernetes (%v) to proto: %v", terminated.StartedAt.Time, err)
-				}
-				endTime, err := types.TimestampProto(terminated.FinishedAt.Time)
-				if err != nil {
-					log.Errorf("converting finish time from Kubernetes (%v) to proto: %v", terminated.FinishedAt.Time, err)
-				}
-				result[i].Started = startTime
-				result[i].Finished = endTime
-				result[i].ExitCode = terminated.ExitCode
-				result[i].TerminationReason = terminated.Reason
+		result[i].ContainerName = c.Name
+
+		// Track terminated containers.
+		if terminated := c.State.Terminated; terminated != nil {
+			startTime, err := types.TimestampProto(terminated.StartedAt.Time)
+			if err != nil {
+				log.Errorf("converting start time from Kubernetes (%v) to proto: %v", terminated.StartedAt.Time, err)
 			}
+			endTime, err := types.TimestampProto(terminated.FinishedAt.Time)
+			if err != nil {
+				log.Errorf("converting finish time from Kubernetes (%v) to proto: %v", terminated.FinishedAt.Time, err)
+			}
+			result[i].Started = startTime
+			result[i].Finished = endTime
+			result[i].ExitCode = terminated.ExitCode
+			result[i].TerminationReason = terminated.Reason
 		}
 		if digest := imageUtils.ExtractImageDigest(c.ImageID); digest != "" {
 			result[i].ImageDigest = digest

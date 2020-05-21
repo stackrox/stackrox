@@ -40,10 +40,6 @@ type MatcherOpts struct {
 // Matcher matches objects against a policy.
 //go:generate mockgen-wrapper
 type Matcher interface {
-	// Match matches the policy against all objects, returning a map from object ID to violations.
-	Match(ctx context.Context, searcher search.Searcher) (map[string]Violations, error)
 	// MatchOne matches the policy against the passed deployment and images
 	MatchOne(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator) (Violations, error)
-	// MatchMany mathes the policy against just the objects with the given ids.
-	MatchMany(ctx context.Context, searcher search.Searcher, ids ...string) (map[string]Violations, error)
 }

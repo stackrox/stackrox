@@ -42,7 +42,6 @@ func (w *responseWriter) Flush() {
 		return // don't send headers needlessly, otherwise trailer-only responses won't work.
 	}
 
-	w.prepareHeadersIfNecessary()
 	if flusher, _ := w.w.(http.Flusher); flusher != nil {
 		flusher.Flush()
 	}

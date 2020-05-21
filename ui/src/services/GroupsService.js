@@ -9,8 +9,8 @@ const updateUrl = '/v1/groupsbatch';
  * @returns {Promise<Object, Error>} fulfilled with array of groups
  */
 export function fetchGroups() {
-    return axios.get(url).then(response => ({
-        response: response.data
+    return axios.get(url).then((response) => ({
+        response: response.data,
     }));
 }
 

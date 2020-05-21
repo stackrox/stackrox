@@ -11,14 +11,14 @@ import { knownBackendFlags } from '../../utils/featureFlags';
 function getSelectComparison(options, key, selectedCluster, handleChange) {
     return function compareSelected(selectedOption) {
         if (
-            options.find(value => value === selectedOption) !== undefined &&
+            options.find((value) => value === selectedOption) !== undefined &&
             selectedCluster[key] !== selectedOption.value
         ) {
             const syntheticEvent = {
                 target: {
                     name: key,
-                    value: selectedOption.value
-                }
+                    value: selectedOption.value,
+                },
             };
 
             handleChange(syntheticEvent);
@@ -393,7 +393,7 @@ ClusterEditForm.propTypes = {
         admissionController: PropTypes.string,
         admissionControllerUpdates: PropTypes.bool,
         tolerationsConfig: PropTypes.shape({
-            disabled: PropTypes.bool
+            disabled: PropTypes.bool,
         }),
         dynamicConfig: PropTypes.shape({
             registryOverride: PropTypes.string,
@@ -402,11 +402,11 @@ ClusterEditForm.propTypes = {
                 enforceOnUpdates: PropTypes.bool,
                 timeoutSeconds: PropTypes.number,
                 scanInline: PropTypes.bool,
-                disableBypass: PropTypes.bool
-            })
-        })
+                disableBypass: PropTypes.bool,
+            }),
+        }),
     }).isRequired,
-    handleChange: PropTypes.func.isRequired
+    handleChange: PropTypes.func.isRequired,
 };
 
 export default ClusterEditForm;

@@ -10,15 +10,15 @@ export const types = {
     GENERATE_API_TOKEN: createFetchingActionTypes('apitokens/GENERATE_API_TOKEN'),
     REVOKE_API_TOKENS: 'apitokens/REVOKE_API_TOKENS',
     START_TOKEN_GENERATION_WIZARD: 'apitokens/START_TOKEN_GENERATION_WIZARD',
-    CLOSE_TOKEN_GENERATION_WIZARD: 'apitokens/CLOSE_TOKEN_GENERATION_WIZARD'
+    CLOSE_TOKEN_GENERATION_WIZARD: 'apitokens/CLOSE_TOKEN_GENERATION_WIZARD',
 };
 
 export const actions = {
     fetchAPITokens: createFetchingActions(types.FETCH_API_TOKENS),
     generateAPIToken: createFetchingActions(types.GENERATE_API_TOKEN),
-    revokeAPITokens: ids => ({ type: types.REVOKE_API_TOKENS, ids }),
+    revokeAPITokens: (ids) => ({ type: types.REVOKE_API_TOKENS, ids }),
     startTokenGenerationWizard: () => ({ type: types.START_TOKEN_GENERATION_WIZARD }),
-    closeTokenGenerationWizard: () => ({ type: types.CLOSE_TOKEN_GENERATION_WIZARD })
+    closeTokenGenerationWizard: () => ({ type: types.CLOSE_TOKEN_GENERATION_WIZARD }),
 };
 
 const apiTokens = (state = [], action) => {
@@ -43,21 +43,21 @@ const tokenGenerationWizard = (state = null, { type, response }) => {
 
 const reducer = combineReducers({
     apiTokens,
-    tokenGenerationWizard
+    tokenGenerationWizard,
 });
 
-const getAPITokens = state => state.apiTokens;
-const tokenGenerationWizardOpen = state => !!state.tokenGenerationWizard;
-const getCurrentGeneratedToken = state =>
+const getAPITokens = (state) => state.apiTokens;
+const tokenGenerationWizardOpen = (state) => !!state.tokenGenerationWizard;
+const getCurrentGeneratedToken = (state) =>
     state.tokenGenerationWizard ? state.tokenGenerationWizard.token : null;
-const getCurrentGeneratedTokenMetadata = state =>
+const getCurrentGeneratedTokenMetadata = (state) =>
     state.tokenGenerationWizard ? state.tokenGenerationWizard.metadata : null;
 
 export const selectors = {
     getAPITokens,
     tokenGenerationWizardOpen,
     getCurrentGeneratedToken,
-    getCurrentGeneratedTokenMetadata
+    getCurrentGeneratedTokenMetadata,
 };
 
 export default reducer;

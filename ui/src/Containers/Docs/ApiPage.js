@@ -9,22 +9,19 @@ function SwaggerBrowser({ uri }) {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isError, setIsError] = useState(false);
-    useEffect(
-        () => {
-            const fetchData = async () => {
-                try {
-                    const fetchResult = await axios(uri);
-                    setResult(fetchResult);
-                    setLoading(false);
-                } catch (e) {
-                    Raven.captureException(e);
-                    setIsError(true);
-                }
-            };
-            fetchData();
-        },
-        [uri]
-    );
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const fetchResult = await axios(uri);
+                setResult(fetchResult);
+                setLoading(false);
+            } catch (e) {
+                Raven.captureException(e);
+                setIsError(true);
+            }
+        };
+        fetchData();
+    }, [uri]);
     if (isError) {
         return <div>Unable to load API data.</div>;
     }

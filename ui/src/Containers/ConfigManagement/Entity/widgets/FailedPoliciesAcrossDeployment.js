@@ -4,7 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
@@ -33,11 +33,11 @@ const QUERY = gql`
     }
 `;
 
-const createTableRows = data => {
+const createTableRows = (data) => {
     const failedPolicies = data.violations.reduce((acc, curr) => {
         const row = {
             time: curr.time,
-            ...curr.policy
+            ...curr.policy,
         };
         return [...acc, row];
     }, []);
@@ -51,8 +51,8 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
             variables={{
                 query: queryService.objectToWhereClause({
                     'Deployment ID': deploymentID,
-                    'Lifecycle Stage': 'DEPLOY'
-                })
+                    'Lifecycle Stage': 'DEPLOY',
+                }),
             }}
         >
             {({ loading, data }) => {
@@ -73,13 +73,13 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         Header: 'Id',
                         headerClassName: 'hidden',
                         className: 'hidden',
-                        accessor: 'id'
+                        accessor: 'id',
                     },
                     {
                         Header: `Policy`,
                         headerClassName: `w-1/5 ${defaultHeaderClassName}`,
                         className: `w-1/5 ${defaultColumnClassName}`,
-                        accessor: 'name'
+                        accessor: 'name',
                     },
                     {
                         Header: `Enforced`,
@@ -89,7 +89,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                             const { enforcementActions } = original;
                             return enforcementActions ? 'Yes' : 'No';
                         },
-                        accessor: 'enforcementActions'
+                        accessor: 'enforcementActions',
                     },
                     {
                         Header: `Severity`,
@@ -101,7 +101,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                             return <SeverityLabel severity={severity} />;
                         },
                         accessor: 'severity',
-                        sortMethod: sortSeverity
+                        sortMethod: sortSeverity,
                     },
                     {
                         Header: `Categories`,
@@ -111,7 +111,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                             const { categories } = original;
                             return categories.join(', ');
                         },
-                        accessor: 'categories'
+                        accessor: 'categories',
                     },
                     {
                         Header: `Lifecycle Stage`,
@@ -119,7 +119,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         className: `w-1/8 ${defaultColumnClassName}`,
                         Cell: ({ original }) => {
                             const { lifecycleStages } = original;
-                            return lifecycleStages.map(lifecycleStage => (
+                            return lifecycleStages.map((lifecycleStage) => (
                                 <LifecycleStageLabel
                                     key={lifecycleStage}
                                     className="mr-2"
@@ -127,15 +127,15 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                                 />
                             ));
                         },
-                        accessor: 'lifecycleStages'
+                        accessor: 'lifecycleStages',
                     },
                     {
                         Header: 'Violation Time',
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
                         Cell: ({ original }) => format(original.time, dateTimeFormat),
-                        accessor: 'time'
-                    }
+                        accessor: 'time',
+                    },
                 ];
                 return (
                     <TableWidget
@@ -154,7 +154,7 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
 };
 
 FailedPoliciesAcrossDeployment.propTypes = {
-    deploymentID: PropTypes.string.isRequired
+    deploymentID: PropTypes.string.isRequired,
 };
 
 export default withRouter(FailedPoliciesAcrossDeployment);

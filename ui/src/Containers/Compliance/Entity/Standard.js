@@ -15,10 +15,10 @@ const StandardPage = ({
     entityId1,
     entityType2,
     entityListType2,
-    entityId2
+    entityId2,
 }) => {
     const listQuery = {
-        'Standard Id': entityId
+        'Standard Id': entityId,
     };
     return (
         <section className="flex flex-col h-full relative" id="capture-list">

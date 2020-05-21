@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -25,13 +26,13 @@ func Command() *cobra.Command {
 		Use:   "add",
 		Short: description,
 		Long:  description,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if len(licenseData) == 0 {
 				return errors.New("no license data supplied")
 			}
 			timeout := flags.Timeout(c)
 			return addLicense(licenseData, activate, timeout)
-		},
+		}),
 	}
 
 	c.Flags().Var(&flags.LicenseVar{Data: &licenseData}, "license", flags.LicenseUsage)

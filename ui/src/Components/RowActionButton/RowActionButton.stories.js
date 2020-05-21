@@ -5,7 +5,7 @@ import RowActionButton from './RowActionButton';
 
 export default {
     title: 'RowActionButton',
-    component: RowActionButton
+    component: RowActionButton,
 };
 
 function fn() {

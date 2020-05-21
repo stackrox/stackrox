@@ -6,7 +6,6 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -38,12 +37,8 @@ func (suite *AlertCommentsStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func cloneComment(comment *storage.Comment) *storage.Comment {
-	return proto.Clone(comment).(*storage.Comment)
-}
-
 func (suite *AlertCommentsStoreTestSuite) mustAddComment(comment *storage.Comment) string {
-	id, err := suite.store.AddAlertComment(cloneComment(comment))
+	id, err := suite.store.AddAlertComment(comment.Clone())
 	suite.Require().NoError(err)
 	return id
 }
@@ -63,7 +58,7 @@ func (suite *AlertCommentsStoreTestSuite) validateCommentsEqual(expected, got *s
 	testutils.ValidateTSInWindow(got.GetCreatedAt(), earliestCreatedAt, latestCreatedAt, suite.T())
 	testutils.ValidateTSInWindow(got.GetLastModified(), earliestModifiedAt, latestModifiedAt, suite.T())
 	suite.Equal(storage.ResourceType_ALERT, got.GetResourceType())
-	gotCloned := cloneComment(got)
+	gotCloned := got.Clone()
 	gotCloned.CommentId = expected.CommentId // We don't need to compare
 	gotCloned.CreatedAt = nil
 	gotCloned.LastModified = nil
@@ -150,7 +145,7 @@ func (suite *AlertCommentsStoreTestSuite) TestAlertComments() {
 	}
 
 	justBeforeUpdate := time.Now()
-	suite.NoError(suite.store.UpdateAlertComment(proto.Clone(updatedComment).(*storage.Comment)))
+	suite.NoError(suite.store.UpdateAlertComment(updatedComment.Clone()))
 	justAfterUpdate := time.Now()
 
 	outputCommentsAfterUpdate := suite.mustGetCommentsAndSort(alertID)

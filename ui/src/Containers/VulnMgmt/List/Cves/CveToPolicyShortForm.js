@@ -8,31 +8,31 @@ import ToggleSwitch from 'Components/ToggleSwitch';
 const severityOptions = [
     {
         label: 'Critical',
-        value: 'CRITICAL_SEVERITY'
+        value: 'CRITICAL_SEVERITY',
     },
     {
         label: 'High',
-        value: 'HIGH_SEVERITY'
+        value: 'HIGH_SEVERITY',
     },
     {
         label: 'Medium',
-        value: 'MEDIUM_SEVERITY'
+        value: 'MEDIUM_SEVERITY',
     },
     {
         label: 'Low',
-        value: 'LOW_SEVERITY'
-    }
+        value: 'LOW_SEVERITY',
+    },
 ];
 
 const lifecycleOptions = [
     {
         label: 'Build',
-        value: 'BUILD'
+        value: 'BUILD',
     },
     {
         label: 'Deploy',
-        value: 'DEPLOY'
-    }
+        value: 'DEPLOY',
+    },
     // no RUNTIME enforcement for policies based on CVEs
 ];
 
@@ -44,9 +44,9 @@ export const emptyPolicy = {
     disabled: false,
     categories: ['Vulnerability Management'],
     fields: {
-        cve: ''
+        cve: '',
     },
-    whitelists: []
+    whitelists: [],
 };
 
 function wrapSelectEvent(key, handleChange) {
@@ -54,8 +54,8 @@ function wrapSelectEvent(key, handleChange) {
         const syntheticEvent = {
             target: {
                 name: key,
-                value: selectedOption
-            }
+                value: selectedOption,
+            },
         };
 
         handleChange(syntheticEvent);
@@ -67,7 +67,7 @@ function CveToPolicyShortForm({
     handleChange,
     policies,
     selectedPolicy,
-    setSelectedPolicy
+    setSelectedPolicy,
 }) {
     // curry the change handlers for the select inputs
     const onSeverityChange = wrapSelectEvent('severity', handleChange);
@@ -83,7 +83,7 @@ function CveToPolicyShortForm({
             ...emptyPolicy,
             name: policyName,
             label: policyName,
-            value: policies.length
+            value: policies.length,
         };
         setSelectedPolicy(newPolicy);
     }
@@ -226,28 +226,28 @@ CveToPolicyShortForm.propTypes = {
         lifecycleStages: PropTypes.arrayOf(
             PropTypes.shape({
                 label: PropTypes.string,
-                value: PropTypes.string
+                value: PropTypes.string,
             })
         ),
         description: PropTypes.string,
         disabled: PropTypes.bool,
         categories: PropTypes.arrayOf(PropTypes.string),
         fields: PropTypes.shape({
-            cve: PropTypes.string
+            cve: PropTypes.string,
         }),
-        whitelists: PropTypes.array
+        whitelists: PropTypes.array,
     }).isRequired,
     policies: PropTypes.arrayOf(
         PropTypes.shape({ label: PropTypes.string, value: PropTypes.string })
     ),
     selectedPolicy: PropTypes.string,
     setSelectedPolicy: PropTypes.func.isRequired,
-    handleChange: PropTypes.func.isRequired
+    handleChange: PropTypes.func.isRequired,
 };
 
 CveToPolicyShortForm.defaultProps = {
     policies: [],
-    selectedPolicy: ''
+    selectedPolicy: '',
 };
 
 export default CveToPolicyShortForm;

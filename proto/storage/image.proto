@@ -17,7 +17,7 @@ message Image {
     ImageName                 name         = 1;
 
     ImageMetadata             metadata     = 2;
-    ImageScan                 scan         = 3;
+    ImageScan                 scan         = 3 [(gogoproto.moretags) = "policy:\"Image Scan\""];
 
     // TODO: Remove when migration is in place, we should get this from relationship instead
     oneof set_components {
@@ -147,7 +147,7 @@ message ImageLayer {
     string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
-    repeated EmbeddedImageScanComponent DEPRECATED_components = 5; // replaced by layer index reference in Scan
+    repeated EmbeddedImageScanComponent DEPRECATED_components = 5 [(gogoproto.moretags) = "search:\"-\""]; // replaced by layer index reference in Scan
     bool empty                             = 6;
 }
 

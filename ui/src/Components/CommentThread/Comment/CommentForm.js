@@ -8,9 +8,7 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
         <Formik
             initialValues={initialFormValues}
             validationSchema={object().shape({
-                message: string()
-                    .trim()
-                    .required('This field is required')
+                message: string().trim().required('This field is required'),
             })}
             onSubmit={onSubmit}
         >
@@ -31,12 +29,15 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
                         aria-label="Comment Input"
                     />
                     {errors && errors.message && (
-                        <span className="text-alert-700">{errors.message}</span>
+                        <span className="text-alert-700" data-testid="comment-form-error">
+                            {errors.message}
+                        </span>
                     )}
                     <div className="flex justify-end">
                         <button
                             className="bg-success-300 border border-success-800 p-1 rounded-sm text-sm text-success-900 uppercase hover:bg-success-400 cursor-pointer"
                             type="submit"
+                            data-testid="save-comment-button"
                         >
                             Save
                         </button>
@@ -49,11 +50,11 @@ const CommentForm = ({ initialFormValues, onSubmit }) => {
 
 CommentForm.propTypes = {
     initialFormValues: PropTypes.shape({}),
-    onSubmit: PropTypes.func.isRequired
+    onSubmit: PropTypes.func.isRequired,
 };
 
 CommentForm.defaultProps = {
-    initialFormValues: {}
+    initialFormValues: {},
 };
 
 export default CommentForm;

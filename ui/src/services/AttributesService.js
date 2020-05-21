@@ -8,7 +8,7 @@ const url = '/v1/usersattributes';
  * @returns {Promise<Object, Error>} fulfilled with array of users attributes
  */
 export default function fetchUsersAttributes() {
-    return axios.get(url).then(response => ({
-        response: response.data
+    return axios.get(url).then((response) => ({
+        response: response.data,
     }));
 }

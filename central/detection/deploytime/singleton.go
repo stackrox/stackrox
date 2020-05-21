@@ -3,7 +3,6 @@ package deploytime
 import (
 	"context"
 
-	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
@@ -40,7 +39,7 @@ func SingletonPolicySet() detection.PolicySet {
 }
 
 func initialize() {
-	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detectionPkg.NewPolicyCompiler(searchbasedpolicies.DeploymentBuilderSingleton()))
+	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detectionPkg.NewLegacyPolicyCompiler(searchbasedpolicies.DeploymentBuilderSingleton()))
 	policies, err := policyDataStore.Singleton().GetAllPolicies(policyCtx)
 	utils.Must(err)
 
@@ -50,5 +49,5 @@ func initialize() {
 		}
 	}
 
-	detector = NewDetector(policySet, deploymentDataStore.Singleton())
+	detector = NewDetector(policySet)
 }

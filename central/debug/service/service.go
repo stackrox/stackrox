@@ -25,7 +25,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	grpcPkg "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -295,22 +294,26 @@ func (s *serviceImpl) CustomRoutes() []routes.CustomRoute {
 			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
 			ServerHandler: http.HandlerFunc(s.getDebugDump),
 		},
-	}
-
-	if features.DiagnosticBundle.Enabled() {
-		customRoutes = append(customRoutes,
-			routes.CustomRoute{
-				Route:         "/api/extensions/diagnostics",
-				Authorizer:    user.With(permissions.View(resources.DebugLogs)),
-				ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
-			},
-		)
+		{
+			Route:         "/api/extensions/diagnostics",
+			Authorizer:    user.With(permissions.View(resources.DebugLogs)),
+			ServerHandler: http.HandlerFunc(s.getDiagnosticDump),
+		},
 	}
 
 	return customRoutes
 }
 
-func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, logs logsMode, withCPUProfile bool) {
+type debugDumpOptions struct {
+	logs logsMode
+	// telemetryMode specifies how to use sensor/central telemetry to gather diagnostics.
+	// 0 - don't collect any telemetry data, 1 - collect telemetry data for central only,
+	// 2 - collect telemetry data from sensors and central.
+	telemetryMode  int
+	withCPUProfile bool
+}
+
+func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string, opts debugDumpOptions) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
@@ -341,7 +344,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		log.Error(err)
 	}
 
-	if withCPUProfile {
+	if opts.withCPUProfile {
 		if err := getCPU(ctx, zipWriter, cpuProfileDuration); err != nil {
 			log.Error(err)
 		}
@@ -351,20 +354,20 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		}
 	}
 
-	if logs == fullK8sIntrospectionData {
+	if opts.logs == fullK8sIntrospectionData {
 		if err := s.getK8sDiagnostics(ctx, zipWriter); err != nil {
 			log.Error(err)
-			logs = localLogs // fallback to local logs
+			opts.logs = localLogs // fallback to local logs
 		}
 	}
-	if logs == localLogs {
+	if opts.logs == localLogs {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
 	}
 
-	if s.telemetryGatherer != nil {
-		telemetryData := s.telemetryGatherer.Gather(ctx)
+	if s.telemetryGatherer != nil && opts.telemetryMode > 0 {
+		telemetryData := s.telemetryGatherer.Gather(ctx, opts.telemetryMode >= 2)
 		if err := writeTelemetryData(zipWriter, telemetryData); err != nil {
 			log.Error(err)
 		}
@@ -376,8 +379,14 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 }
 
 func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
-	logs := localLogs
-	for _, p := range r.URL.Query()["logs"] {
+	opts := debugDumpOptions{
+		logs:           localLogs,
+		withCPUProfile: true,
+		telemetryMode:  0,
+	}
+
+	query := r.URL.Query()
+	for _, p := range query["logs"] {
 		v, err := strconv.ParseBool(p)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -385,19 +394,36 @@ func (s *serviceImpl) getDebugDump(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if v {
-			logs = localLogs
+			opts.logs = localLogs
 		} else {
-			logs = noLogs
+			opts.logs = noLogs
+		}
+	}
+
+	telemetryModeStr := query.Get("telemetry")
+	if telemetryModeStr != "" {
+		var err error
+		opts.telemetryMode, err = strconv.Atoi(telemetryModeStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintf(w, "invalid telemetry mode value: %q\n", telemetryModeStr)
+			return
 		}
 	}
 
 	filename := time.Now().Format("stackrox_debug_2006_01_02_15_04_05.zip")
 
-	s.writeZippedDebugDump(r.Context(), w, filename, logs, true)
+	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }
 
 func (s *serviceImpl) getDiagnosticDump(w http.ResponseWriter, r *http.Request) {
 	filename := time.Now().Format("stackrox_diagnostic_2006_01_02_15_04_05.zip")
 
-	s.writeZippedDebugDump(r.Context(), w, filename, fullK8sIntrospectionData, false)
+	opts := debugDumpOptions{
+		logs:           fullK8sIntrospectionData,
+		telemetryMode:  2,
+		withCPUProfile: false,
+	}
+
+	s.writeZippedDebugDump(r.Context(), w, filename, opts)
 }

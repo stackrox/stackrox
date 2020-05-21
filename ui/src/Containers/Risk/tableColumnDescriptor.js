@@ -11,7 +11,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 
 function DeploymentNameColumn({ original }) {
     const isSuspicious = find(original.whitelistStatuses, {
-        anomalousProcessesExecuted: true
+        anomalousProcessesExecuted: true,
     });
     return (
         <div className="flex items-center">
@@ -20,10 +20,7 @@ function DeploymentNameColumn({ original }) {
                     <Tooltip
                         content={<TooltipOverlay>Abnormal processes discovered</TooltipOverlay>}
                     >
-                        {/* https://github.com/feathericons/react-feather/issues/56 */}
-                        <div>
-                            <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
-                        </div>
+                        <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
                     </Tooltip>
                 )}
                 {!isSuspicious && <Icon.Circle className="h-2 w-2" />}
@@ -36,10 +33,10 @@ function DeploymentNameColumn({ original }) {
 DeploymentNameColumn.propTypes = {
     original: PropTypes.shape({
         deployment: PropTypes.shape({
-            name: PropTypes.string.isRequired
+            name: PropTypes.string.isRequired,
         }).isRequired,
-        whitelistStatuses: PropTypes.arrayOf(PropTypes.object).isRequired
-    }).isRequired
+        whitelistStatuses: PropTypes.arrayOf(PropTypes.object).isRequired,
+    }).isRequired,
 };
 
 const columns = [
@@ -48,7 +45,7 @@ const columns = [
         accessor: 'deployment.name',
         searchField: 'Deployment',
         // eslint-disable-next-line react/prop-types
-        Cell: DeploymentNameColumn
+        Cell: DeploymentNameColumn,
     },
     {
         Header: 'Created',
@@ -56,17 +53,17 @@ const columns = [
         searchField: 'Created',
         // eslint-disable-next-line react/prop-types
         Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
-        sortMethod: sortDate
+        sortMethod: sortDate,
     },
     {
         Header: 'Cluster',
         searchField: 'Cluster',
-        accessor: 'deployment.cluster'
+        accessor: 'deployment.cluster',
     },
     {
         Header: 'Namespace',
         searchField: 'Namespace',
-        accessor: 'deployment.namespace'
+        accessor: 'deployment.namespace',
     },
     {
         Header: 'Priority',
@@ -76,8 +73,8 @@ const columns = [
             const asInt = parseInt(value, 10);
             return Number.isNaN(asInt) || asInt < 1 ? '-' : value;
         },
-        sortMethod: sortValue
-    }
+        sortMethod: sortValue,
+    },
 ];
 
 export default columns;

@@ -6,6 +6,6 @@ export default {
         length: PropTypes.number,
         remove: PropTypes.func,
         map: PropTypes.func,
-        get: PropTypes.func
-    }).isRequired
+        get: PropTypes.func,
+    }).isRequired,
 };

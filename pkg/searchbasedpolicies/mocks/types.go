@@ -129,21 +129,6 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 	return m.recorder
 }
 
-// Match mocks base method
-func (m *MockMatcher) Match(ctx context.Context, searcher search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Match", ctx, searcher)
-	ret0, _ := ret[0].(map[string]searchbasedpolicies.Violations)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Match indicates an expected call of Match
-func (mr *MockMatcherMockRecorder) Match(ctx, searcher interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockMatcher)(nil).Match), ctx, searcher)
-}
-
 // MatchOne mocks base method
 func (m *MockMatcher) MatchOne(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator) (searchbasedpolicies.Violations, error) {
 	m.ctrl.T.Helper()
@@ -157,24 +142,4 @@ func (m *MockMatcher) MatchOne(ctx context.Context, deployment *storage.Deployme
 func (mr *MockMatcherMockRecorder) MatchOne(ctx, deployment, images, pi interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchOne", reflect.TypeOf((*MockMatcher)(nil).MatchOne), ctx, deployment, images, pi)
-}
-
-// MatchMany mocks base method
-func (m *MockMatcher) MatchMany(ctx context.Context, searcher search.Searcher, ids ...string) (map[string]searchbasedpolicies.Violations, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx, searcher}
-	for _, a := range ids {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "MatchMany", varargs...)
-	ret0, _ := ret[0].(map[string]searchbasedpolicies.Violations)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MatchMany indicates an expected call of MatchMany
-func (mr *MockMatcherMockRecorder) MatchMany(ctx, searcher interface{}, ids ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx, searcher}, ids...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchMany", reflect.TypeOf((*MockMatcher)(nil).MatchMany), varargs...)
 }

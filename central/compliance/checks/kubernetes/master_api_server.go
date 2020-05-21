@@ -18,13 +18,25 @@ const tlsCiphers = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
 	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305," +
 	"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,"
 
+const defaultTLSCiphers = "TLS_RSA_WITH_AES_256_GCM_SHA384;" +
+	"TLS_RSA_WITH_AES_256_CBC_SHA;" +
+	"TLS_RSA_WITH_AES_128_GCM_SHA256;" +
+	"TLS_RSA_WITH_AES_128_CBC_SHA;" +
+	"TLS_RSA_WITH_3DES_EDE_CBC_SHA;" +
+	"TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256;" +
+	"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384;" +
+	"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;" +
+	"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256;" +
+	"TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA;" +
+	"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA"
+
 func init() {
 	framework.MustRegisterChecks(
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_1", "anonymous-auth", "false", "true", common.Matches),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_2", "basic-auth-file", "", "", common.Unset),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_3", "token-auth-file", "", "", common.Unset),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_4", "kubelet-https", "true", "true", common.Matches),
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_5", "kube-apiserver", "kubelet-client-certificate", "kubelet-client-key"),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_5", "kube-apiserver", nil, "kubelet-client-certificate", "kubelet-client-key"),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_6", "kubelet-certificate-authority", "", "", common.Set),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_7", "authorization-mode", "AlwaysAllow", "AlwaysAllow", common.NotContains),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_8", "authorization-mode", "Node", "Node", common.Contains),
@@ -48,8 +60,8 @@ func init() {
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_26", "request-timeout", "", "", common.Set),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_27", "service-account-lookup", "true", "true", common.Matches),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_28", "service-account-key-file", "", "", common.Set),
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_29", "kube-apiserver", "etcd-certfile", "etcd-keyfile"),
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_30", "kube-apiserver", "tls-cert-file", "tls-private-key-file"),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_29", "kube-apiserver", nil, "etcd-certfile", "etcd-keyfile"),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:1_2_30", "kube-apiserver", nil, "tls-cert-file", "tls-private-key-file"),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_31", "client-ca-file", "", "", common.Set),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_32", "etcd-cafile", "", "", common.Set),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_33", "encryption-provider-config", "", "", common.Set),

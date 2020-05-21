@@ -13,7 +13,7 @@ import EntityList from '../../List/VulnMgmtList';
 import {
     vulMgmtPolicyQuery,
     tryUpdateQueryWithVulMgmtPolicyClause,
-    getScopeQuery
+    getScopeQuery,
 } from '../VulnMgmtPolicyQueryUtil';
 
 const VulnMgmtImage = ({
@@ -24,7 +24,7 @@ const VulnMgmtImage = ({
     sort,
     page,
     refreshTrigger,
-    setRefreshTrigger
+    setRefreshTrigger,
 }) => {
     const workflowState = useContext(workflowStateContext);
 
@@ -99,8 +99,8 @@ const VulnMgmtImage = ({
             query: tryUpdateQueryWithVulMgmtPolicyClause(entityListType, search),
             ...vulMgmtPolicyQuery,
             cachebuster: refreshTrigger,
-            scopeQuery: getScopeQuery(fullEntityContext)
-        }
+            scopeQuery: getScopeQuery(fullEntityContext),
+        },
     };
 
     return (

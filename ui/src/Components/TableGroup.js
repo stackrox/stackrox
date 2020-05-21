@@ -7,7 +7,7 @@ import pluralize from 'pluralize';
 
 const icons = {
     opened: <Icon.ChevronUp size="14" />,
-    closed: <Icon.ChevronDown size="14" />
+    closed: <Icon.ChevronDown size="14" />,
 };
 
 class TableGroup extends Component {
@@ -15,7 +15,7 @@ class TableGroup extends Component {
         groups: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
-                rows: PropTypes.arrayOf(PropTypes.shape())
+                rows: PropTypes.arrayOf(PropTypes.shape()),
             })
         ).isRequired,
         totalRows: PropTypes.number.isRequired,
@@ -23,11 +23,11 @@ class TableGroup extends Component {
         tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         idAttribute: PropTypes.string.isRequired,
         entityType: PropTypes.string.isRequired,
-        selectedRowId: PropTypes.string
+        selectedRowId: PropTypes.string,
     };
 
     static defaultProps = {
-        selectedRowId: null
+        selectedRowId: null,
     };
 
     renderSubTable = ({ rows }) => {
@@ -45,8 +45,8 @@ class TableGroup extends Component {
                 defaultSorted={[
                     {
                         id: 'control',
-                        desc: false
-                    }
+                        desc: false,
+                    },
                 ]}
             />
         );
@@ -68,9 +68,9 @@ class TableGroup extends Component {
         </div>
     );
 
-    renderWhenOpened = group => this.renderGroupByCollapsible('opened', group);
+    renderWhenOpened = (group) => this.renderGroupByCollapsible('opened', group);
 
-    renderWhenClosed = group => this.renderGroupByCollapsible('closed', group);
+    renderWhenClosed = (group) => this.renderGroupByCollapsible('closed', group);
 
     render() {
         const { groups, totalRows } = this.props;

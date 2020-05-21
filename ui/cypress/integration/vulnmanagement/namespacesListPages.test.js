@@ -5,7 +5,7 @@ import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
     allCVECheck,
-    allFixableCheck
+    allFixableCheck,
 } from '../../helpers/vmWorkflowUtils';
 
 describe('Namespaces list Page and its entity detail page , (related entities) sub list  validations ', () => {
@@ -27,9 +27,9 @@ describe('Namespaces list Page and its entity detail page , (related entities) s
             'Deployments',
             'Policy Status',
             'Latest Violation',
-            'Risk Priority'
+            'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (!columnValue.includes('no') && columnValue.includes('polic'))
                 allChecksForEntities(url.list.namespaces, 'polic');

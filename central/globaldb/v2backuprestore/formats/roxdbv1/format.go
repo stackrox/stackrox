@@ -10,5 +10,6 @@ func init() {
 		"roxdbv1",
 		common.NewFileHandler("bolt.db", false, restoreBoltDB),
 		common.NewFileHandler("badger.db", true, restoreBadger),
+		common.NewFileHandler("rocks.db", true, restoreRocksDB),
 	)
 }

@@ -57,9 +57,9 @@ function getTextOrToggle(config, editable) {
 
 ConfigTelemetryDetailWidget.propTypes = {
     config: PropTypes.shape({
-        enabled: PropTypes.bool
+        enabled: PropTypes.bool,
     }).isRequired,
-    editable: PropTypes.bool.isRequired
+    editable: PropTypes.bool.isRequired,
 };
 
 export default ConfigTelemetryDetailWidget;

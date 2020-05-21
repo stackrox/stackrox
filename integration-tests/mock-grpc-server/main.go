@@ -17,14 +17,15 @@ import (
 
 const (
 	parentUIDStr          = "ParentUid"
-	parentExecFilePathStr = "ParentExecFilePath'"
+	parentExecFilePathStr = "ParentExecFilePath"
 )
 
 var (
-	port          = 9999
-	dbPath        = "/tmp/collector-test.db"
-	processBucket = "Process"
-	networkBucket = "Network"
+	port                     = 9999
+	dbPath                   = "/tmp/collector-test.db"
+	processBucket            = "Process"
+	networkBucket            = "Network"
+	processLineageInfoBucket = "LineageInfo"
 )
 
 type signalServer struct {
@@ -50,13 +51,18 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 
 		processInfo := fmt.Sprintf("%s:%s:%d:%d", processSignal.GetName(), processSignal.GetExecFilePath(), processSignal.GetUid(), processSignal.GetGid())
 		fmt.Printf("ProcessInfo: %s %s\n", processSignal.GetContainerId(), processInfo)
+		if err := s.UpdateProcessSignals(processSignal.GetName(), processInfo); err != nil {
+			return err
+		}
 
 		for _, info := range processSignal.GetLineageInfo() {
 			processLineageInfo := fmt.Sprintf("%s:%s:%s:%d:%s:%s", processSignal.GetName(), processSignal.GetExecFilePath(), parentUIDStr, info.GetParentUid(), parentExecFilePathStr, info.GetParentExecFilePath())
 			fmt.Printf("ProcessLineageInfo: %s %s\n", processSignal.GetContainerId(), processLineageInfo)
-		}
-		if err := s.UpdateProcessSignals(processSignal.GetName(), processInfo); err != nil {
-			return err
+
+			id := fmt.Sprint(info.GetParentUid())
+			if err := s.UpdateProcessLineageInfo(processSignal.GetName(), id, processLineageInfo); err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -99,6 +105,14 @@ func (s *signalServer) UpdateProcessSignals(processName string, processInfo stri
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte(processBucket))
 		return b.Put([]byte(processName), []byte(processInfo))
+	})
+}
+
+func (s *signalServer) UpdateProcessLineageInfo(processName string, parentID string, lineageInfo string) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		bucket, _ := tx.CreateBucketIfNotExists([]byte(processLineageInfoBucket))
+		processBucket, _ := bucket.CreateBucketIfNotExists([]byte(processName))
+		return processBucket.Put([]byte(parentID), []byte(lineageInfo))
 	})
 }
 

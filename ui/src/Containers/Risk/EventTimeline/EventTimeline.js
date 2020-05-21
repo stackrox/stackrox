@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { eventTypes, rootTypes } from 'constants/timelineTypes';
+import { selectOptionEventTypes, rootTypes } from 'constants/timelineTypes';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import DeploymentEventTimeline from './DeploymentEventTimeline';
 import PodEventTimeline from './PodEventTimeline';
@@ -10,18 +10,18 @@ const PAGE_SIZE = 10;
 
 const EventTimelineComponentMap = {
     [rootTypes.DEPLOYMENT]: DeploymentEventTimeline,
-    [rootTypes.POD]: PodEventTimeline
+    [rootTypes.POD]: PodEventTimeline,
 };
 
 const EventTimeline = ({ deploymentId }) => {
     const rootView = [
         {
             type: rootTypes.DEPLOYMENT,
-            id: deploymentId
-        }
+            id: deploymentId,
+        },
     ];
     const [currentPage, setPage] = useState(1);
-    const [selectedEventType, selectEventType] = useState(eventTypes.ALL);
+    const [selectedEventType, selectEventType] = useState(selectOptionEventTypes.ALL);
     const [view, setView] = useState(rootView);
 
     function getCurrentView() {
@@ -29,7 +29,7 @@ const EventTimeline = ({ deploymentId }) => {
     }
 
     function resetSelectedEventType() {
-        selectEventType(eventTypes.ALL);
+        selectEventType(selectOptionEventTypes.ALL);
     }
 
     function goToRootView() {
@@ -60,6 +60,7 @@ const EventTimeline = ({ deploymentId }) => {
                 onClick={goToRootView}
             />
         );
+
     return (
         <Component
             id={currentView.id}
@@ -67,6 +68,7 @@ const EventTimeline = ({ deploymentId }) => {
             goToPreviousView={goToPreviousView}
             selectedEventType={selectedEventType}
             selectEventType={selectEventType}
+            deploymentId={deploymentId}
             currentPage={currentPage}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
@@ -75,7 +77,7 @@ const EventTimeline = ({ deploymentId }) => {
 };
 
 EventTimeline.propTypes = {
-    deploymentId: PropTypes.string.isRequired
+    deploymentId: PropTypes.string.isRequired,
 };
 
 export default EventTimeline;

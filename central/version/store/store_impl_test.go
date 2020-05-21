@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestVersionStore(t *testing.T) {
@@ -21,8 +23,8 @@ type VersionStoreTestSuite struct {
 
 	boltDB   *bolt.DB
 	badgerDB *badger.DB
-
-	store Store
+	rocksDB  *gorocksdb.DB
+	store    Store
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {
@@ -32,14 +34,19 @@ func (suite *VersionStoreTestSuite) SetupTest() {
 	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err, "failed to create badger DB")
 
+	rocksDB, _, err := rocksdb.NewTemp(suite.T().Name())
+	suite.Require().NoError(err, "failed to create rocksDB")
+
 	suite.boltDB = boltDB
 	suite.badgerDB = badgerDB
-	suite.store = New(boltDB, badgerDB)
+	suite.rocksDB = rocksDB
+	suite.store = New(boltDB, badgerDB, rocksDB)
 }
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
 	suite.NoError(suite.boltDB.Close())
 	suite.NoError(suite.badgerDB.Close())
+	suite.rocksDB.Close()
 }
 
 func (suite *VersionStoreTestSuite) TestVersionStore() {

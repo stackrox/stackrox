@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
@@ -12,10 +13,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn/servicecerttoken"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/grpc/util"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
+	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
@@ -172,26 +175,24 @@ func UseDialTLSFunc(fn DialTLSFunc) ConnectionOption {
 	})
 }
 
-// AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
-// client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
+// OptionsForEndpoint returns an Options struct to be used with the given endpoint.
+func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Options, error) {
 	var connOpts connectionOptions
 	for _, opt := range extraConnOpts {
 		if err := opt.apply(&connOpts); err != nil {
-			return nil, errors.Wrap(err, "failed to apply connection option")
+			return Options{}, errors.Wrap(err, "failed to apply connection option")
 		}
 	}
 
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
+		return Options{}, errors.Wrapf(err, "could not parse endpoint %q", endpoint)
 	}
 
 	clientConnOpts := Options{
 		TLS: TLSConfigOptions{
 			UseClientCert: true,
 			ServerName:    host,
-			GRPCOnly:      true,
 		},
 		DialTLS: connOpts.dialTLSFunc,
 	}
@@ -199,12 +200,109 @@ func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConn
 	if connOpts.useServiceCertToken {
 		leafCert, err := mtls.LeafCertificateFromFile()
 		if err != nil {
-			return nil, errors.Wrap(err, "loading client certificate")
+			return Options{}, errors.Wrap(err, "loading client certificate")
 		}
 		clientConnOpts.PerRPCCreds = servicecerttoken.NewServiceCertClientCreds(&leafCert)
 	}
 
+	return clientConnOpts, nil
+}
+
+// AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
+// client certificates found on the local file system.
+func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
+	clientConnOpts, err := OptionsForEndpoint(endpoint, extraConnOpts...)
+	if err != nil {
+		return nil, err
+	}
+
 	return GRPCConnection(context.Background(), server, endpoint, clientConnOpts, keepAliveDialOption())
+}
+
+// HTTPTransport returns a RoundTripper for talking to the specified endpoint. The RoundTripper accepts requests with
+// URLs that omit scheme and host; however, if scheme and/or host are specified, they MUST match "http" or "https"
+// for the scheme (depending on TLS config)
+func HTTPTransport(server mtls.Subject, endpoint string, clientConnOpts Options, baseTransport *http.Transport) (http.RoundTripper, error) {
+	if clientConnOpts.DialTLS != nil {
+		return nil, errors.New("custom TLS dialer is not supported for HTTP transport")
+	}
+
+	clientConnOpts.TLS.GRPCOnly = false
+
+	var tlsConf *tls.Config
+	var scheme string
+	if !clientConnOpts.InsecureNoTLS {
+		var err error
+		tlsConf, err = clientConnOpts.tlsConfig(server)
+		if err != nil {
+			return nil, errors.Wrap(err, "instantiating TLS config")
+		}
+		scheme = "https"
+	} else {
+		scheme = "http"
+	}
+
+	var transport *http.Transport
+	if baseTransport != nil {
+		transport = baseTransport.Clone()
+	} else {
+		transport = httputil.DefaultTransport()
+	}
+
+	transport.TLSClientConfig = tlsConf
+	if err := http2.ConfigureTransport(transport); err != nil {
+		log.Warnf("Failed to configure HTTP/2 transport for talking to %v @ %s: %v", server.ServiceType, endpoint, err)
+	}
+
+	perRPCCreds := clientConnOpts.PerRPCCreds
+	if perRPCCreds != nil {
+		if clientConnOpts.InsecureNoTLS && clientConnOpts.InsecureAllowCredsViaPlaintext {
+			perRPCCreds = util.ForceInsecureCreds(perRPCCreds)
+		}
+	}
+
+	roundTripFunc := func(req *http.Request) (*http.Response, error) {
+		modReq := req.Clone(req.Context())
+		if modReq.URL.Scheme == "" {
+			modReq.URL.Scheme = scheme
+		} else if modReq.URL.Scheme != scheme {
+			return nil, errors.Errorf("unexpected scheme %q, expected %q", modReq.URL.Scheme, scheme)
+		}
+
+		if modReq.URL.Host == "" {
+			modReq.URL.Host = endpoint
+		} else if modReq.URL.Host != endpoint {
+			return nil, errors.Errorf("unexpected host %q, expected %q", modReq.URL.Host, endpoint)
+		}
+
+		// If there are per-RPC credentials configured, inject the respective metadata into the request header
+		// (in case the per-RPC credentials require transport security, only do so if the target URL is using
+		// the secure `https` scheme).
+		if perRPCCreds != nil && (!perRPCCreds.RequireTransportSecurity() || modReq.URL.Scheme == "https") {
+			authMD, err := perRPCCreds.GetRequestMetadata(modReq.Context(), modReq.URL.String())
+			if err != nil {
+				return nil, errors.Wrap(err, "retrieving authentication metadata")
+			}
+			for k, v := range authMD {
+				modReq.Header.Add(k, v)
+			}
+		}
+
+		return transport.RoundTrip(modReq)
+	}
+
+	return httputil.RoundTripperFunc(roundTripFunc), nil
+}
+
+// AuthenticatedHTTPTransport creates an HTTP transport for talking to the given service at the specified endpoint.
+// The transport accepts URL without a schema and a host; however, if provided, they must match the expected values.
+func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransport *http.Transport, extraConnOpts ...ConnectionOption) (http.RoundTripper, error) {
+	clientConnOpts, err := OptionsForEndpoint(endpoint, extraConnOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	return HTTPTransport(server, endpoint, clientConnOpts, baseTransport)
 }
 
 // GRPCConnection establishes a gRPC connection to the given server, using the given connection options.

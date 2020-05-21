@@ -23,22 +23,19 @@ LoginNotice.propTypes = {
     publicConfig: PropTypes.shape({
         loginNotice: PropTypes.shape({
             enabled: PropTypes.bool,
-            text: PropTypes.string
-        })
-    })
+            text: PropTypes.string,
+        }),
+    }),
 };
 
 LoginNotice.defaultProps = {
     publicConfig: {
-        loginNotice: {}
-    }
+        loginNotice: {},
+    },
 };
 
 const mapStateToProps = createStructuredSelector({
-    publicConfig: selectors.getPublicConfig
+    publicConfig: selectors.getPublicConfig,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(LoginNotice);
+export default connect(mapStateToProps, null)(LoginNotice);

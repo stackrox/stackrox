@@ -56,4 +56,157 @@ func TestValidateIntegration(t *testing.T) {
 		Name:       "name",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}))
+
+	request := &v1.UpdateImageIntegrationRequest{
+		Config: &storage.ImageIntegration{
+			Id:                  "id",
+			Name:                "name",
+			Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+			IntegrationConfig:   nil,
+			SkipTestIntegration: true,
+		},
+		UpdatePassword: false,
+	}
+
+	integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "name"}).Return([]*storage.ImageIntegration{
+		{
+			Id:         "id",
+			Name:       "name",
+			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		}}, nil).AnyTimes()
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id").Return(&storage.ImageIntegration{
+		Id:         "id",
+		Name:       "name",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+	}, true, nil).AnyTimes()
+
+	_, err := s.TestUpdatedImageIntegration(textCtx, request)
+	assert.Error(t, err)
+	assert.EqualErrorf(t, err, "the request doesn't have a valid integration config type", "formatted")
+
+	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{
+		Config: &storage.ImageIntegration{
+			Id:         "id2",
+			Name:       "name2",
+			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+				Endpoint: "endpoint",
+				Username: "username",
+				Password: "password",
+			}},
+			SkipTestIntegration: true,
+		},
+		UpdatePassword: false,
+	}
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
+		Id:         "id2",
+		Name:       "name2",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+			Endpoint: "endpoint",
+			Username: "username",
+			Password: "******",
+		}},
+		SkipTestIntegration: true,
+	}, true, nil).AnyTimes()
+
+	maskedIntegrationConfig := &storage.ImageIntegration{
+		Id:         "id2",
+		Name:       "name2",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+			Endpoint: "endpoint",
+			Username: "username",
+			Password: "******",
+		}},
+		SkipTestIntegration: true,
+	}
+	tempConfig := &storage.ImageIntegration{
+		Id:         "id2",
+		Name:       "name2",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+			Endpoint: "endpoint",
+			Username: "username",
+			Password: "password",
+		}},
+		SkipTestIntegration: true,
+	}
+	storedConfig, err := s.GetImageIntegration(textCtx, &v1.ResourceByID{
+		Id: requestWithADockerConfig.GetConfig().GetId(),
+	})
+	assert.Equal(t, storedConfig, maskedIntegrationConfig)
+	assert.NoError(t, err)
+	err = s.pullDataFromStoredConfig(requestWithADockerConfig.GetConfig(), tempConfig)
+	// Ensure successfully pulled credentials from storedConfig
+	assert.Equal(t, requestWithADockerConfig.GetConfig().GetDocker(), tempConfig.GetDocker())
+	assert.NoError(t, err)
+
+	//Test case: config request with a different endpoint
+	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{
+		Config: &storage.ImageIntegration{
+			Id:         "id2",
+			Name:       "name2",
+			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+				Endpoint: "endpointDiff",
+				Username: "username",
+			}},
+			SkipTestIntegration: true,
+		},
+		UpdatePassword: false,
+	}
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
+		Id:         "id2",
+		Name:       "name2",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+			Endpoint: "endpointDiff",
+			Username: "username",
+			Password: "******",
+		}},
+		SkipTestIntegration: true,
+	}, true, nil).AnyTimes()
+
+	storedConfig, err = s.GetImageIntegration(textCtx, &v1.ResourceByID{
+		Id: requestWithDifferentEndpoint.GetConfig().GetId(),
+	})
+	assert.NoError(t, err)
+	err = s.pullDataFromStoredConfig(requestWithDifferentEndpoint.GetConfig(), storedConfig)
+	assert.Error(t, err)
+	assert.EqualErrorf(t, err, "must explicitly set password when changing username/endpoint", "formatted")
+
+	//Test case: config request with a different username
+	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
+		Config: &storage.ImageIntegration{
+			Id:         "id2",
+			Name:       "name2",
+			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+				Endpoint: "endpoint",
+				Username: "usernameDiff",
+			}},
+			SkipTestIntegration: true,
+		},
+		UpdatePassword: false,
+	}
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
+		Id:         "id2",
+		Name:       "name2",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
+			Endpoint: "endpoint",
+			Username: "usernameDiff",
+			Password: "******",
+		}},
+		SkipTestIntegration: true,
+	}, true, nil).AnyTimes()
+
+	storedConfig, err = s.GetImageIntegration(textCtx, &v1.ResourceByID{
+		Id: requestWithDifferentUsername.GetConfig().GetId(),
+	})
+	assert.NoError(t, err)
+	err = s.pullDataFromStoredConfig(requestWithDifferentUsername.GetConfig(), storedConfig)
+	assert.Error(t, err)
+	assert.EqualErrorf(t, err, "must explicitly set password when changing username/endpoint", "formatted")
 }

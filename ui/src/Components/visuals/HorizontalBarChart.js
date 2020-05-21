@@ -6,7 +6,7 @@ import {
     VerticalGridLines,
     HorizontalBarSeries,
     GradientDefs,
-    LabelSeries
+    LabelSeries,
 } from 'react-vis';
 import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
@@ -36,26 +36,30 @@ class HorizontalBarChart extends Component {
         valueGradientColorStart: PropTypes.string,
         valueGradientColorEnd: PropTypes.string,
         minimal: PropTypes.bool,
-        history: ReactRouterPropTypes.history.isRequired
+        history: ReactRouterPropTypes.history.isRequired,
     };
 
     static defaultProps = {
-        valueFormat: x => x,
+        valueFormat: (x) => x,
         tickValues: [0, 25, 50, 75, 100],
         containerProps: {},
         plotProps: {},
         seriesProps: {},
         valueGradientColorStart: '#B3DCFF',
         valueGradientColorEnd: '#BDF3FF',
-        minimal: false
+        minimal: false,
     };
 
-    state = { hintInfo: null };
+    constructor(props) {
+        super(props);
 
-    showLabel = value => value >= 10;
+        this.state = { hintInfo: null };
+    }
+
+    showLabel = (value) => value >= 10;
 
     getLabelData = () =>
-        this.props.data.sort(sortByYValue).map(item => {
+        this.props.data.sort(sortByYValue).map((item) => {
             let label = '';
             // This prevents overlap between the value label and the axis label
             if (this.showLabel(item.x)) {
@@ -66,7 +70,7 @@ class HorizontalBarChart extends Component {
                 x: item.x - 5,
                 y: item.y,
                 yOffset: minimal ? -6 : -3,
-                label
+                label,
             };
             // x offset for label
             val.x -= val.label.length;
@@ -83,13 +87,13 @@ class HorizontalBarChart extends Component {
         this.setState({ hintInfo: null });
     };
 
-    onValueClickHandler = datum => {
+    onValueClickHandler = (datum) => {
         if (datum.link) this.props.history.push(datum.link);
     };
 
     getContainerProps = () => {
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive'
+            className: 'relative chart-container w-full horizontal-bar-responsive',
         };
         return merge(defaultContainerProps, this.props.containerProps);
     };
@@ -110,7 +114,7 @@ class HorizontalBarChart extends Component {
             yType: 'category',
             yRange,
             margin: minimal ? minimalMargin : { top: 33.3, left: Math.ceil(maxLength * 7.5) },
-            stackBy: 'x'
+            stackBy: 'x',
         };
         return merge(defaultPlotProps, this.props.plotProps);
     };
@@ -122,11 +126,11 @@ class HorizontalBarChart extends Component {
             style: {
                 height: minimal ? 15 : 20,
                 rx: '2px',
-                cursor: `${this.props.minimal ? '' : 'pointer'}`
+                cursor: `${this.props.minimal ? '' : 'pointer'}`,
             },
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
-            onValueClick: this.onValueClickHandler
+            onValueClick: this.onValueClickHandler,
         };
         return merge(defaultSeriesProps, this.props.seriesProps);
     };
@@ -209,11 +213,11 @@ class HorizontalBarChart extends Component {
 
                     {/* Empty Background */}
                     <HorizontalBarSeries
-                        data={sortedData.map(item => ({
+                        data={sortedData.map((item) => ({
                             x: 0,
                             x0: Math.ceil(sortedData[0].x / 5) * 5,
                             y: item.y,
-                            link: item.link
+                            link: item.link,
                         }))}
                         style={{
                             height: seriesProps.style.height,
@@ -221,7 +225,7 @@ class HorizontalBarChart extends Component {
                             fill: `url(#bar-background)`,
                             rx: '2',
                             ry: '2',
-                            cursor: `${minimal ? '' : 'pointer'}`
+                            cursor: `${minimal ? '' : 'pointer'}`,
                         }}
                         onValueClick={this.onValueClickHandler}
                     />
@@ -235,7 +239,7 @@ class HorizontalBarChart extends Component {
                         labelAnchorX="end-alignment"
                         style={{
                             fill: 'var(--primary-800)',
-                            cursor: `${minimal ? '' : 'pointer'}`
+                            cursor: `${minimal ? '' : 'pointer'}`,
                         }}
                     />
 

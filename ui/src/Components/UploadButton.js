@@ -15,11 +15,11 @@ const UploadButton = ({ onChange, validExtensions, ...props }) => {
         const extensionIsValid = validExtensions ? validExtensions.includes(ext) : true;
         if (files && files[0] && extensionIsValid) {
             const reader = new FileReader();
-            reader.onload = e => {
+            reader.onload = (e) => {
                 onChange(e.target.result);
                 if (inputRef && inputRef.current) inputRef.current.value = '';
             };
-            reader.onerror = error => {
+            reader.onerror = (error) => {
                 toast(error);
             };
             reader.readAsText(files[0]);
@@ -29,8 +29,14 @@ const UploadButton = ({ onChange, validExtensions, ...props }) => {
     };
     return (
         <>
-            <input ref={inputRef} type="file" className="hidden" onChange={onChangeHandler()} />
-            <Button {...props} onClick={onClickHandler()} />
+            <input
+                ref={inputRef}
+                type="file"
+                className="hidden"
+                onChange={onChangeHandler()}
+                hidden
+            />
+            <Button {...props} onClick={onClickHandler()} aria-label="Upload" />
         </>
     );
 };
@@ -43,7 +49,7 @@ UploadButton.propTypes = {
     textClass: PropTypes.string,
     disabled: PropTypes.bool,
     onChange: PropTypes.func.isRequired,
-    validExtensions: PropTypes.arrayOf(PropTypes.string)
+    validExtensions: PropTypes.arrayOf(PropTypes.string),
 };
 
 UploadButton.defaultProps = {
@@ -52,7 +58,7 @@ UploadButton.defaultProps = {
     textCondensed: null,
     textClass: null,
     disabled: false,
-    validExtensions: null
+    validExtensions: null,
 };
 
 export default UploadButton;

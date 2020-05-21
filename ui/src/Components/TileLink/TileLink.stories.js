@@ -6,7 +6,7 @@ import TileLink from './TileLink';
 
 export default {
     title: 'TileLink',
-    component: TileLink
+    component: TileLink,
 };
 
 export const withData = () => {

@@ -124,7 +124,7 @@ setupLicense: &setupLicense
   run:
     name: Creating License Key
     command: |
-      if [[ -n "$CIRCLE_TAG" ]]; then
+      if [[ -n "$CIRCLE_TAG" ]] || .circleci/pr_has_label.sh "ci-release-build"; then
         echo "Issuing a CI license for testing the release build"
         ROX_LICENSE_KEY="$(licenses/ci.sh)"
       else
@@ -381,8 +381,8 @@ storeK8sLogs: &storeK8sLogs
 
 storeProfilingResults: &storeProfilingResults
   store_artifacts:
-    path: /tmp/pprof
-    destination: pprof
+    path: /tmp/pprof.zip
+    destination: pprof.zip
 
 storeCypressResults: &storeCypressResults
   store_test_results:
@@ -448,7 +448,7 @@ version: 2.1
 executors:
   custom:
     docker:
-      - image: docker.io/stackrox/apollo-ci:0.2.10
+      - image: docker.io/stackrox/apollo-ci:0.2.12-1-ge81027b55f
         auth:
           username: $DOCKER_IO_PULL_USERNAME
           password: $DOCKER_IO_PULL_PASSWORD
@@ -607,6 +607,15 @@ commands:
 
             echo "Isolating pods"
             kubectl -n stackrox apply -R -f tests/proxy/netpol/
+
+  setup-go-build-env:
+    steps:
+      - run:
+          name: Setup Go build environment
+          command: |
+            if .circleci/pr_has_label.sh "ci-release-build"; then
+              cci-export GOTAGS release
+            fi
 
   setup-dep-env:
     parameters:
@@ -866,16 +875,23 @@ commands:
             cmd=(gcloud container clusters get-credentials --project stackrox-ci --zone "$ZONE" "$CLUSTER_NAME")
             "${cmd[@]}"
             echo "Restored config for cluster ${CLUSTER_NAME}"
-            if [[ -x "${CONFIG_DIR}/refresh-token-forever.sh" ]]; then
-              echo "Running refresh token script in the background."
-              nohup "${CONFIG_DIR}/refresh-token-forever.sh" &
-            fi
             cci-export CLUSTER_NAME "$CLUSTER_NAME"
+            cci-export ZONE "$ZONE"
             echo
             echo "Run the following command to attach to the cluster:"
             echo
             printf " %q" "${cmd[@]}"
             echo
+
+      - run:
+          name: Running refresh token script in the background
+          command: |
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            if [[ ! -x "${CONFIG_DIR}/refresh-token-forever.sh" ]]; then
+              exit 0
+            fi
+            "${CONFIG_DIR}/refresh-token-forever.sh"
+          background: true
 
       - run:
           name: Waiting for << parameters.cluster-id >> cluster to stabilize
@@ -893,6 +909,7 @@ commands:
             helm del --purge monitoring || true
             helm del --purge central || true
             helm del --purge scanner || true
+            helm del --purge sensor || true
 
   deploy-webhook-server:
     steps:
@@ -970,8 +987,6 @@ commands:
           name: QA Automation Platform Part 1
           command: |
             export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
@@ -993,8 +1008,6 @@ commands:
           name: QA Automation Platform Part 2
           command: |
             export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
             make -C qa-tests-backend sensor-bounce-test
 
       - run:
@@ -1257,8 +1270,8 @@ commands:
           name: QA Automation Platform Part 1
           command: |
             export CLUSTER=OPENSHIFT
-            export HOSTNAME=localhost
-            export PORT=${LOCAL_PORT}
+            export API_HOSTNAME=localhost
+            export API_PORT=${LOCAL_PORT}
             if [[ "${CIRCLE_BRANCH}" == "master" || -n "${CIRCLE_TAG}" ]]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test || touch FAIL
@@ -1281,8 +1294,8 @@ commands:
           name: QA Automation Platform Part 2
           command: |
             export CLUSTER=OPENSHIFT
-            export HOSTNAME=localhost
-            export PORT="${LOCAL_PORT}"
+            export API_HOSTNAME=localhost
+            export API_PORT="${LOCAL_PORT}"
             make -C qa-tests-backend sensor-bounce-test
 
       - run:
@@ -1382,7 +1395,11 @@ commands:
               cd ${RENDERED_CHART_DIR}
               cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
               ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
-              helm install --namespace stackrox -f values.yaml -f feature-flag-values.yaml --name sensor .
+              extra_args=()
+              if [[ -f feature-flag-values.yaml ]]; then
+                  extra_args+=(-f feature-flag-values.yaml)
+              fi
+              helm install --namespace stackrox -f values.yaml --name sensor . "${extra_args[@]}"
               rm -rf "${RENDERED_CHART_DIR}"
             fi
       - run:
@@ -1461,6 +1478,27 @@ jobs:
   # Jobs independent from build / compilation (like style checks, static code analysis, unit tests)
   ###
 
+  slack-notify:
+    executor: custom
+    resource_class: small
+    steps:
+      - run:
+          name: Send Slack notification with Workflow link
+          command: |
+            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+              webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
+            elif [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
+              webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
+            else
+              exit 0
+            fi
+
+            jq -n \
+              --arg workflow_id "$CIRCLE_WORKFLOW_ID" \
+              --arg tag "$CIRCLE_TAG" \
+              '{"text": "CircleCI build for tag `\($tag)` started! Check the status of the build under the following URL: https://circleci.com/workflow-run/\($workflow_id)"}' \
+            | curl -XPOST -d @- -H 'Content-Type: application/json' "$webhook_url"
+
   unit-tests:
     executor: custom
     resource_class: xlarge
@@ -1468,6 +1506,7 @@ jobs:
       - checkout
 
       - *restoreGoModCache
+      - setup-go-build-env
       - *restoreGradle
       - *restoreUI
 
@@ -1514,6 +1553,7 @@ jobs:
       - checkout
 
       - *restoreGoModCache
+      - setup-go-build-env
       - *restoreGradle
       - *restoreUI
 
@@ -1532,7 +1572,9 @@ jobs:
       - checkout
 
       - *restoreGoModCache
+      - setup-go-build-env
       - run:
+          no_output_timeout: 30m
           name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
           command: |
             git ls-files --others --exclude-standard >/tmp/untracked
@@ -1563,6 +1605,7 @@ jobs:
       - checkout
 
       - *restoreGoModCache
+      - setup-go-build-env
 
       - *restoreGoBuildCache
 
@@ -1665,6 +1708,7 @@ jobs:
     steps:
       - checkout
       - *restoreGoModCache
+      - setup-go-build-env
       - *restoreGoBuildCache
       - run:
           name: Build the CLI
@@ -1701,7 +1745,11 @@ jobs:
     steps:
       - checkout
       - *restoreGoModCache
+      - setup-go-build-env
       - *restoreGoBuildCache
+      - setup_remote_docker
+      - setup-dep-env:
+          docker-login: true
 
       - run:
           name: Build the main Go binaries
@@ -1738,6 +1786,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - setup-dep-env:
+          docker-login: true
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1756,6 +1806,7 @@ jobs:
             ossls version
 
       - *restoreGoModCache
+      - setup-go-build-env
 
       - run:
           name: Generate OSS notice
@@ -1824,6 +1875,7 @@ jobs:
             ossls version
 
       - *restoreGoModCache
+      - setup-go-build-env
 
       - run:
           name: Generate OSS notice
@@ -1849,8 +1901,8 @@ jobs:
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
 
       - run:
-          name: Build main image for RHEL
-          command: make docker-build-main-image-rhel
+          name: Build main image for RHEL which includes building the binaries because they need to be built specifically for RHEL
+          command: make main-image-rhel
 
       - run:
           name: Push new image
@@ -1927,7 +1979,6 @@ jobs:
     environment:
       - GCP_IMAGE_TYPE: "COS"
       - POD_SECURITY_POLICIES: "true"
-      - ROX_POD_DEPLOY_SEPARATE: "true"
     steps:
       - checkout
       - check-backend-changes
@@ -2010,6 +2061,7 @@ jobs:
       - *refreshAlpineBaseImage
 
       - *restoreGoModCache
+      - setup-go-build-env
       - *restoreGoBuildCache
 
       - run:
@@ -2121,7 +2173,7 @@ jobs:
   provision-kops-api-e2e-tests:
     machine: true
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.7
+      - KOPS_AUTOMATION_VERSION: 0.2.8
     steps:
       - checkout
       - check-label-exists-or-skip:
@@ -2203,14 +2255,13 @@ jobs:
       - ROX_VULN_MGMT_UI: true
       - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
-      - ROX_TELEMETRY: true
-      - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
+      - ROX_BOOLEAN_POLICY_LOGIC: false
 
     steps:
       - checkout
@@ -2223,6 +2274,7 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *restoreGoModCache
+      - setup-go-build-env
       - run:
           name: Retrieving missing dependencies
           command: make download-deps
@@ -2238,7 +2290,7 @@ jobs:
 
       - run:
           name: Export Trusted CA file
-          command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/superfish.pem"
+          command: cci-export TRUSTED_CA_FILE "$PWD/tests/bad-ca/untrusted-root-badssl-com.pem"
 
       - *setupGoogleAppCreds
       - *setupLicense
@@ -2409,8 +2461,6 @@ jobs:
       - ROX_VULN_MGMT_UI: true
       - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
-      - ROX_TELEMETRY: true
-      - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
@@ -2483,11 +2533,10 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_BADGER_DB: true
-      - ROX_TELEMETRY: true
-      - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
+      - ROX_BOOLEAN_POLICY_LOGIC: false
 
     steps:
       - run-qa-tests:
@@ -2536,8 +2585,6 @@ jobs:
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_BADGER_DB: true
-      - ROX_TELEMETRY: true
-      - ROX_DIAGNOSTIC_BUNDLE: true
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
@@ -2702,6 +2749,13 @@ jobs:
 
       - *waitForAPI
 
+      - run:
+          name: Run upgrade tests on migrated version
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "260e11a3-cbea-464c-95f0-588fa7695b49"
+            make -C qa-tests-backend upgrade-test
+
       - *restoreGradle
 
       - run:
@@ -2721,11 +2775,10 @@ jobs:
       - *waitForAPI
 
       - run:
-          name: Run upgrade tests
+          name: Run upgrade tests on restored versions
           command: |
             export CLUSTER=K8S
-            export HOSTNAME="${API_HOSTNAME}"
-            export PORT="${API_PORT}"
+            cci-export UPGRADE_CLUSTER_ID "260e11a3-cbea-464c-95f0-588fa7695b49"
             make -C qa-tests-backend upgrade-test
 
       - *storeQATestResults
@@ -2861,6 +2914,101 @@ jobs:
               exit 1;
             fi
 
+      - remove-existing-stackrox-resources
+
+      - run:
+          name: Deploy Central version right after 41.4
+          command: |
+            git checkout 309f7d8edc03e9767ddabefad670224e4bd1746f
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
+            ./deploy/k8s/central.sh
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cci-export ROX_USERNAME "$ROX_USERNAME"
+            cci-export ROX_PASSWORD "$ROX_PASSWORD"
+
+      - *waitForAPI
+      - run:
+          name: Deploy and restore DB to version 41.4
+          command: |
+            # Download 41.4 backup
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
+
+            # Restore 41.4 backup to 41.4 based commit
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
+
+      - *waitForAPI
+
+      - run:
+          name: Checkout current commit again
+          command: git reset --hard "${CIRCLE_SHA1}"
+
+      - run:
+          name: Set Central image to current SHA
+          command: |
+            kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
+
+      - *waitForAPI
+
+      - run:
+          name: Validate 41.4 to current head migration
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+            make -C qa-tests-backend upgrade-test
+
+      - run:
+          name: Restore 41.4 backup to current head
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
+
+      - *waitForAPI
+
+      - run:
+          name: Validate 41.4 backup -> migration to head
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+            make -C qa-tests-backend upgrade-test
+
+      - run:
+          name: Fetch bundle for the "remote" cluster in the DB
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote
+            [[ -d sensor-remote ]]
+
+      - run:
+          name: Install the sensor
+          command: ./sensor-remote/sensor.sh
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Wait for Central reconciliation before running smoke tests
+          command: |
+            # Reconciliation is rather slow in this case, since the central has a DB with a bunch of deployments,
+            # none of which exist. So when sensor connects, the reconciliation deletion takes a while to flush.
+            # This causes flakiness with the smoke tests.
+            # To mitigate this, wait for the deployments to get deleted before running the tests.
+            success=0
+            for i in $(seq 1 60); do
+              numDeployments="$(curl -sSk -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/summary/counts" | jq '.numDeployments' -r)"
+              echo "Try number ${i}. Number of deployments in Central: ${numDeployments}"
+              [[ -n "${numDeployments}" ]]
+              if [[ "${numDeployments}" -lt 100 ]]; then
+                success=1
+                break
+              fi
+              sleep 10
+            done
+            [[ "${success}" == 1 ]]
+
+      - run:
+          name: Run smoke tests now that sensor is up
+          command: |
+            export CLUSTER=K8S
+            make -C qa-tests-backend smoke-test
+
       - *collectK8sLogs
       - get-and-store-debug-dump
       - *storeK8sLogs
@@ -2873,6 +3021,7 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - STORAGE: pvc
+      - STORAGE_CLASS: faster
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
 
@@ -2902,6 +3051,9 @@ jobs:
           command: |
             ./deploy/k8s/central.sh
 
+            kubectl -n stackrox set env deploy/central MUTEX_WATCHDOG_TIMEOUT_SECS=0
+            kubectl -n stackrox patch deploy/central -p '{"spec":{"template":{"spec":{"containers":[{"name":"central","resources":{"requests":{"memory":"2Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
+
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cci-export ROX_USERNAME "$ROX_USERNAME"
             cci-export ROX_PASSWORD "$ROX_PASSWORD"
@@ -2911,24 +3063,23 @@ jobs:
       - *waitForAPI
 
       - run:
-          name: Launch Replay
+          name: Launch Sensor
           command: |
-            ./scale/flightreplay/launch_replay.sh
+            ./deploy/k8s/sensor.sh
+            kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
+            kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=default
+            kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"2Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
             mkdir /tmp/pprof
-            # 65 min run so that we are confident that the run has completely finished
-            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 65
+            # 30 min run so that we are confident that the run has completely finished
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 30
+            zip -r /tmp/pprof.zip /tmp/pprof
+
       - *storeProfilingResults
       - check-stackrox-logs
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
       - *storeMonitoringMetrics
-      - *benchmarkDashboard
-      - *storeDashBenchImages
-      - *benchmarkCompliance
-      - *storeComplianceBenchImages
-      - *benchmarkDryRunPolicies
-      - *storeDryRunBenchImages
       - *collectK8sLogs
       - get-and-store-debug-dump
       - check-stackrox-logs
@@ -3034,8 +3185,8 @@ jobs:
           name: QA Automation Platform
           command: |
             export CLUSTER=K8S
-            export HOSTNAME=localhost
-            export PORT=${LOCAL_PORT}
+            export API_HOSTNAME=localhost
+            export API_PORT=${LOCAL_PORT}
             make -C qa-tests-backend test
 
       - *storeQATestResults
@@ -3045,24 +3196,11 @@ jobs:
 
       - *updateTestRail
 
-      - *restoreUI
-      - *determineWhetherToRunUIDevServer
-      - *runUIDevServer
-      - *waitForUIDevServer
-      - *runUIE2E
-      - *collectImbuedUILogs
-      - *storeImbuedUILogs
-
       - *collectK8sLogs
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
-
-      - *storeCypressResults
-      - *storeCypressScreenshots
-      - *storeCypressVideos
-      - *storeUITestCoverage
 
       - run:
           name: Destroy EKS cluster
@@ -3076,7 +3214,7 @@ jobs:
   kops-api-e2e-tests:
     executor: custom
     environment:
-      - KOPS_AUTOMATION_VERSION: 0.2.7
+      - KOPS_AUTOMATION_VERSION: 0.2.8
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
@@ -3142,8 +3280,8 @@ jobs:
           name: QA Automation Platform
           command: |
             export CLUSTER=K8S
-            export HOSTNAME=localhost
-            export PORT=${LOCAL_PORT}
+            export API_HOSTNAME=localhost
+            export API_PORT=${LOCAL_PORT}
             make -C qa-tests-backend test
 
       - *storeQATestResults
@@ -3153,24 +3291,11 @@ jobs:
 
       - *updateTestRail
 
-      - *restoreUI
-      - *determineWhetherToRunUIDevServer
-      - *runUIDevServer
-      - *waitForUIDevServer
-      - *runUIE2E
-      - *collectImbuedUILogs
-      - *storeImbuedUILogs
-
       - *collectK8sLogs
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
-
-      - *storeCypressResults
-      - *storeCypressScreenshots
-      - *storeCypressVideos
-      - *storeUITestCoverage
 
       - run:
           name: Pack kops volume
@@ -3180,6 +3305,7 @@ jobs:
             docker cp kops/id_rsa.pub        kops:/data
             docker cp kops/terraform.tfstate kops:/data
             docker cp kops/cluster_name      kops:/data
+            docker cp kops/kops_s3_bucket    kops:/data
             docker cp kops/delete-cluster-$(cat kops/cluster_name).sh kops:/data
           when: always
 
@@ -3576,6 +3702,13 @@ workflows:
 
   build_all:
     jobs:
+      - slack-notify:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+          context: docker-io-pull
       - style-checks:
           <<: *runOnAllTagsWithDockerIOPullCtx
       - check-generated-files-up-to-date:

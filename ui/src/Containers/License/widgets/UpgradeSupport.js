@@ -35,9 +35,7 @@ const UpgradeSupport = () => (
                         <div>
                             <a
                                 className="text-base-600 tracking-wide hover:text-primary-600"
-                                href={`mailto:${
-                                    stackroxSupport.email
-                                }?subject=StackRox License Renewal&body=I would like to renew my StackRox Kubernetes Security Platform License.`}
+                                href={`mailto:${stackroxSupport.email}?subject=StackRox License Renewal&body=I would like to renew my StackRox Kubernetes Security Platform License.`}
                             >
                                 {stackroxSupport.email}
                             </a>

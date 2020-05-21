@@ -10,9 +10,9 @@ if (Cypress.env('COLLECT_COVERAGE')) {
 //   See: https://github.com/cypress-io/cypress/issues/871,
 //        and the solution, later in that thread
 //        https://github.com/cypress-io/cypress/issues/871#issuecomment-509392310
-Cypress.on('scrolled', $el => {
+Cypress.on('scrolled', ($el) => {
     $el.get(0).scrollIntoView({
         block: 'center',
-        inline: 'center'
+        inline: 'center',
     });
 });

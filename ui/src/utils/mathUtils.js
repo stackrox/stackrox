@@ -3,5 +3,5 @@ export function getPercentage(num, total) {
 }
 
 export default {
-    getPercentage
+    getPercentage,
 };

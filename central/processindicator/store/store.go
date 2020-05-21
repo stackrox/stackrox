@@ -1,23 +1,20 @@
 package store
 
 import (
-	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for process indicators.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
-	GetProcessIndicators() ([]*storage.ProcessIndicator, error)
-	GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error)
-	GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error)
+	Get(id string) (*storage.ProcessIndicator, bool, error)
+	GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error)
 
-	AddProcessIndicators(...*storage.ProcessIndicator) error
-	RemoveProcessIndicators(id []string) error
+	UpsertMany([]*storage.ProcessIndicator) error
+	DeleteMany(id []string) error
 
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 
-	WalkAll(func(pi *storage.ProcessIndicator) error) error
+	Walk(func(pi *storage.ProcessIndicator) error) error
 }

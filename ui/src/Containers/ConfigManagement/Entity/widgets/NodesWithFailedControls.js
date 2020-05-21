@@ -5,7 +5,7 @@ import entityTypes from 'constants/entityTypes';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { useQuery } from 'react-apollo';
 import Raven from 'raven-js';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { entityAcrossControlsColumns } from 'constants/listColumns';
 import uniqBy from 'lodash/uniqBy';
 
@@ -34,7 +34,7 @@ const NODES_WITH_FAILING_CONTROLS = gql`
     }
 `;
 
-const filterByEntityContext = entityContext => {
+const filterByEntityContext = (entityContext) => {
     const result = Object.keys(entityContext).reduce((acc, entityType) => {
         const entityId = entityContext[entityType];
         acc[`${entityType} Id`] = entityId;
@@ -43,27 +43,27 @@ const filterByEntityContext = entityContext => {
     return queryService.objectToWhereClause(result);
 };
 
-const getFailingNodes = executedControls => {
+const getFailingNodes = (executedControls) => {
     const failingNodes = executedControls.reduce((acc, curr) => {
         return [...acc, ...curr.complianceControl.complianceControlFailingNodes];
     }, []);
-    return uniqBy(failingNodes, 'id').map(node => ({ ...node, passing: false }));
+    return uniqBy(failingNodes, 'id').map((node) => ({ ...node, passing: false }));
 };
 
-const getPassingNodes = executedControls => {
+const getPassingNodes = (executedControls) => {
     const passingNodes = executedControls.reduce((acc, curr) => {
         return [...acc, ...curr.complianceControl.complianceControlPassingNodes];
     }, []);
-    return uniqBy(passingNodes, 'id').map(node => ({ ...node, passing: true }));
+    return uniqBy(passingNodes, 'id').map((node) => ({ ...node, passing: true }));
 };
 
-const NodesWithFailedControls = props => {
+const NodesWithFailedControls = (props) => {
     const { entityType, entityContext } = props;
     const { loading, error, data } = useQuery(NODES_WITH_FAILING_CONTROLS, {
         variables: {
-            query: filterByEntityContext(entityContext)
+            query: filterByEntityContext(entityContext),
         },
-        fetchPolicy: 'no-cache'
+        fetchPolicy: 'no-cache',
     });
     if (loading)
         return (
@@ -125,8 +125,8 @@ const NodesWithFailedControls = props => {
             defaultSorted={[
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
         />
     );
@@ -134,7 +134,7 @@ const NodesWithFailedControls = props => {
 
 NodesWithFailedControls.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityContext: PropTypes.shape({}).isRequired
+    entityContext: PropTypes.shape({}).isRequired,
 };
 
 export default NodesWithFailedControls;

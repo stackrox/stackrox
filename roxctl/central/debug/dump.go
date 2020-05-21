@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/common/zipdownload"
 )
 
@@ -26,10 +27,10 @@ func DumpCommand() *cobra.Command {
 		Use:   "dump",
 		Short: `"dump" to get retrieve a zip of debug metrics`,
 		Long:  `"dump" to get retrieve a zip of debug metrics`,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			fmt.Fprint(os.Stderr, "Retrieving debug metrics. This may take a couple minutes...\n")
 			return retrieveDump(flags.Timeout(c), withLogs, outputDir)
-		},
+		}),
 	}
 	flags.AddTimeoutWithDefault(c, dumpTimeout)
 	c.Flags().BoolVar(&withLogs, "logs", false, "logs=true will retrieve the dump without logs from Central")

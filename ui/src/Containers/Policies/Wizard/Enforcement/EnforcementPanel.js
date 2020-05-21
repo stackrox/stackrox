@@ -9,7 +9,7 @@ import Panel from 'Components/Panel';
 import { actions } from 'reducers/policies/wizard';
 import Tile from 'Containers/Policies/Wizard/Enforcement/Tile/Tile';
 import lifecycleTileMap, {
-    lifecycleToEnforcementsMap
+    lifecycleToEnforcementsMap,
 } from 'Containers/Policies/Wizard/Enforcement/descriptors';
 import EnforcementButtons from 'Containers/Policies/Wizard/Enforcement/EnforcementButtons';
 
@@ -37,7 +37,7 @@ function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
 
     // Add enforcement types.
     function addEnforcementsForLifecycle(stage) {
-        const newPolicy = Object.assign({}, wizardPolicy);
+        const newPolicy = { ...wizardPolicy };
         if (enforcementActionsEmpty(newPolicy.enforcementActions)) {
             newPolicy.enforcementActions = [];
         }
@@ -53,9 +53,9 @@ function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
             intersection(wizardPolicy.enforcementActions, lifecycleToEnforcementsMap[stage])
                 .length > 0
         ) {
-            const newPolicy = Object.assign({}, wizardPolicy);
+            const newPolicy = { ...wizardPolicy };
             newPolicy.enforcementActions = newPolicy.enforcementActions.filter(
-                d => !lifecycleToEnforcementsMap[stage].find(v => v === d)
+                (d) => !lifecycleToEnforcementsMap[stage].find((v) => v === d)
             );
             setWizardPolicy(newPolicy);
         }
@@ -94,7 +94,7 @@ function EnforcementPanel({ header, onClose, wizardPolicy, setWizardPolicy }) {
                 </h2>
                 <div className="border-b border-base-400" />
                 <div className="flex flex-col items-center w-full">
-                    {lifecycles.map(key => (
+                    {lifecycles.map((key) => (
                         <Tile
                             key={key}
                             lifecycle={key}
@@ -115,19 +115,19 @@ EnforcementPanel.propTypes = {
     header: PropTypes.string,
     wizardPolicy: PropTypes.shape({
         enforcementActions: PropTypes.arrayOf(PropTypes.string),
-        lifecycleStages: PropTypes.arrayOf(PropTypes.string)
+        lifecycleStages: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
 
     setWizardPolicy: PropTypes.func.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
 };
 
 EnforcementPanel.defaultProps = {
-    header: ''
+    header: '',
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardPolicy: selectors.getWizardPolicy
+    wizardPolicy: selectors.getWizardPolicy,
 });
 
 const mapDispatchToProps = {
@@ -135,10 +135,7 @@ const mapDispatchToProps = {
     toggleDeployTime: actions.toggleDeployTimeEnforcement,
     toggleRunTime: actions.toggleRunTimeEnforcement,
 
-    setWizardPolicy: actions.setWizardPolicy
+    setWizardPolicy: actions.setWizardPolicy,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(EnforcementPanel);
+export default connect(mapStateToProps, mapDispatchToProps)(EnforcementPanel);

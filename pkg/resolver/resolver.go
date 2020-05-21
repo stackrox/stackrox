@@ -8,10 +8,6 @@ func Registry(url string) string {
 	case "docker.io":
 		return "https://registry-1.docker.io"
 	default:
-		val, err := urlfmt.FormatURL(url, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-		if err != nil {
-			return url
-		}
-		return val
+		return urlfmt.FormatURL(url, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	}
 }

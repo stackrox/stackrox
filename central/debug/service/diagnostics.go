@@ -45,9 +45,8 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 	}
 
 	var err error
-	telemetryCtrl := sensorConn.Telemetry()
-	if telemetryCtrl != nil && sensorConn.HasCapability(centralsensor.PullTelemetryDataCap) {
-		err = telemetryCtrl.PullKubernetesInfo(ctx, callback)
+	if sensorConn.HasCapability(centralsensor.PullTelemetryDataCap) {
+		err = sensorConn.Telemetry().PullKubernetesInfo(ctx, callback)
 	} else {
 		err = errors.New("sensor does not support pulling telemetry data")
 	}

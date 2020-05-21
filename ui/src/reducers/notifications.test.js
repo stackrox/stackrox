@@ -1,7 +1,7 @@
 import reducer, { actions } from './notifications';
 
 const initialState = {
-    notifications: []
+    notifications: [],
 };
 
 const notification = 'notification added';
@@ -19,7 +19,7 @@ describe('Notifications Reducer', () => {
 
     it('should remove oldest notification', () => {
         const prevState = {
-            notifications: [notification]
+            notifications: [notification],
         };
         const nextState = reducer(prevState, actions.removeOldestNotification());
         expect(nextState.notifications).toEqual([]);

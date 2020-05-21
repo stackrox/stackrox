@@ -1,7 +1,6 @@
 package resources
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -68,7 +67,7 @@ func (rs *rbacUpdaterImpl) rebuildEvaluatorBucketsNoLock() {
 }
 
 func (rs *rbacUpdaterImpl) updateBindingNoLock(roleID string, ref namespacedRoleRef, binding *storage.K8SRoleBinding) {
-	newBinding := proto.Clone(binding).(*storage.K8SRoleBinding)
+	newBinding := binding.Clone()
 	newBinding.RoleId = roleID
 	rs.bindingsByID[newBinding.GetId()] = newBinding
 	rs.roleRefToBindings[ref][newBinding.GetId()] = newBinding
@@ -78,7 +77,7 @@ func (rs *rbacUpdaterImpl) upsertRoleGenericNoLock(ref namespacedRoleRef, role *
 	defer rs.rebuildEvaluatorBucketsNoLock()
 
 	// Clone the role
-	role = proto.Clone(role).(*storage.K8SRole)
+	role = role.Clone()
 
 	rs.roles[ref] = role
 
@@ -305,7 +304,7 @@ func toRoleEvent(role *storage.K8SRole, action central.ResourceAction) *central.
 		Id:     role.GetId(),
 		Action: action,
 		Resource: &central.SensorEvent_Role{
-			Role: proto.Clone(role).(*storage.K8SRole),
+			Role: role.Clone(),
 		},
 	}
 }

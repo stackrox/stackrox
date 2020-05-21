@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate"
@@ -39,6 +40,9 @@ type builderImpl struct {
 
 // ForPolicy returns a matcher for the given policy and options.
 func (mb *builderImpl) ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error) {
+	if features.BooleanPolicyLogic.Enabled() {
+		return nil, errors.New("legacy builder is unsupported under boolean policies")
+	}
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}

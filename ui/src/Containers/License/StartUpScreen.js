@@ -88,26 +88,23 @@ StartUpScreen.propTypes = {
     licenseStatus: PropTypes.string,
     licenseUploadStatus: PropTypes.shape({
         status: PropTypes.string,
-        message: PropTypes.string
+        message: PropTypes.string,
     }),
-    authStatus: PropTypes.string.isRequired
+    authStatus: PropTypes.string.isRequired,
 };
 
 StartUpScreen.defaultProps = {
     licenseStatus: null,
     licenseUploadStatus: PropTypes.shape({
         status: null,
-        message: ''
-    })
+        message: '',
+    }),
 };
 
 const mapStateToProps = createStructuredSelector({
     licenseStatus: selectors.getLicenseStatus,
     licenseUploadStatus: selectors.getLicenseUploadStatus,
-    authStatus: selectors.getAuthStatus
+    authStatus: selectors.getAuthStatus,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(StartUpScreen);
+export default connect(mapStateToProps, null)(StartUpScreen);

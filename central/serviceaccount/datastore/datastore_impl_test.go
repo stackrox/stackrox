@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -9,15 +10,16 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceaccount/internal/index"
 	"github.com/stackrox/rox/central/serviceaccount/internal/store"
+	"github.com/stackrox/rox/central/serviceaccount/internal/store/rocksdb"
 	serviceAccountSearch "github.com/stackrox/rox/central/serviceaccount/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	rocksdbHelper "github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestServiceAccountDataStore(t *testing.T) {
@@ -27,6 +29,8 @@ func TestServiceAccountDataStore(t *testing.T) {
 type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
+	db         *gorocksdb.DB
+	dir        string
 	bleveIndex bleve.Index
 
 	indexer   index.Indexer
@@ -42,10 +46,12 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+	db, dir, err := rocksdbHelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err)
+	suite.db = db
+	suite.dir = dir
 
-	suite.storage, err = store.New(db, storecache.NewMapBackedCache())
+	suite.storage, err = rocksdb.New(db)
 	suite.Require().NoError(err)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = serviceAccountSearch.New(suite.storage, suite.indexer)
@@ -59,6 +65,8 @@ func (suite *ServiceAccountDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
+	suite.db.Close()
+	_ = os.RemoveAll(suite.dir)
 	suite.NoError(suite.bleveIndex.Close())
 }
 

@@ -20,7 +20,7 @@ printsrcs:
 
 lint: deps $(SOURCES)
 	@echo "+ $@"
-	yarn lint
+	yarn lint --quiet
 	@touch lint
 
 build: deps $(SOURCES)

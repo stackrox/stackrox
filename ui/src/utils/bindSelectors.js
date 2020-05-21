@@ -10,7 +10,7 @@ const bindSelectors = (slicer, selectors) =>
     Object.keys(selectors).reduce(
         (boundSelectors, selector) => ({
             ...boundSelectors,
-            [selector]: (state, ...args) => selectors[selector](slicer(state), ...args)
+            [selector]: (state, ...args) => selectors[selector](slicer(state), ...args),
         }),
         {}
     );

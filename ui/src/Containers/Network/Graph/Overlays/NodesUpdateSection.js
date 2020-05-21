@@ -26,7 +26,7 @@ const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
 
 NodesUpdateButton.propTypes = {
     nodeUpdatesCount: PropTypes.number.isRequired,
-    networkNodesUpdate: PropTypes.func.isRequired
+    networkNodesUpdate: PropTypes.func.isRequired,
 };
 
 const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedTimestamp }) => {
@@ -48,11 +48,11 @@ const NodesUpdateSection = ({ networkNodesUpdate, nodeUpdatesCount, lastUpdatedT
 NodesUpdateSection.propTypes = {
     lastUpdatedTimestamp: PropTypes.instanceOf(Date),
     nodeUpdatesCount: PropTypes.number.isRequired,
-    networkNodesUpdate: PropTypes.func.isRequired
+    networkNodesUpdate: PropTypes.func.isRequired,
 };
 
 NodesUpdateSection.defaultProps = {
-    lastUpdatedTimestamp: null
+    lastUpdatedTimestamp: null,
 };
 
 const getNodeUpdatesCount = createSelector(
@@ -62,15 +62,12 @@ const getNodeUpdatesCount = createSelector(
 
 const mapStateToProps = createStructuredSelector({
     lastUpdatedTimestamp: selectors.getLastUpdatedTimestamp,
-    nodeUpdatesCount: getNodeUpdatesCount
+    nodeUpdatesCount: getNodeUpdatesCount,
 });
 
 const mapDispatchToProps = {
     getNodeUpdates: graphActions.setNetworkGraphFilterMode,
-    networkNodesUpdate: graphActions.networkNodesUpdate
+    networkNodesUpdate: graphActions.networkNodesUpdate,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(NodesUpdateSection);
+export default connect(mapStateToProps, mapDispatchToProps)(NodesUpdateSection);

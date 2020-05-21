@@ -2,17 +2,17 @@ import { url, selectors } from '../../constants/ConfigManagementPage';
 import * as api from '../../constants/apiEndpoints';
 import withAuth from '../../helpers/basicAuth';
 
-const policyViolationsBySeverityLinkShouldMatchList = linkSelector => {
+const policyViolationsBySeverityLinkShouldMatchList = (linkSelector) => {
     cy.visit(url.dashboard);
     cy.get(linkSelector)
         .invoke('text')
-        .then(linkText => {
+        .then((linkText) => {
             const numPolicies = parseInt(linkText, 10);
             cy.get(linkSelector).click();
             cy.wait(1000);
             cy.get(selectors.tablePanelHeader)
                 .invoke('text')
-                .then(panelHeaderText => {
+                .then((panelHeaderText) => {
                     const numRows = parseInt(panelHeaderText, 10);
                     expect(numPolicies).to.equal(numRows);
                 });
@@ -28,14 +28,12 @@ describe('Config Management Dashboard Page', () => {
             .eq(0)
             .find(selectors.tileLinkValue)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 const numPolicies = value;
-                cy.get(selectors.tileLinks)
-                    .eq(0)
-                    .click();
+                cy.get(selectors.tileLinks).eq(0).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
-                    .then(panelHeaderText => {
+                    .then((panelHeaderText) => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
                     });
             });
@@ -47,14 +45,12 @@ describe('Config Management Dashboard Page', () => {
             .eq(1)
             .find(selectors.tileLinkValue)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 const numControls = value;
-                cy.get(selectors.tileLinks)
-                    .eq(1)
-                    .click();
+                cy.get(selectors.tileLinks).eq(1).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
-                    .then(panelHeaderText => {
+                    .then((panelHeaderText) => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numControls, 10));
                     });
             });
@@ -62,17 +58,13 @@ describe('Config Management Dashboard Page', () => {
 
     it('should properly navigate to the policies list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(0)
-            .click();
+        cy.get(selectors.tileLinks).eq(0).click();
         cy.url().should('contain', url.list.policies);
     });
 
     it('should properly navigate to the cis controls list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(1)
-            .click();
+        cy.get(selectors.tileLinks).eq(1).click();
         cy.url().should('contain', url.list.controls);
     });
 

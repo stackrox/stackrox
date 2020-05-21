@@ -64,30 +64,24 @@ PreviewPanel.propTypes = {
     header: PropTypes.string,
     dryRun: PropTypes.shape({}).isRequired,
     policyDisabled: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
 };
 
 PreviewPanel.defaultProps = {
-    header: ''
+    header: '',
 };
 
-const isPolicyDisabled = createSelector(
-    [selectors.getWizardPolicy],
-    policy => {
-        if (policy == null) return true;
-        if (policy.disabled) return true;
-        return false;
-    }
-);
+const isPolicyDisabled = createSelector([selectors.getWizardPolicy], (policy) => {
+    if (policy == null) return true;
+    if (policy.disabled) return true;
+    return false;
+});
 
-const getDryRun = createSelector(
-    [selectors.getWizardDryRun],
-    ({ dryRun }) => dryRun
-);
+const getDryRun = createSelector([selectors.getWizardDryRun], ({ dryRun }) => dryRun);
 
 const mapStateToProps = createStructuredSelector({
     dryRun: getDryRun,
-    policyDisabled: isPolicyDisabled
+    policyDisabled: isPolicyDisabled,
 });
 
 export default connect(mapStateToProps)(PreviewPanel);

@@ -12,7 +12,7 @@ const MultiSelect = ({
     className,
     'data-testid': dataTestId, // see https://stackoverflow.com/a/51613732
     wrapperClass,
-    triggerClass
+    triggerClass,
 }) => (
     <ReactSelect
         key={name}
@@ -38,7 +38,7 @@ MultiSelect.propTypes = {
     className: PropTypes.string,
     'data-testid': PropTypes.string,
     wrapperClass: PropTypes.string,
-    triggerClass: PropTypes.string
+    triggerClass: PropTypes.string,
 };
 
 MultiSelect.defaultProps = {
@@ -47,7 +47,7 @@ MultiSelect.defaultProps = {
         'block w-full border bg-base-200 border-base-400 text-base-600 p-3 pr-8 rounded-sm z-1 focus:border-base-500',
     'data-testid': '',
     wrapperClass: '',
-    triggerClass: ''
+    triggerClass: '',
 };
 
 export default MultiSelect;

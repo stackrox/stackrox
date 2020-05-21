@@ -6,7 +6,7 @@ import PolicyBuilderKey from './PolicyBuilderKey';
 
 export default {
     title: 'PolicyBuilderKey',
-    component: PolicyBuilderKey
+    component: PolicyBuilderKey,
 };
 
 export const withLabel = () => {

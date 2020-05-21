@@ -14,8 +14,8 @@ import severityPropType from './severityPropTypes';
 
 const ViolationsByPolicyCategory = ({ data, history }) => {
     if (!data) return '';
-    return data.map(policyType => {
-        const pieData = policyType.counts.map(d => ({
+    return data.map((policyType) => {
+        const pieData = policyType.counts.map((d) => ({
             name: severityLabels[d.severity],
             value: parseInt(d.count, 10),
             color: severityColorMap[d.severity],
@@ -23,7 +23,7 @@ const ViolationsByPolicyCategory = ({ data, history }) => {
                 history.push(
                     `/main/violations?category=${policyType.group}&severity=${d.severity}`
                 );
-            }
+            },
         }));
         return (
             <div
@@ -53,28 +53,23 @@ ViolationsByPolicyCategory.propTypes = {
             counts: PropTypes.arrayOf(
                 PropTypes.shape({
                     count: PropTypes.string.isRequired,
-                    severity: severityPropType
+                    severity: severityPropType,
                 })
             ),
-            group: PropTypes.string.isRequired
+            group: PropTypes.string.isRequired,
         })
     ).isRequired,
     history: PropTypes.shape({
-        push: PropTypes.func.isRequired
-    }).isRequired
+        push: PropTypes.func.isRequired,
+    }).isRequired,
 };
 
 ViolationsByPolicyCategory.defaultProps = {
-    data: []
+    data: [],
 };
 
 const mapStateToProps = createStructuredSelector({
-    data: selectors.getAlertCountsByPolicyCategories
+    data: selectors.getAlertCountsByPolicyCategories,
 });
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        null
-    )(ViolationsByPolicyCategory)
-);
+export default withRouter(connect(mapStateToProps, null)(ViolationsByPolicyCategory));

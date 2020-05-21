@@ -11,7 +11,7 @@ import (
 type Evaluator interface {
 	RemoveDeployment(id string)
 	AddWhitelist(whitelist *storage.ProcessWhitelist)
-	IsInWhitelist(pi *storage.ProcessIndicator) bool
+	IsOutsideLockedWhitelist(pi *storage.ProcessIndicator) bool
 }
 
 type whitelistEvaluator struct {
@@ -72,14 +72,11 @@ func (w *whitelistEvaluator) AddWhitelist(whitelist *storage.ProcessWhitelist) {
 
 // IsInWhitelist checks if the process indicator is within a locked whitelist
 // If the whitelist does not exist, then we return true
-func (w *whitelistEvaluator) IsInWhitelist(pi *storage.ProcessIndicator) bool {
+func (w *whitelistEvaluator) IsOutsideLockedWhitelist(pi *storage.ProcessIndicator) bool {
 	w.whitelistLock.RLock()
 	defer w.whitelistLock.RUnlock()
 
 	whitelist := w.whitelists[pi.GetDeploymentId()][pi.GetContainerName()]
-	if whitelist == nil {
-		// If there is no whitelist, then we are counting it as if it's within the whitelist
-		return true
-	}
-	return whitelist.Contains(processwhitelist.WhitelistItemFromProcess(pi))
+	// If there is no whitelist, then we are counting it as if it's within the whitelist
+	return whitelist != nil && !whitelist.Contains(processwhitelist.WhitelistItemFromProcess(pi))
 }

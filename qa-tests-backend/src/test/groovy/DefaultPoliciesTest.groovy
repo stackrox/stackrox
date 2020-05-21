@@ -45,6 +45,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Red Hat Package Manager in Image",
             "Curl in Image",
             "Wget in Image",
+            "Mount Docker Socket",
     ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
@@ -144,7 +145,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "DockerHub NGINX 1.10"                          | NGINX_1_10     | "C823"
     }
 
-    @Category(BAT)
+    @Category([BAT, SMOKE])
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"

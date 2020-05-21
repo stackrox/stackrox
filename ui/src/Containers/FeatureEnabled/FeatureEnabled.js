@@ -13,10 +13,7 @@ const FeatureEnabled = ({ featureFlags, featureFlag, children }) => {
 };
 
 const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags
+    featureFlags: selectors.getFeatureFlags,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(FeatureEnabled);
+export default connect(mapStateToProps, null)(FeatureEnabled);

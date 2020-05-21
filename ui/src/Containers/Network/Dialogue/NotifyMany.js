@@ -13,23 +13,23 @@ class NotifyMany extends Component {
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
                 name: PropTypes.string.isRequired,
-                id: PropTypes.string.isRequired
+                id: PropTypes.string.isRequired,
             })
         ).isRequired,
         selectedNotifiers: PropTypes.arrayOf(PropTypes.string),
 
-        setNetworkNotifiers: PropTypes.func.isRequired
+        setNetworkNotifiers: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
-        selectedNotifiers: []
+        selectedNotifiers: [],
     };
 
-    toggleRow = id => {
+    toggleRow = (id) => {
         const { selectedNotifiers } = this.props;
         if (selectedNotifiers.indexOf(id) > -1) {
             this.props.setNetworkNotifiers(
-                selectedNotifiers.filter(notifierId => notifierId !== id)
+                selectedNotifiers.filter((notifierId) => notifierId !== id)
             );
         } else if (selectedNotifiers.length === 0) {
             this.props.setNetworkNotifiers([id]);
@@ -41,7 +41,7 @@ class NotifyMany extends Component {
     toggleSelectAll = () => {
         const { notifiers, selectedNotifiers } = this.props;
         if (notifiers.length > selectedNotifiers.length) {
-            this.props.setNetworkNotifiers(notifiers.map(notifier => notifier.id));
+            this.props.setNetworkNotifiers(notifiers.map((notifier) => notifier.id));
         } else {
             this.props.setNetworkNotifiers([]);
         }
@@ -54,8 +54,8 @@ class NotifyMany extends Component {
         const columns = [
             {
                 accessor: 'name',
-                Header: 'Select Notifiers'
-            }
+                Header: 'Select Notifiers',
+            },
         ];
 
         const { selectedNotifiers } = this.props;
@@ -75,14 +75,11 @@ class NotifyMany extends Component {
 
 const mapStateToProps = createStructuredSelector({
     notifiers: selectors.getNotifiers,
-    selectedNotifiers: selectors.getNetworkNotifiers
+    selectedNotifiers: selectors.getNetworkNotifiers,
 });
 
 const mapDispatchToProps = {
-    setNetworkNotifiers: dialogueActions.setNetworkNotifiers
+    setNetworkNotifiers: dialogueActions.setNetworkNotifiers,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(NotifyMany);
+export default connect(mapStateToProps, mapDispatchToProps)(NotifyMany);

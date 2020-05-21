@@ -15,7 +15,7 @@ const vulnMgmtDefaultSorts = {
     [entityTypes.DEPLOYMENT]: defaultDeploymentSort,
     [entityTypes.IMAGE]: defaultImageSort,
     [entityTypes.NAMESPACE]: defaultNamespaceSort,
-    [entityTypes.POLICY]: defaultPolicySort
+    [entityTypes.POLICY]: defaultPolicySort,
 };
 
 export default vulnMgmtDefaultSorts;

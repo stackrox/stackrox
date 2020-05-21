@@ -1,9 +1,8 @@
-import selectors from '../constants/SearchPage';
+import { selectors } from '../constants/SearchPage';
 import * as api from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
 
-// TODO(ROX-813): Fix these tests
-xdescribe('Global Search Modal', () => {
+describe('Global Search Modal', () => {
     withAuth();
 
     beforeEach(() => {
@@ -16,52 +15,33 @@ xdescribe('Global Search Modal', () => {
         cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');
         cy.route('GET', api.search.options, '@metadataOptionsJson').as('globalSearchOptions');
         cy.visit('/main/dashboard');
-        cy.get(selectors.searchBtn).click();
+        cy.get(selectors.globalSearchButton).click();
     });
 
     it('Should have 6 tabs with the "All" tab selected by default', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.categoryTabs)
-            .eq(0)
-            .should('have.text', 'All')
-            .should('have.class', 'border-primary-400');
-        cy.get(selectors.categoryTabs)
-            .eq(1)
-            .should('have.text', 'Violations')
-            .should('not.have.class', 'border-primary-400');
-        cy.get(selectors.categoryTabs)
-            .eq(2)
-            .should('have.text', 'Policies')
-            .should('not.have.class', 'border-primary-400');
-        cy.get(selectors.categoryTabs)
-            .eq(3)
-            .should('have.text', 'Deployments')
-            .should('not.have.class', 'border-primary-400');
-        cy.get(selectors.categoryTabs)
-            .eq(4)
-            .should('have.text', 'Images')
-            .should('not.have.class', 'border-primary-400');
-
-        cy.get(selectors.categoryTabs)
-            .eq(5)
-            .should('have.text', 'Secrets')
-            .should('not.have.class', 'border-primary-400');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.allTab).should('have.class', 'border-primary-400');
+        cy.get(selectors.violationsTab).should('not.have.class', 'border-primary-400');
+        cy.get(selectors.policiesTab).should('not.have.class', 'border-primary-400');
+        cy.get(selectors.deploymentsTab).should('not.have.class', 'border-primary-400');
+        cy.get(selectors.imagesTab).should('not.have.class', 'border-primary-400');
+        cy.get(selectors.secretsTab).should('not.have.class', 'border-primary-400');
     });
 
     it('Should filter search results', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.searchResultsHeader).should('not.have.text', '0 search results');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearchResults.header).should('not.have.text', '0 search results');
     });
 
     it('Should send you to the Violations page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.viewOnViolationsChip).click();
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.viewOnViolationsLabelChip).click();
         cy.location('pathname').should(
             'eq',
             '/main/violations/6f68ef75-a96d-4121-ad89-92cf8cde0062'
@@ -70,28 +50,28 @@ xdescribe('Global Search Modal', () => {
 
     it('Should send you to the Risk page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.viewOnRiskChip).click();
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.viewOnRiskLabelChip).click();
         cy.location('pathname').should('eq', '/main/risk/ppqqu24i8x16j7annv2bjphyy');
     });
 
     it('Should send you to the Policies page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.viewOnPoliciesChip).click();
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.viewOnPoliciesLabelChip).click();
         cy.location('pathname').should('eq', '/main/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac');
     });
 
     it('Should send you to the Images page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.searchInput).type('Cluster:{enter}');
-        cy.get(selectors.searchInput).type('remote{enter}');
-        cy.get(selectors.viewOnImagesChip).click();
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
+        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.viewOnImagesLabelChip).click();
         cy.location('pathname').should(
             'eq',
-            '/main/images/sha256:9342f82b178a4325aec19f997400e866bf7c6bf9d59dd74e1358f971159dd7b8'
+            '/main/vulnerability-management/images/sha256:9342f82b178a4325aec19f997400e866bf7c6bf9d59dd74e1358f971159dd7b8'
         );
     });
 });

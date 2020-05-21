@@ -1,7 +1,7 @@
 import queryString from 'qs';
 import { saveFile } from 'services/DownloadService';
 import { cveSortFields } from 'constants/sortFields';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import axios from './instance';
 
 const baseUrl = '/v1/cves';
@@ -42,8 +42,8 @@ export function getCvesInCsvFormat(
             pagination: {
                 offset,
                 limit: pageSize,
-                sortOption
-            }
+                sortOption,
+            },
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
@@ -54,7 +54,7 @@ export function getCvesInCsvFormat(
         method: 'get',
         url,
         data: null,
-        name: `${fileName}.csv`
+        name: `${fileName}.csv`,
     });
 }
 
@@ -66,7 +66,7 @@ export function exportCvesAsCsv(fileName, workflowState) {
 
     const query = queryService.objectToWhereClause({
         ...workflowState.getCurrentSearchState(),
-        ...queryService.entityContextToQueryObject(lastEntityCtx)
+        ...queryService.entityContextToQueryObject(lastEntityCtx),
     });
 
     let sortOption = workflowState.getCurrentSortState()[0];

@@ -1,0 +1,55 @@
+{
+    "data": {
+        "deployment": {
+            "name": "nginx",
+            "numPolicyViolations": 0,
+            "numProcessActivities": 0,
+            "numRestarts": 0,
+            "numTerminations": 0,
+            "numTotalPods": 15,
+            "__typename": "Deployment"
+        },
+        "pods": [
+            {
+                "id": "3944272f-a1e2-5d5c-a587-91d17e6440d1",
+                "name": "redis-1db9fccd9b-7l8cp",
+                "startTime": "2020-04-20T10:00:00Z",
+                "containerCount": 1,
+                "__typename": "Pod",
+                "events": []
+            },
+            {
+                "id": "3944272f-a1e2-5d5c-a587-91d17e6440d2",
+                "name": "nginx-2db9fccd9b-7l8cp",
+                "startTime": "2020-04-20T10:00:00Z",
+                "containerCount": 1,
+                "__typename": "Pod",
+                "events": []
+            },
+            {
+                "id": "3944272f-a1e2-5d5c-a587-91d17e6440d3",
+                "name": "nginx-3db9fccd9b-7l8cp",
+                "startTime": "2020-04-20T10:00:00Z",
+                "containerCount": 1,
+                "__typename": "Pod",
+                "events": []
+            },
+            {
+                "id": "3944272f-a1e2-5d5c-a587-91d17e6440d4",
+                "name": "nginx-4db9fccd9b-7l8cp",
+                "startTime": "2020-04-20T10:00:00Z",
+                "containerCount": 1,
+                "__typename": "Pod",
+                "events": []
+            },
+            {
+                "id": "3944272f-a1e2-5d5c-a587-91d17e6440d5",
+                "name": "nginx-5db9fccd9b-7l8cp",
+                "startTime": "2020-04-20T10:00:00Z",
+                "containerCount": 1,
+                "__typename": "Pod",
+                "events": []
+            }
+        ]
+    }
+}

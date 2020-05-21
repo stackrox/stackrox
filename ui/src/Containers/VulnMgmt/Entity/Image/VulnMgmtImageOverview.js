@@ -27,13 +27,13 @@ const emptyImage = {
     lastUpdated: '',
     metadata: {
         layerShas: [],
-        v1: {}
+        v1: {},
     },
     name: {},
     priority: 0,
     scan: {},
     topVuln: {},
-    vulnCount: 0
+    vulnCount: 0,
 };
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
@@ -53,8 +53,8 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
             layers[i].components = [];
             layers[i].cvesCount = 0;
         });
-        scan.components.forEach(component => {
-            component.vulns.forEach(cve => {
+        scan.components.forEach((component) => {
+            component.vulns.forEach((cve) => {
                 if (cve.isFixable) {
                     fixableCves.push(cve);
                 }
@@ -74,12 +74,12 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 (metadata && metadata.v1 && (
                     <DateTimeField date={metadata.v1.created} asString />
                 )) ||
-                'N/A'
+                'N/A',
         },
         {
             key: 'Scan time',
-            value: (scan && <DateTimeField date={scan.scanTime} asString />) || 'N/A'
-        }
+            value: (scan && <DateTimeField date={scan.scanTime} asString />) || 'N/A',
+        },
     ];
 
     const imageStats = [<RiskScore key="risk-score" score={priority} />];

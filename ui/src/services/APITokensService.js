@@ -8,14 +8,14 @@ const url = '/v1/apitokens';
  * @returns {Promise<Object, Error>} fulfilled with array of the integration source
  */
 export function fetchAPITokens() {
-    return axios.get(`${url}?revoked=false`).then(response => ({
-        response: response.data
+    return axios.get(`${url}?revoked=false`).then((response) => ({
+        response: response.data,
     }));
 }
 
 export function generateAPIToken(data) {
-    return axios.post(`${url}/generate`, data).then(response => ({
-        response: response.data
+    return axios.post(`${url}/generate`, data).then((response) => ({
+        response: response.data,
     }));
 }
 

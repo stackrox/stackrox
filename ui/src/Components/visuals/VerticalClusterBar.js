@@ -5,7 +5,7 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalGridLines,
-    VerticalBarSeries
+    VerticalBarSeries,
 } from 'react-vis';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -29,7 +29,7 @@ class VerticalClusterBar extends Component {
         seriesProps: PropTypes.shape({}),
         tickValues: PropTypes.arrayOf(PropTypes.number),
         tickFormat: PropTypes.func,
-        labelLinks: PropTypes.shape({})
+        labelLinks: PropTypes.shape({}),
     };
 
     static defaultProps = {
@@ -39,11 +39,15 @@ class VerticalClusterBar extends Component {
         plotProps: {},
         seriesProps: {},
         tickValues: [25, 50, 75, 100],
-        tickFormat: x => `${x}%`,
-        labelLinks: {}
+        tickFormat: (x) => `${x}%`,
+        labelLinks: {},
     };
 
-    state = { hintInfo: null };
+    constructor(props) {
+        super(props);
+
+        this.state = { hintInfo: null };
+    }
 
     getLegendData = () => {
         const { data, colors: colorRange } = this.props;
@@ -51,7 +55,7 @@ class VerticalClusterBar extends Component {
             .sort()
             .map((key, i) => ({
                 title: standardBaseTypes[key],
-                color: colorRange[i % colorRange.length]
+                color: colorRange[i % colorRange.length],
             }));
     };
 
@@ -62,11 +66,11 @@ class VerticalClusterBar extends Component {
         const defaultPlotProps = {
             xType: 'ordinal',
             yDomain: [0, 100],
-            height: 270
+            height: 270,
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive'
+            className: 'relative chart-container w-full horizontal-bar-responsive',
         };
 
         const defaultSeriesProps = {
@@ -76,19 +80,19 @@ class VerticalClusterBar extends Component {
                 opacity: '.85',
                 width: '10px',
                 ry: '2px',
-                cursor: 'pointer'
+                cursor: 'pointer',
             },
             onValueMouseOver: (datum, e) => {
                 this.setState({
-                    hintInfo: { data: datum.hint, target: e.event.target }
+                    hintInfo: { data: datum.hint, target: e.event.target },
                 });
             },
             onValueMouseOut: () => {
                 this.setState({ hintInfo: null });
             },
-            onValueClick: datum => {
+            onValueClick: (datum) => {
                 if (datum.link) this.props.history.push(datum.link);
-            }
+            },
         };
 
         // Merge props
@@ -114,9 +118,9 @@ class VerticalClusterBar extends Component {
 
         // Calculate unique cluster names
         let clusterNames = new Set();
-        Object.keys(data).forEach(dataSetKey => {
+        Object.keys(data).forEach((dataSetKey) => {
             const dataSet = data[dataSetKey];
-            dataSet.forEach(datum => {
+            dataSet.forEach((datum) => {
                 clusterNames.add(datum.x);
             });
         });

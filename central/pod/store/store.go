@@ -7,7 +7,7 @@ import (
 // Store provides storage functionality for pods.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetKeys() ([]string, error)
+	GetIDs() ([]string, error)
 
 	Get(id string) (*storage.Pod, bool, error)
 	GetMany(ids []string) ([]*storage.Pod, []int, error)

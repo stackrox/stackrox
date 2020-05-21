@@ -15,7 +15,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { severityLabels } from 'messages/common';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { policySortFields } from 'constants/sortFields';
 
 const FREQUENTLY_VIOLATED_POLICIES = gql`
@@ -36,8 +36,8 @@ const FREQUENTLY_VIOLATED_POLICIES = gql`
 const processData = (data, workflowState, limit) => {
     const results = sortBy(data.results, ['alertCount']).slice(-limit); // @TODO: Remove when we have pagination on Policies
     return results
-        .filter(datum => datum.alertCount)
-        .map(datum => {
+        .filter((datum) => datum.alertCount)
+        .map((datum) => {
             const {
                 id,
                 name,
@@ -46,7 +46,7 @@ const processData = (data, workflowState, limit) => {
                 severity,
                 alertCount,
                 latestViolation,
-                categories
+                categories,
             } = datum;
             const url = workflowState.pushRelatedEntity(entityTypes.POLICY, id).toUrl();
             const isEnforced = enforcementActions.length ? 'Yes' : 'No';
@@ -68,7 +68,7 @@ const processData = (data, workflowState, limit) => {
                 x: alertCount,
                 y: `${name} / Enforced: ${isEnforced} / Severity: ${severityLabels[severity]}`,
                 url,
-                hint: { title: name, body: tooltipBody }
+                hint: { title: name, body: tooltipBody },
             };
         });
 };
@@ -77,8 +77,8 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
     const { loading, data = {} } = useQuery(FREQUENTLY_VIOLATED_POLICIES, {
         variables: {
             query: `${queryService.entityContextToQueryString(entityContext)}+
-            ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`
-        }
+            ${queryService.objectToWhereClause({ Category: 'Vulnerability Management' })}`,
+        },
     });
 
     let content = <Loader />;
@@ -104,7 +104,7 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
         .setSort([
             // @TODO to uncomment once Policy Status field is sortable on backend
             // { id: policySortFields.POLICY_STATUS, desc: false },
-            { id: policySortFields.SEVERITY, desc: true }
+            { id: policySortFields.SEVERITY, desc: true },
         ])
         .toUrl();
 
@@ -122,12 +122,12 @@ const FrequentlyViolatedPolicies = ({ entityContext, limit }) => {
 
 FrequentlyViolatedPolicies.propTypes = {
     entityContext: PropTypes.shape({}),
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 FrequentlyViolatedPolicies.defaultProps = {
     entityContext: {},
-    limit: 7
+    limit: 7,
 };
 
 export default FrequentlyViolatedPolicies;

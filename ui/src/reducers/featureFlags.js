@@ -3,11 +3,11 @@ import { combineReducers } from 'redux';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
 export const types = {
-    FETCH_FEATURE_FLAGS: createFetchingActionTypes('featureflags/FETCH_FEATURE_FLAGS')
+    FETCH_FEATURE_FLAGS: createFetchingActionTypes('featureflags/FETCH_FEATURE_FLAGS'),
 };
 
 export const actions = {
-    fetchFeatureFlags: createFetchingActions(types.FETCH_FEATURE_FLAGS)
+    fetchFeatureFlags: createFetchingActions(types.FETCH_FEATURE_FLAGS),
 };
 
 const featureFlags = (state = [], action) => {
@@ -18,13 +18,13 @@ const featureFlags = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    featureFlags
+    featureFlags,
 });
 
-const getFeatureFlags = state => state.featureFlags;
+const getFeatureFlags = (state) => state.featureFlags;
 
 export const selectors = {
-    getFeatureFlags
+    getFeatureFlags,
 };
 
 export default reducer;

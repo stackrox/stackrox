@@ -264,7 +264,7 @@ select {
 }
 
 button[disabled] {
-    @apply opacity-25 pointer-events-none !important;
+    @apply opacity-50 pointer-events-none !important;
 }
 
 .content-box {
@@ -1457,6 +1457,7 @@ h6 {
     overflow: hidden;
     line-height: 4px;
     padding-top: 2px;
+    padding-left: 2px;
     cursor: move;
     margin-right: 0.3em;
     font-size: 10px;

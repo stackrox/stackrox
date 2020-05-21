@@ -3,14 +3,14 @@ import reducer, { actions } from './serverError';
 describe('Server Error Reducer', () => {
     const initialTimestamp = 946684799000; // 1999-12-31T23:59:59+0000
     const initialState = {
-        serverError: null
+        serverError: null,
     };
     const successState = {
         serverError: {
             numSuccessiveFailures: 0,
             firstFailure: null,
-            serverState: 'UP'
-        }
+            serverState: 'UP',
+        },
     };
 
     let realDatenow;
@@ -26,7 +26,7 @@ describe('Server Error Reducer', () => {
 
     it('should set the UP state when first API call succeeds', () => {
         const prevState = {
-            ...initialState
+            ...initialState,
         };
 
         const nextState = reducer(prevState, actions.recordServerSuccess());
@@ -36,7 +36,7 @@ describe('Server Error Reducer', () => {
 
     it('should return the same state when UP and API call succeeds', () => {
         const prevState = {
-            ...successState
+            ...successState,
         };
 
         const nextState = reducer(prevState, actions.recordServerSuccess());
@@ -49,12 +49,12 @@ describe('Server Error Reducer', () => {
             serverError: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP'
-            }
+                serverState: 'UP',
+            },
         };
 
         const prevState = {
-            ...successState
+            ...successState,
         };
 
         const nextState = reducer(prevState, actions.recordServerError());
@@ -67,19 +67,19 @@ describe('Server Error Reducer', () => {
             serverError: {
                 numSuccessiveFailures: 1,
                 firstFailure: initialTimestamp,
-                serverState: 'UP'
-            }
+                serverState: 'UP',
+            },
         };
 
         const nextFailureState = {
             serverError: {
                 numSuccessiveFailures: 2,
                 firstFailure: initialTimestamp,
-                serverState: 'UP'
-            }
+                serverState: 'UP',
+            },
         };
         const prevState = {
-            ...firstFailureState
+            ...firstFailureState,
         };
         const nextState = reducer(prevState, actions.recordServerError());
 
@@ -91,19 +91,19 @@ describe('Server Error Reducer', () => {
             serverError: {
                 numSuccessiveFailures: 4,
                 firstFailure: initialTimestamp,
-                serverState: 'UP'
-            }
+                serverState: 'UP',
+            },
         };
 
         const nextFailureState = {
             serverError: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE'
-            }
+                serverState: 'UNREACHABLE',
+            },
         };
         const prevState = {
-            ...penultimateFailureState
+            ...penultimateFailureState,
         };
 
         Date.now = jest.fn(() => initialTimestamp + 15001); // tick the "clock" ahead 15 secs.
@@ -120,19 +120,19 @@ describe('Server Error Reducer', () => {
             serverError: {
                 numSuccessiveFailures: 5,
                 firstFailure: initialTimestamp,
-                serverState: 'UNREACHABLE'
-            }
+                serverState: 'UNREACHABLE',
+            },
         };
 
         const nextFailureState = {
             serverError: {
                 numSuccessiveFailures: 0,
                 firstFailure: null,
-                serverState: 'RESURRECTED'
-            }
+                serverState: 'RESURRECTED',
+            },
         };
         const prevState = {
-            ...finalFailureState
+            ...finalFailureState,
         };
 
         const nextState = reducer(prevState, actions.recordServerSuccess());

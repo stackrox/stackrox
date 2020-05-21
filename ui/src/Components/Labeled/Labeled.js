@@ -13,11 +13,11 @@ function Labeled({ label, children }) {
 
 Labeled.propTypes = {
     label: PropTypes.node.isRequired,
-    children: PropTypes.node
+    children: PropTypes.node,
 };
 
 Labeled.defaultProps = {
-    children: null
+    children: null,
 };
 
 export default Labeled;

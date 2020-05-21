@@ -14,51 +14,51 @@ export const navLinks = [
     {
         text: 'Dashboard',
         to: '/main/dashboard',
-        renderIcon: () => <Icon.BarChart2 className={iconClassName} />
+        renderIcon: () => <Icon.BarChart2 className={iconClassName} />,
     },
     {
         text: 'Network Graph',
         to: '/main/network',
-        renderIcon: () => <Icon.Share2 className={iconClassName} />
+        renderIcon: () => <Icon.Share2 className={iconClassName} />,
     },
     {
         text: 'Violations',
         to: '/main/violations',
-        renderIcon: () => <Icon.AlertTriangle className={iconClassName} />
+        renderIcon: () => <Icon.AlertTriangle className={iconClassName} />,
     },
     {
         text: 'Compliance',
         to: '/main/compliance',
-        renderIcon: () => <Icon.CheckSquare className={iconClassName} />
+        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
     },
     {
         text: 'Vulnerability Management',
         to: '/main/vulnerability-management',
         renderIcon: () => <Icon.Layers className={iconClassName} />,
-        featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI
+        featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI,
     },
     {
         text: 'Configuration Management',
         to: '/main/configmanagement',
-        renderIcon: () => <Icon.UserCheck className={iconClassName} />
+        renderIcon: () => <Icon.UserCheck className={iconClassName} />,
     },
     {
         text: 'Risk',
         to: '/main/risk',
-        renderIcon: () => <Icon.ShieldOff className={iconClassName} />
+        renderIcon: () => <Icon.ShieldOff className={iconClassName} />,
     },
     {
         text: 'Platform Configuration',
         to: '',
         renderIcon: () => <Icon.Settings className={iconClassName} />,
         panelType: 'configure',
-        data: 'configure'
-    }
+        data: 'configure',
+    },
 ];
 
 const LeftSideNavLinks = ({ renderLink, featureFlags }) => (
     <ul className="flex flex-col uppercase text-sm tracking-wide">
-        {filterLinksByFeatureFlag(featureFlags, navLinks).map(navLink => (
+        {filterLinksByFeatureFlag(featureFlags, navLinks).map((navLink) => (
             <li key={navLink.text}>{renderLink(navLink)}</li>
         ))}
     </ul>
@@ -69,13 +69,13 @@ LeftSideNavLinks.propTypes = {
     featureFlags: PropTypes.arrayOf(
         PropTypes.shape({
             envVar: PropTypes.string.isRequired,
-            enabled: PropTypes.bool.isRequired
+            enabled: PropTypes.bool.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags
+    featureFlags: selectors.getFeatureFlags,
 });
 
 export default connect(mapStateToProps)(LeftSideNavLinks);

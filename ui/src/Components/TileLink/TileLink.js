@@ -9,10 +9,10 @@ import TileContent from 'Components/TileContent';
 export const POSITION = {
     FIRST: 'first',
     MIDDLE: 'middle',
-    LAST: 'last'
+    LAST: 'last',
 };
 
-const getClassNameByPosition = position => {
+const getClassNameByPosition = (position) => {
     if (position === POSITION.LAST) {
         return 'mr-0';
     }
@@ -30,7 +30,7 @@ const TileLink = ({
     isError,
     position,
     short,
-    dataTestId
+    dataTestId,
 }) => {
     const { isDarkMode } = useTheme();
 
@@ -81,7 +81,7 @@ TileLink.propTypes = {
     isError: PropTypes.bool,
     position: PropTypes.oneOf(Object.values(POSITION)),
     short: PropTypes.bool,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 TileLink.defaultProps = {
@@ -93,7 +93,7 @@ TileLink.defaultProps = {
     subText: null,
     icon: null,
     short: false,
-    dataTestId: 'tile-link'
+    dataTestId: 'tile-link',
 };
 
 export default TileLink;

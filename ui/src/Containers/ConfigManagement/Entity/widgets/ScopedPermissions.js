@@ -2,7 +2,7 @@ import React from 'react';
 
 const colors = ['primary', 'secondary', 'tertiary'];
 
-const getLabelColor = key => {
+const getLabelColor = (key) => {
     let color = '';
     switch (key) {
         case 'create':

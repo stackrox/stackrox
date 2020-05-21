@@ -16,25 +16,23 @@ class Tabs extends Component {
         tabDisabledClass:
             'disabled tracking-wide bg-base-100 font-700 px-2 px-3 py-3 text-base-500 text-sm uppercase',
         tabContentBgColor: 'bg-base-200 border-t shadow z-10 border-base-400',
-        hasTabSpacing: false
+        hasTabSpacing: false,
     };
 
     static propTypes = {
         headers: PropTypes.arrayOf(
             PropTypes.shape({
                 text: PropTypes.string,
-                disabled: PropTypes.bool
+                disabled: PropTypes.bool,
             })
         ).isRequired,
         children: (props, propName, componentName) => {
             const prop = props[propName];
             let error = null;
-            React.Children.forEach(prop, child => {
+            React.Children.forEach(prop, (child) => {
                 if (child.type !== TabContent) {
                     error = new Error(
-                        `'${componentName}' children should be of type 'TabContent', but got '${
-                            child.type
-                        }'.`
+                        `'${componentName}' children should be of type 'TabContent', but got '${child.type}'.`
                     );
                 }
             });
@@ -47,7 +45,7 @@ class Tabs extends Component {
         tabActiveClass: PropTypes.string,
         tabDisabledClass: PropTypes.string,
         tabContentBgColor: PropTypes.string,
-        hasTabSpacing: PropTypes.bool
+        hasTabSpacing: PropTypes.bool,
     };
 
     // If the number of tabs reduces to being less than the active index,
@@ -68,7 +66,7 @@ class Tabs extends Component {
         const index = props.headers.indexOf(props.default);
 
         this.state = {
-            activeIndex: index === -1 ? 0 : index
+            activeIndex: index === -1 ? 0 : index,
         };
     }
 

@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
 
-import captureGraphQLErrors from 'modules/captureGraphQLErrors';
-import queryService from 'modules/queryService';
+import captureGraphQLErrors from 'utils/captureGraphQLErrors';
+import queryService from 'utils/queryService';
 import Panel from 'Components/Panel';
 import TimelineGraph from 'Components/TimelineGraph';
 import Loader from 'Components/Loader';
+import TimelineLegend from 'Components/TimelineLegend';
+import ExportMenu from 'Containers/ExportMenu';
 import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
 import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';
@@ -15,7 +17,7 @@ import { GET_DEPLOYMENT_EVENT_TIMELINE } from '../timelineQueries';
 
 const defaultPodsSort = {
     id: 'Pod Name',
-    desc: false
+    desc: false,
 };
 
 const DeploymentEventTimeline = ({
@@ -23,17 +25,18 @@ const DeploymentEventTimeline = ({
     goToNextView,
     selectedEventType,
     selectEventType,
+    deploymentId,
     currentPage,
     pageSize,
-    onPageChange
+    onPageChange,
 }) => {
     const { loading, error, data } = useQuery(GET_DEPLOYMENT_EVENT_TIMELINE, {
         variables: {
             deploymentId: id,
             podsQuery: queryService.objectToWhereClause({ 'Deployment ID': id }),
             // TODO: Standardize on 1-indexing for Pagination so we can put the value adjustment into the function itself. https://github.com/stackrox/rox/pull/5075#discussion_r395284332
-            pagination: queryService.getPagination(defaultPodsSort, currentPage - 1, pageSize)
-        }
+            pagination: queryService.getPagination(defaultPodsSort, currentPage - 1, pageSize),
+        },
     });
 
     captureGraphQLErrors([error]);
@@ -46,11 +49,12 @@ const DeploymentEventTimeline = ({
         );
 
     const {
+        name,
         numPolicyViolations,
         numProcessActivities,
         numRestarts,
         numTerminations,
-        numTotalPods
+        numTotalPods,
     } = data.deployment;
     const numEvents = numPolicyViolations + numProcessActivities + numRestarts + numTerminations;
 
@@ -60,15 +64,34 @@ const DeploymentEventTimeline = ({
     )} across ${numTotalPods} ${pluralize('pod', numTotalPods)}`;
 
     const headerComponents = (
-        <EventTypeSelect selectedEventType={selectedEventType} selectEventType={selectEventType} />
+        <>
+            <EventTypeSelect
+                selectedEventType={selectedEventType}
+                selectEventType={selectEventType}
+            />
+            <div className="ml-3">
+                <TimelineLegend />
+            </div>
+            <div className="ml-3">
+                <ExportMenu
+                    fileName={`Event-Timeline-Report-${name}`}
+                    pdfId="capture-timeline"
+                    csvEndpoint="/api/risk/timeline/export/csv"
+                    csvEndpointParams={{
+                        'Deployment ID': deploymentId,
+                    }}
+                />
+            </div>
+        </>
     );
 
     const timelineData = getPodEvents(data.pods, selectedEventType);
     const absoluteMaxTimeRange = getLargestDifferenceInMilliseconds(timelineData);
 
     return (
-        <Panel header={header} headerComponents={headerComponents}>
+        <Panel header={header} headerComponents={headerComponents} id="event-timeline">
             <TimelineGraph
+                key={selectedEventType}
                 data={timelineData}
                 goToNextView={goToNextView}
                 currentPage={currentPage}
@@ -86,9 +109,10 @@ DeploymentEventTimeline.propTypes = {
     goToNextView: PropTypes.func.isRequired,
     selectedEventType: PropTypes.string.isRequired,
     selectEventType: PropTypes.func.isRequired,
+    deploymentId: PropTypes.string.isRequired,
     currentPage: PropTypes.number.isRequired,
     pageSize: PropTypes.number.isRequired,
-    onPageChange: PropTypes.func.isRequired
+    onPageChange: PropTypes.func.isRequired,
 };
 
 export default DeploymentEventTimeline;

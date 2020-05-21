@@ -97,7 +97,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	index := deploymentIndex.New(idx)
+	index := deploymentIndex.New(idx, idx)
 
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {

@@ -21,7 +21,7 @@ import {
     defaultHeaderClassName,
     defaultColumnClassName,
     wrapClassName,
-    rtTrActionsClassName
+    rtTrActionsClassName,
 } from 'Components/Table';
 import TableHeader from 'Components/TableHeader';
 import RowActionButton from 'Components/RowActionButton';
@@ -34,7 +34,7 @@ import {
     deleteClusters,
     upgradeCluster,
     upgradeClusters,
-    saveAutoUpgradeConfig
+    saveAutoUpgradeConfig,
 } from 'services/ClustersService';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { clustersPath } from 'routePaths';
@@ -52,21 +52,21 @@ import {
     formatLastCheckIn,
     formatSensorVersion,
     parseUpgradeStatus,
-    getUpgradeableClusters
+    getUpgradeableClusters,
 } from './cluster.helpers';
 
 const ClustersPage = ({
     history,
     location: { search },
     match: {
-        params: { clusterId }
+        params: { clusterId },
     },
     searchOptions,
     searchModifiers,
     searchSuggestions,
     setSearchModifiers,
     setSearchOptions,
-    setSearchSuggestions
+    setSearchSuggestions,
 }) => {
     const [currentClusters, setCurrentClusters] = useState([]);
     const [showDialog, setShowDialog] = useState(false);
@@ -83,7 +83,7 @@ const ClustersPage = ({
                 return [...state, action.payload];
             }
             case 'REMOVE_NOTIFICATION': {
-                return state.filter(note => note !== action.payload);
+                return state.filter((note) => note !== action.payload);
             }
             default: {
                 return state;
@@ -93,7 +93,7 @@ const ClustersPage = ({
     const [notifications, dispatch] = useReducer(notificationsReducer, []);
 
     // @TODO, implement actual delete logic into this stub function
-    const onDeleteHandler = cluster => e => {
+    const onDeleteHandler = (cluster) => (e) => {
         e.stopPropagation();
         setCheckedClusters([cluster.id]);
         setShowDialog(true);
@@ -113,7 +113,7 @@ const ClustersPage = ({
     }
 
     function calculateUpgradeableClusters(selection) {
-        const currentlySelectedClusters = currentClusters.filter(cluster =>
+        const currentlySelectedClusters = currentClusters.filter((cluster) =>
             selection.includes(cluster.id)
         );
 
@@ -145,7 +145,7 @@ const ClustersPage = ({
     }
 
     function refreshClusterList() {
-        return fetchClustersAsArray(searchOptions).then(clusters => {
+        return fetchClustersAsArray(searchOptions).then((clusters) => {
             setCurrentClusters(clusters);
         });
     }
@@ -164,7 +164,7 @@ const ClustersPage = ({
     }, clusterTablePollingInterval);
 
     function fetchConfig() {
-        getAutoUpgradeConfig().then(config => {
+        getAutoUpgradeConfig().then((config) => {
             setAutoUpgradeConfig(config);
         });
     }
@@ -186,13 +186,13 @@ const ClustersPage = ({
             .then(() => {
                 refreshClusterList();
             })
-            .catch(error => {
+            .catch((error) => {
                 const serverError = get(
                     error,
                     'response.data.message',
                     'An unknown error has occurred.'
                 );
-                const givenCluster = currentClusters.find(cluster => cluster.id === id);
+                const givenCluster = currentClusters.find((cluster) => cluster.id === id);
                 const clusterName = givenCluster ? givenCluster.name : '-';
                 const payload = `Failed to trigger upgrade for cluster ${clusterName}. Error: ${serverError}`;
 
@@ -213,7 +213,7 @@ const ClustersPage = ({
             .then(() => {
                 setCheckedClusters([]);
 
-                fetchClustersAsArray().then(clusters => {
+                fetchClustersAsArray().then((clusters) => {
                     setCurrentClusters(clusters);
                 });
             })
@@ -227,25 +227,22 @@ const ClustersPage = ({
     }, []);
 
     // When the selected cluster changes, update the URL.
-    useEffect(
-        () => {
-            const newPath = selectedClusterId
-                ? generatePath(clustersPath, { clusterId: selectedClusterId })
-                : clustersPath.replace('/:clusterId?', '');
-            history.push({
-                pathname: newPath,
-                search
-            });
-        },
-        [history, search, selectedClusterId]
-    );
+    useEffect(() => {
+        const newPath = selectedClusterId
+            ? generatePath(clustersPath, { clusterId: selectedClusterId })
+            : clustersPath.replace('/:clusterId?', '');
+        history.push({
+            pathname: newPath,
+            search,
+        });
+    }, [history, search, selectedClusterId]);
 
     function toggleAutoUpgrade() {
         // @TODO, wrap this settings change in a confirmation prompt of some sort
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
         const newConfig = {
             ...autoUpgradeConfig,
-            enableAutoUpgrade: !previousValue
+            enableAutoUpgrade: !previousValue,
         };
 
         setAutoUpgradeConfig(newConfig); // optimistically set value before API call
@@ -254,7 +251,7 @@ const ClustersPage = ({
             // reverse the optimistic update of the control in the UI
             const rollbackConfig = {
                 ...autoUpgradeConfig,
-                enableAutoUpgrade: previousValue
+                enableAutoUpgrade: previousValue,
             };
             setAutoUpgradeConfig(rollbackConfig);
 
@@ -270,7 +267,7 @@ const ClustersPage = ({
         }
 
         if (status.action) {
-            status.action.actionHandler = e => {
+            status.action.actionHandler = (e) => {
                 e.stopPropagation();
                 upgradeSingleCluster(original.id);
             };
@@ -286,7 +283,7 @@ const ClustersPage = ({
     }
 
     const headerActions = (
-        <React.Fragment>
+        <>
             <PanelButton
                 icon={<Icon.DownloadCloud className="h-4 w-4 ml-1" />}
                 tooltip={`Upgrade (${upgradableClusters.length})`}
@@ -314,7 +311,7 @@ const ClustersPage = ({
             >
                 New Cluster
             </PanelButton>
-        </React.Fragment>
+        </>
     );
 
     const headerComponent = (
@@ -326,42 +323,42 @@ const ClustersPage = ({
             accessor: 'name',
             Header: 'Name',
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'type',
             Header: 'Orchestrator',
             Cell: ({ original }) => formatClusterType(original.type),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'collectionMethod',
             Header: 'Runtime collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'admissionController',
             Header: 'Admission Controller created',
             Cell: ({ original }) => formatConfiguredField(original.admissionController),
             headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-            className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'status.lastContact',
             Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'status.upgradeStatus',
             Header: 'Upgrade status',
             Cell: ({ original }) => getUpgradeStatusField(original),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`
+            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             accessor: 'status.sensorVersion',
@@ -369,20 +366,20 @@ const ClustersPage = ({
             Cell: ({ original }) => formatSensorVersion(original.status),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
-            sortMethod: sortVersion
+            sortMethod: sortVersion,
         },
         {
             Header: '',
             accessor: '',
             headerClassName: 'hidden',
             className: rtTrActionsClassName,
-            Cell: ({ original }) => renderRowActionButtons(original)
-        }
+            Cell: ({ original }) => renderRowActionButtons(original),
+        },
     ];
 
     const headerText = 'Clusters';
     const subHeaderText = 'Resource list';
-    const defaultOption = searchModifiers.find(x => x.value === 'Cluster:');
+    const defaultOption = searchModifiers.find((x) => x.value === 'Cluster:');
 
     const pageHeader = (
         <PageHeader header={headerText} subHeader={subHeaderText}>
@@ -411,8 +408,11 @@ const ClustersPage = ({
         </PageHeader>
     );
 
-    const messages = notifications.map(note => (
-        <div className="flex flex-1 border-b border-base-400 items-center justify-end relative py-0 pl-3 w-full">
+    const messages = notifications.map((note) => (
+        <div
+            key={note}
+            className="flex flex-1 border-b border-base-400 items-center justify-end relative py-0 pl-3 w-full"
+        >
             <span className="w-full">{note}</span>
             <CloseButton
                 onClose={() => {
@@ -427,7 +427,7 @@ const ClustersPage = ({
         if (!currentClusters || !currentClusters.length) {
             return null;
         }
-        const selectedCluster = currentClusters.find(cluster => cluster.id === selectedClusterId);
+        const selectedCluster = currentClusters.find((cluster) => cluster.id === selectedClusterId);
         if (!selectedCluster) {
             return null;
         }
@@ -451,7 +451,7 @@ const ClustersPage = ({
                             )}
                             <div className="w-full">
                                 <CheckboxTable
-                                    ref={table => {
+                                    ref={(table) => {
                                         setTableRef(table);
                                     }}
                                     rows={currentClusters}
@@ -477,9 +477,7 @@ const ClustersPage = ({
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
-                text={`Cluster deletion won't tear down StackRox services running on this cluster. You can remove them from the corresponding cluster by running the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${
-                    checkedClusterIds.length
-                } cluster(s)?`}
+                text={`Cluster deletion won't tear down StackRox services running on this cluster. You can remove them from the corresponding cluster by running the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
                 onConfirm={makeDeleteRequest}
                 confirmText="Delete"
                 onCancel={hideDialog}
@@ -500,22 +498,19 @@ ClustersPage.propTypes = {
     searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
     setSearchOptions: PropTypes.func.isRequired,
     setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired
+    setSearchSuggestions: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getClustersSearchOptions,
     searchModifiers: selectors.getClustersSearchModifiers,
-    searchSuggestions: selectors.getClustersSearchSuggestions
+    searchSuggestions: selectors.getClustersSearchSuggestions,
 });
 
 const mapDispatchToProps = {
     setSearchOptions: clustersActions.setClustersSearchOptions,
     setSearchModifiers: clustersActions.setClustersSearchModifiers,
-    setSearchSuggestions: clustersActions.setClustersSearchSuggestions
+    setSearchSuggestions: clustersActions.setClustersSearchSuggestions,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ClustersPage);
+export default connect(mapStateToProps, mapDispatchToProps)(ClustersPage);

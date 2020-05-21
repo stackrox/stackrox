@@ -20,7 +20,7 @@ export function createFetchingActionTypes(prefix) {
     return {
         REQUEST: `${prefix}_${REQUEST}`,
         SUCCESS: `${prefix}_${SUCCESS}`,
-        FAILURE: `${prefix}_${FAILURE}`
+        FAILURE: `${prefix}_${FAILURE}`,
     };
 }
 
@@ -44,9 +44,9 @@ function action(type, payload = {}) {
  */
 export function createFetchingActions(types) {
     return {
-        request: params => action(types.REQUEST, { params }),
+        request: (params) => action(types.REQUEST, { params }),
         success: (response, params) => action(types.SUCCESS, { response, params }),
-        failure: (error, params) => action(types.FAILURE, { error, params })
+        failure: (error, params) => action(types.FAILURE, { error, params }),
     };
 }
 

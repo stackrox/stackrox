@@ -5,18 +5,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
 
-// Note: Update here if yamls/multi-container-pod.yaml is updated
-const podName = "end-to-end-api-test-pod-multi-container"
-
 type ContainerNameGroup struct {
 	IDStruct
-	Name   string  `json:"name"`
-	Events []Event `json:"events"`
+	Name      string       `json:"name"`
+	StartTime graphql.Time `json:"startTime"`
+	Events    []Event      `json:"events"`
 }
 
 func TestContainerInstances(t *testing.T) {
@@ -41,11 +40,15 @@ func TestContainerInstances(t *testing.T) {
 		// Expecting 1 process: nginx
 		require.Len(t, groupedContainers[0].Events, 1)
 		events := sliceutils.Map(groupedContainers[0].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(t, events, []string{"nginx"})
+		require.ElementsMatch(t, events, []string{"/usr/sbin/nginx"})
 		// Expecting 3 processes: sh, date, sleep
 		require.Len(t, groupedContainers[1].Events, 3)
 		events = sliceutils.Map(groupedContainers[1].Events, func(event Event) string { return event.Name })
-		require.ElementsMatch(t, events, []string{"sh", "date", "sleep"})
+		require.ElementsMatch(t, events, []string{"/bin/sh", "/bin/date", "/bin/sleep"})
+
+		// Verify the container group's timestamp is no later than the timestamp of the first event
+		require.False(t, groupedContainers[0].StartTime.After(groupedContainers[0].Events[0].Timestamp.Time))
+		require.False(t, groupedContainers[1].StartTime.After(groupedContainers[1].Events[0].Timestamp.Time))
 	})
 }
 
@@ -79,9 +82,11 @@ func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGr
 			groupedContainerInstances(query: $containersQuery) {
 				id
 				name
+				startTime
 				events {
 					id
 					name
+					timestamp
 				}
 			}
 		}

@@ -12,7 +12,7 @@ const CLIDownloadButton = ({
     toggleCLIDownloadView,
     topNavBtnTextClass,
     topNavBtnSvgClass,
-    topNavBtnClass
+    topNavBtnClass,
 }) => (
     <Tooltip content={<TooltipOverlay>CLI</TooltipOverlay>} className="sm:visible md:invisible">
         <button
@@ -30,16 +30,11 @@ CLIDownloadButton.propTypes = {
     toggleCLIDownloadView: PropTypes.func.isRequired,
     topNavBtnTextClass: PropTypes.string.isRequired,
     topNavBtnSvgClass: PropTypes.string.isRequired,
-    topNavBtnClass: PropTypes.string.isRequired
+    topNavBtnClass: PropTypes.string.isRequired,
 };
 
-const mapDispatchToProps = dispatch => ({
-    toggleCLIDownloadView: () => dispatch(CLIDownloadActions.toggleCLIDownloadView())
+const mapDispatchToProps = (dispatch) => ({
+    toggleCLIDownloadView: () => dispatch(CLIDownloadActions.toggleCLIDownloadView()),
 });
 
-export default withRouter(
-    connect(
-        null,
-        mapDispatchToProps
-    )(CLIDownloadButton)
-);
+export default withRouter(connect(null, mapDispatchToProps)(CLIDownloadButton));

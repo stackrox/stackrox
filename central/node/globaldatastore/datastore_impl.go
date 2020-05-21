@@ -117,6 +117,11 @@ func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID str
 }
 
 func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterIDs ...string) error {
+	// Stop early, otherwise, the clusterID query turns into an empty query that matches all
+	if len(clusterIDs) == 0 {
+		return nil
+	}
+
 	if ok, err := nodesSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {

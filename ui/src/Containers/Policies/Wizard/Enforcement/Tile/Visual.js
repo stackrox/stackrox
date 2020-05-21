@@ -14,5 +14,5 @@ export default function Visual(props) {
 
 Visual.propTypes = {
     image: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired
+    label: PropTypes.string.isRequired,
 };

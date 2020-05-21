@@ -18,11 +18,11 @@ function validatePresenceOfTabsAndLinks(selector, relatedEntities) {
 function validateRelatedEntitiesValuesWithTabsHeaders(entityName) {
     cy.get(selectors.getTileLink(entityName))
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             cy.get(selectors.getAllClickableTileLinks(entityName)).click();
             cy.get(selectors.tabHeader)
                 .invoke('text')
-                .then(text => {
+                .then((text) => {
                     expect(parseInt(text, 10)).to.equals(
                         parseInt(value, 10),
                         `number of ${entityName}(s) in the list matches the overview tab tile link`
@@ -43,7 +43,7 @@ function validateWithAParentSelector(
     cy.get(topRowSelector)
         .eq(rowIndex)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
             //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
             let rowText;
@@ -54,17 +54,13 @@ function validateWithAParentSelector(
                     .split('/')[0]
                     .trimLeft()
                     .trimRight();
-            cy.get(topRowSelector)
-                .eq(rowIndex)
-                .click();
+            cy.get(topRowSelector).eq(rowIndex).click();
             cy.url().should('contain', urlToVerify);
             cy.get('[data-testid="header-text"]').should('have.text', rowText);
             validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
             validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
             for (let i = 0; i < tileLinksList.length; i += 1) {
-                cy.get(selectors.tabLinks)
-                    .find(`:contains('Overview')`)
-                    .click();
+                cy.get(selectors.tabLinks).find(`:contains('Overview')`).click();
                 validateRelatedEntitiesValuesWithTabsHeaders(tileLinksList[i]);
             }
         });
@@ -80,7 +76,7 @@ function validateWithActualSelector(
     cy.visit(url.dashboard);
     cy.get(topRowSelector)
         .invoke('text')
-        .then(value => {
+        .then((value) => {
             // trim the first 3 chars from the front of the text, to get the image name to compare in the detail view
             //   e.g., "1. k8s.gcr.io/coredns:1.3.1" trimmed becomes "k8s.gcr.io/coredns:1.3.1"
             let rowText;
@@ -97,9 +93,7 @@ function validateWithActualSelector(
             validatePresenceOfTabsAndLinks(selectors.tabLinks, tabLinksList);
             validatePresenceOfTabsAndLinks(selectors.allTileLinks, tileLinksList);
             for (let i = 0; i < tileLinksList.length; i += 1) {
-                cy.get(selectors.tabLinks)
-                    .find(`:contains('Overview')`)
-                    .click();
+                cy.get(selectors.tabLinks).find(`:contains('Overview')`).click();
                 validateRelatedEntitiesValuesWithTabsHeaders(tileLinksList[i]);
             }
         });
@@ -118,13 +112,11 @@ describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validati
 
     it('validate data consistency for top riskiest images widget data row onwards', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Top Riskiest Images'))
-            .find(selectors.viewAllButton)
-            .click();
+        cy.get(selectors.getWidget('Top Riskiest Images')).find(selectors.viewAllButton).click();
         cy.get(selectors.numCVEColLink)
             .eq(2)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 if (value === 'No CVEs') {
                     validateWithAParentSelector(
                         'image',
@@ -137,7 +129,7 @@ describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validati
                             'components',
                             'CVES',
                             'Fixable CVEs',
-                            'Dockerfile'
+                            'Dockerfile',
                         ],
                         ['DEPLOYMENT', 'COMPONENT']
                     );
@@ -153,7 +145,7 @@ describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validati
                             'components',
                             'CVES',
                             'Fixable CVEs',
-                            'Dockerfile'
+                            'Dockerfile',
                         ],
                         ['DEPLOYMENT', 'COMPONENT', 'CVE']
                     );
@@ -204,7 +196,7 @@ describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validati
                 'failing policies',
                 'CVES',
                 'Policies',
-                'Fixable CVEs'
+                'Fixable CVEs',
             ],
             ['POLICIES', 'IMAGE', 'COMPONENT', 'CVE']
         );

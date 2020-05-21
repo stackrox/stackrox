@@ -10,6 +10,7 @@ import com.codepine.api.testrail.model.Case
 import com.codepine.api.testrail.model.Section
 
 import groovy.util.logging.Slf4j
+import util.Env
 
 import java.text.ParseException
 
@@ -18,8 +19,8 @@ class TestRailconfig {
     //Create the Test Rail Instance:
     private static TestRail testRail
     private final static String ENDPOINT = "https://stackroxqa.testrail.net"
-    private final static String USERNAME = System.getenv("username")
-    private final static String PASSWORD = System.getenv("password")
+    private final static String USERNAME = Env.get("username")
+    private final static String PASSWORD = Env.get("password")
     public static final int TEST_CASE_PASSED_STATUS = 1
     public static final int TEST_CASE_FAILED_STATUS = 5
     private static final Map<String, Integer> CASES_TO_ADD = [:]

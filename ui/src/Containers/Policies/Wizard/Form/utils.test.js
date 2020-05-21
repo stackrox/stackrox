@@ -54,7 +54,7 @@ describe('policyFormUtils', () => {
             const valueObj = {
                 source,
                 key,
-                value
+                value,
             };
             const valueStr = formatValueStr(valueObj);
             expect(valueStr).toBe(`${source}=${key}=${value}`);
@@ -65,7 +65,7 @@ describe('policyFormUtils', () => {
             const value = 'value1';
             const valueObj = {
                 key,
-                value
+                value,
             };
             const valueStr = formatValueStr(valueObj);
             expect(valueStr).toBe(`${key}=${value}`);
@@ -74,7 +74,7 @@ describe('policyFormUtils', () => {
         it('should format flat policy criteria values to value obj with value string', () => {
             const value = 'value1';
             const valueObj = {
-                value
+                value,
             };
             const valueStr = formatValueStr(valueObj);
             expect(valueStr).toBe(value);

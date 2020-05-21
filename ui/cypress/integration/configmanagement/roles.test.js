@@ -5,7 +5,7 @@ import {
     hasTabsFor,
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows
+    sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -23,12 +24,21 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		var err error
-		ps, err = New(
-			globaldb.GetGlobalBadgerDB(),
-			globalindex.GetGlobalIndex(),
-			piDS.Singleton(),
-			filter.Singleton(),
-		)
+		if features.RocksDB.Enabled() {
+			ps, err = NewRocksDB(
+				globaldb.GetRocksDB(),
+				globalindex.GetPodIndex(),
+				piDS.Singleton(),
+				filter.Singleton(),
+			)
+		} else {
+			ps, err = New(
+				globaldb.GetGlobalBadgerDB(),
+				globalindex.GetPodIndex(),
+				piDS.Singleton(),
+				filter.Singleton(),
+			)
+		}
 		utils.Must(errors.Wrap(err, "unable to load datastore for pods"))
 	})
 	return ps

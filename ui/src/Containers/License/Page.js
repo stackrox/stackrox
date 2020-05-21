@@ -10,7 +10,7 @@ import PageHeader from 'Components/PageHeader';
 import LicenseExpiration from './widgets/LicenseExpiration';
 import UpgradeSupport from './widgets/UpgradeSupport';
 
-const customerIDFromLicenseInfo = licenseInfo => {
+const customerIDFromLicenseInfo = (licenseInfo) => {
     if (!licenseInfo || !licenseInfo.license) return '';
     return licenseInfo.license.metadata.licensedForId;
 };
@@ -38,18 +38,15 @@ const Page = ({ license }) => {
 };
 
 Page.propTypes = {
-    license: PropTypes.shape({})
+    license: PropTypes.shape({}),
 };
 
 Page.defaultProps = {
-    license: null
+    license: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    license: selectors.getLicense
+    license: selectors.getLicense,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(Page);
+export default connect(mapStateToProps, null)(Page);

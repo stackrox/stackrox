@@ -7,7 +7,7 @@ import { timeWindows } from 'constants/timeWindows';
 export const types = {
     OPEN_WIZARD: 'network/OPEN_WIZARD',
     CLOSE_WIZARD: 'network/CLOSE_WIZARD',
-    SET_NETWORK_ACTIVITY_TIME_WINDOW: 'network/SET_NETWORK_ACTIVITY_TIME_WINDOW'
+    SET_NETWORK_ACTIVITY_TIME_WINDOW: 'network/SET_NETWORK_ACTIVITY_TIME_WINDOW',
 };
 
 // Actions
@@ -15,10 +15,10 @@ export const types = {
 export const actions = {
     openNetworkWizard: () => ({ type: types.OPEN_WIZARD }),
     closeNetworkWizard: () => ({ type: types.CLOSE_WIZARD }),
-    setNetworkActivityTimeWindow: window => ({
+    setNetworkActivityTimeWindow: (window) => ({
         type: types.SET_NETWORK_ACTIVITY_TIME_WINDOW,
-        window
-    })
+        window,
+    }),
 };
 
 // Reducers
@@ -42,17 +42,17 @@ const networkActivityTimeWindow = (state = timeWindows[0], action) => {
 
 const reducer = combineReducers({
     wizardOpen,
-    networkActivityTimeWindow
+    networkActivityTimeWindow,
 });
 
 // Selectors
 
-const getNetworkWizardOpen = state => state.wizardOpen;
-const getNetworkActivityTimeWindow = state => state.networkActivityTimeWindow;
+const getNetworkWizardOpen = (state) => state.wizardOpen;
+const getNetworkActivityTimeWindow = (state) => state.networkActivityTimeWindow;
 
 export const selectors = {
     getNetworkWizardOpen,
-    getNetworkActivityTimeWindow
+    getNetworkActivityTimeWindow,
 };
 
 export default reducer;

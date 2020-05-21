@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io/ioutil"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/utils"
@@ -28,7 +27,7 @@ func init() {
 }
 
 func getComplianceReturn(scrapeID, nodeName string) *compliance.ComplianceReturn {
-	cr := proto.Clone(defaultComplianceReturn).(*compliance.ComplianceReturn)
+	cr := defaultComplianceReturn.Clone()
 	cr.ScrapeId = scrapeID
 	cr.NodeName = nodeName
 	return cr

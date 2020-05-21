@@ -8,7 +8,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_SYSTEM_CONFIG: createFetchingActionTypes('notifiers/FETCH_SYSTEM_CONFIG'),
     FETCH_PUBLIC_CONFIG: createFetchingActionTypes('notifiers/FETCH_PUBLIC_CONFIG'),
-    SAVE_SYSTEM_CONFIG: 'integrations/SAVE_SYSTEM_CONFIG'
+    SAVE_SYSTEM_CONFIG: 'integrations/SAVE_SYSTEM_CONFIG',
 };
 
 // Actions
@@ -16,7 +16,7 @@ export const types = {
 export const actions = {
     fetchSystemConfig: createFetchingActions(types.FETCH_SYSTEM_CONFIG),
     fetchPublicConfig: createFetchingActions(types.FETCH_PUBLIC_CONFIG),
-    saveSystemConfig: systemConfig => ({ type: types.SAVE_SYSTEM_CONFIG, systemConfig })
+    saveSystemConfig: (systemConfig) => ({ type: types.SAVE_SYSTEM_CONFIG, systemConfig }),
 };
 
 // Reducers
@@ -37,17 +37,17 @@ const publicConfig = (state = {}, action) => {
 
 const reducer = combineReducers({
     systemConfig,
-    publicConfig
+    publicConfig,
 });
 
 // Selectors
 
-const getSystemConfig = state => state.systemConfig;
-const getPublicConfig = state => state.publicConfig;
+const getSystemConfig = (state) => state.systemConfig;
+const getPublicConfig = (state) => state.publicConfig;
 
 export const selectors = {
     getSystemConfig,
-    getPublicConfig
+    getPublicConfig,
 };
 
 export default reducer;

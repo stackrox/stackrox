@@ -8,6 +8,9 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,7 +41,7 @@ var (
 
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
 
-	latestTagEnabledAndEnforced = storage.Policy{
+	latestTagEnabledAndEnforced = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		Fields: &storage.PolicyFields{
@@ -50,7 +53,7 @@ var (
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
-	imageAgePolicyEnabledAndEnforced = storage.Policy{
+	imageAgePolicyEnabledAndEnforced = &storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Bar",
 		Fields: &storage.PolicyFields{
@@ -62,73 +65,87 @@ var (
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
-	randomPolicy = storage.Policy{
-		Id:                 uuid.NewV4().String(),
-		Name:               "Random",
-		Disabled:           false,
+	randomPolicy = &storage.Policy{
+		Id:       uuid.NewV4().String(),
+		Name:     "Random",
+		Disabled: false,
+		Fields: &storage.PolicyFields{
+			ProcessPolicy: &storage.ProcessPolicy{
+				Name: "sshd",
+			},
+		},
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 )
 
+func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {
+	m := make(map[string]*storage.Policy, len(policies))
+	for _, p := range policies {
+		if features.BooleanPolicyLogic.Enabled() {
+			require.NoError(t, booleanpolicy.EnsureConverted(p))
+		}
+		m[p.GetName()] = p
+
+	}
+	return m
+}
+
 func TestNIST422_Success(t *testing.T) {
-	t.Parallel()
+	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
+		registry := framework.RegistrySingleton()
+		check := registry.Lookup(standardID)
+		require.NotNil(t, check)
 
-	registry := framework.RegistrySingleton()
-	check := registry.Lookup(standardID)
-	require.NotNil(t, check)
+		policies := getPolicies(t, latestTagEnabledAndEnforced, imageAgePolicyEnabledAndEnforced)
 
-	policies := make(map[string]*storage.Policy)
-	policies[latestTagEnabledAndEnforced.GetName()] = &latestTagEnabledAndEnforced
-	policies[imageAgePolicyEnabledAndEnforced.GetName()] = &imageAgePolicyEnabledAndEnforced
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+		data.EXPECT().Policies().AnyTimes().Return(policies)
 
-	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-	data.EXPECT().Policies().AnyTimes().Return(policies)
+		run, err := framework.NewComplianceRun(check)
+		require.NoError(t, err)
+		err = run.Run(context.Background(), domain, data)
+		require.NoError(t, err)
 
-	run, err := framework.NewComplianceRun(check)
-	require.NoError(t, err)
-	err = run.Run(context.Background(), domain, data)
-	require.NoError(t, err)
+		results := run.GetAllResults()
+		checkResults := results[standardID]
+		require.NotNil(t, checkResults)
 
-	results := run.GetAllResults()
-	checkResults := results[standardID]
-	require.NotNil(t, checkResults)
-
-	require.Len(t, checkResults.Evidence(), 2)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
+		require.Len(t, checkResults.Evidence(), 2)
+		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
+		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
+	})
 }
 
 func TestNIST422_Fail(t *testing.T) {
-	t.Parallel()
+	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
+		registry := framework.RegistrySingleton()
+		check := registry.Lookup(standardID)
+		require.NotNil(t, check)
 
-	registry := framework.RegistrySingleton()
-	check := registry.Lookup(standardID)
-	require.NotNil(t, check)
+		policies := getPolicies(t, randomPolicy)
 
-	policies := make(map[string]*storage.Policy)
-	policies[randomPolicy.GetName()] = &randomPolicy
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
 
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+		data.EXPECT().Policies().AnyTimes().Return(policies)
 
-	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-	data.EXPECT().Policies().AnyTimes().Return(policies)
+		run, err := framework.NewComplianceRun(check)
+		require.NoError(t, err)
+		err = run.Run(context.Background(), domain, data)
+		require.NoError(t, err)
 
-	run, err := framework.NewComplianceRun(check)
-	require.NoError(t, err)
-	err = run.Run(context.Background(), domain, data)
-	require.NoError(t, err)
+		results := run.GetAllResults()
+		checkResults := results[standardID]
+		require.NotNil(t, checkResults)
 
-	results := run.GetAllResults()
-	checkResults := results[standardID]
-	require.NotNil(t, checkResults)
-
-	require.Len(t, checkResults.Evidence(), 2)
-	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
-	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
+		require.Len(t, checkResults.Evidence(), 2)
+		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
+		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
+	})
 }

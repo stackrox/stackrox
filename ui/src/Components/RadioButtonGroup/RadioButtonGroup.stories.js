@@ -5,7 +5,7 @@ import RadioButtonGroup from './RadioButtonGroup';
 
 export default {
     title: 'RadioButtonGroup',
-    component: RadioButtonGroup
+    component: RadioButtonGroup,
 };
 
 export const withButtons = () => {
@@ -49,6 +49,68 @@ export const withSelectableButtons = () => {
                 selected={selected}
                 onClick={onClick}
             />
+        </MemoryRouter>
+    );
+};
+
+export const withNoHeaderText = () => {
+    // eslint-disable-next-line
+    const [selected, setSelected] = useState('All');
+    const buttons = [{ text: 'Fixable' }, { text: 'All' }];
+    function onClick(data) {
+        setSelected(data);
+    }
+    return (
+        <MemoryRouter>
+            <RadioButtonGroup buttons={buttons} selected={selected} onClick={onClick} />
+        </MemoryRouter>
+    );
+};
+
+export const withDisabledButtons = () => {
+    // eslint-disable-next-line
+    const [selected, setSelected] = useState('All');
+    const buttons = [{ text: 'Fixable' }, { text: 'All' }];
+    function onClick(data) {
+        setSelected(data);
+    }
+    return (
+        <MemoryRouter>
+            <RadioButtonGroup buttons={buttons} selected={selected} onClick={onClick} disabled />
+        </MemoryRouter>
+    );
+};
+
+export const withBooleanValues = () => {
+    // eslint-disable-next-line
+    const [selected, setSelected] = useState(true);
+    const buttons = [
+        { text: 'Fixable', value: true },
+        { text: 'All', value: false },
+    ];
+    function onClick(data) {
+        setSelected(data);
+    }
+    return (
+        <MemoryRouter>
+            <RadioButtonGroup buttons={buttons} selected={selected} onClick={onClick} useBoolean />
+        </MemoryRouter>
+    );
+};
+
+export const withStringBooleanValues = () => {
+    // eslint-disable-next-line
+    const [selected, setSelected] = useState('true');
+    const buttons = [
+        { text: 'Fixable', value: true },
+        { text: 'All', value: false },
+    ];
+    function onClick(data) {
+        setSelected(data);
+    }
+    return (
+        <MemoryRouter>
+            <RadioButtonGroup buttons={buttons} selected={selected} onClick={onClick} />
         </MemoryRouter>
     );
 };

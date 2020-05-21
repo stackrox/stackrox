@@ -8,7 +8,7 @@ import Panel from 'Components/Panel';
 import DetailsButtons from './DetailsButtons';
 import PolicyDetails from './PolicyDetails';
 
-function PolicyDetailsPanel({ header, wizardPolicy, onClose }) {
+function PolicyDetailsPanel({ header, wizardPolicy, onClose, initialValues }) {
     if (!wizardPolicy) return null;
 
     return (
@@ -19,7 +19,7 @@ function PolicyDetailsPanel({ header, wizardPolicy, onClose }) {
             id="side-panel"
             className="w-1/2"
         >
-            <PolicyDetails policy={wizardPolicy} />
+            <PolicyDetails policy={wizardPolicy} initialValues={initialValues} />
         </Panel>
     );
 }
@@ -27,17 +27,18 @@ function PolicyDetailsPanel({ header, wizardPolicy, onClose }) {
 PolicyDetailsPanel.propTypes = {
     header: PropTypes.string,
     wizardPolicy: PropTypes.shape({
-        name: PropTypes.string
+        name: PropTypes.string,
     }).isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
+    initialValues: PropTypes.shape({}).isRequired,
 };
 
 PolicyDetailsPanel.defaultProps = {
-    header: ''
+    header: '',
 };
 
 const mapStateToProps = createStructuredSelector({
-    wizardPolicy: selectors.getWizardPolicy
+    wizardPolicy: selectors.getWizardPolicy,
 });
 
 export default connect(mapStateToProps)(PolicyDetailsPanel);

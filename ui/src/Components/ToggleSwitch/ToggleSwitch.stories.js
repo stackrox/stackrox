@@ -6,7 +6,7 @@ import ToggleSwitch from './ToggleSwitch';
 
 export default {
     title: 'ToggleSwitch',
-    component: ToggleSwitch
+    component: ToggleSwitch,
 };
 
 export const withSwitchOnly = () => {

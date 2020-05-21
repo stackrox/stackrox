@@ -9,7 +9,7 @@ const componentTypes = {
     STANDARDS_ACROSS_NODES: 'standardsAcrossNodes',
     COMPLIANCE_ACROSS_ENTITIES: 'complianceAcrossEntities',
     RESOURCE_COUNT: 'resourceCount',
-    COMPLIANCE_BY_STANDARD: 'complianceByStandard'
+    COMPLIANCE_BY_STANDARD: 'complianceByStandard',
 };
 
 export default componentTypes;

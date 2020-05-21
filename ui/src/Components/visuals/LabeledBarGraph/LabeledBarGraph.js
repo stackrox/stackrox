@@ -10,7 +10,7 @@ import {
     HorizontalBarSeries,
     LabelSeries,
     GradientDefs,
-    ChartLabel
+    ChartLabel,
 } from 'react-vis';
 import BarGradient from 'Components/visuals/BarGradient';
 import HoverHint from 'Components/visuals/HoverHint';
@@ -23,7 +23,7 @@ function getFormattedData(data) {
     const { length } = data;
     return data.map(({ y, ...rest }, index) => ({
         y: `${length - index}. ${y}`,
-        ...rest
+        ...rest,
     }));
 }
 
@@ -36,14 +36,14 @@ function getLabelData(data) {
         yOffset: -13,
         xOffset: 10,
         style: { fill: 'var(--primary-800)', cursor: 'pointer' },
-        hint
+        hint,
     }));
 }
 
 const LabeledBarGraph = ({ data, title, history }) => {
     const { hint, onValueMouseOver, onValueMouseOut } = useGraphHoverHint();
 
-    const upperBoundX = max([...data.map(datum => datum.x)]);
+    const upperBoundX = max([...data.map((datum) => datum.x)]);
     const formattedData = getFormattedData(data);
     const labelData = getLabelData(formattedData);
 
@@ -64,7 +64,7 @@ const LabeledBarGraph = ({ data, title, history }) => {
                     style={{
                         height: 6,
                         rx: '2px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                     }}
                     color="url(#horizontalGradient)"
                     data={formattedData}
@@ -111,15 +111,15 @@ HOCLabeledBarGraph.propTypes = {
             color: PropTypes.string,
             x: PropTypes.number.isRequired,
             y: PropTypes.string.isRequired,
-            url: PropTypes.string
+            url: PropTypes.string,
         })
     ),
-    title: PropTypes.string
+    title: PropTypes.string,
 };
 
 HOCLabeledBarGraph.defaultProps = {
     data: [],
-    title: null
+    title: null,
 };
 
 export default HOCLabeledBarGraph;

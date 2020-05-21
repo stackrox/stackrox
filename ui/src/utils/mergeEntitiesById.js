@@ -23,7 +23,7 @@ export default function mergeEntitiesById(existingEntitiesById, newEntitiesById,
         const updateFn = shouldUpdate ? updateValue : updateArrayValue;
         return {
             ...result,
-            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateFn)
+            [id]: mergeWith({}, existingEntitiesById[id], newEntitiesById[id], updateFn),
         };
     }, existingEntitiesById);
 }

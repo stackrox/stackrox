@@ -1,11 +1,11 @@
 import React from 'react';
 import gql from 'graphql-tag';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
@@ -24,8 +24,8 @@ import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 export const defaultClusterSort = [
     {
         id: clusterSortFields.PRIORITY,
-        desc: false
-    }
+        desc: false,
+    },
 ];
 
 // @TODO: remove this exception, once Clusters pagination is fixed on the back end
@@ -53,8 +53,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
         variables: {
             ...vulMgmtPolicyQuery,
             query: queryService.objectToWhereClause(search),
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
     function getTableColumns(workflowState) {
@@ -63,7 +63,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 Header: 'Id',
                 headerClassName: 'hidden',
                 className: 'hidden',
-                accessor: 'id'
+                accessor: 'id',
             },
             {
                 Header: `Cluster`,
@@ -71,7 +71,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 className: `w-1/8 ${defaultColumnClassName}`,
                 id: clusterSortFields.CLUSTER,
                 accessor: 'name',
-                sortField: clusterSortFields.CLUSTER
+                sortField: clusterSortFields.CLUSTER,
             },
             {
                 Header: `CVEs`,
@@ -97,7 +97,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 },
                 id: clusterSortFields.CVE_COUNT,
                 accessor: 'vulnCounter.all.total',
-                sortField: clusterSortFields.CVE_COUNT
+                sortField: clusterSortFields.CVE_COUNT,
             },
             {
                 Header: `K8S Version`,
@@ -106,7 +106,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 id: clusterSortFields.K8SVERSION,
                 accessor: 'status.orchestratorMetadata.version',
                 sortField: clusterSortFields.K8SVERSION,
-                sortable: false
+                sortable: false,
             },
             // TODO: enable this column after data is available from the API
             // {
@@ -133,7 +133,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 ),
                 id: clusterSortFields.NAMESPACE_COUNT,
                 accessor: 'namespaceCount',
-                sortField: clusterSortFields.NAMESPACE_COUNT
+                sortField: clusterSortFields.NAMESPACE_COUNT,
             },
             {
                 Header: `Deployments`,
@@ -151,7 +151,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 ),
                 id: clusterSortFields.DEPLOYMENT_COUNT,
                 accessor: 'deploymentCount',
-                sortField: clusterSortFields.DEPLOYMENT_COUNT
+                sortField: clusterSortFields.DEPLOYMENT_COUNT,
             },
             // @TODD, restore the Policy Counts column once its performance is improved,
             //   or remove the comment if we determine that it cannot be made performant
@@ -191,7 +191,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 id: clusterSortFields.POLICY_STATUS,
                 accessor: 'policyStatus.status',
                 sortField: clusterSortFields.POLICY_STATUS,
-                sortable: false
+                sortable: false,
             },
             {
                 Header: `Latest Violation`,
@@ -204,7 +204,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 id: clusterSortFields.LATEST_VIOLATION,
                 accessor: 'latestViolation',
                 sortField: clusterSortFields.LATEST_VIOLATION,
-                sortable: false
+                sortable: false,
             },
             {
                 Header: `Risk Priority`,
@@ -213,8 +213,8 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
                 id: clusterSortFields.PRIORITY,
                 accessor: 'priority',
                 sortField: clusterSortFields.PRIORITY,
-                sortable: true
-            }
+                sortable: true,
+            },
         ];
         return removeEntityContextColumns(tableColumns, workflowState);
     }
@@ -237,7 +237,7 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data }) => {
 VulnMgmtClusters.propTypes = workflowListPropTypes;
 VulnMgmtClusters.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
 };
 
 export default VulnMgmtClusters;

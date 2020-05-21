@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import useCases from 'constants/useCaseTypes';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -27,8 +27,8 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Lifecycle Stage': 'DEPLOY'
-        })
+            'Lifecycle Stage': 'DEPLOY',
+        }),
     };
 
     const defaultQuery = gql`
@@ -103,7 +103,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                     deploymentCount,
                     secretCount,
                     imageCount,
-                    serviceAccountCount
+                    serviceAccountCount,
                 } = namespace;
 
                 const { name, creationTime, labels = [] } = metadata;
@@ -111,8 +111,8 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                 const metadataKeyValuePairs = [
                     {
                         key: 'Created',
-                        value: creationTime ? format(creationTime, dateTimeFormat) : 'N/A'
-                    }
+                        value: creationTime ? format(creationTime, dateTimeFormat) : 'N/A',
+                    },
                 ];
 
                 return (
@@ -164,12 +164,12 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 <DeploymentsWithFailedPolicies
                                     query={queryService.objectToWhereClause({
                                         Cluster: cluster.name,
-                                        Namespace: name
+                                        Namespace: name,
                                     })}
                                     message="No deployments violating policies in this namespace"
                                     entityContext={{
                                         ...entityContext,
-                                        [entityTypes.NAMESPACE]: id
+                                        [entityTypes.NAMESPACE]: id,
                                     }}
                                 />
                             </div>

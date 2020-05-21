@@ -19,7 +19,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import createPDFTable from 'utils/pdfUtils';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY, DEPLOYMENTS_QUERY } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import orderBy from 'lodash/orderBy';
 
 function getQuery(entityType) {
@@ -46,7 +46,7 @@ function getVariables(entityType, query) {
             : null;
     return {
         where: queryService.objectToWhereClause(query),
-        groupBy
+        groupBy,
     };
 }
 
@@ -82,8 +82,8 @@ function formatResourceData(data, resourceType) {
             overall: {
                 numPassing: 0,
                 numFailing: 0,
-                average: 0
-            }
+                average: 0,
+            },
         };
 
         if (numPassing + numFailing > 0)
@@ -92,8 +92,8 @@ function formatResourceData(data, resourceType) {
         entityMap[curEntity].overall.numFailing += numFailing;
     });
 
-    Object.keys(entityMap).forEach(cluster => {
-        const overallCluster = Object.assign({}, entityMap[cluster]);
+    Object.keys(entityMap).forEach((cluster) => {
+        const overallCluster = { ...entityMap[cluster] };
         const { numPassing, numFailing } = overallCluster.overall;
         overallCluster.overall.average = complianceRate(numPassing, numFailing);
         formattedData.results.push(overallCluster);
@@ -122,7 +122,7 @@ function formatStandardData(data) {
             clusterName,
             description: groupDescription,
             metadata,
-            __typename
+            __typename,
         } = keys[groupKey];
         // the check below is to address ROX-1420
         if (__typename !== '') {
@@ -137,7 +137,7 @@ function formatStandardData(data) {
                 groups[groupName] = {
                     groupId,
                     name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
-                    rows: []
+                    rows: [],
                 };
             }
             if (controlKeyIndex) {
@@ -149,12 +149,12 @@ function formatStandardData(data) {
                     standard: standardLabels[standardId],
                     control: controlName,
                     compliance: complianceRate(numPassing, numFailing),
-                    group: groupName
+                    group: groupName,
                 });
             }
         }
     });
-    Object.keys(groups).forEach(group => {
+    Object.keys(groups).forEach((group) => {
         formattedData.results.push(groups[group]);
         formattedData.totalRows += groups[group].rows.length;
     });
@@ -176,7 +176,7 @@ const ListTable = ({
     query,
     selectedRowId,
     updateSelectedRow,
-    pdfId
+    pdfId,
 }) => {
     const [page, setPage] = useState(0);
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
@@ -189,9 +189,9 @@ const ListTable = ({
         const { results } = data;
         if (isControlList) {
             return results
-                .map(result => {
+                .map((result) => {
                     const newResult = { ...result };
-                    newResult.rows = result.rows.filter(row => {
+                    newResult.rows = result.rows.filter((row) => {
                         const intValue = parseInt(row.compliance, 10); // strValue comes in the format "100.00%"
                         if (Number.isNaN(intValue)) return false;
                         if (isPassing) {
@@ -204,10 +204,10 @@ const ListTable = ({
                     });
                     return newResult;
                 })
-                .filter(result => result.rows.length);
+                .filter((result) => result.rows.length);
         }
 
-        return results.filter(item =>
+        return results.filter((item) =>
             Object.values(standardTypes).reduce((acc, standardId) => {
                 if (!item[standardId]) return acc;
                 const intValue = parseInt(item[standardId], 10);
@@ -244,14 +244,11 @@ const ListTable = ({
     }
 
     let tableData;
-    useEffect(
-        () => {
-            if (tableData && tableData.length) {
-                createPDFTable(tableData, entityType, query, pdfId, tableColumns);
-            }
-        },
-        [entityType, pdfId, query, tableColumns, tableData]
-    );
+    useEffect(() => {
+        if (tableData && tableData.length) {
+            createPDFTable(tableData, entityType, query, pdfId, tableColumns);
+        }
+    }, [entityType, pdfId, query, tableColumns, tableData]);
     return (
         <Query query={gqlQuery} variables={variables}>
             {({ loading, data }) => {
@@ -304,8 +301,8 @@ const ListTable = ({
                                 defaultSorted={[
                                     {
                                         id: 'name',
-                                        desc: false
-                                    }
+                                        desc: false,
+                                    },
                                 ]}
                             />
                         );
@@ -336,11 +333,11 @@ ListTable.propTypes = {
     entityType: PropTypes.string,
     query: PropTypes.shape({
         standardId: PropTypes.string,
-        groupBy: PropTypes.string
+        groupBy: PropTypes.string,
     }),
     selectedRowId: PropTypes.string,
     updateSelectedRow: PropTypes.func.isRequired,
-    pdfId: PropTypes.string
+    pdfId: PropTypes.string,
 };
 
 ListTable.defaultProps = {
@@ -348,7 +345,7 @@ ListTable.defaultProps = {
     selectedRowId: null,
     pdfId: null,
     entityType: null,
-    query: null
+    query: null,
 };
 
 export default ListTable;

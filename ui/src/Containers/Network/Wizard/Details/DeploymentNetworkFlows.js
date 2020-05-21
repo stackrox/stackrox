@@ -17,7 +17,7 @@ const DeploymentNetworkFlows = ({
     deploymentEdges,
     networkGraphRef,
     filterState,
-    onDeploymentClick
+    onDeploymentClick,
 }) => {
     const [selectedNode, setSelectedNode] = useState(null);
     const [page, setPage] = useState(0);
@@ -64,27 +64,27 @@ const DeploymentNetworkFlows = ({
                 Header: 'Deployment',
                 accessor: 'data.destNodeName',
                 // eslint-disable-next-line react/prop-types
-                Cell: ({ value }) => <span>{value}</span>
+                Cell: ({ value }) => <span>{value}</span>,
             },
             {
                 Header: 'Namespace',
                 accessor: 'data.destNodeNS',
                 // eslint-disable-next-line react/prop-types
-                Cell: ({ value }) => <span>{value}</span>
+                Cell: ({ value }) => <span>{value}</span>,
             },
             {
                 Header: 'Flow',
                 accessor: 'data.isActive',
                 show: filterState === filterModes.all,
                 // eslint-disable-next-line react/prop-types
-                Cell: ({ value }) => <span>{value ? 'active' : 'allowed'}</span>
+                Cell: ({ value }) => <span>{value ? 'active' : 'allowed'}</span>,
             },
             {
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => renderRowActionButtons(original)
-            }
+                Cell: ({ original }) => renderRowActionButtons(original),
+            },
         ];
         if (!deploymentEdges.length)
             return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
@@ -132,28 +132,25 @@ DeploymentNetworkFlows.propTypes = {
     networkGraphRef: PropTypes.shape({
         setSelectedNode: PropTypes.func,
         getNodeData: PropTypes.func,
-        onNodeClick: PropTypes.func
+        onNodeClick: PropTypes.func,
     }),
     filterState: PropTypes.number.isRequired,
-    onDeploymentClick: PropTypes.func
+    onDeploymentClick: PropTypes.func,
 };
 
 DeploymentNetworkFlows.defaultProps = {
     deploymentEdges: [],
     networkGraphRef: null,
-    onDeploymentClick: null
+    onDeploymentClick: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     networkGraphRef: selectors.getNetworkGraphRef,
-    filterState: selectors.getNetworkGraphFilterMode
+    filterState: selectors.getNetworkGraphFilterMode,
 });
 
 const mapDispatchToProps = {
-    setSelectedNamespace: graphActions.setSelectedNamespace
+    setSelectedNamespace: graphActions.setSelectedNamespace,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(DeploymentNetworkFlows);
+export default connect(mapStateToProps, mapDispatchToProps)(DeploymentNetworkFlows);

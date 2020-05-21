@@ -18,7 +18,7 @@ const rowData = getRowData();
 
 export default {
     title: 'EntityList',
-    component: EntityList
+    component: EntityList,
 };
 
 const history = createMemoryHistory('/');
@@ -43,13 +43,13 @@ function getTableColumns() {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         {
             Header: `Cluster`,
@@ -61,7 +61,7 @@ function getTableColumns() {
                 const { clusterName } = original;
                 const url = 'https://stackrow.com';
                 return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-            }
+            },
         },
         {
             Header: `Namespace`,
@@ -73,7 +73,7 @@ function getTableColumns() {
                 const { namespace } = original;
                 const url = 'https://wikipedia.org';
                 return <TableCellLink pdf={pdf} url={url} text={namespace} />;
-            }
+            },
         },
         {
             Header: `Policy Status`,
@@ -85,7 +85,7 @@ function getTableColumns() {
                 return policyStatus === 'pass' ? 'Pass' : <LabelChip text="Fail" type="alert" />;
             },
             id: 'policyStatus',
-            accessor: 'policyStatus'
+            accessor: 'policyStatus',
         },
         {
             Header: `Images`,
@@ -104,8 +104,8 @@ function getTableColumns() {
                     />
                 );
             },
-            accessor: 'imageCount'
-        }
+            accessor: 'imageCount',
+        },
     ];
 }
 
@@ -119,7 +119,7 @@ function getRowData() {
             namespace: 'kube-system',
             namespaceId: 'a019d8de-e9bb-11e9-93e8-42010a8a0114',
             imageCount: 1,
-            policyStatus: 'pass'
+            policyStatus: 'pass',
         },
         {
             id: 'b2ed2df0-e9bb-11e9-93e8-42010a8a0114',
@@ -129,7 +129,7 @@ function getRowData() {
             namespace: 'kube-system',
             namespaceId: 'a019d8de-e9bb-11e9-93e8-42010a8a0114',
             imageCount: 1,
-            policyStatus: 'fail'
+            policyStatus: 'fail',
         },
         {
             id: 'b2fc068c-e9bb-11e9-93e8-42010a8a0114',
@@ -139,7 +139,7 @@ function getRowData() {
             namespace: 'kube-system',
             namespaceId: 'a019d8de-e9bb-11e9-93e8-42010a8a0114',
             imageCount: 1,
-            policyStatus: 'fail'
-        }
+            policyStatus: 'fail',
+        },
     ];
 }

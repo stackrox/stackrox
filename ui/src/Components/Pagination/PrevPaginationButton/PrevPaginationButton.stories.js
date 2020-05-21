@@ -6,7 +6,7 @@ import PrevPaginationButton from './PrevPaginationButton';
 
 export default {
     title: 'PrevPaginationButton',
-    component: PrevPaginationButton
+    component: PrevPaginationButton,
 };
 
 export const basicUsage = () => {

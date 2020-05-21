@@ -1,7 +1,7 @@
 import { standardLabels } from 'messages/standards';
 import COMPLIANCE_STATES from 'constants/complianceStates';
 
-const getControlStatus = state => {
+const getControlStatus = (state) => {
     let status = null;
     if (state === 'COMPLIANCE_STATE_FAILURE') {
         status = COMPLIANCE_STATES.FAIL;

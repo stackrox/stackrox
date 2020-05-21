@@ -41,14 +41,14 @@ InfoWidget.propTypes = {
     headline: PropTypes.string,
     description: PropTypes.string,
     linkUrl: PropTypes.string,
-    loading: PropTypes.bool
+    loading: PropTypes.bool,
 };
 
 InfoWidget.defaultProps = {
     description: null,
     headline: null,
     linkUrl: null,
-    loading: false
+    loading: false,
 };
 
 export default connect()(InfoWidget);

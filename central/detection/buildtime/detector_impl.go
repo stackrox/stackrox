@@ -1,13 +1,10 @@
 package buildtime
 
 import (
-	"context"
-
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/detection"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -22,14 +19,14 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	}
 
 	var alerts []*storage.Alert
-	err := d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.Matcher().MatchOne(context.Background(), nil, []*storage.Image{image}, nil)
+		violations, err := compiled.MatchAgainstImage(image)
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}
@@ -38,7 +35,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 			alerts = append(alerts, policyAndViolationsToAlert(compiled.Policy(), alertViolations))
 		}
 		return nil
-	}))
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +49,7 @@ func policyAndViolationsToAlert(policy *storage.Policy, violations []*storage.Al
 	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_BUILD,
-		Policy:         protoutils.CloneStoragePolicy(policy),
+		Policy:         policy.Clone(),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

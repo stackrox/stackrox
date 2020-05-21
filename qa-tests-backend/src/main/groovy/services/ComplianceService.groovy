@@ -115,8 +115,8 @@ class ComplianceService extends BaseService {
         HttpPost httpPost = new HttpPost(
                 "https://${Env.mustGetHostname()}:${Env.mustGetPort()}" +
                         "/api/compliance/export/csv")
-        String username = System.getenv("ROX_USERNAME") ?: ""
-        String password = System.getenv("ROX_PASSWORD") ?: ""
+        String username = Env.mustGetUsername()
+        String password = Env.mustGetPassword()
 
         httpPost.addHeader(
                 "Authorization",

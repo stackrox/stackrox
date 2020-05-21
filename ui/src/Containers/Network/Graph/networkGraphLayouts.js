@@ -2,7 +2,7 @@ import {
     TEXT_MAX_WIDTH,
     NODE_WIDTH,
     NODE_PADDING,
-    SIDE_NODE_PADDING
+    SIDE_NODE_PADDING,
 } from 'constants/networkGraph';
 
 const nodeWidth = TEXT_MAX_WIDTH + NODE_WIDTH;
@@ -22,19 +22,19 @@ function getParentDimensions(nodeCount) {
         width,
         height,
         rows,
-        cols
+        cols,
     };
 }
 
 // Gets positions and dimensions for all parent nodes
 export function getParentPositions(nodes, padding) {
     const NSNames = nodes
-        .filter(node => !node.data().parent && node.data().name)
-        .map(parent => parent.data().id);
+        .filter((node) => !node.data().parent && node.data().name)
+        .map((parent) => parent.data().id);
 
     // Get namespace dimensions sorted by width
-    const namespaces = NSNames.map(id => {
-        const nodeCount = nodes.filter(node => {
+    const namespaces = NSNames.map((id) => {
+        const nodeCount = nodes.filter((node) => {
             const data = node.data();
             return data.parent && !data.side && data.parent === id;
         }).length;
@@ -48,7 +48,7 @@ export function getParentPositions(nodes, padding) {
     let colNum = 0;
     const maxNSWidth = Math.max(...avgNSDimensions.width);
     const maxRowWidth = Math.floor(Math.sqrt(namespaces.length) + 1) * maxNSWidth;
-    return namespaces.map(NS => {
+    return namespaces.map((NS) => {
         const { id, width, height } = NS;
         const newX = (maxNSWidth + padding.x) * colNum;
         const result = {
@@ -56,7 +56,7 @@ export function getParentPositions(nodes, padding) {
             x: newX,
             y,
             width,
-            height
+            height,
         };
 
         if (maxRowWidth < newX) {
@@ -77,13 +77,13 @@ let edgeGridOptions = {};
 export function edgeGridLayout(options) {
     const defaults = {
         parentPadding: { bottom: 0, top: 0, left: 0, right: 0 },
-        position: { x: 0, y: 0 }
+        position: { x: 0, y: 0 },
     };
-    edgeGridOptions = Object.assign({}, defaults, options);
+    edgeGridOptions = { ...defaults, ...options };
 }
 
 // eslint-disable-next-line func-names
-edgeGridLayout.prototype.run = function() {
+edgeGridLayout.prototype.run = function () {
     const options = edgeGridOptions;
     const { parentPadding, position, eles } = options;
 
@@ -130,22 +130,22 @@ edgeGridLayout.prototype.run = function() {
             case 'top':
                 return {
                     x: midWidth,
-                    y: position.y - parentPadding.top - SIDE_NODE_PADDING
+                    y: position.y - parentPadding.top - SIDE_NODE_PADDING,
                 };
             case 'bottom':
                 return {
                     x: midWidth,
-                    y: position.y + height + parentPadding.bottom + SIDE_NODE_PADDING
+                    y: position.y + height + parentPadding.bottom + SIDE_NODE_PADDING,
                 };
             case 'left':
                 return {
                     x: position.x - parentPadding.left - SIDE_NODE_PADDING,
-                    y: midHeight
+                    y: midHeight,
                 };
             case 'right':
                 return {
                     x: position.x + width + parentPadding.right + SIDE_NODE_PADDING,
-                    y: midHeight
+                    y: midHeight,
                 };
             default:
                 return { x: position.x, y: position.y };

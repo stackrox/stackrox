@@ -40,6 +40,8 @@ class AdmissionControllerTest extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
     private final static String CVSS = "Fixable CVSS >= 7"
 
+    static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
+
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
             .setImage("us.gcr.io/stackrox-ci/nginx:1.10")
@@ -58,7 +60,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment MISC_DEPLOYMENT = new Deployment()
         .setName("random-busybox")
-        .setImage("busybox:1.31")
+        .setImage("busybox:1.30")
         .addLabel("app", "random-busybox")
 
     def setupSpec() {
@@ -241,8 +243,6 @@ class AdmissionControllerTest extends BaseSpecification {
                 .build()
 
         assert ClusterService.updateAdmissionController(ac)
-        // Maximum time to wait for propagation to sensor
-        sleep 5000
 
         and:
         "Update latest tag policy to respect scope"
@@ -256,6 +256,9 @@ class AdmissionControllerTest extends BaseSpecification {
             )
             .build()
         Services.updatePolicy(scopedLatestTagPolicy)
+
+        // Maximum time to wait for propagation to sensor
+        sleep 5000
 
         then:
         "Create a deployment with a latest tag"
@@ -376,11 +379,15 @@ class AdmissionControllerTest extends BaseSpecification {
         Thread thread
 
         ChaosMonkey(int minReadyReplicas, Long gracePeriod) {
+            def pods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
+            assert pods.size() > 0, "There are no ${ADMISSION_CONTROLLER_APP_NAME} pods. " +
+                "Did you enable ADMISSION_CONTROLLER when deploying?"
+
             thread = Thread.start {
                 while (!stopFlag.get()) {
                     // Get the current ready, non-deleted pod replicas
                     def admCtrlPods = new ArrayList<Pod>(orchestrator.getPods(
-                            "stackrox", "admission-control"))
+                            Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME))
                     admCtrlPods.removeIf { it?.status?.containerStatuses[0]?.ready }
 
                     if (admCtrlPods.size() <= minReadyReplicas) {
@@ -420,7 +427,7 @@ class AdmissionControllerTest extends BaseSpecification {
             while (!allReady) {
                 sleep 1000
 
-                def admCtrlPods = orchestrator.getPods("stackrox", "admission-control")
+                def admCtrlPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
                 if (admCtrlPods.size() < 3) {
                     continue
                 }

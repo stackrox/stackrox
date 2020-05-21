@@ -1,9 +1,12 @@
+import static Services.getViolationsWithTimeout
+
+import io.stackrox.proto.storage.AlertOuterClass
+import services.AlertService
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import services.ClusterService
 import services.DevelopmentService
-import services.FeatureFlagService
 import services.MetadataService
 import services.NamespaceService
 import services.NetworkPolicyService
@@ -49,8 +52,8 @@ class ReconciliationTest extends BaseSpecification {
             reconciliationStatsForCluster = DevelopmentService.
                 getReconciliationStatsByCluster().getStatsList().find { it.clusterId == clusterId }
             assert reconciliationStatsForCluster
+            assert reconciliationStatsForCluster.getReconciliationDone()
         }
-        assert reconciliationStatsForCluster.getReconciliationDone()
         println "Reconciliation stats: ${reconciliationStatsForCluster.deletedObjectsByTypeMap}"
         for (def entry: reconciliationStatsForCluster.getDeletedObjectsByTypeMap().entrySet()) {
             def expectedMinDeletions = EXPECTED_MIN_DELETIONS_BY_KEY.get(entry.getKey())
@@ -98,14 +101,13 @@ class ReconciliationTest extends BaseSpecification {
                 .addLabel ("app", "testing123")
                 .setCommand(["sleep", "600"])
 
-        def podDeploySeparate = FeatureFlagService.isFeatureFlagEnabled("ROX_POD_DEPLOY_SEPARATE")
-
         // Wait is builtin
         orchestrator.createDeployment(dep)
         assert Services.waitForDeployment(dep)
-        if (podDeploySeparate) {
-            assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
-        }
+        assert Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size() == 1
+
+        def violations = getViolationsWithTimeout("testing123", "Latest Tag", 30)
+        assert violations.size() == 1
 
         NetworkPolicy policy = new NetworkPolicy("do-nothing")
                 .setNamespace(ns)
@@ -117,8 +119,8 @@ class ReconciliationTest extends BaseSpecification {
         def sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
         orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
-        // Delete objects from k8s
         orchestrator.identity {
+            // Delete objects from k8s
             deleteDeployment(dep)
             deleteSecret("testing123", ns)
             deleteNetworkPolicy(policy)
@@ -126,10 +128,15 @@ class ReconciliationTest extends BaseSpecification {
             // Just wait for the namespace to be deleted which is indicative that all of them have been deleted
             waitForNamespaceDeletion(ns)
 
-            createOrchestratorDeployment(sensor)
+            // Recreate sensor
+            try {
+                createOrchestratorDeployment(sensor)
+            } catch (Exception e) {
+                println "Error re-creating the sensor: " + e.toString()
+                throw e
+            }
         }
 
-        // Recreate sensor
         Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 100
@@ -143,9 +150,7 @@ class ReconciliationTest extends BaseSpecification {
         int numDeployments, numPods, numNamespaces, numNetworkPolicies, numSecrets
         while (t.IsValid()) {
             numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
-            if (podDeploySeparate) {
-                numPods = Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size()
-            }
+            numPods = Services.getPods().findAll { it.deploymentId == dep.getDeploymentUid() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()
             numSecrets = SecretService.getSecrets().findAll { it.id == secretID }.size()
@@ -156,14 +161,16 @@ class ReconciliationTest extends BaseSpecification {
             println "Waiting for all resources to be reconciled"
         }
         assert numDeployments == 0
-        if (podDeploySeparate) {
-            assert numPods == 0
-        }
+        assert numPods == 0
         assert numNamespaces == 0
         assert numNetworkPolicies == 0
         assert numSecrets == 0
 
         verifyReconciliationStats(true)
+
+        // Verify Latest Tag alert is marked as stale
+        def violation = AlertService.getViolation(violations[0].getId())
+        assert violation.state == AlertOuterClass.ViolationState.RESOLVED
     }
 
 }

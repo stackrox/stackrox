@@ -9,23 +9,23 @@ class MultiGaugeDetailSection extends Component {
         selectedData: PropTypes.shape({
             passing: PropTypes.bool,
             failing: PropTypes.shape({
-                selected: PropTypes.bool
+                selected: PropTypes.bool,
             }),
-            index: PropTypes.number
+            index: PropTypes.number,
         }),
-        colors: PropTypes.arrayOf(PropTypes.string)
+        colors: PropTypes.arrayOf(PropTypes.string),
     };
 
     static defaultProps = {
         selectedData: null,
-        colors: []
+        colors: [],
     };
 
     onClick = (data, value, index) => () => {
         this.props.onClick({
             ...data,
             value,
-            index
+            index,
         });
     };
 

@@ -15,7 +15,7 @@ const ComplianceDashboardPage = () => {
         ? {}
         : {
               '--start': 'hsl(240, 100%, 97%)',
-              '--end': 'hsl(215, 92%, 95%)'
+              '--end': 'hsl(215, 92%, 95%)',
           };
 
     return (

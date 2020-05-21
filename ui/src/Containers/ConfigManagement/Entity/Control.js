@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -52,8 +52,8 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
         where: queryService.objectToWhereClause({
             ...query[searchParam],
             'Control Id': id,
-            cacheBuster: new Date().getUTCMilliseconds()
-        })
+            cacheBuster: new Date().getUTCMilliseconds(),
+        }),
     };
 
     return (
@@ -81,20 +81,20 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                     standardId = '',
                     name = '',
                     description = '',
-                    interpretationText = ''
+                    interpretationText = '',
                 } = entity;
-                const nodes = complianceControlNodes.map(node => {
+                const nodes = complianceControlNodes.map((node) => {
                     const {
                         id: nodeId,
                         name: nodeName,
                         nodeComplianceControlCount,
-                        clusterName
+                        clusterName,
                     } = node;
                     return {
                         id: nodeId,
                         name: nodeName,
                         clusterName,
-                        passing: !nodeComplianceControlCount.failingCount
+                        passing: !nodeComplianceControlCount.failingCount,
                     };
                 });
 
@@ -133,7 +133,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                                         entityType={entityTypes.CONTROL}
                                         entityContext={{
                                             ...entityContext,
-                                            [entityTypes.CONTROL]: id
+                                            [entityTypes.CONTROL]: id,
                                         }}
                                     />
                                 </div>

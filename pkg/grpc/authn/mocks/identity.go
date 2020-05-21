@@ -91,18 +91,32 @@ func (mr *MockIdentityMockRecorder) User() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "User", reflect.TypeOf((*MockIdentity)(nil).User))
 }
 
-// Role mocks base method
-func (m *MockIdentity) Role() *storage.Role {
+// Permissions mocks base method
+func (m *MockIdentity) Permissions() *storage.Role {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Role")
+	ret := m.ctrl.Call(m, "Permissions")
 	ret0, _ := ret[0].(*storage.Role)
 	return ret0
 }
 
-// Role indicates an expected call of Role
-func (mr *MockIdentityMockRecorder) Role() *gomock.Call {
+// Permissions indicates an expected call of Permissions
+func (mr *MockIdentityMockRecorder) Permissions() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Role", reflect.TypeOf((*MockIdentity)(nil).Role))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Permissions", reflect.TypeOf((*MockIdentity)(nil).Permissions))
+}
+
+// Roles mocks base method
+func (m *MockIdentity) Roles() []*storage.Role {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Roles")
+	ret0, _ := ret[0].([]*storage.Role)
+	return ret0
+}
+
+// Roles indicates an expected call of Roles
+func (mr *MockIdentityMockRecorder) Roles() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Roles", reflect.TypeOf((*MockIdentity)(nil).Roles))
 }
 
 // Service mocks base method

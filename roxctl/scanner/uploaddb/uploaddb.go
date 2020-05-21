@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command represents the command.
@@ -21,7 +22,7 @@ func Command() *cobra.Command {
 		Use:   "upload-db",
 		Short: "upload-db uploads a vulnerability database for the StackRox Scanner to use.",
 		Long:  "upload-db uploads a vulnerability database for the StackRox Scanner to use.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			file, err := os.Open(filename)
 			if err != nil {
 				return errors.Wrap(err, "Could not open file")
@@ -40,7 +41,7 @@ func Command() *cobra.Command {
 			}
 			fmt.Println(string(body))
 			return nil
-		},
+		}),
 	}
 
 	c.Flags().StringVar(&filename, "scanner-db-file", "", "file containing the dumped Scanner definitions DB")

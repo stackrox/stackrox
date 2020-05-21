@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 var (
@@ -30,12 +31,12 @@ func Command() *cobra.Command {
 		Use:   "check",
 		Short: "Check deployments for deploy time policy violations.",
 		Long:  "Check deployments for deploy time policy violations.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if file == "" {
 				return errors.New("--file must be set")
 			}
 			return checkDeployment(file, json, flags.Timeout(c))
-		},
+		}),
 	}
 
 	c.Flags().StringVarP(&file, "file", "f", "", "yaml file to send to Central to evaluate policies against")

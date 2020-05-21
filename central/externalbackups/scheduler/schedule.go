@@ -43,7 +43,7 @@ func New() Scheduler {
 }
 
 func (s *scheduler) backup(w *io.PipeWriter) {
-	err := export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), w, false)
+	err := export.Backup(context.Background(), globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB(), w)
 	if err != nil {
 		log.Errorf("Failed to write backup to io.writer: %v", err)
 		if err := w.CloseWithError(err); err != nil {

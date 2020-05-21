@@ -16,7 +16,7 @@ function ProcessesDiscoveryCardHeader({
     deploymentId,
     process,
     processEpoch,
-    setProcessEpoch
+    setProcessEpoch,
 }) {
     const { name, containerName, suspicious } = process;
 
@@ -25,7 +25,7 @@ function ProcessesDiscoveryCardHeader({
         const { clusterId, namespace } = getDeploymentAndProcessIdFromProcessGroup(process);
         const addProcessesQuery = {
             keys: [{ deploymentId, containerName, clusterId, namespace }],
-            addElements: [{ processName: name }]
+            addElements: [{ processName: name }],
         };
         addDeleteProcesses(addProcessesQuery).then(() => {
             // This is so that the parent component knows that one of the child components
@@ -77,10 +77,10 @@ ProcessesDiscoveryCardHeader.propTypes = {
         name: PropTypes.string.isRequired,
         containerName: PropTypes.string.isRequired,
         suspicious: PropTypes.bool.isRequired,
-        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     }).isRequired,
     processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired
+    setProcessEpoch: PropTypes.func.isRequired,
 };
 
 export default ProcessesDiscoveryCardHeader;

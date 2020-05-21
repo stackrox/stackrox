@@ -2,14 +2,21 @@ package telemetry
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+)
+
+const (
+	telemetryChanGCPeriod = 5 * time.Minute
 )
 
 type controller struct {
@@ -19,30 +26,45 @@ type controller struct {
 	returnChansMutex sync.Mutex
 
 	injector common.MessageInjector
+
+	supportsCancellations bool
 }
 
 type telemetryCallback func(ctx concurrency.ErrorWaitable, chunk *central.TelemetryResponsePayload) error
 
-func newController(injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
-	return &controller{
-		stopSig:     stopSig,
-		returnChans: make(map[string]chan *central.TelemetryResponsePayload),
-		injector:    injector,
+func newController(capabilities centralsensor.SensorCapabilitySet, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) *controller {
+	ctrl := &controller{
+		stopSig:               stopSig,
+		returnChans:           make(map[string]chan *central.TelemetryResponsePayload),
+		injector:              injector,
+		supportsCancellations: capabilities.Contains(centralsensor.PullTelemetryDataCap),
 	}
+	go ctrl.pruneReturnChans()
+	return ctrl
 }
 
 func (c *controller) streamingRequest(ctx context.Context, dataType central.PullTelemetryDataRequest_TelemetryDataType, cb telemetryCallback) error {
 	subCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	concurrency.CancelContextOnSignal(subCtx, cancel, c.stopSig)
 
 	requestID := uuid.NewV4().String()
+
+	var timeoutMs int64
+	if deadline, ok := ctx.Deadline(); ok {
+		timeoutMs = time.Until(deadline).Milliseconds()
+		if timeoutMs <= 0 {
+			return errors.New("deadline already expired")
+		}
+	}
 
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_TelemetryDataRequest{
 			TelemetryDataRequest: &central.PullTelemetryDataRequest{
 				RequestId: requestID,
 				DataType:  dataType,
+				TimeoutMs: timeoutMs,
 			},
 		},
 	}
@@ -53,12 +75,22 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 	})
 
 	defer concurrency.WithLock(&c.returnChansMutex, func() {
-		delete(c.returnChans, requestID)
+		c.returnChans[requestID] = nil
 	})
 
 	if err := c.injector.InjectMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "could not pull telemetry data")
 	}
+
+	hasEOS := false
+	defer func() {
+		// Check for c.supportsCancellations here as well, in order to avoid spawning a goroutine.
+		if hasEOS || !c.supportsCancellations {
+			return
+		}
+
+		go c.sendCancellation(requestID)
+	}()
 
 	for {
 		var resp *central.TelemetryResponsePayload
@@ -71,6 +103,7 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 		}
 
 		if eos := resp.GetEndOfStream(); eos != nil {
+			hasEOS = true
 			if eos.GetErrorMessage() != "" {
 				return errors.New(eos.GetErrorMessage())
 			}
@@ -81,6 +114,25 @@ func (c *controller) streamingRequest(ctx context.Context, dataType central.Pull
 			return err
 		}
 	}
+}
+
+func (c *controller) sendCancellation(requestID string) {
+	if !c.supportsCancellations {
+		return
+	}
+
+	cancelMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_CancelPullTelemetryDataRequest{
+			CancelPullTelemetryDataRequest: &central.CancelPullTelemetryDataRequest{
+				RequestId: requestID,
+			},
+		},
+	}
+
+	// We don't care about any error - it can only be a context or stop error; the first is impossible because we're
+	// using the background context, and in the second we're fine not sending a cancellation as the connection is going
+	// away anyway.
+	_ = c.injector.InjectMessage(context.Background(), cancelMsg)
 }
 
 func (c *controller) PullKubernetesInfo(ctx context.Context, cb KubernetesInfoChunkCallback) error {
@@ -116,10 +168,19 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 	}
 
 	var retC chan *central.TelemetryResponsePayload
+	var found bool
 	concurrency.WithLock(&c.returnChansMutex, func() {
-		retC = c.returnChans[requestID]
+		retC, found = c.returnChans[requestID]
+		if !found {
+			// Add the channel to the map to make sure log messages get throttled.
+			c.returnChans[requestID] = nil
+		}
 	})
 	if retC == nil {
+		if found {
+			// If there is a nil entry, suppress error messages to avoid logspam.
+			return nil
+		}
 		return errors.Errorf("could not dispatch response: no return channel registered for request id %s", requestID)
 	}
 
@@ -128,5 +189,37 @@ func (c *controller) ProcessTelemetryDataResponse(resp *central.PullTelemetryDat
 		return errors.Wrap(c.stopSig.Err(), "sensor connection stopped while waiting for network policies response")
 	case retC <- resp.GetPayload():
 		return nil
+	}
+}
+
+func (c *controller) pruneReturnChans() {
+	prevNilChans := set.NewStringSet()
+	t := time.NewTicker(telemetryChanGCPeriod)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-c.stopSig.Done():
+			return
+		case <-t.C:
+		}
+
+		// Go through all channels, and collect those that are nil. If we find a channel to be nil in two subsequent
+		// iterations, that means it has been in this state for `telemetryChanGCPeriod` and now can be removed.
+		newNilChans := set.NewStringSet()
+		concurrency.WithLock(&c.returnChansMutex, func() {
+			for id, retC := range c.returnChans {
+				if retC != nil {
+					continue
+				}
+
+				if prevNilChans.Contains(id) {
+					delete(c.returnChans, id)
+				} else {
+					newNilChans.Add(id)
+				}
+			}
+			prevNilChans = newNilChans
+		})
 	}
 }

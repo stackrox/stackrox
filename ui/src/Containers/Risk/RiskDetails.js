@@ -23,11 +23,11 @@ const Factor = ({ message, url }) => {
 
 Factor.propTypes = {
     message: PropTypes.string.isRequired,
-    url: PropTypes.string
+    url: PropTypes.string,
 };
 
 Factor.defaultProps = {
-    url: ''
+    url: '',
 };
 
 const RiskDetails = ({ risk }) => {
@@ -36,7 +36,7 @@ const RiskDetails = ({ risk }) => {
             <NoResultsMessage message="Risk details are being calculated. Please check back shortly." />
         );
 
-    return risk.results.map(result => (
+    return risk.results.map((result) => (
         <div className="px-3 pt-5" key={result.name}>
             <div
                 className="alert-preview bg-base-100 text-primary-600 tracking-wide"
@@ -58,12 +58,12 @@ const RiskDetails = ({ risk }) => {
 
 RiskDetails.propTypes = {
     risk: PropTypes.shape({
-        results: PropTypes.array.isRequired
-    })
+        results: PropTypes.array.isRequired,
+    }),
 };
 
 RiskDetails.defaultProps = {
-    risk: null
+    risk: null,
 };
 
 export default RiskDetails;

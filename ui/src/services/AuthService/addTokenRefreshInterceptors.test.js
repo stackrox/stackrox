@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports, import/no-named-default
 import { default as axiosGlobal } from 'axios';
 import addTokenRefreshInterceptors, {
-    doNotStallRequestConfig
+    doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import AccessTokenManager from './AccessTokenManager';
 
@@ -30,8 +30,8 @@ describe('addTokenRefreshInterceptors', () => {
         const handler = addInterceptorAndGetHandler();
         const error = {
             response: {
-                status: 403
-            }
+                status: 403,
+            },
         };
         return expect(handler.rejected(error)).rejects.toMatchObject(error);
     });
@@ -41,12 +41,12 @@ describe('addTokenRefreshInterceptors', () => {
         const m = new AccessTokenManager();
         m.getRefreshTokenOpPromise = jest.fn().mockResolvedValue();
         m.refreshToken = jest.fn().mockResolvedValue();
-        axios.request = config => Promise.resolve(config);
+        axios.request = (config) => Promise.resolve(config);
         const handler = addInterceptorAndGetHandler(axios, m);
 
         const error = {
             response: { status: 401 },
-            config: { myRequest: true }
+            config: { myRequest: true },
         };
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
@@ -58,7 +58,7 @@ describe('addTokenRefreshInterceptors', () => {
 
     it('should retry failed request if token has changed since it was issued', () => {
         const axios = newAxiosInstance();
-        axios.request = config => Promise.resolve(config);
+        axios.request = (config) => Promise.resolve(config);
         const m = new AccessTokenManager();
         m.refreshToken = jest.fn().mockResolvedValue();
         m.getToken = jest.fn().mockReturnValueOnce('token2');
@@ -68,7 +68,7 @@ describe('addTokenRefreshInterceptors', () => {
 
         const error = {
             response: { status: 401 },
-            config: { myRequest: true }
+            config: { myRequest: true },
         };
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
@@ -80,14 +80,14 @@ describe('addTokenRefreshInterceptors', () => {
 
     it('should initiate token refresh in case of 401 failure', () => {
         const axios = newAxiosInstance();
-        axios.request = config => Promise.resolve(config);
+        axios.request = (config) => Promise.resolve(config);
         const m = new AccessTokenManager();
         m.refreshToken = jest.fn().mockResolvedValue();
 
         const handler = addInterceptorAndGetHandler(axios, m);
         const error = {
             response: { status: 401 },
-            config: { myRequest: true }
+            config: { myRequest: true },
         };
         return expect(handler.rejected(error))
             .resolves.toMatchObject({ myRequest: true })
@@ -98,10 +98,10 @@ describe('addTokenRefreshInterceptors', () => {
 
     it('should call error callback when retry / token refresh did not help', async () => {
         const axios = newAxiosInstance();
-        axios.request = config =>
+        axios.request = (config) =>
             Promise.resolve({
                 response: { status: 401 },
-                config
+                config,
             });
         const m = new AccessTokenManager();
         m.refreshToken = jest.fn().mockResolvedValue();
@@ -111,7 +111,7 @@ describe('addTokenRefreshInterceptors', () => {
 
         const error = {
             response: { status: 401 },
-            config: { myRequest: true }
+            config: { myRequest: true },
         };
         const retriedResponseError = await handler.rejected(error);
         return expect(handler.rejected(retriedResponseError))

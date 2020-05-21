@@ -12,7 +12,7 @@ import {
     noOptionsMessage,
     createOptionPosition,
     inputMatchesTopOption,
-    removeValuesForKey
+    removeValuesForKey,
 } from 'Components/URLSearchInputWithAutocomplete';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
@@ -36,13 +36,13 @@ class SearchInput extends Component {
         defaultOption: PropTypes.shape({
             value: PropTypes.string,
             label: PropTypes.string,
-            category: PropTypes.string
+            category: PropTypes.string,
         }),
         autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
         sendAutoCompleteRequest: PropTypes.func,
         clearAutoComplete: PropTypes.func,
         autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
-        setAllSearchOptions: PropTypes.func.isRequired
+        setAllSearchOptions: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
@@ -56,7 +56,7 @@ class SearchInput extends Component {
         autoCompleteResults: [],
         sendAutoCompleteRequest: null,
         clearAutoComplete: null,
-        autoCompleteCategories: []
+        autoCompleteCategories: [],
     };
 
     componentWillUnmount() {
@@ -88,7 +88,7 @@ class SearchInput extends Component {
         }
     };
 
-    updateAutoCompleteState = input => {
+    updateAutoCompleteState = (input) => {
         if (!this.queryIsPossiblyBeingTyped()) {
             if (this.props.clearAutoComplete) this.props.clearAutoComplete();
             return;
@@ -103,7 +103,7 @@ class SearchInput extends Component {
         if (
             this.props.defaultOption &&
             actualSearchOptions.length === 1 &&
-            !this.props.searchModifiers.find(x => x.value === actualSearchOptions[0].value)
+            !this.props.searchModifiers.find((x) => x.value === actualSearchOptions[0].value)
         ) {
             actualSearchOptions[0].label = this.trimDefaultOptionFromValueIfExists(
                 actualSearchOptions[0].label
@@ -127,9 +127,9 @@ class SearchInput extends Component {
         !this.props.searchOptions.length ||
         this.props.searchOptions[this.props.searchOptions.length - 1].type !== 'categoryOption';
 
-    formatValueWithDefaultOption = value => `${this.props.defaultOption.label} ${value}`;
+    formatValueWithDefaultOption = (value) => `${this.props.defaultOption.label} ${value}`;
 
-    trimDefaultOptionFromValueIfExists = value => {
+    trimDefaultOptionFromValueIfExists = (value) => {
         const prefix = `${this.props.defaultOption.label} `;
         if (value.startsWith(prefix)) {
             return value.slice(prefix.length);
@@ -148,7 +148,7 @@ class SearchInput extends Component {
         if (this.queryIsPossiblyBeingTyped()) {
             // If you previously typed a search modifier (Cluster:, Deployment Name:, etc.) then show autocomplete suggestions
             suggestions = suggestions.concat(
-                this.props.autoCompleteResults.map(value => {
+                this.props.autoCompleteResults.map((value) => {
                     let modifiedValue = value;
                     if (searchOptions.length === 0)
                         modifiedValue = this.formatValueWithDefaultOption(modifiedValue);
@@ -175,7 +175,7 @@ class SearchInput extends Component {
             onInputChange: this.updateAutoCompleteState,
             noOptionsMessage,
             closeMenuOnSelect: false,
-            formatCreateLabel: inputValue => {
+            formatCreateLabel: (inputValue) => {
                 if (this.props.defaultOption && this.props.searchOptions.length === 0) {
                     return this.formatValueWithDefaultOption(inputValue);
                 }
@@ -192,7 +192,7 @@ class SearchInput extends Component {
                 // Otherwise it might be confusing.
                 if (
                     selectOptions.find(
-                        option =>
+                        (option) =>
                             option.type === 'categoryOption' &&
                             option.label.toLowerCase().startsWith(inputValue.toLowerCase())
                     )
@@ -200,23 +200,20 @@ class SearchInput extends Component {
                     return false;
                 return true;
             },
-            createOptionPosition
+            createOptionPosition,
         };
         return <Creatable {...props} components={{ ...props.components }} autoFocus />;
     }
 }
 
 const mapStateToProps = createStructuredSelector({
-    autoCompleteResults: selectors.getAutoCompleteResults
+    autoCompleteResults: selectors.getAutoCompleteResults,
 });
 
 const mapDispatchToProps = {
     sendAutoCompleteRequest: searchAutoCompleteActions.sendAutoCompleteRequest,
     clearAutoComplete: searchAutoCompleteActions.clearAutoComplete,
-    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions
+    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(SearchInput);
+export default connect(mapStateToProps, mapDispatchToProps)(SearchInput);

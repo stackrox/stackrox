@@ -28,7 +28,7 @@ const imageMap = {
     [entityTypes.ROLE]: role,
     [entityTypes.SECRET]: secrets,
     [entityTypes.SERVICE_ACCOUNT]: serviceAccount,
-    [entityTypes.CONTROL]: control
+    [entityTypes.CONTROL]: control,
 };
 
 const EntityIcon = ({ className, entityType }) => (
@@ -42,11 +42,11 @@ const EntityIcon = ({ className, entityType }) => (
 
 EntityIcon.propTypes = {
     className: PropTypes.string,
-    entityType: PropTypes.string.isRequired
+    entityType: PropTypes.string.isRequired,
 };
 
 EntityIcon.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default EntityIcon;

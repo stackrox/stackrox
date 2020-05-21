@@ -30,14 +30,14 @@ NotFoundMessage.propTypes = {
     message: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
     actionText: PropTypes.string,
     onClick: PropTypes.func,
-    url: PropTypes.string
+    url: PropTypes.string,
 };
 
 NotFoundMessage.defaultProps = {
     message: 'This page was not found',
     actionText: null,
     onClick: null,
-    url: null
+    url: null,
 };
 
 export default NotFoundMessage;

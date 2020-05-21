@@ -16,16 +16,27 @@ type Validator interface {
 	Validate(rawToken string, jwtClaims *jwt.Claims, extraClaims ...interface{}) error
 }
 
-type rs256Validator struct {
+type validator struct {
 	keyGetter KeyGetter
 	expected  jwt.Expected
+	algorithm string
 }
 
 // NewRS256Validator validates tokens generated using RS256 (256-bit RSA).
 func NewRS256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
-	return rs256Validator{
+	return validator{
 		keyGetter: keys,
 		expected:  jwt.Expected{Issuer: issuer, Audience: audience},
+		algorithm: string(jose.RS256),
+	}
+}
+
+// NewES256Validator validates tokens generated using ES256 (ECDSA using P-256 and SHA-256)
+func NewES256Validator(keys KeyGetter, issuer string, audience jwt.Audience) Validator {
+	return validator{
+		keyGetter: keys,
+		expected:  jwt.Expected{Issuer: issuer, Audience: audience},
+		algorithm: string(jose.ES256),
 	}
 }
 
@@ -45,7 +56,7 @@ var (
 )
 
 // Validate validates the token or returns an error.
-func (v rs256Validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...interface{}) error {
+func (v validator) Validate(rawToken string, claims *jwt.Claims, extraClaims ...interface{}) error {
 	token, err := jwt.ParseSigned(rawToken)
 	if err != nil {
 		return err
@@ -56,7 +67,7 @@ func (v rs256Validator) Validate(rawToken string, claims *jwt.Claims, extraClaim
 	}
 
 	for _, h := range token.Headers {
-		err := v.validateWithHeader(token, h, claims, extraClaims...)
+		err := v.validateHeaderFields(token, h, claims, extraClaims...)
 		if err != nil {
 			return err
 		}
@@ -64,14 +75,15 @@ func (v rs256Validator) Validate(rawToken string, claims *jwt.Claims, extraClaim
 	return nil
 }
 
-func (v rs256Validator) validateWithHeader(token *jwt.JSONWebToken, header jose.Header, claims *jwt.Claims, extraClaims ...interface{}) error {
-	if header.Algorithm != string(jose.RS256) {
+func (v validator) validateHeaderFields(token *jwt.JSONWebToken, header jose.Header, claims *jwt.Claims, extraClaims ...interface{}) error {
+	if header.Algorithm != v.algorithm {
 		return ErrInvalidAlgorithm
 	}
 
 	if header.KeyID == "" {
 		return ErrNoKeyID
 	}
+
 	key := v.keyGetter.Key(header.KeyID)
 	if key == nil {
 		return ErrKeyNotFound

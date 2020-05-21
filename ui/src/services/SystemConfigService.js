@@ -9,7 +9,7 @@ const baseUrl = '/v1/config';
  */
 export function fetchSystemConfig() {
     return axios.get(baseUrl).then(({ data }) => ({
-        response: data
+        response: data,
     }));
 }
 
@@ -20,7 +20,7 @@ export function fetchSystemConfig() {
  */
 export function fetchPublicConfig() {
     return axios.get(`${baseUrl}/public`).then(({ data }) => ({
-        response: data
+        response: data,
     }));
 }
 

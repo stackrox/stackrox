@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/apitoken/backend"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sliceutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,19 +75,26 @@ func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v
 
 func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRequest) (*v1.GenerateTokenResponse, error) {
 	if req.GetName() == "" {
-		return nil, status.Error(codes.Internal, "token name cannot be empty")
+		return nil, status.Error(codes.InvalidArgument, "token name cannot be empty")
 	}
 
-	// Make sure the role exists. We do not allow people to generate a token for a role that doesn't exist.
-	role, err := s.roles.GetRole(ctx, req.GetRole())
+	if req.GetRole() != "" {
+		if len(req.GetRoles()) > 0 {
+			return nil, status.Error(codes.InvalidArgument, "must use either role or roles, but not both")
+		}
+		req.Roles = []string{req.GetRole()}
+		req.Role = ""
+	}
+
+	roles, missingIndices, err := permissions.GetRolesFromStore(ctx, s.roles, req.GetRoles())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "unable to fetch role %q", req.GetRole())
+		return nil, status.Errorf(codes.Internal, "unable to fetch roles: %v", err)
 	}
-	if role == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "role %q doesn't exist", req.GetRole())
+	if len(missingIndices) > 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "role(s) %s don't exist", strings.Join(sliceutils.StringSelect(req.GetRoles(), missingIndices...), ","))
 	}
 
-	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), role)
+	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), roles)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

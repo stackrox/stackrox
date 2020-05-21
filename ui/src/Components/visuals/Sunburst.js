@@ -20,7 +20,7 @@ function getKeyPath(node) {
 // Update a dataset to highlight a specific set of nodes
 function highlightPathData(data, highlightedNames) {
     if (data.children) {
-        data.children.map(child => highlightPathData(child, highlightedNames));
+        data.children.map((child) => highlightPathData(child, highlightedNames));
     }
     /* eslint-disable */
     data.style = {
@@ -34,7 +34,7 @@ function highlightPathData(data, highlightedNames) {
 const LABEL_STYLE = {
     fontSize: '12px',
     textAnchor: 'middle',
-    fill: 'var(--primary-800)'
+    fill: 'var(--primary-800)',
 };
 
 class BasicSunburst extends React.Component {
@@ -50,21 +50,21 @@ class BasicSunburst extends React.Component {
                         name: PropTypes.string.isRequired,
                         color: PropTypes.string.isRequired,
                         link: PropTypes.string,
-                        value: PropTypes.number.isRequired
+                        value: PropTypes.number.isRequired,
                     })
-                )
+                ),
             })
         ).isRequired,
         rootData: PropTypes.arrayOf(
             PropTypes.shape({
                 text: PropTypes.string.isRequired,
-                link: PropTypes.string
+                link: PropTypes.string,
             })
         ).isRequired,
         totalValue: PropTypes.number.isRequired,
         legendData: PropTypes.arrayOf(PropTypes.object),
         sunburstProps: PropTypes.shape({
-            style: PropTypes.string
+            style: PropTypes.string,
         }),
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
@@ -73,7 +73,7 @@ class BasicSunburst extends React.Component {
         staticDetails: PropTypes.bool,
         history: ReactRouterPropTypes.history.isRequired,
         units: PropTypes.string,
-        small: PropTypes.bool
+        small: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -85,7 +85,7 @@ class BasicSunburst extends React.Component {
         onValueDeselect: null,
         staticDetails: false,
         units: 'percentage',
-        small: false
+        small: false,
     };
 
     constructor(props) {
@@ -95,7 +95,7 @@ class BasicSunburst extends React.Component {
         this.state = {
             data: enrichedData,
             clicked: false,
-            selectedDatum: null
+            selectedDatum: null,
         };
     }
 
@@ -104,7 +104,7 @@ class BasicSunburst extends React.Component {
         return <LabelSeries data={[{ x: 1, y: 9, label, style: LABEL_STYLE }]} />;
     };
 
-    onValueMouseOverHandler = datum => {
+    onValueMouseOverHandler = (datum) => {
         const { data, clicked } = this.state;
         const { onValueMouseOver } = this.props;
         if (clicked) {
@@ -113,7 +113,7 @@ class BasicSunburst extends React.Component {
         const path = getKeyPath(datum);
         this.setState({
             data: highlightPathData(data, path),
-            selectedDatum: datum
+            selectedDatum: datum,
         });
         if (onValueMouseOver) onValueMouseOver(path);
     };
@@ -126,12 +126,12 @@ class BasicSunburst extends React.Component {
         }
         this.setState({
             selectedDatum: null,
-            data: highlightPathData(data, false)
+            data: highlightPathData(data, false),
         });
         if (onValueMouseOut) onValueMouseOut();
     };
 
-    onValueClickHandler = datum => {
+    onValueClickHandler = (datum) => {
         const { clicked } = this.state;
         const { onValueSelect, onValueDeselect } = this.props;
         this.setState({ clicked: !clicked });
@@ -152,12 +152,12 @@ class BasicSunburst extends React.Component {
             className: 'cursor-pointer pointer-events-none my-auto',
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
-            onValueClick: this.onValueClickHandler
+            onValueClick: this.onValueClickHandler,
         };
         return merge(defaultSunburstProps, this.props.sunburstProps);
     };
 
-    enrichData = data => {
+    enrichData = (data) => {
         const enrichedData = {
             title: 'Root Title',
             name: 'root',
@@ -169,7 +169,7 @@ class BasicSunburst extends React.Component {
                     radius0: this.props.small ? 50 : 60,
                     stroke: 2,
                     style: {
-                        stroke: 'var(--base-100)'
+                        stroke: 'var(--base-100)',
                     },
                     title: 'Inner Title',
                     children: children.map(({ ...props }) => {
@@ -180,15 +180,15 @@ class BasicSunburst extends React.Component {
                             size: 1,
                             style: {
                                 stroke: 'var(--base-100)',
-                                fillOpacity: 1
+                                fillOpacity: 1,
                             },
-                            title: 'Outer Title'
+                            title: 'Outer Title',
                         };
                         return childResult;
-                    })
+                    }),
                 };
                 return result;
-            })
+            }),
         };
         return enrichedData;
     };
@@ -198,14 +198,12 @@ class BasicSunburst extends React.Component {
         const { clicked, data, selectedDatum } = this.state;
 
         const sunburstProps = this.getSunburstProps();
-        const sunburstStyle = Object.assign(
-            {
-                stroke: '#ddd',
-                strokeOpacity: 0.3,
-                strokeWidth: '0.5'
-            },
-            this.props.sunburstProps.style
-        );
+        const sunburstStyle = {
+            stroke: '#ddd',
+            strokeOpacity: 0.3,
+            strokeWidth: '0.5',
+            ...this.props.sunburstProps.style,
+        };
         sunburstProps.style = sunburstStyle;
 
         return (

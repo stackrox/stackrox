@@ -57,17 +57,17 @@ function retry(axios, config) {
  * @type {Object}
  */
 export const doNotStallRequestConfig = {
-    [doNotStallRequestConfigMarker]: true
+    [doNotStallRequestConfigMarker]: true,
 };
 
 function addRequestInterceptor(axios, refreshTokenOpPromise) {
-    return axios.interceptors.request.use(config => {
+    return axios.interceptors.request.use((config) => {
         if (config[doNotStallRequestConfigMarker]) return config;
 
         // stall all other requests until token refresh operation is finished
         return refreshTokenOpPromise.then(() => ({
             ...config,
-            [retriedAfterTokenRefreshMarker]: true
+            [retriedAfterTokenRefreshMarker]: true,
         }));
     });
 }
@@ -87,7 +87,7 @@ function addRequestInterceptor(axios, refreshTokenOpPromise) {
  * @returns {DetachInterceptorsFunc} Function to call to detach interceptors
  */
 export default function addTokenRefreshInterceptors(axios, accessTokenManager, options = {}) {
-    const refreshTokenOpListener = opPromise => {
+    const refreshTokenOpListener = (opPromise) => {
         const interceptor = addRequestInterceptor(axios, opPromise);
         // remove interceptor as soon as token is refreshed
         opPromise.then(() => {
@@ -99,8 +99,8 @@ export default function addTokenRefreshInterceptors(axios, accessTokenManager, o
     }
 
     const interceptor = axios.interceptors.response.use(
-        response => response,
-        error => {
+        (response) => response,
+        (error) => {
             if (!error.response || error.response.status !== 401) return Promise.reject(error);
             const { config } = error;
 

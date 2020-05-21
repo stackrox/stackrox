@@ -16,7 +16,7 @@ class ApplyModification extends Component {
         dialogueStage: PropTypes.string.isRequired,
 
         applyModification: PropTypes.func.isRequired,
-        setDialogueStage: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired,
     };
 
     onConfirm = () => {
@@ -61,15 +61,12 @@ class ApplyModification extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    dialogueStage: selectors.getNetworkDialogueStage
+    dialogueStage: selectors.getNetworkDialogueStage,
 });
 
 const mapDispatchToProps = {
     applyModification: backendActions.applyNetworkPolicyModification.request,
-    setDialogueStage: dialogueActions.setNetworkDialogueStage
+    setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ApplyModification);
+export default connect(mapStateToProps, mapDispatchToProps)(ApplyModification);

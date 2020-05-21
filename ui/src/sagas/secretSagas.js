@@ -48,6 +48,6 @@ export default function* secrets() {
     yield all([
         takeEveryLocation(secretsPath, getSelectedSecret),
         takeEveryNewlyMatchedLocation(secretsPath, filterSecretsPageBySearch),
-        fork(watchSecretSearchOptions)
+        fork(watchSecretSearchOptions),
     ]);
 }

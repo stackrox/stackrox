@@ -9,7 +9,7 @@ const baseURL = '/v1/telemetry';
  */
 export function fetchTelemetryConfig() {
     return axios.get(`${baseURL}/configure`).then(({ data }) => ({
-        response: data
+        response: data,
     }));
 }
 

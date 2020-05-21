@@ -5,8 +5,8 @@ const permissionsURL = '/v1/mypermissions';
 const resourcesURL = '/v1/resources';
 
 export function fetchResources() {
-    return axios.get(resourcesURL).then(response => ({
-        response: response.data
+    return axios.get(resourcesURL).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -16,8 +16,8 @@ export function fetchResources() {
  * @returns {Promise<Object, Error>} fulfilled with array of roles
  */
 export function fetchRoles() {
-    return axios.get(url).then(response => ({
-        response: response.data
+    return axios.get(url).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -27,8 +27,8 @@ export function fetchRoles() {
  * @returns {Promise<Object, Error>} fulfilled with array of roles
  */
 export function fetchUserRolePermissions() {
-    return axios.get(permissionsURL).then(response => ({
-        response: response.data
+    return axios.get(permissionsURL).then((response) => ({
+        response: response.data,
     }));
 }
 

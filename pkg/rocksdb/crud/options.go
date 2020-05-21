@@ -1,5 +1,3 @@
-// +build rocksdb
-
 package generic
 
 import "github.com/tecbot/gorocksdb"

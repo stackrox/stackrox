@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/deployment/store/types"
 	"github.com/stackrox/rox/generated/storage"
@@ -64,7 +63,7 @@ func (c *cachedStore) getCachedDeployment(id string) (*storage.Deployment, bool,
 	if _, ok := entry.(*deploymentTombstone); ok {
 		return nil, true, nil
 	}
-	return proto.Clone(entry.(*storage.Deployment)).(*storage.Deployment), true, nil
+	return entry.(*storage.Deployment).Clone(), true, nil
 }
 
 func (c *cachedStore) ListDeployment(id string) (*storage.ListDeployment, bool, error) {

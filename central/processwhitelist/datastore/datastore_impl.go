@@ -49,11 +49,11 @@ func (ds *datastoreImpl) GetProcessWhitelist(ctx context.Context, key *storage.P
 	if err != nil {
 		return nil, false, err
 	}
-	processWhitelist, err := ds.storage.GetWhitelist(id)
-	if err != nil {
+	processWhitelist, exists, err := ds.storage.Get(id)
+	if err != nil || !exists {
 		return nil, false, err
 	}
-	return processWhitelist, processWhitelist != nil, nil
+	return processWhitelist, exists, nil
 }
 
 func (ds *datastoreImpl) AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error) {
@@ -81,12 +81,12 @@ func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *stora
 	if err == nil {
 		whitelist.StackRoxLockedTimestamp = lockTimestamp
 	}
-	if err := ds.storage.AddWhitelist(whitelist); err != nil {
+	if err := ds.storage.Upsert(whitelist); err != nil {
 		return id, errors.Wrapf(err, "inserting whitelist %q into store", whitelist.GetId())
 	}
 	if err := ds.indexer.AddWhitelist(whitelist); err != nil {
 		err = errors.Wrapf(err, "inserting whitelist %q into index", whitelist.GetId())
-		subErr := ds.storage.DeleteWhitelist(id)
+		subErr := ds.storage.Delete(id)
 		if subErr != nil {
 			err = errors.Wrap(err, "error rolling back process whitelist addition")
 		}
@@ -101,7 +101,7 @@ func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 	if err := ds.indexer.DeleteWhitelist(id); err != nil {
 		return errors.Wrap(err, "error removing whitelist from index")
 	}
-	if err := ds.storage.DeleteWhitelist(id); err != nil {
+	if err := ds.storage.Delete(id); err != nil {
 		return errors.Wrap(err, "error removing whitelist from store")
 	}
 	return nil
@@ -174,11 +174,11 @@ func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context
 }
 
 func (ds *datastoreImpl) getWhitelistForUpdate(id string) (*storage.ProcessWhitelist, error) {
-	whitelist, err := ds.storage.GetWhitelist(id)
+	whitelist, exists, err := ds.storage.Get(id)
 	if err != nil {
 		return nil, err
 	}
-	if whitelist == nil {
+	if !exists {
 		return nil, errors.Errorf("no process whitelist with id %q", id)
 	}
 	return whitelist, nil
@@ -202,7 +202,7 @@ func makeElementList(elementMap map[string]*storage.WhitelistElement) []*storage
 
 func (ds *datastoreImpl) updateProcessWhitelistAndSetTimestamp(whitelist *storage.ProcessWhitelist) error {
 	whitelist.LastUpdate = types.TimestampNow()
-	return ds.storage.UpdateWhitelist(whitelist)
+	return ds.storage.Upsert(whitelist)
 }
 
 func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *storage.ProcessWhitelist, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
@@ -352,5 +352,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(whitelist *storage
 	} else if !ok {
 		return errors.New("permission denied")
 	}
-	return ds.storage.WalkAll(fn)
+	return ds.storage.Walk(fn)
 }

@@ -48,9 +48,9 @@ Binaries.propTypes = {
     processes: PropTypes.arrayOf(
         PropTypes.shape({
             args: PropTypes.string,
-            signals: PropTypes.arrayOf(PropTypes.object)
+            signals: PropTypes.arrayOf(PropTypes.object),
         })
-    ).isRequired
+    ).isRequired,
 };
 
 export default Binaries;

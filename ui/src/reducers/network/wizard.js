@@ -14,37 +14,37 @@ export const types = {
     SET_POLICY_MODIFICATION_STATE: 'network/SET_POLICY_MODIFICATION_STATE',
     GENERATE_NETWORK_POLICY_MODIFICATION: 'network/GENERATE_NETWORK_POLICY_MODIFICATION',
     LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION: 'network/LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION',
-    LOAD_UNDO_NETWORK_POLICY_MODIFICATION: 'network/LOAD_UNDO_NETWORK_POLICY_MODIFICATION'
+    LOAD_UNDO_NETWORK_POLICY_MODIFICATION: 'network/LOAD_UNDO_NETWORK_POLICY_MODIFICATION',
 };
 
 // Actions
 //---------
 
 export const actions = {
-    setNetworkWizardStage: stage => ({ type: types.SET_WIZARD_STAGE, stage }),
-    setNetworkPolicyModification: modification => ({
+    setNetworkWizardStage: (stage) => ({ type: types.SET_WIZARD_STAGE, stage }),
+    setNetworkPolicyModification: (modification) => ({
         type: types.SET_POLICY_MODIFICATION,
-        modification
+        modification,
     }),
-    setNetworkPolicyModificationName: name => ({
+    setNetworkPolicyModificationName: (name) => ({
         type: types.SET_POLICY_MODIFICATION_NAME,
-        name
+        name,
     }),
-    setNetworkPolicyModificationSource: source => ({
+    setNetworkPolicyModificationSource: (source) => ({
         type: types.SET_POLICY_MODIFICATION_SOURCE,
-        source
+        source,
     }),
-    setNetworkPolicyModificationState: state => ({
+    setNetworkPolicyModificationState: (state) => ({
         type: types.SET_POLICY_MODIFICATION_STATE,
-        state
+        state,
     }),
     generateNetworkPolicyModification: () => ({ type: types.GENERATE_NETWORK_POLICY_MODIFICATION }),
     loadActiveNetworkPolicyModification: () => ({
-        type: types.LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION
+        type: types.LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION,
     }),
     loadUndoNetworkPolicyModification: () => ({
-        type: types.LOAD_UNDO_NETWORK_POLICY_MODIFICATION
-    })
+        type: types.LOAD_UNDO_NETWORK_POLICY_MODIFICATION,
+    }),
 };
 
 // Reducers
@@ -90,7 +90,7 @@ const selectedNodeDeployment = (state = {}, action) => {
     if (action.response && action.response.entities) {
         const { entities, result } = action.response;
         if (entities && entities.deployment && result) {
-            const deploymentsById = Object.assign({}, entities.deployment[result]);
+            const deploymentsById = { ...entities.deployment[result] };
             if (action.type === deploymentTypes.FETCH_DEPLOYMENT.SUCCESS) {
                 return isEqual(deploymentsById, state) ? state : deploymentsById;
             }
@@ -105,7 +105,7 @@ const reducer = combineReducers({
     networkPolicyModificationName,
     networkPolicyModificationSource,
     networkPolicyModificationState,
-    selectedNodeDeployment
+    selectedNodeDeployment,
 });
 
 export default reducer;
@@ -114,12 +114,12 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
-const getNetworkWizardStage = state => state.networkWizardStage;
-const getNetworkPolicyModification = state => state.networkPolicyModification;
-const getNetworkPolicyModificationName = state => state.networkPolicyModificationName;
-const getNetworkPolicyModificationSource = state => state.networkPolicyModificationSource;
-const getNetworkPolicyModificationState = state => state.networkPolicyModificationState;
-const getNodeDeployment = state => state.selectedNodeDeployment;
+const getNetworkWizardStage = (state) => state.networkWizardStage;
+const getNetworkPolicyModification = (state) => state.networkPolicyModification;
+const getNetworkPolicyModificationName = (state) => state.networkPolicyModificationName;
+const getNetworkPolicyModificationSource = (state) => state.networkPolicyModificationSource;
+const getNetworkPolicyModificationState = (state) => state.networkPolicyModificationState;
+const getNodeDeployment = (state) => state.selectedNodeDeployment;
 
 export const selectors = {
     getNetworkWizardStage,
@@ -127,5 +127,5 @@ export const selectors = {
     getNetworkPolicyModificationName,
     getNetworkPolicyModificationSource,
     getNetworkPolicyModificationState,
-    getNodeDeployment
+    getNodeDeployment,
 };

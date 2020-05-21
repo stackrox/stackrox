@@ -9,19 +9,19 @@ class ColorPickerComponent extends Component {
     static propTypes = {
         color: PropTypes.string,
         onChange: PropTypes.func,
-        disabled: PropTypes.bool
+        disabled: PropTypes.bool,
     };
 
     static defaultProps = {
         color: null,
         onChange: () => {},
-        disabled: false
+        disabled: false,
     };
 
     constructor(props) {
         super(props);
         this.state = {
-            isOpen: false
+            isOpen: false,
         };
     }
 

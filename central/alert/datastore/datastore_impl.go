@@ -99,7 +99,7 @@ func (ds *datastoreImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsR
 
 // GetAlert returns an alert by id.
 func (ds *datastoreImpl) GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error) {
-	alert, exists, err := ds.storage.GetAlert(id)
+	alert, exists, err := ds.storage.Get(id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
@@ -131,7 +131,7 @@ func (ds *datastoreImpl) UpsertAlert(ctx context.Context, alert *storage.Alert) 
 	ds.keyedMutex.Lock(alert.GetId())
 	defer ds.keyedMutex.Unlock(alert.GetId())
 
-	if err := ds.storage.UpsertAlert(alert); err != nil {
+	if err := ds.storage.Upsert(alert); err != nil {
 		return err
 	}
 	if err := ds.indexer.AddListAlert(convert.AlertToListAlert(alert)); err != nil {
@@ -218,7 +218,7 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	}
 
 	errorList := errorhelpers.NewErrorList("deleting alert")
-	if err := ds.storage.DeleteAlerts(ids...); err != nil {
+	if err := ds.storage.DeleteMany(ids); err != nil {
 		errorList.AddError(err)
 	} else {
 		for _, id := range ids {
@@ -316,7 +316,10 @@ func (ds *datastoreImpl) RemoveAlertComment(ctx context.Context, alertID, commen
 func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, tags []string) ([]string, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "AddAlertTags")
 
-	alert, exists, err := ds.storage.GetAlert(resourceID)
+	ds.keyedMutex.Lock(resourceID)
+	defer ds.keyedMutex.Unlock(resourceID)
+
+	alert, exists, err := ds.storage.Get(resourceID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
@@ -340,7 +343,10 @@ func (ds *datastoreImpl) AddAlertTags(ctx context.Context, resourceID string, ta
 func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string, tags []string) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "DeleteAlertTags")
 
-	alert, exists, err := ds.storage.GetAlert(resourceID)
+	ds.keyedMutex.Lock(resourceID)
+	defer ds.keyedMutex.Unlock(resourceID)
+
+	alert, exists, err := ds.storage.Get(resourceID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching alert %q from the DB", resourceID)
 	}
@@ -368,7 +374,7 @@ func (ds *datastoreImpl) RemoveAlertTags(ctx context.Context, resourceID string,
 
 func (ds *datastoreImpl) updateAlertNoLock(alert *storage.Alert) error {
 	// Checks pass then update.
-	if err := ds.storage.UpsertAlert(alert); err != nil {
+	if err := ds.storage.Upsert(alert); err != nil {
 		return err
 	}
 	if err := ds.indexer.AddListAlert(convert.AlertToListAlert(alert)); err != nil {
@@ -384,7 +390,7 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 func (ds *datastoreImpl) fullReindex() error {
 	log.Info("[STARTUP] Reindexing all alerts")
 
-	alertIDs, err := ds.storage.GetAlertIDs()
+	alertIDs, err := ds.storage.GetIDs()
 	if err != nil {
 		return err
 	}
@@ -480,5 +486,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 		return errors.New("permission denied")
 	}
 
-	return ds.storage.WalkAll(fn)
+	return ds.storage.Walk(fn)
 }

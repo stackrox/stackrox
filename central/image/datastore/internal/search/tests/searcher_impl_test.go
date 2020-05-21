@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/features"
-	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -96,10 +95,7 @@ func (s *searcherSuite) TestNoAccess() {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	mockFilter := filterMocks.NewMockFilter(mockCtrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
-	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, s.bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -171,10 +167,7 @@ func (s *searcherSuite) TestHasAccess() {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	mockFilter := filterMocks.NewMockFilter(mockCtrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
-	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, s.bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -234,10 +227,7 @@ func (s *searcherSuite) TestPagination() {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	mockFilter := filterMocks.NewMockFilter(mockCtrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
-	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, s.bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	deployments := []*storage.Deployment{
@@ -433,10 +423,7 @@ func (s *searcherSuite) TestNoSharedImageLeak() {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any())
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	mockFilter := filterMocks.NewMockFilter(ctrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
-	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := datastore.NewBadger(s.dacky, concurrency.NewKeyFence(), s.badgerDB, nil, s.bleveIndex, s.bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	s.Require().NoError(err)
 
 	for _, deployment := range deployments {

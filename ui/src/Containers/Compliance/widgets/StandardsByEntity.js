@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import labels from 'messages/common';
 import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
@@ -21,11 +21,11 @@ function processData(match, location, data, entityType, searchParam) {
     if (!data || !data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, controls, entityList, complianceStandards } = data;
-    results.results.forEach(result => {
+    results.results.forEach((result) => {
         const entity = entityList.find(
-            entityObject => entityObject.id === result.aggregationKeys[1].id
+            (entityObject) => entityObject.id === result.aggregationKeys[1].id
         );
-        const standard = complianceStandards.find(c => c.id === result.aggregationKeys[0].id);
+        const standard = complianceStandards.find((c) => c.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
 
@@ -34,12 +34,13 @@ function processData(match, location, data, entityType, searchParam) {
             .query({
                 [searchParam]: {
                     [`${capitalize(entityType)}`]: entity.name,
-                    standard: standardLabels[standard.id]
-                }
+                    standard: standardLabels[standard.id],
+                },
             })
             .url();
         const controlResult = controls.results.find(
-            controlsResult => controlsResult.aggregationKeys[0].id === result.aggregationKeys[0].id
+            (controlsResult) =>
+                controlsResult.aggregationKeys[0].id === result.aggregationKeys[0].id
         );
         const { numFailing: numFailingControls } = controlResult;
         const dataPoint = {
@@ -47,11 +48,9 @@ function processData(match, location, data, entityType, searchParam) {
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
-                body: `${numFailingControls} controls failing in this ${
-                    labels.resourceLabels[entityType]
-                }`
+                body: `${numFailingControls} controls failing in this ${labels.resourceLabels[entityType]}`,
             },
-            link
+            link,
         };
         const standardGroup = standardsGrouping[standard.id];
         if (standardGroup) {
@@ -64,7 +63,7 @@ function processData(match, location, data, entityType, searchParam) {
     const GRAPHS_PER_PAGE = 3;
     const pagedStandardsGrouping = [];
 
-    Object.keys(standardsGrouping).forEach(standard => {
+    Object.keys(standardsGrouping).forEach((standard) => {
         sortedStandardsGrouping[standard] = sortBy(standardsGrouping[standard], ['x']);
         const pageArray = chunk(sortedStandardsGrouping[standard], GRAPHS_PER_PAGE);
         pageArray.forEach((page, pageIdx) => {
@@ -81,7 +80,7 @@ function getLabelLinks(match, location, data, entityType) {
     if (!data) return null;
     const { entityList } = data;
     const labelLinks = {};
-    entityList.forEach(entity => {
+    entityList.forEach((entity) => {
         labelLinks[entity.name] = URLService.getURL(match, location)
             .base(entityType, entity.id)
             .url();
@@ -92,7 +91,7 @@ function getLabelLinks(match, location, data, entityType) {
 const StandardsByEntity = ({ match, location, entityType, bodyClassName, className }) => {
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
-        unit: entityTypes.CHECK
+        unit: entityTypes.CHECK,
     };
     const searchParam = useContext(searchContext);
 
@@ -113,7 +112,7 @@ const StandardsByEntity = ({ match, location, entityType, bodyClassName, classNa
                             results: data && data.results,
                             controls: data && data.controls,
                             complianceStandards: data.complianceStandards,
-                            entityList: data && data.clusters
+                            entityList: data && data.clusters,
                         };
                         const results = processData(
                             match,
@@ -168,12 +167,12 @@ StandardsByEntity.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 StandardsByEntity.defaultProps = {
     bodyClassName: 'p-4',
-    className: ''
+    className: '',
 };
 
 export default withRouter(StandardsByEntity);

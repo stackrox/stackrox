@@ -8,9 +8,7 @@ function validateTopRiskyEntities(entityName) {
         'contain',
         'Top risky deployments by CVE count & CVSS score'
     );
-    cy.get(selectors.topRiskyItems.select.input)
-        .first()
-        .click();
+    cy.get(selectors.topRiskyItems.select.input).first().click();
     cy.get(selectors.topRiskyItems.select.options)
         .contains(`Top risky ${entityName} by CVE count & CVSS score`)
         .click();
@@ -44,14 +42,12 @@ describe('Vuln Management Dashboard Page', () => {
             .eq(0)
             .find(selectors.tileLinkValue)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 const numPolicies = value;
-                cy.get(selectors.tileLinks)
-                    .eq(0)
-                    .click();
+                cy.get(selectors.tileLinks).eq(0).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
-                    .then(panelHeaderText => {
+                    .then((panelHeaderText) => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numPolicies, 10));
                     });
             });
@@ -63,14 +59,12 @@ describe('Vuln Management Dashboard Page', () => {
             .eq(1)
             .find(selectors.tileLinkValue)
             .invoke('text')
-            .then(value => {
+            .then((value) => {
                 const numCves = value;
-                cy.get(selectors.tileLinks)
-                    .eq(1)
-                    .click();
+                cy.get(selectors.tileLinks).eq(1).click();
                 cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
                     .invoke('text')
-                    .then(panelHeaderText => {
+                    .then((panelHeaderText) => {
                         expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numCves, 10));
                     });
             });
@@ -78,9 +72,7 @@ describe('Vuln Management Dashboard Page', () => {
 
     it('should properly navigate to the policies list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.tileLinks)
-            .eq(0)
-            .click();
+        cy.get(selectors.tileLinks).eq(0).click();
         cy.url().should('contain', url.list.policies);
     });
 
@@ -119,7 +111,7 @@ describe('Vuln Management Dashboard Page', () => {
         cy.get(selectors.getWidget('Top risky deployments by CVE count & CVSS score'))
             .find(selectors.widgetBody)
             .invoke('text')
-            .then(bodyText => {
+            .then((bodyText) => {
                 expect(bodyText).to.contain('Loading');
             });
     });
@@ -127,9 +119,7 @@ describe('Vuln Management Dashboard Page', () => {
     // TODO  add a check that there is a sort param on the link URL for sorting by the widget's appropriate sort
     it('clicking the "Top Riskiest Images" widget\'s "View All" button should take you to the images list', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.getWidget('Top Riskiest Images'))
-            .find(selectors.viewAllButton)
-            .click();
+        cy.get(selectors.getWidget('Top Riskiest Images')).find(selectors.viewAllButton).click();
         cy.url().should('contain', url.list.images);
     });
 

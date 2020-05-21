@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 import pluralize from 'pluralize';
 import { useQuery } from 'react-apollo';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -19,7 +19,7 @@ import { severityLabels } from 'messages/common';
 import {
     severityColorMap,
     severityTextColorMap,
-    severityColorLegend
+    severityColorLegend,
 } from 'constants/severityColors';
 import { getSeverityByCvss } from 'utils/vulnerabilityUtils';
 import { entitySortFieldsMap, cveSortFields } from 'constants/sortFields';
@@ -33,14 +33,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
     defaultSelection,
     riskEntityTypes,
     cveFilter,
-    small
+    small,
 }) => {
     const workflowState = useContext(workflowStateContext);
     // Entity Type selection
     const [selectedEntityType, setEntityType] = useState(defaultSelection);
-    const entityOptions = riskEntityTypes.map(entityType => ({
+    const entityOptions = riskEntityTypes.map((entityType) => ({
         label: `Top risky ${pluralize(entityLabels[entityType])} by CVE count & CVSS score`,
-        value: entityType
+        value: entityType,
     }));
     function onChange(datum) {
         setEntityType(datum);
@@ -52,12 +52,12 @@ const TopRiskyEntitiesByVulnerabilities = ({
         .setSort([
             {
                 id: entitySortFieldsMap[selectedEntityType].PRIORITY,
-                desc: false
+                desc: false,
             },
             {
                 id: entitySortFieldsMap[selectedEntityType].NAME,
-                desc: false
-            }
+                desc: false,
+            },
         ])
         .toUrl();
 
@@ -221,7 +221,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         [entityTypes.NAMESPACE]: NAMESPACE_QUERY,
         [entityTypes.CLUSTER]: CLUSTER_QUERY,
         [entityTypes.COMPONENT]: COMPONENT_QUERY,
-        [entityTypes.IMAGE]: IMAGE_QUERY
+        [entityTypes.IMAGE]: IMAGE_QUERY,
     };
     const query = queryMap[selectedEntityType];
 
@@ -283,14 +283,14 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     <HoverHintListItem key="cves" label="CVEs" value={cveCountText} />
                 </ul>
             ),
-            subtitle
+            subtitle,
         };
     }
     function processData(data) {
         if (!data || !data.results) return [];
         const results = data.results
-            .filter(result => !!result?.plottedVulns?.basicVulnCounter?.all?.total) // only show entities with CVEs
-            .map(result => {
+            .filter((result) => !!result?.plottedVulns?.basicVulnCounter?.all?.total) // only show entities with CVEs
+            .map((result) => {
                 const entityId = result.id || result.metadata.id;
                 const vulnCount = result?.plottedVulns?.basicVulnCounter?.all?.total;
                 const url = workflowState.pushRelatedEntity(selectedEntityType, entityId).toUrl();
@@ -302,7 +302,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
                     y: +avgSeverity,
                     color,
                     hint: getHint({ ...result, avgSeverity }, cveFilter),
-                    url
+                    url,
                 };
             })
             .sort((a, b) => {
@@ -320,7 +320,7 @@ const TopRiskyEntitiesByVulnerabilities = ({
         entityPagination: queryService.getPagination(
             {
                 id: 'Priority',
-                desc: false
+                desc: false,
             },
             WIDGET_PAGINATION_START_OFFSET,
             ENTITY_COUNT
@@ -328,12 +328,12 @@ const TopRiskyEntitiesByVulnerabilities = ({
         vulnPagination: queryService.getPagination(
             {
                 id: cveSortFields.CVSS_SCORE,
-                desc: true
+                desc: true,
             },
             WIDGET_PAGINATION_START_OFFSET,
             VULN_COUNT
         ),
-        scopeQuery: queryService.entityContextToQueryString(entityContext)
+        scopeQuery: queryService.entityContextToQueryString(entityContext),
     };
     const { data, loading, error } = useQuery(query, { variables });
 
@@ -393,7 +393,7 @@ TopRiskyEntitiesByVulnerabilities.propTypes = {
     defaultSelection: PropTypes.string.isRequired,
     riskEntityTypes: PropTypes.arrayOf(PropTypes.string),
     cveFilter: PropTypes.string,
-    small: PropTypes.bool
+    small: PropTypes.bool,
 };
 
 TopRiskyEntitiesByVulnerabilities.defaultProps = {
@@ -402,10 +402,10 @@ TopRiskyEntitiesByVulnerabilities.defaultProps = {
         entityTypes.DEPLOYMENT,
         entityTypes.NAMESPACE,
         entityTypes.IMAGE,
-        entityTypes.CLUSTER
+        entityTypes.CLUSTER,
     ],
     cveFilter: 'All',
-    small: false
+    small: false,
 };
 
 export default TopRiskyEntitiesByVulnerabilities;

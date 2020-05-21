@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
+	"github.com/stackrox/rox/central/secret/internal/store/bolt"
 	secretSearch "github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,7 +45,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
-	suite.storage = store.New(db)
+	suite.storage = bolt.New(db)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = secretSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)

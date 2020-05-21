@@ -11,6 +11,13 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
+const (
+	// RequiredKeyValuePrefix is the prefix to a map query to denote that the specific kv pair is required,
+	// and any map without the key value should be flagged.
+	// This is incredibly hacky, and is only done this way because search-based policies are going away soon.
+	RequiredKeyValuePrefix = "REQUIRE\t"
+)
+
 func mapKeyValueQuery(optionsMap map[search.FieldLabel]*v1.SearchField, keyValuePolicy *storage.KeyValuePolicy, fieldLabel search.FieldLabel, fieldName string, name string, keyWrapper func(string) string) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	if keyValuePolicy.GetKey() == "" {
 		if keyValuePolicy.GetValue() != "" {
@@ -26,22 +33,12 @@ func mapKeyValueQuery(optionsMap map[search.FieldLabel]*v1.SearchField, keyValue
 		return
 	}
 
-	var valueQuery string
-	if keyValuePolicy.GetValue() == "" {
-		valueQuery = search.NullQueryString()
-	} else {
-		valueQuery = search.NegateQueryString(search.RegexQueryString(keyValuePolicy.GetValue()))
+	value := keyValuePolicy.GetValue()
+	if value != "" {
+		value = search.RegexQueryString(value)
 	}
-	queryIfKeyExist := search.NewQueryBuilder().AddMapQuery(fieldLabel, keyWrapper(keyValuePolicy.GetKey()), valueQuery).ProtoQuery()
-	queryIfKeyDoesNotExist := search.NewQueryBuilder().AddMapQuery(fieldLabel, search.NegateQueryString(keyWrapper(keyValuePolicy.GetKey())), "").ProtoQuery()
 
-	q = &v1.Query{
-		Query: &v1.Query_Disjunction{
-			Disjunction: &v1.DisjunctionQuery{
-				Queries: []*v1.Query{queryIfKeyExist, queryIfKeyDoesNotExist},
-			},
-		},
-	}
+	q = search.NewQueryBuilder().AddMapQuery(fieldLabel, RequiredKeyValuePrefix+keyWrapper(keyValuePolicy.GetKey()), value).ProtoQuery()
 
 	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{

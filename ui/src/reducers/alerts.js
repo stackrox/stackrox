@@ -6,7 +6,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
@@ -19,7 +19,7 @@ export const types = {
         'alerts/FETCH_ALERT_COUNTS_BY_CLUSTER'
     ),
     FETCH_ALERTS_BY_TIMESERIES: createFetchingActionTypes('alerts/FETCH_ALERTS_BY_TIMESERIES'),
-    ...searchTypes('alerts')
+    ...searchTypes('alerts'),
 };
 
 // Actions
@@ -30,7 +30,7 @@ export const actions = {
     ),
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
     fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
-    ...getSearchActions('alerts')
+    ...getSearchActions('alerts'),
 };
 
 // Reducers
@@ -63,20 +63,20 @@ const reducer = combineReducers({
     alertCountsByPolicyCategories,
     alertCountsByCluster,
     alertsByTimeseries,
-    ...searchReducers('alerts')
+    ...searchReducers('alerts'),
 });
 
 export default reducer;
 
 // Selectors
 
-const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
-const getAlertCountsByCluster = state => state.alertCountsByCluster;
-const getAlertsByTimeseries = state => state.alertsByTimeseries;
+const getAlertCountsByPolicyCategories = (state) => state.alertCountsByPolicyCategories;
+const getAlertCountsByCluster = (state) => state.alertCountsByCluster;
+const getAlertsByTimeseries = (state) => state.alertsByTimeseries;
 
 export const selectors = {
     getAlertCountsByPolicyCategories,
     getAlertCountsByCluster,
     getAlertsByTimeseries,
-    ...getSearchSelectors('alerts')
+    ...getSearchSelectors('alerts'),
 };

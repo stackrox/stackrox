@@ -12,6 +12,7 @@ import services.ImageService
 import services.PolicyService
 import spock.lang.Shared
 import spock.lang.Unroll
+import util.Env
 import util.Timer
 
 class ImageScanningTest extends BaseSpecification {
@@ -33,7 +34,7 @@ class ImageScanningTest extends BaseSpecification {
                     name: "quay",
                     namespace: Constants.ORCHESTRATOR_NAMESPACE,
                     username: "stackrox+circleci_apollo",
-                    password: System.getenv("QUAY_PASSWORD"),
+                    password: Env.mustGet("QUAY_PASSWORD"),
                     server: "https://quay.io"),
     ]
     @Shared
@@ -100,8 +101,9 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "validate registry based image metadata"
-        ImageOuterClass.Image imageDetail = ImageService.getImage(
-                ImageService.getImages().find { it.name == deployment.image }?.id)
+        def imageDigest = ImageService.getImages().find { it.name == deployment.image }
+        assert imageDigest?.id
+        ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
         assert imageDetail.metadata?.layerShasCount >= 1
 
@@ -126,6 +128,10 @@ class ImageScanningTest extends BaseSpecification {
             sleep 3000
             ImageService.scanImage(deployment.image)
             imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
+        }
+        if (!strictIntegrationTesting && imageDetail.scan.componentsCount == 0) {
+            // Ignore flaky external services
+            Assume.assumeNoException("Failed to scan the image using ${integration}. Skipping test!")
         }
         assert imageDetail.scan.componentsCount > 0
         for (String cve : cves) {

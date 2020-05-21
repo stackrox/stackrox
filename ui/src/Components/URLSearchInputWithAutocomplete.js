@@ -16,13 +16,13 @@ const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
 const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
-export const placeholderCreator = placeholderText => () => (
+export const placeholderCreator = (placeholderText) => () => (
     <span className="text-base-500 flex h-full items-center pointer-events-none">
         <span className="font-600 absolute text-lg">{placeholderText}</span>
     </span>
 );
 
-const isCategoryChip = value => value.endsWith(':');
+const isCategoryChip = (value) => value.endsWith(':');
 
 export const Option = ({ children, ...rest }) => {
     let className;
@@ -45,15 +45,15 @@ export const Option = ({ children, ...rest }) => {
 };
 
 export const ValueContainer = ({ ...props }) => (
-    <React.Fragment>
+    <>
         <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
             <Icon.Filter color="currentColor" size={18} />
         </span>
         <components.ValueContainer {...props} />
-    </React.Fragment>
+    </>
 );
 
-export const MultiValue = props => (
+export const MultiValue = (props) => (
     <components.MultiValue
         {...props}
         className={`${
@@ -75,7 +75,8 @@ export const removeValuesForKey = (oldOptions, newOptions) => {
     const actualSearchOptions = [...newOptions];
     if (oldOptions.length > actualSearchOptions.length) {
         const removedKeyIndex = oldOptions.findIndex(
-            x => !actualSearchOptions.some(y => x.value === y.value) && x.type === 'categoryOption'
+            (x) =>
+                !actualSearchOptions.some((y) => x.value === y.value) && x.type === 'categoryOption'
         );
 
         if (removedKeyIndex !== -1) {
@@ -113,7 +114,7 @@ const URLSearchInputWithAutocomplete = ({
             label: `${category}:`,
             value: `${category}:`,
             type: 'categoryOption',
-            ignore: category === 'groupBy'
+            ignore: category === 'groupBy',
         };
     }
 
@@ -130,7 +131,7 @@ const URLSearchInputWithAutocomplete = ({
             label: `${value}`,
             value: `${value}`,
             ignore: key === 'groupBy',
-            __isNew__: true
+            __isNew__: true,
         };
     }
 
@@ -150,7 +151,7 @@ const URLSearchInputWithAutocomplete = ({
         const currentFullQueryObject = getFullQueryObject();
         const newSearch = {};
         let categoryKey = '';
-        searchOptions.forEach(option => {
+        searchOptions.forEach((option) => {
             if (isCategoryOption(option)) {
                 const category = getCategory(option);
                 categoryKey = category;
@@ -180,7 +181,7 @@ const URLSearchInputWithAutocomplete = ({
         const newQueryObject = { ...currentFullQueryObject, [searchParam]: newSearch };
         return queryString.stringify(newQueryObject, {
             arrayFormat: 'repeat',
-            encodeValuesOnly: true
+            encodeValuesOnly: true,
         });
     }
 
@@ -191,15 +192,15 @@ const URLSearchInputWithAutocomplete = ({
             workflowState && workflowState.useCase
                 ? workflowState.getCurrentSearchState()
                 : fullQueryObject[searchParam] || {};
-        Object.keys(queryObj).forEach(key => {
+        Object.keys(queryObj).forEach((key) => {
             const matchedOptionKey = categoryOptions.find(
-                category => category.toLowerCase() === key.toLowerCase()
+                (category) => category.toLowerCase() === key.toLowerCase()
             );
             if (matchedOptionKey) {
                 queryStringOptions.push(createCategoryOption(matchedOptionKey));
                 const value = queryObj[key];
                 if (Array.isArray(value)) {
-                    value.forEach(v => {
+                    value.forEach((v) => {
                         queryStringOptions.push(createValueOption(v));
                     });
                 } else if (value && value !== '') {
@@ -215,12 +216,12 @@ const URLSearchInputWithAutocomplete = ({
         const search = transformSearchOptionsToQueryString(searchOptions);
         history.replace({
             pathname,
-            search
+            search,
         });
     }
 
     function updateAutocompleteState(searchOptions) {
-        return input => {
+        return (input) => {
             setAllSearchOptions(searchOptions);
             if (searchOptions.length === 0) {
                 if (clearAutocomplete) {
@@ -279,9 +280,9 @@ const URLSearchInputWithAutocomplete = ({
         defaultMenuIsOpen: searchOptions.length > 0 && isFocused,
         isValidNewOption: (input, _, availableOptions) =>
             input && searchOptions.length > 0 && !inputMatchesTopOption(input, availableOptions),
-        formatCreateLabel: inputValue => inputValue,
+        formatCreateLabel: (inputValue) => inputValue,
         createOptionPosition,
-        ...rest
+        ...rest,
     };
     return <Creatable {...creatableProps} components={{ ...creatableProps.components }} />;
 };
@@ -295,7 +296,7 @@ URLSearchInputWithAutocomplete.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
-    setAllSearchOptions: PropTypes.func.isRequired
+    setAllSearchOptions: PropTypes.func.isRequired,
 };
 
 URLSearchInputWithAutocomplete.defaultProps = {
@@ -304,14 +305,11 @@ URLSearchInputWithAutocomplete.defaultProps = {
     categoryOptions: [],
     autoCompleteResults: [],
     fetchAutocomplete: null,
-    clearAutocomplete: null
+    clearAutocomplete: null,
 };
 
 const mapDispatchToProps = {
-    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions
+    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(URLSearchInputWithAutocomplete);
+export default connect(null, mapDispatchToProps)(URLSearchInputWithAutocomplete);

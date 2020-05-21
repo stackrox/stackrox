@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	centralMetrics "github.com/stackrox/rox/central/metrics"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
@@ -146,11 +147,12 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "FlushingIndicatorQueue")
+
 	// Map copiedQueue to slice
 	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
-	for id, indicator := range copiedQueue {
+	for _, indicator := range copiedQueue {
 		if deleted, _ := m.deletedDeploymentsCache.Get(indicator.GetDeploymentId()).(bool); deleted {
-			delete(copiedQueue, id)
 			continue
 		}
 		indicatorSlice = append(indicatorSlice, indicator)
@@ -160,6 +162,8 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if err := m.processesDataStore.AddProcessIndicators(lifecycleMgrCtx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
+
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateWhitelist")
 
 	// Group the processes into particular whitelist segments
 	whitelistMap := make(map[processWhitelistKey][]*storage.ProcessIndicator)
@@ -273,11 +277,6 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		if err := m.deploytimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
 			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
-		deployTimeAlerts, err := m.deploytimeDetector.AlertsForPolicy(policy.GetId())
-		if err != nil {
-			return errors.Wrapf(err, "error generating deploy-time alerts for policy %s", policy.GetName())
-		}
-		presentAlerts = append(presentAlerts, deployTimeAlerts...)
 	} else {
 		err := m.deploytimeDetector.PolicySet().RemovePolicy(policy.GetId())
 		if err != nil {
@@ -289,11 +288,6 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		if err := m.runtimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
 			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
-		runTimeAlerts, err := m.runtimeDetector.AlertsForPolicy(policy.GetId())
-		if err != nil {
-			return errors.Wrapf(err, "error generating runtime alerts for policy %s", policy.GetName())
-		}
-		presentAlerts = append(presentAlerts, runTimeAlerts...)
 	} else {
 		err := m.runtimeDetector.PolicySet().RemovePolicy(policy.GetId())
 		if err != nil {

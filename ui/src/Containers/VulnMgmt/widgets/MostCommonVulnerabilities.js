@@ -10,7 +10,7 @@ import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import LabeledBarGraph from 'Components/visuals/LabeledBarGraph';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import entityTypes from 'constants/entityTypes';
 import { cveSortFields } from 'constants/sortFields';
 import { WIDGET_PAGINATION_START_OFFSET } from 'constants/workflowPages.constants';
@@ -36,7 +36,7 @@ const processData = (data, workflowState) => {
     // @TODO: filter on the client side until multiple sorts, including derived fields, is supported by BE
     const results = sortBy(data.results, ['cvss']);
 
-    return results.map(vuln => {
+    return results.map((vuln) => {
         const { id, cve, cvss, scoreVersion, isFixable, deploymentCount } = vuln;
         const url = workflowState.pushRelatedEntity(entityTypes.CVE, id).toUrl();
         const tooltip = getTooltip(vuln);
@@ -47,7 +47,7 @@ const processData = (data, workflowState) => {
                 isFixable ? ' / Fixable' : ''
             }`,
             url,
-            hint: tooltip
+            hint: tooltip,
         };
     });
 };
@@ -64,12 +64,12 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
             vulnPagination: queryService.getPagination(
                 {
                     id: cveSortFields.DEPLOYMENT_COUNT,
-                    desc: true
+                    desc: true,
                 },
                 WIDGET_PAGINATION_START_OFFSET,
                 limit
-            )
-        }
+            ),
+        },
     });
 
     let content = <Loader />;
@@ -90,7 +90,7 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
         .pushList(entityTypes.CVE)
         .setSort([
             { id: cveSortFields.DEPLOYMENT_COUNT, desc: true },
-            { id: cveSortFields.CVSS_SCORE, desc: true }
+            { id: cveSortFields.CVSS_SCORE, desc: true },
         ])
         .toUrl();
 
@@ -108,13 +108,13 @@ const MostCommonVulnerabilities = ({ entityContext, search, limit }) => {
 MostCommonVulnerabilities.propTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 MostCommonVulnerabilities.defaultProps = {
     entityContext: {},
     search: {},
-    limit: 15
+    limit: 15,
 };
 
 export default MostCommonVulnerabilities;

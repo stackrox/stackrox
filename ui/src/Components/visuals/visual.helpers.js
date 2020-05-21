@@ -34,5 +34,5 @@ export function getLowValue(data, keyToCheck, multiple = 0) {
 
 export default {
     getHighValue,
-    getLowValue
+    getLowValue,
 };

@@ -14,7 +14,7 @@ const getTimes = () => {
             times.push(`${i}:00`);
         }
     }
-    return times.map(x => `${x}AM`).concat(times.map(x => `${x}PM`));
+    return times.map((x) => `${x}AM`).concat(times.map((x) => `${x}PM`));
 };
 
 export const times = getTimes();
@@ -28,17 +28,20 @@ export const daysOfWeek = [
     'Wednesday',
     'Thursday',
     'Friday',
-    'Saturday'
+    'Saturday',
 ];
 
 const dayOfWeekOptions = daysOfWeek.map((day, i) => ({ label: day, value: i }));
 
-const intervalOptions = [{ label: 'Daily', value: 'DAILY' }, { label: 'Weekly', value: 'WEEKLY' }];
+const intervalOptions = [
+    { label: 'Daily', value: 'DAILY' },
+    { label: 'Weekly', value: 'WEEKLY' },
+];
 
 const normalizeValue = (value, normalizationFactor) =>
     (value + normalizationFactor) % normalizationFactor;
 
-const getLocalTimeString = schedule => {
+const getLocalTimeString = (schedule) => {
     if (schedule && schedule.intervalType && Number.isInteger(schedule.hour)) {
         const offsetInHours = new Date().getTimezoneOffset() / 60;
         const rawTOD = schedule.hour - offsetInHours;
@@ -100,22 +103,19 @@ const Schedule = ({ formData }) => {
 Schedule.propTypes = {
     formData: PropTypes.shape({
         schedule: {
-            intervalType: PropTypes.string
-        }
-    }).isRequired
+            intervalType: PropTypes.string,
+        },
+    }).isRequired,
 };
 
 const getFormFieldKeys = () => ['schedule.intervalType', 'schedule.hour', 'schedule.weekly.day'];
 
-const formFieldKeys = state => formValueSelector('integrationForm')(state, ...getFormFieldKeys());
+const formFieldKeys = (state) => formValueSelector('integrationForm')(state, ...getFormFieldKeys());
 
-const getFormData = createSelector(
-    [formFieldKeys],
-    formData => formData
-);
+const getFormData = createSelector([formFieldKeys], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
-    formData: getFormData
+    formData: getFormData,
 });
 
 export default connect(mapStateToProps)(Schedule);

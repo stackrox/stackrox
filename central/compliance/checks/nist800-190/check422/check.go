@@ -4,6 +4,8 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -89,9 +91,9 @@ func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 }
 
 func policyHasLatestImageTag(p *storage.Policy) bool {
-	return p.GetFields().GetImageName().GetTag() == "latest"
+	return sliceutils.StringFind(policyfields.GetImageTags(p), "latest") >= 0
 }
 
 func policyHasImageAgeDays(p *storage.Policy) bool {
-	return p.GetFields().GetSetImageAgeDays() != nil
+	return policyfields.ContainsImageAgeField(p)
 }

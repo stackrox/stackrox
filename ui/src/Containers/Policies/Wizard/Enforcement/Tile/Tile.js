@@ -5,7 +5,7 @@ import OnOffSwitch from 'Containers/Policies/Wizard/Enforcement/Tile/OnOffSwitch
 import Descriptor from 'Containers/Policies/Wizard/Enforcement/Tile/Descriptor';
 import Visual from 'Containers/Policies/Wizard/Enforcement/Tile/Visual';
 
-const Tile = props => {
+const Tile = (props) => {
     const { enabled } = props;
     return (
         <div
@@ -43,10 +43,10 @@ Tile.propTypes = {
         image: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,
         header: PropTypes.string.isRequired,
-        description: PropTypes.string.isRequired
+        description: PropTypes.string.isRequired,
     }).isRequired,
     onAction: PropTypes.func.isRequired,
-    offAction: PropTypes.func.isRequired
+    offAction: PropTypes.func.isRequired,
 };
 
 export default Tile;

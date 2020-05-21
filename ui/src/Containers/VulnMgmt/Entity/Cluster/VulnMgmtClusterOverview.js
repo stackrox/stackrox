@@ -31,16 +31,16 @@ const emptyCluster = {
     policyCount: 0,
     policyStatus: {
         status: '',
-        failingPolicies: []
+        failingPolicies: [],
     },
     priority: 0,
     status: {
         orchestratorMetadata: {
             buildDate: '',
-            version: 'N/A'
-        }
+            version: 'N/A',
+        },
     },
-    vulnCount: 0
+    vulnCount: 0,
 };
 
 const VulnMgmtClusterOverview = ({ data, entityContext }) => {
@@ -67,16 +67,16 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
     const metadataKeyValuePairs = [
         {
             key: 'Build date',
-            value: <DateTimeField date={buildDate} asString />
+            value: <DateTimeField date={buildDate} asString />,
         },
         {
             key: 'K8s version',
-            value: version
+            value: version,
         },
         {
             key: 'Istio enabled',
-            value: yesNoMaybe(istioEnabled)
-        }
+            value: yesNoMaybe(istioEnabled),
+        },
     ];
 
     const clusterStats = [
@@ -84,7 +84,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
             <StatusChip status={policyStatus.status} />
-        </React.Fragment>
+        </React.Fragment>,
     ];
 
     const currentEntity = { [entityTypes.CLUSTER]: id };
@@ -110,7 +110,7 @@ const VulnMgmtClusterOverview = ({ data, entityContext }) => {
                                 riskEntityTypes={[
                                     entityTypes.NAMESPACE,
                                     entityTypes.DEPLOYMENT,
-                                    entityTypes.IMAGE
+                                    entityTypes.IMAGE,
                                 ]}
                                 entityContext={currentEntity}
                                 small

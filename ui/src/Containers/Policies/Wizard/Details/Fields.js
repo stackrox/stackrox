@@ -10,17 +10,17 @@ class Fields extends Component {
     static propTypes = {
         clustersById: PropTypes.shape({}).isRequired,
         policy: PropTypes.shape({
-            fields: PropTypes.shape({})
+            fields: PropTypes.shape({}),
         }).isRequired,
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
-                name: PropTypes.string.isRequired
+                name: PropTypes.string.isRequired,
             })
-        ).isRequired
+        ).isRequired,
     };
 
     render() {
-        const policy = Object.assign({}, this.props.policy);
+        const policy = { ...this.props.policy };
         const fields = Object.keys(policy);
         if (!fields) return '';
 
@@ -31,20 +31,20 @@ class Fields extends Component {
                         Policy Details
                     </div>
                     <div className="h-full p-3 pb-1">
-                        {fields.map(field => {
+                        {fields.map((field) => {
                             if (!fieldsMap[field]) return '';
                             if (policy[field] === undefined) return '';
                             const { label } = fieldsMap[field];
                             const value = fieldsMap[field].formatValue(policy[field], {
                                 clustersById: this.props.clustersById,
-                                notifiers: this.props.notifiers
+                                notifiers: this.props.notifiers,
                             });
                             if (!value) return '';
                             if (Array.isArray(value)) {
                                 return (
                                     <div className="mb-4" key={field}>
                                         <div className="text-base-600 font-700">{label}:</div>
-                                        {value.map(v => (
+                                        {value.map((v) => (
                                             <div key={v} className="flex pt-1 leading-normal">
                                                 {v}
                                             </div>
@@ -55,10 +55,10 @@ class Fields extends Component {
                             if (typeof value === 'object') {
                                 return (
                                     <div key={field}>
-                                        {Object.keys(value).map(key => (
+                                        {Object.keys(value).map((key) => (
                                             <div className="mb-4" key={field}>
                                                 <div className="text-base-600 font-700">{key}:</div>
-                                                {value[key].map(v => (
+                                                {value[key].map((v) => (
                                                     <div
                                                         key={v}
                                                         className="flex pt-1 leading-normal"
@@ -87,7 +87,7 @@ class Fields extends Component {
 
 const mapStateToProps = createStructuredSelector({
     clustersById: selectors.getClustersById,
-    notifiers: selectors.getNotifiers
+    notifiers: selectors.getNotifiers,
 });
 
 export default connect(mapStateToProps)(Fields);

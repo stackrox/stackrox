@@ -1,5 +1,3 @@
-// +build rocksdb
-
 package generic
 
 import (
@@ -63,7 +61,7 @@ func (b *txnHelper) AckKeysIndexed(keys ...string) error {
 // GetKeysToIndex retrieves the number of keys to index
 func (b *txnHelper) GetKeysToIndex() ([]string, error) {
 	var keys []string
-	err := BucketKeyForEach(b.db, b.prefix, true, func(k []byte) error {
+	err := BucketKeyForEach(b.db, defaultIteratorOptions, b.prefix, true, func(k []byte) error {
 		keys = append(keys, string(k))
 		return nil
 	})

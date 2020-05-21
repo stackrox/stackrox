@@ -5,7 +5,7 @@ import { ClipLoader } from 'react-spinners';
 const Loader = ({ size }) => <ClipLoader loading size={size} color="currentColor" />;
 
 Loader.propTypes = {
-    size: PropTypes.number.isRequired
+    size: PropTypes.number.isRequired,
 };
 
 const Button = ({
@@ -18,7 +18,7 @@ const Button = ({
     onClick,
     disabled,
     isLoading,
-    loaderSize
+    loaderSize,
 }) => {
     const content = (
         <div className="flex items-center">
@@ -56,7 +56,7 @@ Button.propTypes = {
     onClick: PropTypes.func,
     disabled: PropTypes.bool,
     isLoading: PropTypes.bool,
-    loaderSize: PropTypes.number
+    loaderSize: PropTypes.number,
 };
 
 Button.defaultProps = {
@@ -69,7 +69,7 @@ Button.defaultProps = {
     onClick: () => {},
     disabled: false,
     isLoading: false,
-    loaderSize: 20
+    loaderSize: 20,
 };
 
 export default Button;

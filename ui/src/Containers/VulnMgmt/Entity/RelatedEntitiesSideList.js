@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { getEntityTypesByRelationship } from 'modules/entityRelationships';
+import { getEntityTypesByRelationship } from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
 import { defaultCountKeyMap } from 'constants/workflowPages.constants';
 import TileList from 'Components/TileList';
@@ -18,33 +18,27 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
     const countKeyMap = { ...defaultCountKeyMap, ...altCountKeyMap };
 
     const matches = getEntityTypesByRelationship(entityType, relationshipTypes.MATCHES, useCase)
-        .map(matchEntity => {
+        .map((matchEntity) => {
             const count = data[countKeyMap[matchEntity]];
             return {
                 count,
                 label: pluralize(matchEntity, count),
                 entity: matchEntity,
-                url: workflowState
-                    .pushList(matchEntity)
-                    .setSearch('')
-                    .toUrl()
+                url: workflowState.pushList(matchEntity).setSearch('').toUrl(),
             };
         })
-        .filter(matchObj => matchObj.count && !entityContext[matchObj.entity]);
+        .filter((matchObj) => matchObj.count && !entityContext[matchObj.entity]);
     const contains = getEntityTypesByRelationship(entityType, relationshipTypes.CONTAINS, useCase)
-        .map(containEntity => {
+        .map((containEntity) => {
             const count = data[countKeyMap[containEntity]];
             return {
                 count,
                 label: pluralize(containEntity, count),
                 entity: containEntity,
-                url: workflowState
-                    .pushList(containEntity)
-                    .setSearch('')
-                    .toUrl()
+                url: workflowState.pushList(containEntity).setSearch('').toUrl(),
             };
         })
-        .filter(containObj => containObj.count && !entityContext[containObj.entity]);
+        .filter((containObj) => containObj.count && !entityContext[containObj.entity]);
     if (!matches.length && !contains.length) return null;
     return (
         <div
@@ -58,7 +52,7 @@ const RelatedEntitiesSideList = ({ entityType, data, altCountKeyMap, entityConte
                     style={{
                         position: 'relative',
                         left: '-0.5rem',
-                        width: 'calc(100% + 0.5rem)'
+                        width: 'calc(100% + 0.5rem)',
                     }}
                     className={`mb-3 p-2  text-base rounded-l text-lg ${
                         !isDarkMode
@@ -79,11 +73,11 @@ RelatedEntitiesSideList.propTypes = {
     entityType: PropTypes.string.isRequired,
     data: PropTypes.shape({}).isRequired,
     altCountKeyMap: PropTypes.shape({}),
-    entityContext: PropTypes.shape({}).isRequired
+    entityContext: PropTypes.shape({}).isRequired,
 };
 
 RelatedEntitiesSideList.defaultProps = {
-    altCountKeyMap: {}
+    altCountKeyMap: {},
 };
 
 export default RelatedEntitiesSideList;

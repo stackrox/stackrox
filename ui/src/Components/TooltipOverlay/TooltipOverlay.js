@@ -7,11 +7,11 @@ const TooltipOverlay = ({ className, children }) => (
 
 TooltipOverlay.propTypes = {
     className: PropTypes.string,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 TooltipOverlay.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default TooltipOverlay;

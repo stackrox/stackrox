@@ -25,17 +25,19 @@ func (p *roleChecker) Authorized(ctx context.Context, _ string) error {
 		return authz.ErrNoCredentials
 	}
 
-	return p.checkRole(id.Role())
+	return p.checkRole(id.Roles())
 }
 
-func (p *roleChecker) checkRole(role *storage.Role) error {
-	if role == nil {
+func (p *roleChecker) checkRole(roles []*storage.Role) error {
+	if len(roles) == 0 {
 		return authz.ErrNoCredentials
 	}
 
-	if role.GetName() != p.roleName {
-		return authz.ErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
+	for _, role := range roles {
+		if role.GetName() == p.roleName {
+			return nil
+		}
 	}
 
-	return nil
+	return authz.ErrNotAuthorized(fmt.Sprintf("role %q is required", p.roleName))
 }

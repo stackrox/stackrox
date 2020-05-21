@@ -7,7 +7,7 @@ import PolicyBuilderKeys from './PolicyBuilderKeys';
 
 export default {
     title: 'PolicyBuilderKeys',
-    component: PolicyBuilderKeys
+    component: PolicyBuilderKeys,
 };
 
 export const withPolicyDescriptors = () => {

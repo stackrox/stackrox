@@ -3,7 +3,7 @@ import TopCvssLabel from './TopCvssLabel';
 
 export default {
     title: 'TopCvssLabel',
-    component: TopCvssLabel
+    component: TopCvssLabel,
 };
 
 export const withData = () => (

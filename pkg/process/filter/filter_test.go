@@ -103,46 +103,6 @@ func TestMultiProcessFilter(t *testing.T) {
 	assert.False(t, filter.Add(pi))
 }
 
-func TestDeploymentUpdate(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
-
-	pi := fixtures.GetProcessIndicator()
-	filter.Add(pi)
-
-	assert.Len(t, filter.containersInDeployment, 1)
-	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
-
-	dep := fixtures.GetDeployment()
-	assert.Equal(t, dep.GetId(), pi.GetDeploymentId())
-
-	filter.Update(dep)
-	// The container id of the process and the deployment match so there should be no change
-	assert.Len(t, filter.containersInDeployment, 1)
-	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
-
-	// The container id has changed so the container reference should be removed, but the deployment reference should remain
-	filter.Add(pi)
-	dep.Containers[0].Instances[0].InstanceId.Id = "newcontainerid"
-	filter.Update(dep)
-	assert.Len(t, filter.containersInDeployment, 1)
-	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
-}
-
-func TestDeploymentUpdateWithInstanceTruncation(t *testing.T) {
-	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
-
-	pi := fixtures.GetProcessIndicator()
-	pi.Signal.ContainerId = "0123456789ab"
-	filter.Add(pi)
-
-	dep := fixtures.GetDeployment()
-	// instance id to > 12 digits but it should be truncated to the proper length
-	dep.Containers[0].Instances[0].InstanceId.Id = "0123456789abcdef"
-	filter.Update(dep)
-	assert.Len(t, filter.containersInDeployment, 1)
-	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
-}
-
 func TestPodUpdate(t *testing.T) {
 	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
 
@@ -166,4 +126,19 @@ func TestPodUpdate(t *testing.T) {
 	filter.UpdateByPod(pod)
 	assert.Len(t, filter.containersInDeployment, 1)
 	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 0)
+}
+
+func TestPodUpdateWithInstanceTruncation(t *testing.T) {
+	filter := NewFilter(2, []int{3, 2, 1}).(*filterImpl)
+
+	pi := fixtures.GetProcessIndicator()
+	pi.Signal.ContainerId = "0123456789ab"
+	filter.Add(pi)
+
+	pod := fixtures.GetPod()
+	// instance id to > 12 digits but it should be truncated to the proper length
+	pod.LiveInstances[0].InstanceId.Id = "0123456789abcdef"
+	filter.UpdateByPod(pod)
+	assert.Len(t, filter.containersInDeployment, 1)
+	assert.Len(t, filter.containersInDeployment[pi.GetDeploymentId()], 1)
 }

@@ -10,13 +10,13 @@ import { getDarkModeLinkClassName } from './navHelpers';
 const modifiers = {
     customStyle: {
         enabled: true,
-        fn: data => {
+        fn: (data) => {
             Object.assign(data.styles, {
-                left: '133px' // Left navigation width
+                left: '133px', // Left navigation width
             });
             return data;
-        }
-    }
+        },
+    },
 };
 
 const menuLinkClassName =
@@ -103,15 +103,15 @@ const ApiDocsNavigation = ({ onClick }) => {
 };
 
 ApiDocsNavigation.propTypes = {
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
 };
 
 ApiDocsNavigation.defaultProps = {
-    onClick: null
+    onClick: null,
 };
 
 const clickOutsideConfig = {
-    handleClickOutside: () => ApiDocsNavigation.handleClickOutside
+    handleClickOutside: () => ApiDocsNavigation.handleClickOutside,
 };
 
 export default onClickOutside(ApiDocsNavigation, clickOutsideConfig);

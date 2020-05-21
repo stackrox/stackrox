@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"github.com/stackrox/rox/sensor/kubernetes/telemetry/gatherers"
@@ -35,6 +36,9 @@ type commandHandler struct {
 	clusterGatherer *gatherers.ClusterGatherer
 
 	stopSig concurrency.ErrorSignal
+
+	pendingContextCancels      map[string]context.CancelFunc
+	pendingContextCancelsMutex sync.Mutex
 }
 
 // NewCommandHandler creates a new network policies command handler.
@@ -44,9 +48,10 @@ func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
 
 func newCommandHandler(k8sClient kubernetes.Interface) *commandHandler {
 	return &commandHandler{
-		responsesC:      make(chan *central.MsgFromSensor),
-		clusterGatherer: gatherers.NewClusterGatherer(k8sClient, resources.DeploymentStoreSingleton()),
-		stopSig:         concurrency.NewErrorSignal(),
+		responsesC:            make(chan *central.MsgFromSensor),
+		clusterGatherer:       gatherers.NewClusterGatherer(k8sClient, resources.DeploymentStoreSingleton()),
+		stopSig:               concurrency.NewErrorSignal(),
+		pendingContextCancels: make(map[string]context.CancelFunc),
 	}
 }
 
@@ -72,11 +77,33 @@ func (h *commandHandler) Stop(err error) {
 }
 
 func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
-	telemetryReq := msg.GetTelemetryDataRequest()
-	if telemetryReq == nil {
+	switch m := msg.GetMsg().(type) {
+	case *central.MsgToSensor_TelemetryDataRequest:
+		return h.processRequest(m.TelemetryDataRequest)
+	case *central.MsgToSensor_CancelPullTelemetryDataRequest:
+		return h.processCancelRequest(m.CancelPullTelemetryDataRequest)
+	default:
 		return nil
 	}
-	return h.processRequest(telemetryReq)
+}
+
+func (h *commandHandler) processCancelRequest(req *central.CancelPullTelemetryDataRequest) error {
+	requestID := req.GetRequestId()
+
+	if requestID == "" {
+		return errors.New("received invalid telemetry cancellation request with empty request ID")
+	}
+
+	h.pendingContextCancelsMutex.Lock()
+	defer h.pendingContextCancelsMutex.Unlock()
+
+	cancel := h.pendingContextCancels[requestID]
+	if cancel != nil {
+		log.Infof("Cancelling telemetry pull request %s upon request by central", requestID)
+		cancel()
+		delete(h.pendingContextCancels, requestID)
+	}
+	return nil
 }
 
 func (h *commandHandler) processRequest(req *central.PullTelemetryDataRequest) error {
@@ -87,7 +114,7 @@ func (h *commandHandler) processRequest(req *central.PullTelemetryDataRequest) e
 	return nil
 }
 
-func (h *commandHandler) sendResponse(resp *central.PullTelemetryDataResponse) error {
+func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *central.PullTelemetryDataResponse) error {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_TelemetryDataResponse{
 			TelemetryDataResponse: resp,
@@ -96,8 +123,8 @@ func (h *commandHandler) sendResponse(resp *central.PullTelemetryDataResponse) e
 	select {
 	case h.responsesC <- msg:
 		return nil
-	case <-h.stopSig.Done():
-		return h.stopSig.Err()
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
@@ -108,20 +135,42 @@ func (h *commandHandler) ResponsesC() <-chan *central.MsgFromSensor {
 func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) {
 	requestID := req.GetRequestId()
 
-	sendMsg := func(payload *central.TelemetryResponsePayload) error {
+	sendMsg := func(ctx concurrency.ErrorWaitable, payload *central.TelemetryResponsePayload) error {
 		resp := &central.PullTelemetryDataResponse{
 			RequestId: requestID,
 			Payload:   payload,
 		}
-		return h.sendResponse(resp)
+		return h.sendResponse(ctx, resp)
 	}
+
+	ctx := concurrency.AsContext(&h.stopSig)
+	var cancel context.CancelFunc
+	if req.GetTimeoutMs() > 0 {
+		timeout := time.Duration(req.GetTimeoutMs()) * time.Millisecond
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		log.Infof("Received telemetry data request %s with a timeout of %v", requestID, timeout)
+	} else {
+		ctx, cancel = context.WithCancel(ctx)
+		log.Infof("Received telemetry data request %s without a timeout", requestID)
+	}
+
+	// Store the context in order to be able to react to cancellations.
+	concurrency.WithLock(&h.pendingContextCancelsMutex, func() {
+		h.pendingContextCancels[requestID] = cancel
+	})
+	defer func() {
+		cancel()
+		concurrency.WithLock(&h.pendingContextCancelsMutex, func() {
+			delete(h.pendingContextCancels, requestID)
+		})
+	}()
 
 	var err error
 	switch req.GetDataType() {
 	case central.PullTelemetryDataRequest_KUBERNETES_INFO:
-		err = h.handleKubernetesInfoRequest(sendMsg)
+		err = h.handleKubernetesInfoRequest(ctx, sendMsg)
 	case central.PullTelemetryDataRequest_CLUSTER_INFO:
-		err = h.handleClusterInfoRequest(sendMsg)
+		err = h.handleClusterInfoRequest(ctx, sendMsg)
 	default:
 		err = errors.Errorf("unknown telemetry data type %v", req.GetDataType())
 	}
@@ -139,18 +188,19 @@ func (h *commandHandler) dispatchRequest(req *central.PullTelemetryDataRequest) 
 		},
 	}
 
-	if err := sendMsg(eosPayload); err != nil {
+	// Make sure we send the end-of-stream message even if the context is expired
+	if err := sendMsg(&h.stopSig, eosPayload); err != nil {
 		log.Errorf("Failed to send end of stream indicator for telemetry data request %s: %v", requestID, err)
 	}
 }
 
-func (h *commandHandler) handleKubernetesInfoRequest(sendMsgCb func(*central.TelemetryResponsePayload) error) error {
+func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
 	restCfg, err := rest.InClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "could not instantiate Kubernetes REST client config")
 	}
 
-	fileCb := func(_ concurrency.ErrorWaitable, file k8sintrospect.File) error {
+	fileCb := func(ctx concurrency.ErrorWaitable, file k8sintrospect.File) error {
 		contents := file.Contents
 		if len(contents) > maxK8sFileSize {
 			contents = contents[:maxK8sFileSize]
@@ -167,16 +217,16 @@ func (h *commandHandler) handleKubernetesInfoRequest(sendMsgCb func(*central.Tel
 				},
 			},
 		}
-		return sendMsgCb(payload)
+		return sendMsgCb(ctx, payload)
 	}
 
-	return k8sintrospect.Collect(&h.stopSig, k8sintrospect.DefaultConfig, restCfg, fileCb)
+	return k8sintrospect.Collect(ctx, k8sintrospect.DefaultConfig, restCfg, fileCb)
 }
 
-func (h *commandHandler) handleClusterInfoRequest(sendMsgCb func(*central.TelemetryResponsePayload) error) error {
-	ctx, cancel := context.WithTimeout(context.Background(), gatherTimeout)
+func (h *commandHandler) handleClusterInfoRequest(ctx context.Context, sendMsgCb func(concurrency.ErrorWaitable, *central.TelemetryResponsePayload) error) error {
+	subCtx, cancel := context.WithTimeout(ctx, gatherTimeout)
 	defer cancel()
-	clusterInfo := h.clusterGatherer.Gather(ctx)
+	clusterInfo := h.clusterGatherer.Gather(subCtx)
 	jsonBytes, err := json.Marshal(clusterInfo)
 	if err != nil {
 		return err
@@ -187,7 +237,7 @@ func (h *commandHandler) handleClusterInfoRequest(sendMsgCb func(*central.Teleme
 		if !ok {
 			break
 		}
-		if err := sendMsgCb(makeChunk(jsonBytes[start:end])); err != nil {
+		if err := sendMsgCb(subCtx, makeChunk(jsonBytes[start:end])); err != nil {
 			return err
 		}
 	}
@@ -195,5 +245,5 @@ func (h *commandHandler) handleClusterInfoRequest(sendMsgCb func(*central.Teleme
 }
 
 func (h *commandHandler) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{centralsensor.PullTelemetryDataCap}
+	return []centralsensor.SensorCapability{centralsensor.PullTelemetryDataCap, centralsensor.CancelTelemetryPullCap}
 }

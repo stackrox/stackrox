@@ -15,7 +15,7 @@ import createLocationChange from './sagaTestUtils';
 const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADING) => [
     [select(selectors.getLoginAuthProviders), authProviders],
     [select(selectors.getAuthProviders), authProviders],
-    [select(selectors.getAuthStatus), authStatus]
+    [select(selectors.getAuthStatus), authStatus],
 ];
 
 describe('Auth Sagas', () => {
@@ -32,7 +32,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .put(actions.fetchAuthProviders.success(authProviders))
             .dispatch(createLocationChange('/'))
@@ -47,7 +47,7 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchLoginAuthProviders), dynamic(fetchMock)],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/main/policies'))
@@ -65,7 +65,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), null],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -77,10 +77,10 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.checkAuthStatus), 'ok'],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(AuthService.getAuthStatus), 'ok'],
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
-            .put(actions.login())
+            .put(actions.login('ok'))
             .dispatch(createLocationChange('/'))
             .silentRun());
 
@@ -90,9 +90,9 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors([{ name: 'ap1' }]),
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
-                [call(AuthService.checkAuthStatus), throwError(new Error('401'))],
+                [call(AuthService.getAuthStatus), throwError(new Error('401'))],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -106,7 +106,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), dynamic(logout)],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(actions.logout())
@@ -125,7 +125,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [call(AuthService.logout), null],
                 [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/login', from))
@@ -147,18 +147,20 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [] }],
                 [
                     call(AuthService.exchangeAuthToken, token, 'oidc', serverState),
-                    { token: exchangedToken }
+                    { token: exchangedToken },
                 ],
                 [call(AuthService.storeAccessToken, exchangedToken), dynamic(storeAccessTokenMock)],
                 [call(AuthService.getAndClearRequestedLocation), requestedLocation],
                 [
                     call(LicenseService.fetchLicenses),
                     {
-                        response: { licenses: [{ status: LICENSE_STATUS.VALID }] }
-                    }
+                        response: {
+                            licenses: [{ status: LICENSE_STATUS.VALID }],
+                        },
+                    },
                 ],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -181,7 +183,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -195,7 +197,7 @@ describe('Auth Sagas', () => {
                 [call(AuthService.fetchLoginAuthProviders), { response: [{ name: 'ap1' }] }],
                 [call(AuthService.getAccessToken), 'my-token'],
                 [call(AuthService.logout), null],
-                [call(fetchUserRolePermissions), { response: {} }]
+                [call(fetchUserRolePermissions), { response: {} }],
             ])
             .not.put(actions.logout())
             .dispatch(createLocationChange('/'))

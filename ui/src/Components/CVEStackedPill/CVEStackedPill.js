@@ -52,29 +52,29 @@ CVEStackedPill.propTypes = {
     vulnCounter: PropTypes.shape({
         critical: PropTypes.shape({
             total: PropTypes.number,
-            fixable: PropTypes.number
+            fixable: PropTypes.number,
         }),
         high: PropTypes.shape({
             total: PropTypes.number,
-            fixable: PropTypes.number
+            fixable: PropTypes.number,
         }),
         medium: PropTypes.shape({
             total: PropTypes.number,
-            fixable: PropTypes.number
+            fixable: PropTypes.number,
         }),
         low: PropTypes.shape({
             total: PropTypes.number,
-            fixable: PropTypes.number
+            fixable: PropTypes.number,
         }),
         all: PropTypes.shape({
             total: PropTypes.number,
-            fixable: PropTypes.number
-        })
+            fixable: PropTypes.number,
+        }),
     }).isRequired,
     hideLink: PropTypes.bool,
     url: PropTypes.string,
     fixableUrl: PropTypes.string,
-    showTooltip: PropTypes.bool
+    showTooltip: PropTypes.bool,
 };
 
 CVEStackedPill.defaultProps = {
@@ -82,7 +82,7 @@ CVEStackedPill.defaultProps = {
     hideLink: false,
     url: '',
     fixableUrl: '',
-    showTooltip: true
+    showTooltip: true,
 };
 
 export default CVEStackedPill;

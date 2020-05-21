@@ -5,13 +5,13 @@ import HoverHintListItem from '../visuals/HoverHintListItem';
 
 export default {
     title: 'DetailedTooltipOverlay',
-    component: DetailedTooltipOverlay
+    component: DetailedTooltipOverlay,
 };
 
 export const withTitleAndBody = () => {
     const tooltipData = {
         title: 'scanner',
-        body: 'Weighted CVSS: 6.7'
+        body: 'Weighted CVSS: 6.7',
     };
 
     return <DetailedTooltipOverlay title={tooltipData.title} body={tooltipData.body} />;
@@ -37,7 +37,7 @@ export const withOptionalFooter = () => {
     const tooltipData = {
         title: 'scanner',
         body: tooltipBody,
-        footer: 'Scored using CVSS 3.0'
+        footer: 'Scored using CVSS 3.0',
     };
 
     return (
@@ -63,7 +63,7 @@ export const withOptionalFooterAndSubtitle = () => {
         title: 'jon-snow',
         subtitle: 'remote/stackrox',
         body: tooltipBody,
-        footer: 'Scored using CVSS 3.0'
+        footer: 'Scored using CVSS 3.0',
     };
 
     return (

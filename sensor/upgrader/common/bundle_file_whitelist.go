@@ -21,6 +21,8 @@ var (
 		"collector-cert.pem",
 		"admission-control-cert.pem",
 		"admission-control-key.pem",
+		"ca-setup-sensor.sh",
+		"delete-ca-sensor.sh",
 	)
 )
 

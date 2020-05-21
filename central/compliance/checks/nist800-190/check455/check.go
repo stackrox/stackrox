@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 )
 
 const (
@@ -25,7 +26,7 @@ func checkNIST455(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	policyEnabled := false
 	for _, policy := range policies {
-		if policy.GetFields().GetVolumePolicy().GetSource() == "" {
+		if !policyfields.ContainsVolumeSourceField(policy) {
 			continue
 		}
 

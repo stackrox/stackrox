@@ -15,7 +15,7 @@ const GraphLoader = ({ isLoading }) => {
 };
 
 GraphLoader.propTypes = {
-    isLoading: PropTypes.bool.isRequired
+    isLoading: PropTypes.bool.isRequired,
 };
 
 export default GraphLoader;

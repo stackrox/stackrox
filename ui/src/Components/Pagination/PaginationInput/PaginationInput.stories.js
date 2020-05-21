@@ -5,7 +5,7 @@ import PaginationInput from './PaginationInput';
 
 export default {
     title: 'Pagination',
-    component: PaginationInput
+    component: PaginationInput,
 };
 
 export const basicUsage = () => {

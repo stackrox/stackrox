@@ -17,7 +17,7 @@ const Simulator = ({
     setModification,
     wizardOpen,
     wizardStage,
-    modificationState
+    modificationState,
 }) => {
     function onClose() {
         closeWizard();
@@ -55,7 +55,7 @@ Simulator.propTypes = {
     wizardStage: PropTypes.string.isRequired,
     closeWizard: PropTypes.func.isRequired,
     setModification: PropTypes.func.isRequired,
-    modificationState: PropTypes.string.isRequired
+    modificationState: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -63,15 +63,12 @@ const mapStateToProps = createStructuredSelector({
     wizardStage: selectors.getNetworkWizardStage,
     errorMessage: selectors.getNetworkErrorMessage,
 
-    modificationState: selectors.getNetworkPolicyModificationState
+    modificationState: selectors.getNetworkPolicyModificationState,
 });
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeNetworkWizard,
-    setModification: wizardActions.setNetworkPolicyModification
+    setModification: wizardActions.setNetworkPolicyModification,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Simulator);
+export default connect(mapStateToProps, mapDispatchToProps)(Simulator);

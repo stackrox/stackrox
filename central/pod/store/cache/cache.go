@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/pod/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -63,7 +62,7 @@ func (c *cachedStore) getCachedPod(id string) (*storage.Pod, bool, error) {
 	if _, ok := entry.(*podTombstone); ok {
 		return nil, true, nil
 	}
-	return proto.Clone(entry.(*storage.Pod)).(*storage.Pod), true, nil
+	return entry.(*storage.Pod).Clone(), true, nil
 }
 
 func (c *cachedStore) Get(id string) (*storage.Pod, bool, error) {
@@ -156,6 +155,6 @@ func (c *cachedStore) GetKeysToIndex() ([]string, error) {
 	return c.store.GetKeysToIndex()
 }
 
-func (c *cachedStore) GetKeys() ([]string, error) {
-	return c.store.GetKeys()
+func (c *cachedStore) GetIDs() ([]string, error) {
+	return c.store.GetIDs()
 }

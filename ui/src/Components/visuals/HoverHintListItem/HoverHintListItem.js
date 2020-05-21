@@ -10,7 +10,7 @@ const HoverHintListItem = ({ label, value }) => (
 
 HoverHintListItem.propTypes = {
     label: PropTypes.node.isRequired,
-    value: PropTypes.node.isRequired
+    value: PropTypes.node.isRequired,
 };
 
 export default HoverHintListItem;

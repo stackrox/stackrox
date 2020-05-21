@@ -7,12 +7,12 @@ export const standardLabels = {
     [standardTypes.HIPAA_164]: 'HIPAA 164',
     [standardTypes.CIS_Kubernetes_v1_5]: 'CIS Kubernetes v1.5',
     [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker v1.1.0',
-    [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker v1.2.0'
+    [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker v1.2.0',
 };
 
 export const standardShortLabels = {
     ...standardLabels,
-    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s v1.5'
+    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s v1.5',
 };
 
 export default standardLabels;

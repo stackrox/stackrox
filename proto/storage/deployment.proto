@@ -39,11 +39,11 @@ message Deployment {
     PermissionLevel service_account_permission_level = 28 [(gogoproto.moretags) = "search:\"Service Account Permission Level,store\""];
     bool automount_service_account_token       = 25;
     bool host_network                          = 21;
-    repeated Toleration tolerations            = 22;
+    repeated Toleration tolerations            = 22 [(gogoproto.moretags) = "search:\"-\""];
     repeated PortConfig ports                  = 24;
 
     int64 state_timestamp                      = 27 [(gogoproto.moretags) = "hash:\"ignore\" sensorhash:\"ignore\""]; // Internal use only
-    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\""];
+    float risk_score                           = 29 [(gogoproto.moretags) = "search:\"Risk Score,hidden\" policy:\",ignore\""];
 
     repeated string process_tags               = 30 [(gogoproto.moretags) = "search:\"Process Tag,store\""];
 }
@@ -64,12 +64,12 @@ message Container {
     ContainerImage image                = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
-    repeated PortConfig ports           = 6;
+    repeated PortConfig ports           = 6 [(gogoproto.moretags) = "policy:\",ignore\""]; // Policies use the port config on the top-level deployment.
     repeated EmbeddedSecret secrets     = 7;
     Resources resources                 = 8;
 
     repeated ContainerInstance instances = 9 [(gogoproto.moretags) = "hash:\"ignore\""];
-    string name                          = 10;
+    string name                          = 10 [(gogoproto.moretags) = "policy:\"Container Name\""];
 }
 
 message Resources {
@@ -98,8 +98,8 @@ message Pod {
     repeated ContainerInstance live_instances           = 6;
     // Must be a list of lists, so we can perform search queries (does not work for maps that aren't <string, string>)
     // There is one bucket (list) per container name.
-    repeated ContainerInstanceList terminated_instances = 7;
-    // Time the first known container started
+    repeated ContainerInstanceList terminated_instances = 7 [(gogoproto.moretags) = "search:\"-\""];
+    // Time Kubernetes reports the pod was created.
     google.protobuf.Timestamp started                   = 8;
 
     message ContainerInstanceList {

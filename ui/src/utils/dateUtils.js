@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
+import dateTimeFormat, { dateFormat } from 'constants/dateTimeFormat';
 
 /**
  * Returns a formatted date and time
@@ -9,6 +9,15 @@ import dateTimeFormat from 'constants/dateTimeFormat';
  */
 export function getDateTime(timestamp) {
     return format(timestamp, dateTimeFormat);
+}
+
+/**
+ * Returns a formatted date
+ * @param {string} timestamp - The timestamp for the date
+ * @returns {string} - returns a formatted string for the date
+ */
+export function getDate(timestamp) {
+    return format(timestamp, dateFormat);
 }
 
 export function getLatestDatedItemByKey(key, list = []) {
@@ -24,10 +33,10 @@ export function getLatestDatedItemByKey(key, list = []) {
 }
 
 export function addBrandedTimestampToString(str) {
-    return `StackRox:${str}-${format(new Date(), 'MM/DD/YYYY')}`;
+    return `StackRox:${str}-${format(new Date(), dateFormat)}`;
 }
 
 export default {
     getLatestDatedItemByKey,
-    addBrandedTimestampToString
+    addBrandedTimestampToString,
 };

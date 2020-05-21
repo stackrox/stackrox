@@ -80,6 +80,45 @@ message ExportPoliciesErrorList {
     repeated ExportPolicyError errors = 1;
 }
 
+message PolicyFromSearchRequest {
+    string search_params = 1;
+}
+
+message ImportPoliciesMetadata {
+    bool overwrite = 1;
+}
+
+message ImportPoliciesRequest {
+    ImportPoliciesMetadata  metadata = 1;
+    repeated storage.Policy policies = 2;
+}
+
+message ImportPolicyError {
+    string message              = 1;
+    string type                 = 2;
+    oneof metadata {
+        string duplicate_name   = 3;
+        string validation_error = 4;
+    }
+}
+
+message ImportPolicyResponse {
+    bool                       succeeded = 1;
+    storage.Policy             policy    = 2;
+    repeated ImportPolicyError errors    = 3;
+}
+
+message ImportPoliciesResponse {
+    repeated ImportPolicyResponse responses     = 1;
+    bool                          all_succeeded = 2;
+}
+
+message PolicyFromSearchResponse {
+    storage.Policy  policy                 = 1;
+    repeated string altered_search_terms   = 2;
+    bool            has_nested_fields      = 3;
+}
+
 // PolicyService APIs can be used to manage policies.
 service PolicyService {
 
@@ -196,6 +235,21 @@ service PolicyService {
     rpc ExportPolicies (ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
         option (google.api.http) = {
             post: "/v1/policies/export"
+            body: "*"
+        };
+    }
+
+    rpc PolicyFromSearch (PolicyFromSearchRequest) returns (PolicyFromSearchResponse) {
+        option (google.api.http) = {
+            post: "/v1/policies/from-search"
+            body: "*"
+        };
+    }
+
+    // ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
+    rpc ImportPolicies (ImportPoliciesRequest) returns (ImportPoliciesResponse) {
+        option (google.api.http) = {
+            post: "/v1/policies/import"
             body: "*"
         };
     }

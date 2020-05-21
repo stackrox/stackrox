@@ -16,7 +16,7 @@ type AlertManager interface {
 	// we're looking at. It then pulls out the alerts matching the filters, and compares the alerts in the DB with the ones
 	// that have been produced, and takes care of the logic of marking alerts no longer being produced as resolved,
 	// notifying of new alerts, and updating the timestamp of updated alerts.
-	// It returns true if it has actually added/removed/updated alerts.
+	// It returns a list of added/removed/updated alerts.
 	AlertAndNotify(ctx context.Context, alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modifiedDeployments set.StringSet, err error)
 }
 

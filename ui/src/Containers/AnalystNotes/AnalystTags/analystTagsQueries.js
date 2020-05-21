@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import logError from 'modules/logError';
+import logError from 'utils/logError';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 
@@ -51,10 +51,10 @@ export const REMOVE_PROCESS_TAGS = gql`
 export const getTagsDataByType = (type, data) => {
     if (!data) return [];
     if (type === ANALYST_NOTES_TYPES.VIOLATION) {
-        return data.violation && data.violation.tags;
+        return data?.violation?.tags || [];
     }
     if (type === ANALYST_NOTES_TYPES.PROCESS) {
-        return data.processTags;
+        return data?.processTags || [];
     }
     const error = `Can't get data for type (${type}) because it does not exist`;
     logError(new Error(error));
@@ -74,19 +74,19 @@ export const getTagsDataByType = (type, data) => {
  * @param {string} type - The tags type (ie. VIOLATION and PROCESS)
  * @returns {Result} - returns an object with queries
  */
-export const getQueriesByType = type => {
+export const getQueriesByType = (type) => {
     if (type === ANALYST_NOTES_TYPES.VIOLATION) {
         return {
             GET_TAGS: GET_ALERT_TAGS,
             ADD_TAGS: ADD_ALERT_TAGS,
-            REMOVE_TAGS: REMOVE_ALERT_TAGS
+            REMOVE_TAGS: REMOVE_ALERT_TAGS,
         };
     }
     if (type === ANALYST_NOTES_TYPES.PROCESS) {
         return {
             GET_TAGS: GET_PROCESS_TAGS,
             ADD_TAGS: ADD_PROCESS_TAGS,
-            REMOVE_TAGS: REMOVE_PROCESS_TAGS
+            REMOVE_TAGS: REMOVE_PROCESS_TAGS,
         };
     }
     const error = `Queries for type (${type}) do not exist`;

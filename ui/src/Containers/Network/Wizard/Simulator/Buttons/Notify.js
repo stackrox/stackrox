@@ -15,16 +15,16 @@ class Notify extends Component {
             toDelete: PropTypes.arrayOf(
                 PropTypes.shape({
                     namespace: PropTypes.string.isRequired,
-                    name: PropTypes.string.isRequired
+                    name: PropTypes.string.isRequired,
                 })
-            )
+            ),
         }).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.shape({})),
-        setDialogueStage: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
-        notifiers: []
+        notifiers: [],
     };
 
     onClick = () => {
@@ -55,14 +55,11 @@ class Notify extends Component {
 
 const mapStateToProps = createStructuredSelector({
     modification: selectors.getNetworkPolicyModification,
-    notifiers: selectors.getNotifiers
+    notifiers: selectors.getNotifiers,
 });
 
 const mapDispatchToProps = {
-    setDialogueStage: dialogueActions.setNetworkDialogueStage
+    setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Notify);
+export default connect(mapStateToProps, mapDispatchToProps)(Notify);

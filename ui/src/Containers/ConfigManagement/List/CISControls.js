@@ -3,7 +3,7 @@ import { capitalize } from 'lodash';
 import entityTypes from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { sortVersion, sortStatus } from 'sorters/sorters';
 import searchContext from 'Containers/searchContext';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
@@ -19,20 +19,20 @@ const tableColumns = [
         Header: 'Id',
         headerClassName: 'hidden',
         className: 'hidden',
-        accessor: 'id'
+        accessor: 'id',
     },
     {
         Header: `Standard`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'standard'
+        accessor: 'standard',
     },
     {
         Header: `Control`,
         headerClassName: `w-1/2 ${defaultHeaderClassName}`,
         className: `w-1/2 ${defaultColumnClassName}`,
         accessor: 'control',
-        sortMethod: sortVersion
+        sortMethod: sortVersion,
     },
     {
         Header: `Control Status`,
@@ -45,14 +45,14 @@ const tableColumns = [
             return <StatusChip status={status} asString={pdf} />;
         },
         accessor: 'status',
-        sortMethod: sortStatus
-    }
+        sortMethod: sortStatus,
+    },
 ];
 
 const filterByComplianceState = (rows, state) => {
     if (!state || !rows) return rows;
     const complianceState = capitalize(state);
-    const filteredRows = rows.filter(row => {
+    const filteredRows = rows.filter((row) => {
         if (complianceState === COMPLIANCE_STATES.PASS)
             return row.status === COMPLIANCE_STATES.PASS;
         if (complianceState === COMPLIANCE_STATES.FAIL)
@@ -62,7 +62,7 @@ const filterByComplianceState = (rows, state) => {
     return filteredRows;
 };
 
-const createTableRows = data => {
+const createTableRows = (data) => {
     if (!data || !data.results || !data.results.results.length) return [];
 
     let standardKeyIndex = 0;
@@ -89,7 +89,7 @@ const createTableRows = data => {
                 id: controlId,
                 standard: standardLabels[keys[standardKeyIndex].id],
                 control: `${keys[controlKeyIndex].name} - ${keys[controlKeyIndex].description}`,
-                status
+                status,
             };
         }
     });
@@ -109,7 +109,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause(queryObject);
     const variables = {
         where: queryText,
-        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE]
+        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE],
     };
 
     function createTableRowsFilteredByComplianceState(items) {
@@ -133,16 +133,16 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
             defaultSorted={[
                 {
                     id: 'status',
-                    desc: false
+                    desc: false,
                 },
                 {
                     id: 'standard',
-                    desc: false
+                    desc: false,
                 },
                 {
                     id: 'control',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.COMPLIANCE.STATE]}
             data={filterByComplianceState(data, complianceState)}

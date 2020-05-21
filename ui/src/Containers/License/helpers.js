@@ -8,15 +8,13 @@ import { distanceInWordsStrict, differenceInDays } from 'date-fns';
 export const noneText = 'In order to use StackRox, please obtain and install a valid license key.';
 export const invalidText =
     'Your StackRox license key is invalid. In order to use StackRox, please obtain and install a new valid license key.';
-export const expiredText = `Your license key has expired. Please upload a new license key, or contact our customer success team over email or by calling ${
-    stackroxSupport.phoneNumber.withSpaces
-} to renew  your StackRox Kubernetes Security  Platform license.`;
+export const expiredText = `Your license key has expired. Please upload a new license key, or contact our customer success team over email or by calling ${stackroxSupport.phoneNumber.withSpaces} to renew  your StackRox Kubernetes Security  Platform license.`;
 export const validText = 'Your StackRox license has been renewed';
 
 export const getLicenseStatusMessage = (status, message) => {
     const result = {
         text: '',
-        type: 'info'
+        type: 'info',
     };
     if (!status && !message) return null;
     switch (status) {
@@ -48,7 +46,7 @@ export const getLicenseStatusMessage = (status, message) => {
     return result;
 };
 
-export const getExpirationMessageType = expirationDate => {
+export const getExpirationMessageType = (expirationDate) => {
     const daysLeft = differenceInDays(expirationDate, new Date());
     if (daysLeft > 14) return 'info';
     if (daysLeft > 3) return 'warn';
@@ -57,10 +55,10 @@ export const getExpirationMessageType = expirationDate => {
 
 const createExpirationMessage = (message, type) => ({
     message,
-    type
+    type,
 });
 
-export const createExpirationMessageWithLink = expirationDate => {
+export const createExpirationMessageWithLink = (expirationDate) => {
     const type = getExpirationMessageType(expirationDate);
     if (!type) {
         return null;
@@ -80,7 +78,7 @@ export const createExpirationMessageWithLink = expirationDate => {
     return createExpirationMessage(message, type);
 };
 
-export const createExpirationMessageWithoutLink = expirationDate => {
+export const createExpirationMessageWithoutLink = (expirationDate) => {
     const type = getExpirationMessageType(expirationDate);
     if (!type) {
         return null;

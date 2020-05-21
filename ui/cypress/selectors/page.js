@@ -1,5 +1,5 @@
 const page = {
-    pageHeader: '[data-testid="page-header"]'
+    pageHeader: '[data-testid="page-header"]',
 };
 
 export default page;

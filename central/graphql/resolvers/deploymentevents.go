@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/containerid"
 	processWhitelistPkg "github.com/stackrox/rox/pkg/processwhitelist"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -38,7 +39,9 @@ func init() {
 			"id: ID!",
 			"name: String!",
 			"timestamp: Time",
+			"args: String!",
 			"uid: Int!",
+			"parentName: String",
 			"parentUid: Int!",
 			"whitelisted: Boolean!",
 		}, "DeploymentEvent"),
@@ -144,13 +147,16 @@ func (resolver *ContainerRestartEventResolver) Timestamp() *graphql.Time {
 
 // ProcessActivityEventResolver represents a process start event.
 type ProcessActivityEventResolver struct {
-	id               graphql.ID
-	name             string
-	timestamp        time.Time
-	uid              int32
-	parentUID        int32
-	canReadWhitelist bool
-	whitelisted      bool
+	id                  graphql.ID
+	name                string
+	timestamp           time.Time
+	args                string
+	uid                 int32
+	parentName          *string
+	parentUID           int32
+	containerInstanceID string
+	canReadWhitelist    bool
+	whitelisted         bool
 }
 
 // ID returns the event's ID.
@@ -168,12 +174,28 @@ func (resolver *ProcessActivityEventResolver) Timestamp() *graphql.Time {
 	return &graphql.Time{Time: resolver.timestamp}
 }
 
+// Args returns the process's arguments.
+func (resolver *ProcessActivityEventResolver) Args() string {
+	return resolver.args
+}
+
 // UID returns the process's UID.
 func (resolver *ProcessActivityEventResolver) UID() int32 {
 	return resolver.uid
 }
 
+// ParentName returns the process's parent's name, if it exists, and null otherwise.
+func (resolver *ProcessActivityEventResolver) ParentName() *string {
+	return resolver.parentName
+}
+
 // ParentUID returns the process's parent's UID.
+// Any value greater than or equal to 0 indicates a parent's UID.
+// -1 indicates the parent's UID is unknown or the process does not have a parent.
+// This should be used in tandem with ParentName if the exact state of the UID is desired.
+//
+// If ParentName is not null, a ParentUID of -1 implies the UID is unknown.
+// If ParentName is null, then ParentUID will always be -1.
 func (resolver *ProcessActivityEventResolver) ParentUID() int32 {
 	return resolver.parentUID
 }
@@ -230,22 +252,69 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			continue
 		}
 		// -1 indicates we do not have parent UID information (either no parent exists or we do not know its UID).
+		var parentName *string
 		parentUID := int32(-1)
-		if len(indicator.GetSignal().GetLineageInfo()) > 0 {
+		if lineageInfo := indicator.GetSignal().GetLineageInfo(); len(lineageInfo) > 0 {
 			// This process's direct parent should be the first entry.
-			parentUID = int32(indicator.GetSignal().GetLineageInfo()[0].GetParentUid())
+			name := lineageInfo[0].GetParentExecFilePath()
+			parentName = &name
+			parentUID = int32(lineageInfo[0].GetParentUid())
+		} else if lineage := indicator.GetSignal().GetLineage(); len(lineage) > 0 {
+			// This process's direct parent should be the first entry.
+			parentName = &lineage[0]
 		}
 		processEvents = append(processEvents, &ProcessActivityEventResolver{
-			id:               graphql.ID(indicator.GetId()),
-			name:             indicator.GetSignal().GetName(),
-			timestamp:        timestamp,
-			uid:              int32(indicator.GetSignal().GetUid()),
-			parentUID:        parentUID,
-			canReadWhitelist: canReadWhitelist,
-			whitelisted:      whitelists[keyStr] == nil || whitelists[keyStr].Contains(procName),
+			id:                  graphql.ID(indicator.GetId()),
+			name:                indicator.GetSignal().GetExecFilePath(),
+			timestamp:           timestamp,
+			args:                indicator.GetSignal().GetArgs(),
+			uid:                 int32(indicator.GetSignal().GetUid()),
+			parentName:          parentName,
+			parentUID:           parentUID,
+			containerInstanceID: indicator.GetSignal().GetContainerId(),
+			canReadWhitelist:    canReadWhitelist,
+			whitelisted:         whitelists[keyStr] == nil || whitelists[keyStr].Contains(procName),
 		})
 	}
 	return processEvents, nil
+}
+
+func correctContainerRestartTimestamp(restartResolvers []*ContainerRestartEventResolver,
+	processResolvers []*ProcessActivityEventResolver) {
+	instanceIDToTimestamp := make(map[string]time.Time, len(restartResolvers))
+	for _, restartEvent := range restartResolvers {
+		id := containerid.ShortContainerIDFromInstanceID(string(restartEvent.id))
+		instanceIDToTimestamp[id] = restartEvent.timestamp
+	}
+	for _, processEvent := range processResolvers {
+		earliestTimestamp, exists := instanceIDToTimestamp[processEvent.containerInstanceID]
+		if exists && processEvent.timestamp.Before(earliestTimestamp) {
+			instanceIDToTimestamp[processEvent.containerInstanceID] = processEvent.timestamp
+		}
+	}
+	for _, restartEvent := range restartResolvers {
+		id := containerid.ShortContainerIDFromInstanceID(string(restartEvent.id))
+		restartEvent.timestamp = instanceIDToTimestamp[id]
+	}
+}
+
+func correctContainerTerminationTimestamp(terminationResolvers []*ContainerTerminationEventResolver,
+	processResolvers []*ProcessActivityEventResolver) {
+	instanceIDToTimestamp := make(map[string]time.Time, len(terminationResolvers))
+	for _, terminationEvent := range terminationResolvers {
+		id := containerid.ShortContainerIDFromInstanceID(string(terminationEvent.id))
+		instanceIDToTimestamp[id] = terminationEvent.timestamp
+	}
+	for _, processEvent := range processResolvers {
+		latestTimestamp, exists := instanceIDToTimestamp[processEvent.containerInstanceID]
+		if exists && processEvent.timestamp.After(latestTimestamp) {
+			instanceIDToTimestamp[processEvent.containerInstanceID] = processEvent.timestamp
+		}
+	}
+	for _, terminationEvent := range terminationResolvers {
+		id := containerid.ShortContainerIDFromInstanceID(string(terminationEvent.id))
+		terminationEvent.timestamp = instanceIDToTimestamp[id]
+	}
 }
 
 // PolicyViolationEventResolver represents a policy violation event.

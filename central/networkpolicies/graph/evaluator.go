@@ -1,14 +1,25 @@
 package graph
 
 import (
+	"context"
+
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
+	allNamespaceReadAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Namespace),
+		),
+	)
+
 	log = logging.LoggerForModule()
 )
 
@@ -22,7 +33,7 @@ type Evaluator interface {
 }
 
 type namespaceProvider interface {
-	GetNamespaces() ([]*storage.NamespaceMetadata, error)
+	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
@@ -122,7 +133,7 @@ func (g *evaluatorImpl) evaluate(deployments []*storage.Deployment, networkPolic
 }
 
 func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {
-	namespaces, err := g.namespaceStore.GetNamespaces()
+	namespaces, err := g.namespaceStore.GetNamespaces(allNamespaceReadAccess)
 	if err != nil {
 		log.Errorf("unable to read namespaces: %v", err)
 		return nil

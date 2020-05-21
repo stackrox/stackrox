@@ -171,8 +171,9 @@ func TestValueStream_SubscribeChan(t *testing.T) {
 	go errSig.SignalWithErrorWhen(context.DeadlineExceeded, TimeoutOr(1*time.Second, &errSig), &errSig)
 
 	subscribeErrC := make(chan error)
+	startIt := vs.Iterator(true)
 	go func() {
-		subscribeErrC <- vs.SubscribeChan(&errSig, ch, true)
+		subscribeErrC <- SubscribeChan(&errSig, ch, startIt)
 	}()
 
 	go func() {
@@ -208,8 +209,9 @@ func TestValueStream_SubscribeChanTyped(t *testing.T) {
 	go errSig.SignalWithErrorWhen(context.DeadlineExceeded, TimeoutOr(1*time.Second, &errSig), &errSig)
 
 	subscribeErrC := make(chan error)
+	startIt := vs.Iterator(true)
 	go func() {
-		subscribeErrC <- vs.SubscribeChanTyped(&errSig, ch, true)
+		subscribeErrC <- SubscribeChanTyped(&errSig, ch, startIt)
 	}()
 
 	go func() {

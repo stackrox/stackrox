@@ -27,9 +27,7 @@ describe('Table pagination header in Policies page', () => {
     });
 
     xit('can update page number by typing in input', () => {
-        cy.get(selectors.pageNumberInput)
-            .clear()
-            .invoke('attr', 'type', 'text'); // Cast
+        cy.get(selectors.pageNumberInput).clear().invoke('attr', 'type', 'text'); // Cast
         cy.get(selectors.pageNumberInput).type('1');
         cy.get(selectors.tableFirstRow).should('contain', '30-Day Scan Age');
     });

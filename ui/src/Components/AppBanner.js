@@ -5,7 +5,7 @@ const sizeClassMap = {
     UNSET: '',
     SMALL: 'text-sm',
     MEDIUM: 'text-xl',
-    LARGE: 'text-2xl'
+    LARGE: 'text-2xl',
 };
 
 const AppBanner = ({ type, enabled, text, color, size, backgroundColor }) => {
@@ -27,7 +27,7 @@ AppBanner.propTypes = {
     text: PropTypes.string,
     color: PropTypes.string,
     size: PropTypes.string,
-    backgroundColor: PropTypes.string
+    backgroundColor: PropTypes.string,
 };
 
 AppBanner.defaultProps = {
@@ -35,7 +35,7 @@ AppBanner.defaultProps = {
     text: '',
     color: '',
     size: 'UNSET',
-    backgroundColor: ''
+    backgroundColor: '',
 };
 
 export default AppBanner;

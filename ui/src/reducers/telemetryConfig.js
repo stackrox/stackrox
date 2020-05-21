@@ -6,14 +6,17 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 export const types = {
     FETCH_TELEMETRY_CONFIG: createFetchingActionTypes('telemetry/FETCH_TELEMETRY_CONFIG'),
-    SAVE_TELEMETRY_CONFIG: 'telemetry/SAVE_TELEMETRY_CONFIG'
+    SAVE_TELEMETRY_CONFIG: 'telemetry/SAVE_TELEMETRY_CONFIG',
 };
 
 // Actions
 
 export const actions = {
     fetchTelemetryConfig: createFetchingActions(types.FETCH_TELEMETRY_CONFIG),
-    saveTelemetryConfig: telemetryConfig => ({ type: types.SAVE_TELEMETRY_CONFIG, telemetryConfig })
+    saveTelemetryConfig: (telemetryConfig) => ({
+        type: types.SAVE_TELEMETRY_CONFIG,
+        telemetryConfig,
+    }),
 };
 
 // Reducers
@@ -29,12 +32,12 @@ const reducer = telemetryConfig;
 
 // Selectors
 
-const getTelemetryConfig = state => {
+const getTelemetryConfig = (state) => {
     return state;
 };
 
 export const selectors = {
-    getTelemetryConfig
+    getTelemetryConfig,
 };
 
 export default reducer;

@@ -64,18 +64,15 @@ const Filters = ({ setFilterMode, filterMode }) => {
 
 Filters.propTypes = {
     setFilterMode: PropTypes.func.isRequired,
-    filterMode: PropTypes.number.isRequired
+    filterMode: PropTypes.number.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    filterMode: selectors.getNetworkGraphFilterMode
+    filterMode: selectors.getNetworkGraphFilterMode,
 });
 
 const mapDispatchToProps = {
-    setFilterMode: graphActions.setNetworkGraphFilterMode
+    setFilterMode: graphActions.setNetworkGraphFilterMode,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Filters);
+export default connect(mapStateToProps, mapDispatchToProps)(Filters);

@@ -9,12 +9,10 @@ describe('System Config', () => {
     };
 
     const openTopNav = () => {
-        cy.get(selectors.navLinks.topNav)
-            .last()
-            .click();
+        cy.get(selectors.navLinks.topNav).last().click();
     };
 
-    const editBaseConfig = type => {
+    const editBaseConfig = (type) => {
         cy.get(selectors.pageHeader.editButton, { timeout: 10000 }).click();
 
         cy.get(selectors[type].config.toggle).should('exist');
@@ -22,33 +20,23 @@ describe('System Config', () => {
         cy.get(selectors[type].config.textInput, { timeout: 10000 }).type(text.banner);
     };
 
-    const editBannerConfig = type => {
-        cy.get(selectors[type].config.colorPickerBtn)
-            .first()
-            .click();
-        cy.get(selectors[type].config.colorInput)
-            .clear()
-            .type(text.color);
+    const editBannerConfig = (type) => {
+        cy.get(selectors[type].config.colorPickerBtn).first().click();
+        cy.get(selectors[type].config.colorInput).clear().type(text.color);
         cy.get(selectors[type].widget).click();
         cy.get(selectors[type].config.size.input).click();
-        cy.get(selectors[type].config.size.options)
-            .first()
-            .click();
-        cy.get(selectors[type].config.colorPickerBtn)
-            .last()
-            .click();
-        cy.get(selectors[type].config.colorInput)
-            .clear()
-            .type(text.backgroundColor);
+        cy.get(selectors[type].config.size.options).first().click();
+        cy.get(selectors[type].config.colorPickerBtn).last().click();
+        cy.get(selectors[type].config.colorInput).clear().type(text.backgroundColor);
         cy.get(selectors[type].widget).click();
     };
 
-    const saveConfig = type => {
+    const saveConfig = (type) => {
         cy.get(selectors.pageHeader.saveButton).click();
         cy.get(selectors[type].state).contains('enabled');
     };
 
-    const disableConfig = type => {
+    const disableConfig = (type) => {
         cy.get(selectors.pageHeader.editButton).click();
         cy.get(selectors[type].config.toggle).click();
         cy.get(selectors.pageHeader.saveButton).click();
@@ -66,9 +54,7 @@ describe('System Config', () => {
     it('should go to System Config page', () => {
         cy.visit('/');
         openConfigNav();
-        cy.get(selectors.navLinks.subnavMenu)
-            .get(selectors.navLinks.systemConfig)
-            .click();
+        cy.get(selectors.navLinks.subnavMenu).get(selectors.navLinks.systemConfig).click();
         cy.url().should('contain', systemConfigUrl);
         cy.get(selectors.header.widget).should('exist');
         cy.get(selectors.footer.widget).should('exist');

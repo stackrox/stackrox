@@ -7,7 +7,10 @@ describe('Component:Tabs', () => {
     it('shows the first tab as the active tab', () => {
         const tabs = shallow(
             <Tabs
-                headers={[{ text: 'Tab 1', disabled: false }, { text: 'Tab 2', disabled: false }]}
+                headers={[
+                    { text: 'Tab 1', disabled: false },
+                    { text: 'Tab 2', disabled: false },
+                ]}
             />
         );
         expect(tabs.state('activeIndex')).toEqual(0);
@@ -19,15 +22,15 @@ describe('Component:Tabs', () => {
                 headers={[
                     { text: 'Tab 1', disabled: false },
                     { text: 'Tab 2', disabled: false },
-                    { text: 'Tab 3', disabled: false }
+                    { text: 'Tab 3', disabled: false },
                 ]}
             />
         );
         expect(tabs.state('activeIndex')).toEqual(0);
-        let button = tabs.findWhere(n => n.key() === 'Tab 2');
+        let button = tabs.findWhere((n) => n.key() === 'Tab 2');
         button.simulate('click');
         expect(tabs.state('activeIndex')).toEqual(1);
-        button = tabs.findWhere(n => n.key() === 'Tab 3');
+        button = tabs.findWhere((n) => n.key() === 'Tab 3');
         button.simulate('click');
         expect(tabs.state('activeIndex')).toEqual(2);
     });
@@ -38,15 +41,15 @@ describe('Component:Tabs', () => {
                 headers={[
                     { text: 'Tab 1', disabled: false },
                     { text: 'Tab 2', disabled: true },
-                    { text: 'Tab 3', disabled: false }
+                    { text: 'Tab 3', disabled: false },
                 ]}
             />
         );
         expect(tabs.state('activeIndex')).toEqual(0);
-        let button = tabs.findWhere(n => n.key() === 'Tab 2');
+        let button = tabs.findWhere((n) => n.key() === 'Tab 2');
         button.simulate('click');
         expect(tabs.state('activeIndex')).toEqual(0);
-        button = tabs.findWhere(n => n.key() === 'Tab 3');
+        button = tabs.findWhere((n) => n.key() === 'Tab 3');
         button.simulate('click');
         expect(tabs.state('activeIndex')).toEqual(2);
     });

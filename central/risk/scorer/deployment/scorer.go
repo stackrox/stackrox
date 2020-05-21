@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers/deployment"
+	"github.com/stackrox/rox/central/risk/multipliers/image"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,7 +21,7 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating deployment risk
 type Scorer interface {
-	Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk
+	Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk
 }
 
 // NewDeploymentScorer returns a new scorer that encompasses multipliers for evaluating deployment risk
@@ -33,12 +34,12 @@ func NewDeploymentScorer(alertGetter getters.AlertGetter, roles roleStore.DataSt
 		ConfiguredMultipliers: []deployment.Multiplier{
 			deployment.NewViolations(alertGetter),
 			deployment.NewProcessWhitelists(whitelistEvaluator),
-			deployment.NewVulnerabilities(),
+			deployment.NewImageMultiplier(image.ImageVulnerabilitiesHeading),
 			deployment.NewServiceConfig(),
 			deployment.NewReachability(),
-			deployment.NewRiskyComponents(),
-			deployment.NewComponentCount(),
-			deployment.NewImageAge(),
+			deployment.NewImageMultiplier(image.RiskyComponentCountHeading),
+			deployment.NewImageMultiplier(image.ComponentCountHeading),
+			deployment.NewImageMultiplier(image.ImageAgeHeading),
 			deployment.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts),
 		},
 	}
@@ -51,11 +52,18 @@ type deploymentScorerImpl struct {
 }
 
 // Score takes a deployment and evaluates its risk
-func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) *storage.Risk {
+func (s *deploymentScorerImpl) Score(ctx context.Context, deployment *storage.Deployment, images []*storage.Risk) *storage.Risk {
+	imageRiskResults := make(map[string][]*storage.Risk_Result)
+	for _, risk := range images {
+		for _, result := range risk.GetResults() {
+			imageRiskResults[result.Name] = append(imageRiskResults[result.Name], result)
+		}
+	}
+
 	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
-		if riskResult := mult.Score(ctx, deployment, images); riskResult != nil {
+		if riskResult := mult.Score(ctx, deployment, imageRiskResults); riskResult != nil {
 			overallScore *= riskResult.GetScore()
 			riskResults = append(riskResults, riskResult)
 		}

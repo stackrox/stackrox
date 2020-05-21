@@ -5,13 +5,13 @@ const mockFeatureFlags = [
     {
         name: 'Enable Config Mgmt UI',
         envVar: 'ROX_CONFIG_MGMT_UI',
-        enabled: false
+        enabled: false,
     },
     {
         name: 'Enable Sensor Autoupgrades',
         envVar: 'ROX_SENSOR_AUTOUPGRADE',
-        enabled: true
-    }
+        enabled: true,
+    },
 ];
 
 describe('nav helpers', () => {
@@ -20,16 +20,16 @@ describe('nav helpers', () => {
             const menuWithoutFlags = [
                 {
                     text: 'Dashboard',
-                    to: '/main/dashboard'
+                    to: '/main/dashboard',
                 },
                 {
                     text: 'Network',
-                    to: '/main/network'
+                    to: '/main/network',
                 },
                 {
                     text: 'Violations',
-                    to: '/main/violations'
-                }
+                    to: '/main/violations',
+                },
             ];
 
             const filtersLinks = filterLinksByFeatureFlag(mockFeatureFlags, menuWithoutFlags);
@@ -41,17 +41,17 @@ describe('nav helpers', () => {
             const menuWithFlag = [
                 {
                     text: 'Compliance',
-                    to: '/main/compliance'
+                    to: '/main/compliance',
                 },
                 {
                     text: 'Configuration Management',
                     to: '/main/configmanagement',
-                    featureFlag: mockFeatureFlags[0].envVar
+                    featureFlag: mockFeatureFlags[0].envVar,
                 },
                 {
                     text: 'Risk',
-                    to: '/main/risk'
-                }
+                    to: '/main/risk',
+                },
             ];
 
             const filtersLinks = filterLinksByFeatureFlag(mockFeatureFlags, menuWithFlag);
@@ -65,16 +65,16 @@ describe('nav helpers', () => {
                 {
                     text: 'clusters',
                     to: '/main/clusters',
-                    featureFlag: mockFeatureFlags[1].envVar
+                    featureFlag: mockFeatureFlags[1].envVar,
                 },
                 {
                     text: 'Configuration Management',
-                    to: '/main/configmanagement'
+                    to: '/main/configmanagement',
                 },
                 {
                     text: 'Risk',
-                    to: '/main/risk'
-                }
+                    to: '/main/risk',
+                },
             ];
 
             const filtersLinks = filterLinksByFeatureFlag(mockFeatureFlags, menuWithFlag);

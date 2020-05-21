@@ -9,11 +9,13 @@ import (
 	"github.com/stackrox/rox/central/pod/index"
 	badgerStore "github.com/stackrox/rox/central/pod/store/badger"
 	"github.com/stackrox/rox/central/pod/store/cache"
+	"github.com/stackrox/rox/central/pod/store/rocksdb"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/tecbot/gorocksdb"
 )
 
 // DataStore is an intermediary to PodStorage.
@@ -28,11 +30,21 @@ type DataStore interface {
 	UpsertPod(ctx context.Context, pod *storage.Pod) error
 
 	RemovePod(ctx context.Context, id string) error
+
+	GetPodIDs() ([]string, error)
 }
 
 // New creates a pod datastore based on BadgerDB
 func New(db *badger.DB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store := cache.NewCachedStore(badgerStore.New(db))
+	indexer := index.New(bleveIndex)
+	searcher := search.New(store, indexer)
+	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)
+}
+
+// NewRocksDB creates a pod datastore based on RocksDB
+func NewRocksDB(db *gorocksdb.DB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+	store := cache.NewCachedStore(rocksdb.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)
 	return newDatastoreImpl(store, indexer, searcher, indicators, processFilter)

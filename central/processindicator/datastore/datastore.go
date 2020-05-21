@@ -24,9 +24,7 @@ type DataStore interface {
 
 	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
-	RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
-	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deployment *storage.Deployment) error
 	RemoveProcessIndicatorsOfStaleContainersByPod(ctx context.Context, pod *storage.Pod) error
 	RemoveProcessIndicators(ctx context.Context, ids []string) error
 

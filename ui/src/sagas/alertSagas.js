@@ -45,10 +45,10 @@ function* filterDashboardPageBySearch() {
         return;
     }
     const filters = {
-        query: searchOptionsToQuery(searchOptions)
+        query: searchOptionsToQuery(searchOptions),
     };
     const nestedFilter = {
-        'request.query': searchOptionsToQuery(searchOptions)
+        'request.query': searchOptionsToQuery(searchOptions),
     };
     yield fork(getAlertCountsByCluster, nestedFilter);
     yield fork(getAlertsByTimeseries, filters);
@@ -66,6 +66,6 @@ function* watchDashboardSearchOptions() {
 export default function* alertsSaga() {
     yield all([
         takeEveryNewlyMatchedLocation(dashboardPath, loadDashboardPage),
-        fork(watchDashboardSearchOptions)
+        fork(watchDashboardSearchOptions),
     ]);
 }

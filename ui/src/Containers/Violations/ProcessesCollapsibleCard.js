@@ -7,7 +7,7 @@ import CollapsibleCard from 'Components/CollapsibleCard';
 class ProcessesCollapsibleCard extends Component {
     static propTypes = {
         title: PropTypes.string.isRequired,
-        children: PropTypes.node.isRequired
+        children: PropTypes.node.isRequired,
     };
 
     renderCollapsibleOpened = () => {

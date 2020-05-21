@@ -15,34 +15,20 @@ describe('Compliance Flow', () => {
 
     it('clicking on "Passing Standards by Cluster" should take user to NIST standard details with filters: "Cluster: production, Standard: NIST SP 800-190"', () => {
         cy.visit(url.dashboard);
-        cy.get(ComplianceSelectors.widget.passingStandardsByCluster.NISTBarLinks)
-            .eq(0)
-            .click();
+        cy.get(ComplianceSelectors.widget.passingStandardsByCluster.NISTBarLinks).eq(0).click();
         cy.get(selectors.page.pageHeader).contains('NIST');
-        cy.get(selectors.search.chips)
-            .eq(0)
-            .contains('Cluster:');
-        cy.get(selectors.search.chips)
-            .eq(1)
-            .contains('production');
-        cy.get(selectors.search.chips)
-            .eq(2)
-            .contains('Standard:');
-        cy.get(selectors.search.chips)
-            .eq(3)
-            .contains('NIST SP 800-190');
-        cy.get(`${selectors.table.rows}:contains("4.1.1") div`)
-            .eq(3)
-            .contains('100%');
+        cy.get(selectors.search.chips).eq(0).contains('Cluster:');
+        cy.get(selectors.search.chips).eq(1).contains('production');
+        cy.get(selectors.search.chips).eq(2).contains('Standard:');
+        cy.get(selectors.search.chips).eq(3).contains('NIST SP 800-190');
+        cy.get(`${selectors.table.rows}:contains("4.1.1") div`).eq(3).contains('100%');
     });
 
     it('when selecting "NIST 4.1.1", control details pane opens and shows details for NIST 4.1.1 control', () => {
         const controlName = '4.1.1';
 
         cy.visit(url.list.standards.NIST_800_190);
-        cy.get(selectors.table.rows)
-            .eq(0)
-            .click();
+        cy.get(selectors.table.rows).eq(0).click();
         cy.get(selectors.panel.sidePanel).should('exist');
         cy.get(selectors.table.activeRow).contains(controlName);
         cy.get(selectors.panel.sidePanelHeader).contains(controlName);

@@ -1,6 +1,6 @@
 const policyStatus = {
     PASS: 'Pass',
-    FAIL: 'Fail'
+    FAIL: 'Fail',
 };
 
 export default policyStatus;

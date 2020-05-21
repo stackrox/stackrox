@@ -5,7 +5,7 @@ import RiskScore from './RiskScore';
 
 export default {
     title: 'RiskScore',
-    component: RiskScore
+    component: RiskScore,
 };
 
 export const basicRiskScore = () => {

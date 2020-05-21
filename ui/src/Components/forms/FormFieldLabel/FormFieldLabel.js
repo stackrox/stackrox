@@ -9,11 +9,11 @@ const FormFieldLabel = ({ text, required }) => (
 
 FormFieldLabel.propTypes = {
     text: PropTypes.string.isRequired,
-    required: PropTypes.bool
+    required: PropTypes.bool,
 };
 
 FormFieldLabel.defaultProps = {
-    required: false
+    required: false,
 };
 
 export default FormFieldLabel;

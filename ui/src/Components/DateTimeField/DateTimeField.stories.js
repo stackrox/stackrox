@@ -5,7 +5,7 @@ import DateTimeField from './DateTimeField';
 
 export default {
     title: 'DateTimeField',
-    component: DateTimeField
+    component: DateTimeField,
 };
 
 export const basicDateTimeField = () => {

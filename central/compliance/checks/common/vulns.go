@@ -5,6 +5,7 @@ import (
 	"unicode"
 
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -33,14 +34,17 @@ func CheckAtLeastOnePolicyEnabledReferringToVulns(ctx framework.ComplianceContex
 		if !IsPolicyEnabled(policy) {
 			continue
 		}
-		if policy.GetFields().GetCvss() != nil {
+		if policyfields.ContainsCVSSField(policy) {
 			vulnPolicyIDs.Add(policy.GetId())
 			framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
 			continue
 		}
-		if checkCVEIsNotSingleRegexMatch(policy.GetFields().GetCve()) {
-			vulnPolicyIDs.Add(policy.GetId())
-			framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
+		for _, cveField := range policyfields.GetCVEs(policy) {
+			if checkCVEIsNotSingleRegexMatch(cveField) {
+				vulnPolicyIDs.Add(policy.GetId())
+				framework.Passf(ctx, "Policy %q is enabled, and targets vulnerabilities", policy.GetName())
+				break
+			}
 		}
 	}
 	if vulnPolicyIDs.Cardinality() == 0 {

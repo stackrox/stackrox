@@ -26,13 +26,9 @@ func init() {
 			"podId: String!",
 			"startTime: Time",
 			"containerInstances: [ContainerInstance!]!",
+			"events: [DeploymentEvent!]!",
 		}),
 		schema.AddQuery("groupedContainerInstances(query: String): [ContainerNameGroup!]!"),
-		schema.AddExtraResolver(groupResolverName, "policyViolationEvents: [PolicyViolationEvent!]!"),
-		schema.AddExtraResolver(groupResolverName, "processActivityEvents: [ProcessActivityEvent!]!"),
-		schema.AddExtraResolver(groupResolverName, "containerRestartEvents: [ContainerRestartEvent!]!"),
-		schema.AddExtraResolver(groupResolverName, "containerTerminationEvents: [ContainerTerminationEvent!]!"),
-		schema.AddExtraResolver(groupResolverName, "events: [DeploymentEvent!]!"),
 	)
 }
 
@@ -45,6 +41,7 @@ type ContainerNameGroupResolver struct {
 	startTime           time.Time
 	liveInstance        *containerInstanceResolver
 	terminatedInstances []*containerInstanceResolver
+	events              []*DeploymentEventResolver
 }
 
 // ID returns the group's ID.
@@ -66,6 +63,11 @@ func (resolver *ContainerNameGroupResolver) PodID() string {
 // StartTime returns the start time of the earliest container instance in the group.
 func (resolver *ContainerNameGroupResolver) StartTime() *graphql.Time {
 	return &graphql.Time{Time: resolver.startTime}
+}
+
+// Events returns all events associated with this container instance group.
+func (resolver *ContainerNameGroupResolver) Events() []*DeploymentEventResolver {
+	return resolver.events
 }
 
 // ContainerInstances returns the container instances in the group.
@@ -164,6 +166,17 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 	var groups []*ContainerNameGroupResolver
 	for _, groupByName := range groupByPodID {
 		for _, group := range groupByName {
+			// This is the reason for making 'events' a normal field for the resolver instead of an extra resolver.
+			// Kubernetes timestamps for containers only have second-precision, but our process events have at least
+			// millisecond precision. Because of this, it is possible for the start time of a container to be after a
+			// process's timestamp. We adjust the container's start time (as well as any restart and termination timestamps)
+			// to alleviate the incorrectness due to the lack of precision.
+			if err := populateEvents(ctx, group); err != nil {
+				return nil, errors.Wrapf(err, "populating events for group %s", group.name)
+			}
+			if len(group.events) > 0 && group.startTime.After(group.events[0].Timestamp().Time) {
+				group.startTime = group.events[0].Timestamp().Time
+			}
 			groups = append(groups, group)
 		}
 	}
@@ -176,8 +189,8 @@ func (resolver *Resolver) GroupedContainerInstances(ctx context.Context, args Ra
 	return groups, nil
 }
 
-// PolicyViolationEvents returns all policy violations associated with this group of container instances.
-func (resolver *ContainerNameGroupResolver) PolicyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
+// policyViolationEvents returns all policy violations associated with this group of container instances.
+func (resolver *ContainerNameGroupResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "PolicyViolationEvents")
 
 	// We search by PodID (name) to filter out processes involving other pods.
@@ -196,8 +209,8 @@ func (resolver *ContainerNameGroupResolver) PolicyViolationEvents(ctx context.Co
 	return resolver.root.getPolicyViolationEvents(ctx, q)
 }
 
-// ProcessActivityEvents returns all the process activities associated with this group of container instances.
-func (resolver *ContainerNameGroupResolver) ProcessActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
+// processActivityEvents returns all the process activities associated with this group of container instances.
+func (resolver *ContainerNameGroupResolver) processActivityEvents(ctx context.Context) ([]*ProcessActivityEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "ProcessActivityEvents")
 
 	query := search.NewConjunctionQuery(
@@ -209,8 +222,8 @@ func (resolver *ContainerNameGroupResolver) ProcessActivityEvents(ctx context.Co
 	return resolver.root.getProcessActivityEvents(ctx, query)
 }
 
-// ContainerRestartEvents returns all the container restart events associated with this group of container instances.
-func (resolver *ContainerNameGroupResolver) ContainerRestartEvents() []*ContainerRestartEventResolver {
+// containerRestartEvents returns all the container restart events associated with this group of container instances.
+func (resolver *ContainerNameGroupResolver) containerRestartEvents() []*ContainerRestartEventResolver {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "ContainerRestartEvents")
 
 	events := make([]*ContainerRestartEventResolver, 0, len(resolver.terminatedInstances))
@@ -240,8 +253,8 @@ func (resolver *ContainerNameGroupResolver) ContainerRestartEvents() []*Containe
 	return events
 }
 
-// ContainerTerminationEvents returns all the container termination events associated with this group of container instances.
-func (resolver *ContainerNameGroupResolver) ContainerTerminationEvents() []*ContainerTerminationEventResolver {
+// containerTerminationEvents returns all the container termination events associated with this group of container instances.
+func (resolver *ContainerNameGroupResolver) containerTerminationEvents() []*ContainerTerminationEventResolver {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "ContainerTerminationEvents")
 
 	events := make([]*ContainerTerminationEventResolver, 0, len(resolver.terminatedInstances))
@@ -262,35 +275,44 @@ func (resolver *ContainerNameGroupResolver) ContainerTerminationEvents() []*Cont
 	return events
 }
 
-// Events returns all events associated with this pod.
-func (resolver *ContainerNameGroupResolver) Events(ctx context.Context) ([]*DeploymentEventResolver, error) {
+// populateEvents populates all of the events for the given container instance group sorted by timestamp.
+func populateEvents(ctx context.Context, resolver *ContainerNameGroupResolver) error {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ContainerInstances, "Events")
 
 	var events []*DeploymentEventResolver
 
-	policyViolations, err := resolver.PolicyViolationEvents(ctx)
+	policyViolations, err := resolver.policyViolationEvents(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving policy violation events")
+		return errors.Wrap(err, "retrieving policy violation events")
 	}
 	for _, policyViolation := range policyViolations {
 		events = append(events, &DeploymentEventResolver{policyViolation})
 	}
 
-	processActivities, err := resolver.ProcessActivityEvents(ctx)
+	processActivities, err := resolver.processActivityEvents(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving process activity events")
+		return errors.Wrap(err, "retrieving process activity events")
 	}
 	for _, processActivity := range processActivities {
 		events = append(events, &DeploymentEventResolver{processActivity})
 	}
 
-	for _, containerRestart := range resolver.ContainerRestartEvents() {
+	containerRestarts := resolver.containerRestartEvents()
+	correctContainerRestartTimestamp(containerRestarts, processActivities)
+	for _, containerRestart := range containerRestarts {
 		events = append(events, &DeploymentEventResolver{containerRestart})
 	}
 
-	for _, containerTermination := range resolver.ContainerTerminationEvents() {
+	containerTerminations := resolver.containerTerminationEvents()
+	correctContainerTerminationTimestamp(containerTerminations, processActivities)
+	for _, containerTermination := range containerTerminations {
 		events = append(events, &DeploymentEventResolver{containerTermination})
 	}
 
-	return events, nil
+	// Sort by timestamp.
+	sort.SliceStable(events, func(i, j int) bool { return events[i].Timestamp().Before(events[j].Timestamp().Time) })
+
+	resolver.events = events
+
+	return nil
 }

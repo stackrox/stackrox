@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 import { useQuery } from 'react-apollo';
 import max from 'lodash/max';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Loader from 'Components/Loader';
@@ -50,12 +50,12 @@ const POLICIES_QUERY = gql`
 function getCategorySeverity(category, violationsByCategory) {
     const maxSeverityValue = max(
         violationsByCategory[category]
-            .filter(violation => !violation.passing)
-            .map(violation => severityValues[violation.severity])
+            .filter((violation) => !violation.passing)
+            .map((violation) => severityValues[violation.severity])
     );
 
     const severityEntry = Object.entries(severityValues).find(
-        entry => entry[1] === maxSeverityValue
+        (entry) => entry[1] === maxSeverityValue
     );
 
     if (!severityEntry) return passingChartColor;
@@ -68,9 +68,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
             policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management'
-            })
-        }
+                Category: 'Vulnerability Management',
+            }),
+        },
     });
 
     let content = <Loader />;
@@ -150,16 +150,16 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                     textColor: passingLinkColor,
                     value: 0,
                     labelColor: color,
-                    name: `${isPassing ? '' : 'View deployments violating'} "${fullPolicyName}"`
+                    name: `${isPassing ? '' : 'View deployments violating'} "${fullPolicyName}"`,
                 });
             });
             return newItems;
         }, {});
 
-        return Object.entries(violationsByCategory).map(entry => {
+        return Object.entries(violationsByCategory).map((entry) => {
             const category = entry[0];
             const children = entry[1];
-            const numPassing = children.filter(child => child.passing).length;
+            const numPassing = children.filter((child) => child.passing).length;
             const labelValue = `${children.length - numPassing}/${
                 children.length
             } policies violated`;
@@ -171,22 +171,22 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 value,
                 labelValue,
                 color,
-                textColor: passingLinkColor
+                textColor: passingLinkColor,
             };
         });
     }
 
     function getCenterValue(rawData) {
         const policiesInViolation = rawData.filter(
-            policy => policy.policyStatus.toLowerCase() === 'fail'
+            (policy) => policy.policyStatus.toLowerCase() === 'fail'
         ).length;
         return policiesInViolation;
     }
 
     function getSummaryData(rawData) {
-        const policiesInViolation = rawData.filter(policy => policy.policyStatus === 'fail');
+        const policiesInViolation = rawData.filter((policy) => policy.policyStatus === 'fail');
         function getCount(severity) {
-            return policiesInViolation.filter(policy => policy.severity === severity).length;
+            return policiesInViolation.filter((policy) => policy.severity === severity).length;
         }
 
         // @TODO: check with back-end to see if these counts can be calculated there
@@ -206,9 +206,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 link: newState
                     .setSearch({
                         Severity: severities.CRITICAL_SEVERITY,
-                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
                     })
-                    .toUrl()
+                    .toUrl(),
             });
 
         if (highCount)
@@ -218,9 +218,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 link: newState
                     .setSearch({
                         Severity: severities.HIGH_SEVERITY,
-                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
                     })
-                    .toUrl()
+                    .toUrl(),
             });
 
         if (mediumCount)
@@ -230,9 +230,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 link: newState
                     .setSearch({
                         Severity: severities.MEDIUM_SEVERITY,
-                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
                     })
-                    .toUrl()
+                    .toUrl(),
             });
 
         if (lowCount)
@@ -242,9 +242,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 link: newState
                     .setSearch({
                         Severity: severities.LOW_SEVERITY,
-                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
+                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
                     })
-                    .toUrl()
+                    .toUrl(),
             });
 
         if (passingCount)
@@ -253,9 +253,9 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
                 color: passingLinkColor,
                 link: newState
                     .setSearch({
-                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS
+                        [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS,
                     })
-                    .toUrl()
+                    .toUrl(),
             });
 
         return links;
@@ -274,12 +274,12 @@ const PolicyViolationsBySeverity = ({ entityContext }) => {
 
 PolicyViolationsBySeverity.propTypes = {
     entityContext: PropTypes.shape({}),
-    policyContext: PropTypes.shape({})
+    policyContext: PropTypes.shape({}),
 };
 
 PolicyViolationsBySeverity.defaultProps = {
     entityContext: {},
-    policyContext: {}
+    policyContext: {},
 };
 
 export default PolicyViolationsBySeverity;

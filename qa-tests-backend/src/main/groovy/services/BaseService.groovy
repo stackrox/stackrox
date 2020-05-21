@@ -21,8 +21,8 @@ import util.Keys
 
 class BaseService {
 
-    static final BASIC_AUTH_USERNAME = System.getenv("ROX_USERNAME") ?: ""
-    static final BASIC_AUTH_PASSWORD = System.getenv("ROX_PASSWORD") ?: ""
+    static final BASIC_AUTH_USERNAME = Env.mustGetUsername()
+    static final BASIC_AUTH_PASSWORD = Env.mustGetPassword()
 
     static final EMPTY = EmptyOuterClass.Empty.newBuilder().build()
 

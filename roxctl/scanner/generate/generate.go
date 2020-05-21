@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/scanner/clustertype"
 	"github.com/stackrox/rox/roxctl/scanner/generate/run"
 )
@@ -17,9 +18,9 @@ func Command() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate creates the required YAML files to deploy StackRox Scanner.",
 		Long:  "Generate creates the required YAML files to deploy StackRox Scanner.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return run.Run(c, &params, opts)
-		},
+		}),
 	}
 
 	c.PersistentFlags().Var(clustertype.Value(storage.ClusterType_KUBERNETES_CLUSTER), "cluster-type", "type of cluster the scanner will run on (k8s, openshift)")

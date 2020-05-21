@@ -13,6 +13,7 @@ import (
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -26,12 +27,12 @@ func Command() *cobra.Command {
 		Use:   "info",
 		Short: description,
 		Long:  description,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			if len(licenseData) == 0 {
 				return errors.New("no license data supplied")
 			}
 			return infoLicense(licenseData)
-		},
+		}),
 	}
 
 	c.Flags().Var(&flags.LicenseVar{Data: &licenseData}, "license", flags.LicenseUsage)

@@ -222,10 +222,7 @@ function setup_auth0() {
     local LOCAL_API_ENDPOINT="$1"
 	echo "Setting up StackRox Dev Auth0 login"
 
-	local client_secret=""
-	if [[ "$(curl_central -s "https://${LOCAL_API_ENDPOINT}/v1/featureflags" | jq -r '.featureFlags[] | select(.envVar == "ROX_REFRESH_TOKENS") | .enabled')" == "true" ]]; then
-		client_secret="TYpciXquIi4sqlpux2rzwxcGjvvdWYfUO45d4m44CVUtvK91Z2lKJon55HUXfQJZ"
-	fi
+	local client_secret="TYpciXquIi4sqlpux2rzwxcGjvvdWYfUO45d4m44CVUtvK91Z2lKJon55HUXfQJZ"
 
 	TMP=$(mktemp)
 	STATUS=$(curl_central \

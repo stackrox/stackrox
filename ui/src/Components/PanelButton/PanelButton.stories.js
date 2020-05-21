@@ -5,7 +5,7 @@ import PanelButton from './PanelButton';
 
 export default {
     title: 'PanelButton',
-    component: PanelButton
+    component: PanelButton,
 };
 
 function fn() {

@@ -100,6 +100,10 @@ dependencies {
 
     //JavaMail for mail verifications
     compile group: 'com.sun.mail', name: 'javax.mail', version: '1.6.0'
+
+    // JAX-B dependencies for JDK 9+
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
 }
 
 
@@ -120,17 +124,6 @@ tasks.withType(Test) {
 
 test {
     testLogging.showStandardStreams = true
-    systemProperty "cluster", System.getProperty("CLUSTER")
-    systemProperty "testrail", System.getProperty("TESTRAIL")
-    systemProperty "username", System.getProperty("USERNAME")
-    systemProperty "password", System.getProperty("PASSWORD")
-    environment "CLUSTER", System.getenv("CLUSTER")
-    environment "HOSTNAME",  System.getenv("HOSTNAME")
-    environment "PORT", System.getenv("PORT")
-    environment "TESTRAIL" , System.getenv("TESTRAIL")
-    environment "USERNAME" , System.getenv("USERNAME")
-    environment "PASSWORD" , System.getenv("PASSWORD")
-    environment "GOOGLE_CREDENTIALS_GCR_SCANNER", System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,

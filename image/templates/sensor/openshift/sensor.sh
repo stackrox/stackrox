@@ -58,8 +58,10 @@ fi
 echo "Creating secrets for collector..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-secret.yaml"
 
-echo "Creating secret for additional CAs for sensor..."
-${KUBE_COMMAND} apply -f "$DIR/additional-ca.yaml"
+if [[ -f "$DIR/additional-ca-sensor.yaml" ]]; then
+  echo "Creating secret for additional CAs for sensor..."
+  ${KUBE_COMMAND} apply -f "$DIR/additional-ca-sensor.yaml"
+fi
 
 echo "Creating deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"

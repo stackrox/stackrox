@@ -277,4 +277,16 @@ func (s *liveTestSuite) TestRemoveClusterNodeStores() {
 	results, err = s.globalDataStore.Search(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 3)
+
+	// Test call with no cluster IDs
+	err = s.globalDataStore.RemoveClusterNodeStores(s.ctx)
+	s.NoError(err)
+
+	count, err = s.globalDataStore.CountAllNodes(s.ctx)
+	s.NoError(err)
+	s.Equal(3, count)
+
+	results, err = s.globalDataStore.Search(s.ctx, search.EmptyQuery())
+	s.NoError(err)
+	s.Len(results, 3)
 }

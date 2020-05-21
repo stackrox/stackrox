@@ -11,7 +11,7 @@ import TooltipOverlay from 'Components/TooltipOverlay';
 function ViolationActionButtons({ violation, setSelectedAlertId }) {
     function resolveAlertAction(whitelist) {
         const unselectAlert = () => setSelectedAlertId(null);
-        return e => {
+        return (e) => {
             e.stopPropagation();
             resolveAlert(violation.id, whitelist).then(unselectAlert, unselectAlert);
         };
@@ -58,10 +58,7 @@ function ViolationActionButtons({ violation, setSelectedAlertId }) {
                     </Tooltip>
                 </div>
             )}
-            <Tooltip
-                content={<TooltipOverlay>Whitelist deployment</TooltipOverlay>}
-                overlayClassName="pointer-events-none text-center"
-            >
+            <Tooltip content={<TooltipOverlay>Whitelist deployment</TooltipOverlay>}>
                 <button
                     data-testid="whitelist-deployment-button"
                     type="button"
@@ -82,13 +79,13 @@ ViolationActionButtons.propTypes = {
         id: PropTypes.string.isRequired,
         lifecycleStage: PropTypes.string.isRequired,
         deployment: PropTypes.shape({
-            name: PropTypes.string.isRequired
+            name: PropTypes.string.isRequired,
         }).isRequired,
         policy: PropTypes.shape({
-            id: PropTypes.string.isRequired
-        }).isRequired
+            id: PropTypes.string.isRequired,
+        }).isRequired,
     }).isRequired,
-    setSelectedAlertId: PropTypes.func.isRequired
+    setSelectedAlertId: PropTypes.func.isRequired,
 };
 
 export default ViolationActionButtons;

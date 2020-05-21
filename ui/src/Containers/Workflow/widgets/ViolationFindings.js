@@ -10,7 +10,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
 
-const processData = data => {
+const processData = (data) => {
     if (!data.violations || !data.violations.length) return null;
     return data.violations[0];
 };
@@ -48,7 +48,7 @@ const ViolationFindings = ({ data, message }) => {
                     bodyClassName="flex flex-col p-4 leading-normal"
                 >
                     <ul className="leading-loose">
-                        {policyViolation.violations.map(violation => {
+                        {policyViolation.violations.map((violation) => {
                             return (
                                 <li
                                     className="border-b border-base-300 py-2"
@@ -80,7 +80,7 @@ const ViolationFindings = ({ data, message }) => {
 
 ViolationFindings.propTypes = {
     data: PropTypes.shape({}).isRequired,
-    message: PropTypes.string.isRequired
+    message: PropTypes.string.isRequired,
 };
 
 export default ViolationFindings;

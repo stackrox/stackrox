@@ -14,7 +14,7 @@ function loadSelectedAlert(selectedAlertId, setSelectedAlert, setIsFetchingSelec
     }
     setIsFetchingSelectedAlert(true);
     fetchAlert(selectedAlertId).then(
-        alert => {
+        (alert) => {
             setSelectedAlert(alert);
             setIsFetchingSelectedAlert(false);
         },
@@ -31,12 +31,9 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(true);
 
     // Make updates to the fetching state, and selected alert.
-    useEffect(
-        () => {
-            loadSelectedAlert(selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert);
-        },
-        [selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert]
-    );
+    useEffect(() => {
+        loadSelectedAlert(selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert);
+    }, [selectedAlertId, setSelectedAlert, setIsFetchingSelectedAlert]);
 
     // If no alert is selected, nothing to render.
     if (!selectedAlertId) {
@@ -75,11 +72,11 @@ const ViolationsSidePanel = ({ selectedAlertId, setSelectedAlertId }) => {
 
 ViolationsSidePanel.propTypes = {
     selectedAlertId: PropTypes.string,
-    setSelectedAlertId: PropTypes.func.isRequired
+    setSelectedAlertId: PropTypes.func.isRequired,
 };
 
 ViolationsSidePanel.defaultProps = {
-    selectedAlertId: undefined
+    selectedAlertId: undefined,
 };
 
 export default ViolationsSidePanel;

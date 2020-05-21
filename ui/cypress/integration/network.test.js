@@ -5,7 +5,7 @@ import withAuth from '../helpers/basicAuth';
 import selectors from '../selectors/index';
 
 function uploadYAMLFile(fileName, selector) {
-    cy.fixture(fileName).then(fileContent => {
+    cy.fixture(fileName).then((fileContent) => {
         cy.get(selector).upload({ fileContent, fileName, mimeType: 'text/yaml', encoding: 'utf8' });
     });
 }
@@ -102,9 +102,7 @@ describe('Network page', () => {
 
     it('should show the network policy simulator screen after generating network policies', () => {
         cy.visit(riskURL);
-        cy.get(selectors.table.rows)
-            .eq(0)
-            .click({ force: true });
+        cy.get(selectors.table.rows).eq(0).click({ force: true });
         cy.get(RiskPageSelectors.networkNodeLink, { timeout: 10000 }).click();
 
         cy.get(networkPageSelectors.panels.detailsPanel).should('be.visible');

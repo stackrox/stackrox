@@ -2,6 +2,7 @@ package common
 
 class Constants {
     static final ORCHESTRATOR_NAMESPACE = "qa"
+    static final STACKROX_NAMESPACE = "stackrox"
     static final SCHEDULES_SUPPORTED = false
     static final CHECK_CVES_IN_COMPLIANCE = false
     static final RUN_FLAKEY_TESTS = false

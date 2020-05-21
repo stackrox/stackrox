@@ -5,7 +5,7 @@ import StatusChip from './StatusChip';
 
 export default {
     title: 'StatusChip',
-    component: StatusChip
+    component: StatusChip,
 };
 
 export const passingStatusChip = () => {

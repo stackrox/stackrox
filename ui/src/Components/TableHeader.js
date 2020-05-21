@@ -6,7 +6,7 @@ import TooltipOverlay from 'Components/TooltipOverlay';
 
 const maxSize = 1000;
 
-const TableHeader = props => {
+const TableHeader = (props) => {
     let headerText = '';
     if (props.selectionCount !== 0) {
         headerText = `${props.selectionCount} ${props.type}${
@@ -48,12 +48,12 @@ TableHeader.propTypes = {
     length: PropTypes.number.isRequired,
     selectionCount: PropTypes.number,
     type: PropTypes.string.isRequired,
-    isViewFiltered: PropTypes.bool
+    isViewFiltered: PropTypes.bool,
 };
 
 TableHeader.defaultProps = {
     isViewFiltered: false,
-    selectionCount: 0
+    selectionCount: 0,
 };
 
 export default TableHeader;

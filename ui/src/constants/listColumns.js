@@ -10,19 +10,19 @@ const nodesAcrossControlsColumns = [
         Header: 'Id',
         headerClassName: 'hidden',
         className: 'hidden',
-        accessor: 'id'
+        accessor: 'id',
     },
     {
         Header: `Node`,
         headerClassName: `w-1/3 ${defaultHeaderClassName}`,
         className: `w-1/3 ${defaultColumnClassName}`,
-        accessor: 'name'
+        accessor: 'name',
     },
     {
         Header: `Cluster`,
         headerClassName: `w-1/3 ${defaultHeaderClassName}`,
         className: `w-1/3 ${defaultColumnClassName}`,
-        accessor: 'clusterName'
+        accessor: 'clusterName',
     },
     {
         Header: `Control Status`,
@@ -31,8 +31,8 @@ const nodesAcrossControlsColumns = [
         // eslint-disable-next-line
         Cell: ({ original }) => {
             return !original.passing ? <LabelChip text="Fail" type="alert" /> : 'Pass';
-        }
-    }
+        },
+    },
 ];
 
 const imageColumns = [
@@ -45,19 +45,19 @@ const imageColumns = [
             if (!rest.original.components || rest.original.components.length === 0) return '';
             const className = 'rt-expander w-1 pt-2 pointer-events-auto';
             return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
-        }
+        },
     },
     {
         accessor: 'instruction',
         Header: 'Instruction',
         headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
-        className: `text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`
+        className: `text-left pl-3 ${wrapClassName} ${defaultColumnClassName}`,
     },
     {
         accessor: 'value',
         Header: 'Value',
         headerClassName: `w-3/5 text-left ${wrapClassName} ${defaultHeaderClassName}`,
-        className: `w-3/5 text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
+        className: `w-3/5 text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
     },
     {
         accessor: 'created',
@@ -65,35 +65,35 @@ const imageColumns = [
         align: 'right',
         widthClassName: `text-left pr-3 ${wrapClassName} ${defaultHeaderClassName}`,
         className: `text-left pr-3 ${wrapClassName} ${defaultColumnClassName}`,
-        Cell: ({ original }) => format(original.created, dateTimeFormat)
+        Cell: ({ original }) => format(original.created, dateTimeFormat),
     },
     {
         accessor: 'components.length',
         Header: 'Components',
         headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
-        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
+        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
     },
     {
         accessor: 'cvesCount',
         Header: 'CVEs',
         headerClassName: `text-left ${wrapClassName} ${defaultHeaderClassName}`,
-        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`
-    }
+        className: `text-left pl-3 word-break-all ${wrapClassName} ${defaultColumnClassName}`,
+    },
 ];
 
-const getDeploymentViolationsColumns = entityContext => {
+const getDeploymentViolationsColumns = (entityContext) => {
     const columns = [
         {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         entityContext &&
         (entityContext[entityTypes.CLUSTER] || entityContext[entityTypes.NAMESPACE])
@@ -102,7 +102,7 @@ const getDeploymentViolationsColumns = entityContext => {
                   Header: `Cluster`,
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
-                  accessor: 'clusterName'
+                  accessor: 'clusterName',
               },
         entityContext && entityContext[entityTypes.NAMESPACE]
             ? null
@@ -110,33 +110,33 @@ const getDeploymentViolationsColumns = entityContext => {
                   Header: `Namespace`,
                   headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
-                  accessor: 'namespace'
+                  accessor: 'namespace',
               },
         {
             Header: `Policy Status`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            Cell: () => <LabelChip text="Fail" type="alert" />
+            Cell: () => <LabelChip text="Fail" type="alert" />,
         },
         {
             Header: `Violation Time`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'violationTime',
-            Cell: ({ original }) => format(original.time, dateTimeFormat)
-        }
+            Cell: ({ original }) => format(original.time, dateTimeFormat),
+        },
     ];
-    return columns.filter(col => col);
+    return columns.filter((col) => col);
 };
 
 export const entityToColumns = {
-    [resourceTypes.IMAGE]: imageColumns
+    [resourceTypes.IMAGE]: imageColumns,
 };
 
 export const entityAcrossControlsColumns = {
-    [resourceTypes.NODE]: nodesAcrossControlsColumns
+    [resourceTypes.NODE]: nodesAcrossControlsColumns,
 };
 
 export const entityViolationsColumns = {
-    [resourceTypes.DEPLOYMENT]: getDeploymentViolationsColumns
+    [resourceTypes.DEPLOYMENT]: getDeploymentViolationsColumns,
 };

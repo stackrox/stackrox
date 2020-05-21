@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
@@ -41,15 +43,15 @@ func checkSSHPortAndProcesses(ctx framework.ComplianceContext) {
 	// Map process indicators to deployments.
 	deploymentIDToIndicators := make(map[string][]*storage.ProcessIndicator)
 	for _, indicator := range ctx.Data().ProcessIndicators() {
-		indicators := deploymentIDToIndicators[indicator.GetDeploymentId()]
-		indicators = append(indicators, indicator)
-		deploymentIDToIndicators[indicator.GetDeploymentId()] = indicators
+		deploymentIDToIndicators[indicator.GetDeploymentId()] = append(deploymentIDToIndicators[indicator.GetDeploymentId()], indicator)
 	}
 
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		if deploymentHasSSHProcess(deploymentIDToIndicators, deployment) && !sshPolicyEnforced(ctx) {
+		sshProcessRunning := deploymentHasSSHProcess(deploymentIDToIndicators, deployment)
+		sshEnforced := sshPolicyEnforced(ctx)
+		if sshProcessRunning && !sshEnforced {
 			framework.Fail(ctx, "Deployment has ssh process running and no policy to enforce against them.")
-		} else if deploymentHasSSHProcess(deploymentIDToIndicators, deployment) && sshPolicyEnforced(ctx) {
+		} else if sshProcessRunning && sshEnforced {
 			log.Errorf("SSH Policy is being enforced but found ssh process running in deployment %s", deployment.GetId())
 			framework.Fail(ctx, "Deployment has ssh process running.")
 		} else {
@@ -92,6 +94,5 @@ func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 }
 
 func policyHasSSH(policy *storage.Policy) bool {
-	return policy.GetFields() != nil && policy.GetFields().GetProcessPolicy() != nil &&
-		policy.GetFields().GetProcessPolicy().GetName() == "sshd"
+	return sliceutils.StringFind(policyfields.GetProcessNames(policy), "sshd") >= 0
 }

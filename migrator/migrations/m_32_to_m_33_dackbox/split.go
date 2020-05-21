@@ -1,7 +1,6 @@
 package m32tom33
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -13,7 +12,7 @@ var earliestCVEScanTimes = make(map[string]*types.Timestamp)
 // Split splits the input image into a set of parts.
 func Split(image *storage.Image) ImageParts {
 	parts := ImageParts{
-		image: proto.Clone(image).(*storage.Image),
+		image: image.Clone(),
 	}
 
 	// These need to be called in order.
@@ -74,7 +73,7 @@ func generateImageComponent(from *storage.EmbeddedImageScanComponent) *storage.I
 		Id:        encodeIDPair(from.GetName(), from.GetVersion()),
 		Name:      from.GetName(),
 		Version:   from.GetVersion(),
-		License:   proto.Clone(from.GetLicense()).(*storage.License),
+		License:   from.GetLicense().Clone(),
 		RiskScore: from.GetRiskScore(),
 	}
 

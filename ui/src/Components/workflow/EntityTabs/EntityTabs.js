@@ -7,8 +7,8 @@ import GroupedTabs from 'Components/GroupedTabs';
 import {
     getEntityTypesByRelationship,
     entityGroups,
-    entityGroupMap
-} from 'modules/entityRelationships';
+    entityGroupMap,
+} from 'utils/entityRelationships';
 import relationshipTypes from 'constants/relationshipTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -20,10 +20,7 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: entityGroupMap[tabType],
             value: tabType,
             text: pluralize(entityLabels[tabType]),
-            to: workflowState
-                .pushList(tabType)
-                .setSearch('')
-                .toUrl()
+            to: workflowState.pushList(tabType).setSearch('').toUrl(),
         };
     }
 
@@ -37,11 +34,11 @@ const EntityTabs = ({ entityType, activeTab }) => {
             entityType,
             relationshipTypes.CONTAINS,
             workflowState.useCase
-        )
+        ),
     ];
 
     if (!relationships) return null;
-    const entityTabs = relationships.map(relationship => getTab(relationship, entityType));
+    const entityTabs = relationships.map((relationship) => getTab(relationship, entityType));
     const groups = Object.values(entityGroups);
 
     const tabs = [
@@ -49,12 +46,9 @@ const EntityTabs = ({ entityType, activeTab }) => {
             group: entityGroups.OVERVIEW,
             value: '',
             text: 'Overview',
-            to: workflowState
-                .base()
-                .setSearch('')
-                .toUrl()
+            to: workflowState.base().setSearch('').toUrl(),
         },
-        ...entityTabs
+        ...entityTabs,
     ];
 
     return <GroupedTabs groups={groups} tabs={tabs} activeTab={activeTab || ''} />;
@@ -62,11 +56,11 @@ const EntityTabs = ({ entityType, activeTab }) => {
 
 EntityTabs.propTypes = {
     entityType: PropTypes.string.isRequired,
-    activeTab: PropTypes.string
+    activeTab: PropTypes.string,
 };
 
 EntityTabs.defaultProps = {
-    activeTab: null
+    activeTab: null,
 };
 
 export default EntityTabs;

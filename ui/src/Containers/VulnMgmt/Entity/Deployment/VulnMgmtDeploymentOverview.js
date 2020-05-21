@@ -39,7 +39,7 @@ const emptyDeployment = {
     policyStatus: '',
     priority: 0,
     vulnCount: 0,
-    vulnerabilities: []
+    vulnerabilities: [],
 };
 
 const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
@@ -57,7 +57,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         policyStatus,
         failingPolicies,
         labels,
-        annotations
+        annotations,
     } = safeData;
 
     const metadataKeyValuePairs = [];
@@ -68,7 +68,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             .toUrl();
         metadataKeyValuePairs.push({
             key: 'Cluster',
-            value: cluster && cluster.name && <Link to={clusterLink}>{cluster.name}</Link>
+            value: cluster && cluster.name && <Link to={clusterLink}>{cluster.name}</Link>,
         });
     }
     if (!entityContext[entityTypes.NAMESPACE]) {
@@ -77,7 +77,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
             .toUrl();
         metadataKeyValuePairs.push({
             key: 'Namespace',
-            value: <Link to={namespaceLink}>{namespace}</Link>
+            value: <Link to={namespaceLink}>{namespace}</Link>,
         });
     }
 
@@ -86,7 +86,7 @@ const VulnMgmtDeploymentOverview = ({ data, entityContext }) => {
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
             <StatusChip status={policyStatus} />
-        </React.Fragment>
+        </React.Fragment>,
     ];
     const currentEntity = { [entityTypes.DEPLOYMENT]: id };
     const newEntityContext = { ...entityContext, ...currentEntity };

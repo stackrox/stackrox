@@ -47,14 +47,14 @@ IconWidget.propTypes = {
     description: PropTypes.string,
     textSizeClass: PropTypes.string,
     linkUrl: PropTypes.string,
-    loading: PropTypes.bool
+    loading: PropTypes.bool,
 };
 
 IconWidget.defaultProps = {
     description: null,
     linkUrl: null,
     textSizeClass: 'text-2xl',
-    loading: false
+    loading: false,
 };
 
 export default connect()(IconWidget);

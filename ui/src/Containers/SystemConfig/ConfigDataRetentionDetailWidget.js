@@ -19,12 +19,12 @@ const NumberBox = ({ label, value, suffix }) => (
 NumberBox.propTypes = {
     label: PropTypes.string.isRequired,
     value: PropTypes.number,
-    suffix: PropTypes.string
+    suffix: PropTypes.string,
 };
 
 NumberBox.defaultProps = {
     value: 0,
-    suffix: ''
+    suffix: '',
 };
 
 const DataRetentionDetailWidget = ({ config }) => {
@@ -66,10 +66,10 @@ const DataRetentionDetailWidget = ({ config }) => {
 DataRetentionDetailWidget.propTypes = {
     config: PropTypes.shape({
         publicConfig: PropTypes.shape({
-            loginNotice: PropTypes.shape({})
+            loginNotice: PropTypes.shape({}),
         }),
-        privateConfig: PropTypes.shape({})
-    }).isRequired
+        privateConfig: PropTypes.shape({}),
+    }).isRequired,
 };
 
 export default DataRetentionDetailWidget;

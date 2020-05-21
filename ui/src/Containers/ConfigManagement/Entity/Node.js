@@ -14,7 +14,7 @@ import Metadata from 'Components/Metadata';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 import searchContext from 'Containers/searchContext';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';
@@ -32,7 +32,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
-        query: queryService.getEntityWhereClause(queryObject)
+        query: queryService.getEntityWhereClause(queryObject),
     };
 
     const QUERY = gql`
@@ -82,30 +82,30 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                     clusterName,
                     clusterId,
                     annotations,
-                    complianceResults = []
+                    complianceResults = [],
                 } = node;
 
                 const metadataKeyValuePairs = [
                     {
                         key: 'Kubelet Version',
-                        value: kubeletVersion
+                        value: kubeletVersion,
                     },
                     {
                         key: 'Kernel Version',
-                        value: kernelVersion
+                        value: kernelVersion,
                     },
                     {
                         key: 'Node OS',
-                        value: osImage
+                        value: osImage,
                     },
                     {
                         key: 'Runtime',
-                        value: containerRuntimeVersion
+                        value: containerRuntimeVersion,
                     },
                     {
                         key: 'Join time',
-                        value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A'
-                    }
+                        value: joinedAt ? format(joinedAt, dateTimeFormat) : 'N/A',
+                    },
                 ];
 
                 if (entityListType) {
@@ -121,11 +121,11 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                 }
 
                 const failedComplianceResults = complianceResults
-                    .filter(cr => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
-                    .map(cr => ({
+                    .filter((cr) => cr.value.overallState === 'COMPLIANCE_STATE_FAILURE')
+                    .map((cr) => ({
                         ...cr,
                         standard: standardLabels[cr.control.standardId],
-                        controlName: `${cr.control.name} - ${cr.control.description}`
+                        controlName: `${cr.control.name} - ${cr.control.description}`,
                     }));
 
                 const controlColumns = [
@@ -133,22 +133,22 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                         accessor: 'id',
                         Header: 'id',
                         headerClassName: 'hidden',
-                        className: 'hidden'
+                        className: 'hidden',
                     },
                     {
                         accessor: 'standard',
                         sortMethod: sortVersion,
                         Header: 'Standard',
                         headerClassName: `w-1/5 ${defaultHeaderClassName}`,
-                        className: `w-1/5 ${defaultColumnClassName}`
+                        className: `w-1/5 ${defaultColumnClassName}`,
                     },
                     {
                         accessor: 'controlName',
                         sortMethod: sortVersion,
                         Header: 'Control',
                         headerClassName: `w-1/2 ${defaultHeaderClassName}`,
-                        className: `w-1/2 ${defaultColumnClassName}`
-                    }
+                        className: `w-1/2 ${defaultColumnClassName}`,
+                    },
                 ];
 
                 return (
@@ -191,9 +191,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     {failedComplianceResults.length > 0 && (
                                         <TableWidget
                                             entityType={entityTypes.CONTROL}
-                                            header={`${
-                                                failedComplianceResults.length
-                                            } controls failed across this node`}
+                                            header={`${failedComplianceResults.length} controls failed across this node`}
                                             rows={failedComplianceResults}
                                             noDataText="No Controls"
                                             className="bg-base-100"
@@ -202,12 +200,12 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                                             defaultSorted={[
                                                 {
                                                     id: 'standard',
-                                                    desc: false
+                                                    desc: false,
                                                 },
                                                 {
                                                     id: 'controlName',
-                                                    desc: false
-                                                }
+                                                    desc: false,
+                                                },
                                             ]}
                                         />
                                     )}

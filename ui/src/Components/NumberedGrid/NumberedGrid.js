@@ -4,7 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 
 const NumberedGrid = ({ data, history }) => {
-    const onClick = url => () => {
+    const onClick = (url) => () => {
         if (!url) return null;
         history.push(url);
         return 0;
@@ -57,14 +57,14 @@ NumberedGrid.propTypes = {
             text: PropTypes.string.isRequired,
             subText: PropTypes.string,
             components: PropTypes.element,
-            url: PropTypes.string
+            url: PropTypes.string,
         })
     ),
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 NumberedGrid.defaultProps = {
-    data: []
+    data: [],
 };
 
 export default withRouter(NumberedGrid);

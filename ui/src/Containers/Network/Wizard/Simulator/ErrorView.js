@@ -48,22 +48,22 @@ const ErrorView = ({ modification, modificationName, modificationState, policyGr
 ErrorView.propTypes = {
     modificationName: PropTypes.string,
     modification: PropTypes.shape({
-        applyYaml: PropTypes.string.isRequired
+        applyYaml: PropTypes.string.isRequired,
     }),
     modificationState: PropTypes.string.isRequired,
-    policyGraphState: PropTypes.string.isRequired
+    policyGraphState: PropTypes.string.isRequired,
 };
 
 ErrorView.defaultProps = {
     modificationName: 'YAML',
-    modification: null
+    modification: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     modification: selectors.getNetworkPolicyModification,
     modificationName: selectors.getNetworkPolicyModificationName,
     modificationState: selectors.getNetworkPolicyModificationState,
-    policyGraphState: selectors.getNetworkPolicyGraphState
+    policyGraphState: selectors.getNetworkPolicyGraphState,
 });
 
 export default connect(mapStateToProps)(ErrorView);

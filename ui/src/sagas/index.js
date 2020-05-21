@@ -48,6 +48,6 @@ export default function* root() {
         fork(groups),
         fork(attributes),
         fork(systemConfig),
-        fork(telemetryConfig)
+        fork(telemetryConfig),
     ]);
 }

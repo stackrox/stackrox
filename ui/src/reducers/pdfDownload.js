@@ -4,13 +4,13 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 // Action types
 
 export const types = {
-    FETCH_PDF: createFetchingActionTypes('pdf/FETCH_PDF')
+    FETCH_PDF: createFetchingActionTypes('pdf/FETCH_PDF'),
 };
 
 // Actions
 
 export const actions = {
-    fetchPdf: createFetchingActions(types.FETCH_PDF)
+    fetchPdf: createFetchingActions(types.FETCH_PDF),
 };
 
 // Reducers
@@ -22,15 +22,15 @@ const pdfLoadingStatus = (state = false, action) => {
     return state;
 };
 const reducer = combineReducers({
-    pdfLoadingStatus
+    pdfLoadingStatus,
 });
 
 export default reducer;
 
 // Selectors
 
-const getPdfLoadingStatus = state => state.pdfLoadingStatus;
+const getPdfLoadingStatus = (state) => state.pdfLoadingStatus;
 
 export const selectors = {
-    getPdfLoadingStatus
+    getPdfLoadingStatus,
 };

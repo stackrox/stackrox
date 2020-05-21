@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/renderer"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central/deploy"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Generate defines the gcp generate command.
@@ -15,7 +16,7 @@ func Generate() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate helm chart for GCP marketplace",
 		Long:  "Generate helm chart from GCP marketplace values yaml",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			valuesFilename, _ := c.Flags().GetString("values-file")
 			outputDir, _ := c.Flags().GetString("output-dir")
 			values, err := loadValues(valuesFilename)
@@ -24,7 +25,7 @@ func Generate() *cobra.Command {
 			}
 
 			return generate(outputDir, values)
-		},
+		}),
 	}
 	c.PersistentFlags().String("values-file", "/data/final_values.yaml", "path to the input yaml values file")
 	c.PersistentFlags().String("output-dir", "", "path to the output helm chart directory")

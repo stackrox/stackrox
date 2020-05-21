@@ -6,21 +6,21 @@ import MultiSelect from './MultiSelect';
 const lifecycleOptions = [
     {
         label: 'Build',
-        value: 'BUILD'
+        value: 'BUILD',
     },
     {
         label: 'Deploy',
-        value: 'DEPLOY'
+        value: 'DEPLOY',
     },
     {
         label: 'Runtime',
-        value: 'RUNTIME'
-    }
+        value: 'RUNTIME',
+    },
 ];
 
 export default {
     title: 'MultiSelect',
-    component: MultiSelect
+    component: MultiSelect,
 };
 
 export const basicUsage = () => {

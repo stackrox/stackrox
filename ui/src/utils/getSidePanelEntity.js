@@ -30,7 +30,7 @@ function getSidePanelEntity(workflowState) {
     return {
         sidePanelEntityId,
         sidePanelEntityType,
-        sidePanelListType
+        sidePanelListType,
     };
 }
 

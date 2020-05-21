@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
@@ -13,7 +13,7 @@ import { severityValues, severities } from 'constants/severities';
 import {
     severityColorMap,
     severityTextColorMap,
-    severityColorLegend
+    severityColorLegend,
 } from 'constants/severityColors';
 import policyStatus from 'constants/policyStatus';
 import entityTypes from 'constants/entityTypes';
@@ -42,12 +42,12 @@ const QUERY = gql`
 function getCategorySeverity(category, violationsByCategory) {
     const maxSeverityValue = max(
         violationsByCategory[category]
-            .filter(violation => !violation.passing)
-            .map(violation => severityValues[violation.severity])
+            .filter((violation) => !violation.passing)
+            .map((violation) => severityValues[violation.severity])
     );
 
     const severityEntry = Object.entries(severityValues).find(
-        entry => entry[1] === maxSeverityValue
+        (entry) => entry[1] === maxSeverityValue
     );
 
     if (!severityEntry) return passingChartColor;
@@ -57,7 +57,7 @@ function getCategorySeverity(category, violationsByCategory) {
 
 const PolicyViolationsBySeverity = ({ match, location }) => {
     const searchParam = useContext(searchContext);
-    const processData = data => {
+    const processData = (data) => {
         if (!data || !data.policies || !data.policies.length) return [];
         return data.policies;
     };
@@ -73,8 +73,8 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 const queryObj = !isPassing
                     ? {
                           [searchParam]: {
-                              [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
-                          }
+                              [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
+                          },
                       }
                     : null;
                 const link = URLService.getURL(match, location)
@@ -92,16 +92,16 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     value: 0,
                     labelColor: color,
                     name: `${isPassing ? '' : 'View deployments violating'} "${fullPolicyName}"`,
-                    link
+                    link,
                 });
             });
             return newItems;
         }, {});
 
-        return Object.entries(violationsByCategory).map(entry => {
+        return Object.entries(violationsByCategory).map((entry) => {
             const category = entry[0];
             const children = entry[1];
-            const numPassing = children.filter(child => child.passing).length;
+            const numPassing = children.filter((child) => child.passing).length;
             const labelValue = `${children.length - numPassing}/${
                 children.length
             } policies violated`;
@@ -113,22 +113,22 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 value,
                 labelValue,
                 color,
-                textColor: passingLinkColor
+                textColor: passingLinkColor,
             };
         });
     }
 
     function getCenterValue(data) {
         const policiesInViolation = data.filter(
-            policy => policy.policyStatus.toLowerCase() === 'fail'
+            (policy) => policy.policyStatus.toLowerCase() === 'fail'
         ).length;
         return policiesInViolation;
     }
 
     function getSummaryData(data) {
-        const policiesInViolation = data.filter(policy => policy.policyStatus === 'fail');
+        const policiesInViolation = data.filter((policy) => policy.policyStatus === 'fail');
         function getCount(severity) {
-            return policiesInViolation.filter(policy => policy.severity === severity).length;
+            return policiesInViolation.filter((policy) => policy.severity === severity).length;
         }
 
         const criticalCount = getCount(severities.CRITICAL_SEVERITY);
@@ -136,7 +136,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         const mediumCount = getCount(severities.MEDIUM_SEVERITY);
         const lowCount = getCount(severities.LOW_SEVERITY);
         const passingCount =
-            data.filter(policy => !policy.disabled).length - policiesInViolation.length;
+            data.filter((policy) => !policy.disabled).length - policiesInViolation.length;
 
         const links = [];
 
@@ -150,10 +150,10 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     .query({
                         [searchParam]: {
                             Severity: severities.CRITICAL_SEVERITY,
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
-                        }
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
+                        },
                     })
-                    .url()
+                    .url(),
             });
 
         url.query(null);
@@ -167,10 +167,10 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                         [searchParam]: {
                             Severity: severities.HIGH_SEVERITY,
                             Disabled: 'False',
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
-                        }
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
+                        },
                     })
-                    .url()
+                    .url(),
             });
 
         url.query(null);
@@ -184,10 +184,10 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                         [searchParam]: {
                             Severity: severities.MEDIUM_SEVERITY,
                             Disabled: 'False',
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
-                        }
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
+                        },
                     })
-                    .url()
+                    .url(),
             });
 
         url.query(null);
@@ -201,10 +201,10 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                         [searchParam]: {
                             Severity: severities.LOW_SEVERITY,
                             Disabled: 'False',
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL
-                        }
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.FAIL,
+                        },
                     })
-                    .url()
+                    .url(),
             });
 
         url.query(null);
@@ -217,10 +217,10 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     .query({
                         [searchParam]: {
                             Disabled: 'False',
-                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS
-                        }
+                            [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus.PASS,
+                        },
                     })
-                    .url()
+                    .url(),
             });
 
         return links;
@@ -287,7 +287,7 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
 
 PolicyViolationsBySeverity.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
 };
 
 export default withRouter(PolicyViolationsBySeverity);

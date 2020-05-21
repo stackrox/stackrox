@@ -102,8 +102,8 @@ func (b *storeImpl) GetKeysToIndex() ([]string, error) {
 	return b.podCRUD.GetKeysToIndex()
 }
 
-// GetPodIDs returns the ID for each Pod in the store.
-func (b *storeImpl) GetKeys() ([]string, error) {
+// GetIDs returns the ID for each Pod in the store.
+func (b *storeImpl) GetIDs() ([]string, error) {
 	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, objType+"ID")
 	return b.podCRUD.GetKeys()
 }

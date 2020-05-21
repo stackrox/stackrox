@@ -6,7 +6,7 @@ import EntityTileLink from './EntityTileLink';
 
 export default {
     title: 'EntityTileLink',
-    component: EntityTileLink
+    component: EntityTileLink,
 };
 
 export const withData = () => {

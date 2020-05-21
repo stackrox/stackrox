@@ -648,7 +648,7 @@ func (resolver *deploymentResolver) ContainerRestartCount(ctx context.Context) (
 
 	var count int
 	for _, pod := range pods {
-		count += len(pod.ContainerRestartEvents())
+		count += len(pod.containerRestartEvents())
 	}
 	return int32(count), nil
 }
@@ -665,7 +665,7 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 
 	var count int
 	for _, pod := range pods {
-		count += len(pod.ContainerTerminationEvents())
+		count += len(pod.containerTerminationEvents())
 	}
 
 	return int32(count), nil

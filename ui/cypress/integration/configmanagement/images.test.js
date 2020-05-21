@@ -6,7 +6,7 @@ import {
     clickOnRowEntity,
     hasTabsFor,
     pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows
+    sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import { selectors as configManagementSelectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
@@ -64,7 +64,7 @@ describe('Config Management Entities (Images)', () => {
         renderListAndSidePanel('clusters');
         clickOnCountWidget('images', 'side-panel');
         cy.get(`[data-testid="side-panel"] ${configManagementSelectors.tableRows}:last`).click({
-            force: true
+            force: true,
         });
         clickOnCountWidget('deployments', 'entityList');
 

@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	pkgTestutils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,7 +109,7 @@ func TestCheckAtLeastOnePolicyTargetsAnImageRegistry(t *testing.T) {
 		},
 	} {
 		c := testCase
-		t.Run(c.desc, func(t *testing.T) {
+		pkgTestutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), c.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)

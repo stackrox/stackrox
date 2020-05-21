@@ -28,6 +28,7 @@ combined_coverage.dat
 
 # Build output
 /bin/
+/linux-gocache
 
 # Miscellaneous
 *.g4

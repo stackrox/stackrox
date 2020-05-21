@@ -20,13 +20,13 @@ ButtonLink.propTypes = {
     dataTestId: PropTypes.string,
     extraClassNames: PropTypes.string,
     icon: PropTypes.element,
-    linkTo: PropTypes.string.isRequired
+    linkTo: PropTypes.string.isRequired,
 };
 
 ButtonLink.defaultProps = {
     dataTestId: 'button-link',
     extraClassNames: '',
-    icon: null
+    icon: null,
 };
 
 export default ButtonLink;

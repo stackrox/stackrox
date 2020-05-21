@@ -54,16 +54,16 @@ ZoomButtons.propTypes = {
     networkGraphRef: PropTypes.shape({
         zoomToFit: PropTypes.func,
         zoomIn: PropTypes.func,
-        zoomOut: PropTypes.func
-    })
+        zoomOut: PropTypes.func,
+    }),
 };
 
 ZoomButtons.defaultProps = {
-    networkGraphRef: null
+    networkGraphRef: null,
 };
 
 const mapStateToProps = createStructuredSelector({
-    networkGraphRef: selectors.getNetworkGraphRef
+    networkGraphRef: selectors.getNetworkGraphRef,
 });
 
 export default connect(mapStateToProps)(ZoomButtons);

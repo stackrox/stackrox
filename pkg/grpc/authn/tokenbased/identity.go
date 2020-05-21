@@ -12,7 +12,8 @@ type roleBasedIdentity struct {
 	username     string
 	friendlyName string
 	fullName     string
-	role         *storage.Role
+	perms        *storage.Role
+	roles        []*storage.Role
 	expiry       time.Time
 	attributes   map[string][]string
 	authProvider authproviders.Provider
@@ -30,8 +31,12 @@ func (i *roleBasedIdentity) FullName() string {
 	return i.fullName
 }
 
-func (i *roleBasedIdentity) Role() *storage.Role {
-	return i.role
+func (i *roleBasedIdentity) Permissions() *storage.Role {
+	return i.perms
+}
+
+func (i *roleBasedIdentity) Roles() []*storage.Role {
+	return i.roles
 }
 
 func (i *roleBasedIdentity) Service() *storage.ServiceIdentity {
@@ -42,7 +47,9 @@ func (i *roleBasedIdentity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		Username:     i.username,
 		FriendlyName: i.friendlyName,
-		Role:         i.role,
+		Role:         i.perms,
+		Permissions:  i.perms,
+		Roles:        i.roles,
 	}
 }
 

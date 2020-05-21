@@ -19,6 +19,11 @@ message GetImageIntegrationsResponse {
     repeated storage.ImageIntegration integrations = 1;
 }
 
+message UpdateImageIntegrationRequest {
+    storage.ImageIntegration config = 1;
+    bool updatePassword             = 2;
+}
+
 // ImageIntegrationService APIs manage image registry and image scanner integration.
 service ImageIntegrationService {
 
@@ -64,6 +69,22 @@ service ImageIntegrationService {
     rpc DeleteImageIntegration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/imageintegrations/{id}"
+        };
+    }
+
+    // UpdateImageIntegration updates an existing image integration with knowing whether to update credentials.
+    rpc UpdateImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
+        option (google.api.http) = {
+            patch: "/v1/imageintegrations/{config.id}"
+            body: "*"
+        };
+    }
+
+    // TestUpdatedImageIntegration perform integration test with given a image integration config
+    rpc TestUpdatedImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/imageintegrations/test/updated"
+            body: "*"
         };
     }
 

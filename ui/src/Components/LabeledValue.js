@@ -11,11 +11,11 @@ const LabeledValue = ({ label, value, valueClassName }) => (
 LabeledValue.propTypes = {
     label: PropTypes.string.isRequired,
     value: PropTypes.string.isRequired,
-    valueClassName: PropTypes.string
+    valueClassName: PropTypes.string,
 };
 
 LabeledValue.defaultProps = {
-    valueClassName: ''
+    valueClassName: '',
 };
 
 export default LabeledValue;

@@ -7,10 +7,10 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:2_1", "etcd", "cert-file", "key-file"),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:2_1", "etcd", nil, "cert-file", "key-file"),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_2", "client-cert-auth", "true", "false", common.Matches),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_3", "auto-tls", "true", "false", common.NotMatches),
-		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:2_4", "etcd", "peer-cert-file", "peer-key-file"),
+		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:2_4", "etcd", nil, "peer-cert-file", "peer-key-file"),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_5", "peer-client-cert-auth", "true", "false", common.Matches),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_6", "peer-auto-tls", "true", "false", common.NotMatches),
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:2_7", "Ensure that a unique Certificate Authority is used for etcd"),

@@ -15,12 +15,12 @@ class Apply extends Component {
             toDelete: PropTypes.arrayOf(
                 PropTypes.shape({
                     namespace: PropTypes.string.isRequired,
-                    name: PropTypes.string.isRequired
+                    name: PropTypes.string.isRequired,
                 })
-            )
+            ),
         }).isRequired,
         applicationState: PropTypes.string.isRequired,
-        setDialogueStage: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired,
     };
 
     onClick = () => {
@@ -50,14 +50,11 @@ class Apply extends Component {
 
 const mapStateToProps = createStructuredSelector({
     modification: selectors.getNetworkPolicyModification,
-    applicationState: selectors.getNetworkPolicyApplicationState
+    applicationState: selectors.getNetworkPolicyApplicationState,
 });
 
 const mapDispatchToProps = {
-    setDialogueStage: dialogueActions.setNetworkDialogueStage
+    setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Apply);
+export default connect(mapStateToProps, mapDispatchToProps)(Apply);

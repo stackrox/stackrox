@@ -111,19 +111,19 @@ func TestMatchesDeploymentWhitelist(t *testing.T) {
 				compiledWhitelists = append(compiledWhitelists, cw)
 			}
 
-			got := matchesDeploymentWhitelists(c.deployment, compiledWhitelists)
+			got := deploymentMatchesWhitelists(c.deployment, compiledWhitelists)
 			assert.Equal(t, c.shouldMatch, got)
 			// If it should match, make sure it doesn't match if the whitelists are all expired.
 			if c.shouldMatch {
 				for _, whitelist := range c.policy.GetWhitelists() {
 					whitelist.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
 				}
-				assert.False(t, matchesDeploymentWhitelists(c.deployment, compiledWhitelists))
+				assert.False(t, deploymentMatchesWhitelists(c.deployment, compiledWhitelists))
 
 				for _, whitelist := range c.policy.GetWhitelists() {
 					whitelist.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
 				}
-				assert.True(t, matchesDeploymentWhitelists(c.deployment, compiledWhitelists))
+				assert.True(t, deploymentMatchesWhitelists(c.deployment, compiledWhitelists))
 			}
 			c.policy.Whitelists = append(c.policy.Whitelists, &storage.Whitelist{Image: &storage.Whitelist_Image{Name: "BLAH"}})
 			assert.Equal(t, c.shouldMatch, got)

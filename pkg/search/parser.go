@@ -95,7 +95,7 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 func queryFromFieldValues(field string, values []string, highlight bool) *v1.Query {
 	queries := make([]*v1.Query, 0, len(values))
 	for _, value := range values {
-		queries = append(queries, matchFieldQuery(field, value, highlight))
+		queries = append(queries, MatchFieldQuery(field, value, highlight))
 	}
 
 	return DisjunctionQuery(queries...)
@@ -138,12 +138,15 @@ func queryFromBaseQuery(baseQuery *v1.BaseQuery) *v1.Query {
 	}
 }
 
-func matchFieldQuery(field, value string, highlight bool) *v1.Query {
+// MatchFieldQuery returns a match field query.
+// It's a simple convenience wrapper around initializing the struct.
+func MatchFieldQuery(field, value string, highlight bool) *v1.Query {
 	return queryFromBaseQuery(&v1.BaseQuery{
 		Query: &v1.BaseQuery_MatchFieldQuery{MatchFieldQuery: &v1.MatchFieldQuery{Field: field, Value: value, Highlight: highlight}},
 	})
 }
 
+// MatchLinkedFieldsQuery returns a query that matches
 func matchLinkedFieldsQuery(fieldValues []fieldValue) *v1.Query {
 	mfqs := make([]*v1.MatchFieldQuery, len(fieldValues))
 	for i, fv := range fieldValues {

@@ -17,26 +17,26 @@ const NETWORK_GRAPH_REQUESTS_TIMEOUT = 0;
 export function fetchNetworkPolicyGraph(clusterId, query, modification) {
     const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
     let options;
-    let getGraph = data => data;
+    let getGraph = (data) => data;
     if (modification) {
         options = {
             method: 'POST',
             data: modification,
-            url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`
+            url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`,
         };
         getGraph = ({ simulatedGraph }) => simulatedGraph;
     } else {
         options = {
             method: 'GET',
-            url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`
+            url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`,
         };
     }
     options = {
         ...options,
-        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
     };
-    return axios(options).then(response => ({
-        response: getGraph(response.data)
+    return axios(options).then((response) => ({
+        response: getGraph(response.data),
     }));
 }
 
@@ -57,10 +57,10 @@ export function fetchNetworkFlowGraph(clusterId, query, date) {
     const options = {
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`,
-        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
     };
-    return axios(options).then(response => ({
-        response: response.data
+    return axios(options).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -71,11 +71,11 @@ export function fetchNetworkFlowGraph(clusterId, query, date) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchNetworkPolicies(policyIds) {
-    const networkPoliciesPromises = policyIds.map(policyId =>
+    const networkPoliciesPromises = policyIds.map((policyId) =>
         axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
-    return Promise.all(networkPoliciesPromises).then(response => ({
-        response: response.map(networkPolicy => networkPolicy.data)
+    return Promise.all(networkPoliciesPromises).then((response) => ({
+        response: response.map((networkPolicy) => networkPolicy.data),
     }));
 }
 
@@ -87,8 +87,8 @@ export function fetchNetworkPolicies(policyIds) {
 export function fetchNodeUpdates(clusterId) {
     return axios
         .get(`${networkPoliciesBaseUrl}/graph/epoch?clusterId=${clusterId}`)
-        .then(response => ({
-            response: response.data
+        .then((response) => ({
+            response: response.data,
         }));
 }
 
@@ -108,12 +108,12 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
     }
     const options = {
         method: 'GET',
-        url: `${networkPoliciesBaseUrl}?${params}`
+        url: `${networkPoliciesBaseUrl}?${params}`,
     };
-    return axios(options).then(response => {
+    return axios(options).then((response) => {
         const policies = response.data.networkPolicies;
         if (policies) {
-            return { applyYaml: policies.map(policy => policy.yaml).join('\n---\n') };
+            return { applyYaml: policies.map((policy) => policy.yaml).join('\n---\n') };
         }
         return null;
     });
@@ -129,9 +129,9 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
 export function getUndoNetworkModification(clusterId) {
     const options = {
         method: 'GET',
-        url: `${networkPoliciesBaseUrl}/undo/${clusterId}`
+        url: `${networkPoliciesBaseUrl}/undo/${clusterId}`,
     };
-    return axios(options).then(response => response.data.undoRecord.undoModification);
+    return axios(options).then((response) => response.data.undoRecord.undoModification);
 }
 
 /**
@@ -152,9 +152,9 @@ export function generateNetworkModification(clusterId, query, date) {
     }
     const options = {
         method: 'GET',
-        url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`
+        url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`,
     };
-    return axios(options).then(response => response.data.modification);
+    return axios(options).then((response) => response.data.modification);
 }
 
 /**
@@ -170,10 +170,10 @@ export function notifyNetworkPolicyModification(clusterId, notifierIds, modifica
     const options = {
         method: 'POST',
         data: modification,
-        url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?${notifiers}`
+        url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?${notifiers}`,
     };
-    return axios(options).then(response => ({
-        response: response.data
+    return axios(options).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -189,9 +189,9 @@ export function applyNetworkPolicyModification(clusterId, modification) {
         method: 'POST',
         data: modification,
         url: `${networkPoliciesBaseUrl}/apply/${clusterId}`,
-        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT
+        timeout: NETWORK_GRAPH_REQUESTS_TIMEOUT,
     };
-    return axios(options).then(response => ({
-        response: response.data
+    return axios(options).then((response) => ({
+        response: response.data,
     }));
 }

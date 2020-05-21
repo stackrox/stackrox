@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import { standardLabels } from 'messages/standards';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import pluralize from 'pluralize';
 import toLower from 'lodash/toLower';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -24,20 +24,20 @@ function formatAsPercent(x) {
 
 function setStandardsMapping(data, type) {
     const mapping = {};
-    data.results.forEach(result => {
+    data.results.forEach((result) => {
         const standardId = result.aggregationKeys[0].id;
         const { numPassing, numFailing } = result;
         if (!mapping[standardId]) {
             mapping[standardId] = {};
             mapping[standardId][type] = {
                 passing: numPassing,
-                total: numPassing + numFailing
+                total: numPassing + numFailing,
             };
         } else {
             const { passing, total } = mapping[standardId][type];
             mapping[standardId][type] = {
                 passing: passing + numPassing,
-                total: total + (numPassing + numFailing)
+                total: total + (numPassing + numFailing),
             };
         }
     });
@@ -56,8 +56,8 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
             setStandardsMapping(data.controls, 'controls')
         );
 
-        const barData = Object.keys(standardsMapping).map(standardId => {
-            const standard = complianceStandards.find(cs => cs.id === standardId);
+        const barData = Object.keys(standardsMapping).map((standardId) => {
+            const standard = complianceStandards.find((cs) => cs.id === standardId);
             const { controls, checks } = standardsMapping[standardId];
             const { passing: passingControls, total: totalControls } = controls;
             const { passing: passingChecks, total: totalChecks } = checks;
@@ -67,8 +67,8 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 .query({
                     [searchParam]: {
                         groupBy: type,
-                        standard: standardLabels[standardId]
-                    }
+                        standard: standardLabels[standardId],
+                    },
                 })
                 .url();
             const dataPoint = {
@@ -76,12 +76,11 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
                 x: percentagePassing,
                 hint: {
                     title: `${standard.name} Standard - ${percentagePassing}% Passing`,
-                    body: `${totalControls -
-                        passingControls} failing controls across all ${pluralize(
-                        resourceLabels[type]
-                    )}`
+                    body: `${
+                        totalControls - passingControls
+                    } failing controls across all ${pluralize(resourceLabels[type])}`,
                 },
-                link
+                link,
             };
             return dataPoint;
         });
@@ -91,14 +90,14 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
 
     const variables = {
         groupBy: [entityTypes.STANDARD, entityType],
-        unit: entityTypes.CHECK
+        unit: entityTypes.CHECK,
     };
     return (
         <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 let contents;
                 const headerText = `Passing standards across ${entityType}s`;
-                if (!loading && (data && data.complianceStandards)) {
+                if (!loading && data && data.complianceStandards) {
                     const results = processData(data, entityType);
                     if (!results.length) {
                         contents = (
@@ -132,12 +131,12 @@ StandardsAcrossEntity.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 StandardsAcrossEntity.defaultProps = {
     bodyClassName: 'px-4 pt-1',
-    className: ''
+    className: '',
 };
 
 export default withRouter(StandardsAcrossEntity);

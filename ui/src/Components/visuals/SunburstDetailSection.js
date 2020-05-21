@@ -16,24 +16,24 @@ class SunburstDetailSection extends Component {
             PropTypes.shape({
                 text: PropTypes.string.isRequired,
                 link: PropTypes.string,
-                className: PropTypes.string
+                className: PropTypes.string,
             })
         ).isRequired,
         selectedDatum: PropTypes.shape({
             parent: PropTypes.shape({
                 data: PropTypes.shape({
-                    name: PropTypes.string
-                })
+                    name: PropTypes.string,
+                }),
             }),
-            name: PropTypes.string
+            name: PropTypes.string,
         }),
         clicked: PropTypes.bool.isRequired,
-        units: PropTypes.string
+        units: PropTypes.string,
     };
 
     static defaultProps = {
         selectedDatum: null,
-        units: 'percentage'
+        units: 'percentage',
     };
 
     getParentData = () => {
@@ -57,7 +57,7 @@ class SunburstDetailSection extends Component {
             if (parentDatum) bullets.push({ text: parentDatum.name, ...parentDatum });
             bullets.push({
                 text: selectedDatum.name,
-                ...selectedDatum
+                ...selectedDatum,
             });
         } else {
             bullets = rootData;
@@ -74,7 +74,7 @@ class SunburstDetailSection extends Component {
                             color: graphColor,
                             textColor,
                             labelValue,
-                            labelColor
+                            labelColor,
                         },
                         idx
                     ) => {

@@ -27,14 +27,14 @@ StatusChip.propTypes = {
     status: PropTypes.string,
     size: PropTypes.string,
     asString: PropTypes.bool,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 StatusChip.defaultProps = {
     status: '',
     size: 'large',
     asString: false,
-    dataTestId: 'status-chip'
+    dataTestId: 'status-chip',
 };
 
 export default StatusChip;

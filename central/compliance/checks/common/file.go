@@ -284,6 +284,7 @@ func recursivePermissionCheckWithFileExtFunc(path, fileExtension string, permiss
 func CheckRecursivePermissionWithFileExt(ctx framework.ComplianceContext, f *compliance.File, fileExtension string, permissions uint32) {
 	if filepath.Ext(f.GetPath()) == fileExtension {
 		permissionCheck(ctx, f, permissions)
+		return
 	}
 	for _, child := range f.Children {
 		CheckRecursivePermissionWithFileExt(ctx, child, fileExtension, permissions)

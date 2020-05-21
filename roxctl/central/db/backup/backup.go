@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -33,9 +34,9 @@ func Command() *cobra.Command {
 		Short:        "Save a snapshot of the DB as a backup.",
 		Long:         "Save a snapshot of the DB as a backup.",
 		SilenceUsage: true,
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return getBackup(flags.Timeout(c), output)
-		},
+		}),
 	}
 
 	c.Flags().StringVar(&output, "output", "", `where to write the backup to.

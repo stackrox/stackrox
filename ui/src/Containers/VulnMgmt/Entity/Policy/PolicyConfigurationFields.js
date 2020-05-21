@@ -11,7 +11,7 @@ const PolicyConfigurationFields = ({ fields, ...rest }) => {
     const paredFields = removeEmptyFields(fields);
     const fieldKeys = Object.keys(paredFields);
 
-    const fieldList = fieldKeys.map(key => {
+    const fieldList = fieldKeys.map((key) => {
         if (!fieldsMap[key]) return '';
         const { label } = fieldsMap[key];
         const value = fieldsMap[key].formatValue(paredFields[key]);

@@ -5,7 +5,7 @@ export default function removeEmptyFields(obj) {
     const flattenedObj = flatten(obj);
     const omittedObj = omitBy(
         flattenedObj,
-        value =>
+        (value) =>
             value === null ||
             value === undefined ||
             value === '' ||
@@ -19,7 +19,7 @@ export default function removeEmptyFields(obj) {
     //   so we have to filter them out separately
     //   Note: `readOnlyRootFs` is not in this list, because its only allowed value is `false`
     const exceptionFields = ['whitelistEnabled'];
-    exceptionFields.forEach(fieldName => {
+    exceptionFields.forEach((fieldName) => {
         if (!newObj[fieldName]) {
             delete newObj[fieldName];
         }

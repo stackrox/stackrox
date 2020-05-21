@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import entityTypes, {
     resourceTypes,
-    resourceTypeToApplicableStandards
+    resourceTypeToApplicableStandards,
 } from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
 import { format } from 'date-fns';
@@ -32,7 +32,7 @@ import Header from './Header';
 function processData(data) {
     if (!data || !data.node)
         return {
-            name: ''
+            name: '',
         };
 
     const result = { ...data.node };
@@ -53,7 +53,7 @@ const NodePage = ({
     entityListType2,
     entityId2,
     query,
-    sidePanelMode
+    sidePanelMode,
 }) => {
     const searchParam = useContext(searchContext);
     return (
@@ -73,7 +73,7 @@ const NodePage = ({
                     joinedAtDate,
                     joinedAtTime,
                     kernelVersion,
-                    labels
+                    labels,
                 } = node;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
@@ -83,7 +83,7 @@ const NodePage = ({
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
                         node: name,
-                        ...query[searchParam]
+                        ...query[searchParam],
                     };
                     contents = (
                         <section
@@ -193,7 +193,7 @@ const NodePage = ({
                                 </Widget>
 
                                 {resourceTypeToApplicableStandards[resourceTypes.NODE].map(
-                                    standardType => (
+                                    (standardType) => (
                                         <ComplianceByStandard
                                             key={standardType}
                                             standardType={standardType}
@@ -226,7 +226,7 @@ const NodePage = ({
                                     resourceTabs={[
                                         entityTypes.CONTROL,
                                         entityTypes.CLUSTER,
-                                        entityTypes.NAMESPACE
+                                        entityTypes.NAMESPACE,
                                     ]}
                                 />
                             </>

@@ -67,21 +67,6 @@ func (mr *MockFlowStoreMockRecorder) GetMatchingFlows(pred, since interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingFlows", reflect.TypeOf((*MockFlowStore)(nil).GetMatchingFlows), pred, since)
 }
 
-// GetFlow mocks base method
-func (m *MockFlowStore) GetFlow(props *storage.NetworkFlowProperties) (*storage.NetworkFlow, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFlow", props)
-	ret0, _ := ret[0].(*storage.NetworkFlow)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFlow indicates an expected call of GetFlow
-func (mr *MockFlowStoreMockRecorder) GetFlow(props interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFlow", reflect.TypeOf((*MockFlowStore)(nil).GetFlow), props)
-}
-
 // UpsertFlows mocks base method
 func (m *MockFlowStore) UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
 	m.ctrl.T.Helper()

@@ -239,14 +239,13 @@ func (s *ValueStream) TryFastForward(prev ValueStreamIter, strict bool) ValueStr
 	return strictFfwd.withMode(s, strict)
 }
 
-// SubscribeChan subscribes to the value stream, writing every observed value to a given output channel (with
-// configurable skip behavior). The current value is always written to the channel; if this is not desired, you must
-// manually drop the first value (which will always get written immediately unless this method is invoked with an
-// already expired context) from the channel.
+// SubscribeChan subscribes to the sequence induced by a value stream starting iterator, writing every observed
+// value (including the initial one) to a given output channel. The skip behavior is determined by the starting
+// iterator.
 // This function is synchronous, you most likely want to invoke it in a goroutine. It runs until the context expires
 // and passes through any error from the context.
-func (s *ValueStream) SubscribeChan(ctx ErrorWaitable, output chan<- interface{}, strict bool) error {
-	it := s.Iterator(strict)
+func SubscribeChan(ctx ErrorWaitable, output chan<- interface{}, startIt ValueStreamIter) error {
+	it := startIt
 
 	var err error
 	for err == nil && it != nil {
@@ -264,7 +263,7 @@ func (s *ValueStream) SubscribeChan(ctx ErrorWaitable, output chan<- interface{}
 // SubscribeChanTyped behaves like subscribe, but operates on a typed channel. The values pushed to the value stream
 // MUST be of a type that is convertible to the output channels element type; a mismatch will result in a panic (as will
 // passing a channel that cannot be sent to, or not a channel at all).
-func (s *ValueStream) SubscribeChanTyped(ctx ErrorWaitable, typedOutputChan interface{}, strict bool) error {
+func SubscribeChanTyped(ctx ErrorWaitable, typedOutputChan interface{}, startIt ValueStreamIter) error {
 	outputChanVal := reflect.ValueOf(typedOutputChan)
 	ctxDoneChan := reflect.ValueOf(ctx.Done())
 
@@ -279,7 +278,7 @@ func (s *ValueStream) SubscribeChanTyped(ctx ErrorWaitable, typedOutputChan inte
 		},
 	}
 
-	it := s.Iterator(strict)
+	it := startIt
 	var err error
 	for err == nil && it != nil {
 		selectCases[0].Send = reflect.ValueOf(it.Value())
@@ -299,6 +298,4 @@ type ReadOnlyValueStream interface {
 	Iterator(strict bool) ValueStreamIter
 	FastForward(ctx ErrorWaitable, it ValueStreamIter, strict bool) (ValueStreamIter, error)
 	TryFastForward(it ValueStreamIter, strict bool) ValueStreamIter
-	SubscribeChan(ctx ErrorWaitable, output chan<- interface{}, strict bool) error
-	SubscribeChanTyped(ctx ErrorWaitable, typedOutputC interface{}, strict bool) error
 }

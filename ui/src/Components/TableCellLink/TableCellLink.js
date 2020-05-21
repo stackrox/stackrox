@@ -30,7 +30,7 @@ TableCellLink.propTypes = {
     url: PropTypes.string.isRequired,
     pdf: PropTypes.bool,
     extraClasses: PropTypes.string,
-    dataTestId: PropTypes.string
+    dataTestId: PropTypes.string,
 };
 
 TableCellLink.defaultProps = {
@@ -38,7 +38,7 @@ TableCellLink.defaultProps = {
     text: null,
     pdf: false,
     extraClasses: '',
-    dataTestId: null
+    dataTestId: null,
 };
 
 export default TableCellLink;

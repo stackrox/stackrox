@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import ConfigurationDetails from './ConfigurationDetails';
 
-const Details = props => {
+const Details = (props) => {
     const { name, active } = props.authProvider;
     const { groups, defaultRole } = props;
 
@@ -92,14 +92,14 @@ Details.propTypes = {
     authProvider: PropTypes.shape({
         name: PropTypes.string,
         type: PropTypes.string,
-        active: PropTypes.bool
+        active: PropTypes.bool,
     }).isRequired,
     groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    defaultRole: PropTypes.string
+    defaultRole: PropTypes.string,
 };
 
 Details.defaultProps = {
-    defaultRole: 'Admin'
+    defaultRole: 'Admin',
 };
 
 export default Details;

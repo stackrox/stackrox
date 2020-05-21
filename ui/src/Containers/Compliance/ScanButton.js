@@ -9,30 +9,36 @@ import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 import Query from 'Components/ThrowingQuery';
 
-const getTriggerRunIds = data => {
+const getTriggerRunIds = (data) => {
     if (data && data.complianceTriggerRuns.length) {
-        return data.complianceTriggerRuns.map(run => run.id);
+        return data.complianceTriggerRuns.map((run) => run.id);
     }
     return [];
 };
 
-const areRunsFinished = data => {
+const areRunsFinished = (data) => {
     let runsFinished = true;
     if (data && data.complianceRunStatuses && data.complianceRunStatuses.runs) {
-        const incompleteRuns = data.complianceRunStatuses.runs.filter(x => x.state !== 'FINISHED');
+        const incompleteRuns = data.complianceRunStatuses.runs.filter(
+            (x) => x.state !== 'FINISHED'
+        );
         runsFinished = incompleteRuns.length === 0;
     }
     return runsFinished;
 };
 
 class ScanButton extends React.Component {
-    state = { pendingRunIds: [] };
+    constructor(props) {
+        super(props);
 
-    onClick = triggerScan => () => {
+        this.state = { pendingRunIds: [] };
+    }
+
+    onClick = (triggerScan) => () => {
         const { clusterId, standardId } = this.props;
         triggerScan({ variables: { clusterId, standardId } })
             .then(this.mutationCompleted)
-            .catch(e => {
+            .catch((e) => {
                 this.props.addToast(e.message);
                 setTimeout(this.props.removeToast, 2000);
             });
@@ -42,7 +48,7 @@ class ScanButton extends React.Component {
         this.setState({ pendingRunIds: getTriggerRunIds(data) });
     };
 
-    queryCompleted = client => data => {
+    queryCompleted = (client) => (data) => {
         if (this.state.pendingRunIds.length && areRunsFinished(data)) {
             this.setState({ pendingRunIds: [] });
             client.resetStore();
@@ -106,7 +112,7 @@ ScanButton.propTypes = {
     loaderSize: PropTypes.number,
 
     addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired
+    removeToast: PropTypes.func.isRequired,
 };
 
 ScanButton.defaultProps = {
@@ -115,15 +121,12 @@ ScanButton.defaultProps = {
     textClass: null,
     textCondensed: null,
     standardId: '*',
-    loaderSize: 20
+    loaderSize: 20,
 };
 
 const mapDispatchToProps = {
     addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification
+    removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(ScanButton);
+export default connect(null, mapDispatchToProps)(ScanButton);

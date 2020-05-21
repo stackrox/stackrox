@@ -20,23 +20,20 @@ const AppWrapper = ({ publicConfig, children }) => {
 AppWrapper.propTypes = {
     publicConfig: PropTypes.shape({
         header: PropTypes.shape({}),
-        footer: PropTypes.shape({})
+        footer: PropTypes.shape({}),
     }),
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 AppWrapper.defaultProps = {
     publicConfig: {
         header: {},
-        footer: {}
-    }
+        footer: {},
+    },
 };
 
 const mapStateToProps = createStructuredSelector({
-    publicConfig: selectors.getPublicConfig
+    publicConfig: selectors.getPublicConfig,
 });
 
-export default connect(
-    mapStateToProps,
-    null
-)(AppWrapper);
+export default connect(mapStateToProps, null)(AppWrapper);

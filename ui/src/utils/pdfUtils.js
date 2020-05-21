@@ -41,7 +41,7 @@ export function enhanceWordBreak({ doc, cell, column }) {
 
     // calculate longest word width
     const maxWordUnitWidth = words
-        .map(s => s && Math.floor(doc.getStringUnitWidth(s) * 100) / 100)
+        .map((s) => s && Math.floor(doc.getStringUnitWidth(s) * 100) / 100)
         .reduce((a, b) => Math.max(a, b), 0);
     const maxWordWidth = maxWordUnitWidth * (cell.styles.fontSize / doc.internal.scaleFactor);
 
@@ -93,8 +93,8 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
             ({ accessor, className }) =>
                 accessor && className !== 'hidden' && accessor !== 'id' && accessor !== 'checkbox'
         );
-        const headers = filteredColumns.map(col => col.Header);
-        const headerKeys = filteredColumns.map(col => col.accessor);
+        const headers = filteredColumns.map((col) => col.Header);
+        const headerKeys = filteredColumns.map((col) => col.accessor);
         if (tableData[0].rows && type) {
             headers.unshift(type);
             headerKeys.unshift(type);
@@ -105,14 +105,14 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
         const tbdy = document.createElement('tbody');
         const trh = document.createElement('tr');
 
-        headers.forEach(val => {
+        headers.forEach((val) => {
             const th = document.createElement('th');
             th.appendChild(document.createTextNode(val));
             trh.appendChild(th);
         });
         tbdy.appendChild(trh);
 
-        const addRows = val => {
+        const addRows = (val) => {
             const tr = document.createElement('tr');
             headerKeys.forEach((key, index) => {
                 const td = document.createElement('td');
@@ -125,9 +125,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                     const flattenedObj = flattenObject(val);
                     colValue =
                         (flattenedObj[key] &&
-                            String(flattenedObj[key])
-                                .replace(/\s+/g, ' ')
-                                .trim()) ||
+                            String(flattenedObj[key]).replace(/\s+/g, ' ').trim()) ||
                         'N/A';
                 }
                 td.innerHTML = colValue;
@@ -135,9 +133,9 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
             });
             tbdy.appendChild(tr);
         };
-        tableData.forEach(val => {
+        tableData.forEach((val) => {
             if (val.rows) {
-                val.rows.forEach(row => {
+                val.rows.forEach((row) => {
                     Object.assign(row, { [type]: val.name });
                     addRows(row);
                 });

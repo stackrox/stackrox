@@ -44,6 +44,7 @@ func init() {
 		InlineBucketInuse,
 		BadgerDBSize,
 		BoltDBSize,
+		RocksDBSize,
 	)
 }
 
@@ -136,6 +137,13 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "bolt_db_size",
 		Help:      "bytes being used by BoltDB",
+	})
+
+	RocksDBSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "rocksdb_db_size",
+		Help:      "bytes being used by RocksDB",
 	})
 )
 

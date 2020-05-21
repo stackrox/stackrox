@@ -20,13 +20,13 @@ NotifyOne.propTypes = {
     notifiers: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired
+            value: PropTypes.string.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    notifiers: selectors.getNotifiers
+    notifiers: selectors.getNotifiers,
 });
 
 export default connect(mapStateToProps)(NotifyOne);

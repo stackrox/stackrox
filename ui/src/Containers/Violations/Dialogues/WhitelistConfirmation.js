@@ -21,7 +21,7 @@ function whitelistAlerts(checkedAlertIds, alerts) {
         });
 
     return Promise.all(
-        Object.keys(policyToDeployments).map(policyId => {
+        Object.keys(policyToDeployments).map((policyId) => {
             return whitelistDeployments(policyId, policyToDeployments[policyId]);
         })
     );
@@ -60,15 +60,15 @@ WhitelistConfirmation.propTypes = {
     alerts: PropTypes.arrayOf(
         PropTypes.shape({
             policy: PropTypes.shape({
-                id: PropTypes.string.isRequired
+                id: PropTypes.string.isRequired,
             }).isRequired,
             deployment: PropTypes.shape({
-                name: PropTypes.string.isRequired
-            }).isRequired
+                name: PropTypes.string.isRequired,
+            }).isRequired,
         })
     ).isRequired,
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-    setCheckedAlertIds: PropTypes.func.isRequired
+    setCheckedAlertIds: PropTypes.func.isRequired,
 };
 
 export default WhitelistConfirmation;

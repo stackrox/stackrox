@@ -5,7 +5,7 @@ import {
     YAxis,
     VerticalGridLines,
     HorizontalGridLines,
-    VerticalBarSeries
+    VerticalBarSeries,
 } from 'react-vis';
 import colors from 'constants/visuals/colors';
 
@@ -31,7 +31,7 @@ class VerticalBarChart extends Component {
         tickFormat: PropTypes.func,
         labelLinks: PropTypes.shape({}),
         onValueClick: PropTypes.func,
-        legend: PropTypes.bool
+        legend: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -40,13 +40,17 @@ class VerticalBarChart extends Component {
         plotProps: {},
         seriesProps: {},
         tickValues: [25, 50, 75, 100],
-        tickFormat: x => `${x}%`,
+        tickFormat: (x) => `${x}%`,
         labelLinks: {},
         onValueClick: null,
-        legend: true
+        legend: true,
     };
 
-    state = { hintInfo: null };
+    constructor(props) {
+        super(props);
+
+        this.state = { hintInfo: null };
+    }
 
     render() {
         const { colors: colorRange, tickValues, tickFormat, labelLinks, onValueClick } = this.props;
@@ -58,11 +62,11 @@ class VerticalBarChart extends Component {
             xType: 'ordinal',
             height: 250,
             colorType: 'category',
-            yDomain: [0, 110]
+            yDomain: [0, 110],
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container w-full horizontal-bar-responsive'
+            className: 'relative chart-container w-full horizontal-bar-responsive',
         };
 
         const defaultSeriesProps = {
@@ -70,24 +74,24 @@ class VerticalBarChart extends Component {
             style: {
                 opacity: '.8',
                 ry: '2px',
-                cursor: 'pointer'
+                cursor: 'pointer',
             },
 
-            colorDomain: data.map(datum => datum.y),
+            colorDomain: data.map((datum) => datum.y),
             colorRange,
             onValueMouseOver: (datum, e) => {
                 if (datum.hint) {
                     this.setState({
-                        hintInfo: { data: datum.hint, target: e.event.target }
+                        hintInfo: { data: datum.hint, target: e.event.target },
                     });
                 }
             },
             onValueMouseOut: () => {
                 this.setState({ hintInfo: null });
             },
-            onValueClick: datum => {
+            onValueClick: (datum) => {
                 if (onValueClick) onValueClick(datum);
-            }
+            },
         };
 
         // Merge props
@@ -97,9 +101,10 @@ class VerticalBarChart extends Component {
         const styleProps = this.props.legend ? { top: '-16px' } : {};
 
         // format data with colors:
-        const letDataWithColors = data.map((datum, i) =>
-            Object.assign({}, datum, { color: colors[i % colors.length] })
-        );
+        const letDataWithColors = data.map((datum, i) => ({
+            ...datum,
+            color: colors[i % colors.length],
+        }));
 
         function formatTicks(value) {
             let inner = value;

@@ -4,7 +4,7 @@ import { NO_ACCESS } from 'constants/accessControl';
 export default function addDefaultPermissionsToRole(resources, role) {
     const modifiedRole = { ...role };
     const resourceToAccess = { ...role.resourceToAccess };
-    resources.forEach(resource => {
+    resources.forEach((resource) => {
         // if the access value for the resource is not available
         if (!resourceToAccess[resource]) {
             if (isEmpty(role.resourceToAccess)) {

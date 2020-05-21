@@ -6,7 +6,7 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 export const types = {
     FETCH_RULE_GROUPS: createFetchingActionTypes('groups/FETCH_RULE_GROUPS'),
     SAVE_RULE_GROUP: 'groups/SAVE_RULE_GROUP',
-    DELETE_RULE_GROUP: 'groups/DELETE_RULE_GROUP'
+    DELETE_RULE_GROUP: 'groups/DELETE_RULE_GROUP',
 };
 
 export const actions = {
@@ -15,12 +15,12 @@ export const actions = {
         type: types.SAVE_RULE_GROUP,
         group,
         defaultRole,
-        id
+        id,
     }),
-    deleteRuleGroup: group => ({
+    deleteRuleGroup: (group) => ({
         type: types.DELETE_RULE_GROUP,
-        group
-    })
+        group,
+    }),
 };
 
 const groups = (state = [], action) => {
@@ -33,12 +33,12 @@ const groups = (state = [], action) => {
 const groupsByAuthProviderId = (state = {}, action) => {
     if (action.type === types.FETCH_RULE_GROUPS.SUCCESS) {
         const authProviderRuleGroups = {};
-        action.response.groups.forEach(group => {
+        action.response.groups.forEach((group) => {
             if (group && group.props) {
                 if (!authProviderRuleGroups[group.props.authProviderId]) {
                     authProviderRuleGroups[group.props.authProviderId] = {
                         rules: [],
-                        defaultRole: null
+                        defaultRole: null,
                     };
                 }
                 if (group.props.key && group.props.key !== '') {
@@ -55,16 +55,16 @@ const groupsByAuthProviderId = (state = {}, action) => {
 
 const reducer = combineReducers({
     groups,
-    groupsByAuthProviderId
+    groupsByAuthProviderId,
 });
 
-const getRuleGroups = state => state.groups;
+const getRuleGroups = (state) => state.groups;
 
-const getGroupsByAuthProviderId = state => state.groupsByAuthProviderId;
+const getGroupsByAuthProviderId = (state) => state.groupsByAuthProviderId;
 
 export const selectors = {
     getRuleGroups,
-    getGroupsByAuthProviderId
+    getGroupsByAuthProviderId,
 };
 
 export default reducer;

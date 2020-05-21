@@ -9,7 +9,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
@@ -17,7 +17,7 @@ import {
 export const types = {
     FETCH_IMAGES: createFetchingActionTypes('images/FETCH_IMAGES'),
     FETCH_IMAGE: createFetchingActionTypes('images/FETCH_IMAGE'),
-    ...searchTypes('images')
+    ...searchTypes('images'),
 };
 
 // Actions
@@ -25,7 +25,7 @@ export const types = {
 export const actions = {
     fetchImages: createFetchingActions(types.FETCH_IMAGES),
     fetchImage: createFetchingActions(types.FETCH_IMAGE),
-    ...getSearchActions('images')
+    ...getSearchActions('images'),
 };
 
 // Reducers
@@ -57,22 +57,18 @@ const filteredIDs = (state = [], action) => {
 const reducer = combineReducers({
     byID,
     filteredIDs,
-    ...searchReducers('images')
+    ...searchReducers('images'),
 });
 
 export default reducer;
 
 // Selectors
 
-const getImagesByID = state => state.byID;
-const getImages = createSelector(
-    [getImagesByID],
-    images => Object.values(images)
-);
-const getFilteredIDs = state => state.filteredIDs;
-const getFilteredImages = createSelector(
-    [getImagesByID, getFilteredIDs],
-    (images, ids) => ids.map(id => images[id])
+const getImagesByID = (state) => state.byID;
+const getImages = createSelector([getImagesByID], (images) => Object.values(images));
+const getFilteredIDs = (state) => state.filteredIDs;
+const getFilteredImages = createSelector([getImagesByID, getFilteredIDs], (images, ids) =>
+    ids.map((id) => images[id])
 );
 const getImage = (state, id) => getImagesByID(state)[id];
 
@@ -82,5 +78,5 @@ export const selectors = {
     getFilteredIDs,
     getFilteredImages,
     getImage,
-    ...getSearchSelectors('images')
+    ...getSearchSelectors('images'),
 };

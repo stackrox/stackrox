@@ -1,7 +1,8 @@
 import entityTypes from 'constants/entityTypes';
 import { componentSortFields } from 'constants/sortFields';
 import useCases from 'constants/useCaseTypes';
-import { WorkflowEntity, WorkflowState } from 'modules/WorkflowState';
+import WorkflowEntity from 'utils/WorkflowEntity';
+import { WorkflowState } from 'utils/WorkflowState';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
 
@@ -10,7 +11,7 @@ describe('ListComponents.utils', () => {
         it('should return all the components columns when in a context that allows them', () => {
             const stateStack = [
                 new WorkflowEntity(entityTypes.IMAGE, 'abcd-ef09'),
-                new WorkflowEntity(entityTypes.COMPONENT)
+                new WorkflowEntity(entityTypes.COMPONENT),
             ];
             const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
@@ -27,41 +28,47 @@ describe('ListComponents.utils', () => {
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
 
-            const sourceColumnPresent = filteredColumns.find(col => col.accessor === 'source');
+            const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
-            const locationColumnPresent = filteredColumns.find(col => col.accessor === 'location');
+            const locationColumnPresent = filteredColumns.find(
+                (col) => col.accessor === 'location'
+            );
             expect(locationColumnPresent).toBeUndefined();
         });
 
         it('should remove the source and location columns when in Components sublist of CVE single context', () => {
             const stateStack = [
                 new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
-                new WorkflowEntity(entityTypes.COMPONENT)
+                new WorkflowEntity(entityTypes.COMPONENT),
             ];
             const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
 
-            const sourceColumnPresent = filteredColumns.find(col => col.accessor === 'source');
+            const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
-            const locationColumnPresent = filteredColumns.find(col => col.accessor === 'location');
+            const locationColumnPresent = filteredColumns.find(
+                (col) => col.accessor === 'location'
+            );
             expect(locationColumnPresent).toBeUndefined();
         });
 
         it('should remove the source and location columns when in Components sublist of Deployment single context', () => {
             const stateStack = [
                 new WorkflowEntity(entityTypes.DEPLOYMENT, 'abcd-ef09'),
-                new WorkflowEntity(entityTypes.COMPONENT)
+                new WorkflowEntity(entityTypes.COMPONENT),
             ];
             const workflowState = getEntityState(useCases.VULN_MANAGEMENT, stateStack);
             const tableColumns = getComponentTableColumns(workflowState);
 
             const filteredColumns = getFilteredComponentColumns(tableColumns, workflowState);
 
-            const sourceColumnPresent = filteredColumns.find(col => col.accessor === 'source');
+            const sourceColumnPresent = filteredColumns.find((col) => col.accessor === 'source');
             expect(sourceColumnPresent).toBeUndefined();
-            const locationColumnPresent = filteredColumns.find(col => col.accessor === 'location');
+            const locationColumnPresent = filteredColumns.find(
+                (col) => col.accessor === 'location'
+            );
             expect(locationColumnPresent).toBeUndefined();
         });
     });
@@ -77,7 +84,7 @@ function getComponentTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Component`,
@@ -88,7 +95,7 @@ function getComponentTableColumns(workflowState) {
                 return `${name} ${version}`;
             },
             accessor: 'name',
-            sortField: componentSortFields.COMPONENT
+            sortField: componentSortFields.COMPONENT,
         },
         {
             Header: `CVEs`,
@@ -106,7 +113,7 @@ function getComponentTableColumns(workflowState) {
                 return `${vulnCounter}${url}${fixableUrl}`;
             },
             accessor: 'vulnCounter.all.total',
-            sortField: componentSortFields.CVE_COUNT
+            sortField: componentSortFields.CVE_COUNT,
         },
         {
             Header: `Top CVSS`,
@@ -119,13 +126,13 @@ function getComponentTableColumns(workflowState) {
                 return `${cvss} ${scoreVersion}`;
             },
             accessor: 'topVuln.cvss',
-            sortField: componentSortFields.TOP_CVSS
+            sortField: componentSortFields.TOP_CVSS,
         },
         {
             Header: `Source`,
             headerClassName: `w-1/8`,
             className: `w-1/8`,
-            accessor: 'source'
+            accessor: 'source',
             // @TODO uncomment once source is sortable on backend
             // sortField: componentSortFields.SOURCE
         },
@@ -134,7 +141,7 @@ function getComponentTableColumns(workflowState) {
             headerClassName: `w-1/8`,
             className: `w-1/8`,
             accessor: 'location',
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Images`,
@@ -143,7 +150,7 @@ function getComponentTableColumns(workflowState) {
             className: `w-1/8`,
             accessor: 'imageCount',
             Cell: ({ original }) => original.imageCount,
-            sortField: componentSortFields.IMAGES
+            sortField: componentSortFields.IMAGES,
         },
         {
             Header: `Deployments`,
@@ -152,15 +159,15 @@ function getComponentTableColumns(workflowState) {
             className: `w-1/8`,
             accessor: 'deploymentCount',
             Cell: ({ original }) => original.deploymentCount,
-            sortField: componentSortFields.DEPLOYMENTS
+            sortField: componentSortFields.DEPLOYMENTS,
         },
         {
             Header: `Risk Priority`,
             headerClassName: `w-1/10`,
             className: `w-1/10`,
             accessor: 'priority',
-            sortField: componentSortFields.PRIORITY
-        }
+            sortField: componentSortFields.PRIORITY,
+        },
     ];
 
     return [...tableColumns];

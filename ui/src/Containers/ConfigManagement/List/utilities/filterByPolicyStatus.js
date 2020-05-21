@@ -4,7 +4,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 const filterByPolicyStatus = (rows, state) => {
     if (!state || !rows) return rows;
     const policyState = capitalize(state);
-    return rows.filter(row => {
+    return rows.filter((row) => {
         let passing = false;
         // policyStatus could be an object or a string
         if (row.policyStatus && row.policyStatus.failingPolicies) {

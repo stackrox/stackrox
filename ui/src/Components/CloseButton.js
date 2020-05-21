@@ -22,12 +22,12 @@ const CloseButton = ({ className, iconColor, onClose }) => (
 CloseButton.propTypes = {
     onClose: PropTypes.func.isRequired,
     className: PropTypes.string,
-    iconColor: PropTypes.string
+    iconColor: PropTypes.string,
 };
 
 CloseButton.defaultProps = {
     className: '',
-    iconColor: ''
+    iconColor: '',
 };
 
 export default CloseButton;

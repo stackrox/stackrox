@@ -11,7 +11,15 @@ import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import Details from 'Containers/AccessControl/Roles/Permissions/Details';
 import addDefaultPermissionsToRole from 'Containers/AccessControl/Roles/Permissions/addDefaultPermissionsToRole';
 
-const Permissions = ({ resources, selectedRole, isEditing, onSave, onEdit, onCancel }) => {
+const Permissions = ({
+    resources,
+    selectedRole,
+    isEditing,
+    onSave,
+    onEdit,
+    onCancel,
+    readOnly,
+}) => {
     function displayContent() {
         const modifiedSelectedRole = addDefaultPermissionsToRole(resources, selectedRole);
         const content = isEditing ? (
@@ -21,13 +29,16 @@ const Permissions = ({ resources, selectedRole, isEditing, onSave, onEdit, onCan
         );
         return content;
     }
-
     if (!selectedRole) return null;
     const headerText = selectedRole.name ? `"${selectedRole.name}" Permissions` : 'Create New Role';
     const headerComponents = defaultRoles[selectedRole.name] ? (
         <span className="uppercase text-base-500 leading-normal font-700">system default</span>
     ) : (
-        <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
+        <>
+            {!readOnly && (
+                <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
+            )}
+        </>
     );
     const panelHeaderClassName = `${headerClassName} bg-base-100`;
     return (
@@ -47,26 +58,32 @@ Permissions.propTypes = {
     selectedRole: PropTypes.shape({
         name: PropTypes.string,
         globalAccess: PropTypes.string,
-        resourceToAccess: PropTypes.shape({})
+        resourceToAccess: PropTypes.shape({}),
     }),
     isEditing: PropTypes.bool.isRequired,
-    onSave: PropTypes.func.isRequired,
-    onCancel: PropTypes.func.isRequired,
-    onEdit: PropTypes.func.isRequired
+    onSave: PropTypes.func,
+    onCancel: PropTypes.func,
+    onEdit: PropTypes.func,
+    readOnly: PropTypes.bool,
 };
 
 Permissions.defaultProps = {
-    selectedRole: null
+    selectedRole: null,
+    onSave: null,
+    onCancel: null,
+    onEdit: null,
+    readOnly: false,
+};
+
+const getSelectedRole = (state, ownProps) => {
+    return ownProps.selectedRole || selectors.getSelectedRole;
 };
 
 const mapStateToProps = createStructuredSelector({
     resources: selectors.getResources,
-    selectedRole: selectors.getSelectedRole
+    selectedRole: getSelectedRole,
 });
 
 const mapDispatchToProps = {};
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Permissions);
+export default connect(mapStateToProps, mapDispatchToProps)(Permissions);

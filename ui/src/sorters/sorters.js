@@ -1,8 +1,8 @@
 import flattenObject from 'utils/flattenObject';
 
 const flattenObjectProperties = (a, b, key) => {
-    const aValue = Object.assign({}, flattenObject(a))[key];
-    const bValue = Object.assign({}, flattenObject(b))[key];
+    const aValue = { ...flattenObject(a) }[key];
+    const bValue = { ...flattenObject(b) }[key];
     return { aValue, bValue };
 };
 
@@ -18,7 +18,7 @@ const sortSeverity = (a, b) => {
         Low: 'LOW_SEVERITY',
         Medium: 'MEDIUM_SEVERITY',
         High: 'HIGH_SEVERITY',
-        Critical: 'CRITICAL_SEVERITY'
+        Critical: 'CRITICAL_SEVERITY',
     };
     const priorityArray = ['CRITICAL_SEVERITY', 'HIGH_SEVERITY', 'MEDIUM_SEVERITY', 'LOW_SEVERITY'];
     const firstSeverity = map[a] || a;
@@ -40,7 +40,7 @@ const sortStatus = (a, b) => {
     const map = {
         Pass: 'PASS',
         NA: 'N/A',
-        Fail: 'FAIL'
+        Fail: 'FAIL',
     };
     const priorityArray = ['FAIL', 'PASS', 'N/A'];
     const firstSeverity = map[a] || a;
@@ -105,7 +105,7 @@ const sortVersion = (a, b) => {
  * @param key
  * @returns {number}
  */
-const sortNumberByKey = key => (a, b) => {
+const sortNumberByKey = (key) => (a, b) => {
     const { aValue, bValue } = flattenObjectProperties(a, b, key);
     return sortValue(aValue, bValue);
 };
@@ -181,5 +181,5 @@ export {
     sortLifecycle,
     sortDate,
     sortValueByLength,
-    sortAscii
+    sortAscii,
 };

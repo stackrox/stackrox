@@ -7,16 +7,16 @@ describe('Component:Select', () => {
     const initialOptions = [
         {
             label: 'AT&T',
-            value: 'att'
+            value: 'att',
         },
         {
             label: 'Sprint',
-            value: 'sprint'
+            value: 'sprint',
         },
         {
             label: 'Verizon',
-            value: 'verz'
-        }
+            value: 'verz',
+        },
     ];
     const initialPlaceholder = 'Select a service';
 
@@ -67,7 +67,7 @@ describe('Component:Select', () => {
 
         // act
         const mockChangeEvent = {
-            target: { value: initialOptions[1].value }
+            target: { value: initialOptions[1].value },
         };
         select.instance().onClick(mockChangeEvent);
 

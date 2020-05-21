@@ -44,7 +44,7 @@ func newClusterGatherer(clusterDatastore clusterDatastore.DataStore, nodeDatasto
 }
 
 // Gather returns a list of stats about all the clusters monitored by this StackRox installation
-func (c *ClusterGatherer) Gather(ctx context.Context) []*data.ClusterInfo {
+func (c *ClusterGatherer) Gather(ctx context.Context, pullFromSensors bool) []*data.ClusterInfo {
 	var clusterList []*data.ClusterInfo
 
 	clusters, err := c.clusterDatastore.GetClusters(ctx)
@@ -56,15 +56,34 @@ func (c *ClusterGatherer) Gather(ctx context.Context) []*data.ClusterInfo {
 	for _, cluster := range clusters {
 		clusterMap[cluster.GetId()] = cluster
 	}
+
 	// Get active clusters
-	for _, sensorConn := range c.sensorConnMgr.GetActiveConnections() {
-		cluster, err := c.clusterFromSensor(ctx, sensorConn)
-		if err != nil {
-			continue
+	clusterRetC := make(chan clusterFromSensorResponse)
+	outstanding := 0
+
+	if pullFromSensors {
+		for _, sensorConn := range c.sensorConnMgr.GetActiveConnections() {
+			go c.clusterFromSensor(ctx, sensorConn, clusterRetC)
+			outstanding++
 		}
-		clusterList = append(clusterList, cluster)
-		delete(clusterMap, sensorConn.ClusterID())
 	}
+
+	for outstanding > 0 {
+		select {
+		case <-ctx.Done():
+			outstanding = 0 // proceed with partial data
+
+		case ret := <-clusterRetC:
+			outstanding--
+			if ret.err != nil {
+				log.Errorf("Error pulling telemetry data from cluster %s: %v", ret.clusterID, err)
+				continue
+			}
+			clusterList = append(clusterList, ret.clusterInfo)
+			delete(clusterMap, ret.clusterID)
+		}
+	}
+
 	// Get inactive clusters
 	for _, storageCluster := range clusterMap {
 		clusterList = append(clusterList, c.clusterFromDatastores(ctx, storageCluster))
@@ -73,7 +92,25 @@ func (c *ClusterGatherer) Gather(ctx context.Context) []*data.ClusterInfo {
 	return clusterList
 }
 
-func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection) (*data.ClusterInfo, error) {
+type clusterFromSensorResponse struct {
+	clusterID   string
+	clusterInfo *data.ClusterInfo
+	err         error
+}
+
+func (c *ClusterGatherer) clusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection, outC chan<- clusterFromSensorResponse) {
+	clusterInfo, err := c.fetchClusterFromSensor(ctx, sensorConn)
+	select {
+	case <-ctx.Done():
+	case outC <- clusterFromSensorResponse{
+		clusterID:   sensorConn.ClusterID(),
+		clusterInfo: clusterInfo,
+		err:         err,
+	}:
+	}
+}
+
+func (c *ClusterGatherer) fetchClusterFromSensor(ctx context.Context, sensorConn connection.SensorConnection) (*data.ClusterInfo, error) {
 	var clusterBytes []byte
 	callback := func(ctx concurrency.ErrorWaitable, sensorInfo *central.TelemetryResponsePayload_ClusterInfo) error {
 		clusterBytes = append(clusterBytes, sensorInfo.Chunk...)

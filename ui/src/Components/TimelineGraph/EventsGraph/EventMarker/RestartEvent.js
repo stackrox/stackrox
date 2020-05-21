@@ -1,36 +1,31 @@
-import React from 'react';
+/* eslint-disable react/display-name */
+import React, { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
-import { eventTypes } from 'constants/timelineTypes';
-import EventTooltip from '../EventTooltip';
-
-const RestartEvent = ({ name, type, timestamp, width, height }) => {
-    const elementHeight = height || width;
+const RestartEvent = forwardRef(({ size }, ref) => {
     return (
-        // We wrap the tooltip within the specific event Components because the Tooltip Component
-        // doesn't seem to work when wrapping it around the rendered html one level above. I suspect
-        // it doesn't work because the D3Anchor renders a <g> while this renders an svg element
-        <EventTooltip name={name} type={type} timestamp={timestamp}>
-            <polygon
-                data-testid="restart-event"
-                points={`0,${elementHeight} ${width / 2},0 ${width},${elementHeight}`}
-                fill="var(--caution-600)"
-                stroke="var(--caution-600)"
+        <svg
+            data-testid="restart-event"
+            width={size}
+            height={size}
+            viewBox="0 0 16 15"
+            xmlns="http://www.w3.org/2000/svg"
+            ref={ref}
+            fillRule="evenodd"
+            clipRule="evenodd"
+            strokeLinejoin="round"
+            strokeMiterlimit="2"
+        >
+            <path
+                d="M9.202 1.183l6.612 11.268a1.354 1.354 0 01-.508 1.866c-.211.12-.451.183-.694.183H1.388A1.377 1.377 0 010 13.134c0-.24.064-.475.186-.683L6.798 1.183a1.4 1.4 0 012.404 0z"
+                fill="#ff9064"
             />
-        </EventTooltip>
+        </svg>
     );
-};
+});
 
 RestartEvent.propTypes = {
-    name: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(Object.values(eventTypes)).isRequired,
-    timestamp: PropTypes.string.isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number
-};
-
-RestartEvent.defaultProps = {
-    height: null
+    size: PropTypes.number.isRequired,
 };
 
 export default RestartEvent;

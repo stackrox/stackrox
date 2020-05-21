@@ -19,7 +19,7 @@ const reducer = combineReducers({
     graph: graphReducer,
     page: pageReducer,
     search: searchReducer,
-    wizard: wizardReducer
+    wizard: wizardReducer,
 });
 
 export default reducer;
@@ -27,12 +27,12 @@ export default reducer;
 // Selectors
 //----------
 
-const getBackend = state => state.backend;
-const getDialogue = state => state.dialogue;
-const getGraph = state => state.graph;
-const getPage = state => state.page;
-const getSearch = state => state.search;
-const getWizard = state => state.wizard;
+const getBackend = (state) => state.backend;
+const getDialogue = (state) => state.dialogue;
+const getGraph = (state) => state.graph;
+const getPage = (state) => state.page;
+const getSearch = (state) => state.search;
+const getWizard = (state) => state.wizard;
 
 export const selectors = {
     ...bindSelectors(getBackend, backendSelectors),
@@ -40,5 +40,5 @@ export const selectors = {
     ...bindSelectors(getGraph, graphSelectors),
     ...bindSelectors(getPage, pageSelectors),
     ...bindSelectors(getSearch, searchSelectors),
-    ...bindSelectors(getWizard, wizardSelectors)
+    ...bindSelectors(getWizard, wizardSelectors),
 };

@@ -11,7 +11,6 @@ import (
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	indexerMocks "github.com/stackrox/rox/central/deployment/index/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/store/mocks"
-	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,12 +28,11 @@ func TestDeploymentDatastoreSuite(t *testing.T) {
 type DeploymentDataStoreTestSuite struct {
 	suite.Suite
 
-	storage      *storeMocks.MockStore
-	indexer      *indexerMocks.MockIndexer
-	searcher     *searcherMocks.MockSearcher
-	riskStore    *riskMocks.MockDataStore
-	processStore *indicatorMocks.MockDataStore
-	filter       filter.Filter
+	storage   *storeMocks.MockStore
+	indexer   *indexerMocks.MockIndexer
+	searcher  *searcherMocks.MockSearcher
+	riskStore *riskMocks.MockDataStore
+	filter    filter.Filter
 
 	ctx context.Context
 
@@ -50,7 +48,6 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	suite.indexer = indexerMocks.NewMockIndexer(mockCtrl)
 	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
-	suite.processStore = indicatorMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, []int{5, 4, 3, 2, 1})
 }
 
@@ -67,7 +64,7 @@ func (suite *DeploymentDataStoreTestSuite) TestTags() {
 	defer testutils.TearDownDB(testDB)
 
 	processTagsStorage := processtagsstore.New(testDB)
-	datastore, err := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil, nil,
+	datastore, err := newDatastoreImpl(suite.storage, processTagsStorage, suite.indexer, nil, nil, nil, nil,
 		suite.riskStore, nil, suite.filter, ranking.NewRanker(),
 		ranking.NewRanker(), ranking.NewRanker())
 	suite.NoError(err)
@@ -100,7 +97,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds, err := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, suite.processStore, nil, nil,
+	ds, err := newDatastoreImpl(suite.storage, nil, suite.indexer, suite.searcher, nil, nil, nil,
 		suite.riskStore, nil, suite.filter, clusterRanker,
 		nsRanker, deploymentRanker)
 	suite.NoError(err)

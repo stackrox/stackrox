@@ -5,11 +5,24 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
-func matchesDeploymentWhitelists(deployment *storage.Deployment, whitelists []*compiledWhitelist) bool {
+func deploymentMatchesWhitelists(deployment *storage.Deployment, whitelists []*compiledWhitelist) bool {
 	for _, whitelist := range whitelists {
 		if whitelist.MatchesDeployment(deployment) {
+			return true
+		}
+	}
+	return false
+}
+
+func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope) bool {
+	if len(scopes) == 0 {
+		return true
+	}
+	for _, scope := range scopes {
+		if scope.MatchesDeployment(deployment) {
 			return true
 		}
 	}

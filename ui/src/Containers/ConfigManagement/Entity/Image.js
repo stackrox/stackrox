@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityToColumns } from 'constants/listColumns';
 import cloneDeep from 'lodash/cloneDeep';
@@ -31,8 +31,8 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
         id: safeImageId,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Lifecycle Stage': 'DEPLOY'
-        })
+            'Lifecycle Stage': 'DEPLOY',
+        }),
     };
 
     const defaultQuery = gql`
@@ -126,8 +126,8 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                 const metadataKeyValuePairs = [
                     {
                         key: 'Last Scanned',
-                        value: lastUpdated ? format(lastUpdated, dateTimeFormat) : 'N/A'
-                    }
+                        value: lastUpdated ? format(lastUpdated, dateTimeFormat) : 'N/A',
+                    },
                 ];
 
                 function renderCVEsTable(row) {
@@ -151,7 +151,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                     layers.forEach((layer, i) => {
                         layers[i].components = [];
                     });
-                    scan.components.forEach(component => {
+                    scan.components.forEach((component) => {
                         if (component.layerIndex !== undefined && layers[component.layerIndex]) {
                             layers[component.layerIndex].components.push(component);
                         }

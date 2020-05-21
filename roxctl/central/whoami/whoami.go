@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command defines the central command tree
@@ -20,10 +21,10 @@ func Command() *cobra.Command {
 		Use:   "whoami",
 		Short: "Authentication information",
 		Long:  "Whoami prints information about the current authentication method",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			timeout := flags.Timeout(c)
 			return whoami(timeout)
-		},
+		}),
 	}
 
 	flags.AddTimeout(c)

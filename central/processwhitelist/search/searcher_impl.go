@@ -34,7 +34,7 @@ func (s *searcherImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing process whitelists")
 	whitelists := make([]*storage.ProcessWhitelist, 0, whitelistBatchLimit)
-	if err := s.storage.WalkAll(func(whitelist *storage.ProcessWhitelist) error {
+	if err := s.storage.Walk(func(whitelist *storage.ProcessWhitelist) error {
 		whitelists = append(whitelists, whitelist)
 		if len(whitelists) == whitelistBatchLimit {
 			if err := s.indexer.AddWhitelists(whitelists); err != nil {
@@ -62,7 +62,7 @@ func (s *searcherImpl) SearchRawProcessWhitelists(ctx context.Context, q *v1.Que
 		return nil, err
 	}
 	ids := search.ResultsToIDs(results)
-	whitelists, _, err := s.storage.GetWhitelists(ids)
+	whitelists, _, err := s.storage.GetMany(ids)
 	if err != nil {
 		return nil, err
 	}

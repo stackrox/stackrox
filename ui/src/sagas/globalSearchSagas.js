@@ -20,7 +20,7 @@ export function* getGlobalSearchResults() {
         }
         const category = yield select(selectors.getGlobalSearchCategory);
         const filters = {
-            query: searchOptionsToQuery(searchOptions)
+            query: searchOptionsToQuery(searchOptions),
         };
         if (category !== '') filters.categories = category;
         const result = yield call(fetchGlobalSearchResults, filters);
@@ -75,6 +75,6 @@ export default function* globalSearch() {
     yield all([
         fork(watchGlobalsearchSearchOptions),
         fork(watchSetGlobalSearchCategory),
-        fork(watchPassthroughGlobalSearchOptions)
+        fork(watchPassthroughGlobalSearchOptions),
     ]);
 }

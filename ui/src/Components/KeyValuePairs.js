@@ -5,24 +5,24 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-const isNumeric = x => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
+const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
 
 class KeyValuePairs extends Component {
     static propTypes = {
         data: PropTypes.shape({}).isRequired,
         keyValueMap: PropTypes.shape({
             label: PropTypes.string,
-            className: PropTypes.string
-        })
+            className: PropTypes.string,
+        }),
     };
 
     static defaultProps = {
-        keyValueMap: {}
+        keyValueMap: {},
     };
 
     getKeys = () => Object.keys(this.props.data);
 
-    getNestedValue = data => {
+    getNestedValue = (data) => {
         let nestedData = data;
         let keys = nestedData;
         if (isObject(nestedData)) {
@@ -34,7 +34,7 @@ class KeyValuePairs extends Component {
             }
         }
 
-        return keys.map(key => (
+        return keys.map((key) => (
             <div className="py-2 max-w-md truncate text-accent-400" key={key}>
                 {!isNumeric(key) ? <span className="pr-1 text-secondary-800">{key}:</span> : ''}
                 {isObject(nestedData[key]) ? (
@@ -52,7 +52,7 @@ class KeyValuePairs extends Component {
         const keys = this.getKeys();
         const { data } = this.props;
         const mapping = this.props.keyValueMap;
-        return keys.map(key => {
+        return keys.map((key) => {
             if (!data[key] || !mapping[key] || (isObject(data[key]) && isEmpty(data[key])))
                 return '';
             const { label } = mapping[key];

@@ -40,7 +40,7 @@ function FormEditButtons({ formName, isEditing, setIsEditing }) {
 FormEditButtons.propTypes = {
     formName: PropTypes.string.isRequired,
     isEditing: PropTypes.bool.isRequired,
-    setIsEditing: PropTypes.func.isRequired
+    setIsEditing: PropTypes.func.isRequired,
 };
 
 FormEditButtons.defaultProps = {};

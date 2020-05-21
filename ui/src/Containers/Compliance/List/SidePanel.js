@@ -4,9 +4,9 @@ import Panel from 'Components/Panel';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { Link, withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService';
-import getEntityName from 'modules/getEntityName';
-import { entityNameQueryMap } from 'modules/queryMap';
+import URLService from 'utils/URLService';
+import getEntityName from 'utils/getEntityName';
+import { entityNameQueryMap } from 'utils/queryMap';
 import Query from 'Components/CacheFirstQuery';
 import * as Icon from 'react-feather';
 // TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
@@ -37,14 +37,10 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
     }
 
     function closeSidePanel() {
-        const baseURL = URLService.getURL(match, location)
-            .clearSidePanelParams()
-            .url();
+        const baseURL = URLService.getURL(match, location).clearSidePanelParams().url();
         history.push(baseURL);
     }
-    const headerUrl = URLService.getURL(match, location)
-        .base(entityType, entityId)
-        .url();
+    const headerUrl = URLService.getURL(match, location).base(entityType, entityId).url();
 
     return (
         <Query query={entityNameQueryMap[entityType]} variables={{ id: entityId }}>
@@ -60,10 +56,7 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                                 to={headerUrl}
                                 className="w-full flex text-primary-700 hover:text-primary-800 focus:text-primary-700"
                             >
-                                <div
-                                    className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700"
-                                    data-testid="side-panel-header"
-                                >
+                                <div className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700">
                                     {linkText}
                                 </div>
                             </Link>
@@ -98,7 +91,7 @@ ComplianceListSidePanel.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
-    entityId: PropTypes.string.isRequired
+    entityId: PropTypes.string.isRequired,
 };
 
 export default withRouter(ComplianceListSidePanel);

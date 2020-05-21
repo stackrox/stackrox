@@ -20,8 +20,8 @@ const manualUpgradeUrl = `${upgradesUrl}/cluster`;
  * @returns {Promise<Object, Error>} fulfilled with normalized list of clusters
  */
 export function fetchClusters() {
-    return axios.get(clustersUrl).then(response => ({
-        response: normalize(response.data, { clusters: [clusterSchema] })
+    return axios.get(clustersUrl).then((response) => ({
+        response: normalize(response.data, { clusters: [clusterSchema] }),
     }));
 }
 
@@ -36,12 +36,12 @@ export function fetchClustersAsArray(options) {
         const query = searchOptionsToQuery(options);
         params = queryString.stringify(
             {
-                query
+                query,
             },
             { arrayFormat: 'repeat', allowDots: true }
         );
     }
-    return axios.get(`${clustersUrl}?${params}`).then(response => {
+    return axios.get(`${clustersUrl}?${params}`).then((response) => {
         return (response.data && response.data.clusters) || [];
     });
 }
@@ -52,7 +52,7 @@ export function fetchClustersAsArray(options) {
  * @returns {Promise<Object, Error>} fulfilled with single cluster object
  */
 export function getClusterById(id) {
-    return axios.get(`${clustersUrl}/${id}`).then(response => {
+    return axios.get(`${clustersUrl}/${id}`).then((response) => {
         return (response && response.data && response.data.cluster) || null;
     });
 }
@@ -63,7 +63,7 @@ export function getClusterById(id) {
  * @returns {Promise<Object, Error>} fulfilled with autoupgrade config object
  */
 export function getAutoUpgradeConfig() {
-    return axios.get(autoUpgradeConfigUrl).then(response => {
+    return axios.get(autoUpgradeConfigUrl).then((response) => {
         return (response.data && response.data.config) || {};
     });
 }
@@ -93,7 +93,7 @@ export function upgradeCluster(id) {
  * @returns {Promise<Object, Error>} whose only value is resolved or rejected
  */
 export function upgradeClusters(ids = []) {
-    return Promise.all(ids.map(id => upgradeCluster(id)));
+    return Promise.all(ids.map((id) => upgradeCluster(id)));
 }
 
 /**
@@ -102,8 +102,8 @@ export function upgradeClusters(ids = []) {
  * @returns {Promise<Object, Error>} fulfilled with normalized cluster data
  */
 export function fetchCluster(id) {
-    return axios.get(`${clustersUrl}/${id}`).then(response => ({
-        response: normalize(response.data, { cluster: clusterSchema })
+    return axios.get(`${clustersUrl}/${id}`).then((response) => ({
+        response: normalize(response.data, { cluster: clusterSchema }),
     }));
 }
 
@@ -122,7 +122,7 @@ export function deleteCluster(id) {
  * @returns {Promise<undefined, Error>} resolved if operation was successful
  */
 export function deleteClusters(ids = []) {
-    return Promise.all(ids.map(id => deleteCluster(id)));
+    return Promise.all(ids.map((id) => deleteCluster(id)));
 }
 
 /**
@@ -134,8 +134,8 @@ export function saveCluster(cluster) {
     const promise = cluster.id
         ? axios.put(`${clustersUrl}/${cluster.id}`, cluster)
         : axios.post(clustersUrl, cluster);
-    return promise.then(response => ({
-        response: normalize(response.data, { cluster: clusterSchema })
+    return promise.then((response) => ({
+        response: normalize(response.data, { cluster: clusterSchema }),
     }));
 }
 
@@ -148,6 +148,6 @@ export function downloadClusterYaml(clusterId, createUpgraderSA = false) {
     return saveFile({
         method: 'post',
         url: '/api/extensions/clusters/zip',
-        data: { id: clusterId, createUpgraderSA }
+        data: { id: clusterId, createUpgraderSA },
     });
 }

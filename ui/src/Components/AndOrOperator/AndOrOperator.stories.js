@@ -7,7 +7,7 @@ import AndOrOperator from './AndOrOperator';
 
 export default {
     title: 'AndOrOperator',
-    component: AndOrOperator
+    component: AndOrOperator,
 };
 
 export const withAnd = () => {
@@ -29,6 +29,15 @@ export const withOr = () => {
     return <AndOrOperator value={currentOperator} onToggle={onToggle} />;
 };
 
-export const withAndOnly = () => <AndOrOperator value={BOOLEAN_LOGIC_VALUES.AND} />;
+export const withAndOnly = () => <AndOrOperator value={BOOLEAN_LOGIC_VALUES.AND} disabled />;
 
-export const withOrOnly = () => <AndOrOperator value={BOOLEAN_LOGIC_VALUES.OR} />;
+export const withOrOnly = () => <AndOrOperator value={BOOLEAN_LOGIC_VALUES.OR} disabled />;
+
+export const withCircularStyle = () => {
+    const [currentOperator, setCurrentOperator] = useState(BOOLEAN_LOGIC_VALUES.OR);
+
+    function onToggle() {
+        setCurrentOperator(toggleBooleanValue(currentOperator));
+    }
+    return <AndOrOperator value={currentOperator} onToggle={onToggle} isCircular />;
+};

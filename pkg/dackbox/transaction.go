@@ -27,6 +27,7 @@ type Transaction struct {
 	dirtyPrefix []byte
 	dirtyMap    map[string]proto.Message
 
+	closed  bool
 	discard RemoteDiscard
 	commit  RemoteCommit
 }
@@ -52,10 +53,15 @@ func (dbt *Transaction) BaseTS() uint64 {
 
 // Discard  dumps all of the transaction's changes.
 func (dbt *Transaction) Discard() {
+	if dbt.closed {
+		return
+	}
+	dbt.closed = true
 	dbt.discard(dbt.ts, dbt.DBTransaction)
 }
 
 // Commit the transaction's changes to the remote graph.
 func (dbt *Transaction) Commit() error {
+	dbt.closed = true
 	return dbt.commit(dbt.ts, dbt.DBTransaction, dbt.modification, dbt.dirtyMap)
 }

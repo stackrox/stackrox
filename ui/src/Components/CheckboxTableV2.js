@@ -9,14 +9,14 @@ class CheckboxTable extends Component {
         rows: PropTypes.arrayOf(PropTypes.object).isRequired,
         toggleRow: PropTypes.func.isRequired,
         toggleSelectAll: PropTypes.func.isRequired,
-        selection: PropTypes.arrayOf(PropTypes.string)
+        selection: PropTypes.arrayOf(PropTypes.string),
     };
 
     static defaultProps = {
-        selection: []
+        selection: [],
     };
 
-    setTableRef = table => {
+    setTableRef = (table) => {
         this.reactTable = table;
     };
 
@@ -24,7 +24,7 @@ class CheckboxTable extends Component {
         this.props.toggleRow(id);
     };
 
-    stopPropagationOnClick = e => e.stopPropagation();
+    stopPropagationOnClick = (e) => e.stopPropagation();
 
     toggleSelectAllHandler = () => {
         this.props.toggleSelectAll();
@@ -52,24 +52,26 @@ class CheckboxTable extends Component {
                         checked={selection.includes(original.id)}
                         onChange={this.toggleRowHandler(original)}
                         onClick={this.stopPropagationOnClick} // don't want checkbox click to select the row
+                        aria-label="Toggle row select"
                     />
                 ),
                 Header: () => (
                     <input
                         type="checkbox"
                         checked={this.allSelected()}
-                        ref={input => {
+                        ref={(input) => {
                             if (input) {
                                 input.indeterminate = this.someSelected(); // eslint-disable-line no-param-reassign
                             }
                         }}
                         onChange={this.toggleSelectAllHandler}
+                        aria-label="Toggle select all rows"
                     />
                 ),
                 sortable: false,
-                width: 28
+                width: 28,
             },
-            ...columns
+            ...columns,
         ];
     };
 

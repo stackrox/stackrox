@@ -30,36 +30,40 @@ class NamespaceDetails extends Component {
         onClose: PropTypes.func.isRequired,
         namespace: PropTypes.shape({
             id: PropTypes.string,
-            deployments: PropTypes.arrayOf(PropTypes.shape({}))
+            deployments: PropTypes.arrayOf(PropTypes.shape({})),
         }),
         networkGraphRef: PropTypes.shape({
             setSelectedNode: PropTypes.func,
             selectedNode: PropTypes.shape({}),
             onNodeClick: PropTypes.func,
-            getNodeData: PropTypes.func
+            getNodeData: PropTypes.func,
         }),
         filterState: PropTypes.number.isRequired,
-        history: ReactRouterPropTypes.history.isRequired
+        history: ReactRouterPropTypes.history.isRequired,
     };
 
     static defaultProps = {
         namespace: {
             id: null,
-            deployments: []
+            deployments: [],
         },
         isFetchingNamespace: false,
-        networkGraphRef: null
+        networkGraphRef: null,
     };
 
     constructor(props) {
         super(props);
         this.state = {
             page: 0,
-            selectedNode: null
+            selectedNode: null,
         };
     }
 
-    componentWillReceiveProps = () => {
+    // TODO: refactor this component
+    //   1. if leaving a class component, use `getDerivedStateFromProps` instead
+    //   2. change to functional component with hooks
+    // eslint-disable-next-line camelcase
+    UNSAFE_componentWillReceiveProps = () => {
         this.setState({ selectedNode: null });
     };
 
@@ -80,11 +84,11 @@ class NamespaceDetails extends Component {
         }
     };
 
-    setTablePage = newPage => {
+    setTablePage = (newPage) => {
         this.setState({ page: newPage });
     };
 
-    renderRowActionButtons = node => {
+    renderRowActionButtons = (node) => {
         return (
             <div className="border-2 border-r-2 border-base-400 bg-base-100 flex">
                 <RowActionButton
@@ -111,7 +115,7 @@ class NamespaceDetails extends Component {
             {
                 Header: 'Deployment',
                 accessor: 'data.name',
-                Cell: ({ value }) => <span>{value}</span>
+                Cell: ({ value }) => <span>{value}</span>,
             },
             {
                 Header: `${filterStateString} Flows`,
@@ -119,14 +123,14 @@ class NamespaceDetails extends Component {
                 Cell: ({ value }) => (
                     <span>{value.filter(({ data }) => data.destNodeId).length}</span>
                 ),
-                sortMethod: sortValue
+                sortMethod: sortValue,
             },
             {
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original)
-            }
+                Cell: ({ original }) => this.renderRowActionButtons(original),
+            },
         ];
         const rows = namespace.deployments;
         if (!rows.length) return <NoResultsMessage message="No namespace deployments" />;
@@ -179,19 +183,14 @@ const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
     namespace: selectors.getSelectedNamespace,
-    isFetchingNamespace: state =>
+    isFetchingNamespace: (state) =>
         selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENTS),
     networkGraphRef: selectors.getNetworkGraphRef,
-    filterState: selectors.getNetworkGraphFilterMode
+    filterState: selectors.getNetworkGraphFilterMode,
 });
 
 const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard
+    onClose: pageActions.closeNetworkWizard,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(NamespaceDetails)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(NamespaceDetails));

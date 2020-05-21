@@ -8,7 +8,7 @@ import TooltipOverlay from 'Components/TooltipOverlay';
 
 import VulnsTable from './VulnsTable';
 
-const CVETable = props => {
+const CVETable = (props) => {
     function getColumns() {
         const columns = [
             {
@@ -20,7 +20,7 @@ const CVETable = props => {
                     if (rest.original.vulns.length === 0) return '';
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
                     return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
-                }
+                },
             },
             {
                 Header: 'Name',
@@ -28,21 +28,21 @@ const CVETable = props => {
                 headerClassName:
                     'pl-3 font-600 text-left border-b border-base-300 border-r-0 bg-primary-200',
                 // eslint-disable-next-line react/prop-types
-                Cell: ({ value }) => <div>{value}</div>
+                Cell: ({ value }) => <div>{value}</div>,
             },
             {
                 Header: 'Version',
                 accessor: 'version',
                 className: 'w-1/8 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
             },
             {
                 Header: 'Source',
                 accessor: 'source',
                 className: 'pr-4 flex items-center justify-end w-1/8',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
             },
             {
                 Header: 'Location',
@@ -54,15 +54,15 @@ const CVETable = props => {
                     <Tooltip content={<TooltipOverlay>{value}</TooltipOverlay>}>
                         <div>{value}</div>
                     </Tooltip>
-                )
+                ),
             },
             {
                 Header: 'CVEs',
                 accessor: 'vulns.length',
                 className: 'w-1/10 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
-            }
+                    'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+            },
         ];
 
         if (props.containsFixableCVEs) {
@@ -72,9 +72,9 @@ const CVETable = props => {
                 headerClassName:
                     'w-1/10 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
                 Cell: ({ original }) => {
-                    return original.vulns.filter(vuln => vuln.fixedBy).length;
+                    return original.vulns.filter((vuln) => vuln.fixedBy).length;
                 },
-                sortMethod: sortValue
+                sortMethod: sortValue,
             });
         }
         return columns;
@@ -110,11 +110,11 @@ const CVETable = props => {
             defaultSorted={[
                 {
                     id: 'vulns.length',
-                    desc: true
+                    desc: true,
                 },
                 {
-                    id: 'name'
-                }
+                    id: 'name',
+                },
             ]}
             {...rest}
         />
@@ -123,13 +123,13 @@ const CVETable = props => {
 
 CVETable.propTypes = {
     scan: PropTypes.shape({
-        components: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+        components: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     }).isRequired,
-    containsFixableCVEs: PropTypes.bool
+    containsFixableCVEs: PropTypes.bool,
 };
 
 CVETable.defaultProps = {
-    containsFixableCVEs: false
+    containsFixableCVEs: false,
 };
 
 export default CVETable;

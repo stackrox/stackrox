@@ -4,7 +4,7 @@ import HeaderWithSubText from './HeaderWithSubText';
 
 export default {
     title: 'HeaderWithSubText',
-    component: HeaderWithSubText
+    component: HeaderWithSubText,
 };
 
 export const withData = () => {

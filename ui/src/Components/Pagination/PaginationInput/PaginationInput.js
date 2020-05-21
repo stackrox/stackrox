@@ -9,16 +9,16 @@ const TYPING_DELAY = 800;
 
 const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
     const [localPage, setLocalPage] = useState(currentPage);
-    const delayedSetPage = useCallback(debounce(newPage => onChange(newPage), TYPING_DELAY), []);
+    const delayedSetPage = useCallback(
+        debounce((newPage) => onChange(newPage), TYPING_DELAY),
+        []
+    );
 
     const totalPages = Math.ceil(totalSize / pageSize);
 
-    useEffect(
-        () => {
-            setLocalPage(currentPage);
-        },
-        [currentPage]
-    );
+    useEffect(() => {
+        setLocalPage(currentPage);
+    }, [currentPage]);
 
     function onChangePage(e) {
         const { value } = e.target;
@@ -43,6 +43,7 @@ const PaginationInput = ({ totalSize, onChange, currentPage, pageSize }) => {
                 disabled={totalPages < 2}
                 onChange={onChangePage}
                 data-testid="pagination-input"
+                aria-label="Page Number"
             />
             of {totalPages}
         </div>
@@ -53,11 +54,11 @@ PaginationInput.propTypes = {
     currentPage: PropTypes.number.isRequired,
     totalSize: PropTypes.number.isRequired,
     onChange: PropTypes.func.isRequired,
-    pageSize: PropTypes.number
+    pageSize: PropTypes.number,
 };
 
 PaginationInput.defaultProps = {
-    pageSize: 10
+    pageSize: 10,
 };
 
 export default PaginationInput;

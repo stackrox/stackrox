@@ -21,7 +21,7 @@ function* saveRole(action) {
     try {
         const { role } = action;
         const roles = yield select(selectors.getRoles);
-        const isNewRole = !roles.filter(currRole => currRole.name === role.name).length;
+        const isNewRole = !roles.filter((currRole) => currRole.name === role.name).length;
         if (isNewRole) {
             yield call(service.createRole, role);
             yield put(actions.selectRole(role));
@@ -93,6 +93,6 @@ export default function* integrations() {
         fork(watchSaveRole),
         fork(watchDeleteRole),
         fork(watchSelectRole),
-        fork(watchFetchResources)
+        fork(watchFetchResources),
     ]);
 }

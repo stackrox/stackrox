@@ -2,12 +2,12 @@ import { combineReducers } from 'redux';
 
 export const types = {
     RECORD_SERVER_ERROR: 'serverError/RECORD_ERROR',
-    RECORD_SERVER_SUCCESS: 'serverError/RECORD_SUCCESS'
+    RECORD_SERVER_SUCCESS: 'serverError/RECORD_SUCCESS',
 };
 
 export const actions = {
     recordServerError: () => ({ type: types.RECORD_SERVER_ERROR }),
-    recordServerSuccess: () => ({ type: types.RECORD_SERVER_SUCCESS })
+    recordServerSuccess: () => ({ type: types.RECORD_SERVER_SUCCESS }),
 };
 
 export const serverStates = { UP: 'UP', UNREACHABLE: 'UNREACHABLE', RESURRECTED: 'RESURRECTED' };
@@ -22,7 +22,7 @@ const getStateAfterSuccessfulRequest = (state = null) => {
     return {
         numSuccessiveFailures: 0,
         firstFailure: null,
-        serverState: newServerState
+        serverState: newServerState,
     };
 };
 
@@ -39,7 +39,7 @@ const checkUnreachableState = (numSuccessiveFailures, firstFailure, currentServe
         numSuccessiveFailures >= MIN_FAILURES_BEFORE_FAIL &&
         (Date.now() - firstFailure) / 1000 >= MIN_SECONDS_BEFORE_FAIL
             ? serverStates.UNREACHABLE
-            : currentServerState
+            : currentServerState,
 });
 
 const serverError = (state = null, action) => {
@@ -63,13 +63,13 @@ const serverError = (state = null, action) => {
 };
 
 const reducer = combineReducers({
-    serverError
+    serverError,
 });
 
-const getServerState = state => state.serverError && state.serverError.serverState;
+const getServerState = (state) => state.serverError && state.serverError.serverState;
 
 export const selectors = {
-    getServerState
+    getServerState,
 };
 
 export default reducer;

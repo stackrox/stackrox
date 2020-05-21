@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import gql from 'graphql-tag';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -33,7 +33,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
-        query: queryService.objectToWhereClause(queryObject)
+        query: queryService.objectToWhereClause(queryObject),
     };
 
     const defaultQuery = gql`
@@ -123,7 +123,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                     secretCount,
                     imageCount,
                     complianceControlCount,
-                    status: { orchestratorMetadata = null }
+                    status: { orchestratorMetadata = null },
                 } = entity;
 
                 const { version = 'N/A' } = orchestratorMetadata;
@@ -131,8 +131,8 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                 const metadataKeyValuePairs = [
                     {
                         key: 'K8s version',
-                        value: version
-                    }
+                        value: version,
+                    },
                 ];
 
                 const { passingCount, failingCount, unknownCount } = complianceControlCount;
@@ -211,12 +211,12 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     <TabContent>
                                         <DeploymentsWithFailedPolicies
                                             query={queryService.objectToWhereClause({
-                                                Cluster: name
+                                                Cluster: name,
                                             })}
                                             message="No deployments violating policies in this cluster"
                                             entityContext={{
                                                 ...entityContext,
-                                                [entityTypes.CLUSTER]: id
+                                                [entityTypes.CLUSTER]: id,
                                             }}
                                         />
                                     </TabContent>
@@ -225,7 +225,7 @@ const Cluster = ({ id, entityListType, entityId1, query, entityContext }) => {
                                             entityType={entityTypes.CLUSTER}
                                             entityContext={{
                                                 ...entityContext,
-                                                [entityTypes.CLUSTER]: id
+                                                [entityTypes.CLUSTER]: id,
                                             }}
                                         />
                                     </TabContent>

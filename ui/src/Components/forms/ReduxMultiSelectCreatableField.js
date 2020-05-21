@@ -19,14 +19,14 @@ ReduxMultiSelectCreatable.propTypes = {
     input: PropTypes.shape({
         name: PropTypes.string,
         value: PropTypes.array,
-        onChange: PropTypes.func
+        onChange: PropTypes.func,
     }).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    placeholder: PropTypes.string
+    placeholder: PropTypes.string,
 };
 
 ReduxMultiSelectCreatable.defaultProps = {
-    placeholder: 'Select options'
+    placeholder: 'Select options',
 };
 
 const ReduxMultiSelectCreatableField = ({ name, options }) => (
@@ -41,7 +41,7 @@ const ReduxMultiSelectCreatableField = ({ name, options }) => (
 
 ReduxMultiSelectCreatableField.propTypes = {
     name: PropTypes.string.isRequired,
-    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default ReduxMultiSelectCreatableField;

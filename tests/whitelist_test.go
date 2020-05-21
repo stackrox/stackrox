@@ -23,7 +23,8 @@ func TestWhitelist(t *testing.T) {
 
 func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlertsRequest, desired int) {
 	var alerts []*storage.ListAlert
-	for i := 0; i < 5; i++ {
+	// Retry until desired alert count is reached when sensor(s) resync
+	for i := 0; i < 45; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		resp, err := service.ListAlerts(ctx, req)
 		cancel()
@@ -111,6 +112,7 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	alertService := v1.NewAlertServiceClient(conn)
 
 	qb = search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, latestPolicy.GetName()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
+	// Wait for alert to be removed now that it is whitelisted
 	waitForAlert(t, alertService, &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	}, 1)

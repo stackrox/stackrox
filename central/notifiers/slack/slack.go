@@ -102,10 +102,7 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 	}
 
 	webhookURL := notifiers.GetLabelValue(alert, s.GetLabelKey(), s.GetLabelDefault())
-	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {
@@ -160,10 +157,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	}
 
 	webhookURL := s.GetLabelDefault()
-	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {
@@ -200,10 +194,7 @@ func (s *slack) Test() error {
 		return errors.New("Could not marshal test notification")
 	}
 
-	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {

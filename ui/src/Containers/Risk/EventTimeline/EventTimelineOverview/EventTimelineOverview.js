@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from 'react-apollo';
 import Raven from 'raven-js';
+import pluralize from 'pluralize';
 
-import { graphObjectTypes } from 'constants/timelineTypes';
 import Modal from 'Components/Modal';
 import TimelineOverview from 'Components/TimelineOverview';
 import Loader from 'Components/Loader';
@@ -13,7 +13,7 @@ import { GET_EVENT_TIMELINE_OVERVIEW } from '../timelineQueries';
 const EventTimelineOverview = ({ deploymentId }) => {
     const [isModalOpen, setModalOpen] = useState(false);
     const { loading, error, data } = useQuery(GET_EVENT_TIMELINE_OVERVIEW, {
-        variables: { deploymentId }
+        variables: { deploymentId },
     });
 
     if (error) Raven.captureException(error);
@@ -30,10 +30,9 @@ const EventTimelineOverview = ({ deploymentId }) => {
         numPolicyViolations,
         numProcessActivities,
         numRestarts,
-        numTerminations
+        numTerminations,
     } = data.deployment;
-    const numTotalEvents =
-        numPolicyViolations + numProcessActivities + numRestarts + numTerminations;
+    const numRestartsAndTerminations = numRestarts + numTerminations;
 
     function showEventTimelineGraph() {
         setModalOpen(true);
@@ -44,26 +43,27 @@ const EventTimelineOverview = ({ deploymentId }) => {
     }
 
     const counts = [
-        { text: 'Policy Violations', count: numPolicyViolations },
-        { text: 'Process Activities', count: numProcessActivities },
-        { text: 'Restarts / Terminations', count: numRestarts + numTerminations }
+        { text: pluralize('Policy Violation', numPolicyViolations), count: numPolicyViolations },
+        {
+            text: pluralize('Process Activities', numProcessActivities),
+            count: numProcessActivities,
+        },
+        {
+            text: pluralize('Restarts / Terminations', numRestartsAndTerminations),
+            count: numRestartsAndTerminations,
+        },
     ];
 
     return (
         <>
             <TimelineOverview
-                type={graphObjectTypes.EVENT}
-                total={numTotalEvents}
+                dataTestId="event-timeline-overview"
                 counts={counts}
                 onClick={showEventTimelineGraph}
                 loading={loading}
             />
             {isModalOpen && (
-                <Modal
-                    isOpen={isModalOpen}
-                    onRequestClose={hideEventTimelineGraph}
-                    className="w-2/3 h-full"
-                >
+                <Modal isOpen={isModalOpen} onRequestClose={hideEventTimelineGraph}>
                     <EventTimeline deploymentId={deploymentId} />
                 </Modal>
             )}
@@ -72,7 +72,7 @@ const EventTimelineOverview = ({ deploymentId }) => {
 };
 
 EventTimelineOverview.propTypes = {
-    deploymentId: PropTypes.string.isRequired
+    deploymentId: PropTypes.string.isRequired,
 };
 
 export default React.memo(EventTimelineOverview);

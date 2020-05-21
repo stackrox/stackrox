@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 // Command checks the image against image build lifecycle policies
@@ -23,12 +24,12 @@ func Command() *cobra.Command {
 		Use:   "scan",
 		Short: "Scan an image and return the result.",
 		Long:  "Scan an image and return the result.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
 			return scanImage(image, force, flags.Timeout(c))
-		},
+		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")

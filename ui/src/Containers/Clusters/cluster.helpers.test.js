@@ -8,14 +8,14 @@ import {
     formatLastCheckIn,
     formatSensorVersion,
     parseUpgradeStatus,
-    getUpgradeableClusters
+    getUpgradeableClusters,
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
     describe('formatClusterType', () => {
         it('should return the string "Kubernetes" if passed a value of KUBERNETES_CLUSTER', () => {
             const testCluster = {
-                type: 'KUBERNETES_CLUSTER'
+                type: 'KUBERNETES_CLUSTER',
             };
 
             const displayValue = formatClusterType(testCluster.type);
@@ -25,7 +25,7 @@ describe('cluster helpers', () => {
 
         it('should return the string "OpenShift" if passed a value of OPENSHIFT_CLUSTER', () => {
             const testCluster = {
-                type: 'OPENSHIFT_CLUSTER'
+                type: 'OPENSHIFT_CLUSTER',
             };
 
             const displayValue = formatClusterType(testCluster.type);
@@ -37,7 +37,7 @@ describe('cluster helpers', () => {
     describe('formatCollectionMethod', () => {
         it('should return the string "None" if passed a value of NO_COLLECTION', () => {
             const testCluster = {
-                collectionMethod: 'NO_COLLECTION'
+                collectionMethod: 'NO_COLLECTION',
             };
 
             const displayValue = formatCollectionMethod(testCluster.collectionMethod);
@@ -47,7 +47,7 @@ describe('cluster helpers', () => {
 
         it('should return the string "Kernel Module" if passed a value of KERNEL_MODULE', () => {
             const testCluster = {
-                collectionMethod: 'KERNEL_MODULE'
+                collectionMethod: 'KERNEL_MODULE',
             };
 
             const displayValue = formatCollectionMethod(testCluster.collectionMethod);
@@ -57,7 +57,7 @@ describe('cluster helpers', () => {
 
         it('should return the string "eBPF" if passed a value of EBPF', () => {
             const testCluster = {
-                collectionMethod: 'EBPF'
+                collectionMethod: 'EBPF',
             };
 
             const displayValue = formatCollectionMethod(testCluster.collectionMethod);
@@ -69,7 +69,7 @@ describe('cluster helpers', () => {
     describe('formatConfiguredField', () => {
         it('should return the string "Not configured" if passed a value of false', () => {
             const testCluster = {
-                admissionController: false
+                admissionController: false,
             };
 
             const displayValue = formatConfiguredField(testCluster.admissionController);
@@ -79,7 +79,7 @@ describe('cluster helpers', () => {
 
         it('should return the string "Configured" if passed a value of false', () => {
             const testCluster = {
-                admissionController: true
+                admissionController: true,
             };
 
             const displayValue = formatConfiguredField(testCluster.admissionController);
@@ -92,8 +92,8 @@ describe('cluster helpers', () => {
         it('should return a formatted date string if passed a status object with a lastContact field', () => {
             const testCluster = {
                 status: {
-                    lastContact: '2019-08-28T17:20:29.156602Z'
-                }
+                    lastContact: '2019-08-28T17:20:29.156602Z',
+                },
             };
 
             const displayValue = formatLastCheckIn(testCluster.status);
@@ -108,8 +108,8 @@ describe('cluster helpers', () => {
         it('should return a "N/A" if passed a status object with null lastContact field', () => {
             const testCluster = {
                 status: {
-                    lastContact: null
-                }
+                    lastContact: null,
+                },
             };
 
             const displayValue = formatLastCheckIn(testCluster.status);
@@ -119,7 +119,7 @@ describe('cluster helpers', () => {
 
         it('should return a "N/A" if passed a status object with null status field', () => {
             const testCluster = {
-                status: null
+                status: null,
             };
 
             const displayValue = formatLastCheckIn(testCluster.status);
@@ -132,8 +132,8 @@ describe('cluster helpers', () => {
         it('should return sensor version string if passed a status object with a sensorVersion field', () => {
             const testCluster = {
                 status: {
-                    sensorVersion: 'sensorVersion'
-                }
+                    sensorVersion: 'sensorVersion',
+                },
             };
 
             const displayValue = formatSensorVersion(testCluster.status);
@@ -144,8 +144,8 @@ describe('cluster helpers', () => {
         it('should return a "Not Running" if passed a status object with null sensorVersion field', () => {
             const testCluster = {
                 status: {
-                    sensorVersion: null
-                }
+                    sensorVersion: null,
+                },
             };
 
             const displayValue = formatSensorVersion(testCluster.status);
@@ -155,7 +155,7 @@ describe('cluster helpers', () => {
 
         it('should return a "Not Running" if passed a status object with null status field', () => {
             const testCluster = {
-                status: null
+                status: null,
             };
 
             const displayValue = formatSensorVersion(testCluster.status);
@@ -176,11 +176,11 @@ describe('cluster helpers', () => {
                             mostRecentProcess: {
                                 active: false,
                                 progress: {
-                                    upgradeState: 'UPGRADE_COMPLETE'
-                                }
-                            }
-                        }
-                    }
+                                    upgradeState: 'UPGRADE_COMPLETE',
+                                },
+                            },
+                        },
+                    },
                 },
                 {
                     id: '26eac883-1f09-4123-971b-8b00ee63f5fd',
@@ -191,12 +191,12 @@ describe('cluster helpers', () => {
                             mostRecentProcess: {
                                 active: false,
                                 progress: {
-                                    upgradeState: 'UPGRADE_COMPLETE'
-                                }
-                            }
-                        }
-                    }
-                }
+                                    upgradeState: 'UPGRADE_COMPLETE',
+                                },
+                            },
+                        },
+                    },
+                },
             ];
 
             const upgradeableClusters = getUpgradeableClusters(clusters);
@@ -215,11 +215,11 @@ describe('cluster helpers', () => {
                             mostRecentProcess: {
                                 active: false,
                                 progress: {
-                                    upgradeState: 'UPGRADE_COMPLETE'
-                                }
-                            }
-                        }
-                    }
+                                    upgradeState: 'UPGRADE_COMPLETE',
+                                },
+                            },
+                        },
+                    },
                 },
                 {
                     id: '26eac883-1f09-4123-971b-8b00ee63f5fd',
@@ -230,12 +230,12 @@ describe('cluster helpers', () => {
                             mostRecentProcess: {
                                 active: false,
                                 progress: {
-                                    upgradeState: 'UPGRADE_COMPLETE'
-                                }
-                            }
-                        }
-                    }
-                }
+                                    upgradeState: 'UPGRADE_COMPLETE',
+                                },
+                            },
+                        },
+                    },
+                },
             ];
 
             const upgradeableClusters = getUpgradeableClusters(clusters);
@@ -253,20 +253,20 @@ describe('cluster helpers', () => {
             expect(displayValue).toEqual(null);
         });
 
-        it('should return "On the latest version" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
+        it('should return "Up to date with Central version" if upgradeStatus -> upgradability is UP_TO_DATE', () => {
             const testUpgradeStatus = {
-                upgradability: 'UP_TO_DATE'
+                upgradability: 'UP_TO_DATE',
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
-            const expected = { displayValue: 'On the latest version', type: 'current' };
+            const expected = { displayValue: 'Up to date with Central version', type: 'current' };
             expect(displayValue).toEqual(expected);
         });
 
         it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
             const testUpgradeStatus = {
-                upgradability: 'MANUAL_UPGRADE_REQUIRED'
+                upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -277,16 +277,16 @@ describe('cluster helpers', () => {
 
         it('should return "Upgrade available" if there is no mostRecentProcess ', () => {
             const testUpgradeStatus = {
-                upgradability: 'AUTO_UPGRADE_POSSIBLE'
+                upgradability: 'AUTO_UPGRADE_POSSIBLE',
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Upgrade available'
+                    actionText: 'Upgrade available',
                 },
-                type: 'download'
+                type: 'download',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -297,18 +297,18 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: false,
                     progress: {
-                        upgradeState: 'UPGRADE_COMPLETE'
-                    }
-                }
+                        upgradeState: 'UPGRADE_COMPLETE',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Upgrade available'
+                    actionText: 'Upgrade available',
                 },
-                type: 'download'
+                type: 'download',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -319,9 +319,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: false,
                     progress: {
-                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED'
-                    }
-                }
+                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -330,8 +330,8 @@ describe('cluster helpers', () => {
                 displayValue: 'Pre-flight checks failed',
                 type: 'failure',
                 action: {
-                    actionText: 'Retry upgrade'
-                }
+                    actionText: 'Retry upgrade',
+                },
             };
             expect(displayValue).toEqual(expected);
         });
@@ -342,16 +342,16 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_INITIALIZING'
-                    }
-                }
+                        upgradeState: 'UPGRADE_INITIALIZING',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Upgrade initializing',
-                type: 'progress'
+                type: 'progress',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -362,9 +362,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADER_LAUNCHING'
-                    }
-                }
+                        upgradeState: 'UPGRADER_LAUNCHING',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -379,9 +379,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADER_LAUNCHED'
-                    }
-                }
+                        upgradeState: 'UPGRADER_LAUNCHED',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -396,9 +396,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'PRE_FLIGHT_CHECKS_COMPLETE'
-                    }
-                }
+                        upgradeState: 'PRE_FLIGHT_CHECKS_COMPLETE',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -413,19 +413,19 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED'
-                    }
-                }
+                        upgradeState: 'PRE_FLIGHT_CHECKS_FAILED',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Retry upgrade'
+                    actionText: 'Retry upgrade',
                 },
                 displayValue: 'Pre-flight checks failed',
-                type: 'failure'
+                type: 'failure',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -436,9 +436,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_OPERATIONS_DONE'
-                    }
-                }
+                        upgradeState: 'UPGRADE_OPERATIONS_DONE',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -453,9 +453,9 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_COMPLETE'
-                    }
-                }
+                        upgradeState: 'UPGRADE_COMPLETE',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
@@ -470,19 +470,19 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_ERROR_ROLLED_BACK'
-                    }
-                }
+                        upgradeState: 'UPGRADE_ERROR_ROLLED_BACK',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Retry upgrade'
+                    actionText: 'Retry upgrade',
                 },
                 displayValue: 'Upgrade failed. Rolled back.',
-                type: 'failure'
+                type: 'failure',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -493,19 +493,19 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_ERROR_ROLLBACK_FAILED'
-                    }
-                }
+                        upgradeState: 'UPGRADE_ERROR_ROLLBACK_FAILED',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Retry upgrade'
+                    actionText: 'Retry upgrade',
                 },
                 displayValue: 'Upgrade failed. Rollback failed.',
-                type: 'failure'
+                type: 'failure',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -516,42 +516,42 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_TIMED_OUT'
-                    }
-                }
+                        upgradeState: 'UPGRADE_TIMED_OUT',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Retry upgrade'
+                    actionText: 'Retry upgrade',
                 },
                 displayValue: 'Upgrade timed out.',
-                type: 'failure'
+                type: 'failure',
             };
             expect(displayValue).toEqual(expected);
         });
 
-        it('should return "Upgrade timed out." if upgradeState is UPGRADE_TIMED_OUT', () => {
+        it('should return "Upgrade timed out." if upgradeState is UPGRADE_ERROR_UNKNOWN', () => {
             const testUpgradeStatus = {
                 upgradability: 'AUTO_UPGRADE_POSSIBLE',
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'UPGRADE_ERROR_UNKNOWN'
-                    }
-                }
+                        upgradeState: 'UPGRADE_ERROR_UNKNOWN',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 action: {
-                    actionText: 'Retry upgrade'
+                    actionText: 'Retry upgrade',
                 },
                 displayValue: 'Upgrade error unknown',
-                type: 'failure'
+                type: 'failure',
             };
             expect(displayValue).toEqual(expected);
         });
@@ -562,16 +562,16 @@ describe('cluster helpers', () => {
                 mostRecentProcess: {
                     active: true,
                     progress: {
-                        upgradeState: 'SNAFU'
-                    }
-                }
+                        upgradeState: 'SNAFU',
+                    },
+                },
             };
 
             const displayValue = parseUpgradeStatus(testUpgradeStatus);
 
             const expected = {
                 displayValue: 'Unknown upgrade state. Contact Support.',
-                type: 'intervention'
+                type: 'intervention',
             };
             expect(displayValue).toEqual(expected);
         });

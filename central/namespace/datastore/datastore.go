@@ -82,10 +82,15 @@ type datastoreImpl struct {
 
 func (b *datastoreImpl) buildIndex() error {
 	log.Info("[STARTUP] Indexing namespaces")
-	namespaces, err := b.store.GetNamespaces()
+	var namespaces []*storage.NamespaceMetadata
+	err := b.store.Walk(func(ns *storage.NamespaceMetadata) error {
+		namespaces = append(namespaces, ns)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
+
 	if err := b.indexer.AddNamespaceMetadatas(namespaces); err != nil {
 		return err
 	}
@@ -95,7 +100,7 @@ func (b *datastoreImpl) buildIndex() error {
 
 // GetNamespace returns namespace with given id.
 func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
-	namespace, found, err := b.store.GetNamespace(id)
+	namespace, found, err := b.store.Get(id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -111,21 +116,19 @@ func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace 
 
 // GetNamespaces retrieves namespaces matching the request from bolt
 func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
-	namespaces, err := b.store.GetNamespaces()
-	if err != nil {
-		return nil, err
-	}
-
-	allowedNamespaces := make([]*storage.NamespaceMetadata, 0, len(namespaces))
-	for _, namespace := range namespaces {
+	var allowedNamespaces []*storage.NamespaceMetadata
+	err := b.store.Walk(func(namespace *storage.NamespaceMetadata) error {
 		scopeKeys := []sac.ScopeKey{sac.ClusterScopeKey(namespace.GetClusterId()), sac.NamespaceScopeKey(namespace.GetName())}
 		if ok, err := namespaceSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS, scopeKeys...).
 			Allowed(ctx); err != nil || !ok {
-			continue
+			return nil
 		}
 		allowedNamespaces = append(allowedNamespaces, namespace)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-
 	b.updateNamespacePriority(allowedNamespaces...)
 	return allowedNamespaces, nil
 }
@@ -138,7 +141,7 @@ func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.Nam
 		return errors.New("permission denied")
 	}
 
-	if err := b.store.AddNamespace(namespace); err != nil {
+	if err := b.store.Upsert(namespace); err != nil {
 		return err
 	}
 	return b.indexer.AddNamespaceMetadata(namespace)
@@ -152,7 +155,7 @@ func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.
 		return errors.New("permission denied")
 	}
 
-	if err := b.store.UpdateNamespace(namespace); err != nil {
+	if err := b.store.Upsert(namespace); err != nil {
 		return err
 	}
 	return b.indexer.AddNamespaceMetadata(namespace)
@@ -166,7 +169,7 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 		return errors.New("permission denied")
 	}
 
-	if err := b.store.RemoveNamespace(id); err != nil {
+	if err := b.store.Delete(id); err != nil {
 		return err
 	}
 	// Remove ranker record here since removal is not handled in risk store as no entry present for namespace

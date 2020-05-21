@@ -5,7 +5,7 @@ import * as service from 'services/NetworkService';
 import { fetchClusters } from 'services/ClustersService';
 import {
     actions as backendNetworkActions,
-    types as backendNetworkTypes
+    types as backendNetworkTypes,
 } from 'reducers/network/backend';
 import { types as dialogueNetworkTypes } from 'reducers/network/dialogue';
 import { actions as graphNetworkActions, types as graphNetworkTypes } from 'reducers/network/graph';
@@ -13,7 +13,7 @@ import { types as pageNetworkTypes } from 'reducers/network/page';
 import { types as searchNetworkTypes } from 'reducers/network/search';
 import {
     actions as wizardNetworkActions,
-    types as wizardNetworkTypes
+    types as wizardNetworkTypes,
 } from 'reducers/network/wizard';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -33,7 +33,7 @@ function* getNetworkGraphs(clusterId, query) {
 
         const [{ response: flowGraph }, { response: policyGraph }] = yield all([
             call(service.fetchNetworkFlowGraph, clusterId, query, timeWindowToDate(timeWindow)),
-            call(service.fetchNetworkPolicyGraph, clusterId, query, modification)
+            call(service.fetchNetworkPolicyGraph, clusterId, query, modification),
         ]);
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyGraph));
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowGraph));
@@ -292,6 +292,6 @@ export default function* network() {
         fork(watchNetworkPolicyModification),
         fork(watchNotifyNetworkPolicyModification),
         fork(watchApplyNetworkPolicyModification),
-        fork(watchLocation)
+        fork(watchLocation),
     ]);
 }

@@ -21,7 +21,7 @@ const emptyComponent = {
     priority: 0,
     topVuln: {},
     version: '',
-    vulnCount: 0
+    vulnCount: 0,
 };
 
 function VulnMgmtComponentOverview({ data, entityContext }) {
@@ -35,12 +35,12 @@ function VulnMgmtComponentOverview({ data, entityContext }) {
     const metadataKeyValuePairs = [
         {
             key: 'Component Version',
-            value: version
+            value: version,
         },
         {
             key: 'Location',
-            value: 'N/A'
-        }
+            value: 'N/A',
+        },
     ];
 
     const componentStats = [<RiskScore key="risk-score" score={priority} />];

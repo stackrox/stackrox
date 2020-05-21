@@ -45,9 +45,11 @@ test('should update with different set of entities', () => {
     expect(result.current[0]).toBe(newEntities);
 });
 
-test('should not update with the same set of entities', () => {
+test('should not update with same entities in different order without order respect', () => {
     const initialState = [{ id: 1 }, { id: 2 }];
-    const { result } = renderHook(() => useEntitiesByIdsCache(initialState));
+    const { result } = renderHook(() =>
+        useEntitiesByIdsCache(initialState, { respectOrder: false })
+    );
 
     const newEntities = [{ id: 2 }, { id: 1 }];
     act(() => {
@@ -58,11 +60,32 @@ test('should not update with the same set of entities', () => {
     expect(result.current[0]).toBe(initialState);
 });
 
-test('should respect custom ID attribute', () => {
-    const initialState = [{ id: 1, customId: 'a' }, { id: 2, customId: 'b' }];
-    const { result } = renderHook(() => useEntitiesByIdsCache(initialState, 'customId'));
+test('should update with same entities in different order with order respect', () => {
+    const initialState = [{ id: 1 }, { id: 2 }];
+    const { result } = renderHook(() => useEntitiesByIdsCache(initialState));
 
-    const newEntities = [{ id: 1, customId: 'b' }, { id: 2, customId: 'c' }];
+    const newEntities = [{ id: 2 }, { id: 1 }];
+    act(() => {
+        const setEntities = result.current[1];
+        setEntities(newEntities);
+    });
+
+    expect(result.current[0]).toBe(newEntities);
+});
+
+test('should respect custom ID attribute', () => {
+    const initialState = [
+        { id: 1, customId: 'a' },
+        { id: 2, customId: 'b' },
+    ];
+    const { result } = renderHook(() =>
+        useEntitiesByIdsCache(initialState, { idAttribute: 'customId' })
+    );
+
+    const newEntities = [
+        { id: 1, customId: 'b' },
+        { id: 2, customId: 'c' },
+    ];
     act(() => {
         const setEntities = result.current[1];
         setEntities(newEntities);

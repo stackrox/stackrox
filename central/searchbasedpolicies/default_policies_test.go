@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	gogoTypes "github.com/gogo/protobuf/types"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
@@ -18,11 +17,10 @@ import (
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
-	processIndicatorBadgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -30,6 +28,7 @@ import (
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -38,10 +37,12 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestDefaultPolicies(t *testing.T) {
@@ -52,7 +53,7 @@ type DefaultPoliciesTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
-	db         *badger.DB
+	db         *gorocksdb.DB
 	dir        string
 
 	testCtx  context.Context
@@ -100,16 +101,16 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	suite.db, suite.dir, err = badgerhelper.NewTemp("default_policies_test.db")
+	suite.db, suite.dir, err = rocksdb.NewTemp("default_policies_test.db")
 	suite.Require().NoError(err)
 
-	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex)
+	suite.deploymentIndexer = deploymentIndex.New(suite.bleveIndex, suite.bleveIndex)
 	suite.deploymentSearcher = blevesearch.WrapUnsafeSearcherAsSearcher(suite.deploymentIndexer)
 
 	suite.imageIndexer = imageIndex.New(suite.bleveIndex)
 	suite.imageSearcher = blevesearch.WrapUnsafeSearcherAsSearcher(suite.imageIndexer)
 
-	processStore := processIndicatorBadgerStore.New(suite.db)
+	processStore := processIndicatorStore.New(suite.db)
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
 	processSearcher := processIndicatorSearch.New(processStore, processIndexer)
 	suite.processDataStore, err = processIndicatorDataStore.New(processStore, nil, processIndexer, processSearcher, nil)
@@ -135,7 +136,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 
 func (suite *DefaultPoliciesTestSuite) TearDownTest() {
 	suite.NoError(suite.bleveIndex.Close())
-	testutils.TearDownBadger(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNoDuplicatePolicyIDs() {
@@ -231,6 +232,18 @@ type testCase struct {
 	// If sampleViolationForMatched is provided, we verify that all the matches are the string provided in sampleViolationForMatched.
 	shouldNotMatch            map[string]struct{}
 	sampleViolationForMatched string
+}
+
+func (suite *DefaultPoliciesTestSuite) getImagesForDeployment(deployment *storage.Deployment) []*storage.Image {
+	images := suite.deploymentsToImages[deployment.GetId()]
+	if len(images) == 0 {
+		images = make([]*storage.Image, len(deployment.GetContainers()))
+		for i := range images {
+			images[i] = &storage.Image{}
+		}
+	}
+	suite.Equal(len(deployment.GetContainers()), len(images))
+	return images
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
@@ -485,6 +498,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		Annotations: map[string]string{
 			"owner": "IOWNTHIS",
 			"blah":  "Blah",
+			"email": "notavalidemail",
 		},
 	}
 	suite.mustIndexDepAndImages(depWithOwnerAnnotation)
@@ -567,14 +581,15 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	javaLineage := []string{"/bin/bash", "/mnt/scripts/run_server.sh", "/bin/java"}
 	fixtureDepJavaIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "/bin/bash", "-attack", "/bin/bash", javaLineage, 0)
 
-	// Find all the deployments indexed.
-	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
-	suite.NoError(err)
-
-	allImages, err := suite.imageIndexer.Search(search.EmptyQuery())
-	suite.NoError(err)
-
 	deploymentTestCases := []testCase{
+		{
+			policyName: "Images with no scans",
+			shouldNotMatch: map[string]struct{}{
+				fixtureDep.GetId():    {},
+				oldScannedDep.GetId(): {},
+			},
+			sampleViolationForMatched: "Image has not been scanned",
+		},
 		{
 			policyName: "Latest tag",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
@@ -789,30 +804,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 				},
 			},
-		},
-		{
-			policyName: "Images with no scans",
-			shouldNotMatch: map[string]struct{}{
-				// These deployments have scans on their images.
-				fixtureDep.GetId():    {},
-				oldScannedDep.GetId(): {},
-				// The rest of the deployments have no images!
-				"FAKEID":                                          {},
-				containerPort22Dep.GetId():                        {},
-				dockerSockDep.GetId():                             {},
-				secretEnvDep.GetId():                              {},
-				secretEnvSrcUnsetDep.GetId():                      {},
-				secretKeyRefDep.GetId():                           {},
-				depWithOwnerAnnotation.GetId():                    {},
-				depWithGoodEmailAnnotation.GetId():                {},
-				depWithBadEmailAnnotation.GetId():                 {},
-				depWitharbitraryAnnotations.GetId():               {},
-				sysAdminDep.GetId():                               {},
-				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
-				depWithEnforcementBypassAnnotation.GetId():        {},
-				hostMountDep.GetId():                              {},
-			},
-			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
 			policyName:                "Required Label: Email",
@@ -1053,30 +1044,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
 			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
-			matches, err := m.Match(suite.matchCtx, suite.deploymentSearcher)
-			require.NoError(t, err)
-			validateDeploymentMatches(matches, allDeployments, c, t)
-
-			var allIDs []string
-			for _, deployment := range allDeployments {
-				allIDs = append(allIDs, deployment.ID)
-			}
-			matchesFromMatchMany, err := m.MatchMany(suite.matchCtx, suite.deploymentSearcher, allIDs...)
-			require.NoError(t, err)
-			validateDeploymentMatches(matchesFromMatchMany, allDeployments, c, t)
-
-			var matchingIDs []string
-			for id := range c.expectedViolations {
-				matchingIDs = append(matchingIDs, id)
-			}
-			matchesFromExactlyMatchMany, err := m.MatchMany(suite.matchCtx, suite.deploymentSearcher, matchingIDs...)
-			require.NoError(t, err)
-			validateDeploymentMatches(matchesFromExactlyMatchMany, allDeployments, c, t)
 
 			for id, violations := range c.expectedViolations {
 				// Test match one only if we aren't testing processes
 				if violations.ProcessViolation == nil {
-					gotFromMatchOne, err := m.MatchOne(suite.matchCtx, suite.deployments[id], suite.deploymentsToImages[id], nil)
+					gotFromMatchOne, err := m.MatchOne(suite.matchCtx, suite.deployments[id], suite.getImagesForDeployment(suite.deployments[id]), nil)
 					require.NoError(t, err)
 					// Make checks case insensitive due to differences in regex
 					for _, a := range violations.AlertViolations {
@@ -1088,6 +1060,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 					assert.Equal(t, violations.ProcessViolation, gotFromMatchOne.ProcessViolation)
 				}
+			}
+
+			if len(c.shouldNotMatch) > 0 {
+				for id, deployment := range suite.deployments {
+					gotFromMatchOne, err := m.MatchOne(suite.matchCtx, deployment, suite.getImagesForDeployment(deployment), nil)
+					require.NoError(t, err)
+					matched := len(gotFromMatchOne.AlertViolations) > 0
+					_, shouldNotMatch := c.shouldNotMatch[id]
+					if assert.NotEqual(t, matched, shouldNotMatch, "Deployment %s violated expectation about not matching (matched: %v, should match: %v)", id, matched, !shouldNotMatch) {
+						if !shouldNotMatch && c.sampleViolationForMatched != "" {
+							assert.Equal(t, c.sampleViolationForMatched, gotFromMatchOne.AlertViolations[0].GetMessage())
+						}
+					}
+				}
+
 			}
 		})
 	}
@@ -1335,26 +1322,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
-			matches, err := m.Match(suite.testCtx, suite.imageSearcher)
-			require.NoError(t, err)
-			validateImageMatches(matches, allImages, c, t)
-
-			var allIDs []string
-			for _, image := range allImages {
-				allIDs = append(allIDs, image.ID)
-			}
-			matchesFromMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, allIDs...)
-			require.NoError(t, err)
-			validateImageMatches(matchesFromMatchMany, allImages, c, t)
-
-			var matchingIDs []string
-			for id := range c.expectedViolations {
-				matchingIDs = append(matchingIDs, id)
-			}
-			matchesFromExactlyMatchMany, err := m.MatchMany(suite.testCtx, suite.imageSearcher, matchingIDs...)
-			require.NoError(t, err)
-			validateImageMatches(matchesFromExactlyMatchMany, allImages, c, t)
-
 			for id, violations := range c.expectedViolations {
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.testCtx, nil, []*storage.Image{suite.images[id]}, nil)
@@ -1392,81 +1359,6 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	suite.Empty(matched.AlertViolations)
 }
 
-func validateImageMatches(matches map[string]searchbasedpolicies.Violations, allImages []search.Result, c testCase, t *testing.T) {
-	if len(c.shouldNotMatch) > 0 {
-		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
-		for id := range c.shouldNotMatch {
-			_, exists := matches[id]
-			assert.False(t, exists, "Should not have matched %s", id)
-		}
-
-		for _, imageResult := range allImages {
-			id := imageResult.ID
-			_, shouldNotMatch := c.shouldNotMatch[id]
-			if shouldNotMatch {
-				continue
-			}
-			match, exists := matches[id]
-			require.True(t, exists, "Should have matched %s. Got %+v", id, matches)
-			if c.sampleViolationForMatched != "" {
-				assert.Equal(t, c.sampleViolationForMatched, match.AlertViolations[0].GetMessage())
-			}
-		}
-		return
-	}
-
-	for id, violations := range c.expectedViolations {
-		got, ok := matches[id]
-		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
-			continue
-		}
-		assert.ElementsMatch(t, violations.AlertViolations, got.AlertViolations, "Expected violations %+v don't match what we got %+v", violations, got)
-		assert.Equal(t, violations.ProcessViolation, got.ProcessViolation, "Expected violations %+v don't match what we got %+v", violations, got)
-	}
-	assert.Len(t, matches, len(c.expectedViolations))
-}
-
-func validateDeploymentMatches(matches map[string]searchbasedpolicies.Violations, allDeployments []search.Result, c testCase, t *testing.T) {
-	if len(c.shouldNotMatch) > 0 {
-		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
-		for id := range c.shouldNotMatch {
-			_, exists := matches[id]
-			assert.False(t, exists, "Should not have matched %s", id)
-		}
-		for _, depResult := range allDeployments {
-			id := depResult.ID
-			_, shouldNotMatch := c.shouldNotMatch[id]
-			if shouldNotMatch {
-				continue
-			}
-			match, exists := matches[id]
-			assert.True(t, exists, "Should have matched %s", id)
-			if exists && c.sampleViolationForMatched != "" {
-				assert.Equal(t, c.sampleViolationForMatched, match.AlertViolations[0].GetMessage())
-			}
-		}
-		return
-	}
-
-	for id, violations := range c.expectedViolations {
-		got, ok := matches[id]
-		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
-			continue
-		}
-		// Make checks case insensitive due to differences in regex
-		for _, a := range violations.AlertViolations {
-			a.Message = strings.ToLower(a.Message)
-		}
-		for _, a := range got.AlertViolations {
-			a.Message = strings.ToLower(a.Message)
-		}
-		assert.ElementsMatch(t, violations.AlertViolations, got.AlertViolations, "Expected violations %+v don't match what we got %+v", violations, got)
-		assert.Equal(t, violations.ProcessViolation, got.ProcessViolation)
-
-	}
-	assert.Len(t, matches, len(c.expectedViolations))
-}
-
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 	for _, p := range suite.defaultPolicies {
 		if policyUtils.AppliesAtRunTime(p) && p.GetFields().GetProcessPolicy() != nil {
@@ -1482,4 +1374,30 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 			}
 		}
 	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestRequiredLabel() {
+	policy := suite.MustGetPolicy("Required Image Label")
+
+	policy.Fields.RequiredImageLabel = &storage.KeyValuePolicy{
+		Key:   "org.opencontainers.image.build_number",
+		Value: "27",
+	}
+
+	m, err := suite.matcherBuilder.ForPolicy(policy)
+	if err != nil {
+		panic(err)
+	}
+
+	image := fixtures.GetImage()
+	image.Metadata.V1.Labels = map[string]string{
+		"org.opencontainers.image.build_number": "28",
+		"i have":                                "multiple",
+	}
+
+	violations, err := m.MatchOne(context.Background(), nil, []*storage.Image{image}, nil)
+	if err != nil {
+		panic(err)
+	}
+	suite.NotEmpty(violations.AlertViolations)
 }

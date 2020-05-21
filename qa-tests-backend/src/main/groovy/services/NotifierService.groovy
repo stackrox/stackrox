@@ -5,6 +5,7 @@ import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.NotifierOuterClass
+import util.Env
 
 class NotifierService extends BaseService {
     private static final PAGERDUTY_API_KEY = "9e2d142a2946419c9192a0b224dd811b"
@@ -61,8 +62,8 @@ class NotifierService extends BaseService {
                 .setEnabled(true)
                 .setUiEndpoint(getStackRoxEndpoint())
                 .setEmail(builder.getEmailBuilder()
-                        .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
-                        .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
+                        .setUsername("automation@mailgun.rox.systems")
+                        .setPassword(Env.mustGet("MAILGUN_PASSWORD"))
                         .setSender(Constants.EMAIL_NOTIFER_SENDER)
                         .setFrom(Constants.EMAIL_NOTIFER_FROM)
                         .setDisableTLS(disableTLS)
@@ -162,7 +163,10 @@ class NotifierService extends BaseService {
      * @param legacy Does this integration provide the full URL path or just the base
      * @param name Splunk Integration name
      */
-    static NotifierOuterClass.Notifier getSplunkIntegrationConfig(boolean legacy, String name)  throws Exception {
+    static NotifierOuterClass.Notifier getSplunkIntegrationConfig(
+            boolean legacy,
+            String serviceName,
+            String name)  throws Exception {
         String splunkIntegration = "splunk-Integration"
         String prePackagedToken = "00000000-0000-0000-0000-000000000000"
 
@@ -177,7 +181,7 @@ class NotifierService extends BaseService {
                         .setHttpToken(prePackagedToken)
                         .setInsecure(true)
                         .setHttpEndpoint(String.format(
-                                "https://splunk-collector.qa:8088%s",
+                                "https://${serviceName}.qa:8088%s",
                                 legacy ? "/services/collector/event" : "")))
                 .build()
     }

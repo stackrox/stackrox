@@ -37,7 +37,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
     const riskPanelTabs = [
         { text: 'Risk Indicators' },
         { text: 'Deployment Details' },
-        { text: 'Process Discovery' }
+        { text: 'Process Discovery' },
     ];
     return (
         <Tabs headers={riskPanelTabs}>
@@ -81,24 +81,24 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
 }
 
 RiskSidePanelErrorContent.propTypes = {
-    message: PropTypes.string.isRequired
+    message: PropTypes.string.isRequired,
 };
 
 RiskSidePanelContent.propTypes = {
     isFetching: PropTypes.bool.isRequired,
     selectedDeployment: PropTypes.shape({
-        id: PropTypes.string.isRequired
+        id: PropTypes.string.isRequired,
     }),
     deploymentRisk: PropTypes.shape({}),
     processGroup: PropTypes.shape({
-        groups: PropTypes.arrayOf(PropTypes.object)
-    })
+        groups: PropTypes.arrayOf(PropTypes.object),
+    }),
 };
 
 RiskSidePanelContent.defaultProps = {
     selectedDeployment: undefined,
     deploymentRisk: undefined,
-    processGroup: undefined
+    processGroup: undefined,
 };
 
 export default RiskSidePanelContent;

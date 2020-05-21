@@ -16,10 +16,10 @@ class CreateRoleModal extends Component {
     static propTypes = {
         saveRole: PropTypes.func.isRequired,
         onClose: PropTypes.func.isRequired,
-        resources: PropTypes.arrayOf(PropTypes.string).isRequired
+        resources: PropTypes.arrayOf(PropTypes.string).isRequired,
     };
 
-    saveRoleHandler = data => {
+    saveRoleHandler = (data) => {
         this.props.saveRole(data);
         this.props.onClose();
     };
@@ -51,14 +51,11 @@ class CreateRoleModal extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    resources: selectors.getResources
+    resources: selectors.getResources,
 });
 
 const mapDispatchToProps = {
-    saveRole: actions.saveRole
+    saveRole: actions.saveRole,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(CreateRoleModal);
+export default connect(mapStateToProps, mapDispatchToProps)(CreateRoleModal);

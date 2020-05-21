@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	metricMap     = make(map[string]prometheus.Gauge)
+	metricMap     = make(map[string]*prometheus.GaugeVec)
 	metricMapLock sync.Mutex
 
 	bleveDiskUsage = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -33,21 +33,21 @@ var (
 	})
 )
 
-func newGauge(name string) prometheus.Gauge {
-	return prometheus.NewGauge(prometheus.GaugeOpts{
+func newGauge(name string) *prometheus.GaugeVec {
+	return prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      name,
 		Help:      "The name should be descriptive enough",
-	})
+	}, []string{"Index"})
 }
 
-func walkStatsMap(parentPrefix string, m map[string]interface{}) {
+func walkStatsMap(indexName, parentPrefix string, m map[string]interface{}) {
 	for k, v := range m {
 		currPrefix := parentPrefix + "_" + k
 		switch value := v.(type) {
 		case map[string]interface{}:
-			walkStatsMap(currPrefix, value)
+			walkStatsMap(indexName, currPrefix, value)
 		case uint64:
 			concurrency.WithLock(&metricMapLock, func() {
 				gauge, ok := metricMap[currPrefix]
@@ -58,7 +58,7 @@ func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 					// Register the gauge the first time
 					prometheus.MustRegister(gauge)
 				}
-				gauge.Set(float64(value))
+				gauge.With(prometheus.Labels{"Index": indexName}).Set(float64(value))
 			})
 		default:
 			log.Warnf("Unhandled metric %q", currPrefix)
@@ -67,10 +67,10 @@ func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 }
 
 // start monitoring on that path
-func startMonitoring(index bleve.Index, path string) {
+func startMonitoring(index bleve.Index, resource string, path string) {
 	ticker := time.NewTicker(diskUsageScrapeRate)
 	for range ticker.C {
-		walkStatsMap(metricPrefix, index.StatsMap())
+		walkStatsMap(resource, metricPrefix, index.StatsMap())
 		size, err := fileutils.DirectorySize(path)
 		if err != nil {
 			log.Errorf("error getting index directory size: %v", err)

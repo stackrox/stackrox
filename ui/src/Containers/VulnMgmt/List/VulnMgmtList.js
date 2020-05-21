@@ -17,10 +17,10 @@ const entityComponentMap = {
     [entityTypes.CVE]: VulnMgmtListCves,
     [entityTypes.CLUSTER]: VulnMgmtListClusters,
     [entityTypes.NAMESPACE]: VulnMgmtListNamespaces,
-    [entityTypes.POLICY]: VulnMgmtListPolicies
+    [entityTypes.POLICY]: VulnMgmtListPolicies,
 };
 
-const VulnMgmtEntityList = props => {
+const VulnMgmtEntityList = (props) => {
     const { entityListType } = props;
     const Component = entityComponentMap[entityListType];
     if (!Component) return <PageNotFound resourceType={entityListType} />;

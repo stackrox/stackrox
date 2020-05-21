@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 
-import logError from 'modules/logError';
+import logError from 'utils/logError';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
 
 export const GET_ALERT_COMMENTS = gql`
@@ -101,13 +101,13 @@ export const REMOVE_PROCESS_COMMENT = gql`
  * @param {string} type - The tags type (ie. VIOLATION and PROCESS)
  * @returns {Result} - returns an object with queries
  */
-export const getQueriesByType = type => {
+export const getQueriesByType = (type) => {
     if (type === ANALYST_NOTES_TYPES.VIOLATION) {
         return {
             GET_COMMENTS: GET_ALERT_COMMENTS,
             ADD_COMMENT: ADD_ALERT_COMMENT,
             UPDATE_COMMENT: UPDATE_ALERT_COMMENT,
-            REMOVE_COMMENT: REMOVE_ALERT_COMMENT
+            REMOVE_COMMENT: REMOVE_ALERT_COMMENT,
         };
     }
     if (type === ANALYST_NOTES_TYPES.PROCESS) {
@@ -115,7 +115,7 @@ export const getQueriesByType = type => {
             GET_COMMENTS: GET_PROCESS_COMMENTS,
             ADD_COMMENT: ADD_PROCESS_COMMENT,
             UPDATE_COMMENT: UPDATE_PROCESS_COMMENT,
-            REMOVE_COMMENT: REMOVE_PROCESS_COMMENT
+            REMOVE_COMMENT: REMOVE_PROCESS_COMMENT,
         };
     }
     const error = `Queries for type (${type}) do not exist`;

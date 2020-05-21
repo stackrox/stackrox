@@ -3,10 +3,10 @@ import entityTypes from 'constants/entityTypes';
 import { K8S_ROLES as QUERY } from 'queries/role';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { sortValueByLength, sortDate } from 'sorters/sorters';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
@@ -19,19 +19,19 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Role`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         {
             Header: `Type`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'type'
+            accessor: 'type',
         },
         {
             Header: `Permissions`,
@@ -44,7 +44,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <div className="capitalize">{permissions.join(', ')}</div>;
             },
             accessor: 'verbs',
-            sortMethod: sortValueByLength
+            sortMethod: sortValueByLength,
         },
         {
             Header: `Created`,
@@ -56,7 +56,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(createdAt, dateTimeFormat);
             },
             accessor: 'createdAt',
-            sortMethod: sortDate
+            sortMethod: sortDate,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -73,7 +73,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         {
             Header: `Namespace Scope`,
@@ -84,7 +84,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { roleNamespace, id } = original;
                 if (!roleNamespace) return 'Cluster-wide';
                 const {
-                    metadata: { name, id: namespaceId }
+                    metadata: { name, id: namespaceId },
                 } = roleNamespace;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -92,7 +92,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     .url();
                 return <TableCellLink pdf={pdf} url={url} text={name} />;
             },
-            accessor: 'roleNamespace.metadata.name'
+            accessor: 'roleNamespace.metadata.name',
         },
         {
             Header: `Users & Groups`,
@@ -130,8 +130,8 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <TableCellLink pdf={pdf} url={url} text={subject.name} />;
             },
             id: 'subjects',
-            accessor: d => d.subjects,
-            sortMethod: sortValueByLength
+            accessor: (d) => d.subjects,
+            sortMethod: sortValueByLength,
         },
         {
             Header: `Service Accounts`,
@@ -171,13 +171,13 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <TableCellLink pdf={pdf} url={url} text={serviceAccount.name} />;
             },
             accessor: 'serviceAccounts',
-            sortMethod: sortValueByLength
-        }
+            sortMethod: sortValueByLength,
+        },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => data.results;
+const createTableRows = (data) => data.results;
 
 const Roles = ({
     match,
@@ -187,7 +187,7 @@ const Roles = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);

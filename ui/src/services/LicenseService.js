@@ -8,8 +8,8 @@ const url = '/v1/licenses';
  * @returns {Promise<Object, Error>} fulfilled with array of roles
  */
 export function fetchLicenses() {
-    return axios.get(`${url}/list?active=true`).then(response => ({
-        response: response.data
+    return axios.get(`${url}/list?active=true`).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -21,7 +21,7 @@ export function fetchLicenses() {
 export function addLicense(data) {
     const payload = {
         activate: true,
-        ...data
+        ...data,
     };
-    return axios.post(`${url}/add`, payload).then(response => response.data);
+    return axios.post(`${url}/add`, payload).then((response) => response.data);
 }

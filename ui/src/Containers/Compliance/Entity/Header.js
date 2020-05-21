@@ -16,9 +16,9 @@ const EntityHeader = ({
     entityName,
     entityId,
     searchComponent,
-    headerText
+    headerText,
 }) => {
-    const header = headerText || (entityName || 'Loading...');
+    const header = headerText || entityName || 'Loading...';
     const subHeader = toLower(entityType);
     let exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
@@ -64,7 +64,7 @@ EntityHeader.propTypes = {
     entityName: PropTypes.string,
     entityId: PropTypes.string,
     searchComponent: PropTypes.node,
-    headerText: PropTypes.string
+    headerText: PropTypes.string,
 };
 
 EntityHeader.defaultProps = {
@@ -73,7 +73,7 @@ EntityHeader.defaultProps = {
     entityName: '',
     entityId: '',
     searchComponent: null,
-    headerText: null
+    headerText: null,
 };
 
 export default withRouter(EntityHeader);

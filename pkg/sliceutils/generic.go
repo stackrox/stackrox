@@ -2,6 +2,7 @@ package sliceutils
 
 import (
 	"github.com/mauricelam/genny/generic"
+	"github.com/pkg/errors"
 )
 
 // ElemType is the generic element type of the slice.
@@ -148,6 +149,19 @@ func ElemTypeEqual(a, b []ElemType) bool {
 		}
 	}
 	return true
+}
+
+// ElemTypeSelect returns a slice containing the elements at the given indices of the input slice.
+// CAUTION: This function panics if any index is out of range.
+func ElemTypeSelect(a []ElemType, indices ...int) []ElemType {
+	result := make([]ElemType, 0, len(indices))
+	for _, idx := range indices {
+		if idx < 0 || idx >= len(a) {
+			panic(errors.Errorf("invalid index %d: outside of expected range [0, %d)", idx, len(a)))
+		}
+		result = append(result, a[idx])
+	}
+	return result
 }
 
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"

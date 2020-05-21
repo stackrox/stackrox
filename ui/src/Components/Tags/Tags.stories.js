@@ -5,7 +5,7 @@ import Tags from 'Components/Tags';
 
 export default {
     title: 'Tags',
-    component: Tags
+    component: Tags,
 };
 
 const defaultTags = ['spicy', 'mild', 'bland'];

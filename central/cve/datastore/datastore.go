@@ -28,6 +28,7 @@ type DataStore interface {
 
 	Suppress(ctx context.Context, start *types.Timestamp, duration *types.Duration, ids ...string) error
 	Unsuppress(ctx context.Context, ids ...string) error
+	EnrichImageWithSuppressedCVEs(image *storage.Image)
 
 	Upsert(ctx context.Context, cves ...*storage.CVE) error
 	UpsertClusterCVEs(ctx context.Context, cves ...converter.ClusterCVEParts) error
@@ -41,6 +42,11 @@ func New(graphProvider graph.Provider, storage store.Store, indexer index.Indexe
 		indexer:       indexer,
 		searcher:      searcher,
 		graphProvider: graphProvider,
+
+		cveSuppressionCache: make(map[string]suppressionCacheEntry),
+	}
+	if err := ds.buildSuppressedCache(); err != nil {
+		return nil, err
 	}
 	return ds, nil
 }

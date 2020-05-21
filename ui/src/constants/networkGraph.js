@@ -28,5 +28,5 @@ export const COLORS = {
     inactive: 'hsla(229, 24%, 59%, 1)',
     inactiveNS: 'hsla(229, 24%, 80%, 1)',
     hovered: 'hsla(229, 24%, 70%, 1)',
-    selected: 'hsla(229, 24%, 60%, 1)'
+    selected: 'hsla(229, 24%, 60%, 1)',
 };

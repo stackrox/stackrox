@@ -10,11 +10,13 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Note: Update here if yamls/multi-container-pod.yaml is updated
 const (
 	deploymentName = "end-to-end-api-test-pod-multi-container"
+	podName        = "end-to-end-api-test-pod-multi-container"
 )
 
 type IDStruct struct {
@@ -23,14 +25,16 @@ type IDStruct struct {
 
 type Pod struct {
 	IDStruct
-	Name           string  `json:"name"`
-	ContainerCount int32   `json:"containerCount"`
-	Events         []Event `json:"events"`
+	Name           string       `json:"name"`
+	ContainerCount int32        `json:"containerCount"`
+	Started        graphql.Time `json:"started"`
+	Events         []Event      `json:"events"`
 }
 
 type Event struct {
 	IDStruct
-	Name string `json:"name"`
+	Name      string       `json:"name"`
+	Timestamp graphql.Time `json:"timestamp"`
 }
 
 func TestPod(t *testing.T) {
@@ -56,8 +60,21 @@ func TestPod(t *testing.T) {
 		// Expecting 4 processes: nginx, sh, date, sleep
 		require.Len(t, events, 4)
 		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-		require.ElementsMatch(t, eventNames, []string{"date", "sh", "nginx", "sleep"})
+		require.ElementsMatch(t, eventNames, []string{"/bin/date", "/bin/sh", "/usr/sbin/nginx", "/bin/sleep"})
+
+		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
+		require.False(t, pod.Started.After(events[0].Timestamp.Time))
 	})
+
+	k8sPod, err := createK8sClient(t).CoreV1().Pods("default").Get(podName, metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Pod",
+			APIVersion: "v1",
+		},
+	})
+	require.NoError(t, err)
+	// Verify Pod start time is the creation time.
+	require.Equal(t, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 }
 
 func getDeploymentID(t *testing.T, deploymentName string) string {
@@ -103,6 +120,7 @@ func getPods(t *testing.T, deploymentID string) []Pod {
 				id
 				name
 				containerCount
+				started
 				events {
 					id
 					name
@@ -146,6 +164,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 				events {
 					id
 					name
+					timestamp
 				}
 			}
 		}

@@ -11,7 +11,7 @@ export const selectors = {
     slackTile: 'div[role="button"]:contains("Slack")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
-        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")'
+        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {
         new: 'button:contains("New")',
@@ -23,26 +23,26 @@ export const selectors = {
         confirm: 'button:contains("Confirm")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
-        closePanel: 'button[data-testid="cancel"]'
+        closePanel: 'button[data-testid="cancel"]',
     },
     apiTokenForm: {
         nameInput: 'form[data-testid="api-token-form"] input[name="name"]',
-        roleSelect: 'form[data-testid="api-token-form"] .react-select__control'
+        roleSelect: 'form[data-testid="api-token-form"] .react-select__control',
     },
     apiTokenBox: 'span:contains("eyJ")', // all API tokens start with eyJ
     apiTokenDetailsDiv: 'div[data-testid="api-token-details"]',
     clusterForm: {
         nameInput: 'form[data-testid="cluster-form"] input[name="name"]',
         imageInput: 'form[data-testid="cluster-form"] input[name="mainImage"]',
-        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]'
+        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]',
     },
     dockerRegistryForm: {
         nameInput: "form input[name='name']",
         typesSelect: 'form .react-select__control',
-        endpointInput: "form input[name='docker.endpoint']"
+        endpointInput: "form input[name='docker.endpoint']",
     },
     labeledValue: '[data-testid="labeled-value"]',
     plugins: '.mb-6:first div[role="button"]',
     dialog: '.dialog',
-    checkboxes: 'input'
+    checkboxes: 'input',
 };

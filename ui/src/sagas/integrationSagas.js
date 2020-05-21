@@ -18,7 +18,7 @@ const fetchIntegrationsActionMap = {
     imageIntegrations: actions.fetchImageIntegrations.request(),
     notifiers: actions.fetchNotifiers.request(),
     clusters: clusterActions.fetchClusters.request(),
-    apitoken: apiTokenActions.fetchAPITokens.request()
+    apitoken: apiTokenActions.fetchAPITokens.request(),
 };
 
 // Call fetchIntegration with the given source, and pass the response/failure
@@ -49,13 +49,16 @@ function* getImageIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [getImageIntegrations, getNotifiers, getBackups, getAuthPlugins].map(
-        fetchFunc => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
-    );
+    const effects = [
+        getImageIntegrations,
+        getNotifiers,
+        getBackups,
+        getAuthPlugins,
+    ].map((fetchFunc) => takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc));
     yield all([
         ...effects,
         takeEveryNewlyMatchedLocation(policiesPath, getNotifiers),
-        takeEveryNewlyMatchedLocation(networkPath, getNotifiers)
+        takeEveryNewlyMatchedLocation(networkPath, getNotifiers),
     ]);
 }
 
@@ -65,7 +68,7 @@ function* watchFetchRequest() {
             types.FETCH_AUTH_PLUGINS.REQUEST,
             types.FETCH_BACKUPS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
-            types.FETCH_NOTIFIERS.REQUEST
+            types.FETCH_NOTIFIERS.REQUEST,
         ]);
         switch (action.type) {
             case types.FETCH_AUTH_PLUGINS.REQUEST:
@@ -88,15 +91,16 @@ function* watchFetchRequest() {
 }
 
 function* saveIntegration(action) {
-    const { source, sourceType, integration } = action.params;
+    const { source, sourceType, integration, options } = action.params;
     try {
         if (source === 'authProviders') {
             yield call(AuthService.saveAuthProvider, integration);
             if (sourceType === 'apitoken') yield put(fetchIntegrationsActionMap[sourceType]);
             else yield put(fetchIntegrationsActionMap[source]);
         } else {
-            if (integration.id) yield call(service.saveIntegration, source, integration);
-            else yield call(service.createIntegration, source, integration);
+            if (integration.id) {
+                yield call(service.saveIntegration, source, integration, options);
+            } else yield call(service.createIntegration, source, integration);
             yield put(fetchIntegrationsActionMap[source]);
         }
         yield put(
@@ -135,9 +139,9 @@ function* deleteIntegrations({ source, sourceType, ids }) {
 }
 
 function* testIntegration(action) {
-    const { source, integration } = action;
+    const { source, integration, options } = action;
     try {
-        yield call(service.testIntegration, source, integration);
+        yield call(service.testIntegration, source, integration, options);
         yield put(notificationActions.addNotification('Integration test was successful'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {
@@ -189,6 +193,6 @@ export default function* integrations() {
         fork(watchSaveRequest),
         fork(watchTestRequest),
         fork(watchDeleteRequest),
-        fork(watchBackupRequest)
+        fork(watchBackupRequest),
     ]);
 }

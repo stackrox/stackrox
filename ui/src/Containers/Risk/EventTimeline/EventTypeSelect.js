@@ -1,14 +1,14 @@
 import React from 'react';
 
-import { eventTypes } from 'constants/timelineTypes';
+import { selectOptionEventTypes } from 'constants/timelineTypes';
 import Select from 'Components/ReactSelect';
 
 const options = [
-    { label: 'Show All', value: eventTypes.ALL },
-    { label: 'Policy Violations', value: eventTypes.POLICY_VIOLATION },
-    { label: 'Process Activities', value: eventTypes.PROCESS_ACTIVITY },
-    { label: 'Restarts', value: eventTypes.RESTART },
-    { label: 'Terminations', value: eventTypes.TERMINATION }
+    { label: 'Show All', value: selectOptionEventTypes.ALL },
+    { label: 'Policy Violations', value: selectOptionEventTypes.POLICY_VIOLATION },
+    { label: 'Process Activities', value: selectOptionEventTypes.PROCESS_ACTIVITY },
+    { label: 'Restarts', value: selectOptionEventTypes.RESTART },
+    { label: 'Terminations', value: selectOptionEventTypes.TERMINATION },
 ];
 
 const EventTypeSelect = ({ selectedEventType, selectEventType }) => {

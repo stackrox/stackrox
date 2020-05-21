@@ -2,15 +2,10 @@ package csv
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
-	"time"
 
-	"github.com/gogo/protobuf/proto"
-	"github.com/graph-gophers/graphql-go"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	clusterCVEEdgeMappings "github.com/stackrox/rox/central/clustercveedge/mappings"
 	componentCVEEdgeMappings "github.com/stackrox/rox/central/componentcveedge/mappings"
@@ -21,6 +16,7 @@ import (
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
 	nsMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -29,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 var (
@@ -75,12 +70,6 @@ type scopeLevel struct {
 	optionsMap search.OptionsMap
 }
 
-func writeErr(w http.ResponseWriter, code int, err error) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(code)
-	fmt.Fprint(w, err)
-}
-
 type cveRow struct {
 	cveID           string
 	fixable         string
@@ -96,35 +85,12 @@ type cveRow struct {
 }
 
 type csvResults struct {
-	header []string
-	values [][]string
+	*csv.GenericWriter
 }
 
-func (c *csvResults) write(writer *csv.Writer) {
-	sort.Slice(c.values, func(i, j int) bool {
-		first, second := c.values[i], c.values[j]
-		for len(first) > 0 {
-			// first has more values, so greater
-			if len(second) == 0 {
-				return false
-			}
-			if first[0] < second[0] {
-				return true
-			}
-			if first[0] > second[0] {
-				return false
-			}
-			first = first[1:]
-			second = second[1:]
-		}
-		// second has more values, so first is lesser
-		return len(second) > 0
-	})
-	header := sliceutils.StringClone(c.header)
-	header[0] = "\uFEFF" + header[0]
-	_ = writer.Write(header)
-	for _, v := range c.values {
-		_ = writer.Write(v)
+func newCSVResults(header []string) csvResults {
+	return csvResults{
+		GenericWriter: csv.NewGenericWriter(header),
 	}
 }
 
@@ -144,14 +110,7 @@ func (c *csvResults) addRow(row cveRow) {
 		row.summary,
 	}
 
-	c.values = append(c.values, value)
-}
-
-func fromTS(timestamp *graphql.Time) string {
-	if timestamp == nil {
-		return "-"
-	}
-	return timestamp.Time.Format(time.RFC1123)
+	c.AddValue(value)
 }
 
 // CVECSVHandler is an HTTP handler that outputs CSV exports of CVE data for Vuln Mgmt
@@ -161,14 +120,14 @@ func CVECSVHandler() http.HandlerFunc {
 
 		query, err := parser.ParseURLQuery(r.URL.Query())
 		if err != nil {
-			writeErr(w, http.StatusBadRequest, err)
+			csv.WriteError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		resolver := resolvers.New()
 		vulnResolvers, err := getVulns(ctx, resolver, query)
 		if err != nil {
-			writeErr(w, http.StatusInternalServerError, err)
+			csv.WriteError(w, http.StatusInternalServerError, err)
 			log.Errorf("unable to get vulnerabilities for csv export: %v", err)
 			return
 		}
@@ -176,8 +135,7 @@ func CVECSVHandler() http.HandlerFunc {
 		queryString := r.URL.Query().Get("query")
 		rawQuery := resolvers.RawQuery{Query: &queryString}
 
-		var output csvResults
-		output.header = []string{"CVE", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"}
+		output := newCSVResults([]string{"CVE", "Fixable", "CVSS Score", "Env Impact (%)", "Impact Score", "Deployments", "Images", "Components", "Scanned", "Published", "Summary"})
 		for _, d := range vulnResolvers {
 			var errorList errorhelpers.ErrorList
 			dataRow := cveRow{}
@@ -213,26 +171,22 @@ func CVECSVHandler() http.HandlerFunc {
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.scannedTime = fromTS(scannedTime)
+			dataRow.scannedTime = csv.FromGraphQLTime(scannedTime)
 			publishedTime, err := d.PublishedOn(ctx)
 			if err != nil {
 				errorList.AddError(err)
 			}
-			dataRow.publishedTime = fromTS(publishedTime)
+			dataRow.publishedTime = csv.FromGraphQLTime(publishedTime)
 			dataRow.summary = d.Summary(ctx)
 
 			output.addRow(dataRow)
 
-			log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cveID, errorList.ToError())
+			if err := errorList.ToError(); err != nil {
+				log.Errorf("failed to generate complete csv entry for cve %s: %v", dataRow.cveID, err)
+			}
 		}
 
-		w.Header().Set("Content-Type", `text/csv; charset="utf-8"`)
-		w.Header().Set("Content-Disposition", `attachment; filename="cve_export.csv"`)
-		w.WriteHeader(http.StatusOK)
-		cw := csv.NewWriter(w)
-		cw.UseCRLF = true
-		output.write(cw)
-		cw.Flush()
+		output.Write(w, "cve_export")
 	}
 }
 
@@ -284,13 +238,13 @@ func getScopeContexts(ctx context.Context, resolver *resolvers.Resolver, query *
 }
 
 func scopeByCategory(query *v1.Query, scopeLevel scopeLevel) bool {
-	local := proto.Clone(query).(*v1.Query)
+	local := query.Clone()
 	notCVEQuery, _ := search.FilterQueryWithMap(local, scopeLevel.optionsMap)
 	return notCVEQuery != nil
 }
 
 func isScopable(query *v1.Query) bool {
-	local := proto.Clone(query).(*v1.Query)
+	local := query.Clone()
 	filtered, _ := search.InverseFilterQueryWithMap(local, search.CombineOptionsMaps(
 		cveMappings.OptionsMap, componentCVEEdgeMappings.OptionsMap, clusterCVEEdgeMappings.OptionsMap))
 	if filtered == nil {

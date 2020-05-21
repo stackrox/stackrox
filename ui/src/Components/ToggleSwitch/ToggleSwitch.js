@@ -17,9 +17,9 @@ function ToggleSwitch({
     extraClassNames,
     flipped,
     small,
-    disabled
+    disabled,
 }) {
-    const flippedToggleHandler = e => {
+    const flippedToggleHandler = (e) => {
         set(e, 'target.checked', !e.target.checked);
         toggleHandler(e);
     };
@@ -41,6 +41,7 @@ function ToggleSwitch({
                     id={id}
                     disabled={disabled}
                     className="toggle-switch-checkbox"
+                    aria-label={label}
                 />
                 <label className="toggle-switch-label" htmlFor={id} />
             </div>
@@ -57,7 +58,7 @@ ToggleSwitch.propTypes = {
     extraClassNames: PropTypes.string,
     flipped: PropTypes.bool,
     small: PropTypes.bool,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
 };
 
 ToggleSwitch.defaultProps = {
@@ -67,7 +68,7 @@ ToggleSwitch.defaultProps = {
     extraClassNames: '',
     flipped: false,
     small: false,
-    disabled: false
+    disabled: false,
 };
 
 export default ToggleSwitch;

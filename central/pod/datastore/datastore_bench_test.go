@@ -8,19 +8,17 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	"github.com/stackrox/rox/central/pod/index"
-	badgerStore "github.com/stackrox/rox/central/pod/store/badger"
+	rocksStore "github.com/stackrox/rox/central/pod/store/rocksdb"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,15 +35,15 @@ func BenchmarkSearchAllPods(b *testing.B) {
 
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 
-	db, dir, err := badgerhelper.NewTemp("benchmark_search_all")
+	db, dir, err := rocksdb.NewTemp("benchmark_search_all")
 	require.NoError(b, err)
-	defer utils.IgnoreError(db.Close)
+	defer db.Close()
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	bleveIndex, err := globalindex.InitializeIndices(blevePath, globalindex.EphemeralIndex)
+	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex)
 	require.NoError(b, err)
 
-	podsStore := badgerStore.New(db)
+	podsStore := rocksStore.New(db)
 	podsIndexer := index.New(bleveIndex)
 	podsSearcher := search.New(podsStore, podsIndexer)
 	simpleFilter := filter.NewFilter(5, []int{5, 4, 3, 2, 1})
@@ -53,7 +51,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	podsDatastore, err := newDatastoreImpl(podsStore, podsIndexer, podsSearcher, nil, simpleFilter)
 	require.NoError(b, err)
 
-	podPrototype := proto.Clone(fixtures.GetPod()).(*storage.Pod)
+	podPrototype := fixtures.GetPod().Clone()
 
 	const numPods = 1000
 	for i := 0; i < numPods; i++ {

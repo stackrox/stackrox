@@ -8,7 +8,7 @@ import featureFlags from 'utils/featureFlags';
 const LegendContent = ({ isOpen, toggleLegend }) => {
     if (!isOpen) return null;
     return (
-        <React.Fragment>
+        <>
             <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
                 Legend
                 <button type="button" className="flex" onClick={toggleLegend}>
@@ -73,13 +73,13 @@ const LegendContent = ({ isOpen, toggleLegend }) => {
                     />
                 </div>
             </div>
-        </React.Fragment>
+        </>
     );
 };
 
 LegendContent.propTypes = {
     isOpen: PropTypes.bool.isRequired,
-    toggleLegend: PropTypes.func.isRequired
+    toggleLegend: PropTypes.func.isRequired,
 };
 
 const Legend = () => {

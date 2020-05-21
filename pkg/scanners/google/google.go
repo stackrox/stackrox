@@ -78,10 +78,8 @@ func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
 		return nil, err
 	}
 
-	url, err := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
+	url := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+
 	proxySupport := grpc.WithContextDialer(proxy.AwareDialContext)
 	registry := urlfmt.GetServerFromURL(url)
 	betaClient, err := containeranalysis.NewGrafeasV1Beta1Client(context.Background(), option.WithGRPCDialOption(proxySupport), option.WithCredentialsJSON([]byte(config.GetServiceAccount())))

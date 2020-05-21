@@ -5,6 +5,7 @@ import * as Icon from 'react-feather';
 const Dot = ({ active, onClick }) => (
     <>
         <button
+            aria-label="Jump to page"
             type="button"
             onClick={onClick}
             className={`bg-base-300 h-2 w-2 ml-1 mr-1 rounded-full ${
@@ -15,7 +16,7 @@ const Dot = ({ active, onClick }) => (
 );
 
 export const PagerDots = ({ onPageChange, pageCount, currentPage, className }) => {
-    const handleSetPage = page => () => {
+    const handleSetPage = (page) => () => {
         if (page < 0 || page >= pageCount) return;
 
         onPageChange(page);
@@ -39,12 +40,12 @@ PagerDots.propTypes = {
     onPageChange: PropTypes.func.isRequired,
     pageCount: PropTypes.number.isRequired,
     currentPage: PropTypes.number,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 PagerDots.defaultProps = {
     currentPage: 0,
-    className: ''
+    className: '',
 };
 
 export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePrev }) => (
@@ -74,5 +75,5 @@ PagerButtonGroup.propTypes = {
     onPagePrev: PropTypes.func.isRequired,
     onPageNext: PropTypes.func.isRequired,
     enableNext: PropTypes.bool.isRequired,
-    enablePrev: PropTypes.bool.isRequired
+    enablePrev: PropTypes.bool.isRequired,
 };

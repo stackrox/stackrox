@@ -11,7 +11,7 @@ export const types = {
     FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
     APPLY_NETWORK_POLICY_MODIFICATION: createFetchingActionTypes(
         'network/APPLY_NETWORK_POLICY_MODIFICATION'
-    )
+    ),
 };
 
 // Actions
@@ -21,7 +21,7 @@ export const actions = {
     fetchNetworkFlowGraph: createFetchingActions(types.FETCH_NETWORK_FLOW_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
-    applyNetworkPolicyModification: createFetchingActions(types.APPLY_NETWORK_POLICY_MODIFICATION)
+    applyNetworkPolicyModification: createFetchingActions(types.APPLY_NETWORK_POLICY_MODIFICATION),
 };
 
 // Reducers
@@ -112,19 +112,19 @@ const reducer = combineReducers({
     networkErrorMessage,
     networkPolicyGraphState,
     networkFlowGraphState,
-    networkPolicyApplicationState
+    networkPolicyApplicationState,
 });
 
 // Selectors
 
-const getNetworkPolicyGraph = state => state.networkPolicyGraph;
-const getNetworkFlowGraph = state => state.networkFlowGraph;
-const getNetworkPolicies = state => state.networkPolicies;
-const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
-const getNetworkErrorMessage = state => state.networkErrorMessage;
-const getNetworkPolicyGraphState = state => state.networkPolicyGraphState;
-const getNetworkFlowGraphState = state => state.networkFlowGraphState;
-const getNetworkPolicyApplicationState = state => state.networkPolicyApplicationState;
+const getNetworkPolicyGraph = (state) => state.networkPolicyGraph;
+const getNetworkFlowGraph = (state) => state.networkFlowGraph;
+const getNetworkPolicies = (state) => state.networkPolicies;
+const getNodeUpdatesEpoch = (state) => state.nodeUpdatesEpoch;
+const getNetworkErrorMessage = (state) => state.networkErrorMessage;
+const getNetworkPolicyGraphState = (state) => state.networkPolicyGraphState;
+const getNetworkFlowGraphState = (state) => state.networkFlowGraphState;
+const getNetworkPolicyApplicationState = (state) => state.networkPolicyApplicationState;
 
 export const selectors = {
     getNetworkPolicyGraph,
@@ -134,7 +134,7 @@ export const selectors = {
     getNetworkErrorMessage,
     getNetworkPolicyGraphState,
     getNetworkFlowGraphState,
-    getNetworkPolicyApplicationState
+    getNetworkPolicyApplicationState,
 };
 
 export default reducer;

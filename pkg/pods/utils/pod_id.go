@@ -10,12 +10,15 @@ import (
 )
 
 const (
-	dns1123Regex = `[a-z0-9](?:[-a-z0-9]*[a-z0-9])?`
-	uidRegex     = `[[:xdigit:]-]+`
+	// Resource name regexes based on https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+	// and https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md
+	dnsSubdomain1123Regex = `[a-z0-9](?:[-\.a-z0-9]*[a-z0-9])?`
+	dnsLabel1123Regex     = `[a-z0-9](?:[-a-z0-9]*[a-z0-9])?`
+	uidRegex              = `[[:xdigit:]-]+`
 )
 
 var (
-	podIDRegex = regexp.MustCompile(`^(` + dns1123Regex + `)\.(` + dns1123Regex + `)@(` + uidRegex + `)$`)
+	podIDRegex = regexp.MustCompile(`^(` + dnsSubdomain1123Regex + `)\.(` + dnsLabel1123Regex + `)@(` + uidRegex + `)$`)
 )
 
 // PodID allows uniquely identifying a pod instance.

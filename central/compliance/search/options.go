@@ -16,6 +16,7 @@ var Options = []search.FieldLabel{
 	search.Namespace,
 	search.Node,
 	search.Standard,
+	search.DeploymentName,
 }
 
 // SearchOptionsMultiMap is the OptionsMultiMap for compliance (which is a little bit of a special snowflake when

@@ -5,7 +5,7 @@ const emptyFunc = () => null;
 const slickSettings = {
     dots: false,
     nextArrow: <CarouselNextArrow onClick={emptyFunc} />,
-    prevArrow: <CarouselPrevArrow onClick={emptyFunc} />
+    prevArrow: <CarouselPrevArrow onClick={emptyFunc} />,
 };
 
 export default slickSettings;

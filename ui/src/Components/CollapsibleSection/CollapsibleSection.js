@@ -11,20 +11,27 @@ const Content = posed.div({
     closed: {
         height: '1px',
         transition: {
-            duration: 0
+            duration: 0,
         },
-        flip: true
+        flip: true,
     },
     open: {
         height: 'auto',
         transition: {
-            duration: 0
+            duration: 0,
         },
-        flip: true
-    }
+        flip: true,
+    },
 });
 
-const CollapsibleSection = ({ title, children, headerComponents }) => {
+const CollapsibleSection = ({
+    title,
+    children,
+    headerComponents,
+    headerClassName,
+    titleClassName,
+    dataTestId,
+}) => {
     const [open, setOpen] = useState(true);
 
     function toggleOpen() {
@@ -38,10 +45,12 @@ const CollapsibleSection = ({ title, children, headerComponents }) => {
     );
 
     return (
-        <div className="border-b border-base-300">
-            <header className="flex flex-1 w-full py-4">
+        <div className="border-b border-base-300" data-testid={dataTestId}>
+            <header className={`flex flex-1 w-full ${headerClassName}`}>
                 <div className="flex flex-1">
-                    <div className="flex px-4 py-1 text-base-600 rounded-r-sm font-700 text-xl items-center">
+                    <div
+                        className={`flex py-1 text-base-600 rounded-r-sm font-700 items-center ${titleClassName}`}
+                    >
                         <Button icon={Icon} onClick={toggleOpen} />
                         <span className="ml-2">{title}</span>
                     </div>
@@ -58,11 +67,17 @@ const CollapsibleSection = ({ title, children, headerComponents }) => {
 CollapsibleSection.propTypes = {
     title: PropTypes.string.isRequired,
     children: PropTypes.node.isRequired,
-    headerComponents: PropTypes.element
+    headerClassName: PropTypes.string,
+    headerComponents: PropTypes.element,
+    titleClassName: PropTypes.string,
+    dataTestId: PropTypes.string,
 };
 
 CollapsibleSection.defaultProps = {
-    headerComponents: null
+    headerClassName: 'py-4',
+    headerComponents: null,
+    titleClassName: 'p-4 text-xl',
+    dataTestId: null,
 };
 
 export default CollapsibleSection;

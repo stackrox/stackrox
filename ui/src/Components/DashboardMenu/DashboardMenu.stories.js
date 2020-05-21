@@ -5,14 +5,14 @@ import DashboardMenu from './DashboardMenu';
 
 export default {
     title: 'DashboardMenu',
-    component: DashboardMenu
+    component: DashboardMenu,
 };
 
 export const withApplicationTypes = () => {
     const options = [
         { label: 'Cluster', link: '/main/configmanagement/clusters' },
         { label: 'Namespacce', link: '/main/configmanagement/namespaces' },
-        { label: 'Node', link: '/main/configmanagement/nodes' }
+        { label: 'Node', link: '/main/configmanagement/nodes' },
     ];
     return (
         <MemoryRouter>
@@ -25,7 +25,7 @@ export const withRBACTypes = () => {
     const options = [
         { label: 'Users & Groups', link: '/main/configmanagement/subjects' },
         { label: 'Service Accounts', link: '/main/configmanagement/serviceaccounts' },
-        { label: 'Roles', link: '/main/configmanagement/roles' }
+        { label: 'Roles', link: '/main/configmanagement/roles' },
     ];
     return (
         <MemoryRouter>

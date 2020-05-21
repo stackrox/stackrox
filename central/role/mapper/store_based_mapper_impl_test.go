@@ -18,7 +18,7 @@ const (
 	fakeAuthProvider = "authProvider"
 )
 
-func TestAlertService(t *testing.T) {
+func TestMapper(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(MapperTestSuite))
 }
@@ -107,9 +107,9 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
-	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
+	s.ElementsMatch([]*storage.Role{expectedRole}, roles, "since a single role was mapped, that role should be returned")
 }
 
 func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
@@ -179,15 +179,10 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
-	s.NoError(err, "mapping should have succeeded")
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	s.Require().NoError(err, "mapping should have succeeded")
 
-	// Permissions should be the two roles' permissions combined.
-	unionRole := &storage.Role{
-		Name:         "TeamAwesome",
-		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
-	}
-	s.Equal(unionRole, role, "since a single role was mapped, that role should be returned")
+	s.ElementsMatch([]*storage.Role{expectedRole1, expectedRole2}, roles, "expected both roles to be present")
 }
 
 func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
@@ -240,9 +235,9 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			"email": {"coolguy@yahoo"},
 		},
 	}
-	role, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
+	roles, err := s.mapper.FromUserDescriptor(s.requestContext, userDescriptor)
 	s.NoError(err, "mapping should have succeeded")
-	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
+	s.ElementsMatch([]*storage.Role{expectedRole}, roles, "since a single role was mapped, that role should be returned")
 }
 
 func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {

@@ -1,6 +1,6 @@
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8/ubi
-ARG BASE_TAG=8.1
+ARG BASE_TAG=8.2
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -9,8 +9,16 @@ LABEL vendor="StackRox (support@stackrox.com)"
 LABEL summary="The StackRox Kubernetes Security Platform"
 LABEL description="This image contains everything required to operate the StackRox Kubernetes Security Platform."
 
+ADD bundle.tar.gz /
+
 RUN yum update -y --nogpgcheck --disableplugin=subscription-manager && \
-    rpm -e --nodeps \
+    yum install -y --nogpgcheck --disableplugin=subscription-manager \
+     lz4.rpm \
+     bzip2.rpm \
+     snappy.rpm \
+     zlib.rpm
+
+RUN rpm -e --nodeps \
       rpm \
       rpm-build-libs \
       rpm-libs \
@@ -21,8 +29,6 @@ RUN yum update -y --nogpgcheck --disableplugin=subscription-manager && \
       $(rpm -qa *dnf*) \
       python3-hawkey \
     ;
-
-ADD bundle.tar.gz /
 
 EXPOSE 8443
 

@@ -10,8 +10,8 @@ const ReduxColorPicker = ({ input }) => (
 ReduxColorPicker.propTypes = {
     input: PropTypes.shape({
         value: PropTypes.string,
-        onChange: PropTypes.func
-    }).isRequired
+        onChange: PropTypes.func,
+    }).isRequired,
 };
 
 const ReduxColorPickerField = ({ name }) => (
@@ -19,7 +19,7 @@ const ReduxColorPickerField = ({ name }) => (
 );
 
 ReduxColorPickerField.propTypes = {
-    name: PropTypes.string.isRequired
+    name: PropTypes.string.isRequired,
 };
 
 export default ReduxColorPickerField;

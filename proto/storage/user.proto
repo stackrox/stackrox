@@ -22,7 +22,10 @@ message UserAttribute {
 }
 
 message UserInfo {
-    string       username      = 1;
-    string       friendly_name = 2;
-    storage.Role role          = 3;
+    string       username       = 1;
+    string       friendly_name  = 2;
+    storage.Role permissions    = 4;
+    repeated storage.Role roles = 5;
+
+    storage.Role role          = 3 [deprecated = true]; // Use `permissions` instead.
 }

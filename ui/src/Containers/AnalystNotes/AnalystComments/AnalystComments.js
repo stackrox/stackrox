@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useQuery, useMutation } from 'react-apollo';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
-import captureGraphQLErrors from 'modules/captureGraphQLErrors';
+import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
 import Message from 'Components/Message';
 import CommentThread from 'Components/CommentThread';
@@ -16,7 +16,7 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
     const { GET_COMMENTS, ADD_COMMENT, UPDATE_COMMENT, REMOVE_COMMENT } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_COMMENTS, {
-        variables
+        variables,
     });
 
     // resolves once the modification + refetching happens
@@ -25,8 +25,8 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
         {
             query: GET_PROCESS_COMMENTS_TAGS_COUNT,
             variables,
-            exclude: type !== ANALYST_NOTES_TYPES.PROCESS
-        }
+            exclude: type !== ANALYST_NOTES_TYPES.PROCESS,
+        },
     ]);
 
     const [addComment, { loading: isWaitingToAddComment, error: errorOnAddComment }] = useMutation(
@@ -35,18 +35,18 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
     );
     const [
         updateComment,
-        { loading: isWaitingToUpdateComment, error: errorOnUpdateComment }
+        { loading: isWaitingToUpdateComment, error: errorOnUpdateComment },
     ] = useMutation(UPDATE_COMMENT, refetchAndWait);
     const [
         removeComment,
-        { loading: isWaitingToRemoveComment, error: errorOnRemoveComment }
+        { loading: isWaitingToRemoveComment, error: errorOnRemoveComment },
     ] = useMutation(REMOVE_COMMENT, refetchAndWait);
 
     const { hasErrors } = captureGraphQLErrors([
         error,
         errorOnAddComment,
         errorOnUpdateComment,
-        errorOnRemoveComment
+        errorOnRemoveComment,
     ]);
 
     if (hasErrors)
@@ -61,23 +61,23 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
     const isDisabled =
         isWaitingToAddComment || isWaitingToUpdateComment || isWaitingToRemoveComment || false;
 
-    const comments = data ? data.comments : [];
+    const comments = data?.comments?.length ? data.comments : [];
 
     function onCreate(commentMessage) {
         addComment({
-            variables: { ...variables, commentMessage }
+            variables: { ...variables, commentMessage },
         });
     }
 
     function onUpdate(commentId, commentMessage) {
         updateComment({
-            variables: { ...variables, commentId, commentMessage }
+            variables: { ...variables, commentId, commentMessage },
         });
     }
 
     function onRemove(commentId) {
         removeComment({
-            variables: { ...variables, commentId }
+            variables: { ...variables, commentId },
         });
     }
 
@@ -99,11 +99,11 @@ const AnalystComments = ({ type, variables, isCollapsible }) => {
 AnalystComments.propTypes = {
     type: PropTypes.string.isRequired,
     variables: PropTypes.shape({}).isRequired,
-    isCollapsible: PropTypes.bool
+    isCollapsible: PropTypes.bool,
 };
 
 AnalystComments.defaultProps = {
-    isCollapsible: true
+    isCollapsible: true,
 };
 
 export default React.memo(AnalystComments);

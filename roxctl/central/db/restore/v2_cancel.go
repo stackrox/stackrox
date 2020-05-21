@@ -10,6 +10,7 @@ import (
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -19,9 +20,9 @@ func v2RestoreCancelCommand() *cobra.Command {
 		Use:   "cancel",
 		Short: "Cancel the ongoing DB restore process",
 		Long:  "Cancel the ongoing DB restore process",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return cancelActiveRestore(c)
-		},
+		}),
 	}
 	flags.AddForce(c)
 

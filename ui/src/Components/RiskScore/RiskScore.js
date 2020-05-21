@@ -11,7 +11,7 @@ const RiskScore = ({ score }) => {
 };
 
 RiskScore.propTypes = {
-    score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired
+    score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
 };
 
 export default RiskScore;

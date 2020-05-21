@@ -4,7 +4,7 @@ import Widget from 'Components/Widget';
 import EntityIcon from 'Components/EntityIcon';
 import hexagonal from 'images/side-panel-icons/hexagonal.svg';
 import { withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import workflowStateContext from 'Containers/workflowStateContext';
 
@@ -30,9 +30,7 @@ const RelatedEntity = ({
         if (workflowState && workflowState.useCase) {
             url = workflowState.pushRelatedEntity(entityType, entityId).toUrl();
         } else {
-            url = URLService.getURL(match, location)
-                .push(entityType, entityId)
-                .url();
+            url = URLService.getURL(match, location).push(entityType, entityId).url();
         }
         history.push(url);
     }
@@ -79,14 +77,14 @@ RelatedEntity.propTypes = {
     link: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 RelatedEntity.defaultProps = {
     link: null,
     value: '',
     entityId: null,
-    name: null
+    name: null,
 };
 
 export default withRouter(RelatedEntity);

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import {
     processCategories,
-    getProcessQuery
+    getProcessQuery,
 } from 'Containers/AnalystNotes/analystNotesUtils/tagsAutoCompleteVariables';
 import TagsSearchAutoComplete from 'Containers/AnalystNotes/TagsSearchAutoComplete';
 
@@ -21,7 +21,7 @@ const ProcessTagsSearchAutoComplete = ({ children }) => {
 };
 
 ProcessTagsSearchAutoComplete.propTypes = {
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired
+    children: PropTypes.func.isRequired,
 };
 
 export default ProcessTagsSearchAutoComplete;

@@ -16,7 +16,7 @@ func getDeploymentIndex(b *testing.B) Indexer {
 	if err != nil {
 		b.Fatal(err)
 	}
-	return New(tmpIndex)
+	return New(tmpIndex, tmpIndex)
 }
 
 func benchmarkAddDeploymentNumThen1(b *testing.B, numDeployments int) {

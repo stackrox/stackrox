@@ -12,7 +12,7 @@ require (
 	github.com/VividCortex/ewma v1.1.1
 	github.com/andygrunwald/go-jira v1.10.0
 	github.com/antihax/optional v0.0.0-20180407024304-ca021399b1a6
-	github.com/aws/aws-sdk-go v1.19.37
+	github.com/aws/aws-sdk-go v1.29.17
 	github.com/blevesearch/bleve v0.8.0
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cloudflare/cfssl v0.0.0-20190510060611-9c027c93ba9e
@@ -28,6 +28,7 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/etcd-io/bbolt v1.3.3
+	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/facebookincubator/nvdtools v0.1.4-0.20191024132624-1cb041402875
 	github.com/fullsailor/pkcs7 v0.0.0
 	github.com/ghodss/yaml v1.0.0
@@ -60,7 +61,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
 	github.com/prometheus/common v0.4.1
@@ -79,7 +80,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.11.1
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de
-	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20191127021746-63cb32ae39b2
@@ -98,6 +99,7 @@ require (
 	k8s.io/apiserver v0.0.0-20191114103151-9ca1dc586682
 	k8s.io/client-go v7.0.0+incompatible
 	k8s.io/helm v2.14.0+incompatible
+	k8s.io/klog v0.4.0
 	k8s.io/kubectl v0.0.0-20191114113550-6123e1c827f7
 	sigs.k8s.io/yaml v1.1.0
 )

@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/dbhelper"
 )
 
 type crudImpl struct {
@@ -200,13 +201,13 @@ func (c *crudImpl) Create(x interface{}, nesting ...Key) error {
 // Create creates new entries in bolt for the input value.
 // Returns an error if any entry with a matching key already exists.
 func (c *crudImpl) CreateBatch(entries []Entry, nestingPrefix ...Key) error {
-	serializedValues := make([]bolthelper.KV, len(entries))
+	serializedValues := make([]dbhelper.KV, len(entries))
 	for i, entry := range entries {
 		key, bytes, err := c.serializeFunc(entry.Value)
 		if err != nil {
 			return err
 		}
-		serializedValues[i] = bolthelper.KV{Key: key, Value: bytes}
+		serializedValues[i] = dbhelper.KV{Key: key, Value: bytes}
 	}
 
 	return c.bucketRef.Update(func(b *bolt.Bucket) error {
@@ -264,13 +265,13 @@ func (c *crudImpl) Update(x interface{}, nestingPrefix ...Key) (uint64, uint64, 
 // Update updates the entries in bolt for the input values.
 // Returns an error if any input value does not have an existing entry.
 func (c *crudImpl) UpdateBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error) {
-	serializedValues := make([]bolthelper.KV, len(entries))
+	serializedValues := make([]dbhelper.KV, len(entries))
 	for i, entry := range entries {
 		key, bytes, err := c.serializeFunc(entry.Value)
 		if err != nil {
 			return 0, 0, err
 		}
-		serializedValues[i] = bolthelper.KV{Key: key, Value: bytes}
+		serializedValues[i] = dbhelper.KV{Key: key, Value: bytes}
 	}
 
 	var writeVersion uint64
@@ -327,13 +328,13 @@ func (c *crudImpl) Upsert(x interface{}, nesting ...Key) (uint64, uint64, error)
 
 // Upsert upserts the input values into bolt whether or not entries with the same keys already exist.
 func (c *crudImpl) UpsertBatch(entries []Entry, nestingPrefix ...Key) (uint64, uint64, error) {
-	serializedValues := make([]bolthelper.KV, len(entries))
+	serializedValues := make([]dbhelper.KV, len(entries))
 	for i, entry := range entries {
 		key, bytes, err := c.serializeFunc(entry.Value)
 		if err != nil {
 			return 0, 0, err
 		}
-		serializedValues[i] = bolthelper.KV{Key: key, Value: bytes}
+		serializedValues[i] = dbhelper.KV{Key: key, Value: bytes}
 	}
 
 	var writeVersion uint64

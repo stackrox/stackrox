@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/tecbot/gorocksdb"
 )
 
 var (
@@ -28,13 +29,8 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
-	return serializeDB(boltDB, badgerDB, false)
-}
-
-// ExportDB is a handler that writes a consistent view of the databases without secrets to the HTTP response.
-func ExportDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
-	return serializeDB(boltDB, badgerDB, true)
+func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.Handler {
+	return serializeDB(boltDB, badgerDB, rocksDB)
 }
 
 func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
@@ -53,7 +49,7 @@ func deferredRestart(ctx context.Context) {
 }
 
 // RestoreDB is a handler that takes in a DB and restores Central to it
-func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
+func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
 		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
@@ -94,13 +90,14 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 		if err := badgerDB.Close(); err != nil {
 			log.Errorf("unable to close badger DB: %v", err)
 		}
+		rocksDB.Close()
 
 		log.Info("Bouncing Central to pick up newly imported DB")
 		deferredRestart(req.Context())
 	})
 }
 
-func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.HandlerFunc {
+func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)
@@ -108,7 +105,7 @@ func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.H
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(req.Context(), boltDB, badgerDB, w, scrubSecrets); err != nil {
+		if err := export.Backup(req.Context(), boltDB, badgerDB, rocksDB, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}

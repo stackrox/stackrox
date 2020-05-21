@@ -24,7 +24,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 		),
 		deployments.OptionsMap,
 	)
-	policySet = detection.NewPolicySet(nil, detectionPkg.NewPolicyCompiler(builder))
+	policySet = detection.NewPolicySet(nil, detectionPkg.NewLegacyPolicyCompiler(builder))
 
 	defaults.PoliciesPath = imagePolicies.Directory()
 	policies, err := defaults.Policies()
@@ -36,7 +36,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 		}
 	}
 
-	detection := NewDetector(policySet, nil)
+	detection := NewDetector(policySet)
 
 	dep := fixtures.GetDeployment()
 	images := fixtures.DeploymentImages()

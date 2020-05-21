@@ -1,5 +1,3 @@
-const svgSelector = 'svg[data-testid="timeline-minimap"]';
+const miniMapSelector = 'svg[data-testid="timeline-minimap"]';
 
-export default {
-    svgSelector
-};
+export default miniMapSelector;

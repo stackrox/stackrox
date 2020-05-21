@@ -18,9 +18,10 @@ import {
     apidocsPath,
     accessControlPath,
     licensePath,
+    userPath,
     systemConfigPath,
     vulnManagementPath,
-    configManagementPath
+    configManagementPath,
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -39,7 +40,6 @@ import LicenseReminder from 'Containers/License/LicenseReminder';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import UnreachableWarning from 'Containers/UnreachableWarning';
-import Loader from 'Components/Loader';
 import AppWrapper from './AppWrapper';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
@@ -55,6 +55,7 @@ const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/P
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
 const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
+const AsyncUserPage = asyncComponent(() => import('Containers/User/UserPage'));
 const AsyncSystemConfigPage = asyncComponent(() => import('Containers/SystemConfig/Page'));
 const AsyncConfigManagementPage = asyncComponent(() => import('Containers/ConfigManagement/Page'));
 const AsyncVulnMgmtPage = asyncComponent(() => import('Containers/Workflow/WorkflowLayout'));
@@ -67,36 +68,27 @@ class MainPage extends Component {
         globalSearchView: PropTypes.bool.isRequired,
         cliDownloadView: PropTypes.bool.isRequired,
         metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired }),
-        pdfLoadingStatus: PropTypes.bool,
         featureFlags: PropTypes.arrayOf(
             PropTypes.shape({
                 envVar: PropTypes.string.isRequired,
-                enabled: PropTypes.bool.isRequired
+                enabled: PropTypes.bool.isRequired,
             })
-        ).isRequired
+        ).isRequired,
     };
 
     static defaultProps = {
         metadata: { stale: false },
-        pdfLoadingStatus: false
     };
 
-    onSearchCloseHandler = toURL => {
+    onSearchCloseHandler = (toURL) => {
         this.props.toggleGlobalSearchView();
         if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
     };
 
-    onCLICloseHandler = toURL => {
+    onCLICloseHandler = (toURL) => {
         this.props.toggleCLIDownloadView();
         if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
     };
-
-    renderPDFLoader = () =>
-        this.props.pdfLoadingStatus && (
-            <div className="absolute left-0 top-0 bg-base-100 z-60 mt-20 w-full h-full text-tertiary-800">
-                <Loader message="Exporting..." />
-            </div>
-        );
 
     renderSearchModal = () => {
         if (!this.props.globalSearchView) return '';
@@ -109,11 +101,7 @@ class MainPage extends Component {
     };
 
     renderRouter = () => (
-        <section
-            className={`flex flex-col h-full w-full relative ${
-                this.props.pdfLoadingStatus ? '' : 'overflow-auto'
-            }`}
-        >
+        <section className="flex flex-col h-full w-full relative overflow-auto">
             <ErrorBoundary>
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
@@ -130,6 +118,7 @@ class MainPage extends Component {
                         component={AsyncLicensePage}
                         requiredPermission="Licenses"
                     />
+                    <ProtectedRoute path={userPath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute
                         path={vulnManagementPath}
@@ -147,7 +136,6 @@ class MainPage extends Component {
                     <ProtectedRoute path={clustersPath} component={AsyncClustersPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
-                {this.renderPDFLoader()}
             </ErrorBoundary>
         </section>
     );
@@ -201,16 +189,12 @@ const mapStateToProps = createStructuredSelector({
     globalSearchView: selectors.getGlobalSearchView,
     cliDownloadView: selectors.getCLIDownloadView,
     metadata: selectors.getMetadata,
-    pdfLoadingStatus: selectors.getPdfLoadingStatus,
-    featureFlags: selectors.getFeatureFlags
+    featureFlags: selectors.getFeatureFlags,
 });
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
     toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
-    toggleCLIDownloadView: () => dispatch(cliSearchActions.toggleCLIDownloadView())
+    toggleCLIDownloadView: () => dispatch(cliSearchActions.toggleCLIDownloadView()),
 });
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(MainPage);
+export default connect(mapStateToProps, mapDispatchToProps)(MainPage);

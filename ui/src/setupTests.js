@@ -7,13 +7,11 @@ import '@testing-library/jest-dom/extend-expect';
  * Fix for test error "matchMedia not present, legacy browsers require a polyfill"
  * https://github.com/akiran/react-slick/issues/742
  */
-if (window.matchMedia) {
-    window.matchMedia = window.matchMedia;
-} else {
+if (!window.matchMedia) {
     window.matchMedia = () => ({
         matches: false,
         addListener() {},
-        removeListener() {}
+        removeListener() {},
     });
 }
 
@@ -41,7 +39,7 @@ class Spy {
         // To debug this, go to src/services/instance.js and uncomment the commented out code,
         // which will help you figure out which API requests are not being mocked.
         // expect is magically injected by the jest test runner.
-        // eslint-disable-next-line no-undef
+        // eslint-disable-next-line no-undef,jest/no-standalone-expect
         expect(this.spy).not.toHaveBeenCalled();
         this.spy = null;
     }

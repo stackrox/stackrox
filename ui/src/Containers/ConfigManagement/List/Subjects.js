@@ -1,12 +1,12 @@
 import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import { SUBJECTS_QUERY } from 'queries/subject';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 
 import { sortValueByLength } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
@@ -17,19 +17,19 @@ const buildTableColumns = (match, location) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: 'Users & Groups',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'subject.name'
+            accessor: 'subject.name',
         },
         {
             Header: 'Type',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'type'
+            accessor: 'type',
         },
         {
             Header: `Cluster Admin Role`,
@@ -39,7 +39,7 @@ const buildTableColumns = (match, location) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
             },
-            accessor: 'clusterAdmin'
+            accessor: 'clusterAdmin',
         },
         {
             Header: `Roles`,
@@ -61,16 +61,16 @@ const buildTableColumns = (match, location) => {
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
             accessor: 'roles',
-            sortMethod: sortValueByLength
-        }
+            sortMethod: sortValueByLength,
+        },
     ];
     return tableColumns;
 };
 
-const createTableRows = data => {
+const createTableRows = (data) => {
     const subjectsMap = {};
-    data.clusters.forEach(cluster => {
-        cluster.subjects.forEach(subject => {
+    data.clusters.forEach((cluster) => {
+        cluster.subjects.forEach((subject) => {
             const { id: subjectId, roles: subjectRoles } = subject;
             if (subjectsMap[subjectId]) {
                 const { roles } = subjectsMap[subjectId];
@@ -79,7 +79,7 @@ const createTableRows = data => {
                 subjectsMap[subjectId] = {
                     ...subject,
                     clusterId: cluster.id,
-                    clusterName: cluster.name
+                    clusterName: cluster.name,
                 };
             }
         });
@@ -106,12 +106,12 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
             defaultSorted={[
                 {
                     id: 'clusterAdmin',
-                    desc: true
+                    desc: true,
                 },
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             data={data}
             autoFocusSearchInput={autoFocusSearchInput}

@@ -38,7 +38,7 @@ describe('Access Control Page', () => {
             );
 
             // client secret should be marked as required as HTTP POST should be default callback
-            cy.get(selectors.authProviders.clientSecretLabel).should(p => {
+            cy.get(selectors.authProviders.clientSecretLabel).should((p) => {
                 expect(p.text()).to.contain('(required)');
             });
             cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).should('not.be.disabled');
@@ -57,7 +57,7 @@ describe('Access Control Page', () => {
             // opt out from client secret usage
             cy.get(selectors.authProviders.doNotUseClientSecretCheckbox).check();
             cy.get(selectors.authProviders.clientSecretInput).should('be.disabled');
-            cy.get(selectors.authProviders.clientSecretLabel).should(p => {
+            cy.get(selectors.authProviders.clientSecretLabel).should((p) => {
                 expect(p.text()).not.to.contain('(required)');
             });
         });
@@ -155,20 +155,18 @@ describe('Access Control Page', () => {
             cy.get(selectors.tabs.roles).click();
         });
 
-        const selectRole = roleName => {
-            cy.get(selectors.roles)
-                .contains(roleName)
-                .click();
+        const selectRole = (roleName) => {
+            cy.get(selectors.roles).contains(roleName).click();
         };
 
-        const createRole = roleName => {
+        const createRole = (roleName) => {
             cy.get(selectors.addNewRoleButton).click();
             cy.get(selectors.permissionsPanelHeader).contains('Create New Role');
             cy.get(selectors.input.roleName).type(roleName);
             cy.get(selectors.saveButton).click();
             cy.get(selectors.roles)
                 .contains(roleName)
-                .then($role => {
+                .then(($role) => {
                     cy.get(selectors.permissionsPanelHeader).contains(
                         `"${$role.text()}" Permissions`
                     );
@@ -186,7 +184,7 @@ describe('Access Control Page', () => {
         it('should automatically select the first role', () => {
             cy.get(selectors.roles)
                 .eq(0)
-                .then($role => {
+                .then(($role) => {
                     cy.get(selectors.permissionsPanelHeader).contains(
                         `"${$role.text()}" Permissions`
                     );
@@ -215,9 +213,13 @@ describe('Access Control Page', () => {
             const newRoleName = `Role-${new Date().getTime()}`;
             createRole(newRoleName);
             cy.get(selectors.editButton).click();
-            cy.get(selectors.input.roleName).then($input => {
+            cy.get(selectors.input.roleName).then(($input) => {
                 cy.wrap($input).should('have.attr', 'disabled');
             });
+        });
+
+        it('should have AllComments permission', () => {
+            cy.get(selectors.permissionsMatrix.rowByPermission('AllComments')).should('exist');
         });
     });
 });

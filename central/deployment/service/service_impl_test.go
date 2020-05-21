@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/golang/mock/gomock"
 	deploymentDackBox "github.com/stackrox/rox/central/deployment/dackbox"
 	"github.com/stackrox/rox/central/deployment/datastore"
@@ -20,13 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
-	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
-	testutils2 "github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestAuthz(t *testing.T) {
@@ -114,21 +112,18 @@ func TestLabelsMap(t *testing.T) {
 	mockRiskDatastore.EXPECT().SearchRawRisks(gomock.Any(), gomock.Any()).AnyTimes()
 	mockRiskDatastore.EXPECT().GetRisk(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	mockFilter := filterMocks.NewMockFilter(mockCtrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			badgerDB := testutils2.BadgerDBForT(t)
-			defer utils.IgnoreError(badgerDB.Close)
+			rocksDB := rocksdbtest.RocksDBForT(t)
+			defer rocksDB.Close()
 
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			dacky, registry, indexingQ := testDackBoxInstance(t, badgerDB, bleveIndex)
+			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
 			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-			deploymentsDS, err := datastore.NewBadger(dacky, concurrency.NewKeyFence(), badgerDB, nil, bleveIndex, nil, nil, nil, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			deploymentsDS, err := datastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {
@@ -149,9 +144,9 @@ func TestLabelsMap(t *testing.T) {
 	}
 }
 
-func testDackBoxInstance(t *testing.T, db *badger.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
+func testDackBoxInstance(t *testing.T, db *gorocksdb.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
 	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
 	reg := indexer.NewWrapperRegistry()

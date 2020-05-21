@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/role/resources"
 	storeMocks "github.com/stackrox/rox/central/sac/datastore/internal/store/mocks"
@@ -75,7 +74,7 @@ func (s *authzDataStoreTestSuite) TestMultipleEnabledRecovery() {
 			},
 		},
 	}
-	disabled := proto.Clone(current[1]).(*storage.AuthzPluginConfig)
+	disabled := current[1].Clone()
 	disabled.Enabled = false
 	s.mockStorage.EXPECT().UpsertAuthzPluginConfig(disabled).Return(nil)
 	s.getDataStore(current)
@@ -129,7 +128,7 @@ func (s *authzDataStoreTestSuite) TestEditEnabledPlugin() {
 			},
 		},
 	}
-	modifiedCurrentlyEnabled := proto.Clone(current[1]).(*storage.AuthzPluginConfig)
+	modifiedCurrentlyEnabled := current[1].Clone()
 	modifiedCurrentlyEnabled.EndpointConfig = &storage.HTTPEndpointConfig{Endpoint: "https://AnotherEndpoint"}
 
 	s.mockStorage.EXPECT().GetAuthzPluginConfig(current[1].GetId()).Return(current[1], nil)
@@ -175,7 +174,7 @@ func (s *authzDataStoreTestSuite) TestUpsertCurrentEnabled() {
 	}
 
 	// The currently enabled config should be stored as disabled.
-	modifiedCurrentlyEnabled := proto.Clone(current[1]).(*storage.AuthzPluginConfig)
+	modifiedCurrentlyEnabled := current[1].Clone()
 	modifiedCurrentlyEnabled.Enabled = false
 	s.mockStorage.EXPECT().UpsertAuthzPluginConfig(modifiedCurrentlyEnabled).Return(nil)
 

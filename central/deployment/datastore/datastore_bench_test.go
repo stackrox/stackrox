@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
@@ -48,23 +47,23 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
-	bleveIndex, err := globalindex.InitializeIndices(blevePath, globalindex.EphemeralIndex)
+	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex)
 	require.NoError(b, err)
 
 	deploymentsStore, err := badgerStore.New(db)
 	require.NoError(b, err)
 
-	deploymentsIndexer := index.New(bleveIndex)
+	deploymentsIndexer := index.New(bleveIndex, bleveIndex)
 	deploymentsSearcher := search.New(deploymentsStore, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
 
 	imageDS, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 
-	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil, nil,
+	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,
 		nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 
-	deploymentPrototype := proto.Clone(fixtures.GetDeployment()).(*storage.Deployment)
+	deploymentPrototype := fixtures.GetDeployment().Clone()
 
 	const numDeployments = 1000
 	for i := 0; i < numDeployments; i++ {

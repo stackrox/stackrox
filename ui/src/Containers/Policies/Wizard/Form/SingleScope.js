@@ -10,7 +10,7 @@ const SingleScope = ({
     fieldBasePath,
     isDeploymentScope,
     deploymentOptions,
-    deleteScopeHandler
+    deleteScopeHandler,
 }) => {
     const actualBasePath = isDeploymentScope ? `${fieldBasePath}.scope` : fieldBasePath;
     return (
@@ -71,18 +71,18 @@ SingleScope.propTypes = {
     clusterOptions: PropTypes.arrayOf(
         PropTypes.shape({
             label: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired
+            value: PropTypes.string.isRequired,
         })
     ).isRequired,
     deploymentOptions: PropTypes.arrayOf(
         PropTypes.shape({
             label: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired
+            value: PropTypes.string.isRequired,
         })
     ).isRequired,
     fieldBasePath: PropTypes.string.isRequired,
     isDeploymentScope: PropTypes.bool.isRequired,
-    deleteScopeHandler: PropTypes.func.isRequired
+    deleteScopeHandler: PropTypes.func.isRequired,
 };
 
 export default SingleScope;

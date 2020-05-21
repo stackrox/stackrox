@@ -7,7 +7,7 @@ describe('Component:Select', () => {
     const initialProps = {
         id: 'enableAutoUpgrade',
         label: 'Automatically upgrade secured clusters',
-        toggleHandler: () => {}
+        toggleHandler: () => {},
     };
 
     it('should show its label in a leading <label> element', () => {

@@ -4,20 +4,20 @@ import PropTypes from 'prop-types';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 
-const truncate = key => {
+const truncate = (key) => {
     const index = key.indexOf('/');
     return index > 0 ? key.substr(index + 1) : key;
 };
 
 const Labels = ({ labels }) => (
     <ul className={` ${labels.length > 4 ? `columns-2` : ``} p-3 w-full leading-normal`}>
-        {labels.map(label => (
+        {labels.map((label) => (
             <li
                 key={label.key}
                 className="border-b border-base-300 p-2 truncate"
                 style={{
                     columnBreakInside: 'avoid',
-                    pageBreakInside: 'avoid'
+                    pageBreakInside: 'avoid',
                 }}
             >
                 <Tooltip
@@ -37,7 +37,7 @@ const Labels = ({ labels }) => (
 );
 
 Labels.propTypes = {
-    labels: PropTypes.arrayOf(PropTypes.object).isRequired
+    labels: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 
 export default Labels;

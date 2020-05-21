@@ -7,11 +7,11 @@ import EntityTabs from 'Components/workflow/EntityTabs';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import workflowStateContext from 'Containers/workflowStateContext';
-import parseURL from 'modules/URLParser';
+import parseURL from 'utils/URLParser';
 import getSidePanelEntity from 'utils/getSidePanelEntity';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
-import { WorkflowState } from 'modules/WorkflowState';
-import { useCaseEntityMap } from 'modules/entityRelationships';
+import { WorkflowState } from 'utils/WorkflowState';
+import { useCaseEntityMap } from 'utils/entityRelationships';
 import entityLabels from 'messages/entity';
 import useCaseLabels from 'messages/useCase';
 import useEntityName from 'hooks/useEntityName';
@@ -60,10 +60,10 @@ const WorkflowEntityPageLayout = ({ location }) => {
         ? {
               opacity: 1,
               transition: '.15s opacity ease-in',
-              transitionDelay: '.25s'
+              transitionDelay: '.25s',
           }
         : {
-              opacity: 0
+              opacity: 0,
           };
 
     const subheaderText = entityLabels[pageEntityType];

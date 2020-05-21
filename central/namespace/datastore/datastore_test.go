@@ -50,7 +50,7 @@ func (suite *NamespaceDataStoreTestSuite) SetupTest() {
 
 	suite.deploymentDataStore = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.ns.EXPECT().GetNamespaces().Return(([]*storage.NamespaceMetadata)(nil), nil)
+	suite.ns.EXPECT().Walk(gomock.Any()).Return(([]*storage.NamespaceMetadata)(nil), nil)
 	suite.indexer.EXPECT().AddNamespaceMetadatas(nil).Return(nil)
 
 	var err error

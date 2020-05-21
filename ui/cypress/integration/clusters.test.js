@@ -32,20 +32,20 @@ describe('Cluster Creation Flow', () => {
 
         // mocking a ZIP file download
         //   based on: https://github.com/cypress-io/cypress/issues/1956#issuecomment-455157737
-        cy.fixture('clusters/sensor-kubernetes-cluster-testinstance.zip').then(dataURI => {
-            return Cypress.Blob.base64StringToBlob(dataURI, 'image/jpeg').then(blob => {
+        cy.fixture('clusters/sensor-kubernetes-cluster-testinstance.zip').then((dataURI) => {
+            return Cypress.Blob.base64StringToBlob(dataURI, 'image/jpeg').then((blob) => {
                 return cy
                     .route({
                         url: clustersApi.zip,
                         method: 'POST',
                         response: '',
-                        onResponse: xhr => {
+                        onResponse: (xhr) => {
                             xhr.response.body = blob; // eslint-disable-line no-param-reassign
                         },
                         headers: {
                             'content-disposition':
-                                'attachment; filename="sensor-kubernetes-cluster-testinstance.zip"'
-                        }
+                                'attachment; filename="sensor-kubernetes-cluster-testinstance.zip"',
+                        },
                     })
                     .as('download');
             });
@@ -72,14 +72,12 @@ describe('Cluster Creation Flow', () => {
         cy.get(selectors.clusterForm.nameInput).type(clusterName);
         // The image name should be pre-populated, so we don't type it in to test that the prepopulation works.
         // (The backend WILL error out if the image is empty.)
-        cy.get(selectors.clusterForm.endpointInput)
-            .clear()
-            .type('central.stackrox:443');
+        cy.get(selectors.clusterForm.endpointInput).clear().type('central.stackrox:443');
 
         cy.get(selectors.buttons.next).click();
         cy.wait('@addCluster')
             .its('responseBody')
-            .then(response => {
+            .then((response) => {
                 const clusterId = response.cluster.id;
 
                 cy.get(selectors.buttons.downloadYAML).click();
@@ -92,9 +90,9 @@ describe('Cluster Creation Flow', () => {
                     cluster: {
                         id: clusterId,
                         status: {
-                            lastContact: '2018-06-25T19:12:44.955289Z'
-                        }
-                    }
+                            lastContact: '2018-06-25T19:12:44.955289Z',
+                        },
+                    },
                 }).as('getCluster');
                 cy.wait('@getCluster');
                 cy.get(

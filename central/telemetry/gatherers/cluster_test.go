@@ -79,7 +79,7 @@ func (s *clusterGathererTestSuite) TestGather() {
 	s.mockNodeDatastore.EXPECT().ListNodes().Return(nil, nil)
 	s.mockNamespaceDatastore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(nil, nil)
 	s.mockConnectionManager.EXPECT().GetActiveConnections().Return(nil)
-	clusters := s.gatherer.Gather(context.Background())
+	clusters := s.gatherer.Gather(context.Background(), true)
 	s.Len(clusters, 1)
 	cluster := clusters[0]
 	mockCluster := mockClusters[0]

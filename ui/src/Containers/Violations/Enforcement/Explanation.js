@@ -22,7 +22,7 @@ function Explanation({ lifecycleStage, policyId }) {
 
 Explanation.propTypes = {
     policyId: PropTypes.string.isRequired,
-    lifecycleStage: PropTypes.string.isRequired
+    lifecycleStage: PropTypes.string.isRequired,
 };
 
 export default Explanation;

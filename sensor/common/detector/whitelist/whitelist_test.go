@@ -45,26 +45,24 @@ func TestWhitelist(t *testing.T) {
 	}
 
 	evaluator := NewWhitelistEvaluator()
-	// No whitelist added should return true
-	assert.True(t, evaluator.IsInWhitelist(process))
+	// No whitelist added, nothing is outside a locked whitelist
+	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 
-	// Add whitelist that does not container the value
+	// Add whitelist that does not contain the value
 	evaluator.AddWhitelist(notInWhitelist)
-	assert.False(t, evaluator.IsInWhitelist(process))
+	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
 
-	// Add whitelist that does contain the value
+	// Verify that different whitelists produce expected outcomes.
 	evaluator.AddWhitelist(inWhitelist)
-	assert.True(t, evaluator.IsInWhitelist(process))
-
-	// Re-add the whitelist and then remove the deployment
+	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 	evaluator.AddWhitelist(notInWhitelist)
-	assert.False(t, evaluator.IsInWhitelist(process))
+	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
 	evaluator.AddWhitelist(notInUnlockedWhitelist)
-	assert.True(t, evaluator.IsInWhitelist(process))
+	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 
 	// Add locked whitelist then remove deployment
 	evaluator.AddWhitelist(notInWhitelist)
-	assert.False(t, evaluator.IsInWhitelist(process))
+	assert.True(t, evaluator.IsOutsideLockedWhitelist(process))
 	evaluator.RemoveDeployment(process.GetDeploymentId())
-	assert.True(t, evaluator.IsInWhitelist(process))
+	assert.False(t, evaluator.IsOutsideLockedWhitelist(process))
 }

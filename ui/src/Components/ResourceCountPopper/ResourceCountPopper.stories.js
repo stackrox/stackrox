@@ -4,23 +4,23 @@ import ResourceCountPopper from './ResourceCountPopper';
 
 export default {
     title: 'ResourceCountPopper',
-    component: ResourceCountPopper
+    component: ResourceCountPopper,
 };
 
 export const withData = () => {
     const data = [
         {
             key: 'Created',
-            value: '10/12/2019 | 8:59:17AM'
+            value: '10/12/2019 | 8:59:17AM',
         },
         {
             key: 'Deployment Type',
-            value: 'Deployment'
+            value: 'Deployment',
         },
         {
             key: 'Replicas',
-            value: 1
-        }
+            value: 1,
+        },
     ];
 
     const label = 'Labels';

@@ -14,7 +14,7 @@ export const entityPagePropTypes = {
     controlResult: PropTypes.shape({}),
     match: ReactRouterPropTypes.match,
     location: ReactRouterPropTypes.location,
-    original: PropTypes.shape({})
+    original: PropTypes.shape({}),
 };
 
 export const entityPageDefaultProps = {
@@ -29,7 +29,7 @@ export const entityPageDefaultProps = {
     query: null,
     sidePanelMode: false,
     controlResult: null,
-    original: null
+    original: null,
 };
 
 export const entityListPropTypes = {
@@ -38,14 +38,14 @@ export const entityListPropTypes = {
     query: PropTypes.shape({}),
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    data: PropTypes.arrayOf(PropTypes.shape({}))
+    data: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 export const entityListDefaultprops = {
     className: '',
     selectedRowId: null,
     query: null,
-    data: null
+    data: null,
 };
 
 // TODO: standardize on entityId and search props from legacy id and query.
@@ -55,7 +55,7 @@ export const entityComponentPropTypes = {
     query: PropTypes.shape({}),
     search: PropTypes.shape({}),
     entityListType: PropTypes.string,
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
 };
 
 export const entityComponentDefaultProps = {
@@ -66,7 +66,7 @@ export const entityComponentDefaultProps = {
     query: null,
     search: null,
     id: null,
-    entityid: null
+    entityid: null,
 };
 
 export const workflowListPropTypes = {
@@ -75,7 +75,7 @@ export const workflowListPropTypes = {
     selectedRowId: PropTypes.string,
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
-    page: PropTypes.number
+    page: PropTypes.number,
 };
 
 export const workflowListDefaultProps = {
@@ -85,7 +85,7 @@ export const workflowListDefaultProps = {
     entityContext: {},
     sort: null,
     page: 0,
-    selectedRowId: null
+    selectedRowId: null,
 };
 
 export const workflowEntityPropTypes = {
@@ -94,7 +94,7 @@ export const workflowEntityPropTypes = {
     entityContext: PropTypes.shape({}),
     search: PropTypes.shape({}),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
-    page: PropTypes.number
+    page: PropTypes.number,
 };
 
 export const workflowEntityDefaultProps = {
@@ -102,5 +102,5 @@ export const workflowEntityDefaultProps = {
     entityContext: {},
     search: null,
     sort: [],
-    page: 1
+    page: 1,
 };

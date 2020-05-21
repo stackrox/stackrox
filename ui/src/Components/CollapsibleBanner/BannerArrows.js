@@ -6,29 +6,30 @@ const arrowButtonClass = 'absolute shadow bg-primary-100 h-16 cursor-pointer';
 const arrowIconClass = 'h-8 w-8 text-primary-600 ';
 const arrowStyles = {
     transform: 'translateY(-50%)',
-    top: '50%'
+    top: '50%',
 };
 const arrowPropTypes = {
     className: PropTypes.string,
     style: PropTypes.shape({}),
-    onClick: PropTypes.func
+    onClick: PropTypes.func,
 };
 
 const arrowDefaultProps = {
     className: '',
     style: {},
-    onClick: null
+    onClick: null,
 };
 
-const isArrowDisabled = className => className.includes('slick-disabled');
+const isArrowDisabled = (className) => className.includes('slick-disabled');
 
-const NextArrow = props => {
+const NextArrow = (props) => {
     const { className, style, onClick } = props;
     const isDisabled = isArrowDisabled(className);
     return (
         <div
-            className={`${className} absolute z-10 right-0 h-full pointer-events-none ${isDisabled &&
-                'hidden'}`}
+            className={`${className} absolute z-10 right-0 h-full pointer-events-none ${
+                isDisabled && 'hidden'
+            }`}
         >
             <button
                 type="button"
@@ -45,14 +46,15 @@ const NextArrow = props => {
 NextArrow.propTypes = arrowPropTypes;
 NextArrow.defaultProps = arrowDefaultProps;
 
-const PrevArrow = props => {
+const PrevArrow = (props) => {
     const { className, style, onClick } = props;
     const isDisabled = isArrowDisabled(className);
     return (
         <div
             style={{ ...style, ...arrowStyles }}
-            className={`${className} absolute z-10 left-0 h-full pointer-events-none ${isDisabled &&
-                'hidden'}`}
+            className={`${className} absolute z-10 left-0 h-full pointer-events-none ${
+                isDisabled && 'hidden'
+            }`}
         >
             <button
                 type="button"

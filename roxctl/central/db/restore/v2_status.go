@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -22,9 +23,9 @@ func v2RestoreStatusCmd() *cobra.Command {
 		Use:   "status",
 		Short: "Show information about an active DB restore process",
 		Long:  "Show information about an active DB restore process",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return showRestoreStatus(flags.Timeout(c))
-		},
+		}),
 	}
 
 	return c

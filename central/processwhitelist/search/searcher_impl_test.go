@@ -55,7 +55,7 @@ func (suite *ProcessWhitelistSearchTestSuite) SetupTest() {
 	suite.controller = gomock.NewController(suite.T())
 	suite.indexer = mockIndex.NewMockIndexer(suite.controller)
 	suite.store = mockStore.NewMockStore(suite.controller)
-	suite.store.EXPECT().WalkAll(gomock.Any()).Return(nil)
+	suite.store.EXPECT().Walk(gomock.Any()).Return(nil)
 	searcher, err := New(suite.store, suite.indexer)
 
 	suite.NoError(err)
@@ -76,7 +76,7 @@ func (suite *ProcessWhitelistSearchTestSuite) TestErrors() {
 
 	indexResults, _ := getFakeSearchResults(1)
 	suite.indexer.EXPECT().Search(q).Return(indexResults, nil)
-	suite.store.EXPECT().GetWhitelists(search.ResultsToIDs(indexResults)).Return(nil, nil, someError)
+	suite.store.EXPECT().GetMany(search.ResultsToIDs(indexResults)).Return(nil, nil, someError)
 	results, err = suite.searcher.SearchRawProcessWhitelists(suite.allowAllCtx, q)
 	suite.Error(err)
 	suite.Nil(results)
@@ -87,14 +87,14 @@ func (suite *ProcessWhitelistSearchTestSuite) TestSearchForAll() {
 	var emptyList []search.Result
 	suite.indexer.EXPECT().Search(q).Return(emptyList, nil)
 	// It's an implementation detail whether this method is called, so allow but don't require it.
-	suite.store.EXPECT().GetWhitelists(testutils.AssertionMatcher(assert.Empty)).MinTimes(0).MaxTimes(1)
+	suite.store.EXPECT().GetMany(testutils.AssertionMatcher(assert.Empty)).MinTimes(0).MaxTimes(1)
 	results, err := suite.searcher.SearchRawProcessWhitelists(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Empty(results)
 
 	indexResults, dbResults := getFakeSearchResults(3)
 	suite.indexer.EXPECT().Search(q).Return(indexResults, nil)
-	suite.store.EXPECT().GetWhitelists(search.ResultsToIDs(indexResults)).Return(dbResults, nil, nil)
+	suite.store.EXPECT().GetMany(search.ResultsToIDs(indexResults)).Return(dbResults, nil, nil)
 	results, err = suite.searcher.SearchRawProcessWhitelists(suite.allowAllCtx, q)
 	suite.NoError(err)
 	suite.Equal(dbResults, results)

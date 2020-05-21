@@ -5,10 +5,10 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 // Helper functions
 
-const filterAuthProviders = providers => {
-    const availableTypes = availableAuthProviders.map(provider => provider.value);
+const filterAuthProviders = (providers) => {
+    const availableTypes = availableAuthProviders.map((provider) => provider.value);
     const filteredProviders = providers.filter(
-        provider => availableTypes.indexOf(provider.type) !== -1
+        (provider) => availableTypes.indexOf(provider.type) !== -1
     );
     return filteredProviders;
 };
@@ -26,7 +26,9 @@ export const types = {
     GRANT_ANONYMOUS_ACCESS: 'auth/GRANT_ANONYMOUS_ACCESS',
     AUTH_HTTP_ERROR: 'auth/AUTH_HTTP_ERROR',
     AUTH_IDP_ERROR: 'auth/AUTH_IDP_ERROR',
-    SET_AUTH_PROVIDER_EDITING_STATE: 'auth/SET_AUTH_PROVIDER_EDITING_STATE'
+    SET_AUTH_PROVIDER_EDITING_STATE: 'auth/SET_AUTH_PROVIDER_EDITING_STATE',
+    SET_SAVE_AUTH_PROVIDER_ERROR: 'auth/SET_AUTH_PROVIDER_ERROR',
+    SET_AUTH_PROVIDER_TEST_RESULTS: 'auth/SET_AUTH_PROVIDER_TEST_RESULTS',
 };
 
 // Actions
@@ -34,34 +36,56 @@ export const types = {
 export const actions = {
     fetchAuthProviders: createFetchingActions(types.FETCH_AUTH_PROVIDERS),
     fetchLoginAuthProviders: createFetchingActions(types.FETCH_LOGIN_AUTH_PROVIDERS),
-    selectAuthProvider: authProvider => ({
+    selectAuthProvider: (authProvider) => ({
         type: types.SELECTED_AUTH_PROVIDER,
-        authProvider
+        authProvider,
     }),
-    saveAuthProvider: authProvider => ({
+    saveAuthProvider: (authProvider) => ({
         type: types.SAVE_AUTH_PROVIDER,
-        authProvider
+        authProvider,
     }),
-    deleteAuthProvider: id => ({
+    deleteAuthProvider: (id) => ({
         type: types.DELETE_AUTH_PROVIDER,
-        id
+        id,
     }),
-    setAuthProviderEditingState: value => ({
+    setAuthProviderEditingState: (value) => ({
         type: types.SET_AUTH_PROVIDER_EDITING_STATE,
-        value
+        value,
     }),
-    login: () => ({ type: types.LOGIN }),
+    setSaveAuthProviderError: (error) => ({
+        type: types.SET_SAVE_AUTH_PROVIDER_ERROR,
+        error,
+    }),
+    setAuthProviderTestResults: (value) => ({
+        type: types.SET_AUTH_PROVIDER_TEST_RESULTS,
+        value,
+    }),
+    login: (userData) => ({ type: types.LOGIN, userData }),
     logout: () => ({ type: types.LOGOUT }),
     grantAnonymousAccess: () => ({ type: types.GRANT_ANONYMOUS_ACCESS }),
-    handleAuthHttpError: error => ({ type: types.AUTH_HTTP_ERROR, error }),
-    handleIdpError: error => ({ type: types.AUTH_IDP_ERROR, error })
+    handleAuthHttpError: (error) => ({ type: types.AUTH_HTTP_ERROR, error }),
+    handleIdpError: (error) => ({ type: types.AUTH_IDP_ERROR, error }),
 };
 
 // Reducers
 
+const currentUser = (state = {}, action) => {
+    if (action.type === types.LOGIN) {
+        return isEqual(action.userData, state) ? state : action.userData;
+    }
+    return state;
+};
+
 const authProviders = (state = [], action) => {
     if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
+    }
+    return state;
+};
+
+const authProviderTestResults = (state = {}, action) => {
+    if (action.type === types.SET_AUTH_PROVIDER_TEST_RESULTS) {
+        return isEqual(action.response, state) ? state : action.value;
     }
     return state;
 };
@@ -76,7 +100,7 @@ const loginAuthProviders = (state = [], action) => {
 const selectedAuthProvider = (state = null, action) => {
     if (action.type === types.FETCH_AUTH_PROVIDERS.SUCCESS) {
         const providers = filterAuthProviders(action.response);
-        if (state?.id && !providers.find(provider => provider.id === state.id)) {
+        if (state?.id && !providers.find((provider) => provider.id === state.id)) {
             // the selected auth provider isn't anymore in the list of auth providers => deselect
             return null;
         }
@@ -104,7 +128,7 @@ export const AUTH_STATUS = Object.freeze({
     LOGGED_OUT: 'LOGGED_OUT',
     ANONYMOUS_ACCESS: 'ANONYMOUS_ACCESS',
     AUTH_PROVIDERS_LOADING_ERROR: 'AUTH_PROVIDERS_LOADING_ERROR',
-    LOGIN_AUTH_PROVIDERS_LOADING_ERROR: 'LOGIN_AUTH_PROVIDERS_LOADING_ERROR'
+    LOGIN_AUTH_PROVIDERS_LOADING_ERROR: 'LOGIN_AUTH_PROVIDERS_LOADING_ERROR',
 });
 
 const authStatus = (state = AUTH_STATUS.LOADING, action) => {
@@ -134,33 +158,52 @@ const authProviderResponse = (state = {}, action) => {
     return state;
 };
 
+const saveAuthProviderError = (state = null, action) => {
+    if (action.type === types.SET_SAVE_AUTH_PROVIDER_ERROR) {
+        if (action.error && action.error.message) {
+            return action.error;
+        }
+        return null;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     authProviders,
+    authProviderTestResults,
     loginAuthProviders,
     selectedAuthProvider,
     authStatus,
     authProviderResponse,
-    isEditingAuthProvider
+    isEditingAuthProvider,
+    saveAuthProviderError,
+    currentUser,
 });
 
 export default reducer;
 
 // Selectors
 
-const getAuthProviders = state => state.authProviders;
-const getLoginAuthProviders = state => state.loginAuthProviders;
-const getAvailableAuthProviders = state => filterAuthProviders(state.authProviders);
-const getSelectedAuthProvider = state => state.selectedAuthProvider;
-const getAuthStatus = state => state.authStatus;
-const getAuthProviderError = state => state.authProviderResponse;
-const getAuthProviderEditingState = state => state.isEditingAuthProvider;
+const getAuthProviders = (state) => state.authProviders;
+const getLoginAuthProviders = (state) => state.loginAuthProviders;
+const getLoginAuthProviderTestResults = (state) => state.authProviderTestResults;
+const getAvailableAuthProviders = (state) => filterAuthProviders(state.authProviders);
+const getSelectedAuthProvider = (state) => state.selectedAuthProvider;
+const getAuthStatus = (state) => state.authStatus;
+const getAuthProviderError = (state) => state.authProviderResponse;
+const getAuthProviderEditingState = (state) => state.isEditingAuthProvider;
+const getSaveAuthProviderError = (state) => state.saveAuthProviderError;
+const getCurrentUser = (state) => state.currentUser;
 
 export const selectors = {
     getAuthProviders,
     getLoginAuthProviders,
+    getLoginAuthProviderTestResults,
     getAvailableAuthProviders,
     getSelectedAuthProvider,
     getAuthStatus,
     getAuthProviderError,
-    getAuthProviderEditingState
+    getAuthProviderEditingState,
+    getSaveAuthProviderError,
+    getCurrentUser,
 };

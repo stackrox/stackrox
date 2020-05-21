@@ -26,11 +26,11 @@ const ReadIcon = ({ value, type }) => {
 
 ReadIcon.propTypes = {
     value: PropTypes.string,
-    type: PropTypes.oneOf(['READ', 'WRITE']).isRequired
+    type: PropTypes.oneOf(['READ', 'WRITE']).isRequired,
 };
 
 ReadIcon.defaultProps = {
-    value: ''
+    value: '',
 };
 
 export default ReadIcon;

@@ -7,7 +7,7 @@ const removeFieldHandler = (fields, index) => () => {
     fields.remove(index);
 };
 
-const addFieldHandler = fields => () => {
+const addFieldHandler = (fields) => () => {
     fields.push({});
 };
 
@@ -49,7 +49,7 @@ const renderKeyValues = ({ fields }) => (
 );
 
 renderKeyValues.propTypes = {
-    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default renderKeyValues;

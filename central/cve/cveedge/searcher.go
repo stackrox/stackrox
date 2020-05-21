@@ -18,7 +18,7 @@ var (
 func HandleCVEEdgeSearchQuery(searcher search.Searcher) search.Searcher {
 	return search.Func(func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 		// Local copy to avoid changing input.
-		local := proto.Clone(q).(*v1.Query)
+		local := q.Clone()
 		pagination := local.GetPagination()
 		local.Pagination = nil
 

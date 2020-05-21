@@ -10,10 +10,10 @@ class Violations extends Component {
         dryrun: PropTypes.shape({
             alerts: PropTypes.arrayOf(
                 PropTypes.shape({
-                    deployment: PropTypes.string.isRequired
+                    deployment: PropTypes.string.isRequired,
                 })
-            ).isRequired
-        }).isRequired
+            ).isRequired,
+        }).isRequired,
     };
 
     render() {
@@ -22,7 +22,7 @@ class Violations extends Component {
         const columns = [
             {
                 accessor: 'deployment',
-                Header: 'Deployment'
+                Header: 'Deployment',
             },
             {
                 accessor: 'violations',
@@ -33,7 +33,7 @@ class Violations extends Component {
                     violations = violations.slice(0, 5);
                     return (
                         <div>
-                            {violations.map(violation => (
+                            {violations.map((violation) => (
                                 <div key={violation}>- {violation}</div>
                             ))}
                             {numExtraViolations > 0 && (
@@ -44,8 +44,8 @@ class Violations extends Component {
                             )}
                         </div>
                     );
-                }
-            }
+                },
+            },
         ];
         const rows = this.props.dryrun.alerts;
         return (

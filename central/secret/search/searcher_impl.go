@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/secret/convert"
 )
 
 var (
@@ -65,7 +66,17 @@ func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]se
 
 // ToSecrets returns the secrets from the db for the given search results.
 func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, []int, error) {
-	return ds.storage.ListSecrets(search.ResultsToIDs(results))
+	ids := search.ResultsToIDs(results)
+
+	secrets, missingIndices, err := ds.storage.GetMany(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	listSecrets := make([]*storage.ListSecret, 0, len(secrets))
+	for _, s := range secrets {
+		listSecrets = append(listSecrets, convert.SecretToSecretList(s))
+	}
+	return listSecrets, missingIndices, nil
 }
 
 // ToSearchResults returns the searchResults from the db for the given search results.
@@ -111,7 +122,7 @@ func (ds *searcherImpl) searchSecrets(ctx context.Context, q *v1.Query) ([]*stor
 	}
 
 	ids := search.ResultsToIDs(results)
-	secrets, _, err := ds.storage.GetSecretsWithIds(ids)
+	secrets, _, err := ds.storage.GetMany(ids)
 	if err != nil {
 		return nil, err
 	}

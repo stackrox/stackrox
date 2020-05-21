@@ -22,15 +22,12 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }
     const [isDialogOpen, openDialog] = useState(defaultDialogState);
     const [isVerifyingLicense, verifyLicense] = useState(defaultVerifyingLicenseState);
 
-    useEffect(
-        () => {
-            if (licenseUploadStatus && licenseUploadStatus.status !== LICENSE_STATUS.VERIFYING) {
-                setDialogMessage(getLicenseStatusMessage(status, message));
-                verifyLicense(false);
-            }
-        },
-        [licenseUploadStatus, message, status]
-    );
+    useEffect(() => {
+        if (licenseUploadStatus && licenseUploadStatus.status !== LICENSE_STATUS.VERIFYING) {
+            setDialogMessage(getLicenseStatusMessage(status, message));
+            verifyLicense(false);
+        }
+    }, [licenseUploadStatus, message, status]);
 
     function onUploadHandler(data) {
         verifyLicense(true);
@@ -66,25 +63,22 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }
 UploadLicense.propTypes = {
     licenseUploadStatus: PropTypes.shape({
         status: PropTypes.string,
-        message: PropTypes.string
+        message: PropTypes.string,
     }),
     activateLicense: PropTypes.func.isRequired,
-    isStartUpScreen: PropTypes.bool
+    isStartUpScreen: PropTypes.bool,
 };
 
 UploadLicense.defaultProps = {
     licenseUploadStatus: {},
-    isStartUpScreen: false
+    isStartUpScreen: false,
 };
 const mapStateToProps = createStructuredSelector({
-    licenseUploadStatus: selectors.getLicenseUploadStatus
+    licenseUploadStatus: selectors.getLicenseUploadStatus,
 });
 const mapDispatchToProps = {
     activateLicense: actions.activateLicense,
-    isStartUpScreen: false
+    isStartUpScreen: false,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(UploadLicense);
+export default connect(mapStateToProps, mapDispatchToProps)(UploadLicense);

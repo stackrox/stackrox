@@ -1,38 +1,28 @@
-import React from 'react';
+/* eslint-disable react/display-name */
+import React, { forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
-import { eventTypes } from 'constants/timelineTypes';
-import EventTooltip from '../EventTooltip';
-
-const TerminationEvent = ({ name, type, reason, timestamp, width, height }) => {
-    const elementHeight = height || width;
+const TerminationEvent = forwardRef(({ size }, ref) => {
     return (
-        // We wrap the tooltip within the specific event Components because the Tooltip Component
-        // doesn't seem to work when wrapping it around the rendered html one level above. I suspect
-        // it doesn't work because the D3Anchor renders a <g> while this renders an svg element
-        <EventTooltip name={name} type={type} reason={reason} timestamp={timestamp}>
-            <polygon
-                data-testid="termination-event"
-                points={`0,0 ${width / 2},${elementHeight} ${width},0`}
-                fill="var(--caution-600)"
-                stroke="var(--caution-600)"
+        <svg
+            data-testid="termination-event"
+            width={size}
+            height={size}
+            viewBox="0 0 16 16"
+            xmlns="http://www.w3.org/2000/svg"
+            ref={ref}
+        >
+            <path
+                d="M9.202 13.817l6.612-11.268a1.354 1.354 0 00-.508-1.866A1.406 1.406 0 0014.612.5H1.388C.621.5 0 1.112 0 1.866c0 .24.064.475.186.683l6.612 11.268a1.4 1.4 0 002.404 0z"
+                fill="#FF9064"
+                fillRule="evenodd"
             />
-        </EventTooltip>
+        </svg>
     );
-};
+});
 
 TerminationEvent.propTypes = {
-    name: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(Object.values(eventTypes)).isRequired,
-    reason: PropTypes.string,
-    timestamp: PropTypes.string.isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number
-};
-
-TerminationEvent.defaultProps = {
-    reason: null,
-    height: null
+    size: PropTypes.number.isRequired,
 };
 
 export default TerminationEvent;

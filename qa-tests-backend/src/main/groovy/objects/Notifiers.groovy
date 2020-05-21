@@ -4,8 +4,9 @@ import common.Constants
 import groovy.json.JsonSlurper
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
-import services.ClusterService
+import org.junit.Assume
 import services.NotifierService
+import util.Env
 import util.MailService
 import util.SplunkUtil
 import util.Timer
@@ -35,9 +36,9 @@ class Notifier {
         return NotifierService.testNotifier(notifier)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment) { }
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) { }
 
-    void validateNetpolNotification(String yaml) { }
+    void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) { }
 
     String getId() {
         return notifier.id
@@ -50,7 +51,7 @@ class Notifier {
 
 class EmailNotifier extends Notifier {
     private final MailService mail =
-            new MailService("imap.gmail.com", "stackrox.qa@gmail.com", System.getenv("EMAIL_NOTIFIER_PASSWORD"))
+            new MailService("imap.gmail.com", "stackrox.qa@gmail.com", Env.mustGet("EMAIL_NOTIFIER_PASSWORD"))
 
     EmailNotifier(
             String integrationName = "Email Test",
@@ -68,9 +69,16 @@ class EmailNotifier extends Notifier {
         mail.logout()
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment) {
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
         String policySeverity = policy.severity.valueDescriptor.toString().split("_")[0].toLowerCase()
-        mail.login()
+        try {
+            mail.login()
+        } catch (Exception e) {
+            if (strictIntegrationTesting) {
+                throw(e)
+            }
+            Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
+        }
 
         Timer t = new Timer(30, 3)
         Message[] notifications = []
@@ -98,9 +106,16 @@ class EmailNotifier extends Notifier {
         mail.logout()
     }
 
-    void validateNetpolNotification(String yaml) {
+    void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) {
         Timer t = new Timer(30, 3)
-        mail.login()
+        try {
+            mail.login()
+        } catch (Exception e) {
+            if (strictIntegrationTesting) {
+                throw(e)
+            }
+            Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
+        }
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
             println "checking for messages..."
@@ -128,7 +143,7 @@ class GenericNotifier extends Notifier {
                 integrationName, enableTLS, caCert, skipTLSVerification, auditLoggingEnabled)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment) {
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
         def get = new URL("http://localhost:8080").openConnection()
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(get.getInputStream().getText())
@@ -142,7 +157,7 @@ class GenericNotifier extends Notifier {
         assert generic["data"]["alert"]["deployment"]["name"] == deployment.name
     }
 
-    void validateNetpolNotification(String yaml) {
+    void validateNetpolNotification(String yaml, boolean strictIntegrationTesting) {
         def get = new URL("http://localhost:8080").openConnection()
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(get.getInputStream().getText())
@@ -184,7 +199,7 @@ class PagerDutyNotifier extends Notifier {
         incidentWatcherIndex = getLatestPagerDutyIncident().incidents[0].incident_number
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment) {
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
         def newIncidents = waitForPagerDutyUpdate(incidentWatcherIndex)
         assert newIncidents != null
         assert newIncidents.incidents[0].description.contains(policy.description)
@@ -227,24 +242,31 @@ class PagerDutyNotifier extends Notifier {
 }
 
 class SplunkNotifier extends Notifier {
-    def splunkLbIp = ""
+    def splunkPort
 
-    SplunkNotifier(boolean legacy, String lbIp, String integrationName = "Splunk Test") {
-        splunkLbIp = lbIp
-        notifier = NotifierService.getSplunkIntegrationConfig(legacy, integrationName)
+    SplunkNotifier(boolean legacy, String collectorServiceName, int port, String integrationName = "Splunk Test") {
+        splunkPort = port
+        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName)
     }
 
-    void validateViolationNotification(Policy policy, Deployment deployment) {
-        def response = SplunkUtil.waitForSplunkAlerts(splunkLbIp, 60)
+    def createNotifier() {
+        println "validating splunk deployment is ready to accept events before creating notifier..."
+        withRetry(20, 2) {
+            SplunkUtil.createSearch(splunkPort)
+        }
+        notifier = NotifierService.addNotifier(notifier)
+    }
 
-        assert response.get("offset") == 0
-        assert response.get("preview") == false
-        assert response.get("namespace") == deployment.namespace
-        assert response.get("name") == deployment.name
-        assert response.get("type") == "Deployment"
-        assert response.get("clusterName") == ClusterService.getCluster().name
-        assert response.get("policy") == policy.name
-        assert response.get("sourcetype") == "_json"
-        assert response.get("source") == "stackrox"
+    void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
+        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
+
+        assert response.find { it.deployment.id == deployment.deploymentUid }
+        assert response.find { it.deployment.name == deployment.name }
+        assert response.find { it.deployment.namespace == deployment.namespace }
+        assert response.find { it.deployment.type == "Deployment" }
+        assert response.find { it.policy.name == policy.name }
+        assert response.find { it.policy.description == policy.description }
+        assert response.find { it.policy.remediation == policy.remediation }
+        assert response.find { it.policy.rationale == policy.rationale }
     }
 }

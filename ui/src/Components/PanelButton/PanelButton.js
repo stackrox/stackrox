@@ -13,7 +13,7 @@ const PanelButton = ({
     dataTestId,
     disabled,
     tooltip,
-    alwaysVisibleText
+    alwaysVisibleText,
 }) => {
     const tooltipContent = tooltip || text;
     const tooltipClassName = !tooltip ? 'visible xl:invisible' : '';
@@ -53,7 +53,7 @@ PanelButton.propTypes = {
     dataTestId: PropTypes.string,
     disabled: PropTypes.bool,
     tooltip: PropTypes.node,
-    alwaysVisibleText: PropTypes.bool
+    alwaysVisibleText: PropTypes.bool,
 };
 
 PanelButton.defaultProps = {
@@ -64,7 +64,7 @@ PanelButton.defaultProps = {
     dataTestId: '',
     disabled: false,
     tooltip: '',
-    alwaysVisibleText: false
+    alwaysVisibleText: false,
 };
 
 export default PanelButton;

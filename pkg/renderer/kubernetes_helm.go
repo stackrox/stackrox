@@ -172,6 +172,11 @@ func RenderSensorHelm(values map[string]interface{}, certs *sensor.Certs) ([]*zi
 	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
+		// file excluded from sensor bundle for kubectl, since the ca-setup-sensor.sh script takes care of
+		// additional CA certs in the kubectl deploy method.
+		if filepath.Base(k) == "additional-ca-sensor.yaml" {
+			continue
+		}
 		if file, ok := getSensorChartFile(filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}

@@ -7,7 +7,7 @@ import resolvePath from 'object-resolve-path';
 import Widget from 'Components/Widget';
 import TablePagination from 'Components/TablePagination';
 import Table from 'Components/Table';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 
 const TableWidget = ({ match, location, history, header, entityType, ...rest }) => {
     const [page, setPage] = useState(0);
@@ -30,9 +30,7 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
     );
     function onRowClick(row) {
         const id = resolvePath(row, idAttribute);
-        const url = URLService.getURL(match, location)
-            .push(entityType, id)
-            .url();
+        const url = URLService.getURL(match, location).push(entityType, id).url();
         history.push(url);
     }
     return (
@@ -66,10 +64,10 @@ TableWidget.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    entityType: PropTypes.string
+    entityType: PropTypes.string,
 };
 
 TableWidget.defaultProps = {
-    entityType: ''
+    entityType: '',
 };
 export default withRouter(TableWidget);

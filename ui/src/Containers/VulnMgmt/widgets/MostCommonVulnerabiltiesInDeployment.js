@@ -5,7 +5,7 @@ import gql from 'graphql-tag';
 import sortBy from 'lodash/sortBy';
 
 import entityTypes from 'constants/entityTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { getVulnerabilityChips } from 'utils/vulnerabilityUtils';
 import { cveSortFields } from 'constants/sortFields';
@@ -43,7 +43,8 @@ const MOST_COMMON_VULNERABILITIES = gql`
 const processData = (data, workflowState, deploymentId) => {
     const results = sortBy(data.results, ['cvss']).filter(
         // test whether the given deployment appears in the list of vulnerabilities
-        cve => cve.deployments && cve.deployments.some(deployment => deployment.id === deploymentId)
+        (cve) =>
+            cve.deployments && cve.deployments.some((deployment) => deployment.id === deploymentId)
     );
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
@@ -54,20 +55,20 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
     const { loading, data = {} } = useQuery(MOST_COMMON_VULNERABILITIES, {
         variables: {
             query: queryService.objectToWhereClause({
-                'Deployment ID': deploymentId
+                'Deployment ID': deploymentId,
             }),
             scopeQuery: queryService.objectToWhereClause({
-                'Deployment ID': deploymentId
+                'Deployment ID': deploymentId,
             }),
             vulnPagination: queryService.getPagination(
                 {
                     id: cveSortFields.IMAGE_COUNT,
-                    desc: true
+                    desc: true,
                 },
                 WIDGET_PAGINATION_START_OFFSET,
                 limit
-            )
-        }
+            ),
+        },
     });
 
     let content = <Loader />;
@@ -93,7 +94,7 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
         .pushList(entityTypes.CVE)
         .setSort([
             { id: cveSortFields.IMAGE_COUNT, desc: true },
-            { id: cveSortFields.CVSS_SCORE, desc: true }
+            { id: cveSortFields.CVSS_SCORE, desc: true },
         ])
         .toUrl();
 
@@ -110,11 +111,11 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
 
 MostCommonVulnerabiltiesInDeployment.propTypes = {
     deploymentId: PropTypes.string.isRequired,
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 MostCommonVulnerabiltiesInDeployment.defaultProps = {
-    limit: 5
+    limit: 5,
 };
 
 export default MostCommonVulnerabiltiesInDeployment;

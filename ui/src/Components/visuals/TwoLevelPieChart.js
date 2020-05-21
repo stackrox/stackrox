@@ -22,7 +22,7 @@ const TwoLevelPieChart = ({ data }) => {
             fill,
             payload,
             value,
-            onClick
+            onClick,
         } = properties;
         const sin = Math.sin(-RADIAN * midAngle);
         const cos = Math.cos(-RADIAN * midAngle);
@@ -83,7 +83,7 @@ const TwoLevelPieChart = ({ data }) => {
                     outerRadius={80}
                     onMouseEnter={onPieEnter}
                 >
-                    {data.map(entry => (
+                    {data.map((entry) => (
                         <Cell key={entry.name} fill={entry.color} />
                     ))}
                 </Pie>
@@ -99,9 +99,9 @@ TwoLevelPieChart.propTypes = {
             name: PropTypes.string.isRequired,
             value: PropTypes.number.isRequired,
             color: PropTypes.string.isRequired,
-            onClick: PropTypes.func.isRequired
+            onClick: PropTypes.func.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 export default TwoLevelPieChart;

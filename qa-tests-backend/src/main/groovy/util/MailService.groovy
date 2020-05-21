@@ -20,6 +20,7 @@ class MailService {
     private final URLName url
     private final String protocol = "imaps"
     private final String file = "INBOX"
+    private boolean loggedIn = false
 
     MailService(String host, String username, String password) {
         this.host = host
@@ -50,10 +51,11 @@ class MailService {
         }
         folder = store.getFolder(url)
         folder.open(Folder.READ_WRITE)
+        loggedIn = true
     }
 
     void logout() throws MessagingException {
-        if (session) {
+        if (loggedIn) {
             try {
                 folder.close(false)
                 store.close()
@@ -64,6 +66,7 @@ class MailService {
             } catch (Exception e) {
                 throw e
             }
+            loggedIn = false
         }
     }
 

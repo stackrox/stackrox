@@ -15,7 +15,7 @@ import ViolationsByClusterChart from './ViolationsByClusterChart';
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 import EnvironmentRisk from './EnvironmentRisk';
 
-const DashboardPage = props => {
+const DashboardPage = (props) => {
     const { isDarkMode } = useTheme();
     const subHeader = props.isViewFiltered ? 'Filtered view' : 'Default view';
     return (
@@ -93,7 +93,7 @@ const DashboardPage = props => {
 
 DashboardPage.propTypes = {
     history: PropTypes.shape({
-        push: PropTypes.func.isRequired
+        push: PropTypes.func.isRequired,
     }).isRequired,
     searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
     searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -101,28 +101,25 @@ DashboardPage.propTypes = {
     setSearchOptions: PropTypes.func.isRequired,
     setSearchModifiers: PropTypes.func.isRequired,
     setSearchSuggestions: PropTypes.func.isRequired,
-    isViewFiltered: PropTypes.bool.isRequired
+    isViewFiltered: PropTypes.bool.isRequired,
 };
 
 const isViewFiltered = createSelector(
     [selectors.getDashboardSearchOptions],
-    searchOptions => searchOptions.length !== 0
+    (searchOptions) => searchOptions.length !== 0
 );
 
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getDashboardSearchOptions,
     searchModifiers: selectors.getDashboardSearchModifiers,
     searchSuggestions: selectors.getDashboardSearchSuggestions,
-    isViewFiltered
+    isViewFiltered,
 });
 
 const mapDispatchToProps = {
     setSearchOptions: dashboardActions.setDashboardSearchOptions,
     setSearchModifiers: dashboardActions.setDashboardSearchModifiers,
-    setSearchSuggestions: dashboardActions.setDashboardSearchSuggestions
+    setSearchSuggestions: dashboardActions.setDashboardSearchSuggestions,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(DashboardPage);
+export default connect(mapStateToProps, mapDispatchToProps)(DashboardPage);

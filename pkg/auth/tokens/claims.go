@@ -23,7 +23,10 @@ type RoxClaims struct {
 	// makes the token a pure by-value token.
 	Permissions []*v1.Permission `json:"permissions,omitempty"`
 	// Role represents the claim that the user identified by the token has the given role.
+	// Deprecated: Use RoleNames instead.
 	RoleName string `json:"role,omitempty"`
+	// RoleNames represents the claim that the user identified by the token has the given roles.
+	RoleNames []string `json:"roles,omitempty"`
 	// ExternalUser represents the claim that this token identifies a user from an external identity provider.
 	ExternalUser *ExternalUserClaim `json:"external_user,omitempty"`
 	// Name represents the name of the token assigned by the creator.

@@ -105,10 +105,8 @@ func newGeneric(notifier *storage.Notifier) (*generic, error) {
 	if err := validateConfig(conf); err != nil {
 		return nil, err
 	}
-	fullyQualifiedEndpoint, err := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
-	if err != nil {
-		return nil, err
-	}
+	fullyQualifiedEndpoint := urlfmt.FormatURL(conf.GetEndpoint(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
+
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		rootCAs = x509.NewCertPool()

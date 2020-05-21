@@ -6,7 +6,7 @@ import ButtonLink from './ButtonLink';
 
 export default {
     title: 'ButtonLink',
-    component: ButtonLink
+    component: ButtonLink,
 };
 
 export const withText = () => (

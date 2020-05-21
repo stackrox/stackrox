@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	pkg "github.com/stackrox/rox/pkg/policies"
 )
 
@@ -88,5 +89,5 @@ func checkCVSS7PolicyEnforcedOnDeploy(ctx framework.ComplianceContext) {
 }
 
 func policyHasCVSS(p *storage.Policy) bool {
-	return p.GetFields().GetCvss() != nil
+	return policyfields.ContainsCVSSField(p)
 }

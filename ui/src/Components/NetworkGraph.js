@@ -25,8 +25,8 @@ import { defaultTippyTooltipProps } from 'Components/Tooltip';
 
 function getClasses(map) {
     return Object.entries(map)
-        .filter(entry => entry[1])
-        .map(entry => entry[0])
+        .filter((entry) => entry[1])
+        .map((entry) => entry[0])
         .join(' ');
 }
 
@@ -44,12 +44,12 @@ function getNodesForFilterState(activeNodes, allowedNodes, filterState) {
         return activeNodes;
     }
 
-    const activeNodesWithNetPol = activeNodes.map(activeNode => {
+    const activeNodesWithNetPol = activeNodes.map((activeNode) => {
         const node = { ...activeNode };
         const matchedNode = allowedNodes
-            .map(n => n)
+            .map((n) => n)
             .find(
-                allowedNode =>
+                (allowedNode) =>
                     allowedNode.entity && node.entity && allowedNode.entity.id === node.entity.id
             );
         if (!matchedNode) {
@@ -76,7 +76,7 @@ const NetworkGraph = ({
     setSelectedNodeInGraph,
     simulatorOn,
     history,
-    match
+    match,
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
@@ -90,9 +90,9 @@ const NetworkGraph = ({
     const namespacesWithDeployments = {};
 
     const nodes = getNodesForFilterState(activeNodes, allowedNodes, filterState);
-    const data = nodes.map(datum => ({
+    const data = nodes.map((datum) => ({
         ...datum,
-        isActive: filterState !== filterModes.active && datum.internetAccess
+        isActive: filterState !== filterModes.active && datum.internetAccess,
     }));
 
     const links = getLinks(data, networkEdgeMap, networkNodeMap);
@@ -125,7 +125,7 @@ const NetworkGraph = ({
             onCreate(instance) {
                 // eslint-disable-next-line no-param-reassign
                 instance.popperInstance.reference = popperRef;
-            }
+            },
         });
 
         tippyRef.current.show();
@@ -171,27 +171,27 @@ const NetworkGraph = ({
             return acc;
         }, {});
 
-        return Object.keys(counts).map(key => {
+        return Object.keys(counts).map((key) => {
             const [sourceId, targetId] = key.split(delimiter);
             const count = counts[key];
             const isActive = activeLinkMap[key];
             const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
             const disallowedClass =
-                filterState !== filterModes.allowed && (isActive && disallowedLinkMap[key])
+                filterState !== filterModes.allowed && isActive && disallowedLinkMap[key]
                     ? 'disallowed'
                     : '';
             const { source, target } = getSideMap(sourceId, targetId) || {
                 sourceId,
-                targetId
+                targetId,
             };
 
             return {
                 data: {
                     source,
                     target,
-                    count
+                    count,
                 },
-                classes: `namespace ${activeClass} ${disallowedClass}`
+                classes: `namespace ${activeClass} ${disallowedClass}`,
             };
         });
     }
@@ -200,7 +200,7 @@ const NetworkGraph = ({
         const edgeMap = {};
         const edges = [];
         const inAllowedState = filterState === filterModes.allowed;
-        links.forEach(linkItem => {
+        links.forEach((linkItem) => {
             const { source, sourceNS, sourceName, target, targetNS, targetName } = linkItem;
             const { isActive, isDisallowed, isBetweenNonIsolated } = linkItem;
             const nodeIsSource = nodeId === source;
@@ -231,9 +231,9 @@ const NetworkGraph = ({
                                 destNodeId,
                                 destNodeNS,
                                 destNodeName,
-                                ...linkItem
+                                ...linkItem,
                             },
-                            classes: `edge ${classes}`
+                            classes: `edge ${classes}`,
                         });
                     } else {
                         // make sure both nodes have edges drawn to the nearest side of their NS
@@ -250,9 +250,9 @@ const NetworkGraph = ({
                             data: {
                                 source,
                                 target: sourceNSSide,
-                                isDisallowed
+                                isDisallowed,
                             },
-                            classes: `edge inner ${classes}`
+                            classes: `edge inner ${classes}`,
                         });
 
                         // Edge from target to its namespace
@@ -264,9 +264,9 @@ const NetworkGraph = ({
                                 destNodeName,
                                 destNodeNS,
                                 isActive,
-                                isDisallowed
+                                isDisallowed,
                             },
-                            classes: `edge inner ${classes}`
+                            classes: `edge inner ${classes}`,
                         });
                     }
                     edgeMap[id] = true;
@@ -277,8 +277,8 @@ const NetworkGraph = ({
     }
 
     function getDeploymentsList() {
-        const filteredData = data.filter(datum => datum.entity && datum.entity.deployment);
-        const deploymentList = filteredData.map(datum => {
+        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
+        const deploymentList = filteredData.map((datum) => {
             const { entity, ...datumProps } = datum;
             const { deployment, ...entityProps } = entity;
             const { namespace, ...deploymentProps } = deployment;
@@ -293,7 +293,7 @@ const NetworkGraph = ({
                 !isSelected;
             const isNonIsolated = nonIsolated(datum);
             const isDisallowed =
-                filterState !== filterModes.allowed && edges.find(edge => edge.data.isDisallowed);
+                filterState !== filterModes.allowed && edges.find((edge) => edge.data.isDisallowed);
             const classes = getClasses({
                 active: datum.isActive,
                 selected: isSelected,
@@ -301,7 +301,7 @@ const NetworkGraph = ({
                 disallowed: isDisallowed,
                 hovered: isHovered,
                 background: isBackground,
-                nonIsolated: isNonIsolated
+                nonIsolated: isNonIsolated,
             });
 
             const deploymentNode = {
@@ -311,9 +311,9 @@ const NetworkGraph = ({
                     ...deploymentProps,
                     parent: namespace,
                     edges,
-                    deploymentId: entityProps.id
+                    deploymentId: entityProps.id,
                 },
-                classes
+                classes,
             };
             return deploymentNode;
         });
@@ -321,13 +321,13 @@ const NetworkGraph = ({
     }
 
     function getNodes() {
-        const filteredData = data.filter(datum => datum.entity && datum.entity.deployment);
+        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
         const deploymentList = getDeploymentsList();
         const activeNamespaces = filteredData.reduce((acc, curr) => {
             const nsName = curr.entity.deployment.namespace;
             if (
                 deploymentList.find(
-                    element => element.data.isActive && element.data.parent === nsName
+                    (element) => element.data.isActive && element.data.parent === nsName
                 )
             ) {
                 acc.push(nsName);
@@ -337,8 +337,8 @@ const NetworkGraph = ({
         }, []);
 
         const namespaceList = uniq(
-            filteredData.map(datum => datum.entity.deployment.namespace)
-        ).map(namespace => {
+            filteredData.map((datum) => datum.entity.deployment.namespace)
+        ).map((namespace) => {
             const active = activeNamespaces.includes(namespace);
             const isHovered =
                 hoveredNode && (hoveredNode.id === namespace || hoveredNode.parent === namespace);
@@ -353,7 +353,7 @@ const NetworkGraph = ({
                 nsActive: active,
                 nsSelected: isSelected,
                 nsHovered: isHovered,
-                background: isBackground
+                background: isBackground,
             });
 
             return {
@@ -361,9 +361,9 @@ const NetworkGraph = ({
                     id: namespace,
                     name: `${active ? '\ue901' : ''} ${namespace}`,
                     active,
-                    type: entityTypes.NAMESPACE
+                    type: entityTypes.NAMESPACE,
                 },
-                classes
+                classes,
             };
         });
 
@@ -371,19 +371,19 @@ const NetworkGraph = ({
             const nsName = namespace.data.id;
             const set = ['top', 'left', 'right', 'bottom'];
 
-            const newNodes = set.map(side => ({
+            const newNodes = set.map((side) => ({
                 data: {
                     id: `${nsName}_${side}`,
                     parent: nsName,
-                    side
+                    side,
                 },
-                classes: 'nsEdge'
+                classes: 'nsEdge',
             }));
             return acc.concat(newNodes);
         }, []);
 
-        namespaceList.forEach(namespace => {
-            deploymentList.forEach(deployment => {
+        namespaceList.forEach((namespace) => {
+            deploymentList.forEach((deployment) => {
                 if (!namespacesWithDeployments[namespace.data.id]) {
                     namespacesWithDeployments[namespace.data.id] = [];
                 }
@@ -424,7 +424,7 @@ const NetworkGraph = ({
     }
 
     function getNodeData(id) {
-        return getDeploymentsList().filter(node => node.data.deploymentId === id);
+        return getDeploymentsList().filter((node) => node.data.deploymentId === id);
     }
 
     function clickHandler(ev) {
@@ -495,7 +495,7 @@ const NetworkGraph = ({
 
         cyRef.current.zoom({
             level: Math.max(cyRef.current.zoom() + ZOOM_STEP, cyRef.current.minZoom()),
-            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 }
+            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 },
         });
     }
 
@@ -504,7 +504,7 @@ const NetworkGraph = ({
 
         cyRef.current.zoom({
             level: Math.min(cyRef.current.zoom() - ZOOM_STEP, MAX_ZOOM),
-            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 }
+            renderedPosition: { x: cyRef.current.width() / 2, y: cyRef.current.height() / 2 },
         });
     }
 
@@ -523,7 +523,7 @@ const NetworkGraph = ({
 
             const sideNodes = cyRef.current.nodes(`[parent="${id}"][side]`);
 
-            const nodesInfo = sideNodes.map(node => {
+            const nodesInfo = sideNodes.map((node) => {
                 const { x, y } = node.position();
                 const { side } = node.data();
                 return {
@@ -531,7 +531,7 @@ const NetworkGraph = ({
                     side,
                     id: node.id(),
                     x,
-                    y
+                    y,
                 };
             });
             return { ...acc, [id]: nodesInfo };
@@ -565,9 +565,9 @@ const NetworkGraph = ({
                 const targetSideNodes = sideNodesPerParent[targetName];
                 let shortest;
                 // check distances between every combination of side nodes to find shortest
-                sourceSideNodes.forEach(sourceSideNode => {
+                sourceSideNodes.forEach((sourceSideNode) => {
                     const sourceSide = sourceSideNode.side;
-                    const targetSideNode = targetSideNodes.find(tgtNode => {
+                    const targetSideNode = targetSideNodes.find((tgtNode) => {
                         const { side } = tgtNode;
                         if (sourceSide === 'top') return side === 'bottom';
                         if (sourceSide === 'bottom') return side === 'top';
@@ -583,7 +583,7 @@ const NetworkGraph = ({
                             target: targetSideNode.id,
                             sourceSide: sourceSideNode.side,
                             targetSide: targetSideNode.side,
-                            distance
+                            distance,
                         };
                     }
                 });
@@ -625,7 +625,10 @@ const NetworkGraph = ({
     const elements = getElements();
     // Effects
     function setWindowResize() {
-        window.addEventListener('resize', throttle(() => zoomToFit, 100));
+        window.addEventListener(
+            'resize',
+            throttle(() => zoomToFit, 100)
+        );
 
         const cleanup = () => {
             window.removeEventListener('resize');
@@ -642,7 +645,7 @@ const NetworkGraph = ({
             setSelectedNode,
             selectedNode,
             getNodeData,
-            onNodeClick
+            onNodeClick,
         });
     }
 
@@ -651,13 +654,13 @@ const NetworkGraph = ({
         const CY = cyRef.current;
         const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 100 }); // all nodes, padding
 
-        NSPositions.forEach(position => {
+        NSPositions.forEach((position) => {
             const { id, x, y } = position;
             CY.layout({
                 name: 'edgeGridLayout',
                 parentPadding: { bottom: 5, top: 0, left: 0, right: 0 },
                 position: { x, y },
-                eles: CY.nodes(`[parent="${id}"]`)
+                eles: CY.nodes(`[parent="${id}"]`),
             }).run();
         });
         CY.fit(null, GRAPH_PADDING);
@@ -670,7 +673,7 @@ const NetworkGraph = ({
         if (selectedNode && isNamespace(selectedNode)) {
             onNamespaceClick({
                 id: selectedNode.id,
-                deployments: namespacesWithDeployments[selectedNode.id] || []
+                deployments: namespacesWithDeployments[selectedNode.id] || [],
             });
         }
         if (simulatorOn) {
@@ -727,9 +730,9 @@ NetworkGraph.propTypes = {
                 type: PropTypes.string.isRequired,
                 id: PropTypes.string.isRequired,
                 deployment: PropTypes.shape({
-                    name: PropTypes.string.isRequired
-                })
-            }).isRequired
+                    name: PropTypes.string.isRequired,
+                }),
+            }).isRequired,
         })
     ).isRequired,
     allowedNodes: PropTypes.arrayOf(
@@ -738,9 +741,9 @@ NetworkGraph.propTypes = {
                 type: PropTypes.string.isRequired,
                 id: PropTypes.string.isRequired,
                 deployment: PropTypes.shape({
-                    name: PropTypes.string.isRequired
-                })
-            }).isRequired
+                    name: PropTypes.string.isRequired,
+                }),
+            }).isRequired,
         })
     ).isRequired,
     networkEdgeMap: PropTypes.shape({}),
@@ -754,23 +757,18 @@ NetworkGraph.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
     setSelectedNodeInGraph: PropTypes.func,
-    simulatorOn: PropTypes.bool.isRequired
+    simulatorOn: PropTypes.bool.isRequired,
 };
 
 NetworkGraph.defaultProps = {
     setSelectedNodeInGraph: null,
-    networkEdgeMap: {}
+    networkEdgeMap: {},
 };
 
 const mapDispatchToProps = {
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setSelectedNamespace: graphActions.setSelectedNamespace,
-    setSelectedNodeInGraph: graphActions.setSelectedNode
+    setSelectedNodeInGraph: graphActions.setSelectedNode,
 };
 
-export default withRouter(
-    connect(
-        null,
-        mapDispatchToProps
-    )(NetworkGraph)
-);
+export default withRouter(connect(null, mapDispatchToProps)(NetworkGraph));

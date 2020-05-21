@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -22,6 +23,6 @@ type Controller interface {
 }
 
 // NewController creates and returns a new controller for telemetry data.
-func NewController(injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) Controller {
-	return newController(injector, stopSig)
+func NewController(capabilities centralsensor.SensorCapabilitySet, injector common.MessageInjector, stopSig concurrency.ReadOnlyErrorSignal) Controller {
+	return newController(capabilities, injector, stopSig)
 }

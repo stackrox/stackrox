@@ -52,7 +52,7 @@ func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storag
 	if err != nil {
 		return nil, nil, err
 	}
-	roles, missingIndices, err := ds.storage.GetRoles(search.ResultsToIDs(results))
+	roles, missingIndices, err := ds.storage.GetMany(search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}

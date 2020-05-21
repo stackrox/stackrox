@@ -1,8 +1,8 @@
-import React, { Component, memo } from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { formValueSelector, change } from 'redux-form';
+import { reduxForm, formValueSelector, change } from 'redux-form';
 import sortBy from 'lodash/sortBy';
 
 import Select from 'Components/ReactSelect';
@@ -16,54 +16,55 @@ class FieldGroupCards extends Component {
     static propTypes = {
         fieldGroups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({}).isRequired,
-        change: PropTypes.func.isRequired
+        change: PropTypes.func.isRequired,
     };
 
     constructor(props) {
         super(props);
 
         this.state = {
-            fields: []
+            fields: [],
         };
     }
 
-    addFormField = option => {
+    addFormField = (option) => {
         let fieldToAdd = {};
 
-        this.props.fieldGroups.forEach(fieldGroup => {
-            const field = fieldGroup.descriptor.find(obj => obj.jsonpath === option);
+        this.props.fieldGroups.forEach((fieldGroup) => {
+            const field = fieldGroup.descriptor.find((obj) => obj.jsonpath === option);
             if (field) fieldToAdd = field;
         });
-        this.setState(prevState => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
+        this.setState((prevState) => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
         if (fieldToAdd.defaultValue !== undefined && fieldToAdd.defaultValue !== null) {
             this.props.change(fieldToAdd.jsonpath, fieldToAdd.defaultValue);
         }
     };
 
-    removeField = jsonpath => {
+    removeField = (jsonpath) => {
         let fieldToRemove = {};
-        this.props.fieldGroups.forEach(fieldGroup => {
-            const field = fieldGroup.descriptor.find(obj => obj.jsonpath === jsonpath);
+        this.props.fieldGroups.forEach((fieldGroup) => {
+            const field = fieldGroup.descriptor.find((obj) => obj.jsonpath === jsonpath);
 
             if (field) fieldToRemove = field;
         });
 
-        this.setState(prevState => ({
-            fields: prevState.fields.filter(fieldPath => fieldPath !== fieldToRemove.jsonpath)
+        this.setState((prevState) => ({
+            fields: prevState.fields.filter((fieldPath) => fieldPath !== fieldToRemove.jsonpath),
         }));
 
         this.props.change(fieldToRemove.jsonpath, null);
     };
 
     renderFields = (formFields, formData) => {
-        const filteredFields = formFields.filter(field => {
+        const filteredFields = formFields.filter((field) => {
             const isAddedField =
-                this.state.fields.length !== 0 && this.state.fields.find(o => o === field.jsonpath);
+                this.state.fields.length !== 0 &&
+                this.state.fields.find((o) => o === field.jsonpath);
             return (
                 !field.header &&
                 (field.default ||
                     isAddedField ||
-                    formData.find(jsonpath => jsonpath.includes(field.jsonpath)))
+                    formData.find((jsonpath) => jsonpath.includes(field.jsonpath)))
             );
         });
 
@@ -75,7 +76,7 @@ class FieldGroupCards extends Component {
 
         return (
             <div className="h-full p-3">
-                {filteredFields.map(field => {
+                {filteredFields.map((field) => {
                     const removeField = !field.default ? this.removeField : null;
                     return (
                         <FormField
@@ -96,15 +97,15 @@ class FieldGroupCards extends Component {
     renderFieldsDropdown = (formFields, formData) => {
         let availableFields = formFields
             .filter(
-                field =>
-                    !this.state.fields.find(jsonpath => jsonpath === field.jsonpath) &&
+                (field) =>
+                    !this.state.fields.find((jsonpath) => jsonpath === field.jsonpath) &&
                     !field.default &&
-                    !formData.find(jsonpath => jsonpath.includes(field.jsonpath))
+                    !formData.find((jsonpath) => jsonpath.includes(field.jsonpath))
             )
-            .map(field => ({ label: field.label, value: field.jsonpath }));
+            .map((field) => ({ label: field.label, value: field.jsonpath }));
         const placeholder = 'Add a field';
         if (!availableFields.length) return '';
-        availableFields = sortBy(availableFields, o => o.label);
+        availableFields = sortBy(availableFields, (o) => o.label);
         return (
             <div className="flex p-3 border-t border-base-200 bg-success-100">
                 <span className="w-full">
@@ -120,8 +121,8 @@ class FieldGroupCards extends Component {
         );
     };
 
-    renderHeaderControl = formFields => {
-        const headerField = formFields.find(field => field.header);
+    renderHeaderControl = (formFields) => {
+        const headerField = formFields.find((field) => field.header);
         if (!headerField) return '';
 
         return (
@@ -136,13 +137,13 @@ class FieldGroupCards extends Component {
         );
     };
 
-    isHeaderOnlyCard = formFields =>
-        formFields.length === 1 && formFields.find(field => field.header);
+    isHeaderOnlyCard = (formFields) =>
+        formFields.length === 1 && formFields.find((field) => field.header);
 
     render() {
         const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
 
-        return this.props.fieldGroups.map(fieldGroup => {
+        return this.props.fieldGroups.map((fieldGroup) => {
             const { header: fieldGroupName, descriptor: formFields, dataTestId } = fieldGroup;
             const headerControl = this.renderHeaderControl(formFields);
             const border = this.isHeaderOnlyCard(formFields) ? '' : 'border';
@@ -165,25 +166,20 @@ class FieldGroupCards extends Component {
     }
 }
 
-const formFields = state =>
+const formFields = (state) =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
 
-const getFormData = createSelector(
-    [formFields],
-    formData => formData
-);
+const getFormData = createSelector([formFields], (formData) => formData);
 
 const mapStateToProps = createStructuredSelector({
-    formData: getFormData
+    formData: getFormData,
 });
 
-const mapDispatchToProps = dispatch => ({
-    change: (field, value) => dispatch(change('policyCreationForm', field, value))
+const mapDispatchToProps = (dispatch) => ({
+    change: (field, value) => dispatch(change('policyCreationForm', field, value)),
 });
 
-export default memo(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(FieldGroupCards)
-);
+export default reduxForm({
+    form: 'policyCreationForm',
+    enableReinitialize: true,
+})(connect(mapStateToProps, mapDispatchToProps)(FieldGroupCards));

@@ -13,7 +13,7 @@ const ViewAllButton = ({ url }) => {
 };
 
 ViewAllButton.propTypes = {
-    url: PropTypes.string.isRequired
+    url: PropTypes.string.isRequired,
 };
 
 export default ViewAllButton;

@@ -158,6 +158,19 @@ func (b *storeImpl) RemoveAlertComment(alertID, commentID string) error {
 }
 
 func (b *storeImpl) RemoveAlertComments(alertID string) error {
+	// Bolt updates will always write out the pages so run a View then an Update
+	var alertIDBucketExists bool
+	err := b.View(func(tx *bolt.Tx) error {
+		topLevelAlertCommentsBucket := tx.Bucket(alertCommentsBucket)
+		alertIDBucketExists = topLevelAlertCommentsBucket.Bucket([]byte(alertID)) != nil
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "determining if comment bucket exists")
+	}
+	if !alertIDBucketExists {
+		return nil
+	}
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(alertCommentsBucket)
 		err := bucket.DeleteBucket([]byte(alertID))

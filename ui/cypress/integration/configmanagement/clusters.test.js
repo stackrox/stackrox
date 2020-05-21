@@ -6,7 +6,7 @@ import {
     hasTabsFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-    entityListCountMatchesTableLinkCount
+    entityListCountMatchesTableLinkCount,
 } from '../../helpers/configWorkflowUtils';
 import { url, selectors } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';
@@ -47,7 +47,7 @@ describe('Config Management Entities (Clusters)', () => {
             'Users & Groups',
             'Service Accounts',
             'Roles',
-            'Controls'
+            'Controls',
         ]);
     });
 
@@ -63,15 +63,13 @@ describe('Config Management Entities (Clusters)', () => {
             'users and groups',
             'service accounts',
             'roles',
-            'controls'
+            'controls',
         ]);
     });
 
     it('should have items in the Findings section', () => {
         cy.visit(url.list.clusters);
-        cy.get(`${selectors.tableRows}:contains(fail)`)
-            .eq(0)
-            .click();
+        cy.get(`${selectors.tableRows}:contains(fail)`).eq(0).click();
 
         cy.get(
             `${selectors.sidePanel} ${selectors.deploymentsWithFailedPolicies}:contains(Severity)`

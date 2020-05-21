@@ -5,9 +5,13 @@ import { selectors as navSelectors } from '../constants/TopNavigation';
 import { url as dashboardURL } from '../constants/DashboardPage';
 
 import * as api from '../constants/apiEndpoints';
+import withAuth from '../helpers/basicAuth'; // used to make logout test less flakey
+
+const AUTHENTICATED = true;
+const UNAUTHENTICATED = false;
 
 describe('Authentication', () => {
-    const setupAuth = (landingUrl, authStatusValid = true, authStatusResponse = {}) => {
+    const setupAuth = (landingUrl, authStatusValid, authStatusResponse = {}) => {
         cy.server();
         cy.route('GET', api.auth.loginAuthProviders, 'fixture:auth/authProviders.json').as(
             'authProviders'
@@ -16,7 +20,7 @@ describe('Authentication', () => {
             method: 'GET',
             url: api.auth.authStatus,
             status: authStatusValid ? 200 : 401,
-            response: authStatusResponse
+            response: authStatusResponse,
         }).as('authStatus');
 
         cy.visit(landingUrl);
@@ -27,13 +31,6 @@ describe('Authentication', () => {
         cy.server();
         // Cypress routes have an override behaviour, so defining this first makes it the fallback.
         cy.route(/.*/, {}).as('everythingElse');
-        // TODO-ivan: remove once ROX_REFRESH_TOKENS is enabled by default
-        cy.route('GET', api.featureFlags, {
-            featureFlags: [
-                { name: 'Refresh tokens', envVar: 'ROX_REFRESH_TOKENS', enabled: true },
-                { name: 'Vuln Mgmt', envVar: 'ROX_VULN_MGMT_UI', enabled: false }
-            ]
-        }).as('featureFlags');
         cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
         cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
             'searchOptions'
@@ -50,7 +47,7 @@ describe('Authentication', () => {
 
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
         stubAPIs();
-        setupAuth(dashboardURL);
+        setupAuth(dashboardURL, AUTHENTICATED);
         cy.server();
         cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
         cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
@@ -59,7 +56,7 @@ describe('Authentication', () => {
         cy.url().should('contain', loginUrl);
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
         cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate redirect with 'my-token'
-        cy.wait('@authStatus').then(xhr => {
+        cy.wait('@authStatus').then((xhr) => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer my-token');
         });
         cy.url().should('contain', dashboardURL);
@@ -68,26 +65,20 @@ describe('Authentication', () => {
     it('should allow authenticated user to enter', () => {
         localStorage.setItem('access_token', 'my-token'); // simulate authenticated user
         stubAPIs();
-        setupAuth(dashboardURL);
+        setupAuth(dashboardURL, AUTHENTICATED);
+
+        cy.wait('@authStatus');
+
         cy.url().should('contain', dashboardURL);
     });
 
     it('should logout previously authenticated user with invalid token', () => {
         localStorage.setItem('access_token', 'my-token'); // invalid token
         stubAPIs();
-        setupAuth(dashboardURL, false);
-        cy.url().should('contain', loginUrl);
-    });
+        setupAuth(dashboardURL, UNAUTHENTICATED);
 
-    it('should logout user by request', () => {
-        localStorage.setItem('access_token', 'my-token'); // authenticated user
-        stubAPIs();
-        cy.route('POST', api.auth.logout, {}).as('logout');
-        setupAuth(dashboardURL);
+        cy.wait('@authStatus');
 
-        cy.get(navSelectors.menuButton).click();
-        cy.get(navSelectors.logoutButton).click();
-        cy.wait('@logout');
         cy.url().should('contain', loginUrl);
     });
 
@@ -97,7 +88,29 @@ describe('Authentication', () => {
         cy.route('POST', api.auth.tokenRefresh, {}).as('tokenRefresh');
 
         const expiryDate = addSeconds(Date.now(), 33); // +3 sec should be enough
-        setupAuth(dashboardURL, true, { expires: expiryDate.toISOString() });
+        setupAuth(dashboardURL, AUTHENTICATED, {
+            expires: expiryDate.toISOString(),
+        });
+
         cy.wait('@tokenRefresh');
+    });
+
+    // the logout test has its own describe block, which uses our withAuth() helper function
+    //   to log in with a real auth token
+    //   because after a Cypress upgrade, using a fake token on this test became flakey
+    describe('Logout', () => {
+        withAuth();
+
+        it('should logout user by request', () => {
+            cy.server();
+            cy.route('POST', api.auth.logout, {}).as('logout');
+
+            cy.visit(dashboardURL);
+
+            cy.get(navSelectors.menuButton).click();
+            cy.get(navSelectors.logoutButton).click();
+            cy.wait('@logout');
+            cy.url().should('contain', loginUrl);
+        });
     });
 });

@@ -11,7 +11,7 @@ function ResolveConfirmation({ setDialogue, checkedAlertIds, setCheckedAlertIds,
     }
 
     function resolveAlertsAction() {
-        const resolveSelection = checkedAlertIds.filter(id => runtimeAlerts.has(id));
+        const resolveSelection = checkedAlertIds.filter((id) => runtimeAlerts.has(id));
         resolveAlerts(resolveSelection).then(closeAndClear, closeAndClear);
     }
 
@@ -41,8 +41,8 @@ ResolveConfirmation.propTypes = {
     checkedAlertIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     setCheckedAlertIds: PropTypes.func.isRequired,
     runtimeAlerts: PropTypes.shape({
-        has: PropTypes.func.isRequired
-    }).isRequired
+        has: PropTypes.func.isRequired,
+    }).isRequired,
 };
 
 export default ResolveConfirmation;

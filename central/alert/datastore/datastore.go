@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	commentsStore "github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	alertStore "github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
+	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/tecbot/gorocksdb"
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
@@ -61,8 +61,8 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 }
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *badger.DB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
-	store := alertStore.New(db)
+func NewWithDb(db *gorocksdb.DB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
+	store := rocksdb.NewFullStore(db)
 	commentsStore := commentsStore.New(commentsDB)
 	indexer := index.New(bIndex)
 	searcher := search.New(store, indexer)

@@ -7,14 +7,14 @@ import Whitelist from './Whitelist';
 
 function loadWhitelists(deploymentId, processGroup, setProcessWhitelist) {
     const uniqueContainerNames = uniqBy(processGroup.groups, 'containerName').map(
-        x => x.containerName
+        (x) => x.containerName
     );
     const { clusterId, namespace } = getDeploymentAndProcessIdFromGroupedProcesses(
         processGroup.groups
     );
 
     if (clusterId && namespace && uniqueContainerNames && uniqueContainerNames.length) {
-        const promises = uniqueContainerNames.map(containerName => {
+        const promises = uniqueContainerNames.map((containerName) => {
             const queryStr = `key.clusterId=${clusterId}&key.namespace=${namespace}&key.deploymentId=${deploymentId}&key.containerName=${containerName}`;
             return fetchProcessesWhiteList(queryStr);
         });
@@ -25,12 +25,9 @@ function loadWhitelists(deploymentId, processGroup, setProcessWhitelist) {
 function SpecificationWhitelists({ deploymentId, processGroup, processEpoch, setProcessEpoch }) {
     const [processWhitelist, setProcessWhitelist] = useState(undefined);
 
-    useEffect(
-        () => {
-            loadWhitelists(deploymentId, processGroup, setProcessWhitelist);
-        },
-        [deploymentId, processGroup, processEpoch]
-    );
+    useEffect(() => {
+        loadWhitelists(deploymentId, processGroup, setProcessWhitelist);
+    }, [deploymentId, processGroup, processEpoch]);
 
     if (!processWhitelist) return null;
     return (
@@ -52,10 +49,10 @@ function SpecificationWhitelists({ deploymentId, processGroup, processEpoch, set
 SpecificationWhitelists.propTypes = {
     deploymentId: PropTypes.string.isRequired,
     processGroup: PropTypes.shape({
-        groups: PropTypes.arrayOf(PropTypes.object)
+        groups: PropTypes.arrayOf(PropTypes.object),
     }).isRequired,
     processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired
+    setProcessEpoch: PropTypes.func.isRequired,
 };
 
 export default SpecificationWhitelists;

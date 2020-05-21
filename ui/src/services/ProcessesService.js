@@ -11,9 +11,11 @@ const baseProcessesWhiteListUrl = '/v1/processwhitelists';
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchProcesses(deploymentId) {
-    return axios.get(`${baseUrl}/deployment/${deploymentId}/grouped/container`).then(response => ({
-        response: response.data
-    }));
+    return axios
+        .get(`${baseUrl}/deployment/${deploymentId}/grouped/container`)
+        .then((response) => ({
+            response: response.data,
+        }));
 }
 
 /**
@@ -23,8 +25,8 @@ export function fetchProcesses(deploymentId) {
  * @returns {Promise<Object, Error>} fulfilled
  */
 export function fetchProcessesWhiteList(query) {
-    return axios.get(`${baseProcessesWhiteListUrl}/key?${query}`).then(response => ({
-        data: response.data
+    return axios.get(`${baseProcessesWhiteListUrl}/key?${query}`).then((response) => ({
+        data: response.data,
     }));
 }
 

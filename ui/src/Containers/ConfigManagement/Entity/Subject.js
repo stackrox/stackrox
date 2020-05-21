@@ -11,12 +11,12 @@ import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widge
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
 import useCases from 'constants/useCaseTypes';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import EntityList from '../List/EntityList';
 
-const processSubjectDataByClusters = data => {
+const processSubjectDataByClusters = (data) => {
     const entity = data.clusters.reduce(
         (acc, curr) => {
             if (!curr.subject) return acc;
@@ -31,7 +31,7 @@ const processSubjectDataByClusters = data => {
                 clusterAdmin,
                 roles: allRoles,
                 roleCount: totalRoles,
-                clusters: [...acc.clusters, { ...rest, clusterId, clusterName }]
+                clusters: [...acc.clusters, { ...rest, clusterId, clusterName }],
             };
         },
         { roles: [], clusters: [], roleCount: 0 }
@@ -39,10 +39,10 @@ const processSubjectDataByClusters = data => {
     return entity;
 };
 
-const getClustersQuery = entityContext => {
+const getClustersQuery = (entityContext) => {
     if (entityContext && entityContext[entityTypes.CLUSTER]) {
         return queryService.objectToWhereClause({
-            [`${entityTypes.CLUSTER} ID`]: entityContext[entityTypes.CLUSTER]
+            [`${entityTypes.CLUSTER} ID`]: entityContext[entityTypes.CLUSTER],
         });
     }
     return null;
@@ -55,7 +55,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
         cacheBuster: new Date().getUTCMilliseconds(),
         clustersQuery: getClustersQuery(entityContext),
         name: id,
-        query: queryService.objectToWhereClause(query[searchParam])
+        query: queryService.objectToWhereClause(query[searchParam]),
     };
 
     const defaultQuery = gql`
@@ -150,8 +150,8 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                     { key: 'Role type', value: type },
                     {
                         key: 'Cluster Admin Role',
-                        value: clusterAdmin ? 'Enabled' : 'Disabled'
-                    }
+                        value: clusterAdmin ? 'Enabled' : 'Disabled',
+                    },
                 ];
 
                 return (

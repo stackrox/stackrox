@@ -1,13 +1,15 @@
 package kubernetes
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
-func genericKubernetesCommandlineCheck(name string, processName string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) framework.Check {
+func genericKubernetesCommandlineCheck(name string, processName string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc, failOverride ...common.FailOverride) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
 		Scope:            framework.NodeKind,
@@ -20,11 +22,11 @@ func genericKubernetesCommandlineCheck(name string, processName string, key, tar
 				framework.NoteNowf(ctx, "Process %q not found on host, therefore check is not applicable", processName)
 			}
 			values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, key)
-			evalFunc(ctx, values, key, target, defaultVal)
+			evalFunc(ctx, values, key, target, defaultVal, failOverride...)
 		}))
 }
 
-func multipleFlagsSetCheck(name string, processName string, keys ...string) framework.Check {
+func multipleFlagsSetCheck(name string, processName string, override common.FailOverride, keys ...string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
 		Scope:            framework.NodeKind,
@@ -39,7 +41,12 @@ func multipleFlagsSetCheck(name string, processName string, keys ...string) fram
 			for _, k := range keys {
 				values := common.GetValuesForCommandFromFlagsAndConfig(process.Args, nil, k)
 				if len(values) == 0 {
-					framework.Failf(ctx, "%q is unset", k)
+					msg := fmt.Sprintf("%q is unset", k)
+					if override == nil {
+						framework.Fail(ctx, msg)
+					} else {
+						override(ctx, msg)
+					}
 				} else {
 					framework.Passf(ctx, "%q is set to %s", k, msgfmt.FormatStrings(values...))
 				}

@@ -1,9 +1,8 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { ChevronDown } from 'react-feather';
 
 import workflowStateContext from 'Containers/workflowStateContext';
-import { entityGroupMap } from 'modules/entityRelationships';
+import { entityGroupMap } from 'utils/entityRelationships';
 import { useCaseShortLabels } from 'messages/useCase';
 import { getOption, createOptions } from 'utils/workflowUtils';
 
@@ -14,7 +13,7 @@ const EntitiesMenu = ({ text, options, grouped }) => {
 
     function createGroupedOptions(types) {
         const groupedOptions = {};
-        types.forEach(type => {
+        types.forEach((type) => {
             const option = getOption(type, workflowState);
             const optionGroup = groupedOptions[entityGroupMap[type]];
             if (optionGroup) {
@@ -26,13 +25,6 @@ const EntitiesMenu = ({ text, options, grouped }) => {
         return groupedOptions;
     }
 
-    const buttonContent = (
-        <div className="flex items-center justify-around w-full text-left px-2">
-            {text}
-            <ChevronDown className="pointer-events-none ml-2" />
-        </div>
-    );
-
     const buttonClass =
         'bg-base-100 hover:bg-primary-200 border-base-400 font-weight-600 uppercase font-condensed flex h-full text-base-600 pl-2 border-l border-dashed text-sm';
 
@@ -40,7 +32,7 @@ const EntitiesMenu = ({ text, options, grouped }) => {
     if (!grouped) {
         const dashboardOption = {
             label: `${useCaseShortLabels[workflowState.useCase]} Dashboard`,
-            link: workflowState.clear().toUrl()
+            link: workflowState.clear().toUrl(),
         };
         formattedOptions = [dashboardOption, ...createOptions(options, workflowState)];
     } else {
@@ -52,7 +44,7 @@ const EntitiesMenu = ({ text, options, grouped }) => {
             className="h-full min-w-32"
             menuClassName={grouped ? 'bg-primary-200 min-w-48' : ''}
             buttonClass={buttonClass}
-            buttonContent={buttonContent}
+            buttonText={text}
             options={formattedOptions}
             grouped={grouped}
         />
@@ -62,11 +54,11 @@ const EntitiesMenu = ({ text, options, grouped }) => {
 EntitiesMenu.propTypes = {
     text: PropTypes.string.isRequired,
     options: PropTypes.arrayOf(PropTypes.string).isRequired,
-    grouped: PropTypes.bool
+    grouped: PropTypes.bool,
 };
 
 EntitiesMenu.defaultProps = {
-    grouped: false
+    grouped: false,
 };
 
 export default EntitiesMenu;

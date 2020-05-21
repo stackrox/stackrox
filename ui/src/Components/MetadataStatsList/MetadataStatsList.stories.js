@@ -8,11 +8,11 @@ import MetadataStatsList from './MetadataStatsList';
 
 export default {
     title: 'MetadataStatsList',
-    component: MetadataStatsList
+    component: MetadataStatsList,
 };
 
 export const withOneItem = () => {
-    const oneItem = [<RiskScore score={3} />];
+    const oneItem = [<RiskScore key="one" score={3} />];
 
     return (
         <div className="w-1/3 border">
@@ -25,11 +25,11 @@ export const withOneItem = () => {
 
 export const withTwoItems = () => {
     const twoItems = [
-        <RiskScore score={5} />,
-        <>
+        <RiskScore key="one" score={5} />,
+        <div key="two">
             <span className="pr-1">Policy status:</span>
             <StatusChip status="fail" />
-        </>
+        </div>,
     ];
 
     return (
@@ -43,12 +43,12 @@ export const withTwoItems = () => {
 
 export const withThreeItems = () => {
     const threeItems = [
-        <RiskScore score={7} />,
-        <>
+        <RiskScore key="one" score={7} />,
+        <div key="two">
             <span className="pr-1">Policy status:</span>
             <StatusChip status="fail" />
-        </>,
-        <TopCvssLabel cvss={8.2} expanded version="V3" />
+        </div>,
+        <TopCvssLabel key="three" cvss={8.2} expanded version="V3" />,
     ];
 
     return (

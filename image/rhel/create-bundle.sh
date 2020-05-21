@@ -22,18 +22,17 @@ extract_from_image() {
   [[ -n "$image" && -n "$src" && -n "$dst" ]] \
       || die "extract_from_image: <image> <src> <dst>"
 
-  docker run -ii --rm --entrypoint /bin/sh "${image}" /dev/stdin \
-  > "${dst}" <<EOF
-set -e
-cat < ${src}
-EOF
+  docker create --name copier "${image}"
+  docker cp "copier:${src}" "${dst}"
+  docker rm copier
 
   [[ -s $dst ]] || die "file extracted from image is empty: $dst"
 }
 
 INPUT_ROOT="$1"
 DATA_IMAGE="$2"
-OUTPUT_BUNDLE="$3"
+BUILDER_IMAGE="$3"
+OUTPUT_BUNDLE="$4"
 
 [[ -n "$INPUT_ROOT" && -n "$DATA_IMAGE" && -n "$OUTPUT_BUNDLE" ]] \
     || die "Usage: $0 <input-root> <enc-data-image> <output-bundle>"
@@ -45,7 +44,7 @@ image_exists "${DATA_IMAGE}"
 
 # Create tmp directory with stackrox directory structure
 bundle_root="$(mktemp -d)"
-mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui}
+mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui,lib}
 chmod -R 755 "${bundle_root}"
 
 # =============================================================================
@@ -66,13 +65,18 @@ cp -p "${INPUT_ROOT}/static-bin/"*          "${bundle_root}/stackrox/"
 cp -pr "${INPUT_ROOT}/THIRD_PARTY_NOTICES"  "${bundle_root}/"
 cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 
-wget -q -O "${bundle_root}/telegraf" \
-    "https://github.com/connorgorman/telegraf/releases/download/1.8.3.1%2B179-slim/telegraf"
-chmod +x "${bundle_root}/telegraf"
-
 # Extract and copy encrypted data file from container image
 enc_file="stackrox-data.tgze"
 extract_from_image "${DATA_IMAGE}" "${enc_file}" "${bundle_root}/stackrox/${enc_file}"
+
+# Install all the required compression packages for RocksDB to compile
+rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"
+rpm_suffix="el8.x86_64.rpm"
+
+curl -s -o "${bundle_root}/lz4.rpm" "${rpm_base_url}/lz4-1.8.1.2-4.${rpm_suffix}"
+curl -s -o "${bundle_root}/bzip2.rpm" "${rpm_base_url}/bzip2-1.0.6-26.${rpm_suffix}"
+curl -s -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.7-5.${rpm_suffix}"
+curl -s -o "${bundle_root}/zlib.rpm" "${rpm_base_url}/zlib-1.2.11-10.${rpm_suffix}"
 
 # =============================================================================
 

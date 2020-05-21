@@ -80,7 +80,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	if ctx.FetchOpt != ForceRefetch {
 		if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
 			e.metrics.IncrementMetadataCacheHit()
-			image.Metadata = metadataValue.(*storage.ImageMetadata)
+			image.Metadata = metadataValue.(*storage.ImageMetadata).Clone()
 			return true, nil
 		}
 		e.metrics.IncrementMetadataCacheMiss()
@@ -136,7 +136,7 @@ func (e *enricherImpl) populateFromCache(ctx EnrichmentContext, image *storage.I
 	}
 
 	e.metrics.IncrementScanCacheHit()
-	image.Scan = scanValue.(*storage.ImageScan)
+	image.Scan = scanValue.(*storage.ImageScan).Clone()
 	FillScanStats(image)
 	return true
 }

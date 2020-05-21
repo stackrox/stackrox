@@ -14,7 +14,7 @@ import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import isGQLLoading from 'utils/gqlLoading';
@@ -36,15 +36,13 @@ const List = ({
     noDataText,
     match,
     location,
-    history
+    history,
 }) => {
     const [page, setPage] = useState(0);
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
-        const url = URLService.getURL(match, location)
-            .push(id)
-            .url();
+        const url = URLService.getURL(match, location).push(id).url();
         history.push(url);
     }
 
@@ -143,7 +141,7 @@ List.propTypes = {
     noDataText: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 List.defaultProps = {
@@ -155,7 +153,7 @@ List.defaultProps = {
     defaultSearchOptions: [],
     data: null,
     autoFocusSearchInput: true,
-    noDataText: 'No results found. Please refine your search.'
+    noDataText: 'No results found. Please refine your search.',
 };
 
 export default withRouter(List);

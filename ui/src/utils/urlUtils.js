@@ -15,5 +15,5 @@ export function isValidURL(str) {
 }
 
 export default {
-    isValidURL
+    isValidURL,
 };

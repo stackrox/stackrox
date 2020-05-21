@@ -28,7 +28,12 @@ type datastoreImpl struct {
 func (d *datastoreImpl) buildIndex() error {
 	defer debug.FreeOSMemory()
 	log.Info("[STARTUP] Indexing rolebindings")
-	bindings, err := d.storage.ListRoleBindings()
+
+	var bindings []*storage.K8SRoleBinding
+	err := d.storage.Walk(func(binding *storage.K8SRoleBinding) error {
+		bindings = append(bindings, binding)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -40,7 +45,7 @@ func (d *datastoreImpl) buildIndex() error {
 }
 
 func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
-	binding, found, err := d.storage.GetRoleBinding(id)
+	binding, found, err := d.storage.Get(id)
 	if err != nil || !found {
 		return nil, false, err
 	}
@@ -67,7 +72,7 @@ func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.UpsertRoleBinding(request); err != nil {
+	if err := d.storage.Upsert(request); err != nil {
 		return err
 	}
 	return d.indexer.AddK8sRoleBinding(request)
@@ -80,7 +85,7 @@ func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error 
 		return errors.New("permission denied")
 	}
 
-	if err := d.storage.DeleteRoleBinding(id); err != nil {
+	if err := d.storage.Delete(id); err != nil {
 		return err
 	}
 	return d.indexer.DeleteK8sRoleBinding(id)

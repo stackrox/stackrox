@@ -11,12 +11,12 @@ export const url = {
             CIS_Kubernetes_v1_5: `${baseURL}/controls?s[standard]=CIS%20Kubernetes%20v1.5`,
             HIPAA_164: `${baseURL}/controls?s[standard]=HIPAA%20164`,
             NIST_800_190: `${baseURL}/controls/?s[standard]=NIST%20SP%20800-190`,
-            PCI_DSS_3_2: `${baseURL}/controls?s[standard]=PCI%20DSS%203.2`
-        }
+            PCI_DSS_3_2: `${baseURL}/controls?s[standard]=PCI%20DSS%203.2`,
+        },
     },
     entity: {
-        cluster: `${baseURL}/cluster`
-    }
+        cluster: `${baseURL}/cluster`,
+    },
 };
 
 export const selectors = {
@@ -24,25 +24,25 @@ export const selectors = {
     export: {
         exportButton: "button:contains('Export')",
         pdfButton: "[data-testid='download-pdf-button']",
-        csvButton: "[data-testid='download-csv-button']"
+        csvButton: "[data-testid='download-csv-button']",
     },
     dashboard: {
         tileLinks: {
             cluster: {
                 tile: "[data-testid='tile-link']:contains('cluster')",
                 value:
-                    "[data-testid='tile-link']:contains('cluster') [data-testid='tile-link-value']"
+                    "[data-testid='tile-link']:contains('cluster') [data-testid='tile-link-value']",
             },
             namespace: {
                 tile: "[data-testid='tile-link']:contains('namespace')",
                 value:
-                    "[data-testid='tile-link']:contains('namespace') [data-testid='tile-link-value']"
+                    "[data-testid='tile-link']:contains('namespace') [data-testid='tile-link-value']",
             },
             node: {
                 tile: "[data-testid='tile-link']:contains('node')",
-                value: "[data-testid='tile-link']:contains('node') [data-testid='tile-link-value']"
-            }
-        }
+                value: "[data-testid='tile-link']:contains('node') [data-testid='tile-link-value']",
+            },
+        },
     },
     list: {
         panels: '[data-testid="panel"]',
@@ -50,7 +50,7 @@ export const selectors = {
         sidePanelCloseBtn: '[data-testid="panel"] .close-button',
         banner: {
             content: '[data-testid="collapsible-banner"]',
-            collapseButton: '[data-testid="banner-collapse-button"]'
+            collapseButton: '[data-testid="banner-collapse-button"]',
         },
         table: {
             header: '[data-testid="panel-header"]',
@@ -60,8 +60,8 @@ export const selectors = {
             firstRowName: 'div.rt-tr-group > .rt-tr.-odd:first [data-testid="table-row-name"]',
             secondRow: 'div.rt-tr-group > .rt-tr.-even:first',
             secondRowName: 'div.rt-tr-group > .rt-tr.-even:first [data-testid="table-row-name"]',
-            rows: "table tr:has('td')"
-        }
+            rows: "table tr:has('td')",
+        },
     },
     widgets: "[data-testid='widget']",
     widget: {
@@ -73,36 +73,36 @@ export const selectors = {
                 '[data-testid="compliance-across-entities"] [data-testid="passing-controls-value"]',
             failingControls:
                 '[data-testid="compliance-across-entities"] [data-testid="failing-controls-value"]',
-            arcs: '[data-testid="compliance-across-entities"] svg path'
+            arcs: '[data-testid="compliance-across-entities"] svg path',
         },
         passingStandardsAcrossClusters: {
             widget: '[data-testid="standards-across-cluster"]',
             axisLinks: '[data-testid="standards-across-cluster"] a',
-            barLabels: '[data-testid="standards-across-cluster"] .rv-xy-plot__series > text'
+            barLabels: '[data-testid="standards-across-cluster"] .rv-xy-plot__series > text',
         },
         passingStandardsByCluster: {
             NISTBarLinks:
-                '[data-testid="passing-standards-by-cluster"] g.vertical-cluster-bar-NIST rect'
+                '[data-testid="passing-standards-by-cluster"] g.vertical-cluster-bar-NIST rect',
         },
         passingStandardsAcrossNamespaces: {
-            axisLinks: '[data-testid="standards-across-namespace"] a'
+            axisLinks: '[data-testid="standards-across-namespace"] a',
         },
         passingStandardsAcrossNodes: {
-            axisLinks: '[data-testid="standards-across-node"] a'
+            axisLinks: '[data-testid="standards-across-node"] a',
         },
         controlsMostFailed: {
             widget: '[data-testid="link-list-widget"]:contains("failed")',
-            listItems: '[data-testid="link-list-widget"]:contains("failed") a'
+            listItems: '[data-testid="link-list-widget"]:contains("failed") a',
         },
         controlDetails: {
             widget: '[data-testid="control-details"]',
             standardName: '[data-testid="control-details"] [data-testid="standard-name"]',
-            controlName: '[data-testid="control-details"] [data-testid="control-name"]'
+            controlName: '[data-testid="control-details"] [data-testid="control-name"]',
         },
         PCICompliance: {
             controls:
-                '[data-testid="PCI-compliance"] .widget-detail-bullet span:contains("Controls")'
+                '[data-testid="PCI-compliance"] .widget-detail-bullet span:contains("Controls")',
         },
-        relatedEntities: '[data-testid="related-resource-list"]'
-    }
+        relatedEntities: '[data-testid="related-resource-list"]',
+    },
 };

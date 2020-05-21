@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
 )
 
@@ -19,9 +20,9 @@ func Command() *cobra.Command {
 		Use:   "keys",
 		Short: "Keys opens the BadgerDB and allows the user to get key counts",
 		Long:  "Keys opens the BadgerDB and allows the user to get key counts",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return keys(path, prefix)
-		},
+		}),
 	}
 	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().StringVar(&prefix, "prefix", "", "Specify the prefix of the keys to count")

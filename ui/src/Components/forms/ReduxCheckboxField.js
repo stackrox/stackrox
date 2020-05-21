@@ -18,13 +18,13 @@ ReduxCheckboxField.propTypes = {
     name: PropTypes.string.isRequired,
     id: PropTypes.string,
     disabled: PropTypes.bool,
-    onChange: PropTypes.func
+    onChange: PropTypes.func,
 };
 
 ReduxCheckboxField.defaultProps = {
     id: null,
     disabled: false,
-    onChange: null
+    onChange: null,
 };
 
 export default ReduxCheckboxField;

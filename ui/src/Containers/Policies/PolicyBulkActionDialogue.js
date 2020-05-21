@@ -27,7 +27,7 @@ class PolicyBulkActionDialogue extends Component {
 
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
-                id: PropTypes.string.isRequired
+                id: PropTypes.string.isRequired,
             })
         ).isRequired,
         selectedNotifierIds: PropTypes.arrayOf(PropTypes.string),
@@ -38,28 +38,28 @@ class PolicyBulkActionDialogue extends Component {
         closeWizard: PropTypes.func.isRequired,
         closeDialogue: PropTypes.func.isRequired,
 
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
     };
 
     static defaultProps = {
-        selectedNotifierIds: []
+        selectedNotifierIds: [],
     };
 
     selectedPolicyNotifiers = () => {
         return uniq(
             this.props.policies
                 .filter(
-                    policy =>
-                        this.props.selectedPolicyIds.find(id => id === policy.id) &&
+                    (policy) =>
+                        this.props.selectedPolicyIds.find((id) => id === policy.id) &&
                         policy.notifiers.length > 0
                 )
-                .flatMap(policy => policy.notifiers)
+                .flatMap((policy) => policy.notifiers)
         );
     };
 
     deletePolicies = () => {
         const policyIds = this.props.selectedPolicyIds;
-        policyIds.forEach(rowId => {
+        policyIds.forEach((rowId) => {
             // close the view panel if that policy is being deleted
             if (rowId === this.props.match.params.policyId) {
                 this.props.closeWizard();
@@ -74,7 +74,7 @@ class PolicyBulkActionDialogue extends Component {
     enableNotification = () => {
         const selectedNotifiers =
             this.props.notifiers.length === 1
-                ? this.props.notifiers.map(notifier => notifier.id)
+                ? this.props.notifiers.map((notifier) => notifier.id)
                 : this.props.selectedNotifierIds;
         this.props.enablePoliciesNotification(this.props.selectedPolicyIds, selectedNotifiers);
         this.props.setPolicyNotifiers([]);
@@ -190,7 +190,7 @@ const mapStateToProps = createStructuredSelector({
     policiesAction: selectors.getPoliciesAction,
     selectedPolicyIds: selectors.getSelectedPolicyIds,
     notifiers: selectors.getNotifiers,
-    selectedNotifierIds: selectors.getPolicyNotifiers
+    selectedNotifierIds: selectors.getPolicyNotifiers,
 });
 
 const mapDispatchToProps = {
@@ -202,12 +202,7 @@ const mapDispatchToProps = {
     setPolicyNotifiers: dialogueActions.setPolicyNotifiers,
 
     closeWizard: pageActions.closeWizard,
-    closeDialogue: pageActions.closeDialogue
+    closeDialogue: pageActions.closeDialogue,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(PolicyBulkActionDialogue)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PolicyBulkActionDialogue));

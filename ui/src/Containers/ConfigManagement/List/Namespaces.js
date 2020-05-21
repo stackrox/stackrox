@@ -2,13 +2,13 @@ import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import searchContext from 'Containers/searchContext';
 import { sortValueByLength } from 'sorters/sorters';
 import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import StatusChip from 'Components/StatusChip';
 import List from './List';
@@ -22,13 +22,13 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'metadata.id'
+            accessor: 'metadata.id',
         },
         {
             Header: `Namespace`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'metadata.name'
+            accessor: 'metadata.name',
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -47,7 +47,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         {
             Header: `Policy Status`,
@@ -59,7 +59,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <StatusChip status={policyStatus.status} asString={pdf} />;
             },
             id: 'status',
-            accessor: d => d.policyStatus.status
+            accessor: (d) => d.policyStatus.status,
         },
         {
             Header: `Secrets`,
@@ -83,8 +83,8 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             id: 'numSecrets',
-            accessor: d => d.numSecrets,
-            sortMethod: sortValueByLength
+            accessor: (d) => d.numSecrets,
+            sortMethod: sortValueByLength,
         },
         {
             Header: `Users & Groups`,
@@ -107,7 +107,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'subjectCount'
+            accessor: 'subjectCount',
         },
         {
             Header: `Service Accounts`,
@@ -133,7 +133,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'serviceAccountCount'
+            accessor: 'serviceAccountCount',
         },
         {
             Header: `Roles`,
@@ -156,13 +156,13 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'k8sroleCount'
-        }
+            accessor: 'k8sroleCount',
+        },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => data.results;
+const createTableRows = (data) => data.results;
 
 const Namespaces = ({
     match,
@@ -172,7 +172,7 @@ const Namespaces = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const searchParam = useContext(searchContext);
 

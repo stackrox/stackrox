@@ -14,7 +14,7 @@ const CVSSLabelChip = ({ cvss, expanded }) => {
 
 CVSSLabelChip.propTypes = {
     cvss: PropTypes.number.isRequired,
-    expanded: PropTypes.bool.isRequired
+    expanded: PropTypes.bool.isRequired,
 };
 
 const TopCvssLabel = ({ cvss, version, expanded }) => {
@@ -46,11 +46,11 @@ const TopCvssLabel = ({ cvss, version, expanded }) => {
 TopCvssLabel.propTypes = {
     cvss: PropTypes.number.isRequired,
     version: PropTypes.string.isRequired,
-    expanded: PropTypes.bool
+    expanded: PropTypes.bool,
 };
 
 TopCvssLabel.defaultProps = {
-    expanded: false
+    expanded: false,
 };
 
 export default TopCvssLabel;

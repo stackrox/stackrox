@@ -17,15 +17,13 @@ describe('Policy Detail View Page', () => {
         cy.get(selectors.tableBodyColumn)
             .eq(0)
             .invoke('text')
-            .then(value => {
-                cy.get(selectors.tableBodyColumn)
-                    .eq(0)
-                    .click({ force: true });
+            .then((value) => {
+                cy.get(selectors.tableBodyColumn).eq(0).click({ force: true });
                 cy.get(selectors.policyEditButton).click({ force: true });
-                cy.url().then(policyEditURL => {
+                cy.url().then((policyEditURL) => {
                     expect(policyEditURL).to.include(`/edit`);
                 });
-                cy.url().then(policyEditURL => {
+                cy.url().then((policyEditURL) => {
                     expect(policyEditURL).to.include(value);
                 });
             });

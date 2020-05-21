@@ -9,10 +9,10 @@ import columns from './tableColumnDescriptor';
 function sortOptionFromTableState(state) {
     let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
-        const column = columns.find(col => col.accessor === state.sorted[0].id);
+        const column = columns.find((col) => col.accessor === state.sorted[0].id);
         sortOption = {
             field: column.searchField,
-            reversed: state.sorted[0].desc
+            reversed: state.sorted[0].desc,
         };
     }
     return sortOption;
@@ -22,7 +22,7 @@ function RiskTable({
     currentDeployments,
     setSelectedDeploymentId,
     selectedDeploymentId,
-    setSortOption
+    setSortOption,
 }) {
     function onFetchData(state) {
         const newSortOption = sortOptionFromTableState(state);
@@ -53,11 +53,11 @@ RiskTable.propTypes = {
     currentDeployments: PropTypes.arrayOf(PropTypes.object).isRequired,
     selectedDeploymentId: PropTypes.string,
     setSelectedDeploymentId: PropTypes.func.isRequired,
-    setSortOption: PropTypes.func.isRequired
+    setSortOption: PropTypes.func.isRequired,
 };
 
 RiskTable.defaultProps = {
-    selectedDeploymentId: undefined
+    selectedDeploymentId: undefined,
 };
 
 export default RiskTable;

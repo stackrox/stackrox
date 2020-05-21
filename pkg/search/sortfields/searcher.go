@@ -3,7 +3,6 @@ package sortfields
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -17,7 +16,7 @@ func TransformSortFields(searcher search.Searcher) search.Searcher {
 		}
 
 		// Local copy to avoid changing input.
-		local := proto.Clone(q).(*v1.Query)
+		local := q.Clone()
 
 		sortOptions := make([]*v1.QuerySortOption, 0, len(local.GetPagination().GetSortOptions()))
 		// replace the multi-word fields with the correct multi-word sort field, if present.

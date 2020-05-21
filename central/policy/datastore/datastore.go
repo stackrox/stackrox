@@ -3,13 +3,13 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/globaldb"
+	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
+	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -30,14 +30,17 @@ type DataStore interface {
 	RemovePolicy(ctx context.Context, id string) error
 	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error
+	// This method is allowed to return a v1 proto because it is in the whitelist in tools/storedprotos/storeinterface/storeinterface.go
+	ImportPolicies(ctx context.Context, policies []*storage.Policy, overwrite bool) (responses []*v1.ImportPolicyResponse, allSucceeded bool, err error)
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, clusterDatastore clusterDS.DataStore, notifierDatastore notifierDS.DataStore) DataStore {
 	return &datastoreImpl{
-		storage:    storage,
-		indexer:    indexer,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		storage:           storage,
+		indexer:           indexer,
+		searcher:          searcher,
+		clusterDatastore:  clusterDatastore,
+		notifierDatastore: notifierDatastore,
 	}
 }

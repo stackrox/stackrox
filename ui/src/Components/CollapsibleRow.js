@@ -6,7 +6,7 @@ import { ChevronRight, ChevronDown } from 'react-feather';
 
 const Content = posed.div({
     closed: { height: 0 },
-    open: { height: 'inherit' }
+    open: { height: 'inherit' },
 });
 
 const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, hasTitleBorder }) => {
@@ -33,7 +33,7 @@ const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, ha
                 }`}
                 size="14"
             />
-        )
+        ),
     };
 
     return (
@@ -62,13 +62,13 @@ CollapsibleRow.propTypes = {
     isCollapsible: PropTypes.bool,
     children: PropTypes.node.isRequired,
     isCollapsibleOpen: PropTypes.bool,
-    hasTitleBorder: PropTypes.bool
+    hasTitleBorder: PropTypes.bool,
 };
 
 CollapsibleRow.defaultProps = {
     isCollapsible: true,
     isCollapsibleOpen: true,
-    hasTitleBorder: true
+    hasTitleBorder: true,
 };
 
 export default CollapsibleRow;

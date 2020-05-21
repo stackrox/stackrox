@@ -6,5 +6,11 @@ import (
 	search "github.com/stackrox/rox/pkg/search"
 )
 
-// OptionsMap defines the options for process indicators
-var OptionsMap = search.Walk(v1.SearchCategory_PROCESS_INDICATORS, "process_indicator", (*storage.ProcessIndicator)(nil))
+var (
+	// ProcessPrefix defines the prefix for search when using process indicators. This is exported so that we can properly
+	// alias across indexes when search indicators through deployments
+	ProcessPrefix = "process_indicator"
+
+	// OptionsMap defines the options for process indicators
+	OptionsMap = search.Walk(v1.SearchCategory_PROCESS_INDICATORS, ProcessPrefix, (*storage.ProcessIndicator)(nil))
+)

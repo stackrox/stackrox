@@ -20,7 +20,9 @@ function* getAPITokens() {
 function* generateAPIToken() {
     try {
         const formData = yield select(getFormValues(apiTokenFormId));
-        const result = yield call(service.generateAPIToken, formData);
+        // TODO: Remove this once we allow assigning multiple roles to a token.
+        const modifiedFormData = { ...formData, roles: [formData.role], role: null };
+        const result = yield call(service.generateAPIToken, modifiedFormData);
         yield put(actions.generateAPIToken.success(result.response));
     } catch (error) {
         if (error.response) {
@@ -82,6 +84,6 @@ export default function* integrations() {
         fork(watchFetchRequest),
         fork(watchGenerateRequest),
         fork(watchRevokeRequest),
-        fork(watchModalOpen)
+        fork(watchModalOpen),
     ]);
 }

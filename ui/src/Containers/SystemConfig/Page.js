@@ -16,22 +16,22 @@ import Detail from './Detail';
 const defaultPublicConfig = {
     header: {
         color: '#000000',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
     },
     footer: {
         color: '#000000',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
     },
-    loginNotice: null
+    loginNotice: null,
 };
 
 const defaultPrivateConfig = {
     alertConfig: {
         allRuntimeRetentionDurationDays: 30,
         deletedRuntimeRetentionDurationDays: 7,
-        resolvedDeployRetentionDurationDays: 7
+        resolvedDeployRetentionDurationDays: 7,
     },
-    imageRetentionDurationDays: 7
+    imageRetentionDurationDays: 7,
 };
 
 function getPrivateConfig(privateConfig = {}) {
@@ -57,7 +57,7 @@ const Page = ({ systemConfig, saveSystemConfig, telemetryConfig, saveTelemetryCo
             const safeEditConfig = {
                 ...modifiedSystemConfig,
                 privateConfig: safePrivateConfig,
-                telemetryConfig: modifiedTelemetryConfig
+                telemetryConfig: modifiedTelemetryConfig,
             };
 
             return (
@@ -92,36 +92,33 @@ const Page = ({ systemConfig, saveSystemConfig, telemetryConfig, saveTelemetryCo
 Page.propTypes = {
     systemConfig: PropTypes.shape({
         publicConfig: PropTypes.shape({}),
-        privateConfig: PropTypes.shape({})
+        privateConfig: PropTypes.shape({}),
     }),
     saveSystemConfig: PropTypes.func.isRequired,
     telemetryConfig: PropTypes.shape({
-        enabled: PropTypes.bool
+        enabled: PropTypes.bool,
     }),
-    saveTelemetryConfig: PropTypes.func.isRequired
+    saveTelemetryConfig: PropTypes.func.isRequired,
 };
 
 Page.defaultProps = {
     systemConfig: {
         publicConfig: defaultPublicConfig,
-        privateConfig: {}
+        privateConfig: {},
     },
     telemetryConfig: {
-        enabled: false
-    }
+        enabled: false,
+    },
 };
 
 const mapStateToProps = createStructuredSelector({
     systemConfig: selectors.getSystemConfig,
-    telemetryConfig: selectors.getTelemetryConfig
+    telemetryConfig: selectors.getTelemetryConfig,
 });
 
 const mapDispatchToProps = {
     saveSystemConfig: actions.saveSystemConfig,
-    saveTelemetryConfig: telemetryActions.saveTelemetryConfig
+    saveTelemetryConfig: telemetryActions.saveTelemetryConfig,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Page);
+export default connect(mapStateToProps, mapDispatchToProps)(Page);

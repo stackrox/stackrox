@@ -36,7 +36,7 @@ module.exports = {
             lg: remCalc('1250'),
             xl: remCalc('1440'),
             xxl: remCalc('1812'),
-            xxxl: remCalc('2125')
+            xxxl: remCalc('2125'),
         },
         colors: {
             transparent: 'transparent',
@@ -130,13 +130,13 @@ module.exports = {
             'alert-600': 'var(--alert-600)',
             'alert-700': 'var(--alert-700)',
             'alert-800': 'var(--alert-800)',
-            'alert-900': 'var(--alert-900)'
+            'alert-900': 'var(--alert-900)',
         },
         letterSpacing: {
             tight: `-${remCalc('1')}`,
             normal: '0',
             wide: remCalc('.5'),
-            widest: remCalc('1')
+            widest: remCalc('1'),
         },
         fontFamily: {
             condensed: ['Open Sans Condensed', 'sans-serif'],
@@ -152,7 +152,7 @@ module.exports = {
                 'Fira Sans',
                 'Droid Sans',
                 'Helvetica Neue',
-                'sans-serif'
+                'sans-serif',
             ],
             serif: [
                 'Constantia',
@@ -164,9 +164,9 @@ module.exports = {
                 'Bitstream Vera Serif',
                 'Liberation Serif',
                 'Georgia',
-                'serif'
+                'serif',
             ],
-            mono: ['Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace']
+            mono: ['Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
         },
         fontSize: {
             '2xs': remCalc('9'),
@@ -179,7 +179,7 @@ module.exports = {
             '3xl': remCalc('20'),
             '4xl': remCalc('24'),
             '5xl': remCalc('30'),
-            '6xl': remCalc('40')
+            '6xl': remCalc('40'),
         },
         fontWeight: {
             '100': 100,
@@ -190,39 +190,37 @@ module.exports = {
             '600': 600,
             '700': 700,
             '800': 800,
-            '900': 900
+            '900': 900,
         },
         lineHeight: {
             none: 1,
             tight: 1.25,
             normal: 1.5,
-            loose: 2
+            loose: 2,
         },
-        textColor: theme => theme('colors'),
-        backgroundColor: theme => theme('colors'),
+        textColor: (theme) => theme('colors'),
+        backgroundColor: (theme) => theme('colors'),
         borderWidth: {
             default: '1px',
             '0': '0',
             '2': '2px',
             '3': '3px',
             '4': '4px',
-            '8': '8px'
+            '8': '8px',
         },
-        borderColor: theme => {
+        borderColor: (theme) => {
             const colors = theme('colors');
-            return Object.assign(
-                {
-                    default: colors['grey-light']
-                },
-                colors
-            );
+            return {
+                default: colors['grey-light'],
+                ...colors,
+            };
         },
         borderRadius: {
             none: '0',
             sm: remCalc('2'),
             default: remCalc('4'),
             lg: remCalc('8'),
-            full: '9999px'
+            full: '9999px',
         },
         width: {
             auto: 'auto',
@@ -262,7 +260,7 @@ module.exports = {
             '5/6': '83.33333%',
             '9/10': '93%',
             full: '100%',
-            screen: '100vw'
+            screen: '100vw',
         },
         height: {
             auto: 'auto',
@@ -290,7 +288,7 @@ module.exports = {
             '64': '16rem',
             '72': '20rem',
             full: '100%',
-            screen: '100vh'
+            screen: '100vh',
         },
         minWidth: {
             '0': '0',
@@ -330,7 +328,7 @@ module.exports = {
             full: '100%',
             fit: 'fit-content',
             min: 'min-content',
-            max: 'max-content'
+            max: 'max-content',
         },
         minHeight: {
             '0': '0',
@@ -368,7 +366,7 @@ module.exports = {
             '1/8': '12.5%',
             '5/6': '83.33333%',
             full: '100%',
-            screen: '100vh'
+            screen: '100vh',
         },
         maxWidth: {
             '1': '0.25rem',
@@ -414,11 +412,11 @@ module.exports = {
             full: '100%',
             fit: 'fit-content',
             min: 'min-content',
-            max: 'max-content'
+            max: 'max-content',
         },
         maxHeight: {
             full: '100%',
-            screen: '100vh'
+            screen: '100vh',
         },
         padding: {
             px: '1px',
@@ -432,7 +430,7 @@ module.exports = {
             '7': '1.75rem',
             '8': '2rem',
             '10': '2.5rem',
-            '12': '3rem'
+            '12': '3rem',
         },
         margin: {
             auto: 'auto',
@@ -453,17 +451,18 @@ module.exports = {
             '-3': '-0.75rem',
             '-4': '-1rem',
             '-6': '-1.5rem',
-            '-8': '-2rem'
+            '-8': '-2rem',
         },
         boxShadow: {
             default: '0 2px 8px 0 hsla(0, 0%, 0%, 0.14)',
             md: '0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17)',
             lg: '0 8px 8px 0 hsla(0, 0%, 0%, 0.04), 0 2px 4px 0 hsla(0, 0%, 0%, 0.17)',
             inner: 'inset 0 0px 8px 0 hsla(0, 0%, 0%, .25)',
-            none: 'none'
+            none: 'none',
         },
         zIndex: {
             auto: 'auto',
+            '-1': -1,
             '0': 0,
             '1': 1,
             '10': 10,
@@ -471,140 +470,83 @@ module.exports = {
             '30': 30,
             '40': 40,
             '50': 50,
-            '60': 60
+            '60': 60,
+            '70': 70,
         },
         fill: {
-            current: 'currentColor'
+            current: 'currentColor',
         },
         stroke: {
-            current: 'currentColor'
-        }
+            current: 'currentColor',
+        },
     },
     variants: {
-        appearance: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        backgroundAttachment: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        backgroundColor: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        backgroundPosition: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        backgroundRepeat: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        backgroundSize: ['responsive', 'first-child', 'last-child', 'before', 'after'],
+        appearance: ['responsive', 'before', 'after'],
+        backgroundAttachment: ['responsive', 'before', 'after'],
+        backgroundColor: ['responsive', 'before', 'after', 'hover', 'focus'],
+        backgroundPosition: ['responsive', 'before', 'after'],
+        backgroundRepeat: ['responsive', 'before', 'after'],
+        backgroundSize: ['responsive', 'before', 'after'],
         borderCollapse: [],
-        borderColor: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        borderRadius: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        borderStyle: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        borderWidth: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        cursor: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        display: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        flexDirection: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        flexWrap: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        alignItems: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        alignSelf: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        justifyContent: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        alignContent: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        flex: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        flexGrow: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        flexShrink: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        float: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        fontFamily: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        fontWeight: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        height: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        lineHeight: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        listStylePosition: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        listStyleType: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        margin: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        maxHeight: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        maxWidth: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        minHeight: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        minWidth: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        negativeMargin: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        opacity: ['responsive', 'first-child', 'last-child', 'before', 'after'],
+        borderColor: ['responsive', 'before', 'after', 'hover', 'focus'],
+        borderRadius: ['responsive', 'before', 'after'],
+        borderStyle: ['responsive', 'before', 'after'],
+        borderWidth: ['responsive', 'first', 'last', 'before', 'after'],
+        cursor: ['responsive', 'before', 'after'],
+        display: ['responsive', 'before', 'after'],
+        flexDirection: ['responsive', 'before', 'after'],
+        flexWrap: ['responsive', 'before', 'after'],
+        alignItems: ['responsive', 'before', 'after'],
+        alignSelf: ['responsive', 'before', 'after'],
+        justifyContent: ['responsive', 'before', 'after'],
+        alignContent: ['responsive', 'before', 'after'],
+        flex: ['responsive', 'before', 'after'],
+        flexGrow: ['responsive', 'before', 'after'],
+        flexShrink: ['responsive', 'before', 'after'],
+        float: ['responsive', 'before', 'after'],
+        fontFamily: ['responsive', 'before', 'after'],
+        fontWeight: ['responsive', 'before', 'after', 'hover', 'focus'],
+        height: ['responsive', 'before', 'after'],
+        lineHeight: ['responsive', 'before', 'after'],
+        listStylePosition: ['responsive', 'before', 'after'],
+        listStyleType: ['responsive', 'before', 'after'],
+        margin: ['responsive', 'first', 'last', 'before', 'after'],
+        maxHeight: ['responsive', 'before', 'after'],
+        maxWidth: ['responsive', 'before', 'after'],
+        minHeight: ['responsive', 'before', 'after'],
+        minWidth: ['responsive', 'before', 'after'],
+        negativeMargin: ['responsive', 'before', 'after'],
+        opacity: ['responsive', 'before', 'after'],
         outline: ['focus'],
-        overflow: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        padding: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        pointerEvents: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        position: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        inset: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        resize: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        boxShadow: ['responsive', 'first-child', 'last-child', 'before', 'after', 'hover', 'focus'],
+        overflow: ['responsive', 'before', 'after'],
+        padding: ['responsive', 'before', 'after'],
+        pointerEvents: ['responsive', 'before', 'after'],
+        position: ['responsive', 'before', 'after'],
+        inset: ['responsive', 'before', 'after'],
+        resize: ['responsive', 'before', 'after'],
+        boxShadow: ['responsive', 'before', 'after', 'hover', 'focus'],
         fill: [],
         stroke: [],
-        tableLayout: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        textAlign: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        textColor: ['responsive', 'first-child', 'last-child', 'before', 'after', 'hover', 'focus'],
-        fontSize: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        fontStyle: ['responsive', 'first-child', 'last-child', 'before', 'after', 'hover', 'focus'],
-        fontSmoothing: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        textDecoration: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        textTransform: [
-            'responsive',
-            'first-child',
-            'last-child',
-            'before',
-            'after',
-            'hover',
-            'focus'
-        ],
-        letterSpacing: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        userSelect: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        verticalAlign: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        visibility: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        whitespace: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        wordBreak: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        width: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        zIndex: ['responsive', 'hover', 'first-child', 'last-child', 'before', 'after']
+        tableLayout: ['responsive', 'before', 'after'],
+        textAlign: ['responsive', 'before', 'after'],
+        textColor: ['responsive', 'before', 'after', 'hover', 'focus'],
+        fontSize: ['responsive', 'before', 'after'],
+        fontStyle: ['responsive', 'before', 'after', 'hover', 'focus'],
+        fontSmoothing: ['responsive', 'before', 'after', 'hover', 'focus'],
+        textDecoration: ['responsive', 'before', 'after', 'hover', 'focus'],
+        textTransform: ['responsive', 'before', 'after', 'hover', 'focus'],
+        letterSpacing: ['responsive', 'before', 'after'],
+        userSelect: ['responsive', 'before', 'after'],
+        verticalAlign: ['responsive', 'before', 'after'],
+        visibility: ['responsive', 'before', 'after'],
+        whitespace: ['responsive', 'before', 'after'],
+        wordBreak: ['responsive', 'before', 'after'],
+        width: ['responsive', 'before', 'after'],
+        zIndex: ['responsive', 'hover', 'before', 'after'],
     },
     plugins: [
         customFormsPlugin,
         function addvariant({ addVariant, e }) {
-            addVariant('first-child', ({ modifySelectors, separator }) => {
-                modifySelectors(
-                    ({ className }) => `.${e(`fc${separator}${className}`)} > *:first-child`
-                );
-            });
-            addVariant('last-child', ({ modifySelectors, separator }) => {
-                modifySelectors(
-                    ({ className }) => `.${e(`lc${separator}${className}`)} > *:last-child`
-                );
-            });
             addVariant('before', ({ modifySelectors, separator }) => {
                 modifySelectors(
                     ({ className }) => `.${e(`before${separator}${className}`)}:before`
@@ -615,10 +557,10 @@ module.exports = {
             });
         },
         getGradientClasses({
-            variants: ['responsive', 'first-child', 'last-child', 'before', 'after', 'hover']
+            variants: ['responsive', 'before', 'after', 'hover'],
         }),
         getObjectFitClasses({
-            variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
+            variants: ['responsive', 'before', 'after'],
         }),
         getGridClasses({
             gaps: {
@@ -634,9 +576,9 @@ module.exports = {
                 '8': '2rem',
                 '10': '2.5rem',
                 '12': '3rem',
-                '16': '4rem'
+                '16': '4rem',
             },
-            variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
+            variants: ['responsive', 'before', 'after'],
         }),
         getOrderClasses({
             positive: {
@@ -645,16 +587,16 @@ module.exports = {
                 '2': 2,
                 '3': 3,
                 '4': 4,
-                '5': 5
+                '5': 5,
             },
             negative: {
                 '-1': -1,
                 '-2': -2,
                 '-3': -3,
                 '-4': -4,
-                '-5': -5
+                '-5': -5,
             },
-            variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
+            variants: ['responsive', 'before', 'after'],
         }),
         getColumnClasses({
             index: {
@@ -663,12 +605,12 @@ module.exports = {
                 '2': 2,
                 '3': 3,
                 '4': 4,
-                '5': 5
+                '5': 5,
             },
-            variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
-        })
+            variants: ['responsive', 'before', 'after'],
+        }),
     ],
     corePlugins: {
-        container: false
-    }
+        container: false,
+    },
 };

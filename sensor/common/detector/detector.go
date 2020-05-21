@@ -8,17 +8,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
-	"github.com/stackrox/rox/pkg/detection/runtime"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/logging"
-	options "github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/detector/whitelist"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"google.golang.org/grpc"
@@ -37,16 +33,8 @@ type Detector interface {
 
 // New returns a new detector
 func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager, cache expiringcache.Cache) Detector {
-	builder := matcher.NewBuilder(
-		matcher.NewRegistry(
-			nil,
-		),
-		options.OptionsMap,
-	)
 	return &detectorImpl{
-		deploytimeDetector:       deploytime.NewDetector(detection.NewPolicySet(detection.NewPolicyCompiler(builder))),
-		runtimeDetector:          runtime.NewDetector(detection.NewPolicySet(detection.NewPolicyCompiler(builder))),
-		runtimeWhitelistDetector: runtime.NewDetector(detection.NewPolicySet(detection.NewPolicyCompiler(builder))),
+		unifiedDetector: unified.NewDetector(),
 
 		output:                    make(chan *central.MsgFromSensor),
 		deploymentAlertOutputChan: make(chan outputResult),
@@ -67,15 +55,17 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 }
 
 type detectorImpl struct {
-	deploytimeDetector       deploytime.Detector
-	runtimeDetector          runtime.Detector
-	runtimeWhitelistDetector runtime.Detector
+	unifiedDetector unified.Detector
 
 	output                    chan *central.MsgFromSensor
 	deploymentAlertOutputChan chan outputResult
 
 	deploymentProcessingMap  map[string]int64
 	deploymentProcessingLock sync.RWMutex
+
+	// This lock ensures that processing is done one at a time
+	// When a policy is updated, we will reflush the deployments cache back through detection
+	deploymentDetectionLock sync.Mutex
 
 	enricher        *enricher
 	deploymentStore *deploymentStore
@@ -129,7 +119,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				var isMostRecentUpdate bool
 				concurrency.WithRLock(&d.deploymentProcessingLock, func() {
 					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
-					isMostRecentUpdate = !exists || result.timestamp > value
+					isMostRecentUpdate = !exists || result.timestamp >= value
 					if isMostRecentUpdate {
 						d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
 					}
@@ -166,49 +156,16 @@ func (d *detectorImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.SensorDetectionCap}
 }
 
-func isLifecycleStage(policy *storage.Policy, stage storage.LifecycleStage) bool {
-	for _, s := range policy.GetLifecycleStages() {
-		if s == stage {
-			return true
-		}
-	}
-	return false
-}
-
-func reconcilePolicySets(sync *central.PolicySync, policySet detection.PolicySet, matcher func(p *storage.Policy) bool) {
-	policyIDSet := set.NewStringSet()
-	for _, v := range policySet.GetCompiledPolicies() {
-		policyIDSet.Add(v.Policy().GetId())
-	}
-
-	for _, p := range sync.GetPolicies() {
-		if !matcher(p) {
-			continue
-		}
-		if err := policySet.UpsertPolicy(p); err != nil {
-			log.Errorf("error upserting policy %q: %v", p.GetName(), err)
-			continue
-		}
-		policyIDSet.Remove(p.GetId())
-	}
-	for removedPolicyID := range policyIDSet {
-		if err := policySet.RemovePolicy(removedPolicyID); err != nil {
-			log.Errorf("error removing policy %q", removedPolicyID)
-		}
-	}
-}
-
 func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
-	reconcilePolicySets(sync, d.deploytimeDetector.PolicySet(), func(p *storage.Policy) bool {
-		return isLifecycleStage(p, storage.LifecycleStage_DEPLOY)
-	})
-	reconcilePolicySets(sync, d.runtimeDetector.PolicySet(), func(p *storage.Policy) bool {
-		return isLifecycleStage(p, storage.LifecycleStage_RUNTIME) && !p.GetFields().GetWhitelistEnabled()
-	})
-	reconcilePolicySets(sync, d.runtimeWhitelistDetector.PolicySet(), func(p *storage.Policy) bool {
-		return isLifecycleStage(p, storage.LifecycleStage_RUNTIME) && p.GetFields().GetWhitelistEnabled()
-	})
+	d.unifiedDetector.ReconcilePolicies(sync.GetPolicies())
 	d.deduper.reset()
+
+	// Take deployment lock and flush
+	concurrency.WithLock(&d.deploymentDetectionLock, func() {
+		for _, deployment := range d.deploymentStore.getAll() {
+			d.processDeploymentNoLock(deployment, central.ResourceAction_UPDATE_RESOURCE)
+		}
+	})
 
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.UpdatePolicies(sync.GetPolicies())
@@ -254,10 +211,8 @@ func (d *detectorImpl) runDetector() {
 		case <-d.detectorStopper.StopDone():
 			return
 		case scanOutput := <-d.enricher.outputChan():
-			alerts, err := d.deploytimeDetector.Detect(deploytime.DetectionContext{}, scanOutput.deployment, scanOutput.images)
-			if err != nil {
-				log.Errorf("error running detection on deployment %q: %v", scanOutput.deployment.GetName(), err)
-			}
+			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, scanOutput.deployment, scanOutput.images)
+
 			sort.Slice(alerts, func(i, j int) bool {
 				return alerts[i].GetPolicy().GetId() < alerts[j].GetPolicy().GetId()
 			})
@@ -288,6 +243,13 @@ func (d *detectorImpl) markDeploymentForProcessing(id string) {
 }
 
 func (d *detectorImpl) ProcessDeployment(deployment *storage.Deployment, action central.ResourceAction) {
+	d.deploymentDetectionLock.Lock()
+	defer d.deploymentDetectionLock.Unlock()
+
+	d.processDeploymentNoLock(deployment, action)
+}
+
+func (d *detectorImpl) processDeploymentNoLock(deployment *storage.Deployment, action central.ResourceAction) {
 	switch action {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		d.deploymentStore.removeDeployment(deployment.GetId())
@@ -360,20 +322,7 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 	images := d.enricher.getImages(deployment)
 
 	// Run detection now
-	alerts, err := d.runtimeDetector.Detect(deployment, images, pi)
-	if err != nil {
-		log.Errorf("error running runtime policies for deployment %q and process %q: %v", deployment.GetName(), pi.GetSignal().GetExecFilePath(), err)
-	}
-
-	// We need to handle the whitelist policies separately because there is no distinct logic in the runtime
-	// detection logic and it always returns true
-	if !d.whitelistEval.IsInWhitelist(pi) {
-		whitelistAlerts, err := d.runtimeWhitelistDetector.Detect(deployment, images, pi)
-		if err != nil {
-			log.Errorf("error evaluating whitelist policies against deployment %q and process %q: %v", deployment.GetName(), pi.GetSignal().GetExecFilePath(), err)
-		}
-		alerts = append(alerts, whitelistAlerts...)
-	}
+	alerts := d.unifiedDetector.DetectProcess(deployment, images, pi, d.whitelistEval.IsOutsideLockedWhitelist(pi))
 
 	alertResults := &central.AlertResults{
 		DeploymentId: pi.GetDeploymentId(),

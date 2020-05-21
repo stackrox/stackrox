@@ -3,7 +3,8 @@
   "extends": [
     "airbnb",
     "prettier",
-    "plugin:testing-library/react"
+    "plugin:testing-library/react",
+    "plugin:react/recommended"
   ],
   "plugins": [
     "prettier",
@@ -24,6 +25,19 @@
     "jsx-a11y/label-has-for": [
       0
     ],
+    "jsx-a11y/control-has-associated-label": [
+      1,
+      {
+        "labelAttributes": [
+          "label"
+        ],
+        "controlComponents": [
+          "Dot",
+          "Labeled"
+        ],
+        "depth": 3
+      }
+    ],
     "mocha/no-exclusive-tests": "error",
     "import/no-extraneous-dependencies": [
       "error",
@@ -41,6 +55,12 @@
     ],
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
+    "react/display-name": "warn",
+    "react/jsx-props-no-spreading": "warn",
+    "react/static-property-placement": [
+      "warn",
+      "static public field"
+    ],
     "react/prop-types": [
       2,
       {

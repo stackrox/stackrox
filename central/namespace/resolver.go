@@ -11,7 +11,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -100,7 +99,7 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
 		AddExactMatches(search.Namespace, storageNamespace.GetName()).
 		ProtoQuery()
-	deploymentResults, err := deploymentDataStore.Search(ctx, protoutils.CloneV1Query(q))
+	deploymentResults, err := deploymentDataStore.Search(ctx, q.Clone())
 	if err != nil {
 		return nil, errors.Wrap(err, "searching deployments")
 	}

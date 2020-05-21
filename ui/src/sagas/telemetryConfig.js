@@ -38,6 +38,6 @@ function* watchSaveTelemetryConfig() {
 export default function* telemetryConfig() {
     yield all([
         takeEveryNewlyMatchedLocation(systemConfigPath, getTelemetryConfig),
-        fork(watchSaveTelemetryConfig)
+        fork(watchSaveTelemetryConfig),
     ]);
 }

@@ -11,7 +11,7 @@ describe('AccessTokenManager', () => {
         expect(m.getToken()).toBe('my-token');
     });
 
-    it('should clear stored token and its info;=', () => {
+    it('should store token', () => {
         const m = new AccessTokenManager();
         m.setToken('my-token');
         expect(m.getToken()).toBe('my-token');
@@ -29,7 +29,7 @@ describe('AccessTokenManager', () => {
         expect(m.tokenInfo).toEqual({ d: 'data' });
     });
 
-    it('should clear stored token and its info;=', () => {
+    it('should clear stored token and its info', () => {
         const m = new AccessTokenManager();
         m.setToken('my-token', { d: 'data' });
         m.clearToken();
@@ -74,7 +74,7 @@ describe('AccessTokenManager', () => {
     it('should notify attached listener about token being refreshed', () => {
         const refreshToken = jest.fn().mockRejectedValue();
         let opPromiseToTest = null;
-        const refreshTokenListener = opPromise => {
+        const refreshTokenListener = (opPromise) => {
             opPromiseToTest = opPromise;
         };
         const tokenInfo = { expiry: new Date(Date.now() + 31000).toISOString() };

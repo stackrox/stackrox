@@ -9,20 +9,20 @@ export const resourceTypes = {
     COMPONENT: 'COMPONENT',
     CVE: 'CVE',
     POLICY: 'POLICY',
-    CONTROL: 'CONTROL'
+    CONTROL: 'CONTROL',
 };
 
 export const rbacConfigTypes = {
     SUBJECT: 'SUBJECT',
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNT',
-    ROLE: 'ROLE'
+    ROLE: 'ROLE',
 };
 
 export const standardEntityTypes = {
     CONTROL: 'CONTROL',
     CATEGORY: 'CATEGORY',
     STANDARD: 'STANDARD',
-    CHECK: 'CHECK'
+    CHECK: 'CHECK',
 };
 
 export const standardTypes = {
@@ -32,7 +32,7 @@ export const standardTypes = {
     HIPAA_164: 'HIPAA_164',
     CIS_Kubernetes_v1_5: 'CIS_Kubernetes_v1_5',
     CIS_Docker_v1_1_0: 'CIS_Docker_v1_1_0',
-    CIS_Docker_v1_2_0: 'CIS_Docker_v1_2_0'
+    CIS_Docker_v1_2_0: 'CIS_Docker_v1_2_0',
 };
 
 export const standardBaseTypes = {
@@ -42,7 +42,7 @@ export const standardBaseTypes = {
     [standardTypes.HIPAA_164]: 'HIPAA',
     [standardTypes.CIS_Docker_v1_1_0]: 'CIS Docker',
     [standardTypes.CIS_Docker_v1_2_0]: 'CIS Docker',
-    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s'
+    [standardTypes.CIS_Kubernetes_v1_5]: 'CIS K8s',
 };
 
 // resourceTypeToApplicableStandards maps a resource type to the standards that apply to it.
@@ -55,25 +55,25 @@ export const resourceTypeToApplicableStandards = {
         standardTypes.HIPAA_164,
         standardTypes.NIST_800_190,
         standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2
+        standardTypes.PCI_DSS_3_2,
     ],
     [resourceTypes.NODE]: [
         standardTypes.CIS_Docker_v1_2_0,
         standardTypes.CIS_Kubernetes_v1_5,
-        standardTypes.NIST_800_190
+        standardTypes.NIST_800_190,
     ],
     [resourceTypes.NAMESPACE]: [
         standardTypes.HIPAA_164,
         standardTypes.NIST_800_190,
         standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2
+        standardTypes.PCI_DSS_3_2,
     ],
     [resourceTypes.DEPLOYMENT]: [
         standardTypes.HIPAA_164,
         standardTypes.NIST_800_190,
         standardTypes.NIST_SP_800_53_Rev_4,
-        standardTypes.PCI_DSS_3_2
-    ]
+        standardTypes.PCI_DSS_3_2,
+    ],
 };
 
 export const searchCategories = {
@@ -90,12 +90,12 @@ export const searchCategories = {
     RISK: 'RISKS',
     ROLE: 'ROLES',
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNTS',
-    SUBJECT: 'SUBJECTS'
+    SUBJECT: 'SUBJECTS',
 };
 
 export default {
     ...resourceTypes,
     ...standardTypes,
     ...standardEntityTypes,
-    ...rbacConfigTypes
+    ...rbacConfigTypes,
 };

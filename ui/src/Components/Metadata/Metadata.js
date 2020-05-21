@@ -6,7 +6,7 @@ import Widget from 'Components/Widget';
 import ResourceCountPopper from 'Components/ResourceCountPopper';
 import { useTheme } from 'Containers/ThemeProvider';
 
-const renderName = data => {
+const renderName = (data) => {
     return data.map(({ name }) => (
         <div className="mt-2" key={name}>
             {name}
@@ -98,7 +98,7 @@ Metadata.propTypes = {
     keyValuePairs: PropTypes.arrayOf(
         PropTypes.shape({
             key: PropTypes.string.isRequired,
-            value: PropTypes.oneOfType([PropTypes.string, PropTypes.element, PropTypes.number])
+            value: PropTypes.oneOfType([PropTypes.string, PropTypes.element, PropTypes.number]),
         })
     ).isRequired,
     title: PropTypes.string,
@@ -108,7 +108,7 @@ Metadata.propTypes = {
     whitelists: PropTypes.arrayOf(PropTypes.shape({})),
     secrets: PropTypes.arrayOf(PropTypes.shape({})),
     bgClass: PropTypes.bool,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 Metadata.defaultProps = {
@@ -119,7 +119,7 @@ Metadata.defaultProps = {
     whitelists: null,
     secrets: null,
     bgClass: false,
-    className: ''
+    className: '',
 };
 
 export default Metadata;

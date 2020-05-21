@@ -28,7 +28,7 @@ const entityComponentMap = {
     [entityTypes.NODE]: Node,
     [entityTypes.IMAGE]: Image,
     [entityTypes.POLICY]: Policy,
-    [entityTypes.SUBJECT]: Subject
+    [entityTypes.SUBJECT]: Subject,
 };
 
 const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
@@ -50,11 +50,11 @@ Entity.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityListType: PropTypes.string,
     entityId: PropTypes.string.isRequired,
-    query: PropTypes.shape({})
+    query: PropTypes.shape({}),
 };
 Entity.defaultProps = {
     query: null,
-    entityListType: undefined
+    entityListType: undefined,
 };
 
 export default Entity;

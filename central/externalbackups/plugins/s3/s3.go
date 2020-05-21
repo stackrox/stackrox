@@ -68,9 +68,16 @@ func newS3(integration *storage.ExternalBackup) (*s3, error) {
 		return nil, err
 	}
 
-	awsConfig := &aws.Config{
-		Region: aws.String(conf.GetRegion()),
+	endpoint := conf.GetEndpoint()
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("s3.%s.amazonaws.com", conf.GetRegion())
 	}
+
+	awsConfig := &aws.Config{
+		Endpoint: aws.String(endpoint),
+		Region:   aws.String(conf.GetRegion()),
+	}
+
 	if !conf.GetUseIam() {
 		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
 	}

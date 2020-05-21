@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import LinkListWidget from 'Components/LinkListWidget';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import pluralize from 'pluralize';
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { resourceLabels } from 'messages/common';
 import { RELATED_SECRETS, RELATED_DEPLOYMENTS, ALL_NAMESPACES } from 'queries/namespace';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { NODES_BY_CLUSTER } from 'queries/node';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
@@ -17,7 +17,7 @@ const queryMap = {
     [entityTypes.NAMESPACE]: ALL_NAMESPACES,
     [entityTypes.NODE]: NODES_BY_CLUSTER,
     [entityTypes.SECRET]: RELATED_SECRETS,
-    [entityTypes.DEPLOYMENT]: RELATED_DEPLOYMENTS
+    [entityTypes.DEPLOYMENT]: RELATED_DEPLOYMENTS,
 };
 
 function getPageContext(entityType) {
@@ -39,7 +39,7 @@ const ResourceRelatedEntitiesList = ({
     pageEntity,
     clusterName,
     className,
-    limit
+    limit,
 }) => {
     const linkContext = getPageContext(listEntityType);
     const resourceLabel = resourceLabels[listEntityType];
@@ -51,21 +51,19 @@ const ResourceRelatedEntitiesList = ({
         let items = data.results;
         if (listEntityType === entityTypes.NAMESPACE) {
             items = items
-                .map(item => ({
+                .map((item) => ({
                     ...item.metadata,
-                    name: `${item.metadata.clusterName}/${item.metadata.name}`
+                    name: `${item.metadata.clusterName}/${item.metadata.name}`,
                 }))
-                .filter(item => item.clusterName === pageEntity.name);
+                .filter((item) => item.clusterName === pageEntity.name);
         }
         if (listEntityType === entityTypes.NODE) {
             items = data.results.nodes;
         }
 
-        return items.map(item => ({
+        return items.map((item) => ({
             label: item.name,
-            link: URLService.getURL(match, location)
-                .base(listEntityType, item.id)
-                .url()
+            link: URLService.getURL(match, location).base(listEntityType, item.id).url(),
         }));
     }
 
@@ -77,8 +75,8 @@ const ResourceRelatedEntitiesList = ({
                     .query({
                         [searchParam]: {
                             [pageEntityType]: pageEntity.name,
-                            [entityTypes.CLUSTER]: clusterName
-                        }
+                            [entityTypes.CLUSTER]: clusterName,
+                        },
                     })
                     .url()}
                 className="no-underline"
@@ -97,8 +95,8 @@ const ResourceRelatedEntitiesList = ({
         const variables = {
             query: queryService.objectToWhereClause({
                 [pageEntityType]: pageEntity.name,
-                [entityTypes.CLUSTER]: clusterName
-            })
+                [entityTypes.CLUSTER]: clusterName,
+            }),
         };
 
         if (listEntityType === entityTypes.NODE) {
@@ -135,17 +133,17 @@ ResourceRelatedEntitiesList.propTypes = {
     className: PropTypes.string,
     pageEntity: PropTypes.shape({
         id: PropTypes.string,
-        name: PropTypes.string
+        name: PropTypes.string,
     }),
     clusterName: PropTypes.string,
-    limit: PropTypes.number
+    limit: PropTypes.number,
 };
 
 ResourceRelatedEntitiesList.defaultProps = {
     pageEntity: null,
     className: null,
     limit: 20,
-    clusterName: null
+    clusterName: null,
 };
 
 export default withRouter(ResourceRelatedEntitiesList);

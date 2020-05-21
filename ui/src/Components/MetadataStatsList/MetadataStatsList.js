@@ -21,11 +21,11 @@ const MetadataStatsList = ({ statTiles }) => {
 };
 
 MetadataStatsList.propTypes = {
-    statTiles: PropTypes.arrayOf(PropTypes.node)
+    statTiles: PropTypes.arrayOf(PropTypes.node),
 };
 
 MetadataStatsList.defaultProps = {
-    statTiles: null
+    statTiles: null,
 };
 
 export default MetadataStatsList;

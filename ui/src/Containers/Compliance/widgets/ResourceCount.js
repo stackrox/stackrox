@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { resourceLabels } from 'messages/common';
 import capitalize from 'lodash/capitalize';
 import Widget from 'Components/Widget';
@@ -9,8 +9,8 @@ import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import CountWidget from 'Components/CountWidget';
 import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
-import queryService from 'modules/queryService';
-import { getResourceCountFromAggregatedResults } from 'modules/complianceUtils';
+import queryService from 'utils/queryService';
+import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import useCases from 'constants/useCaseTypes';
@@ -22,7 +22,7 @@ const ResourceCount = ({
     entityType,
     relatedToResourceType,
     relatedToResource,
-    count
+    count,
 }) => {
     const searchParam = useContext(searchContext);
     function getUrl() {
@@ -31,8 +31,8 @@ const ResourceCount = ({
                 .set('context', useCases.SECRET)
                 .query({
                     [searchParam]: {
-                        [`${capitalize(relatedToResourceType)}`]: relatedToResource.name
-                    }
+                        [`${capitalize(relatedToResourceType)}`]: relatedToResource.name,
+                    },
                 })
                 .url();
         }
@@ -49,7 +49,7 @@ const ResourceCount = ({
             case entityTypes.NAMESPACE:
                 query = {
                     namespace: relatedToResource.name,
-                    cluster: relatedToResource.clusterName
+                    cluster: relatedToResource.clusterName,
                 };
                 break;
             default:
@@ -58,7 +58,7 @@ const ResourceCount = ({
 
         return {
             query: queryService.objectToWhereClause(query),
-            categories: []
+            categories: [],
         };
     }
 
@@ -100,15 +100,15 @@ ResourceCount.propTypes = {
     relatedToResource: PropTypes.shape({
         id: PropTypes.string,
         name: PropTypes.string,
-        clusterName: PropTypes.string
+        clusterName: PropTypes.string,
     }),
-    count: PropTypes.number
+    count: PropTypes.number,
 };
 
 ResourceCount.defaultProps = {
     entityType: null,
     relatedToResource: null,
-    count: null
+    count: null,
 };
 
 export default withRouter(ResourceCount);

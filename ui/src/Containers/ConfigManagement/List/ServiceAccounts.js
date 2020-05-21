@@ -1,11 +1,11 @@
 import React from 'react';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import { SERVICE_ACCOUNTS as QUERY } from 'queries/serviceAccount';
 import { sortValueByLength } from 'sorters/sorters';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
 
 import List from './List';
@@ -17,13 +17,13 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Service Accounts`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         {
             Header: `Cluster Admin Role`,
@@ -33,7 +33,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
             },
-            accessor: 'clusterAdmin'
+            accessor: 'clusterAdmin',
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -50,7 +50,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         entityContext && entityContext[entityTypes.NAMESPACE]
             ? null
@@ -63,7 +63,7 @@ const buildTableColumns = (match, location, entityContext) => {
             Cell: ({ original, pdf }) => {
                       const {
                           id,
-                          saNamespace: { metadata }
+                          saNamespace: { metadata },
                       } = original;
                       if (!metadata) return 'No Matches';
                       const { name, id: namespaceId } = metadata;
@@ -72,7 +72,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.NAMESPACE, namespaceId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={name} />;
-                  }
+                  },
               },
         {
             Header: `Roles`,
@@ -97,7 +97,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return original.roles[0].name;
             },
             accessor: 'roles',
-            sortMethod: sortValueByLength
+            sortMethod: sortValueByLength,
         },
         {
             Header: `Deployments`,
@@ -119,13 +119,13 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'deploymentCount'
-        }
+            accessor: 'deploymentCount',
+        },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => data.results;
+const createTableRows = (data) => data.results;
 
 const ServiceAccounts = ({
     match,
@@ -135,7 +135,7 @@ const ServiceAccounts = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
@@ -155,12 +155,12 @@ const ServiceAccounts = ({
             defaultSorted={[
                 {
                     id: 'clusterAdmin',
-                    desc: true
+                    desc: true,
                 },
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             data={data}
             autoFocusSearchInput={autoFocusSearchInput}

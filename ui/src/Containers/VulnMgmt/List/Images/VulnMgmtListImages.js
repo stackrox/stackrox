@@ -1,7 +1,7 @@
 import React from 'react';
 import gql from 'graphql-tag';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import StatusChip from 'Components/StatusChip';
@@ -10,7 +10,7 @@ import DateTimeField from 'Components/DateTimeField';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -23,8 +23,8 @@ import { imageSortFields } from 'constants/sortFields';
 export const defaultImageSort = [
     {
         id: imageSortFields.PRIORITY,
-        desc: false
-    }
+        desc: false,
+    },
 ];
 
 export function getImageTableColumns(workflowState) {
@@ -33,7 +33,7 @@ export function getImageTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Image`,
@@ -41,7 +41,7 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/6 word-break-all ${defaultColumnClassName}`,
             id: imageSortFields.NAME,
             accessor: 'name.fullName',
-            sortField: imageSortFields.NAME
+            sortField: imageSortFields.NAME,
         },
         {
             Header: `CVEs`,
@@ -67,7 +67,7 @@ export function getImageTableColumns(workflowState) {
             },
             id: imageSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
-            sortField: imageSortFields.CVE_COUNT
+            sortField: imageSortFields.CVE_COUNT,
         },
         {
             Header: `Top CVSS`,
@@ -86,7 +86,7 @@ export function getImageTableColumns(workflowState) {
             },
             id: imageSortFields.TOP_CVSS,
             accessor: 'topVuln.cvss',
-            sortField: imageSortFields.TOP_CVSS
+            sortField: imageSortFields.TOP_CVSS,
         },
         {
             Header: `Created`,
@@ -99,7 +99,7 @@ export function getImageTableColumns(workflowState) {
             },
             id: imageSortFields.CREATED_TIME,
             accessor: 'metadata.v1.created',
-            sortField: imageSortFields.CREATED_TIME
+            sortField: imageSortFields.CREATED_TIME,
         },
         {
             Header: `Scan Time`,
@@ -112,7 +112,7 @@ export function getImageTableColumns(workflowState) {
             },
             id: imageSortFields.SCAN_TIME,
             accessor: 'scan.scanTime',
-            sortField: imageSortFields.SCAN_TIME
+            sortField: imageSortFields.SCAN_TIME,
         },
         {
             Header: 'Image Status',
@@ -126,7 +126,7 @@ export function getImageTableColumns(workflowState) {
             id: imageSortFields.IMAGE_STATUS,
             accessor: 'deploymentCount',
             sortField: imageSortFields.IMAGE_STATUS,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Deployments`,
@@ -143,7 +143,7 @@ export function getImageTableColumns(workflowState) {
             ),
             id: imageSortFields.DEPLOYMENT_COUNT,
             accessor: 'deploymentCount',
-            sortField: imageSortFields.DEPLOYMENT_COUNT
+            sortField: imageSortFields.DEPLOYMENT_COUNT,
         },
         {
             Header: `Components`,
@@ -160,7 +160,7 @@ export function getImageTableColumns(workflowState) {
             ),
             id: imageSortFields.COMPONENT_COUNT,
             accessor: 'componentCount',
-            sortField: imageSortFields.COMPONENT_COUNT
+            sortField: imageSortFields.COMPONENT_COUNT,
         },
         {
             Header: `Risk Priority`,
@@ -168,8 +168,8 @@ export function getImageTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             id: imageSortFields.PRIORITY,
             accessor: 'priority',
-            sortField: imageSortFields.PRIORITY
-        }
+            sortField: imageSortFields.PRIORITY,
+        },
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
 }
@@ -189,8 +189,8 @@ const VulnMgmtImages = ({ selectedRowId, search, sort, page, data, totalResults 
     const queryOptions = {
         variables: {
             query: queryService.objectToWhereClause(search),
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
     return (

@@ -3,21 +3,21 @@ import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table
 import { resourceTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 
-const getNameCell = name => <div data-testid="table-row-name">{name}</div>;
+const getNameCell = (name) => <div data-testid="table-row-name">{name}</div>;
 
 const controlColumns = [
     {
         accessor: 'id',
         Header: 'id',
         headerClassName: 'hidden',
-        className: 'hidden'
+        className: 'hidden',
     },
     {
         accessor: 'control.standardId',
         sortMethod: sortVersion,
         Header: 'Standard',
         headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-        className: `w-1/4 ${defaultColumnClassName}`
+        className: `w-1/4 ${defaultColumnClassName}`,
     },
     {
         accessor: 'control',
@@ -26,7 +26,7 @@ const controlColumns = [
         headerClassName: `w-1/4 ${defaultHeaderClassName}`,
         className: `w-1/4 ${defaultColumnClassName}`,
         Cell: ({ original }) =>
-            getNameCell(`${original.control.name} - ${original.control.description}`)
+            getNameCell(`${original.control.name} - ${original.control.description}`),
     },
     {
         accessor: 'value.overallState',
@@ -38,7 +38,7 @@ const controlColumns = [
             <span className="bg-alert-200 border border-alert-400 px-2 rounded text-alert-800">
                 {original.value.overallState === 'COMPLIANCE_STATE_FAILURE' && 'Fail'}
             </span>
-        )
+        ),
     },
     {
         accessor: 'value.evidence',
@@ -50,12 +50,12 @@ const controlColumns = [
             return `${evidence[0].message}  ${
                 evidence.length > 1 ? `+${evidence.length - 1} more...` : ''
             }`;
-        }
-    }
+        },
+    },
 ];
 
 const entityToColumns = {
-    [resourceTypes.CONTROL]: controlColumns
+    [resourceTypes.CONTROL]: controlColumns,
 };
 
 export default entityToColumns;

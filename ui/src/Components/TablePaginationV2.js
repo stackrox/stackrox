@@ -47,6 +47,7 @@ const TablePaginationV2 = ({ pageCount, page, setPage, searchOptions }) => {
                         disabled={pageCount === 1}
                         onChange={onChange}
                         data-testid="page-number-input"
+                        aria-label="Page Number"
                     />
                     of {pageCount}
                 </div>
@@ -77,15 +78,15 @@ TablePaginationV2.propTypes = {
     pageCount: PropTypes.number.isRequired,
     page: PropTypes.number.isRequired,
     setPage: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.shape({}))
+    searchOptions: PropTypes.arrayOf(PropTypes.shape({})),
 };
 
 TablePaginationV2.defaultProps = {
-    searchOptions: []
+    searchOptions: [],
 };
 
 const mapStateToProps = createStructuredSelector({
-    searchOptions: selectors.getAllSearchOptions
+    searchOptions: selectors.getAllSearchOptions,
 });
 
 export default withRouter(connect(mapStateToProps)(TablePaginationV2));

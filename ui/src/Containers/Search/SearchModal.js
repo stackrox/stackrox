@@ -19,7 +19,7 @@ class SearchModal extends Component {
         setSearchOptions: PropTypes.func.isRequired,
         setSearchModifiers: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
-        onClose: PropTypes.func.isRequired
+        onClose: PropTypes.func.isRequired,
     };
 
     componentDidMount() {
@@ -30,7 +30,7 @@ class SearchModal extends Component {
         document.removeEventListener('keydown', this.handleKeyDown);
     }
 
-    handleKeyDown = event => {
+    handleKeyDown = (event) => {
         // 'escape' key maps to keycode '27'
         if (event.keyCode === 27) {
             this.props.onClose();
@@ -73,7 +73,7 @@ class SearchModal extends Component {
     }
 }
 
-const SearchModalContainer = props => {
+const SearchModalContainer = (props) => {
     const EnhancedSearchModal = onClickOutside(SearchModal);
     return (
         <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-60 absolute">
@@ -85,19 +85,16 @@ const SearchModalContainer = props => {
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getGlobalSearchOptions,
     searchModifiers: selectors.getGlobalSearchModifiers,
-    searchSuggestions: selectors.getGlobalSearchSuggestions
+    searchSuggestions: selectors.getGlobalSearchSuggestions,
 });
 
-const mapDispatchToProps = dispatch => ({
-    setSearchOptions: searchOptions =>
+const mapDispatchToProps = (dispatch) => ({
+    setSearchOptions: (searchOptions) =>
         dispatch(globalSearchActions.setGlobalSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
+    setSearchModifiers: (searchModifiers) =>
         dispatch(globalSearchActions.setGlobalSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(globalSearchActions.setGlobalSearchSuggestions(searchSuggestions))
+    setSearchSuggestions: (searchSuggestions) =>
+        dispatch(globalSearchActions.setGlobalSearchSuggestions(searchSuggestions)),
 });
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(SearchModalContainer);
+export default connect(mapStateToProps, mapDispatchToProps)(SearchModalContainer);

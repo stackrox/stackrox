@@ -1,18 +1,28 @@
+import com.google.protobuf.Timestamp
 import com.google.protobuf.UnknownFieldSet
 import groups.Upgrade
-import com.google.protobuf.Timestamp
+import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ProcessIndicatorOuterClass
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ConfigService
+import services.GraphQLService
 import services.ProcessService
+import services.SummaryService
+import spock.lang.Unroll
+import util.Env
 
 class UpgradesTest extends BaseSpecification {
-    static final private String CLUSTERID = "260e11a3-cbea-464c-95f0-588fa7695b49"
+    private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
 
     @Category(Upgrade)
     def "Verify cluster exists and that field values are retained"() {
+        given:
+        "Only run on specific upgrade from 2.4.16"
+        Assume.assumeTrue(CLUSTERID=="260e11a3-cbea-464c-95f0-588fa7695b49")
+
         expect:
         def clusters = ClusterService.getClusters()
         clusters.size() == 1
@@ -43,6 +53,9 @@ class UpgradesTest extends BaseSpecification {
                                 .setBuildDate(Timestamp.newBuilder().setSeconds(1549394549).build())
                                 .build())
                         .build())
+                .setDynamicConfig(ClusterOuterClass.DynamicClusterConfig.newBuilder()
+                        .setAdmissionControllerConfig(ClusterOuterClass.AdmissionControllerConfig.newBuilder()
+                                .setTimeoutSeconds(3)))
                 .build()
 
         def cluster = ClusterOuterClass.Cluster.newBuilder(clusters.get(0))
@@ -53,8 +66,12 @@ class UpgradesTest extends BaseSpecification {
 
     @Category(Upgrade)
     def "Verify process indicators have cluster IDs and namespaces added"() {
+        given:
+        "Only run on specific upgrade from 2.4.16"
+        Assume.assumeTrue(CLUSTERID=="260e11a3-cbea-464c-95f0-588fa7695b49")
+
         expect:
-        "Migrated ProcessIndicatos to have a cluster ID and a namespace"
+        "Migrated ProcessIndicators to have a cluster ID and a namespace"
         def processIndicators = ProcessService.getProcessIndicatorsByDeployment("33b3eb66-3bd4-11e9-b563-42010a8a0101")
         processIndicators.size() > 0
         for (ProcessIndicatorOuterClass.ProcessIndicator indicator : processIndicators) {
@@ -65,6 +82,10 @@ class UpgradesTest extends BaseSpecification {
 
     @Category(Upgrade)
     def "Verify private config contains the correct retention duration for alerts and images"() {
+        given:
+        "Only run on specific upgrade from 2.4.16"
+        Assume.assumeTrue(CLUSTERID=="260e11a3-cbea-464c-95f0-588fa7695b49")
+
         expect:
         "Alert retention duration is nil, image rentention duration is 7 days"
         def config = ConfigService.getConfig()
@@ -76,16 +97,59 @@ class UpgradesTest extends BaseSpecification {
         config.getPrivateConfig().getImageRetentionDurationDays() == 7
     }
 
+    @Category(Upgrade)
+    def "Verify that summary API returns non-zero values on upgrade"() {
+        expect:
+        "Summary API returns non-zero values on upgrade"
+        SummaryServiceOuterClass.SummaryCountsResponse resp = SummaryService.getCounts()
+        assert resp.numAlerts != 0
+        assert resp.numDeployments != 0
+        assert resp.numSecrets != 0
+        assert resp.numClusters != 0
+        assert resp.numImages != 0
+        assert resp.numNodes != 0
+    }
+
+    @Unroll
+    @Category(Upgrade)
+    def "verify that we find the correct number of #resourceType for query"() {
+        when:
+        "Fetch the #resourceType from GraphQL"
+        def gqlService = new GraphQLService()
+        def resultRet = gqlService.Call(getQuery(resourceType), [ query: searchQuery ])
+        assert resultRet.getCode() == 200
+        println "return code " + resultRet.getCode()
+
+        then:
+        "Check that we got the correct number of #resourceType from GraphQL "
+        assert resultRet.getValue() != null
+        def items = resultRet.getValue()[resourceType]
+        assert items.size() >= minResults
+
+        where:
+        "Data Inputs Are:"
+        resourceType      | searchQuery               | minResults
+        "policies"        | "Policy:Latest Tag"       | 1
+        "nodes"           | "Cluster ID:${CLUSTERID}" | 2
+        "violations"      | ""                        | 1
+        "secrets"         | "Cluster ID:${CLUSTERID}" | 1
+        "deployments"     | "Cluster ID:${CLUSTERID}" | 1
+        "images"          | "Cluster ID:${CLUSTERID}" | 1
+        "components"      | "Cluster ID:${CLUSTERID}" | 1
+        "vulnerabilities" | "Cluster ID:${CLUSTERID}" | 1
+    }
+
+    static getQuery(resourceType) {
+        return """query get${resourceType}(\$query: String!) {
+                ${resourceType} : ${resourceType}(query: \$query) {
+                     id
+                }
+            }"""
+    }
+
     // TODO
-    // deployment (incl risk)
-    // image (with CVEs)
-    // violation (with/without resolved, and with process)
-    // nodes
     // network flow edges
-    // process indicator
-    // secret
     // compliance
     // clairify integration
     // slack integration
-    // policies
 }

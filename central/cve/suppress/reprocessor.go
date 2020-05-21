@@ -96,11 +96,12 @@ func (l *cveUnsuppressLoopImpl) unsuppressCVEsWithExpiredSuppressState() {
 		log.Errorf("error unsuppressing CVEs %+s: %v", cves, err)
 		return
 	}
+	log.Infof("Successfully unsuppressed %d CVEs", len(cves))
 }
 
 func (l *cveUnsuppressLoopImpl) getCVEsWithExpiredSuppressState() ([]string, error) {
 	// TODO: ROX-4072: change the format to 01/02/2006 15:04:05 MST once timestamp query is supported
-	now := fmt.Sprintf("<=%s", time.Now().Format("01/02/2006 MST"))
+	now := fmt.Sprintf("<%s", time.Now().Format("01/02/2006 MST"))
 	q := search.NewQueryBuilder().AddGenericTypeLinkedFields(
 		[]search.FieldLabel{search.CVESuppressed, search.CVESuppressExpiry}, []interface{}{true, now}).ProtoQuery()
 	results, err := l.cves.Search(reprocessorCtx, q)

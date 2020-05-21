@@ -9,7 +9,7 @@ const SeverityTile = ({ severity, count, index, color }) => {
     const { isDarkMode } = useTheme();
     function renderTileContent() {
         const backgroundStyle = {
-            backgroundColor: color
+            backgroundColor: color,
         };
 
         return (
@@ -58,7 +58,7 @@ SeverityTile.propTypes = {
     severity: PropTypes.string.isRequired,
     count: PropTypes.number.isRequired,
     index: PropTypes.number.isRequired,
-    color: PropTypes.string.isRequired
+    color: PropTypes.string.isRequired,
 };
 
 export default SeverityTile;

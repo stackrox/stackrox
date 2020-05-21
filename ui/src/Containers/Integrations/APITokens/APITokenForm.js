@@ -12,7 +12,7 @@ import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 
 const Fields = ({ roleOptions }) => (
-    <React.Fragment>
+    <>
         <FormField label="Token Name" required>
             <ReduxTextField name="name" />
         </FormField>
@@ -23,16 +23,16 @@ const Fields = ({ roleOptions }) => (
                 options={roleOptions}
             />
         </FormField>
-    </React.Fragment>
+    </>
 );
 
 Fields.propTypes = {
     roleOptions: PropTypes.arrayOf(
         PropTypes.shape({
             label: PropTypes.string.isRequired,
-            value: PropTypes.string.isRequired
+            value: PropTypes.string.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 const APITokenForm = ({ roles }) => {
@@ -48,13 +48,13 @@ const APITokenForm = ({ roles }) => {
 APITokenForm.propTypes = {
     roles: PropTypes.arrayOf(
         PropTypes.shape({
-            name: PropTypes.string.isRequired
+            name: PropTypes.string.isRequired,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    roles: selectors.getRoles
+    roles: selectors.getRoles,
 });
 
 const ConnectedForm = connect(mapStateToProps)(reduxForm({ form: apiTokenFormId })(APITokenForm));

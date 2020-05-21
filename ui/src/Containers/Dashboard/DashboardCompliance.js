@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, withRouter } from 'react-router-dom';
 import sortBy from 'lodash/sortBy';
 import { AGGREGATED_RESULTS_ACROSS_ENTITY } from 'queries/controls';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import useCases from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -15,7 +15,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 
 const standardsResultsMap = {
     passing: 'var(--tertiary-400)',
-    failing: 'var(--alert-400)'
+    failing: 'var(--alert-400)',
 };
 
 const DashboardCompliance = ({ match, location }) => {
@@ -23,8 +23,10 @@ const DashboardCompliance = ({ match, location }) => {
     function processData(data) {
         if (!data || !data.results || !data.results.results.length) return [];
         const { complianceStandards } = data;
-        const modifiedData = data.results.results.map(result => {
-            const standard = complianceStandards.find(cs => cs.id === result.aggregationKeys[0].id);
+        const modifiedData = data.results.results.map((result) => {
+            const standard = complianceStandards.find(
+                (cs) => cs.id === result.aggregationKeys[0].id
+            );
             const { numPassing, numFailing } = result;
             const percentagePassing =
                 Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
@@ -36,15 +38,15 @@ const DashboardCompliance = ({ match, location }) => {
                 name: standard.name,
                 passing: percentagePassing,
                 failing: 100 - percentagePassing,
-                link
+                link,
             };
             return modifiedResult;
         });
-        return sortBy(modifiedData, [datum => datum.name]);
+        return sortBy(modifiedData, [(datum) => datum.name]);
     }
 
     function renderStandardsData(standards) {
-        return standards.map(standard => {
+        return standards.map((standard) => {
             const standardResults = ['passing', 'failing'];
 
             return (
@@ -58,11 +60,11 @@ const DashboardCompliance = ({ match, location }) => {
                     </Link>
 
                     <div className="flex flex-1 w-1/2 h-2">
-                        {standardResults.map(standardResult => {
+                        {standardResults.map((standardResult) => {
                             const resultValue = standard[standardResult];
                             const backgroundStyle = {
                                 backgroundColor: standardsResultsMap[standardResult],
-                                width: `${resultValue}%`
+                                width: `${resultValue}%`,
                             };
                             return (
                                 <div
@@ -79,9 +81,9 @@ const DashboardCompliance = ({ match, location }) => {
     }
 
     function renderLegend() {
-        Object.keys(standardsResultsMap).map(result => {
+        Object.keys(standardsResultsMap).map((result) => {
             const backgroundStyle = {
-                backgroundColor: standardsResultsMap[result]
+                backgroundColor: standardsResultsMap[result],
             };
             return (
                 <div className="flex items-center mb-2" key={result}>
@@ -95,9 +97,7 @@ const DashboardCompliance = ({ match, location }) => {
     }
 
     function renderScanButton() {
-        const link = URLService.getURL()
-            .base(null, null, useCases.COMPLIANCE)
-            .url();
+        const link = URLService.getURL().base(null, null, useCases.COMPLIANCE).url();
         return (
             <div className="flex flex-col items-center justify-center p-4 w-full">
                 <span className="mb-4">
@@ -132,7 +132,7 @@ const DashboardCompliance = ({ match, location }) => {
                     query={AGGREGATED_RESULTS_ACROSS_ENTITY}
                     variables={{
                         unit: entityTypes.CONTROL,
-                        groupBy: [entityTypes.STANDARD]
+                        groupBy: [entityTypes.STANDARD],
                     }}
                 >
                     {({ loading, data }) => {
@@ -159,7 +159,7 @@ const DashboardCompliance = ({ match, location }) => {
 
 DashboardCompliance.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    location: ReactRouterPropTypes.location.isRequired,
 };
 
 export default withRouter(DashboardCompliance);

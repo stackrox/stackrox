@@ -20,14 +20,14 @@ function FormButtons({
     setWizardStage,
     setWizardPolicy,
     addToast,
-    removeToast
+    removeToast,
 }) {
     function goToPreview() {
         const dryRunOK = checkPreDryRun();
         if (dryRunOK) {
             // Format form data into the policy.
             const serverFormattedPolicy = formatPolicyFields(formData);
-            const enabledPolicy = Object.assign({}, serverFormattedPolicy);
+            const enabledPolicy = { ...serverFormattedPolicy };
 
             // Need to add id and enforcement actions since those aren't in the form data.
             enabledPolicy.id = wizardPolicy.id;
@@ -43,8 +43,8 @@ function FormButtons({
     function checkPreDryRun() {
         if (!wizardPolicyIsNew) return true;
 
-        const policyNames = policies.map(policy => policy.name);
-        if (policyNames.find(name => name === formData.name)) {
+        const policyNames = policies.map((policy) => policy.name);
+        if (policyNames.find((name) => name === formData.name)) {
             const error = `Could not add policy due to name validation: "${formData.name}
                 " already exists`;
             showToast(error);
@@ -61,7 +61,7 @@ function FormButtons({
     return (
         <PanelButton
             icon={<ArrowRight className="h-4 w-4" />}
-            className="btn btn-base"
+            className="btn btn-base mr-2"
             onClick={goToPreview}
             tooltip="Go to next step"
         >
@@ -74,10 +74,10 @@ FormButtons.propTypes = {
     policies: PropTypes.arrayOf(PropTypes.object).isRequired,
     wizardPolicy: PropTypes.shape({
         id: PropTypes.string,
-        enforcementActions: PropTypes.arrayOf(PropTypes.string)
+        enforcementActions: PropTypes.arrayOf(PropTypes.string),
     }).isRequired,
     formData: PropTypes.shape({
-        name: PropTypes.string
+        name: PropTypes.string,
     }),
     wizardPolicyIsNew: PropTypes.bool.isRequired,
 
@@ -85,20 +85,20 @@ FormButtons.propTypes = {
     setWizardPolicy: PropTypes.func.isRequired,
 
     addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired
+    removeToast: PropTypes.func.isRequired,
 };
 
 FormButtons.defaultProps = {
     formData: {
-        name: ''
-    }
+        name: '',
+    },
 };
 
 const mapStateToProps = createStructuredSelector({
     policies: selectors.getFilteredPolicies,
     wizardPolicy: selectors.getWizardPolicy,
     formData: getFormValues('policyCreationForm'),
-    wizardPolicyIsNew: selectors.getWizardIsNew
+    wizardPolicyIsNew: selectors.getWizardIsNew,
 });
 
 const mapDispatchToProps = {
@@ -106,10 +106,7 @@ const mapDispatchToProps = {
     setWizardStage: wizardActions.setWizardStage,
 
     addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification
+    removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(FormButtons);
+export default connect(mapStateToProps, mapDispatchToProps)(FormButtons);

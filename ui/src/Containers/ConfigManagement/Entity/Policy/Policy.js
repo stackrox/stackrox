@@ -15,7 +15,7 @@ import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
 import isGQLLoading from 'utils/gqlLoading';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
@@ -31,7 +31,7 @@ const PolicyEditButton = ({ id }) => {
 };
 
 PolicyEditButton.propTypes = {
-    id: PropTypes.string.isRequired
+    id: PropTypes.string.isRequired,
 };
 
 const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
@@ -42,8 +42,8 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
         query: queryService.objectToWhereClause({
             ...query[searchParam],
             'Policy Id': id,
-            'Lifecycle Stage': 'DEPLOY'
-        })
+            'Lifecycle Stage': 'DEPLOY',
+        }),
     };
 
     const defaultQuery = gql`
@@ -132,37 +132,37 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                     enforcementActions,
                     whitelists = [],
                     alerts = [],
-                    deploymentCount
+                    deploymentCount,
                 } = entity;
 
                 const metadataKeyValuePairs = [
                     {
                         key: 'Life Cycle',
-                        value: lifecycleStages.map(lifecycleStage => (
+                        value: lifecycleStages.map((lifecycleStage) => (
                             <LifecycleStageLabel
                                 key={lifecycleStage}
                                 lifecycleStage={lifecycleStage}
                             />
-                        ))
+                        )),
                     },
                     {
                         key: 'Severity',
-                        value: <SeverityLabel severity={severity} />
+                        value: <SeverityLabel severity={severity} />,
                     },
                     {
                         key: 'Enforced',
-                        value: enforcementActions ? 'Yes' : 'No'
+                        value: enforcementActions ? 'Yes' : 'No',
                     },
                     {
                         key: 'Enabled',
-                        value: !disabled ? 'Yes' : 'No'
-                    }
+                        value: !disabled ? 'Yes' : 'No',
+                    },
                 ];
 
                 const alertsData = alerts.reduce((acc, curr) => {
                     const datum = {
                         time: curr.time,
-                        ...curr.deployment
+                        ...curr.deployment,
                     };
                     return [...acc, datum];
                 }, []);
@@ -214,7 +214,10 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 </Widget>
                             </div>
                         </CollapsibleSection>
-                        <CollapsibleSection title="Policy Findings">
+                        <CollapsibleSection
+                            title="Policy Findings"
+                            dataTestId="policy-findings-section"
+                        >
                             <div className="flex mb-4 pdf-page pdf-stretch">
                                 <PolicyFindings
                                     entityContext={entityContext}

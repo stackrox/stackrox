@@ -9,13 +9,13 @@ export const licenses = [
                 phone: '1 (650) 385-8329',
                 email: 'support@stackrox.com',
                 url: '',
-                name: ''
+                name: '',
             },
             metadata: {
                 id: '1234-5678-9123-4567',
                 issueDate: '2019-01-01T12:00:00Z',
                 licensedForId: '48ejd4jk9d3m',
-                licensedForName: 'Alan Roy'
+                licensedForName: 'Alan Roy',
             },
             restrictions: {
                 notValidBefore: '2018-12-31T12:00:00Z',
@@ -23,11 +23,11 @@ export const licenses = [
                 allowOffline: true,
                 maxNodes: '500',
                 buildFlavors: '',
-                deploymentEnvironments: ''
-            }
+                deploymentEnvironments: '',
+            },
         },
         status: LICENSE_STATUS.VALID,
         statusReason: '',
-        active: true
-    }
+        active: true,
+    },
 ];

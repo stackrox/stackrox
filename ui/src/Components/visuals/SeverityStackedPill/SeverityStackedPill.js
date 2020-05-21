@@ -10,25 +10,25 @@ const SeverityStackedPill = ({ low, medium, high, critical, tooltip }) => {
     if (low) {
         data.push({
             colorType: 'base',
-            value: getPercentage(low, total)
+            value: getPercentage(low, total),
         });
     }
     if (medium) {
         data.push({
             colorType: 'warning',
-            value: getPercentage(medium, total)
+            value: getPercentage(medium, total),
         });
     }
     if (high) {
         data.push({
             colorType: 'caution',
-            value: getPercentage(high, total)
+            value: getPercentage(high, total),
         });
     }
     if (critical) {
         data.push({
             colorType: 'alert',
-            value: getPercentage(critical, total)
+            value: getPercentage(critical, total),
         });
     }
     return <PercentageStackedPill data={data} tooltip={tooltip} />;
@@ -41,8 +41,8 @@ SeverityStackedPill.propTypes = {
     critical: PropTypes.number,
     tooltip: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired
-    })
+        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
+    }),
 };
 
 SeverityStackedPill.defaultProps = {
@@ -50,7 +50,7 @@ SeverityStackedPill.defaultProps = {
     medium: 0,
     high: 0,
     critical: 0,
-    tooltip: null
+    tooltip: null,
 };
 
 export default SeverityStackedPill;

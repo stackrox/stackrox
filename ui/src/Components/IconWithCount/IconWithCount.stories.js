@@ -5,7 +5,7 @@ import IconWithCount from './IconWithCount';
 
 export default {
     title: 'IconWithCount',
-    component: IconWithCount
+    component: IconWithCount,
 };
 
 export const basic = () => {

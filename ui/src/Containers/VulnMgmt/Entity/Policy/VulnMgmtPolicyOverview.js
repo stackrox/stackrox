@@ -18,8 +18,11 @@ import ViolationsAcrossThisDeployment from 'Containers/Workflow/widgets/Violatio
 import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/VulnMgmtListDeployments';
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
+import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 import { pluralizeHas } from 'utils/textUtils';
-
+import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
 import TableWidget from '../TableWidget';
 import PolicyConfigurationFields from './PolicyConfigurationFields';
@@ -37,12 +40,13 @@ const emptyPolicy = {
     latestViolation: '',
     lifecycleStages: [],
     name: '',
+    policySections: [],
     policyStatus: '',
     rationale: '',
     remediation: '',
     scope: [],
     severity: '',
-    whitelists: []
+    whitelists: [],
 };
 
 const noop = () => {};
@@ -67,11 +71,14 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         enforcementActions,
         lifecycleStages,
         fields,
+        policySections,
         scope,
         whitelists,
-        deployments
+        deployments,
     } = safeData;
     const [currentDisabledState, setCurrentDisabledState] = useState(disabled);
+
+    const initialValues = preFormatPolicyFields(safeData);
 
     function togglePolicy() {
         updatePolicyDisabledState(id, !currentDisabledState).then(() => {
@@ -114,7 +121,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     );
 
     // @TODO: extract this out to make it re-usable and easier to test
-    const failingDeployments = deployments.filter(singleDeploy => {
+    const failingDeployments = deployments.filter((singleDeploy) => {
         if (
             singleDeploy.policyStatus === 'pass' ||
             !singleDeploy.deployAlerts ||
@@ -122,7 +129,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
         ) {
             return false;
         }
-        return singleDeploy.deployAlerts.some(alert => {
+        return singleDeploy.deployAlerts.some((alert) => {
             return alert && alert.policy && alert.policy.id === id;
         });
     });
@@ -130,64 +137,64 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
     const descriptionBlockMetadata = [
         {
             key: 'Description',
-            value: description || '-'
+            value: description || '-',
         },
         {
             key: 'Rationale',
-            value: rationale || '-'
+            value: rationale || '-',
         },
         {
             key: 'Remediation',
-            value: remediation || '-'
-        }
+            value: remediation || '-',
+        },
     ];
 
     const details = [
         {
             key: 'Categories',
-            value: categories && categories.join(', ')
+            value: categories && categories.join(', '),
         },
         {
             key: 'Last violated',
-            value: latestViolation ? format(latestViolation, dateTimeFormat) : '-'
+            value: latestViolation ? format(latestViolation, dateTimeFormat) : '-',
         },
         {
             key: 'Last updated',
-            value: lastUpdated ? format(lastUpdated, dateTimeFormat) : '-'
+            value: lastUpdated ? format(lastUpdated, dateTimeFormat) : '-',
         },
         {
             key: 'Enforcement',
-            value: enforcementActions && enforcementActions.length ? 'Yes' : 'No'
+            value: enforcementActions && enforcementActions.length ? 'Yes' : 'No',
         },
         {
             key: 'Lifecycle',
             value:
                 lifecycleStages && lifecycleStages.length
-                    ? lifecycleStages.map(stage => stage.toLowerCase()).join(', ')
-                    : 'No lifecycle stages'
-        }
+                    ? lifecycleStages.map((stage) => stage.toLowerCase()).join(', ')
+                    : 'No lifecycle stages',
+        },
     ];
 
     const scopeDetails = [
         {
             key: 'Cluster',
-            value: (scope && scope.cluster) || 'N/A'
+            value: (scope && scope.cluster) || 'N/A',
         },
         {
             key: 'Namespace',
-            value: (scope && scope.namespace) || 'N/A'
-        }
+            value: (scope && scope.namespace) || 'N/A',
+        },
     ];
 
     const whitelistDetails = [
         {
             key: 'Image(s)',
-            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A'
+            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A',
         },
         {
             key: 'Deployment(s)',
-            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A'
-        }
+            value: (whitelists && whitelists.image && whitelists.image.name) || 'N/A',
+        },
     ];
 
     const newEntityContext = { ...entityContext, [entityTypes.POLICY]: id };
@@ -220,8 +227,8 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                     defaultSorted={[
                         {
                             id: 'priority',
-                            desc: false
-                        }
+                            desc: false,
+                        },
                     ]}
                 />
             </div>
@@ -277,6 +284,24 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                                 </div>
                             </Widget>
                         </div>
+                        {!!policySections.length && (
+                            <FeatureEnabled
+                                featureFlag={knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC}
+                            >
+                                <div className="sy-2">
+                                    <Widget
+                                        header="Policy Criteria"
+                                        className="pdf-page pdf-stretch h-full"
+                                    >
+                                        <BooleanPolicySection
+                                            readOnly
+                                            hasHeader={false}
+                                            initialValues={initialValues}
+                                        />
+                                    </Widget>
+                                </div>
+                            </FeatureEnabled>
+                        )}
                         <div className="sx-1">
                             <Metadata
                                 className="h-full w-full min-w-48 bg-base-100 pdf-page h-full"
@@ -306,7 +331,7 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                         </div>
                     </div>
                 </CollapsibleSection>
-                <CollapsibleSection title="Policy Findings">
+                <CollapsibleSection title="Policy Findings" dataTestId="policy-findings-section">
                     {policyFindingsContent}
                 </CollapsibleSection>
             </div>

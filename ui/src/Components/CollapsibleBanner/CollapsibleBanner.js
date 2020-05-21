@@ -10,7 +10,7 @@ import { NextArrow, PrevArrow } from 'Components/CollapsibleBanner/BannerArrows'
 const triggerClassName = 'flex w-full justify-center absolute bottom-0';
 const triggerIconClassName = 'text-primary-600 h-4';
 const triggerElementStyle = {
-    top: '-11px' // adjusts position of the trigger element further up to overlap the border
+    top: '-11px', // adjusts position of the trigger element further up to overlap the border
 };
 
 const sliderSettings = {
@@ -22,33 +22,33 @@ const sliderSettings = {
             breakpoint: 930,
             settings: {
                 slidesToShow: 1,
-                slidesToScroll: 1
-            }
+                slidesToScroll: 1,
+            },
         },
         {
             breakpoint: 1350,
             settings: {
                 slidesToShow: 2,
-                slidesToScroll: 1
-            }
-        }
+                slidesToScroll: 1,
+            },
+        },
     ],
     slidesToShow: 3,
     slidesToScroll: 1,
     speed: 500,
     nextArrow: <NextArrow />,
-    prevArrow: <PrevArrow />
+    prevArrow: <PrevArrow />,
 };
 
 class CollapsibleBanner extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            open: true
+            open: true,
         };
     }
 
-    renderTriggerElement = state => {
+    renderTriggerElement = (state) => {
         const icon =
             state === 'opened' ? (
                 <Icon.ChevronsUp className={triggerIconClassName} />
@@ -101,9 +101,7 @@ class CollapsibleBanner extends Component {
                 <div data-testid="collapsible-banner">
                     <Slider
                         {...sliderSettings}
-                        className={`banner-background px-3 py-1 bg-primary-200 h-64 ${
-                            this.props.className
-                        }`}
+                        className={`banner-background px-3 py-1 bg-primary-200 h-64 ${this.props.className}`}
                     >
                         {content}
                     </Slider>
@@ -115,11 +113,11 @@ class CollapsibleBanner extends Component {
 
 CollapsibleBanner.propTypes = {
     children: PropTypes.node.isRequired,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 CollapsibleBanner.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default CollapsibleBanner;

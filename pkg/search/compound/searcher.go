@@ -3,7 +3,6 @@ package compound
 import (
 	"context"
 
-	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/dackbox/keys/transformation"
 	"github.com/stackrox/rox/pkg/search"
@@ -49,7 +48,7 @@ type compoundSearcherImpl struct {
 func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	var local *v1.Query
 	if q != nil {
-		local = proto.Clone(q).(*v1.Query)
+		local = q.Clone()
 	}
 
 	// Construct a tree that matches subqueries with specifications.

@@ -15,15 +15,15 @@ export function saveFile({ method, url, data, name }) {
         responseType: 'arraybuffer',
         name,
         // removing timeout for downloads
-        timeout: 0
+        timeout: 0,
     };
-    return axios(options).then(response => {
+    return axios(options).then((response) => {
         if (response.data) {
             const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             const matches = filenameRegex.exec(response.headers['content-disposition']);
 
             const file = new Blob([response.data], {
-                type: response.headers['content-type']
+                type: response.headers['content-type'],
             });
 
             if (name && typeof name === 'string') {

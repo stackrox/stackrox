@@ -30,8 +30,8 @@ const DeploymentViolations = ({ className, alerts, entityContext }) => {
             defaultSorted={[
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
         />
     );
@@ -40,13 +40,13 @@ const DeploymentViolations = ({ className, alerts, entityContext }) => {
 DeploymentViolations.propTypes = {
     className: PropTypes.string,
     alerts: PropTypes.arrayOf(PropTypes.shape({})),
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
 };
 
 DeploymentViolations.defaultProps = {
     className: '',
     alerts: [],
-    entityContext: {}
+    entityContext: {},
 };
 
 export default DeploymentViolations;

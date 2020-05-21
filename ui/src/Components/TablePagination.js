@@ -27,7 +27,10 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
     const [localPage, setLocalPage] = useState(page + 1);
 
     // 2. debounce the setPage callback to delay the setPage call when typing
-    const delayedSetPage = useCallback(debounce(newPage => setPage(newPage), TYPING_DELAY), []);
+    const delayedSetPage = useCallback(
+        debounce((newPage) => setPage(newPage), TYPING_DELAY),
+        []
+    );
 
     function onChangePage(e) {
         const { value } = e.target;
@@ -80,6 +83,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                         disabled={totalPages < 2}
                         onChange={onChangePage}
                         data-testid="page-number-input"
+                        aria-label="Page Number"
                     />
                     of {totalPages}
                 </div>
@@ -110,11 +114,11 @@ TablePagination.propTypes = {
     page: PropTypes.number.isRequired,
     dataLength: PropTypes.number.isRequired,
     setPage: PropTypes.func.isRequired,
-    pageSize: PropTypes.number
+    pageSize: PropTypes.number,
 };
 
 TablePagination.defaultProps = {
-    pageSize: defaultPageSize
+    pageSize: defaultPageSize,
 };
 
 export default withRouter(TablePagination);

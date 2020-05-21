@@ -8,7 +8,7 @@ import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import CVEStackedPill from 'Components/CVEStackedPill';
 import TableCountLink from 'Components/workflow/TableCountLink';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
@@ -20,8 +20,8 @@ import { getFilteredComponentColumns } from './ListComponents.utils';
 export const defaultComponentSort = [
     {
         id: componentSortFields.PRIORITY,
-        desc: false
-    }
+        desc: false,
+    },
 ];
 
 export function getComponentTableColumns(workflowState) {
@@ -30,7 +30,7 @@ export function getComponentTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Component`,
@@ -42,7 +42,7 @@ export function getComponentTableColumns(workflowState) {
             },
             id: componentSortFields.COMPONENT,
             accessor: 'name',
-            sortField: componentSortFields.COMPONENT
+            sortField: componentSortFields.COMPONENT,
         },
         {
             Header: `CVEs`,
@@ -68,7 +68,7 @@ export function getComponentTableColumns(workflowState) {
             },
             id: componentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
-            sortField: componentSortFields.CVE_COUNT
+            sortField: componentSortFields.CVE_COUNT,
         },
         {
             Header: `Top CVSS`,
@@ -87,7 +87,7 @@ export function getComponentTableColumns(workflowState) {
             },
             id: componentSortFields.TOP_CVSS,
             accessor: 'topVuln.cvss',
-            sortField: componentSortFields.TOP_CVSS
+            sortField: componentSortFields.TOP_CVSS,
         },
         {
             Header: `Source`,
@@ -95,7 +95,7 @@ export function getComponentTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             id: componentSortFields.SOURCE,
             accessor: 'source',
-            sortField: componentSortFields.SOURCE
+            sortField: componentSortFields.SOURCE,
         },
         {
             Header: `Location`,
@@ -104,7 +104,7 @@ export function getComponentTableColumns(workflowState) {
             Cell: ({ original }) => original.location || 'N/A',
             id: componentSortFields.LOCATION,
             accessor: 'location',
-            sortField: componentSortFields.LOCATION
+            sortField: componentSortFields.LOCATION,
         },
         {
             Header: `Images`,
@@ -121,7 +121,7 @@ export function getComponentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
-            sortField: componentSortFields.IMAGE_COUNT
+            sortField: componentSortFields.IMAGE_COUNT,
         },
         {
             Header: `Deployments`,
@@ -138,7 +138,7 @@ export function getComponentTableColumns(workflowState) {
                     selectedRowId={original.id}
                 />
             ),
-            sortField: componentSortFields.DEPLOYMENT_COUNT
+            sortField: componentSortFields.DEPLOYMENT_COUNT,
         },
         {
             Header: `Risk Priority`,
@@ -146,8 +146,8 @@ export function getComponentTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             id: componentSortFields.PRIORITY,
             accessor: 'priority',
-            sortField: componentSortFields.PRIORITY
-        }
+            sortField: componentSortFields.PRIORITY,
+        },
     ];
 
     const componentColumnsBasedOnContext = getFilteredComponentColumns(tableColumns, workflowState);
@@ -170,8 +170,8 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResu
         variables: {
             query: queryService.objectToWhereClause(search),
             scopeQuery: '',
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
     return (
@@ -194,7 +194,7 @@ const VulnMgmtComponents = ({ selectedRowId, search, sort, page, data, totalResu
 VulnMgmtComponents.propTypes = workflowListPropTypes;
 VulnMgmtComponents.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
 };
 
 export default VulnMgmtComponents;

@@ -7,7 +7,7 @@ import {
     HorizontalBarSeries,
     MarkSeries,
     LabelSeries,
-    GradientDefs
+    GradientDefs,
 } from 'react-vis';
 import { max } from 'lodash';
 import { withRouter } from 'react-router-dom';
@@ -18,7 +18,7 @@ import BarGradient from './BarGradient';
 const Lollipop = ({ data, history }) => {
     function getGridLineValues() {
         const interval = data.length < 5 ? 1 : 5;
-        const values = data.map(datum => datum.x);
+        const values = data.map((datum) => datum.x);
         const maxVal = Math.round(max(values) / interval) * interval;
         const lineValues = [];
         for (let x = 0; x <= maxVal + interval; x += interval) {
@@ -40,7 +40,7 @@ const Lollipop = ({ data, history }) => {
                 y: item.y,
                 yOffset: -25,
                 xOffset: 10,
-                label: ` ${index + 1}. ${item.y}`
+                label: ` ${index + 1}. ${item.y}`,
             };
             return val;
         });
@@ -80,7 +80,7 @@ const Lollipop = ({ data, history }) => {
                     style={{
                         height: 3,
                         rx: '2px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                     }}
                     color="url(#horizontalGradient)"
                     onValueClick={onValueClickHandler}
@@ -101,7 +101,7 @@ const Lollipop = ({ data, history }) => {
                     style={{
                         fill: 'var(--primary-800)',
                         cursor: 'pointer',
-                        transform: 'translate(15px,35px)'
+                        transform: 'translate(15px,35px)',
                     }}
                 />
 
@@ -113,7 +113,7 @@ const Lollipop = ({ data, history }) => {
 
 Lollipop.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default withRouter(Lollipop);

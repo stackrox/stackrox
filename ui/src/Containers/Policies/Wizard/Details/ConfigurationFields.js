@@ -13,8 +13,8 @@ class ConfigurationFields extends Component {
     static propTypes = {
         clustersById: PropTypes.shape({}).isRequired,
         policy: PropTypes.shape({
-            fields: PropTypes.shape({})
-        }).isRequired
+            fields: PropTypes.shape({}),
+        }).isRequired,
     };
 
     render() {
@@ -31,7 +31,7 @@ class ConfigurationFields extends Component {
                         {policyConfiguration.header}
                     </div>
                     <div className="h-full p-3 pb-0">
-                        {fieldKeys.map(key => {
+                        {fieldKeys.map((key) => {
                             if (!fieldsMap[key]) return '';
                             const { label } = fieldsMap[key];
                             const value = fieldsMap[key].formatValue(this.props.policy.fields[key]);
@@ -50,7 +50,7 @@ class ConfigurationFields extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    clustersById: selectors.getClustersById
+    clustersById: selectors.getClustersById,
 });
 
 export default connect(mapStateToProps)(ConfigurationFields);

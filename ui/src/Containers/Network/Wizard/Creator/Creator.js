@@ -38,19 +38,16 @@ const Creator = ({ onClose, wizardOpen, wizardStage }) => {
 Creator.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     wizardStage: PropTypes.string.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
-    wizardStage: selectors.getNetworkWizardStage
+    wizardStage: selectors.getNetworkWizardStage,
 });
 
 const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard
+    onClose: pageActions.closeNetworkWizard,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Creator);
+export default connect(mapStateToProps, mapDispatchToProps)(Creator);

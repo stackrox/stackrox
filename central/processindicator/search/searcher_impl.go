@@ -29,7 +29,7 @@ func (s *searcherImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Que
 	if err != nil {
 		return nil, err
 	}
-	processes, _, err := s.storage.GetBatchProcessIndicators(search.ResultsToIDs(results))
+	processes, _, err := s.storage.GetMany(search.ResultsToIDs(results))
 	return processes, err
 }
 

@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	processindicator "github.com/stackrox/rox/central/processindicator"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -34,98 +33,64 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetProcessIndicator mocks base method
-func (m *MockStore) GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error) {
+// Get mocks base method
+func (m *MockStore) Get(id string) (*storage.ProcessIndicator, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessIndicator", id)
+	ret := m.ctrl.Call(m, "Get", id)
 	ret0, _ := ret[0].(*storage.ProcessIndicator)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetProcessIndicator indicates an expected call of GetProcessIndicator
-func (mr *MockStoreMockRecorder) GetProcessIndicator(id interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicator", reflect.TypeOf((*MockStore)(nil).GetProcessIndicator), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// GetProcessIndicators mocks base method
-func (m *MockStore) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
+// GetMany mocks base method
+func (m *MockStore) GetMany(ids []string) ([]*storage.ProcessIndicator, []int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessIndicators")
-	ret0, _ := ret[0].([]*storage.ProcessIndicator)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessIndicators indicates an expected call of GetProcessIndicators
-func (mr *MockStoreMockRecorder) GetProcessIndicators() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessIndicators", reflect.TypeOf((*MockStore)(nil).GetProcessIndicators))
-}
-
-// GetBatchProcessIndicators mocks base method
-func (m *MockStore) GetBatchProcessIndicators(ids []string) ([]*storage.ProcessIndicator, []int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatchProcessIndicators", ids)
+	ret := m.ctrl.Call(m, "GetMany", ids)
 	ret0, _ := ret[0].([]*storage.ProcessIndicator)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetBatchProcessIndicators indicates an expected call of GetBatchProcessIndicators
-func (mr *MockStoreMockRecorder) GetBatchProcessIndicators(ids interface{}) *gomock.Call {
+// GetMany indicates an expected call of GetMany
+func (mr *MockStoreMockRecorder) GetMany(ids interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatchProcessIndicators", reflect.TypeOf((*MockStore)(nil).GetBatchProcessIndicators), ids)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ids)
 }
 
-// GetProcessInfoToArgs mocks base method
-func (m *MockStore) GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
+// UpsertMany mocks base method
+func (m *MockStore) UpsertMany(arg0 []*storage.ProcessIndicator) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProcessInfoToArgs")
-	ret0, _ := ret[0].(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessInfoToArgs indicates an expected call of GetProcessInfoToArgs
-func (mr *MockStoreMockRecorder) GetProcessInfoToArgs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessInfoToArgs", reflect.TypeOf((*MockStore)(nil).GetProcessInfoToArgs))
-}
-
-// AddProcessIndicators mocks base method
-func (m *MockStore) AddProcessIndicators(arg0 ...*storage.ProcessIndicator) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range arg0 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AddProcessIndicators", varargs...)
+	ret := m.ctrl.Call(m, "UpsertMany", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddProcessIndicators indicates an expected call of AddProcessIndicators
-func (mr *MockStoreMockRecorder) AddProcessIndicators(arg0 ...interface{}) *gomock.Call {
+// UpsertMany indicates an expected call of UpsertMany
+func (mr *MockStoreMockRecorder) UpsertMany(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddProcessIndicators", reflect.TypeOf((*MockStore)(nil).AddProcessIndicators), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockStore)(nil).UpsertMany), arg0)
 }
 
-// RemoveProcessIndicators mocks base method
-func (m *MockStore) RemoveProcessIndicators(id []string) error {
+// DeleteMany mocks base method
+func (m *MockStore) DeleteMany(id []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveProcessIndicators", id)
+	ret := m.ctrl.Call(m, "DeleteMany", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveProcessIndicators indicates an expected call of RemoveProcessIndicators
-func (mr *MockStoreMockRecorder) RemoveProcessIndicators(id interface{}) *gomock.Call {
+// DeleteMany indicates an expected call of DeleteMany
+func (mr *MockStoreMockRecorder) DeleteMany(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessIndicators", reflect.TypeOf((*MockStore)(nil).RemoveProcessIndicators), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockStore)(nil).DeleteMany), id)
 }
 
 // AckKeysIndexed mocks base method
@@ -161,16 +126,16 @@ func (mr *MockStoreMockRecorder) GetKeysToIndex() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeysToIndex", reflect.TypeOf((*MockStore)(nil).GetKeysToIndex))
 }
 
-// WalkAll mocks base method
-func (m *MockStore) WalkAll(arg0 func(*storage.ProcessIndicator) error) error {
+// Walk mocks base method
+func (m *MockStore) Walk(arg0 func(*storage.ProcessIndicator) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WalkAll", arg0)
+	ret := m.ctrl.Call(m, "Walk", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WalkAll indicates an expected call of WalkAll
-func (mr *MockStoreMockRecorder) WalkAll(arg0 interface{}) *gomock.Call {
+// Walk indicates an expected call of Walk
+func (mr *MockStoreMockRecorder) Walk(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAll", reflect.TypeOf((*MockStore)(nil).WalkAll), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0)
 }

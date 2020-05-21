@@ -41,6 +41,10 @@ class ClusterService extends BaseService {
         }
     }
 
+    static Boolean updateAdmissionController(AdmissionControllerConfig.Builder builder) {
+        return updateAdmissionController(builder.build())
+    }
+
     static Boolean updateAdmissionController(AdmissionControllerConfig config) {
         Cluster currentCluster = getCluster()
         if (currentCluster == null) {

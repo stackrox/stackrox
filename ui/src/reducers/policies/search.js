@@ -3,21 +3,21 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
 //-------------
 
 export const types = {
-    ...searchTypes('policies')
+    ...searchTypes('policies'),
 };
 
 // Actions
 //---------
 
 export const actions = {
-    ...getSearchActions('policies')
+    ...getSearchActions('policies'),
 };
 
 // Reducers
@@ -25,7 +25,7 @@ export const actions = {
 //---------------------------------------------------------------------------------
 
 const reducer = combineReducers({
-    ...searchReducers('policies')
+    ...searchReducers('policies'),
 });
 
 export default reducer;
@@ -35,5 +35,5 @@ export default reducer;
 //---------------------------------------------------------------------------------
 
 export const selectors = {
-    ...getSearchSelectors('policies')
+    ...getSearchSelectors('policies'),
 };

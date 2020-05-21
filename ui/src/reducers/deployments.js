@@ -9,7 +9,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
@@ -17,7 +17,7 @@ import {
 export const types = {
     FETCH_DEPLOYMENTS: createFetchingActionTypes('deployments/FETCH_DEPLOYMENTS'),
     FETCH_DEPLOYMENT: createFetchingActionTypes('deployments/FETCH_DEPLOYMENT'),
-    ...searchTypes('deployments')
+    ...searchTypes('deployments'),
 };
 
 // Actions
@@ -25,7 +25,7 @@ export const types = {
 export const actions = {
     fetchDeployments: createFetchingActions(types.FETCH_DEPLOYMENTS),
     fetchDeployment: createFetchingActions(types.FETCH_DEPLOYMENT),
-    ...getSearchActions('deployments')
+    ...getSearchActions('deployments'),
 };
 
 // Reducers
@@ -57,23 +57,22 @@ const filteredIds = (state = [], action) => {
 const reducer = combineReducers({
     byId,
     filteredIds,
-    ...searchReducers('deployments')
+    ...searchReducers('deployments'),
 });
 
 export default reducer;
 
 // Selectors
 
-const getDeploymentsById = state => state.byId;
-const getDeployments = createSelector(
-    [getDeploymentsById],
-    deployments => Object.values(deployments)
+const getDeploymentsById = (state) => state.byId;
+const getDeployments = createSelector([getDeploymentsById], (deployments) =>
+    Object.values(deployments)
 );
-const getFilteredIds = state => state.filteredIds;
+const getFilteredIds = (state) => state.filteredIds;
 const getSelectedDeployment = (state, id) => getDeploymentsById(state)[id];
 const getFilteredDeployments = createSelector(
     [getDeploymentsById, getFilteredIds],
-    (deployments, ids) => ids.map(id => deployments[id])
+    (deployments, ids) => ids.map((id) => deployments[id])
 );
 
 export const selectors = {
@@ -81,5 +80,5 @@ export const selectors = {
     getDeployments,
     getSelectedDeployment,
     getFilteredDeployments,
-    ...getSearchSelectors('deployments')
+    ...getSearchSelectors('deployments'),
 };

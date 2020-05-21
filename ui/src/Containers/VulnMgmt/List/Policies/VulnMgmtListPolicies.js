@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
 import Dialog from 'Components/Dialog';
@@ -22,7 +22,7 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import { actions as notificationActions } from 'reducers/notifications';
 import { deletePolicies } from 'services/PoliciesService';
@@ -35,8 +35,8 @@ export const defaultPolicySort = [
     // @TODO: remove this fake default sort on Policy name, when latest violation is available
     {
         id: policySortFields.POLICY,
-        desc: false
-    }
+        desc: false,
+    },
     // {
     //     id: policySortFields.LATEST_VIOLATION,
     //     desc: true
@@ -51,7 +51,7 @@ export function getPolicyTableColumns(workflowState) {
             Header: 'id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: 'statuses',
@@ -71,7 +71,7 @@ export function getPolicyTableColumns(workflowState) {
                         />
                     </div>
                 );
-            }
+            },
         },
         {
             Header: `Policy`,
@@ -79,7 +79,7 @@ export function getPolicyTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             id: policySortFields.POLICY,
             accessor: 'name',
-            sortField: policySortFields.POLICY
+            sortField: policySortFields.POLICY,
         },
         {
             Header: `Description`,
@@ -87,7 +87,7 @@ export function getPolicyTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             id: policySortFields.DESCRIPTION,
             accessor: 'description',
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Policy Status`,
@@ -101,7 +101,7 @@ export function getPolicyTableColumns(workflowState) {
             id: policySortFields.POLICY_STATUS,
             accessor: 'policyStatus',
             sortField: policySortFields.POLICY_STATUS,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Last Updated`,
@@ -113,7 +113,7 @@ export function getPolicyTableColumns(workflowState) {
             },
             id: policySortFields.LAST_UPDATED,
             accessor: 'lastUpdated',
-            sortField: policySortFields.LAST_UPDATED
+            sortField: policySortFields.LAST_UPDATED,
         },
         {
             Header: `Latest Violation`,
@@ -126,7 +126,7 @@ export function getPolicyTableColumns(workflowState) {
             id: policySortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: policySortFields.LATEST_VIOLATION,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Severity`,
@@ -135,7 +135,7 @@ export function getPolicyTableColumns(workflowState) {
             Cell: ({ original }) => <SeverityLabel severity={original.severity} />,
             id: policySortFields.SEVERITY,
             accessor: 'severity',
-            sortField: policySortFields.SEVERITY
+            sortField: policySortFields.SEVERITY,
         },
         {
             Header: `Deployments`,
@@ -153,7 +153,7 @@ export function getPolicyTableColumns(workflowState) {
             id: policySortFields.DEPLOYMENTS,
             accessor: 'deploymentCount',
             sortField: policySortFields.DEPLOYMENTS,
-            sortable: false // not performant as of 2020-01-28
+            sortable: false, // not performant as of 2020-01-28
         },
         {
             Header: `Lifecycle`,
@@ -163,14 +163,14 @@ export function getPolicyTableColumns(workflowState) {
                 const { lifecycleStages } = original;
                 if (!lifecycleStages || !lifecycleStages.length) return 'No lifecycle stages';
                 const lowercasedLifecycles = lifecycleStages
-                    .map(stage => stage.toLowerCase())
+                    .map((stage) => stage.toLowerCase())
                     .join(', ');
 
                 return <span>{lowercasedLifecycles}</span>;
             },
             id: policySortFields.LIFECYCLE_STAGE,
             accessor: 'lifecycleStages',
-            sortField: policySortFields.LIFECYCLE_STAGE
+            sortField: policySortFields.LIFECYCLE_STAGE,
         },
         {
             Header: `Enforcement`,
@@ -182,8 +182,8 @@ export function getPolicyTableColumns(workflowState) {
             },
             id: policySortFields.ENFORCEMENT,
             accessor: 'enforcementActions',
-            sortField: policySortFields.ENFORCEMENT
-        }
+            sortField: policySortFields.ENFORCEMENT,
+        },
     ];
 
     return removeEntityContextColumns(tableColumns, workflowState);
@@ -199,7 +199,7 @@ const VulnMgmtPolicies = ({
     addToast,
     removeToast,
     refreshTrigger,
-    setRefreshTrigger
+    setRefreshTrigger,
 }) => {
     const [selectedPolicyIds, setSelectedPolicyIds] = useState([]);
     const [bulkActionPolicyIds, setBulkActionPolicyIds] = useState([]);
@@ -220,13 +220,13 @@ const VulnMgmtPolicies = ({
             policyQuery: queryService.objectToWhereClause({
                 ...search,
                 Category: 'Vulnerability Management',
-                cachebuster: refreshTrigger
+                cachebuster: refreshTrigger,
             }),
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
-    const deletePolicy = policyId => e => {
+    const deletePolicy = (policyId) => (e) => {
         e.stopPropagation();
 
         const policiesToDelete = policyId ? [policyId] : selectedPolicyIds;
@@ -260,7 +260,7 @@ const VulnMgmtPolicies = ({
 
                 hideDialog();
             })
-            .catch(evt => {
+            .catch((evt) => {
                 addToast(`Could not delete all of the selected policies: ${evt.message}`);
                 setTimeout(removeToast, 3000);
             });
@@ -279,7 +279,7 @@ const VulnMgmtPolicies = ({
     );
 
     const tableHeaderComponents = (
-        <React.Fragment>
+        <>
             <PanelButton
                 icon={<Trash2 className="h-4 w-4" />}
                 className="btn-icon btn-alert"
@@ -289,7 +289,7 @@ const VulnMgmtPolicies = ({
             >
                 Delete
             </PanelButton>
-        </React.Fragment>
+        </>
     );
 
     return (
@@ -331,21 +331,18 @@ const VulnMgmtPolicies = ({
 VulnMgmtPolicies.propTypes = {
     ...workflowListPropTypes,
     refreshTrigger: PropTypes.number,
-    setRefreshTrigger: PropTypes.func
+    setRefreshTrigger: PropTypes.func,
 };
 VulnMgmtPolicies.defaultProps = {
     ...workflowListDefaultProps,
     sort: null,
     refreshTrigger: 0,
-    setRefreshTrigger: null
+    setRefreshTrigger: null,
 };
 
 const mapDispatchToProps = {
     addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification
+    removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(VulnMgmtPolicies);
+export default connect(null, mapDispatchToProps)(VulnMgmtPolicies);

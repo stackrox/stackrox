@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
 )
 
@@ -24,9 +25,9 @@ func Command() *cobra.Command {
 		Use:   "rewrite",
 		Short: "Rewrite opens the BadgerDB and does a logical rewrite to a new DB",
 		Long:  "Rewrite opens the BadgerDB and does a logical rewrite to a new DB",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return rewrite(path, outputDB)
-		},
+		}),
 	}
 	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().StringVar(&outputDB, "output", "/var/lib/stackrox/badgerdb-rewrite", "Specify the path to write the new, rewritten BadgerDB out to")

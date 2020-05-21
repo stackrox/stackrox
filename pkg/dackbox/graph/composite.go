@@ -1,7 +1,7 @@
 package graph
 
 // NewCompositeGraph returns an ReadOnlyGraph instance that uses the input states as a stack to surface values.
-// When a request for an id relationship is placed through one of it's functions, it search down the stack for the
+// When a request for an id relationship is placed through one of it's functions, it searches down the stack for the
 // first state that has the desired information, and returns that to the user.
 func NewCompositeGraph(base RGraph, modifications ...Modification) RGraph {
 	if len(modifications) == 0 {

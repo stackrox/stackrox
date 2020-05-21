@@ -26,7 +26,7 @@ class APITokensModal extends Component {
             PropTypes.shape({
                 id: PropTypes.string.isRequired,
                 name: PropTypes.string.isRequired,
-                role: PropTypes.string.isRequired
+                roles: PropTypes.arrayOf(PropTypes.string).isRequired,
             })
         ).isRequired,
         tokenGenerationWizardOpen: PropTypes.bool.isRequired,
@@ -38,26 +38,30 @@ class APITokensModal extends Component {
         currentGeneratedToken: PropTypes.string,
         currentGeneratedTokenMetadata: PropTypes.shape({
             name: PropTypes.string.isRequired,
-            role: PropTypes.string.isRequired
-        })
+            roles: PropTypes.arrayOf(PropTypes.string).isRequired,
+        }),
     };
 
     static defaultProps = {
         currentGeneratedToken: '',
-        currentGeneratedTokenMetadata: null
+        currentGeneratedTokenMetadata: null,
     };
 
-    state = {
-        selectedTokenId: null,
-        showConfirmationDialog: false,
-        selection: []
-    };
+    constructor(props) {
+        super(props);
 
-    onRowClick = row => {
+        this.state = {
+            selectedTokenId: null,
+            showConfirmationDialog: false,
+            selection: [],
+        };
+    }
+
+    onRowClick = (row) => {
         this.setState({ selectedTokenId: row.id });
     };
 
-    onRevokeHandler = token => e => {
+    onRevokeHandler = (token) => (e) => {
         e.stopPropagation();
         this.revokeTokens(token);
     };
@@ -108,19 +112,19 @@ class APITokensModal extends Component {
 
         const columns = [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'role', Header: 'Role' },
+            { id: 'roles', accessor: (row) => row.roles.join(', '), Header: 'Roles' },
             {
                 Header: '',
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original)
-            }
+                Cell: ({ original }) => this.renderRowActionButtons(original),
+            },
         ];
 
         return (
             <CheckboxTable
-                ref={table => {
+                ref={(table) => {
                     this.apiTokenModalTable = table;
                 }}
                 rows={this.props.tokens}
@@ -136,7 +140,7 @@ class APITokensModal extends Component {
         );
     };
 
-    toggleRow = id => {
+    toggleRow = (id) => {
         const selection = toggleRow(id, this.state.selection);
         this.updateSelection(selection);
     };
@@ -151,9 +155,9 @@ class APITokensModal extends Component {
     showTokenGenerationDetails = () =>
         this.props.currentGeneratedToken && this.props.currentGeneratedTokenMetadata;
 
-    updateSelection = selection => this.setState({ selection });
+    updateSelection = (selection) => this.setState({ selection });
 
-    renderRowActionButtons = token => (
+    renderRowActionButtons = (token) => (
         <div className="border-2 border-r-2 border-base-400 bg-base-100">
             <RowActionButton
                 text="Revoke token"
@@ -166,7 +170,7 @@ class APITokensModal extends Component {
     renderPanelButtons = () => {
         const selectionCount = this.state.selection.length;
         return (
-            <React.Fragment>
+            <>
                 {selectionCount !== 0 && (
                     <PanelButton
                         icon={<Icon.Slash className="h-4 w-4 ml-1" />}
@@ -192,7 +196,7 @@ class APITokensModal extends Component {
                         Generate Token
                     </PanelButton>
                 )}
-            </React.Fragment>
+            </>
         );
     };
 
@@ -300,17 +304,14 @@ class APITokensModal extends Component {
 const mapStateToProps = createStructuredSelector({
     tokenGenerationWizardOpen: selectors.tokenGenerationWizardOpen,
     currentGeneratedToken: selectors.getCurrentGeneratedToken,
-    currentGeneratedTokenMetadata: selectors.getCurrentGeneratedTokenMetadata
+    currentGeneratedTokenMetadata: selectors.getCurrentGeneratedTokenMetadata,
 });
 
 const mapDispatchToProps = {
     startTokenGenerationWizard: actions.startTokenGenerationWizard,
     closeTokenGenerationWizard: actions.closeTokenGenerationWizard,
     generateAPIToken: actions.generateAPIToken.request,
-    revokeAPITokens: actions.revokeAPITokens
+    revokeAPITokens: actions.revokeAPITokens,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(APITokensModal);
+export default connect(mapStateToProps, mapDispatchToProps)(APITokensModal);

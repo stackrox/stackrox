@@ -1,6 +1,10 @@
 {
     "extends": [
+        "plugin:jest/recommended",
         "prettier/react"
+    ],
+    "plugins": [
+        "jest"
     ],
     "env": {
         "browser": true
@@ -100,6 +104,12 @@
             "error",
             {
               "forbid": ["data-test-id"] 
+            }
+        ],
+        "jest/expect-expect": [
+            "error",
+            {
+                "assertFunctionNames": ["expect", "expectSaga"]
             }
         ],
         // TODO-ivan: rules below are to be removed after fixing all violations in the code

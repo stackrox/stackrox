@@ -1,9 +1,6 @@
 import React from 'react';
 import Labeled from 'Components/Labeled';
 
-import { knownBackendFlags as featureFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-
 const CommonDetails = ({ name }) => (
     <>
         <Labeled label="Integration Name">{name}</Labeled>
@@ -13,7 +10,7 @@ const CommonDetails = ({ name }) => (
 const OidcDetails = ({ authProvider: { name, config } }) => {
     const oidcCallbackValues = {
         post: 'HTTP POST',
-        fragment: 'Fragment'
+        fragment: 'Fragment',
     };
     const callbackModeValue = oidcCallbackValues[config.mode];
     if (!callbackModeValue) throw new Error(`Unknown callback mode "${config.mode}"`);
@@ -24,9 +21,7 @@ const OidcDetails = ({ authProvider: { name, config } }) => {
             <Labeled label="Callback Mode">{callbackModeValue}</Labeled>
             <Labeled label="Issuer">{config.issuer}</Labeled>
             <Labeled label="Client ID">{config.client_id}</Labeled>
-            <FeatureEnabled featureFlag={featureFlags.ROX_REFRESH_TOKENS}>
-                <Labeled label="Client Secret">{config.client_secret ? '*****' : null}</Labeled>
-            </FeatureEnabled>
+            <Labeled label="Client Secret">{config.client_secret ? '*****' : null}</Labeled>
         </>
     );
 };
@@ -76,7 +71,7 @@ const detailsComponents = {
     oidc: OidcDetails,
     auth0: Auth0Details,
     saml: SamlDetails,
-    userpki: UserPkiDetails
+    userpki: UserPkiDetails,
 };
 
 const ConfigurationDetails = ({ authProvider }) => {

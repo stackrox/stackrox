@@ -34,46 +34,32 @@ func (m *MockPolicySet) EXPECT() *MockPolicySetMockRecorder {
 	return m.recorder
 }
 
-// Compiler mocks base method
-func (m *MockPolicySet) Compiler() detection.PolicyCompiler {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Compiler")
-	ret0, _ := ret[0].(detection.PolicyCompiler)
-	return ret0
-}
-
-// Compiler indicates an expected call of Compiler
-func (mr *MockPolicySetMockRecorder) Compiler() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Compiler", reflect.TypeOf((*MockPolicySet)(nil).Compiler))
-}
-
 // ForOne mocks base method
-func (m *MockPolicySet) ForOne(policyID string, pt detection.PolicyExecutor) error {
+func (m *MockPolicySet) ForOne(policyID string, f func(detection.CompiledPolicy) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ForOne", policyID, pt)
+	ret := m.ctrl.Call(m, "ForOne", policyID, f)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ForOne indicates an expected call of ForOne
-func (mr *MockPolicySetMockRecorder) ForOne(policyID, pt interface{}) *gomock.Call {
+func (mr *MockPolicySetMockRecorder) ForOne(policyID, f interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForOne", reflect.TypeOf((*MockPolicySet)(nil).ForOne), policyID, pt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForOne", reflect.TypeOf((*MockPolicySet)(nil).ForOne), policyID, f)
 }
 
 // ForEach mocks base method
-func (m *MockPolicySet) ForEach(pt detection.PolicyExecutor) error {
+func (m *MockPolicySet) ForEach(arg0 func(detection.CompiledPolicy) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ForEach", pt)
+	ret := m.ctrl.Call(m, "ForEach", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ForEach indicates an expected call of ForEach
-func (mr *MockPolicySetMockRecorder) ForEach(pt interface{}) *gomock.Call {
+func (mr *MockPolicySetMockRecorder) ForEach(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockPolicySet)(nil).ForEach), pt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForEach", reflect.TypeOf((*MockPolicySet)(nil).ForEach), arg0)
 }
 
 // GetCompiledPolicies mocks base method

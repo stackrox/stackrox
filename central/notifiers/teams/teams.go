@@ -330,10 +330,7 @@ func (t *teams) AlertNotify(alert *storage.Alert) error {
 	}
 
 	webhookURL := notifiers.GetLabelValue(alert, t.GetLabelKey(), t.GetLabelDefault())
-	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {
@@ -374,11 +371,7 @@ func (t *teams) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	if err != nil {
 		return errors.Wrapf(err, "Could not marshal notification for yaml for cluster %s", clusterName)
 	}
-	webhookURL := t.GetLabelDefault()
-	webhook, err := urlfmt.FormatURL(webhookURL, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(t.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {
@@ -409,10 +402,7 @@ func (t *teams) Test() error {
 		return errors.New("Could not marshal test notification")
 	}
 
-	webhook, err := urlfmt.FormatURL(t.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	webhook := urlfmt.FormatURL(t.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 
 	return retry.WithRetry(
 		func() error {

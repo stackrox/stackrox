@@ -36,11 +36,9 @@ var (
 )
 
 // Filter takes in a process indicator via add and determines if should be filtered or not
-// TODO: Consider making this based on pods rather than deployments once features.PodDeploymentSeparation is permanently enabled.
 //go:generate mockgen-wrapper
 type Filter interface {
 	Add(indicator *storage.ProcessIndicator) bool
-	Update(deployment *storage.Deployment)
 	UpdateByPod(pod *storage.Pod)
 	UpdateByGivenContainers(deploymentID string, liveContainerSet set.StringSet)
 	Delete(deploymentID string)
@@ -131,27 +129,6 @@ func (f *filterImpl) Add(indicator *storage.ProcessIndicator) bool {
 	}
 
 	return f.siftNoLock(processLevel, strings.Fields(indicator.GetSignal().GetArgs()), 0)
-}
-
-// Deprecated: When Pod/Deployment separation becomes enabled by default,
-// the process filter will be updated on a per-pod basis.
-func (f *filterImpl) Update(deployment *storage.Deployment) {
-	f.rootLock.Lock()
-	defer f.rootLock.Unlock()
-
-	liveContainerSet := set.NewStringSet()
-	for _, c := range deployment.GetContainers() {
-		for _, inst := range c.GetInstances() {
-			liveContainerSet.Add(containerid.ShortContainerIDFromInstance(inst))
-		}
-	}
-
-	containersMap := f.containersInDeployment[deployment.GetId()]
-	for k := range containersMap {
-		if !liveContainerSet.Contains(k) {
-			delete(containersMap, k)
-		}
-	}
 }
 
 func (f *filterImpl) UpdateByPod(pod *storage.Pod) {

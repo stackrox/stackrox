@@ -10,10 +10,11 @@ import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
+import ReduxRadioButtonGroupField from 'Components/forms/ReduxRadioButtonGroupField';
 import RestrictToScope from './RestrictToScope';
 import WhitelistScope from './WhitelistScope';
 
-export default function Field({ field, name }) {
+export default function Field({ field, name, readOnly, BPLenabled }) {
     if (field === undefined) return null;
     // this is to accomodate for recursive Fields (when type is 'group')
     const pathName = field.subpath ? name : `${name}.value`;
@@ -25,19 +26,31 @@ export default function Field({ field, name }) {
                 <ReduxTextField
                     key={path}
                     name={path}
-                    disabled={field.disabled}
+                    disabled={readOnly || field.disabled}
                     placeholder={field.placeholder}
                 />
             );
         case 'checkbox':
-            return <ReduxCheckboxField name={path} disabled={field.disabled} />;
+            return <ReduxCheckboxField name={path} disabled={readOnly || field.disabled} />;
         case 'toggle':
             return (
                 <ReduxToggleField
                     name={path}
                     key={path}
-                    disabled={field.disabled}
+                    disabled={readOnly || field.disabled}
                     reverse={field.reverse}
+                    className="self-center"
+                />
+            );
+        case 'radioGroup':
+            return (
+                <ReduxRadioButtonGroupField
+                    name={path}
+                    key={path}
+                    buttons={field.radioButtons}
+                    groupClassName="w-full"
+                    useBoolean={!BPLenabled}
+                    disabled={readOnly}
                 />
             );
         case 'select':
@@ -47,20 +60,28 @@ export default function Field({ field, name }) {
                     name={path}
                     options={field.options}
                     placeholder={field.placeholder}
-                    disabled={field.disabled}
+                    disabled={readOnly || field.disabled}
                     defaultValue={field.default}
                 />
             );
         case 'multiselect':
-            return <ReduxMultiSelectField name={path} options={field.options} />;
+            return (
+                <ReduxMultiSelectField name={path} options={field.options} disabled={readOnly} />
+            );
         case 'multiselect-creatable':
-            return <ReduxMultiSelectCreatableField name={path} options={field.options} />;
+            return (
+                <ReduxMultiSelectCreatableField
+                    name={path}
+                    options={field.options}
+                    disabled={readOnly}
+                />
+            );
         case 'textarea':
             return (
                 <ReduxTextAreaField
                     name={path}
                     key={path}
-                    disabled={field.disabled}
+                    disabled={readOnly || field.disabled}
                     placeholder={field.placeholder}
                 />
             );
@@ -73,12 +94,20 @@ export default function Field({ field, name }) {
                     max={field.max}
                     step={field.step}
                     placeholder={field.placeholder}
+                    disabled={readOnly}
                 />
             );
         case 'group':
-            return field.jsonpaths.map(subField => {
+            return field.jsonpaths.map((subField) => {
                 const subFieldName = name ? `${name}.${subField.subpath}` : subField.jsonpath;
-                return <Field key={subField.jsonpath} name={subFieldName} field={subField} />;
+                return (
+                    <Field
+                        key={subField.jsonpath}
+                        name={subFieldName}
+                        field={subField}
+                        readOnly={readOnly}
+                    />
+                );
             });
         case 'scope':
             return <FieldArray key={path} name={path} component={RestrictToScope} />;
@@ -91,11 +120,11 @@ export default function Field({ field, name }) {
 
 Field.propsTypes = {
     field: PropTypes.shape({
-        type: PropTypes.string.isRequired
+        type: PropTypes.string.isRequired,
     }).isRequired,
-    name: PropTypes.string
+    name: PropTypes.string,
 };
 
 Field.defaultProps = {
-    name: ''
+    name: '',
 };

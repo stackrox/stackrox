@@ -9,9 +9,13 @@ import (
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/compact"
 	"github.com/stackrox/rox/migrator/log"
+	"github.com/stackrox/rox/migrator/rockshelper"
 	"github.com/stackrox/rox/migrator/runner"
+	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/tecbot/gorocksdb"
 )
 
 func main() {
@@ -65,6 +69,13 @@ func run() error {
 		return errors.Wrap(err, "failed to open badger DB")
 	}
 
+	var rocksdb *gorocksdb.DB
+	if features.RocksDB.Enabled() {
+		rocksdb, err = rockshelper.New()
+		if err != nil {
+			return errors.Wrap(err, "failed to open rocksdb")
+		}
+	}
 	defer func() {
 		if err := boltDB.Close(); err != nil {
 			log.WriteToStderrf("Error closing DB: %v", err)
@@ -72,8 +83,15 @@ func run() error {
 		if err := badgerDB.Close(); err != nil {
 			log.WriteToStderrf("Error closing badger DB: %v", err)
 		}
+		if rocksdb != nil {
+			rocksdb.Close()
+		}
 	}()
-	err = runner.Run(boltDB, badgerDB)
+	err = runner.Run(&types.Databases{
+		BoltDB:   boltDB,
+		BadgerDB: badgerDB,
+		RocksDB:  rocksdb,
+	})
 	if err != nil {
 		return errors.Wrap(err, "migrations failed")
 	}

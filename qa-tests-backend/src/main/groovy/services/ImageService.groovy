@@ -4,6 +4,7 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
+import io.stackrox.proto.storage.ImageOuterClass
 
 class ImageService extends BaseService {
     static getImageClient() {
@@ -15,6 +16,10 @@ class ImageService extends BaseService {
     }
 
     static getImage(String digest) {
+        if (digest == null) {
+            ImageOuterClass.Image nullImage
+            return nullImage
+        }
         return getImageClient().getImage(Common.ResourceByID.newBuilder().setId(digest).build())
     }
 

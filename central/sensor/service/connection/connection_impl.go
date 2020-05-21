@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -67,9 +66,7 @@ func newConnection(ctx context.Context, clusterID string, eventPipeline pipeline
 	conn.sensorEventHandler = newSensorEventHandler(eventPipeline, conn, &conn.stopSig)
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
 	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
-	if features.Telemetry.Enabled() || features.DiagnosticBundle.Enabled() {
-		conn.telemetryCtrl = telemetry.NewController(conn, &conn.stopSig)
-	}
+	conn.telemetryCtrl = telemetry.NewController(conn.capabilities, conn, &conn.stopSig)
 
 	return conn
 }
@@ -167,10 +164,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	case *central.MsgFromSensor_TelemetryDataResponse:
-		if c.telemetryCtrl != nil {
-			return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
-		}
-		return errors.New("received unsupported telemetry message from sensor")
+		return c.telemetryCtrl.ProcessTelemetryDataResponse(m.TelemetryDataResponse)
 	case *central.MsgFromSensor_Event:
 		// Special case the reprocess deployment because its fields are already set
 		if msg.GetEvent().GetReprocessDeployment() != nil {

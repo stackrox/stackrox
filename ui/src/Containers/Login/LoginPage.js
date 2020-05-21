@@ -29,36 +29,36 @@ import LoginNotice from './LoginNotice';
 import { loginWithBasicAuth } from '../../services/AuthService';
 
 const unknownErrorResponse = {
-    error: 'Unknown error'
+    error: 'Unknown error',
 };
 
 const CollapsibleContent = posed.div({
     closed: { height: 0 },
-    open: { height: 'inherit' }
+    open: { height: 'inherit' },
 });
 
-const authProvidersToSelectOptions = authProviders =>
-    authProviders.map(authProvider => ({
+const authProvidersToSelectOptions = (authProviders) =>
+    authProviders.map((authProvider) => ({
         label: authProvider.name,
-        value: authProvider.id
+        value: authProvider.id,
     }));
 
 class LoginPage extends Component {
     static propTypes = {
-        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
+        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map((key) => AUTH_STATUS[key]))
             .isRequired,
         authProviders: PropTypes.arrayOf(PropTypes.object).isRequired,
         authProviderResponse: PropTypes.shape({
             error: PropTypes.string,
             error_description: PropTypes.string,
-            error_uri: PropTypes.string
+            error_uri: PropTypes.string,
         }).isRequired,
         formValues: PropTypes.shape({
             authProvider: PropTypes.string,
             username: PropTypes.string,
-            password: PropTypes.string
+            password: PropTypes.string,
         }).isRequired,
-        ...reduxFormPropTypes
+        ...reduxFormPropTypes,
     };
 
     static contextType = ThemeContext;
@@ -68,16 +68,16 @@ class LoginPage extends Component {
         const { authProviderResponse } = props;
         this.state = {
             loggingIn: false,
-            authProviderResponse
+            authProviderResponse,
         };
     }
 
     getSelectedAuthProvider(formValues) {
         const { authProviders } = this.props;
-        return authProviders.find(ap => ap.id === formValues.authProvider);
+        return authProviders.find((ap) => ap.id === formValues.authProvider);
     }
 
-    login = formValues => {
+    login = (formValues) => {
         const authProvider = this.getSelectedAuthProvider(formValues);
         if (!authProvider) return;
         if (authProvider.type === 'basic') {
@@ -85,9 +85,9 @@ class LoginPage extends Component {
 
             const { username, password } = formValues;
             loginWithBasicAuth(username, password, authProvider)
-                .catch(e => {
+                .catch((e) => {
                     this.setState({
-                        authProviderResponse: e?.response?.data || unknownErrorResponse
+                        authProviderResponse: e?.response?.data || unknownErrorResponse,
                     });
                 })
                 .finally(() => {
@@ -132,7 +132,7 @@ class LoginPage extends Component {
         if (authProviderResponse && authProviderResponse.error) {
             const errorKey = authProviderResponse.error.replace('_', ' ');
             const errorMsg = authProviderResponse.error_description || '';
-            const errorLink = (url =>
+            const errorLink = ((url) =>
                 url ? (
                     <span>
                         (
@@ -220,7 +220,7 @@ class LoginPage extends Component {
         }
 
         const {
-            formValues: { username, password }
+            formValues: { username, password },
         } = this.props;
         const { loggingIn } = this.state;
         const disabled =
@@ -280,17 +280,12 @@ const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getLoginAuthProviders,
     authStatus: selectors.getAuthStatus,
     authProviderResponse: selectors.getAuthProviderError,
-    formValues: state => selector(state, 'authProvider', 'username', 'password')
+    formValues: (state) => selector(state, 'authProvider', 'username', 'password'),
 });
 
 const Form = reduxForm({
-    form: loginFormId
-})(
-    connect(
-        mapStateToProps,
-        null
-    )(LoginPage)
-);
+    form: loginFormId,
+})(connect(mapStateToProps, null)(LoginPage));
 
 // the whole reason for this component to exist is to pass initial values to the form
 // which are based on the Redux state. Yet because initialValues matter only when
@@ -305,7 +300,4 @@ const LoadingOrForm = ({ authProviders }) => {
 };
 
 // yep, it's connect again, because we need to initialize form values from the state
-export default connect(
-    mapStateToProps,
-    null
-)(LoadingOrForm);
+export default connect(mapStateToProps, null)(LoadingOrForm);

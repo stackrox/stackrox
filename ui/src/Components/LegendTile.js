@@ -20,7 +20,7 @@ const svgMapping = {
     'namespace-allowed-connection': namespaceAllowed,
     'namespace-connection': namespaceConnection,
     'non-isolated-deployment-allowed': nonIsolatedDeploymentAllowed,
-    'namespace-disallowed-connection': namespaceDisallowedConnection
+    'namespace-disallowed-connection': namespaceDisallowedConnection,
 };
 
 const fontIconMapping = {
@@ -45,7 +45,7 @@ const fontIconMapping = {
             className="icon-ingress-egress text-3xl"
             style={{ color: constants.INGRESS_EGRESS_ICON_COLOR }}
         />
-    )
+    ),
 };
 
 const LegendTile = ({ name, tooltip, type }) => (
@@ -60,7 +60,7 @@ const LegendTile = ({ name, tooltip, type }) => (
 LegendTile.propTypes = {
     name: PropTypes.string.isRequired,
     tooltip: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(['svg', 'font']).isRequired
+    type: PropTypes.oneOf(['svg', 'font']).isRequired,
 };
 
 export default LegendTile;

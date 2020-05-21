@@ -1,7 +1,7 @@
 const pageTypes = {
     ENTITY: 'entity',
     LIST: 'list',
-    DASHBOARD: 'dashboard'
+    DASHBOARD: 'dashboard',
 };
 
 export default pageTypes;

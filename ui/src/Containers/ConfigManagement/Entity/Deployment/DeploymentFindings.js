@@ -23,11 +23,11 @@ const DeploymentFindings = ({ entityContext = {}, deploymentID }) => {
 
 DeploymentFindings.propTypes = {
     entityContext: PropTypes.shape({}),
-    deploymentID: PropTypes.string.isRequired
+    deploymentID: PropTypes.string.isRequired,
 };
 
 DeploymentFindings.defaultProps = {
-    entityContext: {}
+    entityContext: {},
 };
 
 export default DeploymentFindings;

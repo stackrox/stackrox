@@ -1,4 +1,4 @@
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 
 export const violationCategories = ['ALERTS'];
 export const processCategories = ['DEPLOYMENTS'];

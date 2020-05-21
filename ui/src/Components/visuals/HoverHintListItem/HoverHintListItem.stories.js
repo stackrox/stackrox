@@ -4,7 +4,7 @@ import HoverHintListItem from './HoverHintListItem';
 
 export default {
     title: 'HoverHintListItem',
-    component: HoverHintListItem
+    component: HoverHintListItem,
 };
 
 export const withText = () => {

@@ -14,6 +14,7 @@ import stringUtil from 'utils/string';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
 import { ThemeProvider } from 'Containers/ThemeProvider';
+import ExportingInProgress from 'Containers/ExportingPDFInProgress';
 import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
 import configureApollo from './configureApolloClient';
@@ -32,6 +33,7 @@ ReactDOM.render(
                 <ThemeProvider>
                     <ErrorBoundary>
                         <AppPage />
+                        <ExportingInProgress />
                     </ErrorBoundary>
                 </ThemeProvider>
             </ConnectedRouter>

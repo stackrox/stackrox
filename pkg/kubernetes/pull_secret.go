@@ -11,5 +11,5 @@ func GetResolvedRegistry(image string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return urlfmt.FormatURL(parsedImage.GetName().GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	return urlfmt.FormatURL(parsedImage.GetName().GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash), nil
 }

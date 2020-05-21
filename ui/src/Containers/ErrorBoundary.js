@@ -8,13 +8,17 @@ import * as Icons from 'react-feather';
 class ErrorBoundary extends Component {
     static propTypes = {
         location: ReactRouterPropTypes.location.isRequired,
-        children: PropTypes.node.isRequired
+        children: PropTypes.node.isRequired,
     };
 
-    state = {
-        hasError: false,
-        errorLocation: null
-    };
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            hasError: false,
+            errorLocation: null,
+        };
+    }
 
     static getDerivedStateFromProps(nextProps, state) {
         if (state.hasError && nextProps.location !== state.errorLocation) {

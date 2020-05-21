@@ -1,19 +1,38 @@
-const selectors = {
-    panelHeader: 'div[data-testid="panel"]',
-    searchBtn: 'button:contains("Search")',
+import scopeSelectors from '../helpers/scopeSelectors';
+import tab from '../selectors/tab';
+import search from '../selectors/search';
+
+const viewOnLabelChip = '[data-testid="view-on-label-chip"]';
+const filterOnLabelChip = '[data-testid="filter-on-label-chip"]';
+
+export const selectors = {
+    globalSearchButton: 'button:contains("Search")',
     pageSearchSuggestions: 'div.Select-menu-outer',
-    categoryTabs: '[data-testid="tab"]',
-    searchInput: '.search-modal input',
-    pageSearchInput: '.react-select__input > input',
-    searchResultsHeader: '.bg-base-100.flex-1 > .text-xl',
-    viewOnViolationsChip:
-        'div.rt-tbody > .rt-tr-group:first-child .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',
-    viewOnRiskChip:
-        'div.rt-tbody > .rt-tr-group:nth-child(2) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button',
-    viewOnPoliciesChip:
-        'div.rt-tbody > .rt-tr-group:nth-child(3) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button ',
-    viewOnImagesChip:
-        'div.rt-tbody > .rt-tr-group:nth-child(4) .rt-tr .rt-td:nth-child(3) ul > li:first-child > button'
+    pageSearch: scopeSelectors('[data-testid="page-header"]', {
+        input: search.input,
+        options: search.input,
+    }),
+    globalSearch: scopeSelectors('.search-modal', {
+        input: search.input,
+        options: search.input,
+    }),
+    allTab: `${tab.tabs}:contains("All")`,
+    violationsTab: `${tab.tabs}:contains("Violations")`,
+    policiesTab: `${tab.tabs}:contains("Policies")`,
+    deploymentsTab: `${tab.tabs}:contains("Deployments")`,
+    imagesTab: `${tab.tabs}:contains("Images")`,
+    secretsTab: `${tab.tabs}:contains("Secrets")`,
+    globalSearchResults: scopeSelectors('[data-testid="global-search-results"]', {
+        header: 'h1',
+    }),
+    viewOnRiskLabelChip: `${viewOnLabelChip}:contains("RISK")`,
+    viewOnViolationsLabelChip: `${viewOnLabelChip}:contains("VIOLATIONS")`,
+    viewOnPoliciesLabelChip: `${viewOnLabelChip}:contains("POLICIES")`,
+    viewOnImagesLabelChip: `${viewOnLabelChip}:contains("IMAGES")`,
+    viewOnSecretsLabelChip: `${viewOnLabelChip}:contains("SECRETS")`,
+    filterOnRiskLabelChip: `${filterOnLabelChip}:contains("RISK")`,
+    filterOnViolationsLabelChip: `${filterOnLabelChip}:contains("VIOLATIONS")`,
+    filterOnNetworkLabelChip: `${filterOnLabelChip}:contains("NETWORK")`,
 };
 
 export default selectors;

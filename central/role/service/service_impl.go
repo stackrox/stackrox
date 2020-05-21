@@ -139,7 +139,7 @@ func GetMyPermissions(ctx context.Context) (*storage.Role, error) {
 	if id == nil {
 		return nil, status.Error(codes.Internal, "unable to retrieve user identity")
 	}
-	role := id.Role()
+	role := id.Permissions().Clone()
 	role.Name = "" // Clear name since this concept can't be applied to a user (Permission may result from many roles).
 	utils.FillAccessList(role)
 	return role, nil

@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 )
 
@@ -13,17 +12,17 @@ var (
 )
 
 type bleveGatherer struct {
-	index bleve.Index
+	indexes []bleve.Index
 }
 
-func newBleveGatherer(index bleve.Index) *bleveGatherer {
+func newBleveGatherer(indexes ...bleve.Index) *bleveGatherer {
 	return &bleveGatherer{
-		index: index,
+		indexes: indexes,
 	}
 }
 
-func (b *bleveGatherer) getBleveSize() (int64, error) {
-	statsMap := b.index.StatsMap()
+func getBleveSize(index bleve.Index) (int64, error) {
+	statsMap := index.StatsMap()
 	indexStatsInterface := statsMap["index"]
 	if indexStatsInterface == nil {
 		return 0, errIndexStats
@@ -44,17 +43,21 @@ func (b *bleveGatherer) getBleveSize() (int64, error) {
 }
 
 // Gather returns telemetry information about the bolt database used by Bleve
-func (b *bleveGatherer) Gather() *data.DatabaseStats {
-	diskBytes, err := b.getBleveSize()
-	var errList []string
-	if err != nil {
-		errList = append(errList, err.Error())
+func (b *bleveGatherer) Gather() []*data.DatabaseStats {
+	stats := make([]*data.DatabaseStats, 0, len(b.indexes))
+	for _, index := range b.indexes {
+		var errList []string
+		size, err := getBleveSize(index)
+		if err != nil {
+			errList = append(errList, err.Error())
+		}
+		stats = append(stats, &data.DatabaseStats{
+			Type:      "bleve",
+			Path:      index.Name(),
+			UsedBytes: size,
+			Buckets:   nil,
+			Errors:    errList,
+		})
 	}
-	return &data.DatabaseStats{
-		Type:      "bleve",
-		Path:      globalindex.DefaultBlevePath,
-		UsedBytes: diskBytes,
-		Buckets:   nil,
-		Errors:    errList,
-	}
+	return stats
 }

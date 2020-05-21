@@ -83,10 +83,8 @@ func (q *Quay) Test() error {
 		return q.Registry.Test()
 	}
 
-	url, err := urlfmt.FormatURL(q.config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
+	url := urlfmt.FormatURL(q.config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+
 	discoveryURL := url + "/api/v1/discovery"
 	client := http.Client{
 		Timeout: timeout,

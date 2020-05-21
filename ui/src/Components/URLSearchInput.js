@@ -25,7 +25,7 @@ const URLSearchInput = ({ categories, ...props }) => {
             query={SEARCH_AUTOCOMPLETE_QUERY}
             variables={{
                 query: autoCompleteQuery,
-                categories
+                categories,
             }}
         >
             {({ data }) => {
@@ -44,11 +44,11 @@ const URLSearchInput = ({ categories, ...props }) => {
 };
 
 URLSearchInput.propTypes = {
-    categories: PropTypes.arrayOf(PropTypes.string)
+    categories: PropTypes.arrayOf(PropTypes.string),
 };
 
 URLSearchInput.defaultProps = {
-    categories: []
+    categories: [],
 };
 
 export default withRouter(URLSearchInput);

@@ -110,7 +110,7 @@ func (m *manager) getActiveConfig() *storage.TelemetryConfiguration {
 		utils.Should(errors.New("active telemetry configuration contained invalid data"))
 		cfg = &storage.TelemetryConfiguration{}
 	}
-	return proto.Clone(cfg).(*storage.TelemetryConfiguration)
+	return cfg.Clone()
 }
 
 func (m *manager) UpdateTelemetryConfig(ctx context.Context, config *v1.ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error) {
@@ -186,7 +186,7 @@ func (m *manager) doCollectAndSendData(ctx context.Context) (time.Duration, erro
 		return 0, errors.New("invoked telemetry collection in spite of offline mode")
 	}
 
-	telemetryData := m.gatherer.Gather(ctx)
+	telemetryData := m.gatherer.Gather(ctx, true)
 
 	if telemetryData.Central == nil || telemetryData.Central.License == nil {
 		return 0, errors.New("cannot send telemetry data as no license information is available")

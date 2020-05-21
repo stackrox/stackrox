@@ -28,8 +28,7 @@ func makeGraphQLRequest(t testutils.T, query string, vars map[string]interface{}
 		httpReq.SetBasicAuth(testutils.RoxUsername(t), testutils.RoxPassword(t))
 		headerWithBasicAuth = httpReq.Header
 
-		url, err := urlfmt.FormatURL(testutils.RoxAPIEndpoint(t), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-		require.NoError(t, err)
+		url := urlfmt.FormatURL(testutils.RoxAPIEndpoint(t), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 		graphqlClient = graphql.NewClient(fmt.Sprintf("%s/api/graphql", url),
 			graphql.WithHTTPClient(&http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}),
 		)

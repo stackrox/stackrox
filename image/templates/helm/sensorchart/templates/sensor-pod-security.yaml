@@ -120,15 +120,8 @@ spec:
   volumes:
     - '*'
   allowedHostPaths:
-    - pathPrefix: /var/run
-    - pathPrefix: /proc
-    - pathPrefix: /etc
-    - pathPrefix: /sys
-    - pathPrefix: /dev
-    - pathPrefix: /lib
-    - pathPrefix: /usr
-    - pathPrefix: /var
-    - pathPrefix: /run
+    - pathPrefix: /
+      readOnly: true
   hostNetwork: false
   hostIPC: false
   hostPID: true

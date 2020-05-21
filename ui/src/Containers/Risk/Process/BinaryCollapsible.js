@@ -45,7 +45,7 @@ function BinaryCollapsible({ commandLineArgs, children }) {
 
 BinaryCollapsible.propTypes = {
     commandLineArgs: PropTypes.string.isRequired,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export default BinaryCollapsible;

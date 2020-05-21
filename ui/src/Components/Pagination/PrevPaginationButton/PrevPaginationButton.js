@@ -27,12 +27,12 @@ PrevPaginationButton.propTypes = {
     currentPage: PropTypes.number.isRequired,
     totalSize: PropTypes.number.isRequired,
     onChange: PropTypes.func.isRequired,
-    pageSize: PropTypes.number
+    pageSize: PropTypes.number,
 };
 
 PrevPaginationButton.defaultProps = {
     className: '',
-    pageSize: 10
+    pageSize: 10,
 };
 
 export default PrevPaginationButton;

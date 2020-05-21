@@ -295,13 +295,7 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	// Sort the queries by field value, to ensure consistency of output.
-	fields := make([]FieldLabel, 0, len(qb.fieldsToValues))
-	for field := range qb.fieldsToValues {
-		fields = append(fields, field)
-	}
-	sort.Slice(fields, func(i, j int) bool {
-		return fields[i] < fields[j]
-	})
+	fields := qb.getSortedFields()
 
 	for _, field := range fields {
 		_, highlighted := qb.highlightedFields[field]
@@ -313,6 +307,14 @@ func (qb *QueryBuilder) ProtoQuery() *v1.Query {
 	}
 
 	return ConjunctionQuery(queries...)
+}
+
+func (qb *QueryBuilder) getSortedFields() []FieldLabel {
+	fields := make([]FieldLabel, 0, len(qb.fieldsToValues))
+	for field := range qb.fieldsToValues {
+		fields = append(fields, field)
+	}
+	return SortFieldLabels(fields)
 }
 
 // RawQuery returns raw query in string form
@@ -346,6 +348,9 @@ func MatchNoneQuery() *v1.Query {
 
 // NewConjunctionQuery takes in a variadic of queries and creates a conjunction query from them
 func NewConjunctionQuery(q ...*v1.Query) *v1.Query {
+	if len(q) == 1 {
+		return q[0]
+	}
 	return &v1.Query{
 		Query: &v1.Query_Conjunction{
 			Conjunction: &v1.ConjunctionQuery{
@@ -357,6 +362,10 @@ func NewConjunctionQuery(q ...*v1.Query) *v1.Query {
 
 // NewDisjunctionQuery takes in a variadic of queries and creates a disjunction query from them
 func NewDisjunctionQuery(q ...*v1.Query) *v1.Query {
+	if len(q) == 1 {
+		return q[0]
+	}
+
 	return &v1.Query{
 		Query: &v1.Query_Disjunction{
 			Disjunction: &v1.DisjunctionQuery{

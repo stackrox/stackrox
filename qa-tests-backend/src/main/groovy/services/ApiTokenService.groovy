@@ -9,12 +9,12 @@ class ApiTokenService extends BaseService {
         return APITokenServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static generateToken(String name, String role) {
+    static generateToken(String name, String... roles) {
         try {
             GenerateTokenRequest.Builder request =
                     GenerateTokenRequest.newBuilder()
                             .setName(name)
-                            .setRole(role)
+                            .addAllRoles(Arrays.asList(roles))
             return getApiTokenService().generateToken(request.build())
         } catch (Exception e) {
             println "Failed to generate token: ${e}"

@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import Query from 'Components/CacheFirstQuery';
@@ -55,8 +55,8 @@ const processNumValue = (data, entityType) => {
 
     if (entityType === entityTypes.CONTROL) {
         const set = new Set();
-        data.results.forEach(cluster => {
-            cluster.complianceResults.forEach(result => {
+        data.results.forEach((cluster) => {
+            cluster.complianceResults.forEach((result) => {
                 set.add(result.control.id);
             });
         });
@@ -69,9 +69,7 @@ const processNumValue = (data, entityType) => {
 
 const DashboardTile = ({ match, location, entityType, position }) => {
     const QUERY = getQuery(entityType);
-    const url = URLService.getURL(match, location)
-        .base(entityType)
-        .url();
+    const url = URLService.getURL(match, location).base(entityType).url();
 
     return (
         <Query query={QUERY} action="list">
@@ -96,11 +94,11 @@ DashboardTile.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
-    position: PropTypes.string
+    position: PropTypes.string,
 };
 
 DashboardTile.defaultProps = {
-    position: null
+    position: null,
 };
 
 export default withRouter(DashboardTile);

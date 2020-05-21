@@ -11,8 +11,8 @@ const mocks = [
         request: {
             query: CLUSTER_VERSION_QUERY,
             variables: {
-                id: clusterId
-            }
+                id: clusterId,
+            },
         },
         result: {
             data: {
@@ -24,15 +24,15 @@ const mocks = [
                         orchestratorMetadata: {
                             version: 'v1.12.8-gke.10',
                             buildDate: '2019-06-19T20:48:40Z',
-                            __typename: 'OrchestratorMetadata'
+                            __typename: 'OrchestratorMetadata',
                         },
-                        __typename: 'ClusterStatus'
+                        __typename: 'ClusterStatus',
                     },
-                    __typename: 'Cluster'
-                }
-            }
-        }
-    }
+                    __typename: 'Cluster',
+                },
+            },
+        },
+    },
 ];
 
 describe('Compliance ClusterVersion widget', () => {

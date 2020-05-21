@@ -8,12 +8,15 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestCheck(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(suiteImpl))
 }
 
@@ -32,147 +35,151 @@ func (s *suiteImpl) TearDownSuite() {
 }
 
 func (s *suiteImpl) TestPass() {
-	check := s.verifyCheckRegistered()
+	testutils.RunWithAndWithoutFeatureFlag(s.T(), features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
+		check := s.verifyCheckRegistered()
 
-	testCluster := s.cluster()
+		testCluster := s.cluster()
 
-	testNodes := s.nodes()
+		testNodes := s.nodes()
 
-	testDeployments := []*storage.Deployment{
-		{
-			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/tmp/blah",
-							Type:   "EmptyDir",
+		testDeployments := []*storage.Deployment{
+			{
+				Id: uuid.NewV4().String(),
+				Containers: []*storage.Container{
+					{
+						Volumes: []*storage.Volume{
+							{
+								Source: "/tmp/blah",
+								Type:   "EmptyDir",
+							},
 						},
 					},
 				},
 			},
-		},
-		{
-			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/tmp/blah",
-							Type:   "EmptyDir",
+			{
+				Id: uuid.NewV4().String(),
+				Containers: []*storage.Container{
+					{
+						Volumes: []*storage.Volume{
+							{
+								Source: "/tmp/blah",
+								Type:   "EmptyDir",
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-
-	policies := []*storage.Policy{
-		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Source: "/etc/passwd",
-				},
-			},
-		},
-	}
-
-	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
-
-	run, err := framework.NewComplianceRun(check)
-	s.NoError(err)
-
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
-	err = run.Run(context.Background(), domain, data)
-	s.NoError(err)
-
-	results := run.GetAllResults()
-	checkResults := results[standardID]
-	s.NotNil(checkResults)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		if s.Len(deploymentResults.Evidence(), 1) {
-			s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
 		}
-	}
+
+		policies := []*storage.Policy{
+			{
+				Fields: &storage.PolicyFields{
+					VolumePolicy: &storage.VolumePolicy{
+						Source: "/etc/passwd",
+					},
+				},
+			},
+		}
+
+		data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
+		data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+		data.EXPECT().Policies().AnyTimes().Return(policiesToMap(s.T(), policies))
+		data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
+
+		run, err := framework.NewComplianceRun(check)
+		s.NoError(err)
+
+		domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
+		err = run.Run(context.Background(), domain, data)
+		s.NoError(err)
+
+		results := run.GetAllResults()
+		checkResults := results[standardID]
+		s.NotNil(checkResults)
+
+		for _, deployment := range domain.Deployments() {
+			deploymentResults := checkResults.ForChild(deployment)
+			s.NoError(deploymentResults.Error())
+			if s.Len(deploymentResults.Evidence(), 1) {
+				s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
+			}
+		}
+	})
 }
 
 func (s *suiteImpl) TestFail() {
-	check := s.verifyCheckRegistered()
+	testutils.RunWithAndWithoutFeatureFlag(s.T(), features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
+		check := s.verifyCheckRegistered()
 
-	testCluster := s.cluster()
+		testCluster := s.cluster()
 
-	testNodes := s.nodes()
+		testNodes := s.nodes()
 
-	testDeployments := []*storage.Deployment{
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "foo",
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/etc/passwd",
-							Type:   "HostPath (bare host directory volume)",
+		testDeployments := []*storage.Deployment{
+			{
+				Id:   uuid.NewV4().String(),
+				Name: "foo",
+				Containers: []*storage.Container{
+					{
+						Volumes: []*storage.Volume{
+							{
+								Source: "/etc/passwd",
+								Type:   "HostPath (bare host directory volume)",
+							},
 						},
 					},
 				},
 			},
-		},
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "boo",
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/var/run/docker.sock",
-							Type:   "HostPath (bare host directory volume)",
+			{
+				Id:   uuid.NewV4().String(),
+				Name: "boo",
+				Containers: []*storage.Container{
+					{
+						Volumes: []*storage.Volume{
+							{
+								Source: "/var/run/docker.sock",
+								Type:   "HostPath (bare host directory volume)",
+							},
 						},
 					},
 				},
 			},
-		},
-	}
-
-	policies := []*storage.Policy{
-		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Destination: "/etc/passwd",
-				},
-			},
-		},
-	}
-
-	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
-
-	run, err := framework.NewComplianceRun(check)
-	s.NoError(err)
-
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
-	err = run.Run(context.Background(), domain, data)
-	s.NoError(err)
-
-	results := run.GetAllResults()
-	checkResults := results[standardID]
-	s.NotNil(checkResults)
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NotNil(deploymentResults)
-		s.NoError(deploymentResults.Error())
-		if s.Len(deploymentResults.Evidence(), 1) {
-			s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
 		}
-	}
+
+		policies := []*storage.Policy{
+			{
+				Fields: &storage.PolicyFields{
+					VolumePolicy: &storage.VolumePolicy{
+						Destination: "/etc/passwd",
+					},
+				},
+			},
+		}
+
+		data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
+		data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+		data.EXPECT().Policies().AnyTimes().Return(policiesToMap(s.T(), policies))
+		data.EXPECT().UnresolvedAlerts().AnyTimes().Return(nil)
+
+		run, err := framework.NewComplianceRun(check)
+		s.NoError(err)
+
+		domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
+		err = run.Run(context.Background(), domain, data)
+		s.NoError(err)
+
+		results := run.GetAllResults()
+		checkResults := results[standardID]
+		s.NotNil(checkResults)
+		for _, deployment := range domain.Deployments() {
+			deploymentResults := checkResults.ForChild(deployment)
+			s.NotNil(deploymentResults)
+			s.NoError(deploymentResults.Error())
+			if s.Len(deploymentResults.Evidence(), 1) {
+				s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
+			}
+		}
+	})
 }
 
 // Helper functions for test data.
@@ -210,9 +217,12 @@ func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
 	return merp
 }
 
-func policiesToMap(in []*storage.Policy) map[string]*storage.Policy {
+func policiesToMap(t *testing.T, in []*storage.Policy) map[string]*storage.Policy {
 	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
+		if features.BooleanPolicyLogic.Enabled() {
+			require.NoError(t, booleanpolicy.EnsureConverted(np))
+		}
 		merp[np.GetId()] = np
 	}
 	return merp

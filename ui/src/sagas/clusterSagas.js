@@ -69,7 +69,7 @@ function* downloadClusterYaml() {
 }
 
 function* watchLocation() {
-    const effects = [dashboardPath, integrationsPath, policiesPath, compliancePath].map(path =>
+    const effects = [dashboardPath, integrationsPath, policiesPath, compliancePath].map((path) =>
         takeEveryNewlyMatchedLocation(path, getClusters)
     );
     yield all(effects);
@@ -108,7 +108,7 @@ function* watchWizard() {
                 yield put(actions.updateWizardState(wizardPages.DEPLOYMENT, savedClusterId));
                 yield race([
                     call(pollCluster, savedClusterId),
-                    take([types.FINISH_WIZARD, types.PREV_WIZARD_PAGE])
+                    take([types.FINISH_WIZARD, types.PREV_WIZARD_PAGE]),
                 ]);
             }
         } else if (
@@ -126,6 +126,6 @@ export default function* clusters() {
         fork(watchFetchRequest),
         fork(watchDeleteRequest),
         fork(watchWizard),
-        fork(watchDownloadRequest)
+        fork(watchDownloadRequest),
     ]);
 }

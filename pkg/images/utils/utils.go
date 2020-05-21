@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/reference"
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -191,7 +190,7 @@ func GetImageID(img *storage.Image) string {
 
 // StripCVEDescriptions takes in an image and returns a stripped down version without the descriptions of CVEs
 func StripCVEDescriptions(img *storage.Image) *storage.Image {
-	newImage := proto.Clone(img).(*storage.Image)
+	newImage := img.Clone()
 	StripCVEDescriptionsNoClone(newImage)
 	return newImage
 }

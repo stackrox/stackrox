@@ -5,7 +5,7 @@ import {
     clickOnCountWidget,
     hasTabsFor,
     pageEntityCountMatchesTableRows,
-    sidePanelEntityCountMatchesTableRows
+    sidePanelEntityCountMatchesTableRows,
 } from '../../helpers/configWorkflowUtils';
 import withAuth from '../../helpers/basicAuth';
 

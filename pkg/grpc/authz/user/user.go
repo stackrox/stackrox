@@ -42,7 +42,7 @@ func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
 	}
 
 	// Fall back to checking user role.
-	return p.checkRole(id.Role())
+	return p.checkPermissions(id.Permissions())
 }
 
 func (p *permissionChecker) collectPermissions(pc *[]permissions.ResourceWithAccess) error {
@@ -72,12 +72,12 @@ func (p *permissionChecker) checkGlobalSACPermissions(ctx context.Context, rootS
 	return nil
 }
 
-func (p *permissionChecker) checkRole(role *storage.Role) error {
-	if role == nil {
+func (p *permissionChecker) checkPermissions(perms *storage.Role) error {
+	if perms == nil {
 		return authz.ErrNoCredentials
 	}
 	for _, perm := range p.requiredPermissions {
-		if !permissions.RoleHasPermission(role, perm) {
+		if !permissions.RoleHasPermission(perms, perm) {
 			return authz.ErrNotAuthorized(fmt.Sprintf("not authorized to %s %s", perm.Access, perm.Resource))
 		}
 	}

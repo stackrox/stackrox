@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/mode"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
@@ -179,12 +180,10 @@ func OutputZip(config renderer.Config) error {
 	if config.K8sConfig != nil {
 		config.Environment[env.OfflineModeEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.OfflineMode)
 
-		if features.Telemetry.Enabled() {
-			if config.K8sConfig.EnableTelemetry {
-				fmt.Fprintln(os.Stderr, "NOTE: Unless run in offline mode, StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag")
-			}
-			config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.EnableTelemetry)
+		if config.K8sConfig.EnableTelemetry {
+			fmt.Fprintln(os.Stderr, "NOTE: Unless run in offline mode, StackRox Kubernetes Security Platform collects and transmits aggregated usage and system health information.  If you want to OPT OUT from this, re-generate the deployment bundle with the '--enable-telemetry=false' flag")
 		}
+		config.Environment[env.InitialTelemetryEnabledEnv.EnvVar()] = strconv.FormatBool(config.K8sConfig.EnableTelemetry)
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd
@@ -251,11 +250,11 @@ func interactive() *cobra.Command {
 	return &cobra.Command{
 		Use:   "interactive",
 		Short: "Interactive runs the CLI in interactive mode with user prompts",
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command()
 			c.SilenceUsage = true
 			return runInteractive(c)
-		},
+		}),
 		SilenceUsage: true,
 	}
 }

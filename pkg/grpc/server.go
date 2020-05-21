@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
@@ -30,6 +29,9 @@ import (
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	// All our gRPC servers should support gzip
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 const (
@@ -160,7 +162,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 
 	u = append(u, a.config.UnaryInterceptors...)
 	u = append(u, a.unaryRecovery())
-	if features.Telemetry.Enabled() && a.config.GRPCMetrics != nil {
+	if a.config.GRPCMetrics != nil {
 		u = append(u, a.config.GRPCMetrics.UnaryMonitoringInterceptor)
 	}
 	return u

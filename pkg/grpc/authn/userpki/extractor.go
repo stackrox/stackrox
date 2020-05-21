@@ -72,11 +72,12 @@ func (i extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 			Attributes: attributes,
 		}
 
-		role, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
+		roles, err := provider.RoleMapper().FromUserDescriptor(ctx, ud)
 		if err != nil {
 			return nil, err
 		}
-		identity.role = role
+		identity.roles = roles
+		identity.perms = permissions.NewUnionRole(roles)
 		return identity, nil
 	}
 	return nil, nil
@@ -120,7 +121,8 @@ func ExtractAttributes(userCerts ...requestinfo.CertInfo) map[string][]string {
 type identity struct {
 	info       requestinfo.CertInfo
 	provider   authproviders.Provider
-	role       *storage.Role
+	roles      []*storage.Role
+	perms      *storage.Role
 	attributes map[string][]string
 }
 
@@ -139,12 +141,18 @@ func (i *identity) FullName() string {
 func (i *identity) User() *storage.UserInfo {
 	return &storage.UserInfo{
 		FriendlyName: i.info.Subject.CommonName,
-		Role:         i.role,
+		Role:         i.perms,
+		Permissions:  i.perms,
+		Roles:        i.roles,
 	}
 }
 
-func (i *identity) Role() *storage.Role {
-	return i.role
+func (i *identity) Permissions() *storage.Role {
+	return i.perms
+}
+
+func (i *identity) Roles() []*storage.Role {
+	return i.roles
 }
 
 func (i *identity) Service() *storage.ServiceIdentity {

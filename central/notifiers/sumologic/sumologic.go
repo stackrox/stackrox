@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
@@ -39,7 +38,7 @@ type sumologic struct {
 
 // AlertNotify takes in an alert and generates the Slack message
 func (s *sumologic) AlertNotify(alert *storage.Alert) error {
-	clonedAlert := protoutils.CloneStorageAlert(alert)
+	clonedAlert := alert.Clone()
 	notifiers.PruneAlert(clonedAlert, 10000)
 
 	return retry.WithRetry(
@@ -92,10 +91,7 @@ func newSumoLogic(notifier *storage.Notifier) (*sumologic, error) {
 	if err := validateConfig(sumoConf); err != nil {
 		return nil, err
 	}
-	fullyQualifiedEndpoint, err := urlfmt.FormatURL(sumoConf.GetHttpSourceAddress(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
-	if err != nil {
-		return nil, err
-	}
+	fullyQualifiedEndpoint := urlfmt.FormatURL(sumoConf.GetHttpSourceAddress(), urlfmt.HTTPS, urlfmt.HonorInputSlash)
 
 	return &sumologic{
 		Notifier: notifier,

@@ -104,11 +104,11 @@ TableWidget.propTypes = {
     parentPageState: PropTypes.shape({
         page: PropTypes.number,
         setPage: PropTypes.func,
-        totalCount: PropTypes.number
+        totalCount: PropTypes.number,
     }),
     currentSort: PropTypes.arrayOf(PropTypes.shape({})),
     sortHandler: PropTypes.func,
-    entityType: PropTypes.string.isRequired
+    entityType: PropTypes.string.isRequired,
 };
 
 TableWidget.defaultProps = {
@@ -116,6 +116,6 @@ TableWidget.defaultProps = {
     pageSize: DEFAULT_PAGE_SIZE,
     parentPageState: null,
     currentSort: null,
-    sortHandler: null
+    sortHandler: null,
 };
 export default withRouter(TableWidget);

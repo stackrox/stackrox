@@ -5,8 +5,8 @@ import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
 import { colorTypes, defaultColorType } from 'constants/visuals/colors';
 
-const getBackgroundColor = colorType => {
-    const color = colorTypes.find(datum => datum === colorType);
+const getBackgroundColor = (colorType) => {
+    const color = colorTypes.find((datum) => datum === colorType);
     if (!color) return defaultColorType;
     return `bg-${color}-500`;
 };
@@ -43,18 +43,18 @@ PercentageStackedPill.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
             colorType: PropTypes.string.isRequired,
-            value: PropTypes.number.isRequired
+            value: PropTypes.number.isRequired,
         })
     ),
     tooltip: PropTypes.shape({
         title: PropTypes.string.isRequired,
-        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired
-    })
+        body: PropTypes.oneOfType([PropTypes.string, PropTypes.element]).isRequired,
+    }),
 };
 
 PercentageStackedPill.defaultProps = {
     data: [],
-    tooltip: null
+    tooltip: null,
 };
 
 export default PercentageStackedPill;

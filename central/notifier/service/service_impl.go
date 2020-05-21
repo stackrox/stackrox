@@ -75,7 +75,7 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 	if !exists {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %v not found", request.GetId()))
 	}
-	secrets.ScrubSecretsFromStruct(notifier)
+	secrets.ScrubSecretsFromStructWithReplacement(notifier, secrets.ReplacementStr)
 	return notifier, nil
 }
 
@@ -86,7 +86,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiers
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	for _, n := range notifiers {
-		secrets.ScrubSecretsFromStruct(n)
+		secrets.ScrubSecretsFromStructWithReplacement(n, secrets.ReplacementStr)
 	}
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }

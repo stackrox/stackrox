@@ -3,10 +3,10 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { Link, withRouter } from 'react-router-dom';
-import getEntityName from 'modules/getEntityName';
-import { entityNameQueryMap } from 'modules/queryMap';
+import getEntityName from 'utils/getEntityName';
+import { entityNameQueryMap } from 'utils/queryMap';
 
 import { ChevronRight } from 'react-feather';
 import Query from 'Components/ThrowingQuery';
@@ -24,7 +24,7 @@ const getBreadCrumbStates = ({
     entityId1,
     entityListType2,
     entityId2,
-    entityType2
+    entityType2,
 }) => {
     const breadCrumbStates = [];
     if (entityType1 && entityId1) {
@@ -33,13 +33,13 @@ const getBreadCrumbStates = ({
     if (entityListType2) {
         breadCrumbStates.push({
             name: pluralize(entityLabels[entityListType2]),
-            type: 'entity list'
+            type: 'entity list',
         });
     }
     if (entityId2) {
         breadCrumbStates.push({
             name: relatedEntityName,
-            type: entityLabels[entityType2] || entityLabels[entityListType2]
+            type: entityLabels[entityType2] || entityLabels[entityListType2],
         });
     }
     return breadCrumbStates;
@@ -55,7 +55,7 @@ const getLink = (match, location, index, length) => {
     return urlBuilder.url();
 };
 
-const BreadCrumbLinks = props => {
+const BreadCrumbLinks = (props) => {
     const { className, match, location, history, ...params } = props;
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) return null;
@@ -105,11 +105,11 @@ BreadCrumbLinks.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 BreadCrumbLinks.defaultProps = {
-    className: ''
+    className: '',
 };
 
 const getEntityVariables = (type, id) => {
@@ -119,7 +119,7 @@ const getEntityVariables = (type, id) => {
     return { id };
 };
 
-const BreadCrumbs = props => {
+const BreadCrumbs = (props) => {
     const { className, match, location, ...params } = props;
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
     if (!entityId1) return null;
@@ -170,7 +170,7 @@ BreadCrumbs.propTypes = {
     entityId1: PropTypes.string,
     entityType2: PropTypes.string,
     entityListType2: PropTypes.string,
-    entityId2: PropTypes.string
+    entityId2: PropTypes.string,
 };
 
 BreadCrumbs.defaultProps = {
@@ -179,7 +179,7 @@ BreadCrumbs.defaultProps = {
     entityId1: null,
     entityType2: null,
     entityListType2: null,
-    entityId2: null
+    entityId2: null,
 };
 
 export default withRouter(BreadCrumbs);

@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import getEntityName from 'modules/getEntityName';
-import { entityNameQueryMap } from 'modules/queryMap';
+import getEntityName from 'utils/getEntityName';
+import { entityNameQueryMap } from 'utils/queryMap';
 import entityLabels from 'messages/entity';
 import entityTypes from 'constants/entityTypes';
 
@@ -22,7 +22,7 @@ const getQueryAndVariables = (entityType, entityId) => {
     const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
     return {
         query,
-        variables: getEntityVariables(entityType, safeEntityId)
+        variables: getEntityVariables(entityType, safeEntityId),
     };
 };
 
@@ -66,12 +66,12 @@ EntityPageHeader.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
     urlParams: PropTypes.shape({
-        entityListType1: PropTypes.string
-    })
+        entityListType1: PropTypes.string,
+    }),
 };
 
 EntityPageHeader.defaultProps = {
-    urlParams: null
+    urlParams: null,
 };
 
 export default EntityPageHeader;

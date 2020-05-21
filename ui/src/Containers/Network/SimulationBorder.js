@@ -25,7 +25,7 @@ function SimulationBorder({ wizardOpen, wizardStage, modificationState }) {
 SimulationBorder.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     wizardStage: PropTypes.string.isRequired,
-    modificationState: PropTypes.string.isRequired
+    modificationState: PropTypes.string.isRequired,
 };
 
 const getModificationState = createSelector(
@@ -41,7 +41,7 @@ const getModificationState = createSelector(
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
-    modificationState: getModificationState
+    modificationState: getModificationState,
 });
 
 export default connect(mapStateToProps)(SimulationBorder);

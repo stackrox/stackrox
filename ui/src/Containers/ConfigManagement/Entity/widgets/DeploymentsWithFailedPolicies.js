@@ -4,7 +4,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 
 import VIOLATIONS from 'queries/violation';
 import resolvePath from 'object-resolve-path';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import uniq from 'lodash/uniq';
@@ -19,7 +19,7 @@ import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Component
 import SeverityLabel from 'Components/SeverityLabel';
 import TableWidget from './TableWidget';
 
-const getDeploymentsGroupedByPolicies = data => {
+const getDeploymentsGroupedByPolicies = (data) => {
     const { violations } = data;
     if (!violations || !violations.length) return [];
     const groups = violations.reduce((acc, curr) => {
@@ -27,7 +27,7 @@ const getDeploymentsGroupedByPolicies = data => {
         const deployments = acc[policy.id] ? acc[policy.id].deployments : [];
         acc[policy.id] = {
             ...policy,
-            deployments: [...deployments, { time, ...deployment }]
+            deployments: [...deployments, { time, ...deployment }],
         };
         return acc;
     }, {});
@@ -39,9 +39,7 @@ const Deployments = ({ original: policy, match, location, history, entityContext
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
     function onRowClick(row) {
         const id = resolvePath(row, 'id');
-        const url = URLService.getURL(match, location)
-            .push(entityTypes.DEPLOYMENT, id)
-            .url();
+        const url = URLService.getURL(match, location).push(entityTypes.DEPLOYMENT, id).url();
         history.push(url);
     }
     return (
@@ -60,11 +58,11 @@ Deployments.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
     history: ReactRouterPropTypes.history.isRequired,
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
 };
 
 Deployments.defaultProps = {
-    entityContext: {}
+    entityContext: {},
 };
 
 const DeploymentsWithRouter = withRouter(Deployments);
@@ -75,7 +73,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
             if (loading) return <Loader />;
             if (!data) return null;
             const groups = getDeploymentsGroupedByPolicies(data);
-            const numDeployments = uniq(data.violations.map(violation => violation.deployment))
+            const numDeployments = uniq(data.violations.map((violation) => violation.deployment))
                 .length;
             if (numDeployments === 0)
                 return <NoResultsMessage message={message} className="p-3 shadow" icon="info" />;
@@ -116,8 +114,8 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                             </CollapsibleRow>
                         );
                         return group;
-                    }
-                }
+                    },
+                },
             ];
             return (
                 <TableWidget
@@ -138,13 +136,13 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
 DeploymentsWithFailedPolicies.propTypes = {
     query: PropTypes.string,
     message: PropTypes.string,
-    entityContext: PropTypes.shape({})
+    entityContext: PropTypes.shape({}),
 };
 
 DeploymentsWithFailedPolicies.defaultProps = {
     query: '',
     message: '',
-    entityContext: {}
+    entityContext: {},
 };
 
 export default DeploymentsWithFailedPolicies;

@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { reduxForm } from 'redux-form';
 
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import ConfigBannerFormWidget from './ConfigBannerFormWidget';
 import ConfigDataRetentionFormWidget from './ConfigDataRetentionFormWidget';
 import ConfigLoginFormWidget from './ConfigLoginFormWidget';
@@ -29,12 +27,8 @@ const Form = ({ initialValues, onSubmit, config }) => (
                 <ConfigLoginFormWidget />
             </div>
             <div className="flex flex-col justify-between md:flex-row pb-5 w-full">
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_DIAGNOSTIC_BUNDLE}>
-                    <DownloadTelemetryDetailWidget />
-                </FeatureEnabled>
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_TELEMETRY}>
-                    <ConfigTelemetryDetailWidget config={config.telemetryConfig} editable />
-                </FeatureEnabled>
+                <DownloadTelemetryDetailWidget />
+                <ConfigTelemetryDetailWidget config={config.telemetryConfig} editable />
             </div>
         </form>
     </>
@@ -44,25 +38,20 @@ Form.propTypes = {
     config: PropTypes.shape({
         privateConfig: PropTypes.shape({
             alertConfig: PropTypes.shape({}),
-            imageRetentionDurationDays: PropTypes.number
+            imageRetentionDurationDays: PropTypes.number,
         }),
         telemetryConfig: PropTypes.shape({
-            enabled: PropTypes.bool
-        })
+            enabled: PropTypes.bool,
+        }),
     }).isRequired,
     onSubmit: PropTypes.func.isRequired,
-    initialValues: PropTypes.shape({})
+    initialValues: PropTypes.shape({}),
 };
 
 Form.defaultProps = {
-    initialValues: null
+    initialValues: null,
 };
 
 export default reduxForm({
-    form: 'system-config-form'
-})(
-    connect(
-        null,
-        null
-    )(Form)
-);
+    form: 'system-config-form',
+})(connect(null, null)(Form));

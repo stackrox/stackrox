@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import startCase from 'lodash/startCase';
 
 import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
@@ -22,7 +22,7 @@ const ListPage = ({ match, location, history }) => {
         entityType2,
         entityListType2,
         entityId2,
-        query
+        query,
     } = params;
     const searchParam = useContext(searchContext);
 
@@ -78,7 +78,7 @@ const ListPage = ({ match, location, history }) => {
 ListPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default ListPage;

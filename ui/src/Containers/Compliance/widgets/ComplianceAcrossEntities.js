@@ -9,9 +9,9 @@ import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels, standardLabels } from 'messages/standards';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import searchContext from 'Containers/searchContext';
@@ -31,7 +31,7 @@ function processData(
 ) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
-        filteredResults = results.results.filter(result =>
+        filteredResults = results.results.filter((result) =>
             result.aggregationKeys[0].id.includes(entityType)
         );
     } else {
@@ -43,13 +43,13 @@ function processData(
                 id: entityType,
                 title: entityType,
                 passing: { value: 0, link: '' },
-                failing: { value: 0, link: '' }
-            }
+                failing: { value: 0, link: '' },
+            },
         ];
     const standardDataMapping = filteredResults.reduce((accMapping, result) => {
         const newMapping = { ...accMapping };
         const { id: standardId } = result.aggregationKeys[0];
-        const standard = complianceStandards.find(cs => cs.id === standardId);
+        const standard = complianceStandards.find((cs) => cs.id === standardId);
         let { numPassing: totalPassing, numFailing: totalFailing } = result;
         let totalSkipped = !(totalPassing + totalFailing > 0) ? 1 : 0;
         if (newMapping[standardId]) {
@@ -70,8 +70,8 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Pass',
-                    standard: standardLabels[standard.id]
-                }
+                    standard: standardLabels[standard.id],
+                },
             })
             .url();
 
@@ -80,8 +80,8 @@ function processData(
             .query({
                 [searchParam]: {
                     [complianceStateKey]: 'Fail',
-                    standard: standardLabels[standard.id]
-                }
+                    standard: standardLabels[standard.id],
+                },
             })
             .url();
 
@@ -92,16 +92,16 @@ function processData(
                 value: totalPassing,
                 controls: 0,
                 link: passingLink,
-                selected: currentUrl === passingLink
+                selected: currentUrl === passingLink,
             },
             failing: {
                 value: totalFailing,
                 controls: 0,
                 link: failingLink,
-                selected: currentUrl === failingLink
+                selected: currentUrl === failingLink,
             },
             skipped: totalSkipped,
-            defaultLink
+            defaultLink,
         };
         return newMapping;
     }, {});
@@ -122,14 +122,14 @@ const getQueryVariables = (entityType, groupBy, query) => {
         return {
             groupBy: [entityTypes.STANDARD, entityType],
             unit: entityType === entityTypes.CONTROL ? entityTypes.CHECK : entityType,
-            where: queryService.objectToWhereClause(queryWithoutStandard)
+            where: queryService.objectToWhereClause(queryWithoutStandard),
         };
     }
 
     return {
         groupBy: [entityTypes.STANDARD, ...(groupBy ? [groupBy] : [])],
         unit: entityTypes.CHECK,
-        where: queryService.objectToWhereClause(query)
+        where: queryService.objectToWhereClause(query),
     };
 };
 
@@ -172,13 +172,13 @@ ComplianceAcrossEntities.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string,
     groupBy: PropTypes.string,
-    query: PropTypes.shape({})
+    query: PropTypes.shape({}),
 };
 
 ComplianceAcrossEntities.defaultProps = {
     entityType: null,
     groupBy: null,
-    query: null
+    query: null,
 };
 
 export default withRouter(ComplianceAcrossEntities);

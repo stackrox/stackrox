@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import entityTypes, {
     resourceTypes,
-    resourceTypeToApplicableStandards
+    resourceTypeToApplicableStandards,
 } from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
@@ -33,7 +33,7 @@ const ClusterPage = ({
     entityListType2,
     entityId2,
     query,
-    sidePanelMode
+    sidePanelMode,
 }) => {
     const searchParam = useContext(searchContext);
 
@@ -51,7 +51,7 @@ const ClusterPage = ({
                         groupBy:
                             listEntityType1 === entityTypes.CONTROL ? entityTypes.STANDARD : '',
                         'Cluster Id': entityId,
-                        ...query[searchParam]
+                        ...query[searchParam],
                     };
                     contents = (
                         <section
@@ -100,7 +100,7 @@ const ClusterPage = ({
                                     </div>
                                 </div>
                                 {resourceTypeToApplicableStandards[resourceTypes.CLUSTER].map(
-                                    standardType => (
+                                    (standardType) => (
                                         <ComplianceByStandard
                                             key={standardType}
                                             standardType={standardType}
@@ -165,7 +165,7 @@ const ClusterPage = ({
                                         entityTypes.CONTROL,
                                         entityTypes.NAMESPACE,
                                         entityTypes.NODE,
-                                        entityTypes.DEPLOYMENT
+                                        entityTypes.DEPLOYMENT,
                                     ]}
                                 />
                             </>

@@ -6,21 +6,11 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/globalindex"
-	imageIndexer "github.com/stackrox/rox/central/image/index"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
-	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
-	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store/badger"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stretchr/testify/require"
@@ -48,26 +38,6 @@ policyLoop:
 	return deployAndRuntimePolicies
 }
 
-func setup(b require.TestingT) (processIndicatorDataStore.DataStore, imageIndexer.Indexer, index.Indexer) {
-	db, _, err := badgerhelper.NewTemp("bench_test.db")
-	require.NoError(b, err)
-
-	bleveIndex, err := globalindex.TempInitializeIndices("")
-	require.NoError(b, err)
-
-	processStore := processIndicatorStore.New(db)
-	processIndexer := processIndicatorIndex.New(bleveIndex)
-	processSearcher := processIndicatorSearch.New(processStore, processIndexer)
-
-	deploymentIndexer := index.New(bleveIndex)
-	imageIdx := imageIndexer.New(bleveIndex)
-
-	processDataStore, err := processIndicatorDataStore.New(processStore, nil, processIndexer, processSearcher, nil)
-	require.NoError(b, err)
-
-	return processDataStore, imageIdx, deploymentIndexer
-}
-
 func getDeployments(num int) (deployments []*storage.Deployment) {
 	deployments = make([]*storage.Deployment, 0, num)
 	for i := 0; i < num; i++ {
@@ -89,36 +59,31 @@ func getProcesses(dNum, pNum int) (processes []*storage.ProcessIndicator) {
 	return
 }
 
-func BenchmarkPolicies(b *testing.B) {
+func BenchmarkPoliciesMatchOne(b *testing.B) {
 	policies := getPolicies(b)
 
-	numDeployments := []int{10000}
-	numProcessIndicators := []int{100000}
+	numDeployments := []int{10}
+	numProcessIndicators := []int{10}
 
-	addIndicatorCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Indicator)))
 	matchCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS)))
 	for _, dNum := range numDeployments {
 		for _, pNum := range numProcessIndicators {
-			processDatastore, _, indexer := setup(b)
-			require.NoError(b, indexer.AddDeployments(getDeployments(dNum)))
-			require.NoError(b, processDatastore.AddProcessIndicators(addIndicatorCtx, getProcesses(dNum, pNum)...))
-			matcherBuilder := matcher.NewBuilder(
-				matcher.NewRegistry(
-					processDatastore,
-				),
-				deployments.OptionsMap,
-			)
-			searcher := blevesearch.WrapUnsafeSearcherAsSearcher(indexer)
+			mockDeployments := getDeployments(dNum)
+			mockProcesses := getProcesses(dNum, pNum)
+			matcherBuilder := matcher.NewBuilder(matcher.NewRegistry(nil), deployments.OptionsMap)
+
 			for _, p := range policies {
 				b.Run(fmt.Sprintf("%s %dd %dp", p.GetName(), dNum, pNum), func(b *testing.B) {
 					mr, err := matcherBuilder.ForPolicy(p)
 					require.NoError(b, err)
 					for i := 0; i < b.N; i++ {
-						_, err = mr.Match(matchCtx, searcher)
-						require.NoError(b, err)
+						for _, deployment := range mockDeployments {
+							for _, indicator := range mockProcesses {
+								_, err = mr.MatchOne(matchCtx, deployment, nil, indicator)
+								require.NoError(b, err)
+							}
+						}
 					}
 				})
 			}

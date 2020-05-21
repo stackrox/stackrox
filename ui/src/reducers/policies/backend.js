@@ -16,7 +16,7 @@ export const types = {
     REASSESS_POLICIES: 'policies/REASSESS_POLICIES',
     DELETE_POLICIES: 'policies/DELETE_POLICIES',
     ENABLE_POLICIES_NOTIFICATION: 'policies/ENABLE_POLICIES_NOTIFICATION',
-    DISABLE_POLICIES_NOTIFICATION: 'policies/DISABLE_POLICIES_NOTIFICATION'
+    DISABLE_POLICIES_NOTIFICATION: 'policies/DISABLE_POLICIES_NOTIFICATION',
 };
 
 // Actions
@@ -27,18 +27,18 @@ export const actions = {
     fetchPolicy: createFetchingActions(types.FETCH_POLICY),
     fetchPolicyCategories: createFetchingActions(types.FETCH_POLICY_CATEGORIES),
     reassessPolicies: () => ({ type: types.REASSESS_POLICIES }),
-    deletePolicies: policyIds => ({ type: types.DELETE_POLICIES, policyIds }),
-    updatePolicy: policy => ({ type: types.UPDATE_POLICY, policy }),
+    deletePolicies: (policyIds) => ({ type: types.DELETE_POLICIES, policyIds }),
+    updatePolicy: (policy) => ({ type: types.UPDATE_POLICY, policy }),
     enablePoliciesNotification: (policyIds, notifierIds) => ({
         type: types.ENABLE_POLICIES_NOTIFICATION,
         policyIds,
-        notifierIds
+        notifierIds,
     }),
     disablePoliciesNotification: (policyIds, notifierIds) => ({
         type: types.DISABLE_POLICIES_NOTIFICATION,
         policyIds,
-        notifierIds
-    })
+        notifierIds,
+    }),
 };
 
 // Reducers
@@ -69,7 +69,7 @@ const filteredIds = (state = {}, action) => {
 const reducer = combineReducers({
     policyCategories,
     byId,
-    filteredIds
+    filteredIds,
 });
 
 export default reducer;
@@ -78,15 +78,15 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/policies/reducer.js
 //---------------------------------------------------------------------------------
 
-const getPoliciesById = state => state.byId;
-const getFilteredPolicyIds = state => state.filteredIds;
-const getPolicyCategories = state => state.policyCategories;
+const getPoliciesById = (state) => state.byId;
+const getFilteredPolicyIds = (state) => state.filteredIds;
+const getPolicyCategories = (state) => state.policyCategories;
 
 const getPolicy = (state, policyId) => getPoliciesById(state)[policyId];
-const getPolicies = state => Object.values(getPoliciesById(state));
+const getPolicies = (state) => Object.values(getPoliciesById(state));
 const getFilteredPolicies = createSelector(
     [getPoliciesById, getFilteredPolicyIds],
-    (policies, ids) => (ids.policies && ids.policies.map(id => policies[id])) || []
+    (policies, ids) => (ids.policies && ids.policies.map((id) => policies[id])) || []
 );
 
 export const selectors = {
@@ -95,5 +95,5 @@ export const selectors = {
     getPoliciesById,
     getPolicyCategories,
     getFilteredPolicyIds,
-    getFilteredPolicies
+    getFilteredPolicies,
 };

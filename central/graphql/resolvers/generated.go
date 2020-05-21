@@ -1017,6 +1017,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"revoked: Boolean!",
 		"role: String!",
+		"roles: [String!]!",
 	}))
 	utils.Must(builder.AddType("Toleration", []string{
 		"key: String!",
@@ -8679,6 +8680,11 @@ func (resolver *tokenMetadataResolver) Revoked(ctx context.Context) bool {
 
 func (resolver *tokenMetadataResolver) Role(ctx context.Context) string {
 	value := resolver.data.GetRole()
+	return value
+}
+
+func (resolver *tokenMetadataResolver) Roles(ctx context.Context) []string {
+	value := resolver.data.GetRoles()
 	return value
 }
 

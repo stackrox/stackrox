@@ -10,20 +10,20 @@ const priorityRowClassName =
 const defaultSeverities = [
     {
         severity: 'CRITICAL_SEVERITY',
-        priorityName: 'P0-Highest'
+        priorityName: 'P0-Highest',
     },
     {
         severity: 'HIGH_SEVERITY',
-        priorityName: 'P1-High'
+        priorityName: 'P1-High',
     },
     {
         severity: 'MEDIUM_SEVERITY',
-        priorityName: 'P2-Medium'
+        priorityName: 'P2-Medium',
     },
     {
         severity: 'LOW_SEVERITY',
-        priorityName: 'P3-Low'
-    }
+        priorityName: 'P3-Low',
+    },
 ];
 
 const PriorityMapping = ({ fields }) => {
@@ -34,7 +34,7 @@ const PriorityMapping = ({ fields }) => {
     };
 
     if (!fields.length) {
-        defaultSeverities.forEach(severity => fields.push(severity));
+        defaultSeverities.forEach((severity) => fields.push(severity));
     }
 
     return (
@@ -48,7 +48,7 @@ const PriorityMapping = ({ fields }) => {
                 />
             </div>
             {usePriorityMapping &&
-                fields.map(priorityItem => (
+                fields.map((priorityItem) => (
                     <div
                         key={`${priorityItem.severity}--${priorityItem.priorityName}`}
                         className="w-full flex py-1"
@@ -77,7 +77,7 @@ const PriorityMapping = ({ fields }) => {
 };
 
 PriorityMapping.propTypes = {
-    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    fields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 export default PriorityMapping;

@@ -1,12 +1,10 @@
 package admissioncontroller
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -32,7 +30,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 			continue
 		}
 
-		filtered = append(filtered, protoutils.CloneStoragePolicy(policy))
+		filtered = append(filtered, policy.Clone())
 	}
 
 	p.mutex.Lock()
@@ -54,7 +52,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 }
 
 func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
-	clonedConfig := proto.Clone(config).(*storage.DynamicClusterConfig)
+	clonedConfig := config.Clone()
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()

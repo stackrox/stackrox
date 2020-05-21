@@ -1,7 +1,7 @@
 import React from 'react';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'react-feather';
 import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
@@ -17,7 +17,7 @@ const getBreadCrumbStates = ({
     entityId1,
     entityListType2,
     entityId2,
-    entityType2
+    entityType2,
 }) => {
     const breadCrumbStates = [];
     if (entityType1 && entityId1) {
@@ -26,13 +26,13 @@ const getBreadCrumbStates = ({
     if (entityListType2) {
         breadCrumbStates.push({
             name: pluralize(entityLabels[entityListType2]),
-            type: 'entity list'
+            type: 'entity list',
         });
     }
     if (entityId2) {
         breadCrumbStates.push({
             name: relatedEntityName,
-            type: entityLabels[entityType2] || entityLabels[entityListType2]
+            type: entityLabels[entityType2] || entityLabels[entityListType2],
         });
     }
     return breadCrumbStates;
@@ -48,7 +48,7 @@ const getLink = (match, location, index, length) => {
     return urlBuilder.url();
 };
 
-const BreadCrumbLinks = props => {
+const BreadCrumbLinks = (props) => {
     const { className, match, location, history, ...params } = props;
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) return null;

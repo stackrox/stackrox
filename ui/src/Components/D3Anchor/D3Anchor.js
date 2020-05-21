@@ -28,13 +28,13 @@ D3Anchor.propTypes = {
     translateX: PropTypes.number,
     translateY: PropTypes.number,
     onUpdate: PropTypes.func.isRequired,
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node])
+    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]),
 };
 
 D3Anchor.defaultProps = {
     translateX: 0,
     translateY: 0,
-    children: null
+    children: null,
 };
 
 export default D3Anchor;

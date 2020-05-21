@@ -19,8 +19,8 @@ const deploymentDetailsMap = {
     replicas: { label: 'Replicas' },
     created: {
         label: 'Created',
-        formatValue: timestamp =>
-            timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available'
+        formatValue: (timestamp) =>
+            timestamp ? dateFns.format(timestamp, dateTimeFormat) : 'not available',
     },
     labels: { label: 'Labels' },
     annotations: { label: 'Annotations' },
@@ -28,8 +28,8 @@ const deploymentDetailsMap = {
     serviceAccount: { label: 'Service Account' },
     imagePullSecrets: {
         label: 'Image Pull Secrets',
-        formatValue: v => v.join(', ')
-    }
+        formatValue: (v) => v.join(', '),
+    },
 };
 
 const containerConfigMap = {
@@ -37,30 +37,30 @@ const containerConfigMap = {
     args: { label: 'Arguments' },
     ports: { label: 'Ports' },
     volumes: { label: 'Volumes' },
-    secrets: { label: 'Secrets' }
+    secrets: { label: 'Secrets' },
 };
 
 const containerSecurityContextMap = {
     privileged: { label: 'Privileged' },
     add_capabilities: { label: 'Add Capabilities' },
-    drop_capabilities: { label: 'Drop Capabilities' }
+    drop_capabilities: { label: 'Drop Capabilities' },
 };
 
 class DeploymentDetails extends Component {
     static propTypes = {
         deployment: PropTypes.shape({
             id: PropTypes.string.isRequired,
-            containers: PropTypes.arrayOf(PropTypes.object)
-        }).isRequired
+            containers: PropTypes.arrayOf(PropTypes.object),
+        }).isRequired,
     };
 
-    getContainerConfigurations = container => {
+    getContainerConfigurations = (container) => {
         if (!container.config) return null;
         const { command, args, ports, volumes, secrets } = container.config;
         return { command, args, ports, volumes, secrets };
     };
 
-    getSecurityContext = container => {
+    getSecurityContext = (container) => {
         if (!container.securityContext) return null;
         const { privileged, add_capabilities, drop_capabilities } = container.securityContext; // eslint-disable-line
         return { privileged, add_capabilities, drop_capabilities };
@@ -82,7 +82,7 @@ class DeploymentDetails extends Component {
         );
     }
 
-    renderContainerImage = image => {
+    renderContainerImage = (image) => {
         if (!image || !image.name || !image.name.fullName) return null;
         if (image.id === '') {
             return (
@@ -110,19 +110,19 @@ class DeploymentDetails extends Component {
         );
     };
 
-    renderResources = resources => {
+    renderResources = (resources) => {
         if (!resources) return <span className="py-3 font-600 italic">None</span>;
         const resourceMap = {
             cpuCoresRequest: { label: 'CPU Request (cores)' },
             cpuCoresLimit: { label: 'CPU Limit (cores)' },
             memoryMbRequest: { label: 'Memory Request (MB)' },
-            memoryMbLimit: { label: 'Memory Limit (MB)' }
+            memoryMbLimit: { label: 'Memory Limit (MB)' },
         };
 
         return <KeyValuePairs data={resources} keyValueMap={resourceMap} />;
     };
 
-    renderContainerVolumes = volumes => {
+    renderContainerVolumes = (volumes) => {
         if (!volumes || !volumes.length) return <span className="py-1 font-600 italic">None</span>;
         return volumes.map((volume, idx) => (
             <li
@@ -144,7 +144,7 @@ class DeploymentDetails extends Component {
         ));
     };
 
-    renderContainerSecrets = secrets => {
+    renderContainerSecrets = (secrets) => {
         if (!secrets || !secrets.length) return <span className="py-1 font-600 italic">None</span>;
         return secrets.map((secret, idx) => (
             <div key={idx} className="py-2">
@@ -210,7 +210,7 @@ class DeploymentDetails extends Component {
         let containers = [];
         if (deployment.containers) {
             containers = deployment.containers
-                .filter(container => container.securityContext)
+                .filter((container) => container.securityContext)
                 .map((container, index) => {
                     const data = this.getSecurityContext(container);
                     if (data === {}) return null;

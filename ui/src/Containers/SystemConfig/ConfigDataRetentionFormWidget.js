@@ -94,10 +94,10 @@ DataRetentionFormWidget.propTypes = {
         alertConfig: PropTypes.shape({
             allRuntimeRetentionDurationDays: PropTypes.number,
             deletedRuntimeRetentionDurationDays: PropTypes.number,
-            resolvedDeployRetentionDurationDays: PropTypes.number
+            resolvedDeployRetentionDurationDays: PropTypes.number,
         }),
-        imageRetentionDurationDays: PropTypes.number
-    }).isRequired
+        imageRetentionDurationDays: PropTypes.number,
+    }).isRequired,
 };
 
 export default DataRetentionFormWidget;

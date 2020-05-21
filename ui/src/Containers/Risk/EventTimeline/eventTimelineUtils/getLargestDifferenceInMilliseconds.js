@@ -15,9 +15,9 @@ import maxBy from 'lodash/maxBy';
  * @param {TimelineData[]} data
  * @returns {number} the largest difference in milliseconds
  */
-const getLargestDifferenceInMilliseconds = data => {
+const getLargestDifferenceInMilliseconds = (data) => {
     const largestDifferenceInMilliseconds = data.reduce((acc, curr) => {
-        const eventWithMaxValue = maxBy(curr.events, event => event.differenceInMilliseconds);
+        const eventWithMaxValue = maxBy(curr.events, (event) => event.differenceInMilliseconds);
         if (!eventWithMaxValue) return acc;
         return Math.max(acc, eventWithMaxValue.differenceInMilliseconds);
     }, 0);

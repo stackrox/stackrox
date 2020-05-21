@@ -20,7 +20,7 @@ const CommentThread = ({
     defaultOpen,
     isLoading,
     isDisabled,
-    isCollapsible
+    isCollapsible,
 }) => {
     const [newComment, createComment] = useState(null);
     const [limit, setLimit] = useState(defaultLimit);
@@ -37,7 +37,7 @@ const CommentThread = ({
         e.stopPropagation(); // prevents click-through trigger of collapsible
         createComment({
             createdTime: new Date().toISOString(),
-            message: ''
+            message: '',
         });
     }
 
@@ -60,7 +60,11 @@ const CommentThread = ({
             comments.length > 0 || !!newComment ? (
                 <div className="p-3">
                     {sortedComments.slice(0, limit).map((comment, i) => (
-                        <div key={comment.id} className={i === 0 ? 'mt-0' : 'mt-3'}>
+                        <div
+                            key={comment.id}
+                            className={i === 0 ? 'mt-0' : 'mt-3'}
+                            data-testid="comment"
+                        >
                             <Comment
                                 comment={comment}
                                 onSave={onSave}
@@ -70,7 +74,10 @@ const CommentThread = ({
                         </div>
                     ))}
                     {!!newComment && (
-                        <div className={sortedComments.length === 0 ? 'mt-0' : 'mt-3'}>
+                        <div
+                            className={sortedComments.length === 0 ? 'mt-0' : 'mt-3'}
+                            data-testid="new-comment"
+                        >
                             <Comment
                                 comment={newComment}
                                 onSave={onSave}
@@ -110,6 +117,7 @@ const CommentThread = ({
                     icon={<PlusCircle className="text-primary-800 h-4 w-4 mr-1" />}
                     disabled={!!newComment || isDisabled}
                     onClick={addNewComment}
+                    dataTestId="new-comment-button"
                 />
             }
             open={defaultOpen}
@@ -129,12 +137,12 @@ CommentThread.propTypes = {
             user: PropTypes.shape({
                 id: PropTypes.string.isRequired,
                 name: PropTypes.string.isRequired,
-                email: PropTypes.string.isRequired
+                email: PropTypes.string.isRequired,
             }),
             createdTime: PropTypes.string.isRequired,
             updatedTime: PropTypes.string.isRequired,
             isEditable: PropTypes.bool,
-            isDeletable: PropTypes.bool
+            isDeletable: PropTypes.bool,
         })
     ),
     onCreate: PropTypes.func.isRequired,
@@ -144,7 +152,7 @@ CommentThread.propTypes = {
     defaultOpen: PropTypes.bool,
     isLoading: PropTypes.bool,
     isDisabled: PropTypes.bool,
-    isCollapsible: PropTypes.bool
+    isCollapsible: PropTypes.bool,
 };
 
 CommentThread.defaultProps = {
@@ -153,7 +161,7 @@ CommentThread.defaultProps = {
     defaultOpen: false,
     isLoading: false,
     isDisabled: false,
-    isCollapsible: true
+    isCollapsible: true,
 };
 
 export default CommentThread;

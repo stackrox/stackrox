@@ -60,10 +60,8 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) 
 		return nil, err
 	}
 
-	endpoint, err := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return nil, err
-	}
+	endpoint := urlfmt.FormatURL(config.GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+
 	client := &http.Client{
 		Timeout: requestTimeout,
 	}

@@ -7,5 +7,5 @@ export const selectors = {
     prevPageButton: '[data-testid="prev-page-button"]',
     nextPageButton: '[data-testid="next-page-button"]',
     pageNumberInput: '[data-testid="page-number-input"]',
-    tableFirstRow: '.rt-tr-group:first-child .rt-tr'
+    tableFirstRow: '.rt-tr-group:first-child .rt-tr',
 };

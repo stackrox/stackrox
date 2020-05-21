@@ -12,14 +12,14 @@ export function getPolicySeverityCounts(failingPolicies) {
             [severities.CRITICAL_SEVERITY]: 0,
             [severities.HIGH_SEVERITY]: 0,
             [severities.MEDIUM_SEVERITY]: 0,
-            [severities.LOW_SEVERITY]: 0
+            [severities.LOW_SEVERITY]: 0,
         }
     );
     return {
         critical: counts.CRITICAL_SEVERITY,
         high: counts.HIGH_SEVERITY,
         medium: counts.MEDIUM_SEVERITY,
-        low: counts.LOW_SEVERITY
+        low: counts.LOW_SEVERITY,
     };
 }
 

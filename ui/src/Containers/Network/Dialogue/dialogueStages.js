@@ -1,7 +1,7 @@
 const dialogueStages = {
     closed: 'CLOSED',
     application: 'APPLICATION',
-    notification: 'NOTIFICATION'
+    notification: 'NOTIFICATION',
 };
 
 export default dialogueStages;

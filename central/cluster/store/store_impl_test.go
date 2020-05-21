@@ -7,7 +7,6 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -35,9 +34,9 @@ func (suite *ClusterStoreTestSuite) TearDownTest() {
 }
 
 func (suite *ClusterStoreTestSuite) hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus, upgradeStatus *storage.ClusterUpgradeStatus) *storage.Cluster {
-	clonedCluster := protoutils.CloneStorageCluster(cluster)
+	clonedCluster := cluster.Clone()
 	suite.Nil(status.GetUpgradeStatus())
-	clonedStatus := protoutils.CloneStorageClusterStatus(status)
+	clonedStatus := status.Clone()
 	clonedStatus.UpgradeStatus = upgradeStatus
 	clonedCluster.Status = clonedStatus
 	return clonedCluster

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import capitalize from 'lodash/capitalize';
 import ReactRouterPropTypes from 'react-router-prop-types';
@@ -10,7 +10,7 @@ import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/CacheFirstQuery';
 import Loader from 'Components/Loader';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { Link, withRouter } from 'react-router-dom';
 import searchContext from 'Containers/searchContext';
 import ReactSelect from 'Components/ReactSelect';
@@ -20,9 +20,9 @@ const colors = [
     'var(--tertiary-400)',
     'var(--warning-400)',
     'var(--caution-400)',
-    'var(--alert-400)'
+    'var(--alert-400)',
 ];
-const getColor = value => {
+const getColor = (value) => {
     if (value === 100) return colors[0];
     if (value >= 70) return colors[1];
     if (value >= 50) return colors[2];
@@ -33,7 +33,7 @@ const sunburstLegendData = [
     { title: '100%', color: 'var(--tertiary-400)' },
     { title: '> 70%', color: 'var(--warning-400)' },
     { title: '> 50%', color: 'var(--caution-400)' },
-    { title: '< 50%', color: 'var(--alert-400)' }
+    { title: '< 50%', color: 'var(--alert-400)' },
 ];
 
 const processSunburstData = (match, location, data, type) => {
@@ -59,7 +59,7 @@ const processSunburstData = (match, location, data, type) => {
             isGroup && group ? group.total + numPassing + numFailing : numPassing + numFailing;
         mapping[key] = {
             passing,
-            total
+            total,
         };
         return mapping;
     };
@@ -67,9 +67,9 @@ const processSunburstData = (match, location, data, type) => {
     const groupStatsMapping = data.results.results.reduce(statsReducer, {});
     const controlStatsMapping = data.checks.results.reduce(statsReducer, {});
 
-    const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
+    const { groups, controls } = data.complianceStandards.filter((datum) => datum.id === type)[0];
 
-    groups.forEach(datum => {
+    groups.forEach((datum) => {
         const groupStat = groupStatsMapping[datum.id];
         if (groupStat !== undefined) {
             const value = Math.round((groupStat.passing / groupStat.total) * 100);
@@ -77,14 +77,14 @@ const processSunburstData = (match, location, data, type) => {
                 name: `${datum.name}. ${datum.description}`,
                 color: getColor(value),
                 value,
-                children: []
+                children: [],
             };
         }
     });
 
     controls
-        .filter(control => control.standardId === type)
-        .forEach(datum => {
+        .filter((control) => control.standardId === type)
+        .forEach((datum) => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
 
@@ -98,7 +98,7 @@ const processSunburstData = (match, location, data, type) => {
                     name: `${datum.name} - ${datum.description}`,
                     color: getColor(value),
                     link: url,
-                    value
+                    value,
                 });
             }
         });
@@ -106,7 +106,7 @@ const processSunburstData = (match, location, data, type) => {
     const { passing, total } = Object.values(controlStatsMapping).reduce(
         (acc, currVal) => ({
             passing: acc.passing + currVal.passing,
-            total: acc.total + currVal.total
+            total: acc.total + currVal.total,
         }),
         { passing: 0, total: 0 }
     );
@@ -115,11 +115,11 @@ const processSunburstData = (match, location, data, type) => {
 
     return {
         sunburstData: Object.values(groupMapping),
-        totalPassing
+        totalPassing,
     };
 };
 
-const getNumControls = sunburstData =>
+const getNumControls = (sunburstData) =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
 const createURLLink = (match, location, entityType, standardId, entityName, searchParam) => {
@@ -143,32 +143,32 @@ const ComplianceByStandard = ({
     entityId,
     className,
     standardOptions,
-    onStandardChange
+    onStandardChange,
 }) => {
     const groupBy = [
         entityTypes.STANDARD,
         entityTypes.CATEGORY,
         entityTypes.CONTROL,
-        ...(entityType ? [entityType] : [])
+        ...(entityType ? [entityType] : []),
     ];
     const searchParam = useContext(searchContext);
     const where = {
-        Standard: standardLabels[standardType]
+        Standard: standardLabels[standardType],
     };
     if (entityType && entityId) where[`${entityType} ID`] = entityId;
     const variables = {
         groupBy,
-        where: queryService.objectToWhereClause(where)
+        where: queryService.objectToWhereClause(where),
     };
 
     function getTitleComponent() {
         if (!standardOptions) return null;
 
         const options = standardOptions
-            .filter(standard => standard !== standardType)
-            .map(standard => ({
+            .filter((standard) => standard !== standardType)
+            .map((standard) => ({
                 value: standard,
-                label: standardLabels[standard]
+                label: standardLabels[standard],
             }));
 
         return (
@@ -180,27 +180,27 @@ const ComplianceByStandard = ({
                 isSearchable={false}
                 styles={{
                     indicatorSeparator: () => ({
-                        display: 'none'
+                        display: 'none',
                     }),
                     control: () => ({
-                        border: 'none'
+                        border: 'none',
                     }),
                     placeholder: () => ({
                         fontWeight: 700,
                         fontSize: '11px',
                         letterSpacing: '.5px',
-                        textTransform: 'uppercase'
+                        textTransform: 'uppercase',
                     }),
-                    valueContainer: provided => ({
+                    valueContainer: (provided) => ({
                         ...provided,
                         paddingRight: 0,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                     }),
-                    dropdownIndicator: provided => ({
+                    dropdownIndicator: (provided) => ({
                         ...provided,
                         color: 'var(--base-500)',
-                        paddingLeft: 0
-                    })
+                        paddingLeft: 0,
+                    }),
                 }}
             />
         );
@@ -236,13 +236,13 @@ const ComplianceByStandard = ({
                     );
                     const sunburstRootData = [
                         {
-                            text: `${sunburstData.length} Categories`
+                            text: `${sunburstData.length} Categories`,
                         },
                         {
                             text: `${getNumControls(sunburstData)} Controls`,
                             link: url,
-                            color: 'var(--tertiary-700)'
-                        }
+                            color: 'var(--tertiary-700)',
+                        },
                     ];
 
                     const linkTo = URLService.getURL(match, location)
@@ -250,8 +250,8 @@ const ComplianceByStandard = ({
                         .query({
                             [searchParam]: {
                                 standard: standardLabels[standardType],
-                                groupBy: entityTypes.CATEGORY
-                            }
+                                groupBy: entityTypes.CATEGORY,
+                            },
                         })
                         .url();
 
@@ -307,7 +307,7 @@ ComplianceByStandard.propTypes = {
     entityId: PropTypes.string,
     className: PropTypes.string,
     standardOptions: PropTypes.arrayOf(PropTypes.string),
-    onStandardChange: PropTypes.func
+    onStandardChange: PropTypes.func,
 };
 
 ComplianceByStandard.defaultProps = {
@@ -316,7 +316,7 @@ ComplianceByStandard.defaultProps = {
     entityName: null,
     className: '',
     standardOptions: null,
-    onStandardChange: null
+    onStandardChange: null,
 };
 
 export default withRouter(ComplianceByStandard);

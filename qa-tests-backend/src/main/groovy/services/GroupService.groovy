@@ -10,6 +10,25 @@ class GroupService extends BaseService {
         return GroupServiceGrpc.newBlockingStub(getChannel())
     }
 
+    static addDefaultMapping(String authProviderId, String defaultRoleName) {
+        def group = Group.newBuilder()
+            .setProps(GroupProperties.newBuilder()
+                .setAuthProviderId(authProviderId))
+            .setRoleName(defaultRoleName)
+            .build()
+        createGroup(group)
+    }
+
+    static removeAllMappingsForProvider(String authProviderId) {
+        getGroups(
+                GetGroupsRequest.newBuilder()
+                        .setAuthProviderId(authProviderId)
+                        .build()
+        ).groupsList.forEach {
+            deleteGroup(it.props)
+        }
+    }
+
     static createGroup(Group group) {
         try {
             return getGroupService().createGroup(group)

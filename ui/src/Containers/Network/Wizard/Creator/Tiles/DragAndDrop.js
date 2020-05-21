@@ -4,27 +4,22 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { useDropzone } from 'react-dropzone';
 
+import { fileUploadColors } from 'constants/visuals/colors';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import wizardStages from 'Containers/Network/Wizard/wizardStages';
 
-const BACKGROUND_COLOR = '#faecd2';
-const ICON_COLOR = '#b39357';
-
-const DragAndDrop = props => {
-    const showToast = useCallback(
-        () => {
-            const errorMessage = 'Invalid file type. Try again.';
-            props.addToast(errorMessage);
-            setTimeout(props.removeToast, 500);
-        },
-        [props]
-    );
+const DragAndDrop = (props) => {
+    const showToast = useCallback(() => {
+        const errorMessage = 'Invalid file type. Try again.';
+        props.addToast(errorMessage);
+        setTimeout(props.removeToast, 500);
+    }, [props]);
 
     const onDrop = useCallback(
-        acceptedFiles => {
+        (acceptedFiles) => {
             props.setNetworkPolicyModificationState('REQUEST');
-            acceptedFiles.forEach(file => {
+            acceptedFiles.forEach((file) => {
                 // check file type.
                 if (file && !file.name.includes('.yaml')) {
                     showToast();
@@ -65,13 +60,16 @@ const DragAndDrop = props => {
             </div>
             <div
                 {...getRootProps()}
-                className="flex w-full min-h-32 h-full mt-3 py-3 flex-col self-center uppercase hover:bg-warning-100 border border-dashed border-warning-500 bg-warning-100 hover:bg-warning-200 cursor-pointer justify-center outline-none"
+                className="bg-warning-100 border border-dashed border-warning-500 cursor-pointer flex flex-col h-full hover:bg-warning-200 justify-center min-h-32 mt-3 outline-none py-3 self-center uppercase w-full"
             >
                 <input {...getInputProps()} />
                 <div className="flex flex-shrink-0 flex-col">
                     <div
                         className="mt-3 h-18 w-18 self-center rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: BACKGROUND_COLOR, color: ICON_COLOR }}
+                        style={{
+                            background: fileUploadColors.BACKGROUND_COLOR,
+                            color: fileUploadColors.ICON_COLOR,
+                        }}
                     >
                         <Icon.Upload className="h-8 w-8" strokeWidth="1.5px" />
                     </div>
@@ -92,7 +90,7 @@ DragAndDrop.propTypes = {
     setWizardStage: PropTypes.func.isRequired,
 
     addToast: PropTypes.func.isRequired,
-    removeToast: PropTypes.func.isRequired
+    removeToast: PropTypes.func.isRequired,
 };
 
 const mapDispatchToProps = {
@@ -104,10 +102,7 @@ const mapDispatchToProps = {
     setWizardStage: wizardActions.setNetworkWizardStage,
 
     addToast: notificationActions.addNotification,
-    removeToast: notificationActions.removeOldestNotification
+    removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(
-    null,
-    mapDispatchToProps
-)(DragAndDrop);
+export default connect(null, mapDispatchToProps)(DragAndDrop);

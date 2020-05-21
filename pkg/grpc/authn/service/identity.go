@@ -30,7 +30,11 @@ func (i identity) FullName() string {
 	return i.id.Subject.CN()
 }
 
-func (i identity) Role() *storage.Role {
+func (i identity) Permissions() *storage.Role {
+	return nil
+}
+
+func (i identity) Roles() []*storage.Role {
 	return nil // services do not have roles
 }
 

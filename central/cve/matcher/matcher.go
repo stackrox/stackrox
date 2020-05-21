@@ -15,6 +15,7 @@ import (
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -117,15 +118,20 @@ func (m *CVEMatcher) IsClusterAffectedByK8sOrIstioCVE(ctx context.Context, clust
 func (m *CVEMatcher) IsClusterAffectedByK8sCVE(_ context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
 	clusterVersion := cluster.GetStatus().GetOrchestratorMetadata().GetVersion()
 	for _, node := range cve.Configurations.Nodes {
-		if m.matchVersions(node, clusterVersion, converter.K8s) {
+		matched, err := m.matchVersions(node, clusterVersion, converter.K8s)
+		// If we could determine CVE impact from one of cpe string, we skip logging error
+		if matched {
 			return true, nil
+		}
+		if err != nil {
+			log.Error(errors.Wrapf(err, "errors occurred determining impact of k8s cve %s", cve.CVE.CVEDataMeta.ID))
 		}
 	}
 	return false, nil
 }
 
 // IsClusterAffectedByIstioCVE returns true if cluster is affected by istio cve
-func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *storage.Cluster, entry *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
+func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *storage.Cluster, cve *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error) {
 	ok, err := m.isIstioControlPlaneRunning(ctx)
 	if err != nil {
 		return false, err
@@ -138,10 +144,15 @@ func (m *CVEMatcher) IsClusterAffectedByIstioCVE(ctx context.Context, cluster *s
 	if err != nil {
 		return false, err
 	}
-	for _, node := range entry.Configurations.Nodes {
+	for _, node := range cve.Configurations.Nodes {
 		for _, version := range versions.AsSlice() {
-			if m.matchVersions(node, version, converter.Istio) {
+			matched, err := m.matchVersions(node, version, converter.Istio)
+			// If we could determine CVE impact from one of cpe string, we skip logging error
+			if matched {
 				return true, nil
+			}
+			if err != nil {
+				log.Error(errors.Wrapf(err, "errors occurred determining impact of istio cve %s", cve.CVE.CVEDataMeta.ID))
 			}
 		}
 	}
@@ -174,37 +185,32 @@ func (m *CVEMatcher) getAllIstioComponentsVersionsInCluster(ctx context.Context,
 	return set, nil
 }
 
-func (m *CVEMatcher) matchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct converter.CVEType) bool {
+func (m *CVEMatcher) matchVersions(node *schema.NVDCVEFeedJSON10DefNode, versionToMatch string, ct converter.CVEType) (bool, error) {
 	if node.Operator != "OR" {
-		log.Errorf("operator %q is not supported right now", node.Operator)
-		return false
+		return false, nil
 	}
 
 	if m.IsGKEOrEKSVersion(versionToMatch) {
 		versionToMatch = strings.Split(versionToMatch, "-")[0]
 	}
 
+	var errList errorhelpers.ErrorList
 	for _, cpeMatch := range node.CPEMatch {
 		// It might be possible that the node contains non kube cpes too, so keep iterating. For example,
 		// "cpe23Uri": "cpe:2.3:a:cncf:portmap:*:*:*:*:*:container_networking_interface:*:*", and
 		// "cpe23Uri": "cpe:2.3:a:kubernetes:kubernetes:*:*:*:*:*:*:*:*" are in the same node
-		cpeVersionAndUpdate, err := getVersionAndUpdateFromCpe(cpeMatch.Cpe23Uri, ct)
-		if err != nil {
-			log.Error(errors.Wrapf(err, "could not get version and update from cpe: %q", cpeMatch.Cpe23Uri))
-			continue
-		}
-
+		cpeVersionAndUpdate := getVersionAndUpdateFromCpe(cpeMatch.Cpe23Uri, ct)
 		if cpeVersionAndUpdate == "" {
 			continue
 		}
 
 		// The version is N/A, treating it as a match
 		if cpeVersionAndUpdate == "-:*" {
-			return true
+			return true, errList.ToError()
 		}
 
 		if versionToMatch == "" {
-			return false
+			return false, errList.ToError()
 		}
 
 		targetVersion, err := version.NewVersion(versionToMatch)
@@ -218,36 +224,30 @@ func (m *CVEMatcher) matchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 		if stringutils.AllEmpty(cpeMatch.VersionStartIncluding, cpeMatch.VersionEndIncluding, cpeMatch.VersionEndExcluding) {
 			// This means this version and all prelease, build versions of this version. For example 1.6.4:*
 			if strings.HasSuffix(cpeVersionAndUpdate, ":*") {
-				match, err := matchBaseVersion(strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch)
-				if err != nil {
-					log.Error(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
-					continue
-				}
-				if match {
-					return true
+				if match, err := matchBaseVersion(strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch); err != nil {
+					errList.AddError(errors.Wrapf(err, "could not compare base version %q with cluster version: %q", strings.TrimSuffix(cpeVersionAndUpdate, ":*"), versionToMatch))
+				} else if match {
+					return true, errList.ToError()
 				}
 				continue
 			}
 
 			// Case of specific version and prerelease. Example 1.6.4:beta0
 			cpeVersion := strings.Join(strings.Split(cpeVersionAndUpdate, ":"), "-")
-			match, err := matchExactVersion(cpeVersion, versionToMatch)
-			if err != nil {
-				log.Error(errors.Wrapf(err, "could not compare exact version %q with cluster version: %q", cpeVersion, versionToMatch))
+			if match, err := matchExactVersion(cpeVersion, versionToMatch); err != nil {
+				errList.AddError(errors.Wrapf(err, "could not compare exact version %q with cluster version: %q", cpeVersion, versionToMatch))
 				continue
+			} else if match {
+				return true, errList.ToError()
 			}
-			if match {
-				return true
-			}
-		} else { // This is case where we're dealing with block of versions
-
+		} else {
+			// This is case where we're dealing with block of versions
 			targetVersion, err := getBaseVersion(targetVersion)
 			if err != nil {
 				continue
 			}
 
 			var constraints []*version.Constraint
-
 			if cpeMatch.VersionStartIncluding != "" {
 				cs := getConstraints(fmt.Sprintf(">= %s", cpeMatch.VersionStartIncluding))
 				constraints = append(constraints, cs...)
@@ -268,11 +268,11 @@ func (m *CVEMatcher) matchVersions(node *schema.NVDCVEFeedJSON10DefNode, version
 				val = val && c.Check(targetVersion)
 			}
 			if val {
-				return true
+				return true, errList.ToError()
 			}
 		}
 	}
-	return false
+	return false, errList.ToError()
 }
 
 func getConstraints(s string) []*version.Constraint {
@@ -287,12 +287,10 @@ func getConstraints(s string) []*version.Constraint {
 func matchBaseVersion(version1, version2 string) (bool, error) {
 	v1, err := version.NewVersion(version1)
 	if err != nil {
-		log.Error(err)
 		return false, err
 	}
 	v2, err := version.NewVersion(version2)
 	if err != nil {
-		log.Error(err)
 		return false, err
 	}
 	// For ex [1.6.4, 1.6.4] Or [1.6.4, 1.6.4+build1] should be matched
@@ -302,7 +300,6 @@ func matchBaseVersion(version1, version2 string) (bool, error) {
 	// For ex [1.6.4 and 1.6.4-beta1
 	v2, err = getBaseVersion(v2)
 	if err != nil {
-		log.Error(err)
 		return false, err
 	}
 	return v1.Equal(v2), nil
@@ -333,24 +330,24 @@ func getBaseVersion(v *version.Version) (*version.Version, error) {
 	return bv, nil
 }
 
-func getVersionAndUpdateFromCpe(cpe string, ct converter.CVEType) (string, error) {
+func getVersionAndUpdateFromCpe(cpe string, ct converter.CVEType) string {
 	if ok := strings.HasPrefix(cpe, "cpe:2.3:a:"); !ok {
-		return "", errors.Errorf("cpe: %q not a valid cpe23Uri format", cpe)
+		return ""
 	}
 
 	ss := strings.Split(cpe, ":")
 	if len(ss) != 13 {
-		return "", errors.Errorf("cpe: %q not a valid cpe23Uri format", cpe)
+		return ""
 	}
 	if ct != converter.K8s && ct != converter.Istio {
-		return "", errors.Errorf("unkown CVE type: %d", ct)
+		return ""
 	}
 	if ct == converter.K8s && (ss[3] != "kubernetes" || ss[4] != "kubernetes") {
-		return "", nil
+		return ""
 	}
 	if ct == converter.Istio && (ss[3] != "istio" || ss[4] != "istio") {
-		return "", nil
+		return ""
 	}
 
-	return strings.Join(ss[5:7], ":"), nil
+	return strings.Join(ss[5:7], ":")
 }

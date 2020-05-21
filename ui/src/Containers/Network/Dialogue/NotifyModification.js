@@ -17,24 +17,24 @@ class NotifyModification extends Component {
         dialogueStage: PropTypes.string.isRequired,
         notifiers: PropTypes.arrayOf(
             PropTypes.shape({
-                id: PropTypes.string.isRequired
+                id: PropTypes.string.isRequired,
             })
         ).isRequired,
         selectedNotifiers: PropTypes.arrayOf(PropTypes.string),
 
         setNetworkNotifiers: PropTypes.func.isRequired,
         notifyModification: PropTypes.func.isRequired,
-        setDialogueStage: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired,
     };
 
     static defaultProps = {
-        selectedNotifiers: []
+        selectedNotifiers: [],
     };
 
     onNotify = () => {
         // If we only have one notifier, then assume any request is for that notifier.
         if (this.props.notifiers.length === 1) {
-            this.props.setNetworkNotifiers(this.props.notifiers.map(notifier => notifier.id));
+            this.props.setNetworkNotifiers(this.props.notifiers.map((notifier) => notifier.id));
         }
         this.props.notifyModification();
         this.props.setDialogueStage(dialogueStages.closed);
@@ -85,16 +85,13 @@ class NotifyModification extends Component {
 const mapStateToProps = createStructuredSelector({
     notifiers: selectors.getNotifiers,
     selectedNotifiers: selectors.getNetworkNotifiers,
-    dialogueStage: selectors.getNetworkDialogueStage
+    dialogueStage: selectors.getNetworkDialogueStage,
 });
 
 const mapDispatchToProps = {
     notifyModification: dialogueActions.notifyNetworkPolicyModification,
     setNetworkNotifiers: dialogueActions.setNetworkNotifiers,
-    setDialogueStage: dialogueActions.setNetworkDialogueStage
+    setDialogueStage: dialogueActions.setNetworkDialogueStage,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(NotifyModification);
+export default connect(mapStateToProps, mapDispatchToProps)(NotifyModification);

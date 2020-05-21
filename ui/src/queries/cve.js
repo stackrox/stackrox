@@ -11,5 +11,5 @@ export const CVE_NAME = gql`
 `;
 
 export default {
-    CVE_NAME
+    CVE_NAME,
 };

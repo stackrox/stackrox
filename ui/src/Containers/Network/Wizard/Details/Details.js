@@ -37,7 +37,7 @@ function Details(props) {
     const envGraphPanelTabs = [
         { text: 'Details' },
         { text: 'Network Policies' },
-        { text: 'Network Flows' }
+        { text: 'Network Flows' },
     ];
     const deploymentEdges = selectedNode.edges.filter(
         ({ data }) => data.destNodeNS && data.destNodeName && data.source !== data.target
@@ -90,14 +90,14 @@ function Details(props) {
     }
 
     const leftButtons = props.selectedNamespace ? (
-        <React.Fragment>
+        <>
             <PanelButton
                 icon={<Icon.ArrowLeft className="h-5 w-5" />}
                 className="flex pl-3 text-center text-sm items-center"
                 onClick={onBackButtonClick}
                 tooltip="Back"
             />
-        </React.Fragment>
+        </>
     ) : null;
 
     return (
@@ -118,26 +118,26 @@ Details.propTypes = {
 
     deployment: PropTypes.shape({
         name: PropTypes.string,
-        deployment: PropTypes.shape({})
+        deployment: PropTypes.shape({}),
     }).isRequired,
     selectedNode: PropTypes.shape({
-        edges: PropTypes.arrayOf(PropTypes.shape({}))
+        edges: PropTypes.arrayOf(PropTypes.shape({})),
     }),
     selectedNamespace: PropTypes.shape({}),
     isFetchingNode: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
     networkGraphRef: PropTypes.shape({
-        setSelectedNode: PropTypes.func
+        setSelectedNode: PropTypes.func,
     }),
     setWizardStage: PropTypes.func.isRequired,
     setSelectedNode: PropTypes.func.isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 Details.defaultProps = {
     networkGraphRef: null,
     selectedNode: null,
-    selectedNamespace: null
+    selectedNamespace: null,
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -149,19 +149,14 @@ const mapStateToProps = createStructuredSelector({
     deployment: selectors.getNodeDeployment,
     selectedNode: selectors.getSelectedNode,
     selectedNamespace: selectors.getSelectedNamespace,
-    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
-    networkGraphRef: selectors.getNetworkGraphRef
+    isFetchingNode: (state) => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
+    networkGraphRef: selectors.getNetworkGraphRef,
 });
 
 const mapDispatchToProps = {
     onClose: pageActions.closeNetworkWizard,
     setWizardStage: wizardActions.setNetworkWizardStage,
-    setSelectedNode: graphActions.setSelectedNode
+    setSelectedNode: graphActions.setSelectedNode,
 };
 
-export default withRouter(
-    connect(
-        mapStateToProps,
-        mapDispatchToProps
-    )(Details)
-);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Details));

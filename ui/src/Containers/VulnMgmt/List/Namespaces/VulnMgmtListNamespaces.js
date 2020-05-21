@@ -1,7 +1,7 @@
 import React from 'react';
 import gql from 'graphql-tag';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import TableCellLink from 'Components/TableCellLink';
 import TableCountLink from 'Components/workflow/TableCountLink';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -10,7 +10,7 @@ import DateTimeField from 'Components/DateTimeField';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -24,8 +24,8 @@ import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 export const defaultNamespaceSort = [
     {
         id: namespaceSortFields.PRIORITY,
-        desc: false
-    }
+        desc: false,
+    },
 ];
 
 export function getNamespaceTableColumns(workflowState) {
@@ -34,7 +34,7 @@ export function getNamespaceTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'metadata.id'
+            accessor: 'metadata.id',
         },
         {
             Header: `Namespace`,
@@ -42,7 +42,7 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/6 ${defaultColumnClassName}`,
             id: namespaceSortFields.NAMESPACE,
             accessor: 'metadata.name',
-            sortField: namespaceSortFields.NAMESPACE
+            sortField: namespaceSortFields.NAMESPACE,
         },
         {
             Header: `CVEs`,
@@ -68,7 +68,7 @@ export function getNamespaceTableColumns(workflowState) {
             },
             id: namespaceSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
-            sortField: namespaceSortFields.CVE_COUNT
+            sortField: namespaceSortFields.CVE_COUNT,
         },
         {
             Header: `Cluster`,
@@ -87,7 +87,7 @@ export function getNamespaceTableColumns(workflowState) {
             },
             id: namespaceSortFields.CLUSTER,
             accessor: 'metadata.clusterName',
-            sortField: namespaceSortFields.CLUSTER
+            sortField: namespaceSortFields.CLUSTER,
         },
         {
             Header: `Deployments`,
@@ -105,7 +105,7 @@ export function getNamespaceTableColumns(workflowState) {
             id: namespaceSortFields.DEPLOYMENT_COUNT,
             accessor: 'deploymentCount',
             sortField: namespaceSortFields.DEPLOYMENT_COUNT,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Images`,
@@ -123,7 +123,7 @@ export function getNamespaceTableColumns(workflowState) {
             id: namespaceSortFields.IMAGES,
             accessor: 'imageCount',
             sortField: namespaceSortFields.IMAGES,
-            sortable: false
+            sortable: false,
         },
         // @TODD, restore the Policy Counts column once its performance is improved,
         //   or remove the comment if we determine that it cannot be made performant
@@ -162,7 +162,7 @@ export function getNamespaceTableColumns(workflowState) {
             id: namespaceSortFields.POLICY_STATUS,
             accessor: 'policyStatus.status',
             sortField: namespaceSortFields.POLICY_STATUS,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Latest Violation`,
@@ -175,7 +175,7 @@ export function getNamespaceTableColumns(workflowState) {
             id: namespaceSortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: namespaceSortFields.LATEST_VIOLATION,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Risk Priority`,
@@ -184,8 +184,8 @@ export function getNamespaceTableColumns(workflowState) {
             id: namespaceSortFields.PRIORITY,
             accessor: 'metadata.priority',
             sortField: namespaceSortFields.PRIORITY,
-            sortable: true
-        }
+            sortable: true,
+        },
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
 }
@@ -206,8 +206,8 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
         variables: {
             query: queryService.objectToWhereClause(search),
             ...vulMgmtPolicyQuery,
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
     return (
@@ -230,7 +230,7 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
 VulnMgmtNamespaces.propTypes = workflowListPropTypes;
 VulnMgmtNamespaces.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
 };
 
 export default VulnMgmtNamespaces;

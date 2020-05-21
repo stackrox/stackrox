@@ -4,7 +4,7 @@ import FormFieldLabel from './FormFieldLabel';
 
 export default {
     title: 'FormFieldLabel',
-    component: FormFieldLabel
+    component: FormFieldLabel,
 };
 
 export const withTextLabel = () => {

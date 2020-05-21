@@ -5,7 +5,7 @@ import LabeledBarGraph from './LabeledBarGraph';
 
 export default {
     title: 'LabeledBarGraph',
-    component: LabeledBarGraph
+    component: LabeledBarGraph,
 };
 
 const data = [
@@ -15,7 +15,7 @@ const data = [
     { x: 75, y: 'Policy Name 2 / Enforced: Yes / Severity: Medium' },
     { x: 30, y: 'Policy Name 3 / Enforced: Yes / Severity: Medium' },
     { x: 20, y: 'Policy Name 4 / Enforced: Yes / Severity: Low' },
-    { x: 40, y: 'Policy Name 5 / Enforced: Yes / Severity: Low' }
+    { x: 40, y: 'Policy Name 5 / Enforced: Yes / Severity: Low' },
 ];
 
 export const withData = () => {
@@ -35,10 +35,10 @@ export const withTitle = () => {
 };
 
 export const withLinks = () => {
-    const dataWithLinks = data.map(datum => {
+    const dataWithLinks = data.map((datum) => {
         return {
             url: '/link/to/somewhere',
-            ...datum
+            ...datum,
         };
     });
     return (
@@ -85,9 +85,9 @@ function getLargerDataSet(withHint) {
                 ? {
                       title: `CVE-2019-${i}`,
                       body:
-                          'Echo ethernet floating-point analog in computer plasma indeterminate integral interface inversion element.'
+                          'Echo ethernet floating-point analog in computer plasma indeterminate integral interface inversion element.',
                   }
-                : null
+                : null,
         });
     }
 

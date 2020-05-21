@@ -13,8 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/sac"
-	testutils2 "github.com/stackrox/rox/pkg/testutils"
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -74,13 +73,13 @@ func TestGetPods(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			badgerDB := testutils2.BadgerDBForT(t)
-			defer utils.IgnoreError(badgerDB.Close)
+			rocksDB := rocksdbtest.RocksDBForT(t)
+			defer rocksDB.Close()
 
 			bleveIndex, err := globalindex.MemOnlyIndex()
 			require.NoError(t, err)
 
-			podsDS, err := datastore.New(badgerDB, bleveIndex, mockIndicators, mockFilter)
+			podsDS, err := datastore.NewRocksDB(rocksDB, bleveIndex, mockIndicators, mockFilter)
 			require.NoError(t, err)
 
 			for _, pod := range c.pods {

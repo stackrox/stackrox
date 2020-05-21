@@ -64,6 +64,7 @@ message ECRConfig {
     string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 4;
     bool   use_iam           = 5;
+    string endpoint          = 6;
 }
 
 message DTRConfig {

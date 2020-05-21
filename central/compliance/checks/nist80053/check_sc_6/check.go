@@ -3,6 +3,7 @@ package checksc6
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -29,10 +30,10 @@ func init() {
 				if !(common.IsPolicyEnforced(p) && common.IsPolicyEnabled(p)) {
 					continue
 				}
-				if p.GetFields().GetContainerResourcePolicy().GetCpuResourceLimit() != nil {
+				if policyfields.ContainsCPUResourceLimit(p) {
 					cpuLimitPolicy = name
 				}
-				if p.GetFields().GetContainerResourcePolicy().GetMemoryResourceLimit() != nil {
+				if policyfields.ContainsMemResourceLimit(p) {
 					memLimitPolicy = name
 				}
 			}

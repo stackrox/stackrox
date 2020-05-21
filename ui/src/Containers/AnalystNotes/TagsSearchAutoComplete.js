@@ -11,7 +11,7 @@ const TagsSearchAutoComplete = ({ categories, getQueryWithAutoComplete, children
 
     const autoCompleteVariables = {
         categories,
-        query: getQueryWithAutoComplete(autoComplete)
+        query: getQueryWithAutoComplete(autoComplete),
     };
 
     return (
@@ -29,7 +29,7 @@ const TagsSearchAutoComplete = ({ categories, getQueryWithAutoComplete, children
 TagsSearchAutoComplete.propTypes = {
     categories: PropTypes.arrayOf(PropTypes.string).isRequired,
     getQueryWithAutoComplete: PropTypes.func.isRequired,
-    children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired
+    children: PropTypes.func.isRequired,
 };
 
 export default TagsSearchAutoComplete;

@@ -13,5 +13,5 @@ export default {
     panel,
     page,
     tab,
-    search
+    search,
 };

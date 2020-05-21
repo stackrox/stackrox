@@ -8,13 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-// GetMockImages returns a slice of mock images
-func GetMockImages() []*storage.Image {
-	return []*storage.Image{
-		GetMockImage(),
-	}
-}
-
 // GetMockImage returns a mock image
 func GetMockImage() *storage.Image {
 	return &storage.Image{

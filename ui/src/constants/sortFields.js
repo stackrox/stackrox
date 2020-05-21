@@ -27,7 +27,7 @@ export const imageSortFields = {
     VOLUMES: 'Image Volumes',
     LABEL: 'Label',
     NAMESPACE: 'Namespace',
-    NAMESPACE_ID: 'Namespace ID'
+    NAMESPACE_ID: 'Namespace ID',
 };
 
 /**
@@ -46,7 +46,7 @@ export const componentSortFields = {
     LOCATION: 'Component Location',
     IMAGE_COUNT: 'Image Count',
     DEPLOYMENT_COUNT: 'Deployment Count',
-    PRIORITY: 'Priority'
+    PRIORITY: 'Priority',
 };
 
 /**
@@ -72,7 +72,7 @@ export const cveSortFields = {
     CVE_CREATED_TIME: 'CVE Created Time',
     IMAGE_SCAN_TIME: 'Image Scan Time',
     CVE_TYPE: 'CVE Type',
-    PUBLISHED: 'CVE Published On'
+    PUBLISHED: 'CVE Published On',
 };
 
 /**
@@ -92,7 +92,7 @@ export const clusterSortFields = {
     NAMESPACE_COUNT: 'Namespace Count',
     POLICY_COUNT: 'Policy Count',
     POLICY_STATUS: 'Policy Status',
-    PRIORITY: 'Priority'
+    PRIORITY: 'Priority',
 };
 
 /**
@@ -112,7 +112,7 @@ export const namespaceSortFields = {
     NAME: 'Namespace',
     POLICY_COUNT: 'Policy Count',
     POLICY_STATUS: 'Policy Status',
-    PRIORITY: 'Priority'
+    PRIORITY: 'Priority',
 };
 
 /**
@@ -132,7 +132,7 @@ export const policySortFields = {
     LIFECYCLE_STAGE: 'Lifecycle Stage',
     POLICY: 'Policy',
     POLICY_STATUS: 'Policy Status',
-    SEVERITY: 'Severity'
+    SEVERITY: 'Severity',
 };
 
 export const deploymentSortFields = {
@@ -206,7 +206,7 @@ export const deploymentSortFields = {
     VOLUME_NAME: 'Volume Name',
     VOLUME_READONLY: 'Volume ReadOnly',
     VOLUME_SOURCE: 'Volume Source',
-    VOLUME_TYPE: 'Volume Type'
+    VOLUME_TYPE: 'Volume Type',
 };
 
 // rollup object export
@@ -218,5 +218,5 @@ export const entitySortFieldsMap = {
     [entityTypes.IMAGE]: imageSortFields,
     [entityTypes.COMPONENT]: componentSortFields,
     [entityTypes.CVE]: cveSortFields,
-    [entityTypes.POLICY]: policySortFields
+    [entityTypes.POLICY]: policySortFields,
 };

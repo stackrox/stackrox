@@ -4,7 +4,7 @@ import NoComponentVulnMessage from './NoComponentVulnMessage';
 
 export default {
     title: 'NoComponentVulnMessage',
-    component: NoComponentVulnMessage
+    component: NoComponentVulnMessage,
 };
 
 export const noComponentsOrVulnMessage = () => <NoComponentVulnMessage />;

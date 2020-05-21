@@ -33,75 +33,60 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetNamespace mocks base method
-func (m *MockStore) GetNamespace(id string) (*storage.NamespaceMetadata, bool, error) {
+// Get mocks base method
+func (m *MockStore) Get(id string) (*storage.NamespaceMetadata, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespace", id)
+	ret := m.ctrl.Call(m, "Get", id)
 	ret0, _ := ret[0].(*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// GetNamespace indicates an expected call of GetNamespace
-func (mr *MockStoreMockRecorder) GetNamespace(id interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockStore)(nil).GetNamespace), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// GetNamespaces mocks base method
-func (m *MockStore) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
+// Walk mocks base method
+func (m *MockStore) Walk(arg0 func(*storage.NamespaceMetadata) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaces")
-	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNamespaces indicates an expected call of GetNamespaces
-func (mr *MockStoreMockRecorder) GetNamespaces() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MockStore)(nil).GetNamespaces))
-}
-
-// AddNamespace mocks base method
-func (m *MockStore) AddNamespace(arg0 *storage.NamespaceMetadata) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNamespace", arg0)
+	ret := m.ctrl.Call(m, "Walk", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddNamespace indicates an expected call of AddNamespace
-func (mr *MockStoreMockRecorder) AddNamespace(arg0 interface{}) *gomock.Call {
+// Walk indicates an expected call of Walk
+func (mr *MockStoreMockRecorder) Walk(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespace", reflect.TypeOf((*MockStore)(nil).AddNamespace), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0)
 }
 
-// UpdateNamespace mocks base method
-func (m *MockStore) UpdateNamespace(arg0 *storage.NamespaceMetadata) error {
+// Upsert mocks base method
+func (m *MockStore) Upsert(arg0 *storage.NamespaceMetadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateNamespace", arg0)
+	ret := m.ctrl.Call(m, "Upsert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateNamespace indicates an expected call of UpdateNamespace
-func (mr *MockStoreMockRecorder) UpdateNamespace(arg0 interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert
+func (mr *MockStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNamespace", reflect.TypeOf((*MockStore)(nil).UpdateNamespace), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), arg0)
 }
 
-// RemoveNamespace mocks base method
-func (m *MockStore) RemoveNamespace(id string) error {
+// Delete mocks base method
+func (m *MockStore) Delete(id string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveNamespace", id)
+	ret := m.ctrl.Call(m, "Delete", id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveNamespace indicates an expected call of RemoveNamespace
-func (mr *MockStoreMockRecorder) RemoveNamespace(id interface{}) *gomock.Call {
+// Delete indicates an expected call of Delete
+func (mr *MockStoreMockRecorder) Delete(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNamespace", reflect.TypeOf((*MockStore)(nil).RemoveNamespace), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockStore)(nil).Delete), id)
 }

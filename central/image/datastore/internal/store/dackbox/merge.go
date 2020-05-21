@@ -1,7 +1,6 @@
 package dackbox
 
 import (
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/cve/converter"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/edges"
@@ -9,7 +8,7 @@ import (
 
 // Merge merges the images parts into an image.
 func Merge(parts ImageParts) *storage.Image {
-	ret := proto.Clone(parts.image).(*storage.Image)
+	ret := parts.image.Clone()
 	mergeComponents(parts, ret)
 	return ret
 }
@@ -45,7 +44,7 @@ func generateEmbeddedComponent(cp ComponentParts) *storage.EmbeddedImageScanComp
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.component.GetName(),
 		Version:   cp.component.GetVersion(),
-		License:   proto.Clone(cp.component.GetLicense()).(*storage.License),
+		License:   cp.component.GetLicense().Clone(),
 		Source:    cp.component.GetSource(),
 		Location:  cp.edge.GetLocation(),
 		RiskScore: cp.component.GetRiskScore(),

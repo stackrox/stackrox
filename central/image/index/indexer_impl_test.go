@@ -35,7 +35,7 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 	suite.Require().NoError(err)
 
 	suite.bleveIndex = tmpIndex
-	suite.deploymentIndexer = deploymentIndex.New(tmpIndex)
+	suite.deploymentIndexer = deploymentIndex.New(tmpIndex, tmpIndex)
 
 	suite.indexer = New(tmpIndex)
 

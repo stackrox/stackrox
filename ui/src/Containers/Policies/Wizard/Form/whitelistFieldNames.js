@@ -5,5 +5,5 @@
 // eslint-disable-next-line import/prefer-default-export
 export const clientOnlyWhitelistFieldNames = {
     WHITELISTED_IMAGE_NAMES: 'whitelistedImageNames',
-    WHITELISTED_DEPLOYMENT_SCOPES: 'whitelistedDeploymentScopes'
+    WHITELISTED_DEPLOYMENT_SCOPES: 'whitelistedDeploymentScopes',
 };

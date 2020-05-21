@@ -10,6 +10,7 @@ import services.AuthProviderService
 import services.BaseService
 import services.ClusterService
 import services.NetworkPolicyService
+import services.ProcessService
 import services.RoleService
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
 import io.stackrox.proto.storage.RoleOuterClass
@@ -63,7 +64,7 @@ class RbacAuthTest extends BaseSpecification {
         return resource.get(res) == RoleOuterClass.Access.READ_WRITE_ACCESS
     }
 
-    def canDo(Closure closure, String token) {
+    def canDo(Closure closure, String token, boolean allowOtherError = false) {
         BaseService.setUseClientCert(false)
         BaseService.useApiToken(token)
 
@@ -72,12 +73,25 @@ class RbacAuthTest extends BaseSpecification {
             if (result instanceof Throwable) {
                 throw (Throwable)result
             }
-            return true
         } catch (StatusRuntimeException ex) {
             if (ex.status.code == Status.Code.PERMISSION_DENIED) {
                 return false
             }
-            throw ex
+            if (!allowOtherError) {
+                throw ex
+            }
+        } finally {
+            resetAuth()
+        }
+        return true
+    }
+
+    def myPermissions(String token) {
+        BaseService.setUseClientCert(false)
+        BaseService.useApiToken(token)
+
+        try {
+            return RoleService.myPermissions()
         } finally {
             resetAuth()
         }
@@ -159,5 +173,59 @@ class RbacAuthTest extends BaseSpecification {
          "Deployment": RoleOuterClass.Access.READ_ACCESS,
          "NetworkGraph": RoleOuterClass.Access.READ_ACCESS,
          "NetworkPolicy": RoleOuterClass.Access.READ_WRITE_ACCESS,] | ["NetworkPolicy"]
+    }
+
+    @Category(BAT)
+    def "Verify token with multiple roles works as expected"() {
+        when:
+        "Create two roles for individual access"
+        def roles = ["Indicator", "ProcessWhitelist"].collect {
+            def role = RoleOuterClass.Role.newBuilder()
+                    .setName("View ${it}")
+                    .putResourceToAccess(it, RoleOuterClass.Access.READ_ACCESS)
+                    .build()
+            RoleService.createRole(role)
+            assert RoleService.getRole(role.name)
+            println "Created Role:\n${role.name}"
+            role
+        }
+        assert roles.size() == 2
+
+        and:
+        "Create tokens that use either one or both roles"
+        def tokens = roles.subsequences().collect {
+            def token = ApiTokenService.generateToken("API Token - ${it*.name}", (it*.name).toArray(new String[0]))
+            assert token != null
+            token
+        }
+        assert tokens.size() == 3
+
+        then:
+        "Call to RPC method should succeed iff token represents union role"
+        for (def token : tokens) {
+            println "Checking behavior with token ${token.metadata.name}"
+            assert canDo({
+                ProcessService.getGroupedProcessByDeploymentAndContainer("unknown")
+            }, token.token, true) == (token.metadata.rolesCount > 1)
+        }
+
+        and:
+        "MyPermissions API should return the union of permissions"
+        for (def token : tokens) {
+            println "Checking permissions for token ${token.metadata.name}"
+            assert myPermissions(token.token).resourceToAccessMap.size() == token.metadata.rolesList.size()
+        }
+
+        cleanup:
+        "Revoke tokens"
+        for (def token : tokens) {
+            ApiTokenService.revokeToken(token.metadata.id)
+        }
+
+        and:
+        "Delete roles"
+        for (def role : roles) {
+            RoleService.deleteRole(role.name)
+        }
     }
 }

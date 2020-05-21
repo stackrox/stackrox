@@ -12,15 +12,12 @@ function Details({ deploymentId, processGroup }) {
     const [processEpoch, setProcessEpoch] = useState(0);
     const [processes, setProcesses] = useState(processGroup);
 
-    useEffect(
-        () => {
-            if (processEpoch === 0) {
-                return;
-            }
-            fetchProcesses(deploymentId).then(resp => setProcesses(resp.response));
-        },
-        [deploymentId, setProcesses, processEpoch]
-    );
+    useEffect(() => {
+        if (processEpoch === 0) {
+            return;
+        }
+        fetchProcesses(deploymentId).then((resp) => setProcesses(resp.response));
+    }, [deploymentId, setProcesses, processEpoch]);
 
     return (
         <div>
@@ -51,8 +48,8 @@ function Details({ deploymentId, processGroup }) {
 Details.propTypes = {
     deploymentId: PropTypes.string.isRequired,
     processGroup: PropTypes.shape({
-        groups: PropTypes.arrayOf(PropTypes.object)
-    }).isRequired
+        groups: PropTypes.arrayOf(PropTypes.object),
+    }).isRequired,
 };
 
 export default Details;

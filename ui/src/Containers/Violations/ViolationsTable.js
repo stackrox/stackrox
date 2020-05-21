@@ -11,10 +11,10 @@ function createSortOptionFromTableState(columns, state) {
     let sortOption = null;
     if (state.sorted.length && state.sorted[0].id) {
         // Column is selected for sorting.
-        const column = columns.find(col => col.accessor === state.sorted[0].id);
+        const column = columns.find((col) => col.accessor === state.sorted[0].id);
         sortOption = {
             field: column.searchField,
-            reversed: state.sorted[0].desc
+            reversed: state.sorted[0].desc,
         };
     }
     return sortOption;
@@ -26,17 +26,17 @@ function ViolationsTable({
     setSelectedAlertId,
     selectedRows,
     setSelectedRows,
-    setSortOption
+    setSortOption,
 }) {
     if (!violations.length)
         return <NoResultsMessage message="No results found. Please refine your search." />;
 
     // Add a single row to the selected rows.
     function toggleRow(idtoToggle) {
-        if (!selectedRows.find(id => id === idtoToggle)) {
+        if (!selectedRows.find((id) => id === idtoToggle)) {
             setSelectedRows(selectedRows.concat([idtoToggle]));
         } else {
-            setSelectedRows(selectedRows.filter(id => id !== idtoToggle));
+            setSelectedRows(selectedRows.filter((id) => id !== idtoToggle));
         }
     }
 
@@ -51,7 +51,7 @@ function ViolationsTable({
         if (allSelected) {
             setSelectedRows([]);
         } else {
-            setSelectedRows(violations.map(violation => violation.id));
+            setSelectedRows(violations.map((violation) => violation.id));
         }
     }
 
@@ -90,12 +90,12 @@ ViolationsTable.propTypes = {
     setSelectedAlertId: PropTypes.func.isRequired,
     selectedRows: PropTypes.arrayOf(PropTypes.string),
     setSelectedRows: PropTypes.func.isRequired,
-    setSortOption: PropTypes.func.isRequired
+    setSortOption: PropTypes.func.isRequired,
 };
 
 ViolationsTable.defaultProps = {
     selectedAlertId: undefined,
-    selectedRows: []
+    selectedRows: [],
 };
 
 export default ViolationsTable;

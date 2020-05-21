@@ -13,7 +13,7 @@ import ApiDocsNavigation from './ApiDocsNavigation';
 import LeftSideNavLinks, { navLinks } from './LeftSideNavLinks';
 import { getDarkModeLinkClassName } from './navHelpers';
 
-const versionString = metadata => {
+const versionString = (metadata) => {
     let result = `v${metadata.version}`;
     if (metadata.releaseBuild === false) {
         result += ' [DEV BUILD]';
@@ -77,7 +77,7 @@ const LeftNavigation = ({ location, metadata }) => {
     }
 
     function showNavigationPanel(navLink) {
-        return e => {
+        return (e) => {
             if (navLink.panelType && panelType !== navLink.panelType) {
                 e.preventDefault();
                 setPanelType(navLink.panelType);
@@ -114,9 +114,9 @@ const LeftNavigation = ({ location, metadata }) => {
     }
 
     function componentDidMount() {
-        window.onpopstate = e => {
+        window.onpopstate = (e) => {
             const url = e.srcElement.location.pathname;
-            const link = find(navLinks, navLink => url === navLink.to);
+            const link = find(navLinks, (navLink) => url === navLink.to);
             if (panelType || link) {
                 setPanelType(null);
             }
@@ -160,19 +160,19 @@ LeftNavigation.propTypes = {
     metadata: PropTypes.shape({
         version: PropTypes.string,
         releaseBuild: PropTypes.bool,
-        licenseStatus: PropTypes.string
-    })
+        licenseStatus: PropTypes.string,
+    }),
 };
 
 LeftNavigation.defaultProps = {
     metadata: {
         version: 'latest',
-        releaseBuild: false
-    }
+        releaseBuild: false,
+    },
 };
 
 const mapStateToProps = createStructuredSelector({
-    metadata: selectors.getMetadata
+    metadata: selectors.getMetadata,
 });
 
 export default withRouter(connect(mapStateToProps)(LeftNavigation));

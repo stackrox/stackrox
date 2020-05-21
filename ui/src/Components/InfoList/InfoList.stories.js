@@ -5,7 +5,7 @@ import InfoList from './InfoList';
 
 export default {
     title: 'InfoList',
-    component: InfoList
+    component: InfoList,
 };
 
 export const basicInfoList = () => {
@@ -20,20 +20,20 @@ export const withCustomItemRenderer = () => {
             id: 'CVE-2017-14062',
             cve: 'CVE-2017-14062',
             summary:
-                'Integer overflow in the decode_digit function in puny_decode.c in Libidn2 before 2.0.4 allows remote attackers to cause a denial of service or possibly have unspecified other impact.'
+                'Integer overflow in the decode_digit function in puny_decode.c in Libidn2 before 2.0.4 allows remote attackers to cause a denial of service or possibly have unspecified other impact.',
         },
         {
             id: 'CVE-2018-16402',
             cve: 'CVE-2018-16402',
             summary:
-                'libelf/elf_end.c in elfutils 0.173 allows remote attackers to cause a denial of service (double free and application crash) or possibly have unspecified other impact because it tries to decompress twice.'
+                'libelf/elf_end.c in elfutils 0.173 allows remote attackers to cause a denial of service (double free and application crash) or possibly have unspecified other impact because it tries to decompress twice.',
         },
         {
             id: 'CVE-2018-6485',
             cve: 'CVE-2018-6485',
             summary:
-                'An integer overflow in the implementation of the posix_memalign in memalign functions in the GNU C Library (aka glibc or libc6) 2.26 and earlier could cause these functions to return a pointer to a heap area that is too small, potentially leading to heap corruption.'
-        }
+                'An integer overflow in the implementation of the posix_memalign in memalign functions in the GNU C Library (aka glibc or libc6) 2.26 and earlier could cause these functions to return a pointer to a heap area that is too small, potentially leading to heap corruption.',
+        },
     ];
     function customRenderer(item) {
         return (

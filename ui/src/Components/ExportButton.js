@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
 
-import downloadCsv from 'services/ComplianceDownloadService';
-import PDFExportButton from 'Components/PDFExportButton';
+import downloadCSV from 'services/CSVDownloadService';
+import WorkflowPDFExportButton from 'Components/WorkflowPDFExportButton';
 import Button from 'Components/Button';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
@@ -15,7 +15,7 @@ const btnClassName =
 const queryParamMap = {
     CLUSTER: 'clusterId',
     STANDARD: 'standardId',
-    ALL: ''
+    ALL: '',
 };
 
 const complianceDownloadUrl = '/api/compliance/export/csv';
@@ -38,7 +38,7 @@ class ExportButton extends Component {
         tableOptions: PropTypes.shape({}),
         customCsvExportHandler: PropTypes.func,
         page: PropTypes.string,
-        disabled: PropTypes.bool
+        disabled: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -51,17 +51,21 @@ class ExportButton extends Component {
         tableOptions: {},
         customCsvExportHandler: null,
         page: '',
-        disabled: false
+        disabled: false,
     };
 
-    state = {
-        toggleWidget: false,
-        csvIsDownloading: false
-    };
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            toggleWidget: false,
+            csvIsDownloading: false,
+        };
+    }
 
     handleClickOutside = () => this.setState({ toggleWidget: false });
 
-    downloadCsv = () => {
+    downloadCSVFile = () => {
         const { id, fileName, page, type, customCsvExportHandler } = this.props;
         const csvName = addBrandedTimestampToString(fileName);
 
@@ -87,7 +91,7 @@ class ExportButton extends Component {
                 query = { [queryParamMap[type]]: value };
             }
 
-            downloadCsv(query, csvName, complianceDownloadUrl);
+            downloadCSV(csvName, complianceDownloadUrl, query);
         }
     };
 
@@ -118,7 +122,7 @@ class ExportButton extends Component {
                 <ul className=" bg-base-100 border-2 border-primary-600 rounded">
                     <li className="p-4 border-b border-base-400">
                         <div className="flex uppercase">
-                            <PDFExportButton
+                            <WorkflowPDFExportButton
                                 id={this.props.pdfId}
                                 className={`${btnClassName}  ${
                                     this.isCsvSupported() ? 'mr-2' : 'w-full'
@@ -132,7 +136,7 @@ class ExportButton extends Component {
                                     data-testid="download-csv-button"
                                     className={btnClassName}
                                     type="button"
-                                    onClick={this.downloadCsv}
+                                    onClick={this.downloadCSVFile}
                                     text={csvButtonText}
                                     isLoading={csvIsDownloading}
                                     loaderSize={14}

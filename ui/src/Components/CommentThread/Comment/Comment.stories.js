@@ -4,7 +4,7 @@ import Comment from './Comment';
 
 export default {
     title: 'Comment',
-    component: Comment
+    component: Comment,
 };
 
 function onSave() {}
@@ -18,11 +18,11 @@ export const withEdited = () => {
         user: {
             id: 'user-id-1',
             name: 'Bob Dylan',
-            email: 'bob@gmail.com'
+            email: 'bob@gmail.com',
         },
         createdTime: '2019-12-29T21:21:31.218853651Z',
         updatedTime: '2019-12-31T21:21:31.218853651Z',
-        modifiable: false
+        modifiable: false,
     };
     return <Comment comment={comment} onSave={onSave} onRemove={onRemove} />;
 };
@@ -34,11 +34,11 @@ export const withoutEdited = () => {
         user: {
             id: 'user-id-1',
             name: 'Bob Dylan',
-            email: 'bob@gmail.com'
+            email: 'bob@gmail.com',
         },
         createdTime: '2019-12-29T21:21:31.218853651Z',
         updatedTime: '2019-12-29T21:21:31.218853651Z',
-        modifiable: false
+        modifiable: false,
     };
     return <Comment comment={comment} onSave={onSave} onRemove={onRemove} />;
 };
@@ -50,11 +50,11 @@ export const withAbilityToModify = () => {
         user: {
             id: 'user-id-1',
             name: 'Bob Dylan',
-            email: 'bob@gmail.com'
+            email: 'bob@gmail.com',
         },
         createdTime: '2019-12-29T21:21:31.218853651Z',
         updatedTime: '2019-12-29T21:21:31.218853651Z',
-        modifiable: true
+        modifiable: true,
     };
     return <Comment comment={comment} onSave={onSave} onRemove={onRemove} />;
 };
@@ -66,11 +66,11 @@ export const withURLs = () => {
         user: {
             id: 'user-id-1',
             name: 'Bob Dylan',
-            email: 'bob@gmail.com'
+            email: 'bob@gmail.com',
         },
         createdTime: '2019-12-29T21:21:31.218853651Z',
         updatedTime: '2019-12-29T21:21:31.218853651Z',
-        modifiable: false
+        modifiable: false,
     };
     return <Comment comment={comment} onSave={onSave} onRemove={onRemove} />;
 };

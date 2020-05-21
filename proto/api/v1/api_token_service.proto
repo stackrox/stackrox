@@ -13,8 +13,9 @@ import "storage/api_token.proto";
 package v1;
 
 message GenerateTokenRequest {
-    string name = 1;
-    string role = 2;
+    string name  = 1;
+    string role  = 2 [deprecated = true];
+    repeated string roles = 3;
 }
 
 message GenerateTokenResponse {

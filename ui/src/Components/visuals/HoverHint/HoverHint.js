@@ -26,24 +26,21 @@ const HoverHint = ({ target, children, ...props }) => {
         elRef.current = document.createElement('div');
     }
 
-    useEffect(
-        () => {
-            document.body.appendChild(elRef.current);
-            const tippyInstance = tippy(target, {
-                content: elRef.current,
-                ...defaultTippyTooltipProps,
-                ...props
-            });
-            tippyInstance.show();
+    useEffect(() => {
+        document.body.appendChild(elRef.current);
+        const tippyInstance = tippy(target, {
+            content: elRef.current,
+            ...defaultTippyTooltipProps,
+            ...props,
+        });
+        tippyInstance.show();
 
-            return () => {
-                if (typeof tippyInstance.destroy === 'function') {
-                    tippyInstance.destroy();
-                }
-            };
-        },
-        [props, target]
-    );
+        return () => {
+            if (typeof tippyInstance.destroy === 'function') {
+                tippyInstance.destroy();
+            }
+        };
+    }, [props, target]);
 
     return createPortal(children, elRef.current);
 };
@@ -52,7 +49,7 @@ HoverHint.propTypes = {
     /** target DOM element */
     target: PropTypes.instanceOf(Element).isRequired,
     /** content to render when hint appears */
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 export default HoverHint;

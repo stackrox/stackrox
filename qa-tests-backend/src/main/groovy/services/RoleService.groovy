@@ -41,5 +41,9 @@ class RoleService extends BaseService {
             println "Error deleting role ${name}: ${e}"
         }
     }
+
+    static myPermissions() {
+        getRoleService().getMyPermissions(EMPTY)
+    }
 }
 

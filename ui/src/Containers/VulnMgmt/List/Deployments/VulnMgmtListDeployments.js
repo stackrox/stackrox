@@ -1,7 +1,7 @@
 import React from 'react';
 import gql from 'graphql-tag';
 
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import DateTimeField from 'Components/DateTimeField';
 import StatusChip from 'Components/StatusChip';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -10,7 +10,7 @@ import TableCountLink from 'Components/workflow/TableCountLink';
 import {
     defaultHeaderClassName,
     nonSortableHeaderClassName,
-    defaultColumnClassName
+    defaultColumnClassName,
 } from 'Components/Table';
 import entityTypes from 'constants/entityTypes';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
@@ -24,8 +24,8 @@ import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 export const defaultDeploymentSort = [
     {
         id: deploymentSortFields.PRIORITY,
-        desc: false
-    }
+        desc: false,
+    },
 ];
 
 export function getDeploymentTableColumns(workflowState) {
@@ -37,7 +37,7 @@ export function getDeploymentTableColumns(workflowState) {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Deployment`,
@@ -45,7 +45,7 @@ export function getDeploymentTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             id: deploymentSortFields.DEPLOYMENT,
             accessor: 'name',
-            sortField: deploymentSortFields.DEPLOYMENT
+            sortField: deploymentSortFields.DEPLOYMENT,
         },
         {
             Header: `CVEs`,
@@ -72,7 +72,7 @@ export function getDeploymentTableColumns(workflowState) {
             },
             id: deploymentSortFields.CVE_COUNT,
             accessor: 'vulnCounter.all.total',
-            sortField: deploymentSortFields.CVE_COUNT
+            sortField: deploymentSortFields.CVE_COUNT,
         },
         {
             Header: `Latest Violation`,
@@ -85,7 +85,7 @@ export function getDeploymentTableColumns(workflowState) {
             id: deploymentSortFields.LATEST_VIOLATION,
             accessor: 'latestViolation',
             sortField: deploymentSortFields.LATEST_VIOLATION,
-            sortable: false
+            sortable: false,
         },
         // @TODD, restore the Policy Counts column once its performance is improved,
         //   or remove the comment if we determine that it cannot be made performant
@@ -122,7 +122,7 @@ export function getDeploymentTableColumns(workflowState) {
             id: deploymentSortFields.POLICY_STATUS,
             accessor: 'policyStatus',
             sortField: deploymentSortFields.POLICY_STATUS,
-            sortable: false
+            sortable: false,
         },
         {
             Header: `Cluster`,
@@ -141,7 +141,7 @@ export function getDeploymentTableColumns(workflowState) {
             },
             id: deploymentSortFields.CLUSTER,
             accessor: 'clusterName',
-            sortField: deploymentSortFields.CLUSTER
+            sortField: deploymentSortFields.CLUSTER,
         },
         {
             Header: `Namespace`,
@@ -158,7 +158,7 @@ export function getDeploymentTableColumns(workflowState) {
             },
             id: deploymentSortFields.NAMESPACE,
             accessor: 'namespace',
-            sortField: deploymentSortFields.NAMESPACE
+            sortField: deploymentSortFields.NAMESPACE,
         },
         {
             Header: `Images`,
@@ -174,7 +174,7 @@ export function getDeploymentTableColumns(workflowState) {
             ),
             id: deploymentSortFields.IMAGE_COUNT,
             accessor: 'imageCount',
-            sortField: deploymentSortFields.IMAGE_COUNT
+            sortField: deploymentSortFields.IMAGE_COUNT,
         },
         {
             Header: `Risk Priority`,
@@ -182,8 +182,8 @@ export function getDeploymentTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             id: deploymentSortFields.PRIORITY,
             accessor: 'priority',
-            sortField: deploymentSortFields.PRIORITY
-        }
+            sortField: deploymentSortFields.PRIORITY,
+        },
     ];
     return removeEntityContextColumns(tableColumns, workflowState);
 }
@@ -203,8 +203,8 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
         variables: {
             query: queryService.objectToWhereClause(search),
             ...vulMgmtPolicyQuery,
-            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE)
-        }
+            pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
+        },
     };
 
     return (
@@ -227,7 +227,7 @@ const VulnMgmtDeployments = ({ selectedRowId, search, sort, page, data, totalRes
 VulnMgmtDeployments.propTypes = workflowListPropTypes;
 VulnMgmtDeployments.defaultProps = {
     ...workflowListDefaultProps,
-    sort: null
+    sort: null,
 };
 
 export default VulnMgmtDeployments;

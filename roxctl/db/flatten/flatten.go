@@ -3,6 +3,7 @@ package flatten
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/roxctl/common/util"
 	"github.com/stackrox/rox/roxctl/db/common"
 
 	"github.com/dgraph-io/badger"
@@ -18,9 +19,9 @@ func Command() *cobra.Command {
 		Use:   "flatten",
 		Short: "Flatten opens the BadgerDB and flattens the LSM tree to a single level",
 		Long:  "Flatten opens the BadgerDB and flattens the LSM tree to a single level",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return flatten(path, workers)
-		},
+		}),
 	}
 	c.Flags().StringVar(&path, "path", "/var/lib/stackrox/badgerdb", "Specify this path if you want to point explicitly at a specific BadgerDB")
 	c.Flags().IntVar(&workers, "workers", 2, "Specify the number of workers to use")

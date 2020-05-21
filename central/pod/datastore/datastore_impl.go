@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
@@ -115,7 +114,7 @@ func (ds *datastoreImpl) buildIndex() error {
 func (ds *datastoreImpl) fullReindex() error {
 	log.Info("[STARTUP] Reindexing all pods")
 
-	podIDs, err := ds.podStore.GetKeys()
+	podIDs, err := ds.podStore.GetIDs()
 	if err != nil {
 		return err
 	}
@@ -204,20 +203,7 @@ func (ds *datastoreImpl) UpsertPod(ctx context.Context, pod *storage.Pod) error 
 			return errors.Wrapf(err, "retrieving pod %q from store", pod.GetName())
 		}
 		if found {
-			pod.Started = oldPod.Started
 			mergeContainerInstances(pod, oldPod)
-		}
-
-		// Need to compute the start time if we don't already know it.
-		if pod.Started == nil {
-			var earliest *types.Timestamp
-			for _, instance := range pod.GetLiveInstances() {
-				startTime := instance.GetStarted()
-				if earliest == nil || earliest.Compare(startTime) > 0 {
-					earliest = startTime
-				}
-			}
-			pod.Started = earliest
 		}
 
 		if err := ds.podStore.Upsert(pod); err != nil {
@@ -320,4 +306,8 @@ func (ds *datastoreImpl) RemovePod(ctx context.Context, id string) error {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Indicator)))
 	return ds.indicators.RemoveProcessIndicatorsByPod(deleteIndicatorsCtx, id)
+}
+
+func (ds *datastoreImpl) GetPodIDs() ([]string, error) {
+	return ds.podStore.GetIDs()
 }

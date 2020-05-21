@@ -13,10 +13,10 @@ const baseCountUrl = '/v1/alertscount';
  */
 export function fetchAlertsByTimeseries(filters) {
     const params = queryString.stringify({
-        ...filters
+        ...filters,
     });
-    return axios.get(`${baseUrl}/summary/timeseries?${params}`).then(response => ({
-        response: response.data
+    return axios.get(`${baseUrl}/summary/timeseries?${params}`).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -27,10 +27,10 @@ export function fetchAlertsByTimeseries(filters) {
  */
 export function fetchSummaryAlertCounts(filters) {
     const params = queryString.stringify({
-        ...filters
+        ...filters,
     });
-    return axios.get(`${baseUrl}/summary/counts?${params}`).then(response => ({
-        response: response.data
+    return axios.get(`${baseUrl}/summary/counts?${params}`).then((response) => ({
+        response: response.data,
     }));
 }
 
@@ -51,14 +51,14 @@ export function fetchAlerts(options, sortOption, page, pageSize) {
             pagination: {
                 offset,
                 limit: pageSize,
-                sortOption
-            }
+                sortOption,
+            },
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
     return axios
         .get(`${baseUrl}?${params}`)
-        .then(response => (response.data ? response.data.alerts : []));
+        .then((response) => (response.data ? response.data.alerts : []));
 }
 
 /**
@@ -72,7 +72,7 @@ export function fetchAlertCount(options) {
         { query: searchOptionsToQuery(options) },
         { arrayFormat: 'repeat' }
     );
-    return axios.get(`${baseCountUrl}?${params}`).then(response => response.data.count);
+    return axios.get(`${baseCountUrl}?${params}`).then((response) => response.data.count);
 }
 
 /**
@@ -83,7 +83,7 @@ export function fetchAlertCount(options) {
  */
 export function fetchAlert(id) {
     if (!id) throw new Error('Alert ID must be specified');
-    return axios.get(`${baseUrl}/${id}`).then(response => response.data);
+    return axios.get(`${baseUrl}/${id}`).then((response) => response.data);
 }
 
 /**
@@ -105,5 +105,5 @@ export function resolveAlert(alertId, whitelist = false) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function resolveAlerts(alertIds = [], whitelist = false) {
-    return Promise.all(alertIds.map(id => resolveAlert(id, whitelist)));
+    return Promise.all(alertIds.map((id) => resolveAlert(id, whitelist)));
 }

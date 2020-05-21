@@ -7,7 +7,7 @@ import URLSearchInput from 'Components/URLSearchInput';
 
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 
-const addComplianceStateOption = searchOptions => {
+const addComplianceStateOption = (searchOptions) => {
     let modifiedSearchOptions = [];
     if (searchOptions) {
         modifiedSearchOptions = [...searchOptions];
@@ -35,12 +35,12 @@ const ComplianceListSearchInput = ({ categories, shouldAddComplianceState }) => 
 
 ComplianceListSearchInput.propTypes = {
     categories: PropTypes.arrayOf(PropTypes.string),
-    shouldAddComplianceState: PropTypes.bool
+    shouldAddComplianceState: PropTypes.bool,
 };
 
 ComplianceListSearchInput.defaultProps = {
     categories: [],
-    shouldAddComplianceState: false
+    shouldAddComplianceState: false,
 };
 
 export default ComplianceListSearchInput;

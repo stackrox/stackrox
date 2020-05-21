@@ -4,14 +4,14 @@ import { combineReducers } from 'redux';
 //-------------
 
 export const types = {
-    SET_POLICY_NOTIFIERS: 'policies/SET_POLICY_NOTIFIERS'
+    SET_POLICY_NOTIFIERS: 'policies/SET_POLICY_NOTIFIERS',
 };
 
 // Actions
 //---------
 
 export const actions = {
-    setPolicyNotifiers: notifierIds => ({ type: types.SET_POLICY_NOTIFIERS, notifierIds })
+    setPolicyNotifiers: (notifierIds) => ({ type: types.SET_POLICY_NOTIFIERS, notifierIds }),
 };
 
 // Reducers
@@ -26,7 +26,7 @@ const selectedPolicyNotifiers = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    selectedPolicyNotifiers
+    selectedPolicyNotifiers,
 });
 
 export default reducer;
@@ -35,8 +35,8 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
-const getPolicyNotifiers = state => state.selectedPolicyNotifiers;
+const getPolicyNotifiers = (state) => state.selectedPolicyNotifiers;
 
 export const selectors = {
-    getPolicyNotifiers
+    getPolicyNotifiers,
 };

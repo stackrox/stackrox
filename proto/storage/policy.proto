@@ -55,8 +55,8 @@ message PolicyValue {
 }
 
 enum BooleanOperator {
-    AND = 0;
-    OR  = 1;
+    OR  = 0;
+    AND = 1;
 }
 
 message PolicyList {

@@ -9,7 +9,7 @@ import {
     hasRelatedEntityFor,
     pageEntityCountMatchesTableRows,
     sidePanelEntityCountMatchesTableRows,
-    entityListCountMatchesTableLinkCount
+    entityListCountMatchesTableLinkCount,
 } from '../../helpers/configWorkflowUtils';
 import { url } from '../../constants/ConfigManagementPage';
 import withAuth from '../../helpers/basicAuth';

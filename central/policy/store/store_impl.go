@@ -15,11 +15,14 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/secondarykey"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type storeImpl struct {
 	*bolt.DB
+
+	mutex sync.Mutex
 }
 
 func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.Policy, exists bool, err error) {
@@ -103,18 +106,69 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	if policy.Id == "" {
 		policy.Id = uuid.NewV4().String()
 	}
-	err := b.Update(func(tx *bolt.Tx) error {
+
+	// Lock here so we can check whether the policy exists outside of the Bolt write lock.  This can race with
+	// update/delete but I don't think this results in any problems.
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	equalPolicyExists := false
+	err := b.View(func(tx *bolt.Tx) error {
+		var errs []error
 		bucket := tx.Bucket(policyBucket)
-		_, exists, err := b.getPolicy(policy.GetId(), bucket)
+
+		// Check whether a policy with this ID already exists
+		existingPolicy, exists, err := b.getPolicy(policy.GetId(), bucket)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Policy %v (%v) cannot be added because it already exists", policy.GetName(), policy.GetId())
+			if proto.Equal(existingPolicy, policy) {
+				// The existing policy is identical to the added policy, this is a noop.
+				equalPolicyExists = true
+				return nil
+			}
+			errs = append(errs,
+				&IDConflictError{
+					ErrString:          fmt.Sprintf("Policy %v (%v) cannot be added because it already exists", policy.GetName(), policy.GetId()),
+					ExistingPolicyName: existingPolicy.GetName(),
+				},
+			)
 		}
-		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
-			return errors.Wrap(err, "Could not add policy due to name validation")
+
+		// Check whether a policy with this name already exists
+		if exists := secondarykey.CheckUniqueKeyExists(tx, policyBucket, policy.GetName()); exists {
+			errs = append(errs,
+				&NameConflictError{
+					ErrString:          "Could not add policy due to name validation",
+					ExistingPolicyName: policy.GetName(),
+				},
+			)
 		}
+
+		// If we had any ID or name conflicts return both here
+		if len(errs) > 0 {
+			return &PolicyStoreErrorList{
+				Errors: errs,
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return policy.GetId(), err
+	}
+
+	if equalPolicyExists {
+		return policy.GetId(), nil
+	}
+
+	err = b.Update(func(tx *bolt.Tx) error {
+		// We've already checked for duplicate IDs and names, we can just write here.
+		if err := secondarykey.InsertUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
+			return err
+		}
+
+		bucket := tx.Bucket(policyBucket)
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
 			return err
@@ -127,6 +181,11 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 // UpdatePolicy updates a policy to bolt
 func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
+
+	// Have to lock here because this is an upsert, not an update.  AddPolicy should not re-create a policy which is
+	// created here.
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)

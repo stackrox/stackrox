@@ -83,7 +83,7 @@ FixableCVECount.propTypes = {
     orientation: PropTypes.oneOf(orientations),
     // This field is necessary to exclude rendering the Link during PDF generation. It causes an error where the Link can't be rendered outside a Router
     hideLink: PropTypes.bool,
-    showZero: PropTypes.bool
+    showZero: PropTypes.bool,
 };
 
 FixableCVECount.defaultProps = {
@@ -93,7 +93,7 @@ FixableCVECount.defaultProps = {
     fixableUrl: null,
     orientation: 'horizontal',
     hideLink: false,
-    showZero: false
+    showZero: false,
 };
 
 export default FixableCVECount;

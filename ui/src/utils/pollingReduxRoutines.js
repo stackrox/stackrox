@@ -17,7 +17,7 @@ const STOP = 'STOP';
 export function createPollingActionTypes(prefix) {
     return {
         START: `${prefix}_${START}`,
-        STOP: `${prefix}_${STOP}`
+        STOP: `${prefix}_${STOP}`,
     };
 }
 
@@ -40,7 +40,7 @@ function action(type, payload = {}) {
  */
 export function createPollingActions(types) {
     return {
-        start: params => action(types.START, { params }),
-        stop: () => action(types.STOP, {})
+        start: (params) => action(types.START, { params }),
+        stop: () => action(types.STOP, {}),
     };
 }

@@ -57,3 +57,9 @@ func AppendSeparator(key []byte) []byte {
 	newKey = append(newKey, separator...)
 	return newKey
 }
+
+// KV is a key/value pair.
+type KV struct {
+	Key   []byte
+	Value []byte
+}

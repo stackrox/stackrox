@@ -6,7 +6,7 @@ import Comment from './Comment';
 test('should not save on an empty comment', async () => {
     const comment = {
         createdTime: new Date().toISOString(),
-        message: ''
+        message: '',
     };
     function doNothing() {}
     const { getByTestId, getByText } = render(
@@ -30,7 +30,7 @@ test('should not save on an empty comment', async () => {
 test('should show links for urls with http(s) as a prefix', async () => {
     const comment = {
         createdTime: new Date().toISOString(),
-        message: 'Here is a link: https://www.example.com'
+        message: 'Here is a link: https://www.example.com',
     };
     function doNothing() {}
     const { getByTestId } = render(
@@ -45,7 +45,7 @@ test('should show links for urls with http(s) as a prefix', async () => {
 test('should not show links for urls with non-http(s) as a prefix', async () => {
     const comment = {
         createdTime: new Date().toISOString(),
-        message: 'These are not links: www.example3.com, example4.com'
+        message: 'These are not links: www.example3.com, example4.com',
     };
     function doNothing() {}
     const { queryByTestId } = render(

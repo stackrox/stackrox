@@ -7,16 +7,20 @@ function IconWithState({ Icon, enabled }) {
     }`;
     const iconClassName = `h-2 w-2 ${enabled ? 'text-success-700' : 'text-base-500'}`;
 
-    return <div className={wrapperClassName}>{<Icon className={iconClassName} />}</div>;
+    return (
+        <div className={wrapperClassName}>
+            <Icon className={iconClassName} />
+        </div>
+    );
 }
 
 IconWithState.propTypes = {
     Icon: PropTypes.func.isRequired,
-    enabled: PropTypes.bool
+    enabled: PropTypes.bool,
 };
 
 IconWithState.defaultProps = {
-    enabled: false
+    enabled: false,
 };
 
 export default IconWithState;

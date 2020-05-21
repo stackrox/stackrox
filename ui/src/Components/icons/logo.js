@@ -22,11 +22,11 @@ const Logo = ({ className }) => (
 );
 
 Logo.defaultProps = {
-    className: ''
+    className: '',
 };
 
 Logo.propTypes = {
-    className: PropTypes.string
+    className: PropTypes.string,
 };
 
 export default Logo;

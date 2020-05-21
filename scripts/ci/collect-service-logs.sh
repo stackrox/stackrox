@@ -39,6 +39,7 @@ main() {
             kubectl -n "${namespace}" logs "po/${pod}" -p -c "$ctr" > "${log_dir}/${pod}-${ctr}-previous.log"
         done
     done
+    kubectl -n "$namespace" get events -o wide >"${log_dir}/events.txt"
     find "${log_dir}" -type f -size 0 -delete
 }
 

@@ -6,18 +6,18 @@ import ReactSelectCreatable from 'react-select/lib/Creatable';
 const defaultClassName = 'text-base-600 font-400 w-full';
 
 const defaultComponentClassNames = {
-    multiValue: 'bg-primary-200 border border-primary-300 text-primary-700'
+    multiValue: 'bg-primary-200 border border-primary-300 text-primary-700',
 };
 
 export const selectMenuOnTopStyles = {
-    menu: base => ({
+    menu: (base) => ({
         ...base,
         position: 'absolute !important',
         top: 'auto !important',
         bottom: '100% !important',
         zIndex: '100000',
-        'border-radius': '5px 5px 0px 0px !important'
-    })
+        'border-radius': '5px 5px 0px 0px !important',
+    }),
 };
 
 const Control = ({ className, ...props }) => (
@@ -36,7 +36,7 @@ const Menu = ({ className, ...props }) => (
     />
 );
 
-const MultiValue = props => (
+const MultiValue = (props) => (
     <selectComponents.MultiValue {...props} className={defaultComponentClassNames.multiValue} />
 );
 
@@ -45,8 +45,8 @@ export const defaultSelectStyles = {
     option: (styles, { isFocused }) => ({
         ...styles,
         color: 'var(--base-600)',
-        backgroundColor: isFocused ? 'var(--base-300)' : ''
-    })
+        backgroundColor: isFocused ? 'var(--base-300)' : '',
+    }),
 };
 
 /**
@@ -77,11 +77,11 @@ function withAdjustedBehavior(SelectComponent) {
             styles: PropTypes.shape({}),
             'data-testid': PropTypes.string,
             isMulti: PropTypes.bool,
-            disallowWhitespace: PropTypes.bool
+            disallowWhitespace: PropTypes.bool,
         };
 
         static defaultProps = {
-            getOptionValue: option => (option ? option.value : option),
+            getOptionValue: (option) => (option ? option.value : option),
             className: defaultClassName,
             classNamePrefix: 'react-select', // only for testing purposes, not for CSS creation
             onChange: () => {},
@@ -92,17 +92,21 @@ function withAdjustedBehavior(SelectComponent) {
             styles: defaultSelectStyles,
             'data-testid': '',
             isMulti: false,
-            disallowWhitespace: false
+            disallowWhitespace: false,
         };
 
-        state = {
-            createdOptions: []
-        };
+        constructor(props) {
+            super(props);
 
-        trimNewValueWhitespace = newValue => {
+            this.state = {
+                createdOptions: [],
+            };
+        }
+
+        trimNewValueWhitespace = (newValue) => {
             // if it's not related to the creatable component creating new values, then ignore
             if (!Array.isArray(newValue)) return newValue;
-            const trimmedNewValue = newValue.map(datum => {
+            const trimmedNewValue = newValue.map((datum) => {
                 // if a new creatable value is not being added, don't make any changes
                 const { __isNew__ } = datum;
                 if (!__isNew__) return { ...datum };
@@ -113,7 +117,7 @@ function withAdjustedBehavior(SelectComponent) {
                 return {
                     label: trimmedLabel,
                     value: trimmedValue,
-                    ...rest
+                    ...rest,
                 };
             });
             return trimmedNewValue;
@@ -126,14 +130,14 @@ function withAdjustedBehavior(SelectComponent) {
             switch (changeAction.action) {
                 case 'create-option':
                     this.setState(({ createdOptions }) => ({
-                        createdOptions: [...createdOptions, lastOption]
+                        createdOptions: [...createdOptions, lastOption],
                     }));
                     break;
                 case 'remove-value':
                     this.setState(({ createdOptions }) => ({
                         createdOptions: createdOptions.filter(
-                            option => option !== changeAction.removedValue
-                        )
+                            (option) => option !== changeAction.removedValue
+                        ),
                     }));
                     break;
                 default:
@@ -150,7 +154,7 @@ function withAdjustedBehavior(SelectComponent) {
             this.updateCreatedOptions(modifiedNewValue, changeAction);
             const onlyValues =
                 modifiedNewValue && Array.isArray(modifiedNewValue)
-                    ? modifiedNewValue.map(option => getOptionValue(option))
+                    ? modifiedNewValue.map((option) => getOptionValue(option))
                     : getOptionValue(modifiedNewValue);
             onChange(onlyValues, modifiedNewValue, changeAction, ...rest);
         };
@@ -168,10 +172,10 @@ function withAdjustedBehavior(SelectComponent) {
             // in this case we assume that label will be the same as value
             // it should be happening only with Creatable, common example when options
             // are some list of entities, but we allow user to enter an arbitrary value
-            const transformSingleValue = v =>
-                allOptions.find(option => v === getOptionValue(option)) || {
+            const transformSingleValue = (v) =>
+                allOptions.find((option) => v === getOptionValue(option)) || {
                     label: v,
-                    value: v
+                    value: v,
                 };
             return Array.isArray(value)
                 ? value.map(transformSingleValue)
@@ -194,15 +198,15 @@ function withAdjustedBehavior(SelectComponent) {
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
             let mergedComponents = {
                 ...defaultComponents,
-                ...components
+                ...components,
             };
             if (!isMulti) {
                 mergedComponents = {
                     ...mergedComponents,
                     IndicatorSeparator: () => null,
-                    ValueContainer: props => (
+                    ValueContainer: (props) => (
                         <selectComponents.ValueContainer {...props} className="cursor-pointer" />
-                    )
+                    ),
                 };
             }
 

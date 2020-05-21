@@ -33,7 +33,7 @@ function ViolationsPageHeader({
     searchSuggestions,
     setSearchOptions,
     setSearchModifiers,
-    setSearchSuggestions
+    setSearchSuggestions,
 }) {
     // To handle page/count refreshing.
     const [pollEpoch, setPollEpoch] = useState(0);
@@ -51,37 +51,34 @@ function ViolationsPageHeader({
     if (
         hasExecutableFilter &&
         selectedAlertId &&
-        !currentPageAlerts.find(alert => alert.id === selectedAlertId)
+        !currentPageAlerts.find((alert) => alert.id === selectedAlertId)
     ) {
         setSelectedAlertId(null);
     }
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
-    useEffect(
-        () => {
-            if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
-                // Get the alerts that match the search request for the current page.
-                fetchAlerts(searchOptions, sortOption, currentPage, pageSize).then(
-                    setCurrentPageAlerts,
-                    () => {
-                        setCurrentPageAlerts([]);
-                    }
-                );
-                // Get the total count of alerts that match the search request.
-                fetchAlertCount(searchOptions).then(setAlertCount);
-            }
+    useEffect(() => {
+        if (!searchOptions.length || !searchOptions[searchOptions.length - 1].type) {
+            // Get the alerts that match the search request for the current page.
+            fetchAlerts(searchOptions, sortOption, currentPage, pageSize).then(
+                setCurrentPageAlerts,
+                () => {
+                    setCurrentPageAlerts([]);
+                }
+            );
+            // Get the total count of alerts that match the search request.
+            fetchAlertCount(searchOptions).then(setAlertCount);
+        }
 
-            // We will update the poll epoch after 5 seconds to force a refresh.
-            runAfter5Seconds(() => {
-                setPollEpoch(pollEpoch + 1);
-            });
-        },
-        [searchOptions, currentPage, sortOption, pollEpoch, setCurrentPageAlerts, setAlertCount]
-    );
+        // We will update the poll epoch after 5 seconds to force a refresh.
+        runAfter5Seconds(() => {
+            setPollEpoch(pollEpoch + 1);
+        });
+    }, [searchOptions, currentPage, sortOption, pollEpoch, setCurrentPageAlerts, setAlertCount]);
 
     // Render.
     const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
-    const defaultOption = searchModifiers.find(x => x.value === 'Deployment:');
+    const defaultOption = searchModifiers.find((x) => x.value === 'Deployment:');
     return (
         <PageHeader header="Violations" subHeader={subHeader}>
             <SearchInput
@@ -116,27 +113,24 @@ ViolationsPageHeader.propTypes = {
     searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
     setSearchOptions: PropTypes.func.isRequired,
     setSearchModifiers: PropTypes.func.isRequired,
-    setSearchSuggestions: PropTypes.func.isRequired
+    setSearchSuggestions: PropTypes.func.isRequired,
 };
 
 ViolationsPageHeader.defaultProps = {
     currentPageAlerts: [],
-    selectedAlertId: null
+    selectedAlertId: null,
 };
 
 const mapStateToProps = createStructuredSelector({
     searchOptions: selectors.getAlertsSearchOptions,
     searchModifiers: selectors.getAlertsSearchModifiers,
-    searchSuggestions: selectors.getAlertsSearchSuggestions
+    searchSuggestions: selectors.getAlertsSearchSuggestions,
 });
 
 const mapDispatchToProps = {
     setSearchOptions: alertActions.setAlertsSearchOptions,
     setSearchModifiers: alertActions.setAlertsSearchModifiers,
-    setSearchSuggestions: alertActions.setAlertsSearchSuggestions
+    setSearchSuggestions: alertActions.setAlertsSearchSuggestions,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(ViolationsPageHeader);
+export default connect(mapStateToProps, mapDispatchToProps)(ViolationsPageHeader);

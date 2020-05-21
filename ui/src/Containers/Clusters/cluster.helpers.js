@@ -8,31 +8,31 @@ export const runtimeOptions = [
     {
         label: 'No Runtime Collection',
         tableDisplay: 'None',
-        value: 'NO_COLLECTION'
+        value: 'NO_COLLECTION',
     },
     {
         label: 'Kernel Module',
         tableDisplay: 'Kernel Module',
-        value: 'KERNEL_MODULE'
+        value: 'KERNEL_MODULE',
     },
     {
         label: 'eBPF Program',
         tableDisplay: 'eBPF',
-        value: 'EBPF'
-    }
+        value: 'EBPF',
+    },
 ];
 
 export const clusterTypeOptions = [
     {
         label: 'Kubernetes',
         tableDisplay: 'Kubernetes',
-        value: 'KUBERNETES_CLUSTER'
+        value: 'KUBERNETES_CLUSTER',
     },
     {
         label: 'OpenShift',
         tableDisplay: 'OpenShift',
-        value: 'OPENSHIFT_CLUSTER'
-    }
+        value: 'OPENSHIFT_CLUSTER',
+    },
 ];
 
 export const clusterTablePollingInterval = 5000; // milliseconds
@@ -56,7 +56,7 @@ export const newClusterDefault = {
     DEPRECATEDOrchestratorMetadata: null,
     status: null,
     tolerationsConfig: {
-        disabled: false
+        disabled: false,
     },
     dynamicConfig: {
         admissionControllerConfig: {
@@ -64,105 +64,105 @@ export const newClusterDefault = {
             enforceOnUpdates: false,
             timeoutSeconds: 3,
             scanInline: false,
-            disableBypass: false
-        }
-    }
+            disableBypass: false,
+        },
+    },
 };
 
 // @TODO: add optional button text and func
 const upgradeStates = {
     UP_TO_DATE: {
-        displayValue: 'On the latest version',
-        type: 'current'
+        displayValue: 'Up to date with Central version',
+        type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
         displayValue: 'Manual upgrade required',
-        type: 'intervention'
+        type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
         type: 'download',
         action: {
-            actionText: 'Upgrade available'
-        }
+            actionText: 'Upgrade available',
+        },
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
-        type: 'progress'
+        type: 'progress',
     },
     UPGRADER_LAUNCHING: {
         displayValue: 'Upgrader launching',
-        type: 'progress'
+        type: 'progress',
     },
     UPGRADER_LAUNCHED: {
         displayValue: 'Upgrader launched',
-        type: 'progress'
+        type: 'progress',
     },
     PRE_FLIGHT_CHECKS_COMPLETE: {
         displayValue: 'Pre-flight checks complete',
-        type: 'progress'
+        type: 'progress',
     },
     UPGRADE_OPERATIONS_DONE: {
         displayValue: 'Upgrade operations done',
-        type: 'progress'
+        type: 'progress',
     },
     UPGRADE_COMPLETE: {
         displayValue: 'Upgrade complete',
-        type: 'current'
+        type: 'current',
     },
     UPGRADE_INITIALIZATION_ERROR: {
         displayValue: 'Upgrade initialization error',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     PRE_FLIGHT_CHECKS_FAILED: {
         displayValue: 'Pre-flight checks failed',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     UPGRADE_ERROR_ROLLING_BACK: {
         displayValue: 'Upgrade failed. Rolling back…',
-        type: 'failure'
+        type: 'failure',
     },
     UPGRADE_ERROR_ROLLED_BACK: {
         displayValue: 'Upgrade failed. Rolled back.',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     UPGRADE_ERROR_ROLLBACK_FAILED: {
         displayValue: 'Upgrade failed. Rollback failed.',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     UPGRADE_TIMED_OUT: {
         displayValue: 'Upgrade timed out.',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     UPGRADE_ERROR_UNKNOWN: {
         displayValue: 'Upgrade error unknown',
         type: 'failure',
         action: {
-            actionText: 'Retry upgrade'
-        }
+            actionText: 'Retry upgrade',
+        },
     },
     unknown: {
         displayValue: 'Unknown upgrade state. Contact Support.',
-        type: 'intervention'
-    }
+        type: 'intervention',
+    },
 };
 
 function findOptionInList(options, value) {
-    return options.find(opt => opt.value === value);
+    return options.find((opt) => opt.value === value);
 }
 
 export function formatClusterType(value) {
@@ -202,7 +202,7 @@ export function formatUpgradeMessage(upgradeStatus, detail) {
             (upgradeStatus.action && upgradeStatus.action.actionText) ||
             'Unknown status',
         type: '',
-        detail
+        detail,
     };
     switch (upgradeStatus.type) {
         case 'failure': {
@@ -297,7 +297,7 @@ function findUpgradeState(upgradeStatus) {
 }
 
 export function getUpgradeableClusters(clusters = []) {
-    return clusters.filter(cluster => {
+    return clusters.filter((cluster) => {
         const upgradeStatus = get(cluster, 'status.upgradeStatus', null);
         const statusObj = parseUpgradeStatus(upgradeStatus);
 
@@ -307,7 +307,7 @@ export function getUpgradeableClusters(clusters = []) {
 
 export const wizardSteps = Object.freeze({
     FORM: 'FORM',
-    DEPLOYMENT: 'DEPLOYMENT'
+    DEPLOYMENT: 'DEPLOYMENT',
 });
 
 export default {
@@ -322,5 +322,5 @@ export default {
     formatLastCheckIn,
     formatUpgradeMessage,
     parseUpgradeStatus,
-    wizardSteps
+    wizardSteps,
 };

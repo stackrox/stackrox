@@ -7,7 +7,7 @@ export const types = {
     UPDATE_POLICY_DISABLED_STATE: 'policies/UPDATE_POLICY_DISABLED_STATE',
     SELECT_POLICY: 'policies/SELECT_POLICY',
     SELECT_POLICIES: 'policies/SELECT_POLICIES',
-    SET_TABLE_PAGE: 'policies/SET_TABLE_PAGE'
+    SET_TABLE_PAGE: 'policies/SET_TABLE_PAGE',
 };
 
 // Actions
@@ -17,12 +17,12 @@ export const actions = {
     updatePolicyDisabledState: ({ policyId, disabled }) => ({
         type: types.UPDATE_POLICY_DISABLED_STATE,
         policyId,
-        disabled
+        disabled,
     }),
-    selectPolicyId: policyId => ({ type: types.SELECT_POLICY, policyId }),
-    selectPolicyIds: policyIds => ({ type: types.SELECT_POLICIES, policyIds }),
-    selectPolicies: policies => ({ type: types.SELECT_POLICIES, policies }),
-    setTablePage: page => ({ type: types.SET_TABLE_PAGE, page })
+    selectPolicyId: (policyId) => ({ type: types.SELECT_POLICY, policyId }),
+    selectPolicyIds: (policyIds) => ({ type: types.SELECT_POLICIES, policyIds }),
+    selectPolicies: (policies) => ({ type: types.SELECT_POLICIES, policies }),
+    setTablePage: (page) => ({ type: types.SET_TABLE_PAGE, page }),
 };
 
 // Reducers
@@ -61,7 +61,7 @@ const reducer = combineReducers({
     selectedId,
     selectedIds,
     selectedPolicies,
-    page
+    page,
 });
 
 export default reducer;
@@ -70,17 +70,17 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/policies/reducer.js
 //---------------------------------------------------------------------------------
 
-const getSelectedPolicyId = state => state.selectedId;
+const getSelectedPolicyId = (state) => state.selectedId;
 
-const getSelectedPolicyIds = state => state.selectedIds;
+const getSelectedPolicyIds = (state) => state.selectedIds;
 
-const getSelectedPolicies = state => state.selectedPolicies;
+const getSelectedPolicies = (state) => state.selectedPolicies;
 
-const getTablePage = state => state.page;
+const getTablePage = (state) => state.page;
 
 export const selectors = {
     getSelectedPolicyId,
     getSelectedPolicyIds,
     getSelectedPolicies,
-    getTablePage
+    getTablePage,
 };

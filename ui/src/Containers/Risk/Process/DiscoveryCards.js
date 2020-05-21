@@ -12,7 +12,11 @@ function DiscoveryCards({ deploymentId, processGroup, processEpoch, setProcessEp
         ['desc', 'asc']
     );
     return sortedProcessGroups.map((pg, i, list) => (
-        <div className={`px-3 ${i === list.length - 1 ? '' : 'pb-5'}`} key={pg.name}>
+        <div
+            className={`px-3 ${i === list.length - 1 ? '' : 'pb-5'}`}
+            key={pg.name}
+            data-testid="process-discovery-card"
+        >
             <ProcessDiscoveryCard
                 process={pg}
                 deploymentId={deploymentId}
@@ -28,10 +32,10 @@ function DiscoveryCards({ deploymentId, processGroup, processEpoch, setProcessEp
 DiscoveryCards.propTypes = {
     deploymentId: PropTypes.string.isRequired,
     processGroup: PropTypes.shape({
-        groups: PropTypes.arrayOf(PropTypes.object)
+        groups: PropTypes.arrayOf(PropTypes.object),
     }).isRequired,
     processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired
+    setProcessEpoch: PropTypes.func.isRequired,
 };
 
 export default DiscoveryCards;

@@ -19,7 +19,7 @@ function KeyValue({ label, value }) {
 
 KeyValue.propTypes = {
     label: PropTypes.string.isRequired,
-    value: PropTypes.string.isRequired
+    value: PropTypes.string.isRequired,
 };
 
 function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
@@ -105,11 +105,11 @@ ProcessMessage.propTypes = {
             execFilePath: PropTypes.string.isRequired,
             containerId: PropTypes.string.isRequired,
             lineage: PropTypes.arrayOf(PropTypes.string).isRequired,
-            uid: PropTypes.string.isRequired
-        })
+            uid: PropTypes.string.isRequired,
+        }),
     }).isRequired,
     areAnalystNotesVisible: PropTypes.bool.isRequired,
-    selectProcessId: PropTypes.func.isRequired
+    selectProcessId: PropTypes.func.isRequired,
 };
 
 export default ProcessMessage;

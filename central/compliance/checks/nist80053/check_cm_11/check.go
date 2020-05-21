@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -32,14 +33,20 @@ func checkAtLeastOnePolicyTargetsAnImageRegistry(ctx framework.ComplianceContext
 		if !common.IsPolicyEnabled(policy) {
 			continue
 		}
-		if registryField := policy.GetFields().GetImageName().GetRegistry(); registryField != "" {
+		var registries []string
+		for _, registryField := range policyfields.GetImageRegistries(policy) {
+			if registryField != "" {
+				registries = append(registries, registryField)
+			}
+		}
+		if len(registries) > 0 {
 			passed = true
 			var enforcedText string
 			if len(policy.GetEnforcementActions()) > 0 {
 				enforcedText = " (which is enforced)"
 			}
 
-			framework.Passf(ctx, "Policy %q%s targets an image registry (%s)", policy.GetName(), enforcedText, registryField)
+			framework.Passf(ctx, "Policy %q%s targets image registries (%s)", policy.GetName(), enforcedText, strings.Join(registries, ", "))
 		}
 	}
 	if !passed {

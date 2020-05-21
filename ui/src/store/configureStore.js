@@ -12,7 +12,7 @@ import { actions as serverErrorActions } from 'reducers/serverError';
 import registerServerErrorHandler from 'services/serverErrorHandler';
 
 const sagaMiddleware = createSagaMiddleware({
-    onError: error => Raven.captureException(error)
+    onError: (error) => Raven.captureException(error),
 });
 
 const ravenMiddleware = createRavenMiddleware(Raven);
@@ -30,14 +30,14 @@ export default function configureStore(initialState = {}, history) {
             ? window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
                   // TODO Try to remove when `react-router-redux` is out of beta, LOCATION_CHANGE should not be fired more than once after hot reloading
                   // Prevent recomputing reducers for `replaceReducer`
-                  shouldHotReload: false
+                  shouldHotReload: false,
               })
             : compose;
     /* eslint-enable */
     const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
 
     // add auth interceptors before any HTTP request to APIs (i.e. before running sagas)
-    AuthService.addAuthInterceptors(error =>
+    AuthService.addAuthInterceptors((error) =>
         store.dispatch(authActions.handleAuthHttpError(error))
     );
 

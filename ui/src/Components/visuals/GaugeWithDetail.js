@@ -9,22 +9,22 @@ import MultiGaugeDetailSection from './MultiGaugeDetailSection';
 const LABEL_STYLE = {
     textAnchor: 'middle',
     fill: 'var(--primary-800)',
-    fontWeight: 400
+    fontWeight: 400,
 };
 
-const buildValue = hoveredCell => {
+const buildValue = (hoveredCell) => {
     const { radius, angle, angle0 } = hoveredCell;
     const truedAngle = (angle + angle0) / 2;
     return {
         x: radius * Math.cos(truedAngle),
-        y: radius * Math.sin(truedAngle)
+        y: radius * Math.sin(truedAngle),
     };
 };
 
 const GaugeWithDetail = ({ data, history }) => {
     const [hoveredCell, setHoveredCell] = useState();
 
-    const selectedData = data.find(datum => {
+    const selectedData = data.find((datum) => {
         return datum.passing.selected || datum.failing.selected;
     });
 
@@ -64,7 +64,7 @@ const GaugeWithDetail = ({ data, history }) => {
                 radius0,
                 radius: radius1,
                 index,
-                arc: 'outer'
+                arc: 'outer',
             };
 
             const passingCircle = {
@@ -76,7 +76,7 @@ const GaugeWithDetail = ({ data, history }) => {
                 radius: radius1,
                 index,
                 arc: 'inner',
-                opacity: d.passing.selected ? 1 : 0.2
+                opacity: d.passing.selected ? 1 : 0.2,
             };
             returnData.push(failingCircle, passingCircle);
         });
@@ -144,8 +144,8 @@ const GaugeWithDetail = ({ data, history }) => {
                             x: 0.1,
                             y: data.length > 1 ? -0.8 : -1.3,
                             label: `${failingSelected ? pctFailing : pctPassing}%`,
-                            style: LABEL_STYLE
-                        }
+                            style: LABEL_STYLE,
+                        },
                     ]}
                 />
                 {getHint()}
@@ -176,16 +176,16 @@ GaugeWithDetail.propTypes = {
             title: PropTypes.string.isRequired,
             passing: PropTypes.shape({
                 value: PropTypes.number.isRequired,
-                link: PropTypes.string.isRequired
+                link: PropTypes.string.isRequired,
             }),
             failing: PropTypes.shape({
                 value: PropTypes.number.isRequired,
-                link: PropTypes.string.isRequired
+                link: PropTypes.string.isRequired,
             }),
-            defaultLink: PropTypes.string.isRequired
+            defaultLink: PropTypes.string.isRequired,
         })
     ).isRequired,
-    history: ReactRouterPropTypes.history.isRequired
+    history: ReactRouterPropTypes.history.isRequired,
 };
 
 export default withRouter(GaugeWithDetail);

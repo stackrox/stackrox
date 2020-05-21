@@ -26,13 +26,13 @@ CollapsibleCountsButton.propTypes = {
     onClick: PropTypes.func.isRequired,
     children: PropTypes.oneOf([
         PropTypes.arrayOf(PropTypes.oneOfType(IconWithCount)),
-        PropTypes.oneOfType(IconWithCount)
-    ])
+        PropTypes.oneOfType(IconWithCount),
+    ]),
 };
 
 CollapsibleCountsButton.defaultProps = {
     isOpen: false,
-    children: null
+    children: null,
 };
 
 export default CollapsibleCountsButton;

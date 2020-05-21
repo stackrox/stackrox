@@ -76,6 +76,7 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/risk/handlers/timeline"
 	"github.com/stackrox/rox/central/role"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
@@ -247,7 +248,7 @@ func main() {
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB())
+	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB())
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
@@ -302,13 +303,14 @@ func (defaultFactory) StartServices() {
 func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
-		authService.New(),
 		apiTokenService.Singleton(),
+		authService.New(),
 		authproviderService.New(registry),
+		backupRestoreService.Singleton(),
 		backupService.Singleton(),
 		clusterService.Singleton(),
-		complianceService.Singleton(),
 		complianceManagerService.Singleton(),
+		complianceService.Singleton(),
 		configService.Singleton(),
 		debugService.Singleton(),
 		deploymentService.Singleton(),
@@ -317,6 +319,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		groupService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
+		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 		metadataService.New(f.restartingFlag, licenseSingletons.ManagerSingleton()),
 		namespaceService.Singleton(),
 		networkFlowService.Singleton(),
@@ -324,32 +327,28 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		nodeService.Singleton(),
 		notifierService.Singleton(),
 		pingService.Singleton(),
+		podService.Singleton(),
 		policyService.Singleton(),
 		probeUploadService.Singleton(),
 		processIndicatorService.Singleton(),
 		processWhitelistService.Singleton(),
-		roleService.Singleton(),
 		rbacService.Singleton(),
+		roleService.Singleton(),
 		sacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
-		sensorUpgradeService.Singleton(),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
+		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
+		telemetryService.Singleton(),
 		userService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
-		licenseService.New(false, licenseSingletons.ManagerSingleton()),
-		backupRestoreService.Singleton(),
 	}
 
 	if features.Dackbox.Enabled() {
 		servicesToRegister = append(servicesToRegister, cveService.Singleton())
-	}
-
-	if features.Telemetry.Enabled() {
-		servicesToRegister = append(servicesToRegister, telemetryService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()
@@ -366,10 +365,6 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	if devbuild.IsEnabled() {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
-	}
-
-	if features.PodDeploymentSeparation.Enabled() {
-		servicesToRegister = append(servicesToRegister, podService.Singleton())
 	}
 
 	return servicesToRegister
@@ -552,19 +547,13 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
-			Compression:   true,
-		},
-		{
-			Route:         "/db/export",
-			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB()),
 		},
 		{
 			Route:         "/api/docs/swagger",
@@ -582,6 +571,12 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/compliance/export/csv",
 			Authorizer:    user.With(permissions.View(resources.Compliance)),
 			ServerHandler: complianceHandlers.CSVHandler(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/risk/timeline/export/csv",
+			Authorizer:    user.With(permissions.View(resources.Deployment), permissions.View(resources.Indicator), permissions.View(resources.ProcessWhitelist)),
+			ServerHandler: timeline.CSVHandler(),
 			Compression:   true,
 		},
 		{

@@ -30,14 +30,14 @@ const emptyNamespace = {
         name: '',
         priority: 0,
         labels: [],
-        id: ''
+        id: '',
     },
     policyStatus: {
         status: '',
-        failingPolicies: []
+        failingPolicies: [],
     },
     vulnCount: 0,
-    vulnerabilities: []
+    vulnerabilities: [],
 };
 
 const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
@@ -46,7 +46,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
     // guard against incomplete GraphQL-cached data
     const safeData = {
         ...emptyNamespace,
-        ...data
+        ...data,
     };
 
     const { metadata, policyStatus } = safeData;
@@ -61,7 +61,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         const clusterLink = workflowState.pushRelatedEntity(entityTypes.CLUSTER, clusterId).toUrl();
         metadataKeyValuePairs.push({
             key: 'Cluster',
-            value: <Link to={clusterLink}>{clusterName}</Link>
+            value: <Link to={clusterLink}>{clusterName}</Link>,
         });
     }
 
@@ -70,7 +70,7 @@ const VulnMgmtNamespaceOverview = ({ data, entityContext }) => {
         <React.Fragment key="policy-status">
             <span className="pb-2">Policy status:</span>
             <StatusChip status={status} size="large" />
-        </React.Fragment>
+        </React.Fragment>,
     ];
 
     const currentEntity = { [entityTypes.NAMESPACE]: id };

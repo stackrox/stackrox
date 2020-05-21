@@ -6,7 +6,7 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import Table, {
     defaultHeaderClassName,
     defaultColumnClassName,
-    wrapClassName
+    wrapClassName,
 } from 'Components/Table';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
@@ -14,23 +14,23 @@ const columns = [
     {
         Header: 'Time',
         id: 'time',
-        accessor: d => dateFns.format(d.signal.time, dateTimeFormat),
+        accessor: (d) => dateFns.format(d.signal.time, dateTimeFormat),
         headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
-        className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
+        className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`,
     },
     {
         Header: 'Pod ID',
         accessor: 'podId',
         headerClassName: `${defaultHeaderClassName} w-1/3 pointer-events-none`,
-        className: `${wrapClassName} ${defaultColumnClassName} w-1/3 cursor-auto`
+        className: `${wrapClassName} ${defaultColumnClassName} w-1/3 cursor-auto`,
     },
     {
         Header: 'UID',
         id: 'uid',
-        accessor: d => d.signal.uid,
+        accessor: (d) => d.signal.uid,
         headerClassName: `${defaultHeaderClassName} w-1/6 pointer-events-none`,
-        className: `${wrapClassName} ${defaultColumnClassName} w-1/6 cursor-auto`
-    }
+        className: `${wrapClassName} ${defaultColumnClassName} w-1/6 cursor-auto`,
+    },
 ];
 
 function Signal({ signals }) {
@@ -51,11 +51,11 @@ function Signal({ signals }) {
 }
 
 Signal.propTypes = {
-    signals: PropTypes.arrayOf(PropTypes.object)
+    signals: PropTypes.arrayOf(PropTypes.object),
 };
 
 Signal.defaultProps = {
-    signals: []
+    signals: [],
 };
 
 export default Signal;

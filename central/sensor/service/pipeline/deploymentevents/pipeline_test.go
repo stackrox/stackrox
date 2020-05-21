@@ -7,12 +7,13 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	graphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/testutils"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -23,10 +24,12 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	clusters    *clusterMocks.MockDataStore
-	deployments *deploymentMocks.MockDataStore
-	images      *imageMocks.MockDataStore
-	detector    *mockDetector
+	clusters       *clusterMocks.MockDataStore
+	deployments    *deploymentMocks.MockDataStore
+	images         *imageMocks.MockDataStore
+	manager        *lifecycleMocks.MockManager
+	graphEvaluator *graphMocks.MockEvaluator
+	pipeline       *pipelineImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -37,11 +40,43 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.clusters = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.images = imageMocks.NewMockDataStore(suite.mockCtrl)
-	suite.detector = &mockDetector{}
+	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
+	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
+	suite.pipeline = NewPipeline(suite.clusters, suite.deployments, suite.images, suite.manager, suite.graphEvaluator, nil).(*pipelineImpl)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+}
+
+func (suite *PipelineTestSuite) TestDeploymentRemovePipeline() {
+	deployment := fixtures.GetDeployment()
+
+	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+
+	err := suite.pipeline.Run(context.Background(), deployment.GetClusterId(), &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     deployment.GetId(),
+				Action: central.ResourceAction_REMOVE_RESOURCE,
+				Resource: &central.SensorEvent_Deployment{
+					Deployment: deployment,
+				},
+			},
+		},
+	}, nil)
+	suite.NoError(err)
+}
+
+func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
+	deployment := fixtures.GetDeployment()
+
+	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId())
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+	suite.manager.EXPECT().DeploymentRemoved(deployment)
+
+	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment, true))
 }
 
 func (suite *PipelineTestSuite) TestUpdateImages() {
@@ -172,19 +207,4 @@ func fakeDeploymentEvents() []*central.SensorEvent {
 			Action: central.ResourceAction_CREATE_RESOURCE,
 		},
 	}
-}
-
-// Mock detector for testing.
-type mockDetector struct {
-	mock.Mock
-}
-
-func (d *mockDetector) DeploymentUpdated(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (alertID, policyName string, enforcement storage.EnforcementAction, err error) {
-	args := d.Called(deployment)
-	return args.Get(0).(string), args.Get(1).(string), args.Get(2).(storage.EnforcementAction), args.Error(3)
-}
-
-func (d *mockDetector) DeploymentRemoved(deployment *storage.Deployment) error {
-	args := d.Called(deployment)
-	return args.Error(0)
 }

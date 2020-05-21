@@ -15,13 +15,13 @@ function DeploytimeMessages({ violations }) {
 DeploytimeMessages.propTypes = {
     violations: PropTypes.arrayOf(
         PropTypes.shape({
-            message: PropTypes.string.isRequired
+            message: PropTypes.string.isRequired,
         })
-    )
+    ),
 };
 
 DeploytimeMessages.defaultProps = {
-    violations: []
+    violations: [],
 };
 
 export default DeploytimeMessages;

@@ -7,12 +7,12 @@ const TabContent = ({ children, extraClasses }) => (
 
 TabContent.defaultProps = {
     children: [],
-    extraClasses: ''
+    extraClasses: '',
 };
 
 TabContent.propTypes = {
     children: PropTypes.node,
-    extraClasses: PropTypes.string
+    extraClasses: PropTypes.string,
 };
 
 export default TabContent;

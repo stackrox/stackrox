@@ -3,7 +3,6 @@ package store
 import (
 	"testing"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,7 +51,7 @@ func TestStringsRoundTrip(t *testing.T) {
 		},
 	}
 
-	resultsWithoutStrings := proto.Clone(results).(*storage.ComplianceRunResults)
+	resultsWithoutStrings := results.Clone()
 	stringsProto := externalizeStrings(resultsWithoutStrings)
 	assert.ElementsMatch(t, stringsProto.Strings, []string{"foo", "bar", "baz"})
 

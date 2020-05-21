@@ -6,7 +6,7 @@ const useCaseTypes = {
     SECRET: 'secrets',
     POLICY: 'policy',
     SERVICE_ACCOUNT: 'serviceaccounts',
-    DEPLOYMENT: 'risk'
+    DEPLOYMENT: 'risk',
 };
 
 export default useCaseTypes;

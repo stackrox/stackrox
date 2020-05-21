@@ -72,6 +72,18 @@ func (mr *MockDataStoreMockRecorder) Delete(arg0 interface{}, arg1 ...interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDataStore)(nil).Delete), varargs...)
 }
 
+// EnrichImageWithSuppressedCVEs mocks base method
+func (m *MockDataStore) EnrichImageWithSuppressedCVEs(arg0 *storage.Image) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichImageWithSuppressedCVEs", arg0)
+}
+
+// EnrichImageWithSuppressedCVEs indicates an expected call of EnrichImageWithSuppressedCVEs
+func (mr *MockDataStoreMockRecorder) EnrichImageWithSuppressedCVEs(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageWithSuppressedCVEs), arg0)
+}
+
 // Exists mocks base method
 func (m *MockDataStore) Exists(arg0 context.Context, arg1 string) (bool, error) {
 	m.ctrl.T.Helper()

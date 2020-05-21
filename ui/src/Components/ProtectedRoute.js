@@ -12,22 +12,22 @@ import LoadingSection from 'Components/LoadingSection';
 class ProtectedRoute extends Component {
     static propTypes = {
         component: PropTypes.func.isRequired,
-        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
+        authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map((key) => AUTH_STATUS[key]))
             .isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         devOnly: PropTypes.bool,
         requiredPermission: PropTypes.string,
         shouldHaveReadPermission: PropTypes.func.isRequired,
-        featureFlagEnabled: PropTypes.bool
+        featureFlagEnabled: PropTypes.bool,
     };
 
     static defaultProps = {
         devOnly: false,
         requiredPermission: null,
-        featureFlagEnabled: true
+        featureFlagEnabled: true,
     };
 
-    renderRoute = props => {
+    renderRoute = (props) => {
         const { component: LocationComponent, authStatus, location } = this.props;
 
         switch (authStatus) {
@@ -43,7 +43,7 @@ class ProtectedRoute extends Component {
                     <Redirect
                         to={{
                             pathname: '/login',
-                            state: { from: location.pathname }
+                            state: { from: location.pathname },
                         }}
                     />
                 );
@@ -76,7 +76,7 @@ class ProtectedRoute extends Component {
 
 const mapStateToProps = createStructuredSelector({
     authStatus: selectors.getAuthStatus,
-    shouldHaveReadPermission: selectors.shouldHaveReadPermission
+    shouldHaveReadPermission: selectors.shouldHaveReadPermission,
 });
 
 export default connect(mapStateToProps)(ProtectedRoute);

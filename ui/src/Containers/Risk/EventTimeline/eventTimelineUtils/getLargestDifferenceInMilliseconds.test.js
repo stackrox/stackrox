@@ -7,19 +7,19 @@ describe('getLargestDifferenceInMilliseconds', () => {
                 events: [
                     { differenceInMilliseconds: 10000 },
                     {},
-                    { differenceInMilliseconds: 10000 }
-                ]
+                    { differenceInMilliseconds: 10000 },
+                ],
             },
             {
-                events: []
+                events: [],
             },
             {
                 events: [
                     { differenceInMilliseconds: 100 },
                     { differenceInMilliseconds: 100000 },
-                    { differenceInMilliseconds: 5000 }
-                ]
-            }
+                    { differenceInMilliseconds: 5000 },
+                ],
+            },
         ];
 
         const value = getLargestDifferenceInMilliseconds(timelineData);

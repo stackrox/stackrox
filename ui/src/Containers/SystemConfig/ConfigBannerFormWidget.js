@@ -11,16 +11,16 @@ import { keyClassName } from './SystemConfig.constants';
 const sizeOptions = [
     {
         label: 'Small',
-        value: 'SMALL'
+        value: 'SMALL',
     },
     {
         label: 'Medium',
-        value: 'MEDIUM'
+        value: 'MEDIUM',
     },
     {
         label: 'Large',
-        value: 'LARGE'
-    }
+        value: 'LARGE',
+    },
 ];
 
 const ConfigBannerFormWidget = ({ type }) => (
@@ -65,7 +65,7 @@ const ConfigBannerFormWidget = ({ type }) => (
 );
 
 ConfigBannerFormWidget.propTypes = {
-    type: PropTypes.string.isRequired
+    type: PropTypes.string.isRequired,
 };
 
 export default ConfigBannerFormWidget;

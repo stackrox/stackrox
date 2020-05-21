@@ -5,7 +5,7 @@ import ViewAllButton from './ViewAllButton';
 
 export default {
     title: 'ViewAllButton',
-    component: ViewAllButton
+    component: ViewAllButton,
 };
 
 export const withUrl = () => {

@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/util"
 )
 
 const (
@@ -24,12 +25,12 @@ func Command() *cobra.Command {
 		Use:   "delete",
 		Short: "Delete removes the Sensor from Central, but does not delete any Kubernetes objects.",
 		Long:  "Delete removes the Sensor from Central, but does not delete any Kubernetes objects.",
-		RunE: func(c *cobra.Command, _ []string) error {
+		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if name == "" {
 				return errors.New("--name is required")
 			}
 			return deleteCluster(name)
-		},
+		}),
 	}
 	c.PersistentFlags().StringVar(&name, "name", "", "cluster name to delete")
 	return c

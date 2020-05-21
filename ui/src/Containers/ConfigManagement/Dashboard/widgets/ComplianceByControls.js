@@ -2,11 +2,11 @@ import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import gql from 'graphql-tag';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import entityTypes, { standardEntityTypes, standardBaseTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import { Link, withRouter } from 'react-router-dom';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import searchContext from 'Containers/searchContext';
 import networkStatuses from 'constants/networkStatuses';
 import COMPLIANCE_STATES from 'constants/complianceStates';
@@ -26,7 +26,7 @@ const NAColor = 'var(--base-400)';
 const sunburstLegendData = [
     { title: 'Passing', color: 'var(--tertiary-400)' },
     { title: 'Failing', color: 'var(--alert-400)' },
-    { title: 'N/A', color: 'var(--base-400)' }
+    { title: 'N/A', color: 'var(--base-400)' },
 ];
 
 const QUERY = gql`
@@ -65,19 +65,19 @@ const getPercentagePassing = (numPassing, numFailing) => {
     return Math.floor((numPassing / (numPassing + numFailing)) * 100);
 };
 
-const getCategoryControlMapping = data => {
+const getCategoryControlMapping = (data) => {
     const categoryMapping = data.aggregatedResults.results.reduce((acc, curr) => {
         const { numPassing, numFailing } = curr;
         const [category, control] = curr.keys;
         if (acc[category.id]) {
             acc[category.id].controls = [
                 ...acc[category.id].controls,
-                { control, numPassing, numFailing }
+                { control, numPassing, numFailing },
             ];
         } else {
             acc[category.id] = {
                 category,
-                controls: [{ control, numPassing, numFailing }]
+                controls: [{ control, numPassing, numFailing }],
             };
         }
         return acc;
@@ -97,7 +97,7 @@ const getColor = (numPassing, numFailing) => {
 
 const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType) => {
     const categories = Object.keys(categoryMapping);
-    const data = categories.map(categoryId => {
+    const data = categories.map((categoryId) => {
         const { category, controls } = categoryMapping[categoryId];
         const { totalPassing, totalFailing } = controls.reduce(
             (acc, curr) => {
@@ -120,23 +120,23 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
                     .query({
                         [searchParam]: {
                             standard: standardLabels[standardType],
-                            'Compliance State': undefined
-                        }
+                            'Compliance State': undefined,
+                        },
                     })
                     .url();
                 return {
                     name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
                     value,
-                    link
+                    link,
                 };
-            })
+            }),
         };
     });
     return data;
 };
 
-const getTotalPassingFailing = data => {
+const getTotalPassingFailing = (data) => {
     const result = data.aggregatedResults.results.reduce(
         (acc, curr) => {
             const { numPassing, numFailing } = curr;
@@ -164,8 +164,8 @@ const getSunburstRootData = (
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                'Compliance State': COMPLIANCE_STATES.PASS
-            }
+                'Compliance State': COMPLIANCE_STATES.PASS,
+            },
         })
         .url();
 
@@ -174,8 +174,8 @@ const getSunburstRootData = (
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                'Compliance State': COMPLIANCE_STATES.FAIL
-            }
+                'Compliance State': COMPLIANCE_STATES.FAIL,
+            },
         })
         .url();
 
@@ -184,8 +184,8 @@ const getSunburstRootData = (
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                'Compliance State': COMPLIANCE_STATES['N/A']
-            }
+                'Compliance State': COMPLIANCE_STATES['N/A'],
+            },
         })
         .url();
 
@@ -193,18 +193,18 @@ const getSunburstRootData = (
         {
             text: `${controlsPassing} Controls Passing`,
             link: controlsPassingLink,
-            className: 'text-tertiary-700'
+            className: 'text-tertiary-700',
         },
         {
             text: `${controlsFailing} Controls Failing`,
             link: controlsFailingLink,
-            className: 'text-alert-700'
+            className: 'text-alert-700',
         },
         {
             text: `${controlsNA} Controls N/A`,
             link: controlsNALink,
-            className: 'text-base-700'
-        }
+            className: 'text-base-700',
+        },
     ];
     return sunburstRootData;
 };
@@ -224,7 +224,7 @@ const getSunburstProps = (data, urlBuilder, standardType, searchParam) => {
     return {
         sunburstData,
         sunburstRootData,
-        totalPassing: getPercentagePassing(controlsPassing, controlsFailing)
+        totalPassing: getPercentagePassing(controlsPassing, controlsFailing),
     };
 };
 
@@ -234,8 +234,8 @@ const ViewStandardButton = ({ standardType, searchParam, urlBuilder }) => {
         .query({
             [searchParam]: {
                 standard: standardLabels[standardType],
-                groupBy: entityTypes.CATEGORY
-            }
+                groupBy: entityTypes.CATEGORY,
+            },
         })
         .url();
 
@@ -254,26 +254,26 @@ const ComplianceByControls = ({
     location,
     className,
     standardOptions,
-    isConfigMangement
+    isConfigMangement,
 }) => {
     const searchParam = useContext(searchContext);
-    const options = standardOptions.map(standard => ({
+    const options = standardOptions.map((standard) => ({
         label: standardLabels[standard],
         jsonpath: standardLabels[standard],
         value: standardLabels[standard],
-        standard
+        standard,
     }));
     const [selectedStandard, selectStandard] = useState(options[0]);
 
     function onChange(datum) {
-        const standard = options.find(option => option.value === datum);
+        const standard = options.find((option) => option.value === datum);
         selectStandard(standard);
     }
 
     const variables = {
         groupBy: [standardEntityTypes.CATEGORY, standardEntityTypes.CONTROL],
         unit: standardEntityTypes.CONTROL,
-        where: queryService.objectToWhereClause({ Standard: selectedStandard.value })
+        where: queryService.objectToWhereClause({ Standard: selectedStandard.value }),
     };
 
     return (
@@ -354,12 +354,12 @@ ComplianceByControls.propTypes = {
     location: ReactRouterPropTypes.location.isRequired,
     className: PropTypes.string,
     standardOptions: PropTypes.arrayOf(PropTypes.shape).isRequired,
-    isConfigMangement: PropTypes.string
+    isConfigMangement: PropTypes.string,
 };
 
 ComplianceByControls.defaultProps = {
     className: '',
-    isConfigMangement: 'false'
+    isConfigMangement: 'false',
 };
 
 export default withRouter(ComplianceByControls);

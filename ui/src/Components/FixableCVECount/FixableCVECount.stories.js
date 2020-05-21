@@ -5,7 +5,7 @@ import FixableCVECount from './FixableCVECount';
 
 export default {
     title: 'FixableCVECount',
-    component: FixableCVECount
+    component: FixableCVECount,
 };
 
 export const withCVE = () => <FixableCVECount cves={10} />;

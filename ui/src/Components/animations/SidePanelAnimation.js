@@ -5,12 +5,12 @@ import posed, { PoseGroup } from 'react-pose';
 const Container = posed.div({
     enter: {
         x: 0,
-        transition: { ease: 'easeIn', duration: 300 }
+        transition: { ease: 'easeIn', duration: 300 },
     },
     exit: {
         x: '100%',
-        transition: { ease: 'easeOut', duration: 300 }
-    }
+        transition: { ease: 'easeOut', duration: 300 },
+    },
 });
 
 const SidePanelAnimation = ({ className, condition, children }) => {
@@ -22,7 +22,7 @@ const SidePanelAnimation = ({ className, condition, children }) => {
                     className={`absolute z-10 h-full top-0 right-0 w-full lg:w-9/10 ${className}`}
                 >
                     {children}
-                </Container>
+                </Container>,
             ]}
         </PoseGroup>
     );
@@ -31,11 +31,11 @@ const SidePanelAnimation = ({ className, condition, children }) => {
 SidePanelAnimation.propTypes = {
     className: PropTypes.string,
     condition: PropTypes.bool.isRequired,
-    children: PropTypes.element.isRequired
+    children: PropTypes.element.isRequired,
 };
 
 SidePanelAnimation.defaultProps = {
-    className: ''
+    className: '',
 };
 
 export default SidePanelAnimation;

@@ -3,11 +3,11 @@ import pluralize from 'pluralize';
 
 import entityTypes from 'constants/entityTypes';
 import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import searchContext from 'Containers/searchContext';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import StatusChip from 'Components/StatusChip';
 import List from './List';
@@ -20,13 +20,13 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -43,7 +43,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         entityContext && entityContext[entityTypes.NAMESPACE]
             ? null
@@ -60,7 +60,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.NAMESPACE, namespaceId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={namespace} />;
-                  }
+                  },
               },
         {
             Header: `Policy Status`,
@@ -72,7 +72,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <StatusChip status={policyStatus} asString={pdf} />;
             },
             id: 'policyStatus',
-            accessor: 'policyStatus'
+            accessor: 'policyStatus',
         },
         {
             Header: `Images`,
@@ -94,7 +94,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'imageCount'
+            accessor: 'imageCount',
         },
         {
             Header: `Secrets`,
@@ -116,7 +116,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     />
                 );
             },
-            accessor: 'secretCount'
+            accessor: 'secretCount',
         },
         entityContext && entityContext[entityTypes.SERVICE_ACCOUNT]
             ? null
@@ -133,13 +133,13 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.SERVICE_ACCOUNT, serviceAccountID)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
-                  }
-              }
+                  },
+              },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => data.results;
+const createTableRows = (data) => data.results;
 
 const Deployments = ({
     match,
@@ -149,7 +149,7 @@ const Deployments = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const searchParam = useContext(searchContext);
 
@@ -183,12 +183,12 @@ const Deployments = ({
             defaultSorted={[
                 {
                     id: 'failingPolicies',
-                    desc: true
+                    desc: true,
                 },
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}

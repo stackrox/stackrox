@@ -9,7 +9,7 @@ describe('sorters', () => {
                 'Shellshock: Multiple CVEs',
                 '90-Day Image Age',
                 'Latest tag',
-                'CAP_SYS_ADMIN capability added'
+                'CAP_SYS_ADMIN capability added',
             ];
 
             const sortedArr = unsortedArr.sort(sortAscii);
@@ -20,7 +20,7 @@ describe('sorters', () => {
                 'Latest tag',
                 'Process Targeting Kubernetes Service Endpoint',
                 'Shellshock: Multiple CVEs',
-                'crontab Execution'
+                'crontab Execution',
             ]);
         });
     });

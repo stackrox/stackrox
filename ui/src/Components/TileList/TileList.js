@@ -49,14 +49,14 @@ TileList.propTypes = {
         PropTypes.shape({
             label: PropTypes.string,
             count: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-            url: PropTypes.string
+            url: PropTypes.string,
         })
     ).isRequired,
-    title: PropTypes.string
+    title: PropTypes.string,
 };
 
 TileList.defaultProps = {
-    title: ''
+    title: '',
 };
 
 export default TileList;

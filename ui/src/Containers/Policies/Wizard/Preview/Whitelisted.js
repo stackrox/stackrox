@@ -9,10 +9,10 @@ class Whitelisted extends Component {
         dryrun: PropTypes.shape({
             excluded: PropTypes.arrayOf(
                 PropTypes.shape({
-                    deployment: PropTypes.string.isRequired
+                    deployment: PropTypes.string.isRequired,
                 })
-            ).isRequired
-        }).isRequired
+            ).isRequired,
+        }).isRequired,
     };
 
     render() {
@@ -21,9 +21,9 @@ class Whitelisted extends Component {
         const columns = [
             {
                 key: 'deployment',
-                keyValueFunc: deployment => deployment,
-                label: 'Deployment'
-            }
+                keyValueFunc: (deployment) => deployment,
+                label: 'Deployment',
+            },
         ];
         const rows = this.props.dryrun.excluded;
 

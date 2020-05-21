@@ -5,7 +5,7 @@ import Button from 'Components/Button';
 
 const Content = posed.div({
     closed: { height: 0 },
-    open: { height: 'inherit' }
+    open: { height: 'inherit' },
 });
 
 const CollapsibleText = ({ initiallyExpanded, expandText, collapseText, children }) => {
@@ -40,13 +40,13 @@ CollapsibleText.propTypes = {
     initiallyExpanded: PropTypes.bool,
     expandText: PropTypes.string,
     collapseText: PropTypes.string,
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
 };
 
 CollapsibleText.defaultProps = {
     initiallyExpanded: false,
     expandText: 'Show more ...',
-    collapseText: 'Show less'
+    collapseText: 'Show less',
 };
 
 export default CollapsibleText;

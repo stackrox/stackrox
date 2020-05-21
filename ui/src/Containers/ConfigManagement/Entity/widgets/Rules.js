@@ -57,11 +57,11 @@ const Rules = ({ rules, ...rest }) => {
 };
 
 Rules.propTypes = {
-    rules: PropTypes.arrayOf({})
+    rules: PropTypes.arrayOf({}),
 };
 
 Rules.defaultProps = {
-    rules: null
+    rules: null,
 };
 
 export default Rules;

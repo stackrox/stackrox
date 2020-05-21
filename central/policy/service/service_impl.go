@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -36,9 +38,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -57,6 +58,7 @@ var (
 			"/v1.PolicyService/GetPolicyCategories",
 			"/v1.PolicyService/QueryDryRunJobStatus",
 			"/v1.PolicyService/ExportPolicies",
+			"/v1.PolicyService/PolicyFromSearch",
 		},
 		user.With(permissions.Modify(resources.Policy)): {
 			"/v1.PolicyService/PostPolicy",
@@ -69,6 +71,7 @@ var (
 			"/v1.PolicyService/RenamePolicyCategory",
 			"/v1.PolicyService/DeletePolicyCategory",
 			"/v1.PolicyService/EnableDisablePolicyNotification",
+			"/v1.PolicyService/ImportPolicies",
 		},
 	})
 )
@@ -83,6 +86,8 @@ var (
 	policySyncReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Policy)))
+
+	partialListPolicyGroups = set.NewStringSet(booleanpolicy.ImageComponent, booleanpolicy.DockerfileLine, booleanpolicy.EnvironmentVariable)
 )
 
 // serviceImpl provides APIs for alerts.
@@ -95,7 +100,7 @@ type serviceImpl struct {
 	connectionManager connection.Manager
 
 	buildTimePolicies detection.PolicySet
-	testMatchBuilder  matcher.Builder
+	policyCompiler    detection.PolicyCompiler
 	lifecycleManager  lifecycle.Manager
 	processor         notifierProcessor.Processor
 	metadataCache     expiringcache.Cache
@@ -180,22 +185,34 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	return resp, nil
 }
 
-// PostPolicy inserts a new policy into the system.
-func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error) {
-	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
-
-	if request.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
-	}
-	if err := s.validator.validate(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy) error {
+	if features.BooleanPolicyLogic.Enabled() {
+		if err := booleanpolicy.EnsureConverted(p); err != nil {
+			return status.Errorf(codes.InvalidArgument, "Could not ensure policy format: %v", err.Error())
+		}
 	}
 
-	id, err := s.policies.AddPolicy(ctx, request)
-	if err != nil {
+	if err := s.validator.validate(ctx, p); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	return nil
+}
+
+func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, extraValidateFunc func(*storage.Policy) error, updateFunc func(context.Context, *storage.Policy) error) (*storage.Policy, error) {
+	if extraValidateFunc != nil {
+		if err := extraValidateFunc(request); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := s.convertAndValidate(ctx, request); err != nil {
 		return nil, err
 	}
-	request.Id = id
+
+	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
+	if err := updateFunc(ctx, request); err != nil {
+		return nil, err
+	}
 
 	if err := s.addActivePolicy(request); err != nil {
 		return nil, errors.Wrap(err, "Policy could not be edited due to")
@@ -208,26 +225,33 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 	return request, nil
 }
 
+func ensureIDEmpty(p *storage.Policy) error {
+	if p.GetId() != "" {
+		return status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
+	}
+	return nil
+}
+
+func (s *serviceImpl) addPolicyToStoreAndSetID(ctx context.Context, p *storage.Policy) error {
+	id, err := s.policies.AddPolicy(ctx, p)
+	if err != nil {
+		return err
+	}
+	p.Id = id
+	return nil
+}
+
+// PostPolicy inserts a new policy into the system.
+func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error) {
+	return s.addOrUpdatePolicy(ctx, request, ensureIDEmpty, s.addPolicyToStoreAndSetID)
+}
+
 // PutPolicy updates a current policy in the system.
 func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
-	request.LastUpdated = protoconv.ConvertTimeToTimestamp(time.Now())
-
-	if err := s.validator.validate(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	if err := s.policies.UpdatePolicy(ctx, request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if err := s.addActivePolicy(request); err != nil {
-		return nil, errors.Wrap(err, "Policy could not be edited due to")
-	}
-
-	if err := s.syncPoliciesWithSensors(); err != nil {
+	_, err := s.addOrUpdatePolicy(ctx, request, nil, s.policies.UpdatePolicy)
+	if err != nil {
 		return nil, err
 	}
-
 	return &v1.Empty{}, nil
 }
 
@@ -281,13 +305,13 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 	s.metadataCache.RemoveAll()
 	s.scanCache.RemoveAll()
 
-	go s.reprocessor.ShortCircuit()
+	s.reprocessor.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storage.Policy) (*v1.JobId, error) {
-	if err := s.validator.validate(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+	if err := s.convertAndValidate(ctx, request); err != nil {
+		return nil, err
 	}
 
 	t := func(c concurrency.ErrorWaitable, res *backgroundtasks.ExecutionResult) error {
@@ -353,24 +377,15 @@ func (s *serviceImpl) CancelDryRunJob(ctx context.Context, jobid *v1.JobId) (*v1
 }
 
 func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx concurrency.ErrorWaitable, request *storage.Policy) (*v1.DryRunResponse, error) {
-	if err := s.validator.validate(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
 	var resp v1.DryRunResponse
 
 	// Dry runs do not apply to policies with whitelists or runtime lifecycle stage because they are evaluated
 	// through the process indicator pipeline
-	if request.GetFields().GetWhitelistEnabled() || sliceutils.Find(request.GetLifecycleStages(), storage.LifecycleStage_RUNTIME) != -1 {
+	if policies.AppliesAtRunTime(request) {
 		return &resp, nil
 	}
 
-	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
-	}
-
-	compiledPolicy, err := detection.NewCompiledPolicy(request, searchBasedMatcher)
+	compiledPolicy, err := s.policyCompiler.CompilePolicy(request)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid policy: %v", err)
 	}
@@ -412,8 +427,16 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				<-pChan
 			}()
 
+			if compiledPolicy.Policy().GetDisabled() {
+				return
+			}
+
 			deployment, exists, err := s.deployments.GetDeployment(ctx, depId)
 			if !exists || err != nil {
+				return
+			}
+
+			if !compiledPolicy.AppliesTo(deployment) {
 				return
 			}
 
@@ -422,17 +445,14 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			violations, err := searchBasedMatcher.MatchOne(ctx, deployment, images, nil)
+			violations, err := compiledPolicy.MatchAgainstDeployment(deployment, images)
+
 			if err != nil {
 				log.Errorf("failed policy matching: %s", err.Error())
 				return
 			}
 
 			if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
-				return
-			}
-
-			if !compiledPolicy.AppliesTo(deployment) {
 				return
 			}
 
@@ -456,62 +476,11 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
 func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error) {
-	if features.DryRunPolicyJobMechanism.Enabled() {
-		return s.predicateBasedDryRunPolicy(ctx, ctx, request)
+	if err := s.convertAndValidate(ctx, request); err != nil {
+		return nil, err
 	}
 
-	if err := s.validator.validate(ctx, request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-
-	var resp v1.DryRunResponse
-	// Dry runs do not apply to policies with whitelists or runtime lifecycle stage because they are evaluated
-	// through the process indicator pipeline
-	if request.GetFields().GetWhitelistEnabled() || sliceutils.Find(request.GetLifecycleStages(), storage.LifecycleStage_RUNTIME) != -1 {
-		return &resp, nil
-	}
-
-	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
-	}
-
-	compiledPolicy, err := detection.NewCompiledPolicy(request, searchBasedMatcher)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "invalid policy: %v", err)
-	}
-
-	violationsPerDeployment, err := searchBasedMatcher.Match(ctx, s.deployments)
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed policy matching: %s", err))
-	}
-
-	for deploymentID, violations := range violationsPerDeployment {
-		if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
-			continue
-		}
-		deployment, exists, err := s.deployments.GetDeployment(ctx, deploymentID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("retrieving deployment '%s': %s", deploymentID, err))
-		}
-		if !exists {
-			// Maybe the deployment was deleted around the time of the dry-run.
-			continue
-		}
-		if !compiledPolicy.AppliesTo(deployment) {
-			continue
-		}
-		// Collect the violation messages as strings for the output.
-		convertedViolations := make([]string, 0, len(violations.AlertViolations))
-		for _, violation := range violations.AlertViolations {
-			convertedViolations = append(convertedViolations, violation.GetMessage())
-		}
-		if violations.ProcessViolation != nil {
-			convertedViolations = append(convertedViolations, violations.ProcessViolation.GetMessage())
-		}
-		resp.Alerts = append(resp.Alerts, &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations})
-	}
-	return &resp, nil
+	return s.predicateBasedDryRunPolicy(ctx, ctx, request)
 }
 
 // GetPolicyCategories returns the categories of all policies.
@@ -754,4 +723,368 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	return &storage.ExportPoliciesResponse{
 		Policies: policyList,
 	}, nil
+}
+
+func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
+	if features.BooleanPolicyLogic.Enabled() {
+		if err := booleanpolicy.EnsureConverted(p); err != nil {
+			return err
+		}
+	}
+	if err := s.validator.validateImport(p); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoliciesRequest) (*v1.ImportPoliciesResponse, error) {
+	if !features.PolicyImportExport.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+
+	responses := make([]*v1.ImportPolicyResponse, 0, len(request.Policies))
+	allValidationSucceeded := true
+	// Validate input policies
+	validPolicyList := make([]*storage.Policy, 0, len(request.GetPolicies()))
+	for _, policy := range request.GetPolicies() {
+		err := s.convertAndValidateForImport(policy)
+		if err != nil {
+			allValidationSucceeded = false
+			responses = append(responses, makeValidationError(policy, err))
+			continue
+		}
+		validPolicyList = append(validPolicyList, policy)
+	}
+
+	// Import valid policies
+	importResponses, allImportsSucceeded, err := s.policies.ImportPolicies(ctx, validPolicyList, request.GetMetadata().GetOverwrite())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	for _, importResponse := range importResponses {
+		if importResponse.GetSucceeded() {
+			if err := s.addActivePolicy(importResponse.GetPolicy()); err != nil {
+				importResponse.Succeeded = false
+				importResponse.Errors = append(importResponse.GetErrors(), &v1.ImportPolicyError{
+					Message: errors.Wrap(err, "Policy could not be imported due to").Error(),
+					Type:    policies.ErrImportUnknown,
+				})
+			}
+		}
+	}
+
+	if err := s.syncPoliciesWithSensors(); err != nil {
+		return nil, err
+	}
+
+	responses = append(responses, importResponses...)
+	return &v1.ImportPoliciesResponse{
+		Responses:    responses,
+		AllSucceeded: allValidationSucceeded && allImportsSucceeded,
+	}, nil
+}
+
+func makeValidationError(policy *storage.Policy, err error) *v1.ImportPolicyResponse {
+	return &v1.ImportPolicyResponse{
+		Succeeded: false,
+		Policy:    policy,
+		Errors: []*v1.ImportPolicyError{
+			{
+				Message: "Invalid policy",
+				Type:    policies.ErrImportValidation,
+				Metadata: &v1.ImportPolicyError_ValidationError{
+					ValidationError: err.Error(),
+				},
+			},
+		},
+	}
+}
+
+func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFromSearchRequest) (*v1.PolicyFromSearchResponse, error) {
+	if !features.BooleanPolicyLogic.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+	policy, unconvertableCriteria, hasNestedFields, err := s.parsePolicy(ctx, request.GetSearchParams())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error creating policy from search string: %v", err)
+	}
+
+	response := &v1.PolicyFromSearchResponse{
+		Policy:             policy,
+		HasNestedFields:    hasNestedFields,
+		AlteredSearchTerms: make([]string, 0, len(unconvertableCriteria)),
+	}
+	for _, fieldName := range unconvertableCriteria {
+		response.AlteredSearchTerms = append(response.AlteredSearchTerms, fieldName.String())
+	}
+	return response, nil
+}
+
+func (s *serviceImpl) parsePolicy(ctx context.Context, searchString string) (*storage.Policy, []search.FieldLabel, bool, error) {
+	// Handle empty input query case.
+	if len(searchString) == 0 {
+		return nil, nil, false, errors.New("can not generate a policy from an empty query")
+	}
+	// Have a filled query, parse it.
+	fieldMap, err := getFieldMapFromQueryString(searchString)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	policy, unconvertable, err := s.makePolicyFromFieldMap(ctx, fieldMap)
+	if err != nil {
+		return nil, nil, false, err
+	}
+
+	return policy, unconvertable, false, err
+}
+
+func getFieldMapFromQueryString(searchString string) (map[search.FieldLabel][]string, error) {
+	fieldMap, err := search.ParseFieldMap(searchString)
+	if err != nil {
+		return nil, err
+	}
+	for fieldLabel, fieldValues := range fieldMap {
+		filteredV := fieldValues[:0]
+		for _, value := range fieldValues {
+			if value == "" {
+				continue
+			}
+			filteredV = append(filteredV, value)
+		}
+		fieldMap[fieldLabel] = filteredV
+	}
+	return fieldMap, nil
+}
+
+func (s *serviceImpl) makePolicyFromFieldMap(ctx context.Context, fieldMap map[search.FieldLabel][]string) (*storage.Policy, []search.FieldLabel, error) {
+	// Sort the FieldLabels by field value, to ensure consistency of output.
+	fieldLabels := make([]search.FieldLabel, 0, len(fieldMap))
+	for field := range fieldMap {
+		fieldLabels = append(fieldLabels, field)
+	}
+	sortedFieldLabels := search.SortFieldLabels(fieldLabels)
+
+	var unconvertableFields []search.FieldLabel
+	policyGroupMap := make(map[string][]*storage.PolicyGroup)
+	for _, field := range sortedFieldLabels {
+		if field == search.Cluster || field == search.Namespace || field == search.Label {
+			continue
+		}
+		searchTermPolicyGroup, fieldsDropped, converterExists := booleanpolicy.GetPolicyGroupFromSearchTerms(field, fieldMap[field])
+		if !converterExists || searchTermPolicyGroup == nil {
+			// Either we can't convert this search term or the translator generated no policy values
+			unconvertableFields = append(unconvertableFields, field)
+			continue
+		}
+		if fieldsDropped {
+			// Some part of this search term was dropped during conversion but we still ended up with policy values.
+			unconvertableFields = append(unconvertableFields, field)
+		}
+		policyGroupMap[searchTermPolicyGroup.GetFieldName()] = append(policyGroupMap[searchTermPolicyGroup.GetFieldName()], searchTermPolicyGroup)
+	}
+
+	scopes, err := s.makeScopes(ctx, fieldMap)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(policyGroupMap) == 0 && len(scopes) == 0 {
+		return nil, nil, errors.New("after parsing there were no valid policy groups or scopes")
+	}
+
+	policyGroups := flattenPolicyGroupMap(policyGroupMap)
+
+	policy := &storage.Policy{
+		PolicyVersion: booleanpolicy.Version,
+	}
+	if len(scopes) > 0 {
+		policy.Scope = scopes
+	}
+	if len(policyGroups) > 0 {
+		policy.PolicySections = []*storage.PolicySection{
+			{
+				PolicyGroups: policyGroups,
+			},
+		}
+	}
+
+	// We have to add and remove a policy name because the BPL validator requires a policy name for these checks
+	policy.Name = "Policy from Search"
+	policy.LifecycleStages = s.validator.getAllowedLifecyclesForPolicy(policy)
+	policy.Name = ""
+
+	return policy, unconvertableFields, nil
+}
+
+func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldLabel][]string) ([]*storage.Scope, error) {
+	clusters, clustersOk := fieldMap[search.Cluster]
+	namespaces, namespacesOk := fieldMap[search.Namespace]
+	if !namespacesOk {
+		namespaces = []string{""}
+	}
+	labels, labelsOk := fieldMap[search.Label]
+	if !labelsOk {
+		labels = []string{""}
+	}
+	// If we have none of the above, we have no scopes
+	if !clustersOk && !namespacesOk && !labelsOk {
+		return nil, nil
+	}
+	// We need cluster IDs, not cluster names
+	clusterIDs, err := s.getClusterIDs(ctx, clusters)
+	if err != nil {
+		return nil, err
+	}
+	if len(clusterIDs) == 0 {
+		clusterIDs = []string{""}
+	}
+
+	// For each combination of label, cluster, and namespace create a Scope
+	var scopes []*storage.Scope
+	for _, label := range labels {
+		var labelObject *storage.Scope_Label
+		labelParts := strings.Split(label, "=")
+		if len(labelParts) == 2 {
+			labelObject = &storage.Scope_Label{
+				Key:   labelParts[0],
+				Value: labelParts[1],
+			}
+		}
+		for _, clusterID := range clusterIDs {
+			for _, namespace := range namespaces {
+				scopes = append(scopes, &storage.Scope{
+					Cluster:   clusterID,
+					Namespace: namespace,
+					Label:     labelObject,
+				})
+			}
+		}
+	}
+
+	return scopes, nil
+}
+
+func (s *serviceImpl) getClusterIDs(ctx context.Context, clusterNames []string) ([]string, error) {
+	if len(clusterNames) == 0 {
+		return nil, nil
+	}
+
+	allClusters, err := s.clusters.GetClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterIDs := set.NewStringSet()
+	for _, clusterName := range clusterNames {
+		matcher, err := basematchers.ForString(clusterName)
+		if err != nil {
+			log.Errorf("could not create matcher for %s: %v", clusterName, err)
+			continue
+		}
+
+		for _, cluster := range allClusters {
+			if matcher(cluster.GetName()) {
+				clusterIDs.Add(cluster.GetId())
+			}
+		}
+	}
+
+	return clusterIDs.AsSlice(), nil
+}
+
+func flattenPolicyGroupMap(policyGroupMap map[string][]*storage.PolicyGroup) []*storage.PolicyGroup {
+	policyGroupList := make([]*storage.PolicyGroup, 0, len(policyGroupMap))
+	for groupName, singleGroupList := range policyGroupMap {
+		if !partialListPolicyGroups.Contains(groupName) {
+			// This policy group can't be combined, use whichever one was generated first.  This will be consistent as
+			// we sort the field names.  If there is more than one the later groups will be dropped.
+			policyGroupList = append(policyGroupList, singleGroupList[0])
+			continue
+		}
+
+		var policyValueLists []*storage.PolicyValue
+		for _, policyGroup := range singleGroupList {
+			// For now we don't care which search term a policy value came from because no two search terms can
+			// generate a value for the same list index, and no search term can generate a value for more than one list
+			// index.  Therefore it is safe to flatten the values and naively generate all possible combinations.
+			policyValueLists = append(policyValueLists, policyGroup.GetValues()...)
+		}
+		combinedValues := combinePolicyValues(policyValueLists)
+
+		policyGroupList = append(policyGroupList, &storage.PolicyGroup{
+			FieldName: groupName,
+			Values:    combinedValues,
+		})
+	}
+	return policyGroupList
+}
+
+func combinePolicyValues(policyValues []*storage.PolicyValue) []*storage.PolicyValue {
+	splitValueStringLists := make([][]string, 0, len(policyValues))
+	for _, policyValue := range policyValues {
+		splitValueStringLists = append(splitValueStringLists, strings.Split(policyValue.GetValue(), "="))
+	}
+
+	requiredLength := len(splitValueStringLists[0])
+	partsToCombine := make([][]string, requiredLength)
+	for _, splitValueList := range splitValueStringLists {
+		for i, section := range splitValueList {
+			if section != "" {
+				partsToCombine[i] = append(partsToCombine[i], section)
+			}
+		}
+	}
+
+	for i, partsList := range partsToCombine {
+		if len(partsList) == 0 {
+			// If part of a list is empty we still want to generate the combinations of the other parts, leaving this part empty
+			partsToCombine[i] = []string{""}
+		}
+	}
+
+	combinations := combineStrings(partsToCombine)
+	values := make([]*storage.PolicyValue, len(combinations))
+	for i, combination := range combinations {
+		values[i] = &storage.PolicyValue{
+			Value: combination,
+		}
+	}
+
+	return values
+}
+
+func combineStrings(toCombine [][]string) []string {
+	indices := make([]int, len(toCombine))
+	var combinations []string
+
+	maxIterations := 1
+	for _, category := range toCombine {
+		maxIterations *= len(category)
+	}
+	for i := 0; i < maxIterations; i++ {
+		combination := ""
+		for i := 0; i < len(indices); i++ {
+			if combination != "" {
+				combination = combination + "="
+			}
+			combination = combination + toCombine[i][indices[i]]
+		}
+		combinations = append(combinations, combination)
+
+		for index := len(indices) - 1; index >= 0; index-- {
+			indices[index]++
+			if indices[index] < len(toCombine[index]) {
+				break
+			}
+			if index == 0 {
+				return combinations
+			}
+			indices[index] = 0
+		}
+	}
+	return nil
 }

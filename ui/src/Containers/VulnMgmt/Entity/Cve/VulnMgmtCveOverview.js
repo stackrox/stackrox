@@ -28,7 +28,7 @@ const emptyCve = {
     publishedOn: '',
     scoreVersion: '',
     summary: '',
-    vectors: {}
+    vectors: {},
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
@@ -47,7 +47,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         createdAt,
         publishedOn,
         lastModified,
-        scoreVersion
+        scoreVersion,
     } = safeData;
 
     const linkToMoreInfo = isValidURL(link) ? (
@@ -70,39 +70,39 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const cvssScoreBreakdown = [
         {
             key: 'CVSS Score',
-            value: cvss && cvss.toFixed(1)
+            value: cvss && cvss.toFixed(1),
         },
         {
             key: 'Vector',
-            value: vectors && vectors.vector
+            value: vectors && vectors.vector,
         },
         {
             key: 'Impact Score',
-            value: vectors && vectors.impactScore && vectors.impactScore.toFixed(1)
+            value: vectors && vectors.impactScore && vectors.impactScore.toFixed(1),
         },
         {
             key: 'Exploitability Score',
-            value: vectors && vectors.exploitabilityScore && vectors.exploitabilityScore.toFixed(1)
-        }
+            value: vectors && vectors.exploitabilityScore && vectors.exploitabilityScore.toFixed(1),
+        },
     ];
 
     const scanningDetails = [
         {
             key: 'Discovered Time',
-            value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A'
+            value: createdAt ? format(createdAt, dateTimeFormat) : 'N/A',
         },
         {
             key: 'Published',
-            value: publishedOn ? format(publishedOn, dateTimeFormat) : 'N/A'
+            value: publishedOn ? format(publishedOn, dateTimeFormat) : 'N/A',
         },
         {
             key: 'Last modified',
-            value: lastModified ? format(lastModified, dateTimeFormat) : 'N/A'
+            value: lastModified ? format(lastModified, dateTimeFormat) : 'N/A',
         },
         {
             key: 'Scoring version',
-            value: scoreVersion && `CVSS ${scoreVersion}`
-        }
+            value: scoreVersion && `CVSS ${scoreVersion}`,
+        },
     ];
 
     const severityStyle = getSeverityChipType(cvss);
@@ -128,17 +128,19 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                         <span className="text-tertiary-800">{cve}</span>
                                     </div>
                                     <div className="w-full flex border-t border-base-400 md:border-t-0 justify-end items-center">
-                                        {// eslint-disable-next-line eqeqeq
-                                        envImpact == Number(envImpact) && (
-                                            <span className="w-full md:w-auto p-4 border-base-400 text-base-600 border-l whitespace-no-wrap">
-                                                <span>
-                                                    {' '}
-                                                    {`Env. Impact: ${(envImpact * 100).toFixed(
-                                                        0
-                                                    )}%`}
+                                        {
+                                            // eslint-disable-next-line eqeqeq
+                                            envImpact == Number(envImpact) && (
+                                                <span className="w-full md:w-auto p-4 border-base-400 text-base-600 border-l whitespace-no-wrap">
+                                                    <span>
+                                                        {' '}
+                                                        {`Env. Impact: ${(envImpact * 100).toFixed(
+                                                            0
+                                                        )}%`}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        )}
+                                            )
+                                        }
                                         <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             <LabelChip
                                                 text={`CVSS ${cvss && cvss.toFixed(1)}`}

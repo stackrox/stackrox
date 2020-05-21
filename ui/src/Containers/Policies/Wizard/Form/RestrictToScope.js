@@ -8,8 +8,8 @@ const RestrictToScope = ({ fields }) => {
 
 RestrictToScope.propTypes = {
     fields: PropTypes.shape({
-        map: PropTypes.func.isRequired
-    }).isRequired
+        map: PropTypes.func.isRequired,
+    }).isRequired,
 };
 
 export default RestrictToScope;

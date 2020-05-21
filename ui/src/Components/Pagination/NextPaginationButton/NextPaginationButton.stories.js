@@ -6,7 +6,7 @@ import NextPaginationButton from './NextPaginationButton';
 
 export default {
     title: 'NextPaginationButton',
-    component: NextPaginationButton
+    component: NextPaginationButton,
 };
 
 export const basicUsage = () => {

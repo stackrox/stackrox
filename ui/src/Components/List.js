@@ -24,12 +24,12 @@ List.propTypes = {
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     selectRow: PropTypes.func,
     selectedListItem: PropTypes.shape({}),
-    selectedIdAttribute: PropTypes.string.isRequired
+    selectedIdAttribute: PropTypes.string.isRequired,
 };
 
 List.defaultProps = {
     selectedListItem: null,
-    selectRow: null
+    selectRow: null,
 };
 
 export default List;

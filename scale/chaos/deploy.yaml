@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: chaos
+  name: chaos
+  namespace: stackrox
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chaos
+  template:
+    metadata:
+      labels:
+        app: chaos
+    spec:
+      serviceAccount: chaos
+      containers:
+      - image: stackrox/scale:${TAG}
+        imagePullPolicy: IfNotPresent
+        name: chaos
+        command:
+        - /chaos
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: chaos
+  namespace: stackrox
+imagePullSecrets:
+- name: stackrox
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: chaos-editor
+  namespace: stackrox
+rules:
+- apiGroups:
+  - '*'
+  resources:
+  - 'pods'
+  verbs:
+  - '*'
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: chaos-editor
+  namespace: stackrox
+subjects:
+- kind: ServiceAccount
+  name: chaos
+  namespace: stackrox
+roleRef:
+  kind: Role
+  name: chaos-editor
+  apiGroup: rbac.authorization.k8s.io

@@ -4,7 +4,7 @@ import { severityLabels } from 'messages/common';
 
 const labelClassName = 'px-2 rounded-sm p-1 border text-base';
 
-const getSeverityClassName = severity => {
+const getSeverityClassName = (severity) => {
     switch (severity) {
         case 'LOW_SEVERITY':
             return `${labelClassName} bg-base-200 border-base-300 text-base-800`;
@@ -24,7 +24,7 @@ const SeverityLabel = ({ severity }) => (
 );
 
 SeverityLabel.propTypes = {
-    severity: PropTypes.string.isRequired
+    severity: PropTypes.string.isRequired,
 };
 
 export default SeverityLabel;

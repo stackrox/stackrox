@@ -1,5 +1,3 @@
-// +build rocksdb
-
 package generic
 
 import (
@@ -37,7 +35,7 @@ func (c *crudImpl) getPrefixedKeyBytes(id []byte) []byte {
 
 func (c *crudImpl) Count() (int, error) {
 	var count int
-	err := ForEachOverKeySet(c.db, c.prefix, false, func(k []byte) error {
+	err := ForEachOverKeySet(c.db, defaultIteratorOptions, c.prefix, false, func(k []byte) error {
 		count++
 		return nil
 	})
@@ -169,7 +167,7 @@ func (c *crudImpl) DeleteMany(ids []string) error {
 
 func (c *crudImpl) GetKeys() ([]string, error) {
 	var keys []string
-	err := BucketKeyForEach(c.db, c.prefix, true, func(k []byte) error {
+	err := BucketKeyForEach(c.db, defaultIteratorOptions, c.prefix, true, func(k []byte) error {
 		keys = append(keys, string(k))
 		return nil
 	})
@@ -177,7 +175,7 @@ func (c *crudImpl) GetKeys() ([]string, error) {
 }
 
 func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
-	return BucketForEach(c.db, c.prefix, false, func(k, v []byte) error {
+	return BucketForEach(c.db, defaultIteratorOptions, c.prefix, false, func(k, v []byte) error {
 		msg, err := c.deserializeFunc(v)
 		if err != nil {
 			return errors.Wrap(err, "deserializing object")

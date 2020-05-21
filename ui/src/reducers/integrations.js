@@ -16,7 +16,7 @@ export const types = {
     TEST_INTEGRATION: 'integrations/TEST_INTEGRATION',
     DELETE_INTEGRATIONS: 'integrations/DELETE_INTEGRATIONS',
     SAVE_INTEGRATION: createFetchingActionTypes('integrations/SAVE_INTEGRATION'),
-    SET_CREATE_STATE: 'integrations/SET_CREATE_STATE'
+    SET_CREATE_STATE: 'integrations/SET_CREATE_STATE',
 };
 
 // Actions
@@ -26,26 +26,27 @@ export const actions = {
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
     fetchBackups: createFetchingActions(types.FETCH_BACKUPS),
     fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
-    testIntegration: (source, integration) => ({
+    testIntegration: (source, integration, options) => ({
         type: types.TEST_INTEGRATION,
         source,
-        integration
+        integration,
+        options,
     }),
     deleteIntegrations: (source, sourceType, ids) => ({
         type: types.DELETE_INTEGRATIONS,
         source,
         sourceType,
-        ids
+        ids,
     }),
-    triggerBackup: id => ({
+    triggerBackup: (id) => ({
         type: types.TRIGGER_BACKUP,
-        id
+        id,
     }),
     saveIntegration: createFetchingActions(types.SAVE_INTEGRATION),
-    setCreateState: state => ({
+    setCreateState: (state) => ({
         type: types.SET_CREATE_STATE,
-        state
-    })
+        state,
+    }),
 };
 
 // Reducers
@@ -90,23 +91,23 @@ const reducer = combineReducers({
     backups,
     notifiers,
     imageIntegrations,
-    isCreating
+    isCreating,
 });
 
 // Selectors
 
-const getAuthPlugins = state => state.authPlugins;
-const getBackups = state => state.backups;
-const getNotifiers = state => state.notifiers;
-const getImageIntegrations = state => state.imageIntegrations;
-const getCreationState = state => state.isCreating;
+const getAuthPlugins = (state) => state.authPlugins;
+const getBackups = (state) => state.backups;
+const getNotifiers = (state) => state.notifiers;
+const getImageIntegrations = (state) => state.imageIntegrations;
+const getCreationState = (state) => state.isCreating;
 
 export const selectors = {
     getAuthPlugins,
     getBackups,
     getNotifiers,
     getImageIntegrations,
-    getCreationState
+    getCreationState,
 };
 
 export default reducer;

@@ -4,14 +4,14 @@ import { combineReducers } from 'redux';
 
 export const types = {
     ADD_NOTIFICATION: 'notifications/ADD_NOTIFICATION',
-    REMOVE_OLDEST_NOTIFICATION: 'notifications/REMOVE_OLDEST_NOTIFICATION'
+    REMOVE_OLDEST_NOTIFICATION: 'notifications/REMOVE_OLDEST_NOTIFICATION',
 };
 
 // Actions
 
 export const actions = {
-    addNotification: notification => ({ type: types.ADD_NOTIFICATION, notification }),
-    removeOldestNotification: () => ({ type: types.REMOVE_OLDEST_NOTIFICATION })
+    addNotification: (notification) => ({ type: types.ADD_NOTIFICATION, notification }),
+    removeOldestNotification: () => ({ type: types.REMOVE_OLDEST_NOTIFICATION }),
 };
 
 // Reducers
@@ -31,15 +31,15 @@ const notifications = (state = [], action) => {
 };
 
 const reducer = combineReducers({
-    notifications
+    notifications,
 });
 
 export default reducer;
 
 // Selectors
 
-const getNotifications = state => state.notifications;
+const getNotifications = (state) => state.notifications;
 
 export const selectors = {
-    getNotifications
+    getNotifications,
 };

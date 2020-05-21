@@ -71,9 +71,9 @@ ConfigBannerDetailWidget.propTypes = {
     config: PropTypes.shape({
         publicConfig: PropTypes.shape({
             header: PropTypes.shape({}),
-            footer: PropTypes.shape({})
-        })
-    }).isRequired
+            footer: PropTypes.shape({}),
+        }),
+    }).isRequired,
 };
 
 export default ConfigBannerDetailWidget;

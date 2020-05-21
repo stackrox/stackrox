@@ -35,7 +35,6 @@ func TestScrubFromNestedStruct(t *testing.T) {
 	ScrubSecretsFromStruct(testStruct)
 	assert.Empty(t, testStruct.Password)
 	assert.Equal(t, "name", testStruct.Name)
-	assert.Equal(t, "", testStruct.Config.OauthToken)
 }
 
 func TestScrubEmbeddedConfig(t *testing.T) {
@@ -50,4 +49,46 @@ func TestScrubEmbeddedConfig(t *testing.T) {
 	}
 	ScrubSecretsFromStruct(dtrIntegration)
 	assert.Empty(t, dtrIntegration.GetDtr().GetPassword())
+}
+
+func TestScrubSecretsWithoutPasswordSetWithEncryption(t *testing.T) {
+	testStruct := &toplevel{Name: "name", Password: ""}
+	ScrubSecretsFromStructWithReplacement(testStruct, ReplacementStr)
+	assert.Empty(t, testStruct.Password)
+	assert.Equal(t, testStruct.Name, "name")
+}
+
+func TestScrubSecretsFromStructWithEncryption(t *testing.T) {
+	testStruct := &toplevel{Name: "name", Password: "password"}
+	ScrubSecretsFromStructWithReplacement(testStruct, ReplacementStr)
+	assert.Equal(t, testStruct.Password, ReplacementStr)
+	assert.Equal(t, testStruct.Name, "name")
+}
+
+func TestScrubFromNestedStructWithEncryption(t *testing.T) {
+	testStruct := &toplevel{
+		Name:     "name",
+		Password: "password",
+		Config: &config{
+			OauthToken: "oauth",
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(testStruct, ReplacementStr)
+	assert.Equal(t, testStruct.Password, ReplacementStr)
+	assert.Equal(t, "name", testStruct.Name)
+	assert.Equal(t, ReplacementStr, testStruct.Config.OauthToken)
+}
+
+func TestScrubEmbeddedConfigWithEncryption(t *testing.T) {
+	// Test an embedded config
+	dtrIntegration := &storage.ImageIntegration{
+		Name: "hi",
+		IntegrationConfig: &storage.ImageIntegration_Dtr{
+			Dtr: &storage.DTRConfig{
+				Password: "pass",
+			},
+		},
+	}
+	ScrubSecretsFromStructWithReplacement(dtrIntegration, ReplacementStr)
+	assert.Equal(t, dtrIntegration.GetDtr().GetPassword(), ReplacementStr)
 }

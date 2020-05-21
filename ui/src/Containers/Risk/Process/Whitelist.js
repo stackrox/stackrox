@@ -24,7 +24,7 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
         const desiredLocked = !isLocked;
         const query = {
             keys: [{ ...key }],
-            locked: desiredLocked
+            locked: desiredLocked,
         };
         lockUnlockProcesses(query).then(() => {
             // This is so that the parent component knows that one of the child components
@@ -35,7 +35,7 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
         });
     }
 
-    const sortedElements = elements.sort(function(a, b) {
+    const sortedElements = elements.sort(function (a, b) {
         if (!a.element || !a.element.processName) return -1;
         if (!b.element || !b.element.processName) return 1;
         return a.element.processName.localeCompare(b.element.processName);
@@ -93,14 +93,14 @@ const Whitelist = ({ process, processEpoch, setProcessEpoch }) => {
 Whitelist.propTypes = {
     process: PropTypes.shape({
         key: PropTypes.shape({
-            containerName: PropTypes.string
+            containerName: PropTypes.string,
         }).isRequired,
         elements: PropTypes.arrayOf(PropTypes.object).isRequired,
         containerName: PropTypes.func,
-        userLockedTimestamp: PropTypes.string
+        userLockedTimestamp: PropTypes.string,
     }).isRequired,
     processEpoch: PropTypes.number.isRequired,
-    setProcessEpoch: PropTypes.func.isRequired
+    setProcessEpoch: PropTypes.func.isRequired,
 };
 
 export default Whitelist;

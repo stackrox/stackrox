@@ -20,11 +20,11 @@ function UsageButtons({ modificationSource }) {
 }
 
 UsageButtons.propTypes = {
-    modificationSource: PropTypes.string.isRequired
+    modificationSource: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
-    modificationSource: selectors.getNetworkPolicyModificationSource
+    modificationSource: selectors.getNetworkPolicyModificationSource,
 });
 
 export default connect(mapStateToProps)(UsageButtons);

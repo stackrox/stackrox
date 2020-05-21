@@ -4,12 +4,12 @@ import PropTypes from 'prop-types';
 class Pills extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object),
-        onActivePillsChange: PropTypes.func
+        onActivePillsChange: PropTypes.func,
     };
 
     static defaultProps = {
         data: [],
-        onActivePillsChange: () => {}
+        onActivePillsChange: () => {},
     };
 
     constructor(props) {
@@ -17,11 +17,11 @@ class Pills extends Component {
 
         this.state = {
             data: this.props.data,
-            active: {}
+            active: {},
         };
     }
 
-    activatePillHandler = item => () => {
+    activatePillHandler = (item) => () => {
         if (item.disabled) return;
         const { active } = this.state;
         if (active[item.value] === true) {
@@ -35,7 +35,7 @@ class Pills extends Component {
 
     displayData() {
         const { active } = this.state;
-        return this.state.data.map(item => {
+        return this.state.data.map((item) => {
             let pillClass = active[item.value]
                 ? 'text-black select-none cursor-pointer p-2 m-2 bg-blue-lightest rounded-sm whitespace-no-wrap shadow-md'
                 : 'text-black select-none cursor-pointer p-2 m-2 rounded-sm whitespace-no-wrap hover:bg-blue-lightest';

@@ -5,12 +5,12 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
-	"github.com/stackrox/rox/generated/storage"
+	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
-	executorCtx = sac.WithAllAccess(context.Background())
+	detectorCtx = sac.WithAllAccess(context.Background())
 )
 
 type detectorImpl struct {
@@ -23,37 +23,34 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 	return d.policySet
 }
 
-func (d *detectorImpl) AlertsForDeployments(deploymentIDs ...string) ([]*storage.Alert, error) {
-	executor := newAlertCollectingExecutor(executorCtx, d.deployments, deploymentIDs...)
-	err := d.policySet.ForEach(executor)
-	if err != nil {
-		return nil, err
-	}
-
-	return executor.GetAlerts(), nil
-}
-
-func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {
-	executor := newAlertCollectingExecutor(executorCtx, d.deployments)
-	err := d.policySet.ForOne(policyID, executor)
-	if err != nil {
-		return nil, err
-	}
-
-	return executor.GetAlerts(), nil
-}
-
 func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID string) bool {
-	executor := newWhitelistTestingExecutor(executorCtx, d.deployments, deploymentID)
-	err := d.policySet.ForOne(policyID, executor)
+	var result bool
+	err := d.policySet.ForOne(policyID, func(compiled detectionPkg.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
+			result = true
+			return nil
+		}
+		dep, exists, err := d.deployments.GetDeployment(detectorCtx, deploymentID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			// Assume it's not whitelisted if it doesn't exist, otherwise runtime alerts for deleted deployments
+			// will always get removed every time we update a policy.
+			result = false
+			return nil
+		}
+		result = !compiled.AppliesTo(dep)
+		return nil
+	})
 	if err != nil {
 		log.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s: %s", deploymentID, policyID, err)
 	}
-	return executor.GetResult()
+	return result
 }
 
 func (d *detectorImpl) DeploymentInactive(deploymentID string) bool {
-	_, exists, err := d.deployments.ListDeployment(executorCtx, deploymentID)
+	_, exists, err := d.deployments.ListDeployment(detectorCtx, deploymentID)
 	if err != nil {
 		log.Errorf("Couldn't determine inactive state of deployment %q: %v", deploymentID, err)
 		return false

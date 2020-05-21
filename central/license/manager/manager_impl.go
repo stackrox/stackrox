@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deploymentenvs"
@@ -430,7 +429,7 @@ func (m *manager) GetActiveLicense() *licenseproto.License {
 	var licenseProto *licenseproto.License
 	concurrency.WithRLock(&m.mutex, func() {
 		if m.activeLicense != nil {
-			licenseProto = proto.Clone(m.activeLicense.licenseProto).(*licenseproto.License)
+			licenseProto = m.activeLicense.licenseProto.Clone()
 		}
 	})
 	return licenseProto

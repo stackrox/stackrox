@@ -8,6 +8,6 @@ import { saveFile } from 'services/DownloadService';
 export default function downloadDiagnostics() {
     return saveFile({
         method: 'get',
-        url: '/api/extensions/diagnostics'
+        url: '/api/extensions/diagnostics',
     });
 }

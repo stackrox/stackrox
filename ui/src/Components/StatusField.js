@@ -6,34 +6,34 @@ import {
     CheckCircle,
     DownloadCloud,
     Info,
-    Loader
+    Loader,
 } from 'react-feather';
 
 const statusTypes = {
     info: {
         color: 'text-base-600',
-        icon: Info
+        icon: Info,
     },
     current: {
         color: 'text-base-600',
-        icon: CheckCircle
+        icon: CheckCircle,
     },
     download: {
         color: 'text-tertiary-700',
-        icon: DownloadCloud
+        icon: DownloadCloud,
     },
     progress: {
         color: 'text-success-600',
-        icon: Loader
+        icon: Loader,
     },
     failure: {
         color: 'text-alert-700',
-        icon: AlertTriangle
+        icon: AlertTriangle,
     },
     intervention: {
         color: 'text-warning-700',
-        icon: AlertCircle
-    }
+        icon: AlertCircle,
+    },
 };
 
 function StatusField({ displayValue, type, action }) {
@@ -69,14 +69,14 @@ StatusField.propTypes = {
     type: PropTypes.string,
     action: PropTypes.shape({
         actionText: PropTypes.string.isRequired,
-        actionHandler: PropTypes.func.isRequired
-    })
+        actionHandler: PropTypes.func.isRequired,
+    }),
 };
 
 StatusField.defaultProps = {
     displayValue: '',
     type: 'info',
-    action: null
+    action: null,
 };
 
 export default StatusField;

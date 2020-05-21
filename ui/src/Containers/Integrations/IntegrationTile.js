@@ -6,19 +6,19 @@ class IntegrationTile extends Component {
         integration: PropTypes.shape({
             label: PropTypes.string.isRequired,
             image: PropTypes.string.isRequired,
-            categories: PropTypes.string
+            categories: PropTypes.string,
         }).isRequired,
         onClick: PropTypes.func.isRequired,
-        numIntegrations: PropTypes.number
+        numIntegrations: PropTypes.number,
     };
 
     static defaultProps = {
-        numIntegrations: 0
+        numIntegrations: 0,
     };
 
     onClick = () => this.props.onClick(this.props.integration);
 
-    handleKeyUp = e => (e.key === 'Enter' ? this.props.onClick(this.props.integration) : null);
+    handleKeyUp = (e) => (e.key === 'Enter' ? this.props.onClick(this.props.integration) : null);
 
     renderIndicator = () => {
         if (this.props.numIntegrations === 0) return null;

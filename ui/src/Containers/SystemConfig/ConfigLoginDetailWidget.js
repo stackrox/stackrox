@@ -33,10 +33,10 @@ ConfigLoginDetailWidget.propTypes = {
         publicConfig: PropTypes.shape({
             loginNotice: PropTypes.shape({
                 enabled: PropTypes.bool,
-                text: PropTypes.string
-            })
-        })
-    }).isRequired
+                text: PropTypes.string,
+            }),
+        }),
+    }).isRequired,
 };
 
 export default ConfigLoginDetailWidget;

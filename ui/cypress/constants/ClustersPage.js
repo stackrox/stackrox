@@ -6,7 +6,7 @@ export const selectors = {
     header: '[data-testid="header-text"]',
     autoUpgradeInput: '[id="enableAutoUpgrade"]',
     clusters: {
-        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")'
+        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
     },
     buttons: {
         new: 'button:contains("New")',
@@ -19,13 +19,13 @@ export const selectors = {
         confirmDelete: '.dialog button:contains("Delete")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
-        closePanel: 'button[data-testid="cancel"]'
+        closePanel: 'button[data-testid="cancel"]',
     },
     clusterForm: {
         nameInput: 'form[data-testid="cluster-form"] input[name="name"]',
         imageInput: 'form[data-testid="cluster-form"] input[name="mainImage"]',
-        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]'
+        endpointInput: 'form[data-testid="cluster-form"] input[name="centralApiEndpoint"]',
     },
     dialog: '.dialog',
-    checkboxes: 'input[data-testid="checkbox-table-row-selector"'
+    checkboxes: 'input[data-testid="checkbox-table-row-selector"',
 };

@@ -7,23 +7,15 @@ describe('Compliance list page', () => {
 
     it('should filter the table with passing controls', () => {
         cy.visit(url.list.namespaces);
-        cy.get(selectors.search.input)
-            .type('Compliance State:')
-            .type('{enter}');
-        cy.get(selectors.search.input)
-            .type('Pass')
-            .type('{enter}');
+        cy.get(selectors.search.input).type('Compliance State:').type('{enter}');
+        cy.get(selectors.search.input).type('Pass').type('{enter}');
         cy.get(selectors.table.rows).should('not.exist');
     });
 
     it('should filter the table with failing controls', () => {
         cy.visit(url.list.namespaces);
-        cy.get(selectors.search.input)
-            .type('Compliance State:')
-            .type('{enter}');
-        cy.get(selectors.search.input)
-            .type('Fail')
-            .type('{enter}');
+        cy.get(selectors.search.input).type('Compliance State:').type('{enter}');
+        cy.get(selectors.search.input).type('Fail').type('{enter}');
         cy.get(selectors.table.rows);
     });
 
@@ -31,7 +23,7 @@ describe('Compliance list page', () => {
         cy.visit(url.list.clusters);
         cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
-            .then(name => {
+            .then((name) => {
                 cy.get(ComplianceSelectors.list.table.firstRow).click();
                 cy.get(selectors.panel.sidePanel).should('exist');
                 cy.get(selectors.panel.sidePanelHeader).contains(name);
@@ -45,7 +37,7 @@ describe('Compliance list page', () => {
         cy.visit(url.list.clusters);
         cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
-            .then(name => {
+            .then((name) => {
                 cy.get(ComplianceSelectors.list.table.firstRow).click();
                 cy.get(selectors.panel.sidePanelHeader).contains(name);
                 cy.get(selectors.panel.sidePanelHeader).click();
@@ -57,17 +49,21 @@ describe('Compliance list page', () => {
         cy.visit(url.list.standards.CIS_Docker_v1_2_0);
         cy.get(ComplianceSelectors.list.table.firstRowName)
             .invoke('text')
-            .then(text1 => {
+            .then((text1) => {
                 cy.get(ComplianceSelectors.list.table.secondRowName)
                     .invoke('text')
-                    .then(text2 => {
+                    .then((text2) => {
                         const arr1 = text1.split(' ')[0];
                         const controlArr1 = arr1.split('.');
                         const arr2 = text2.split(' ')[0];
                         const controlArr2 = arr2.split('.');
-                        expect(controlArr1[0]).to.be.at.most(controlArr2[0]);
+                        expect(parseInt(controlArr1[0], 10)).to.be.at.most(
+                            parseInt(controlArr2[0], 10)
+                        );
                         if (controlArr1[1] && controlArr2[1]) {
-                            expect(controlArr1[1]).to.be.at.most(controlArr2[1]);
+                            expect(parseInt(controlArr1[1], 10)).to.be.at.most(
+                                parseInt(controlArr2[1], 10)
+                            );
                         }
                     });
             });
@@ -91,13 +87,13 @@ describe('Compliance list page', () => {
         cy.visit(url.list.standards.CIS_Docker_v1_2_0);
         cy.get(ComplianceSelectors.widget.controlsInCompliance.centerLabel)
             .invoke('text')
-            .then(labelPercentage => {
+            .then((labelPercentage) => {
                 cy.get(ComplianceSelectors.widget.controlsInCompliance.passingControls)
                     .invoke('text')
-                    .then(passingControls => {
+                    .then((passingControls) => {
                         cy.get(ComplianceSelectors.widget.controlsInCompliance.failingControls)
                             .invoke('text')
-                            .then(failingControls => {
+                            .then((failingControls) => {
                                 const percentagePassing = Math.round(
                                     (parseInt(passingControls, 10) /
                                         (parseInt(passingControls, 10) +
@@ -117,11 +113,9 @@ describe('Compliance list page', () => {
         cy.get(ComplianceSelectors.widget.controlsMostFailed.listItems, { timeout: 10000 })
             .eq(0)
             .invoke('text')
-            .then(text => {
+            .then((text) => {
                 const controlName = text.split(':')[0];
-                cy.get(ComplianceSelectors.widget.controlsMostFailed.listItems)
-                    .eq(0)
-                    .click();
+                cy.get(ComplianceSelectors.widget.controlsMostFailed.listItems).eq(0).click();
                 cy.get(ComplianceSelectors.widget.controlDetails.controlName)
                     .invoke('text')
                     .should('eq', controlName);

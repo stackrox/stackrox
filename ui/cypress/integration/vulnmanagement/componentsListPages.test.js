@@ -4,7 +4,7 @@ import { url, selectors } from '../../constants/VulnManagementPage';
 import {
     hasExpectedHeaderColumns,
     allChecksForEntities,
-    allCVECheck
+    allCVECheck,
     // TBD - will be uncommented after issue is fixed - allFixableCheck
 } from '../../helpers/vmWorkflowUtils';
 
@@ -25,9 +25,9 @@ describe('Components list Page and its entity detail page, (related entities) su
             'Top CVSS',
             'Images',
             'Deployments',
-            'Risk Priority'
+            'Risk Priority',
         ]);
-        cy.get(selectors.tableBodyColumn).each($el => {
+        cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
             if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
                 allChecksForEntities(url.list.components, 'Deployment');

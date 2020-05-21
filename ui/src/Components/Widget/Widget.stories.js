@@ -5,7 +5,7 @@ import Widget from './Widget';
 
 export default {
     title: 'Widget',
-    component: Widget
+    component: Widget,
 };
 
 export const withTitleComponents = () => (

@@ -106,39 +106,35 @@ Roles.propTypes = {
     roles: PropTypes.arrayOf(
         PropTypes.shape({
             name: PropTypes.string,
-            globalAccess: PropTypes.string
+            globalAccess: PropTypes.string,
         })
     ).isRequired,
     selectedRole: PropTypes.shape({
         name: PropTypes.string,
-        globalAccess: PropTypes.string
+        globalAccess: PropTypes.string,
     }),
     selectRole: PropTypes.func.isRequired,
     saveRole: PropTypes.func.isRequired,
-    deleteRole: PropTypes.func.isRequired
+    deleteRole: PropTypes.func.isRequired,
 };
 
 Roles.defaultProps = {
-    selectedRole: null
+    selectedRole: null,
 };
 
-const getRolesWithDefault = createSelector(
-    [selectors.getRoles],
-    roles => roles.map(role => Object.assign({}, role, { noAction: defaultRoles[role.name] }))
+const getRolesWithDefault = createSelector([selectors.getRoles], (roles) =>
+    roles.map((role) => ({ ...role, noAction: defaultRoles[role.name] }))
 );
 
 const mapStateToProps = createStructuredSelector({
     roles: getRolesWithDefault,
-    selectedRole: selectors.getSelectedRole
+    selectedRole: selectors.getSelectedRole,
 });
 
 const mapDispatchToProps = {
     selectRole: actions.selectRole,
     saveRole: actions.saveRole,
-    deleteRole: actions.deleteRole
+    deleteRole: actions.deleteRole,
 };
 
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(Roles);
+export default connect(mapStateToProps, mapDispatchToProps)(Roles);

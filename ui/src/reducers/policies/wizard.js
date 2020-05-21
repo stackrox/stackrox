@@ -9,32 +9,32 @@ export const types = {
     SET_WIZARD_POLICY: 'policies/SET_WIZARD_POLICY',
     SET_WIZARD_DRY_RUN_JOB_ID: 'policies/SET_WIZARD_DRY_RUN_JOB_ID',
     SET_WIZARD_DRY_RUN: 'policies/SET_WIZARD_DRY_RUN',
-    SET_WIZARD_POLICY_DISABLED: 'policies/SET_WIZARD_POLICY_DISABLED'
+    SET_WIZARD_POLICY_DISABLED: 'policies/SET_WIZARD_POLICY_DISABLED',
 };
 
 // Actions
 //---------
 
 export const actions = {
-    setWizardStage: stage => ({ type: types.SET_WIZARD_STAGE, stage }),
-    setWizardPolicy: policy => ({ type: types.SET_WIZARD_POLICY, policy }),
-    setWizardDryRunJobId: jobId => ({ type: types.SET_WIZARD_DRY_RUN_JOB_ID, jobId }),
-    setWizardDryRun: dryRun => ({ type: types.SET_WIZARD_DRY_RUN, dryRun }),
-    setWizardPolicyDisabled: disabled => ({ type: types.SET_WIZARD_POLICY_DISABLED, disabled })
+    setWizardStage: (stage) => ({ type: types.SET_WIZARD_STAGE, stage }),
+    setWizardPolicy: (policy) => ({ type: types.SET_WIZARD_POLICY, policy }),
+    setWizardDryRunJobId: (jobId) => ({ type: types.SET_WIZARD_DRY_RUN_JOB_ID, jobId }),
+    setWizardDryRun: (dryRun) => ({ type: types.SET_WIZARD_DRY_RUN, dryRun }),
+    setWizardPolicyDisabled: (disabled) => ({ type: types.SET_WIZARD_POLICY_DISABLED, disabled }),
 };
 
 // Helpers
 //--------
 
 const setPolicy = (state, policy) => {
-    const newState = Object.assign({}, state, { policy });
+    const newState = { ...state, policy };
     newState.isNew = !newState.policy.id;
     return newState;
 };
 
 const setPolicyDisabled = (state, disabled) => {
     const newState = {};
-    newState.policy = Object.assign({}, state.policy, { disabled });
+    newState.policy = { ...state.policy, disabled };
     newState.isNew = state.isNew;
     return newState;
 };
@@ -73,7 +73,7 @@ const wizardDryRun = (state = { jobId: null, dryRun: null }, action) => {
 const reducer = combineReducers({
     wizardStage,
     wizardPolicy,
-    wizardDryRun
+    wizardDryRun,
 });
 
 export default reducer;
@@ -82,17 +82,17 @@ export default reducer;
 // If adding a selector, you'll need to wire it through reducers/policies/reducer.js
 //---------------------------------------------------------------------------------
 
-const getWizardStage = state => state.wizardStage;
+const getWizardStage = (state) => state.wizardStage;
 
-const getWizardIsNew = state => state.wizardPolicy.isNew;
+const getWizardIsNew = (state) => state.wizardPolicy.isNew;
 
-const getWizardPolicy = state => state.wizardPolicy.policy;
+const getWizardPolicy = (state) => state.wizardPolicy.policy;
 
-const getWizardDryRun = state => state.wizardDryRun;
+const getWizardDryRun = (state) => state.wizardDryRun;
 
 export const selectors = {
     getWizardStage,
     getWizardIsNew,
     getWizardPolicy,
-    getWizardDryRun
+    getWizardDryRun,
 };

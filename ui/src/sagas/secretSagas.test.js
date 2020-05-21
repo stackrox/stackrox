@@ -13,12 +13,12 @@ describe('Secret Sagas', () => {
         {
             value: 'Secret:',
             label: 'Secret:',
-            type: 'categoryOption'
+            type: 'categoryOption',
         },
         {
             value: 'bla',
-            label: 'bla'
-        }
+            label: 'bla',
+        },
     ];
 
     it('should get unfiltered list of secrets on Secrets page', () => {
@@ -28,7 +28,7 @@ describe('Secret Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getSecretsSearchOptions), []],
-                [call(fetchSecrets, []), dynamic(fetchMock)]
+                [call(fetchSecrets, []), dynamic(fetchMock)],
             ])
             .dispatch(createLocationChange('/main/secrets'))
             .dispatch({ type: types.SET_SEARCH_OPTIONS, payload: { options: [] } })
@@ -43,12 +43,12 @@ describe('Secret Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getSecretsSearchOptions), secretNameSearchOptions],
-                [call(fetchSecrets, secretNameSearchOptions), dynamic(fetchMock)]
+                [call(fetchSecrets, secretNameSearchOptions), dynamic(fetchMock)],
             ])
             .put(actions.fetchSecrets.success(secrets, { options: secretNameSearchOptions }))
             .dispatch({
                 type: types.SET_SEARCH_OPTIONS,
-                payload: { options: secretNameSearchOptions }
+                payload: { options: secretNameSearchOptions },
             })
             .dispatch(createLocationChange('/main/secrets'))
             .silentRun();
@@ -61,12 +61,12 @@ describe('Secret Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getSecretsSearchOptions), secretNameSearchOptions],
-                [call(fetchSecrets, secretNameSearchOptions), dynamic(fetchMock)]
+                [call(fetchSecrets, secretNameSearchOptions), dynamic(fetchMock)],
             ])
             .put(actions.fetchSecrets.success(secrets, { options: secretNameSearchOptions }))
             .dispatch({
                 type: types.SET_SEARCH_OPTIONS,
-                payload: { options: secretNameSearchOptions }
+                payload: { options: secretNameSearchOptions },
             })
             .dispatch(actions.setSecretsSearchOptions(secretNameSearchOptions))
             .silentRun();

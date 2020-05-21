@@ -1,7 +1,13 @@
 # Helm charts for the StackRox Kubernetes Security Platform 
 
 After you [install StackRox Central](https://help.stackrox.com/docs/get-started/quick-start/#install-stackrox-central),
-you can use helm charts to install Sensor, Collector, and Admission Controller. 
+you can use helm charts to install Sensor, Collector, and Admission Controller.
+
+- [Prerequisites](#prerequisites)
+- [Install Sensor using Helm chart](#install-sensor-using-helm-chart)
+- [Uninstall Sensor using Helm chart](#uninstall-sensor-using-helm-chart)
+- [Upgrade Sensor using Helm chart](#upgrade-sensor-using-helm-chart)
+- [Configuration](#configuration)
 
 ## Prerequisites
 To install the StackRox Kubernetes Security Platform's Sensor, Collector, and
@@ -33,8 +39,8 @@ you use.
 1. Navigate to the [stackrox/helm-charts](https://github.com/stackrox/helm-charts)
    repository, and download the helm charts folder that corresponds to the
    StackRox Kubernetes Security Platform version you are using. For example, if
-   you are using the StackRox Kubernetes Security Platform version 3.0.41,
-   download the folder named `3.0.41`.
+   you are using the StackRox Kubernetes Security Platform version 3.0.42.0,
+   download the folder named `3.0.42.0`.
 1. From the downloaded folder, modify the `values.yaml` file based on your
    environment. See the [Configuration](#configuration) section to understand the
    available parameters.
@@ -90,9 +96,11 @@ you use.
    StackRox Kubernetes Security Platform version you are using. For example, if
    you are using the StackRox Kubernetes Security Platform version 3.0.41,
    download the folder named `3.0.41`.
-1. From the downloaded folder, modify the `values.yaml` file based on your
-   environment. See the [Configuration](#configuration) section to understand the
-   available parameters.
+1. In the downloaded folder, create a new directory called `secrets`. 
+1. In the new `secrets` directory, copy the contents from the `secrets`
+   directory of the release from which you are upgrading. For example, if you
+   are upgrading from version 3.0.41.0 to 3.0.42.0, copy the contents of the
+   directory `3.0.41.0/secrets` into `3.0.42.0/secrets`.   
 1. Run the Helm upgrade command.
    - For Helm v2:
      ```

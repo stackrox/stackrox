@@ -29,7 +29,6 @@ var (
 	deploymentIDBase = uuid.NewV4().String()
 	deploymentCount  = int64(0)
 	admissionCount   = int64(0)
-	imageNameIndex   = int64(0)
 )
 
 func getDeploymentCount() int {
@@ -46,10 +45,6 @@ func getAdmissionCount() int {
 
 func incrementAndGetAdmissionCount() int {
 	return int(atomic.AddInt64(&admissionCount, 1))
-}
-
-func getAndIncrementNameIndex() int {
-	return int(atomic.AddInt64(&imageNameIndex, 1)) - 1
 }
 
 func main() {
@@ -185,15 +180,14 @@ func replaceImages(deployment *storage.Deployment) {
 }
 
 func knownDockerContainerImage() *storage.ContainerImage {
-	nameIndex := getAndIncrementNameIndex()
-	nameAndID := imageNames[nameIndex%len(imageNames)]
+	nameAndID := fixtures.GetRandomImage()
 	return &storage.ContainerImage{
-		Id: nameAndID.id,
+		Id: nameAndID.ID,
 		Name: &storage.ImageName{
 			Registry: "docker.io",
-			Remote:   nameAndID.name,
+			Remote:   nameAndID.Name,
 			Tag:      "latest",
-			FullName: fmt.Sprintf("docker.io/%s", nameAndID.name),
+			FullName: fmt.Sprintf("docker.io/%s", nameAndID.Name),
 		},
 	}
 }

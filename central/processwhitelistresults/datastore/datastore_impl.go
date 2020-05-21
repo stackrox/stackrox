@@ -25,12 +25,12 @@ func (d *datastoreImpl) UpsertWhitelistResults(ctx context.Context, results *sto
 		return errors.New("permission denied")
 	}
 
-	return d.storage.UpsertWhitelistResults(results)
+	return d.storage.Upsert(results)
 }
 
 func (d *datastoreImpl) GetWhitelistResults(ctx context.Context, deploymentID string) (*storage.ProcessWhitelistResults, error) {
-	pWResults, err := d.storage.GetWhitelistResults(deploymentID)
-	if err != nil || pWResults == nil {
+	pWResults, exists, err := d.storage.Get(deploymentID)
+	if err != nil || !exists {
 		return nil, err
 	}
 
@@ -42,8 +42,8 @@ func (d *datastoreImpl) GetWhitelistResults(ctx context.Context, deploymentID st
 }
 
 func (d *datastoreImpl) DeleteWhitelistResults(ctx context.Context, deploymentID string) error {
-	pWResults, err := d.storage.GetWhitelistResults(deploymentID)
-	if err != nil || pWResults == nil {
+	pWResults, exists, err := d.storage.Get(deploymentID)
+	if err != nil || !exists {
 		return err
 	}
 
@@ -51,5 +51,5 @@ func (d *datastoreImpl) DeleteWhitelistResults(ctx context.Context, deploymentID
 		return err
 	}
 
-	return d.storage.DeleteWhitelistResults(deploymentID)
+	return d.storage.Delete(deploymentID)
 }

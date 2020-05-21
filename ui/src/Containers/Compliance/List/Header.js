@@ -12,7 +12,7 @@ import { standardLabels } from 'messages/standards';
 import useCaseTypes from 'constants/useCaseTypes';
 
 const ListHeader = ({ entityType, searchComponent, standard }) => {
-    const standardId = findKey(standardLabels, key => key === standard);
+    const standardId = findKey(standardLabels, (key) => key === standard);
 
     const headerText = standardId
         ? standardLabels[standardId]
@@ -25,8 +25,8 @@ const ListHeader = ({ entityType, searchComponent, standard }) => {
             columnStyles: {
                 0: { columnWidth: 80 },
                 1: { columnWidth: 80 },
-                2: { columnWidth: 25 }
-            }
+                2: { columnWidth: 25 },
+            },
         };
     }
     return (
@@ -56,12 +56,12 @@ const ListHeader = ({ entityType, searchComponent, standard }) => {
 ListHeader.propTypes = {
     searchComponent: PropTypes.element,
     entityType: PropTypes.string.isRequired,
-    standard: PropTypes.string
+    standard: PropTypes.string,
 };
 
 ListHeader.defaultProps = {
     searchComponent: null,
-    standard: null
+    standard: null,
 };
 
 export default withRouter(ListHeader);

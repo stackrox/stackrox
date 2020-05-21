@@ -1,10 +1,10 @@
 import React from 'react';
 import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortDate } from 'sorters/sorters';
@@ -40,25 +40,25 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Node`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         {
             Header: `Operating System`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'osImage'
+            accessor: 'osImage',
         },
         {
             Header: `Container Runtime`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'containerRuntimeVersion'
+            accessor: 'containerRuntimeVersion',
         },
         {
             Header: `Node join time`,
@@ -70,7 +70,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(joinedAt, dateTimeFormat);
             },
             accessor: 'joinedAt',
-            sortMethod: sortDate
+            sortMethod: sortDate,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -87,7 +87,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         entityContext && entityContext[entityTypes.CONTROL]
             ? null
@@ -102,7 +102,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       const {
                           passingCount,
                           failingCount,
-                          unknownCount
+                          unknownCount,
                       } = nodeComplianceControlCount;
                       const controlCount = passingCount + failingCount + unknownCount;
                       if (!controlCount) {
@@ -119,13 +119,13 @@ const buildTableColumns = (match, location, entityContext) => {
                               text={`${controlCount} ${pluralize('Controls', controlCount)}`}
                           />
                       );
-                  }
-              }
+                  },
+              },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => data.results;
+const createTableRows = (data) => data.results;
 
 const Nodes = ({
     match,
@@ -135,7 +135,7 @@ const Nodes = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);

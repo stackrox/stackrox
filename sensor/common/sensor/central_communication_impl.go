@@ -11,6 +11,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/encoding/gzip"
+	"google.golang.org/grpc/status"
 )
 
 // sensor implements the Sensor interface by sending inputs to central,
@@ -36,6 +39,40 @@ func (s *centralCommunicationImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &s.stoppedC
 }
 
+func isUnimplemented(err error) bool {
+	spb, ok := status.FromError(err)
+	if spb == nil || !ok {
+		return false
+	}
+	return spb.Code() == codes.Unimplemented
+}
+
+func communicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
+	opts := []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
+
+	for {
+		stream, err := client.Communicate(ctx, opts...)
+		if err != nil {
+			if isUnimplemented(err) && len(opts) > 0 {
+				opts = nil
+				continue
+			}
+			return nil, errors.Wrap(err, "opening stream")
+		}
+
+		_, err = stream.Header()
+		if err != nil {
+			if isUnimplemented(err) && len(opts) > 0 {
+				opts = nil
+				continue
+			}
+			return nil, errors.Wrap(err, "receiving initial metadata")
+		}
+
+		return stream, nil
+	}
+}
+
 func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
 	defer func() {
 		s.stoppedC.SignalWithError(s.stopC.Err())
@@ -56,14 +93,9 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 	ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
 
-	stream, err := client.Communicate(ctx)
+	stream, err := communicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "opening stream"))
-		return
-	}
-	_, err = stream.Header()
-	if err != nil {
-		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial metadata"))
+		s.stopC.SignalWithError(err)
 		return
 	}
 

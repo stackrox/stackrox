@@ -4,6 +4,7 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/tecbot/gorocksdb"
 )
 
 // Databases encapsulates all the different databases we are using
@@ -11,6 +12,7 @@ import (
 type Databases struct {
 	BoltDB   *bolt.DB
 	BadgerDB *badger.DB
+	RocksDB  *gorocksdb.DB
 }
 
 // A Migration represents a migration.

@@ -24,8 +24,8 @@ class GraphQLService {
     private final AuthorizedPoster aPoster
 
     GraphQLService() {
-        String username = System.getenv("ROX_USERNAME") ?: ""
-        String password = System.getenv("ROX_PASSWORD") ?: ""
+        String username = Env.mustGetUsername()
+        String password = Env.mustGetPassword()
         this.aPoster = new AuthorizedPoster(username, password, new Poster(getAddr()))
     }
 

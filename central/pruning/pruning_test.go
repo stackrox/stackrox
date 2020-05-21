@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
@@ -37,7 +36,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	filterMocks "github.com/stackrox/rox/pkg/process/filter/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -45,8 +43,10 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tecbot/gorocksdb"
 )
 
 const (
@@ -121,17 +121,41 @@ func newDeployment(imageIDs ...string) *storage.Deployment {
 	}
 }
 
-func newPod(imageIDs ...string) *storage.Pod {
+func newPod(live bool, imageIDs ...string) *storage.Pod {
 	instanceLists := make([]*storage.Pod_ContainerInstanceList, len(imageIDs))
+	instances := make([]*storage.ContainerInstance, len(imageIDs))
 	for i, id := range imageIDs {
-		instanceLists[i] = &storage.Pod_ContainerInstanceList{
-			Instances: []*storage.ContainerInstance{
-				{
-					ImageDigest: types.NewDigest(id).Digest(),
+		if live {
+			instances[i] = &storage.ContainerInstance{
+				ImageDigest: types.NewDigest(id).Digest(),
+			}
+			// Populate terminated instances to ensure the indexing isn't overwritten.
+			instanceLists[i] = &storage.Pod_ContainerInstanceList{
+				Instances: []*storage.ContainerInstance{
+					{
+						ImageDigest: types.NewDigest("nonexistentid").Digest(),
+					},
 				},
-			},
+			}
+		} else {
+			instanceLists[i] = &storage.Pod_ContainerInstanceList{
+				Instances: []*storage.ContainerInstance{
+					{
+						ImageDigest: types.NewDigest(id).Digest(),
+					},
+				},
+			}
 		}
 	}
+
+	if live {
+		return &storage.Pod{
+			Id:                  "id",
+			LiveInstances:       instances,
+			TerminatedInstances: instanceLists,
+		}
+	}
+
 	return &storage.Pod{
 		Id:                  "id",
 		TerminatedInstances: instanceLists,
@@ -139,7 +163,7 @@ func newPod(imageIDs ...string) *storage.Pod {
 }
 
 func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore, podDatastore.DataStore, queue.WaitableQueue) {
-	db := testutils.BadgerDBForT(t)
+	db := rocksdbtest.RocksDBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
@@ -155,11 +179,10 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 
 	// Initialize real datastore
-	images, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, true, mockComponentDatastore, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
+	images, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, bleveIndex, true, mockComponentDatastore, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return(nil)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainersByPod(gomock.Any(), gomock.Any()).Return(nil)
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
@@ -170,34 +193,31 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockAlertDatastore := alertDatastoreMocks.NewMockDataStore(ctrl)
 
 	mockFilter := filterMocks.NewMockFilter(ctrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, nil, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
-	pods, err := podDatastore.New(db, bleveIndex, mockProcessDataStore, mockFilter)
+	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
 	require.NoError(t, err)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods, indexingQ
 }
 
 func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatastore.DataStore, configDatastore.DataStore, imageDatastore.DataStore, deploymentDatastore.DataStore) {
-	db := testutils.BadgerDBForT(t)
+	db := rocksdbtest.RocksDBForT(t)
 	commentsDB := testutils.DBForT(t)
 
 	bleveIndex, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
 	// Initialize real datastore
 	alerts := alertDatastore.NewWithDb(db, commentsDB, bleveIndex)
 
 	ctrl := gomock.NewController(t)
-	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
 
 	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
 
@@ -207,10 +227,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	mockFilter := filterMocks.NewMockFilter(ctrl)
-	mockFilter.EXPECT().Update(gomock.Any()).AnyTimes()
-
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, nil, bleveIndex, nil, mockProcessDataStore, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
@@ -218,7 +235,6 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 func TestImagePruning(t *testing.T) {
 	var cases = []struct {
-		sepEnabled  bool
 		name        string
 		images      []*storage.Image
 		deployment  *storage.Deployment
@@ -234,7 +250,7 @@ func TestImagePruning(t *testing.T) {
 			expectedIDs: []string{"id1", "id2"},
 		},
 		{
-			name: "one old and one new - no deployments",
+			name: "one old and one new - no deployments nor pods",
 			images: []*storage.Image{
 				newImageInstance("id1", 1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
@@ -251,12 +267,21 @@ func TestImagePruning(t *testing.T) {
 			expectedIDs: []string{"id1"},
 		},
 		{
-			name: "one old and one new - 1 deployment with old",
+			name: "one old and one new - 1 pod with new",
 			images: []*storage.Image{
 				newImageInstance("id1", 1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
-			deployment:  newDeployment("id2"),
+			pod:         newPod(true, "id1"),
+			expectedIDs: []string{"id1"},
+		},
+		{
+			name: "one old and one new - 1 pod with old",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod(true, "id2"),
 			expectedIDs: []string{"id1", "id2"},
 		},
 		{
@@ -269,120 +294,35 @@ func TestImagePruning(t *testing.T) {
 			expectedIDs: []string{"id2"},
 		},
 		{
-			name: "two old - 1 deployment with old, but has reference to old",
-			images: []*storage.Image{
-				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			deployment: &storage.Deployment{
-				Id: "d1",
-				Containers: []*storage.Container{
-					{
-						Image: &storage.ContainerImage{
-							Id: "sha256:id1",
-						},
-						Instances: []*storage.ContainerInstance{
-							{
-								ImageDigest: "sha256:id2",
-							},
-						},
-					},
-				},
-			},
-			expectedIDs: []string{"id1", "id2"},
-		},
-		{
-			sepEnabled: true,
-			name:       "No pruning",
-			images: []*storage.Image{
-				newImageInstance("id1", 1),
-				newImageInstance("id2", 1),
-			},
-			expectedIDs: []string{"id1", "id2"},
-		},
-		{
-			sepEnabled: true,
-			name:       "one old and one new - no deployments nor pods",
-			images: []*storage.Image{
-				newImageInstance("id1", 1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			expectedIDs: []string{"id1"},
-		},
-		{
-			sepEnabled: true,
-			name:       "one old and one new - 1 deployment with new",
-			images: []*storage.Image{
-				newImageInstance("id1", 1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			deployment:  newDeployment("id1"),
-			expectedIDs: []string{"id1"},
-		},
-		{
-			sepEnabled: true,
-			name:       "one old and one new - 1 pod with new",
-			images: []*storage.Image{
-				newImageInstance("id1", 1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			pod:         newPod("id1"),
-			expectedIDs: []string{"id1"},
-		},
-		{
-			sepEnabled: true,
-			name:       "one old and one new - 1 pod with old",
-			images: []*storage.Image{
-				newImageInstance("id1", 1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			pod:         newPod("id2"),
-			expectedIDs: []string{"id1", "id2"},
-		},
-		{
-			sepEnabled: true,
-			name:       "two old - 1 deployment with old",
+			name: "two old - 1 deployment and pod with old",
 			images: []*storage.Image{
 				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
 			deployment:  newDeployment("id2"),
+			pod:         newPod(true, "id2"),
 			expectedIDs: []string{"id2"},
 		},
 		{
-			sepEnabled: true,
-			name:       "two old - 1 deployment and pod with old",
+			name: "two old - 1 pod with old",
 			images: []*storage.Image{
 				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
-			deployment:  newDeployment("id2"),
-			pod:         newPod("id2"),
+			pod:         newPod(true, "id2"),
 			expectedIDs: []string{"id2"},
 		},
 		{
-			sepEnabled: true,
-			name:       "two old - 1 pod with old",
+			name: "two old - 1 pod with old",
 			images: []*storage.Image{
 				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
 			},
-			pod:         newPod("id2"),
+			pod:         newPod(true, "id2"),
 			expectedIDs: []string{"id2"},
 		},
 		{
-			sepEnabled: true,
-			name:       "two old - 1 pod with old",
-			images: []*storage.Image{
-				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
-				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
-			},
-			pod:         newPod("id2"),
-			expectedIDs: []string{"id2"},
-		},
-		{
-			sepEnabled: true,
-			name:       "two old - 1 deployment and pod with old, but have references to old",
+			name: "two old - 1 deployment and pod with old, but have references to old",
 			images: []*storage.Image{
 				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
 				newImageInstance("id2", configDatastore.DefaultImageRetention+1),
@@ -397,8 +337,24 @@ func TestImagePruning(t *testing.T) {
 					},
 				},
 			},
-			pod:         newPod("id2"),
+			pod:         newPod(true, "id2"),
 			expectedIDs: []string{"id1", "id2"},
+		},
+		{
+			name: "one new - 1 pod with new, but terminated",
+			images: []*storage.Image{
+				newImageInstance("id1", 1),
+			},
+			pod:         newPod(false, "id1"),
+			expectedIDs: []string{"id1"},
+		},
+		{
+			name: "one old - 1 pod with old, but terminated",
+			images: []*storage.Image{
+				newImageInstance("id1", configDatastore.DefaultImageRetention+1),
+			},
+			pod:         newPod(false, "id1"),
+			expectedIDs: []string{},
 		},
 	}
 
@@ -423,7 +379,7 @@ func TestImagePruning(t *testing.T) {
 			if c.deployment != nil {
 				require.NoError(t, deployments.UpsertDeployment(ctx, c.deployment))
 			}
-			if c.sepEnabled && c.pod != nil {
+			if c.pod != nil {
 				require.NoError(t, pods.UpsertPod(ctx, c.pod))
 			}
 			for _, image := range c.images {
@@ -434,12 +390,6 @@ func TestImagePruning(t *testing.T) {
 			indexingDone := concurrency.NewSignal()
 			indexQ.PushSignal(&indexingDone)
 			indexingDone.Wait()
-
-			if !c.sepEnabled {
-				envIsolator := testutils.NewEnvIsolator(t)
-				envIsolator.Setenv(features.PodDeploymentSeparation.EnvVar(), "false")
-				defer envIsolator.RestoreAll()
-			}
 
 			conf, err := config.GetConfig(ctx)
 			require.NoError(t, err, "failed to get config")
@@ -609,51 +559,84 @@ func newIndicatorWithDeployment(id string, age time.Duration, deploymentID strin
 	}
 }
 
+func newIndicatorWithDeploymentAndPod(id string, age time.Duration, deploymentID, podUID string) *storage.ProcessIndicator {
+	indicator := newIndicatorWithDeployment(id, age, deploymentID)
+	indicator.PodUid = podUID
+	return indicator
+}
+
 func TestRemoveOrphanedProcesses(t *testing.T) {
 	cases := []struct {
 		name              string
 		initialProcesses  []*storage.ProcessIndicator
 		deployments       set.FrozenStringSet
+		pods              set.FrozenStringSet
 		expectedDeletions []string
 	}{
 		{
-			name: "no deployments - remove all old indicators",
+			name: "no deployments nor pods - remove all old indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
-				newIndicatorWithDeployment("pi2", 1*time.Hour, "dep2"),
-				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep2", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
 			},
 			deployments:       set.NewFrozenStringSet(),
+			pods:              set.NewFrozenStringSet(),
 			expectedDeletions: []string{"pi1", "pi2", "pi3"},
 		},
 		{
-			name: "no deployments - remove no new orphaned indicators",
+			name: "no deployments nor pods - remove no new orphaned indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeployment("pi1", 20*time.Minute, "dep1"),
-				newIndicatorWithDeployment("pi2", 20*time.Minute, "dep2"),
-				newIndicatorWithDeployment("pi3", 20*time.Minute, "dep3"),
+				newIndicatorWithDeploymentAndPod("pi1", 20*time.Minute, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep2", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 20*time.Minute, "dep3", "pod3"),
 			},
 			deployments:       set.NewFrozenStringSet(),
+			pods:              set.NewFrozenStringSet(),
 			expectedDeletions: []string{},
 		},
 		{
-			name: "all deployments - remove no indicators",
+			name: "all pods separate deployments - remove no indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
-				newIndicatorWithDeployment("pi2", 1*time.Hour, "dep2"),
-				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep2", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
 			},
 			deployments:       set.NewFrozenStringSet("dep1", "dep2", "dep3"),
+			pods:              set.NewFrozenStringSet("pod1", "pod2", "pod3"),
 			expectedDeletions: []string{},
 		},
 		{
-			name: "some deployments - remove some indicators",
+			name: "all pods same deployment - remove no indicators",
 			initialProcesses: []*storage.ProcessIndicator{
-				newIndicatorWithDeployment("pi1", 1*time.Hour, "dep1"),
-				newIndicatorWithDeployment("pi2", 20*time.Minute, "dep2"),
-				newIndicatorWithDeployment("pi3", 1*time.Hour, "dep3"),
+				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 1*time.Hour, "dep1", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep1", "pod3"),
+			},
+			deployments:       set.NewFrozenStringSet("dep1"),
+			pods:              set.NewFrozenStringSet("pod1", "pod2", "pod3"),
+			expectedDeletions: []string{},
+		},
+		{
+			name: "some pods separate deployments - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep2", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep3", "pod3"),
 			},
 			deployments:       set.NewFrozenStringSet("dep3"),
+			pods:              set.NewFrozenStringSet("pod3"),
+			expectedDeletions: []string{"pi1"},
+		},
+		{
+			name: "some pods same deployment - remove some indicators",
+			initialProcesses: []*storage.ProcessIndicator{
+				newIndicatorWithDeploymentAndPod("pi1", 1*time.Hour, "dep1", "pod1"),
+				newIndicatorWithDeploymentAndPod("pi2", 20*time.Minute, "dep1", "pod2"),
+				newIndicatorWithDeploymentAndPod("pi3", 1*time.Hour, "dep1", "pod3"),
+			},
+			deployments:       set.NewFrozenStringSet("dep1"),
+			pods:              set.NewFrozenStringSet("pod3"),
 			expectedDeletions: []string{"pi1"},
 		},
 	}
@@ -665,6 +648,7 @@ func TestRemoveOrphanedProcesses(t *testing.T) {
 			gci := &garbageCollectorImpl{
 				processes: processes,
 			}
+
 			processes.EXPECT().WalkAll(pruningCtx, gomock.Any()).DoAndReturn(
 				func(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
 					for _, a := range c.initialProcesses {
@@ -673,7 +657,7 @@ func TestRemoveOrphanedProcesses(t *testing.T) {
 					return nil
 				})
 			processes.EXPECT().RemoveProcessIndicators(pruningCtx, testutils.AssertionMatcher(assert.ElementsMatch, c.expectedDeletions))
-			gci.removeOrphanedProcesses(c.deployments)
+			gci.removeOrphanedProcesses(c.deployments, c.pods)
 		})
 	}
 }
@@ -999,9 +983,9 @@ func TestRemoveOrphanedRisks(t *testing.T) {
 	}
 }
 
-func testDackBoxInstance(t *testing.T, db *badger.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
+func testDackBoxInstance(t *testing.T, db *gorocksdb.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
 	indexingQ := queue.NewWaitableQueue()
-	dacky, err := dackbox.NewDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)
 
 	reg := indexer.NewWrapperRegistry()

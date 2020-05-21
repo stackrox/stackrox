@@ -3,6 +3,8 @@ import differenceInMilliSeconds from 'date-fns/difference_in_milliseconds';
 import subSeconds from 'date-fns/sub_seconds';
 import EventEmitter from 'events';
 
+import RefreshTokenTimeout from './RefreshTokenTimeout';
+
 /**
  * Token and its expiry date
  * @typedef {Object} TokenInfo
@@ -35,24 +37,6 @@ import EventEmitter from 'events';
  * @callback RefreshTokenListener
  * @param {!RefreshTokenOpPromise} opPromise - Operation Promise
  */
-
-class RefreshTokenTimeout {
-    constructor() {
-        this.timeoutID = null;
-    }
-
-    set(func, delay) {
-        this.clear();
-        this.timeoutID = setTimeout(func, delay);
-    }
-
-    clear() {
-        if (this.timeoutID) {
-            clearTimeout(this.timeoutID);
-            this.timeoutID = null;
-        }
-    }
-}
 
 const accessTokenKey = 'access_token';
 
@@ -107,7 +91,7 @@ export default class AccessTokenManager {
      * @method
      * @param {TokenInfo} info - Token info
      */
-    updateTokenInfo = info => {
+    updateTokenInfo = (info) => {
         this.refreshTimeout.clear();
         this.tokenInfo = info;
         if (info && info.expiry) {
@@ -156,7 +140,7 @@ export default class AccessTokenManager {
      * @method
      * @param {!RefreshTokenListener} listener - Callback function
      */
-    onRefreshTokenStarted = listener => {
+    onRefreshTokenStarted = (listener) => {
         this.eventEmitter.on(this.refreshTokenSymbol, listener);
     };
 
@@ -165,7 +149,7 @@ export default class AccessTokenManager {
      * @method
      * @param {!RefreshTokenListener} listener - Callback function
      */
-    removeRefreshTokenListener = listener => {
+    removeRefreshTokenListener = (listener) => {
         this.eventEmitter.removeListener(this.refreshTokenSymbol, listener);
     };
 

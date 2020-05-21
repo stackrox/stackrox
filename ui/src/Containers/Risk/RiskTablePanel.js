@@ -16,7 +16,7 @@ import {
     filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
-    convertSortToRestFormat
+    convertSortToRestFormat,
 } from './riskPageUtils';
 
 const DEFAULT_RISK_SORT = [{ id: 'Priority', desc: false }];
@@ -26,7 +26,7 @@ function RiskTablePanel({
     setSelectedDeploymentId,
     isViewFiltered,
     setIsViewFiltered,
-    searchOptions
+    searchOptions,
 }) {
     const workflowState = useContext(workflowStateContext);
     const pageSearch = workflowState.search[searchParams.page];
@@ -40,7 +40,7 @@ function RiskTablePanel({
         history.push(workflowState.setPage(newPage).toUrl());
     }
     const setSortOption = useCallback(
-        newSortOption => {
+        (newSortOption) => {
             const convertedSortOption = convertSortToGraphQLFormat(newSortOption);
 
             const newUrl = workflowState.setSort(convertedSortOption).toUrl();
@@ -50,25 +50,22 @@ function RiskTablePanel({
         [history, workflowState]
     );
 
-    useDeepCompareEffect(
-        () => {
-            const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
-            const restSearch = convertToRestSearch(filteredSearch || {});
-            const restSort = convertSortToRestFormat(sortOption);
+    useDeepCompareEffect(() => {
+        const filteredSearch = filterAllowedSearch(searchOptions, pageSearch || {});
+        const restSearch = convertToRestSearch(filteredSearch || {});
+        const restSort = convertSortToRestFormat(sortOption);
 
-            fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE).then(
-                setCurrentDeployments
-            );
-            fetchDeploymentsCount(restSearch).then(setDeploymentsCount);
+        fetchDeployments(restSearch, restSort, currentPage, DEFAULT_PAGE_SIZE).then(
+            setCurrentDeployments
+        );
+        fetchDeploymentsCount(restSearch).then(setDeploymentsCount);
 
-            if (restSearch.length) {
-                setIsViewFiltered(true);
-            } else {
-                setIsViewFiltered(false);
-            }
-        },
-        [pageSearch, sortOption, currentPage, searchOptions]
-    );
+        if (restSearch.length) {
+            setIsViewFiltered(true);
+        } else {
+            setIsViewFiltered(false);
+        }
+    }, [pageSearch, sortOption, currentPage, searchOptions]);
 
     const paginationComponent = (
         <TablePagination
@@ -102,12 +99,12 @@ RiskTablePanel.propTypes = {
     setSelectedDeploymentId: PropTypes.func.isRequired,
     isViewFiltered: PropTypes.bool.isRequired,
     setIsViewFiltered: PropTypes.func.isRequired,
-    searchOptions: PropTypes.arrayOf(PropTypes.string)
+    searchOptions: PropTypes.arrayOf(PropTypes.string),
 };
 
 RiskTablePanel.defaultProps = {
     selectedDeploymentId: null,
-    searchOptions: []
+    searchOptions: [],
 };
 
 export default withRouter(RiskTablePanel);

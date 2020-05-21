@@ -16,7 +16,7 @@ function AuthProviderSelect(props) {
 }
 
 AuthProviderSelect.propTypes = {
-    onChange: PropTypes.func.isRequired
+    onChange: PropTypes.func.isRequired,
 };
 
 export default AuthProviderSelect;

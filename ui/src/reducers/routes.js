@@ -5,13 +5,13 @@ import {
     replace,
     go,
     goBack,
-    goForward
+    goForward,
 } from 'react-router-redux';
 
 // Action Types
 
 export const types = {
-    LOCATION_CHANGE
+    LOCATION_CHANGE,
 };
 
 // Actions
@@ -21,7 +21,7 @@ export const actions = {
     replace,
     go,
     goBack,
-    goForward
+    goForward,
 };
 
 // Reducers
@@ -30,8 +30,8 @@ export default routerReducer;
 
 // Selectors
 
-const getLocation = state => state.location;
+const getLocation = (state) => state.location;
 
 export const selectors = {
-    getLocation
+    getLocation,
 };

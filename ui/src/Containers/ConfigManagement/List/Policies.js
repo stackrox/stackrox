@@ -2,7 +2,7 @@ import React from 'react';
 import entityTypes from 'constants/entityTypes';
 import { POLICIES as QUERY } from 'queries/policy';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -19,13 +19,13 @@ const tableColumns = [
         Header: 'Id',
         headerClassName: 'hidden',
         className: 'hidden',
-        accessor: 'id'
+        accessor: 'id',
     },
     {
         Header: `Policy`,
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
-        accessor: 'name'
+        accessor: 'name',
     },
     {
         Header: `Enabled`,
@@ -35,7 +35,7 @@ const tableColumns = [
             const { disabled } = original;
             return disabled ? 'No' : 'Yes';
         },
-        accessor: 'disabled'
+        accessor: 'disabled',
     },
     {
         Header: `Enforced`,
@@ -48,7 +48,7 @@ const tableColumns = [
                 ? 'No'
                 : 'Yes';
         },
-        accessor: 'enforcementActions'
+        accessor: 'enforcementActions',
     },
     {
         Header: `Policy Status`,
@@ -59,7 +59,7 @@ const tableColumns = [
             const { policyStatus } = original;
             return <StatusChip status={policyStatus} asString={pdf} />;
         },
-        accessor: 'policyStatus'
+        accessor: 'policyStatus',
     },
     {
         Header: `Severity`,
@@ -71,7 +71,7 @@ const tableColumns = [
             return <SeverityLabel severity={severity} />;
         },
         accessor: 'severity',
-        sortMethod: sortSeverity
+        sortMethod: sortSeverity,
     },
     {
         Header: `Categories`,
@@ -81,7 +81,7 @@ const tableColumns = [
             const { categories } = original;
             return categories.join(', ');
         },
-        accessor: 'categories'
+        accessor: 'categories',
     },
     {
         Header: `Lifecycle Stage`,
@@ -89,7 +89,7 @@ const tableColumns = [
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { lifecycleStages } = original;
-            return lifecycleStages.map(lifecycleStage => (
+            return lifecycleStages.map((lifecycleStage) => (
                 <LifecycleStageLabel
                     key={lifecycleStage}
                     className="mr-2"
@@ -97,18 +97,18 @@ const tableColumns = [
                 />
             ));
         },
-        accessor: 'lifecycleStages'
-    }
+        accessor: 'lifecycleStages',
+    },
 ];
 
-const createTableRows = data => data.policies;
+const createTableRows = (data) => data.policies;
 
 const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
     const autoFocusSearchInput = !selectedRowId;
     const { [SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]: policyStatus, ...restQuery } = query || {};
     const queryText = queryService.objectToWhereClause({
         'Lifecycle Stage': 'DEPLOY',
-        ...restQuery
+        ...restQuery,
     });
     const variables = queryText ? { query: queryText } : null;
 
@@ -132,12 +132,12 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
             defaultSorted={[
                 {
                     id: 'policyStatus',
-                    desc: false
+                    desc: false,
                 },
                 {
                     id: 'severity',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}

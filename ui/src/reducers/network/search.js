@@ -3,32 +3,32 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 
 // Action types
 //-------------
 
 export const types = {
-    ...searchTypes('network')
+    ...searchTypes('network'),
 };
 
 // Network search should not show the 'Cluster' category
 const getNetworkSearchActions = getSearchActions('network');
 
-const networkSearchActions = Object.assign({}, getNetworkSearchActions);
+const networkSearchActions = { ...getNetworkSearchActions };
 
-const filterSearchOptions = options => options.filter(obj => obj.value !== 'Cluster:');
-networkSearchActions.setNetworkSearchModifiers = options =>
+const filterSearchOptions = (options) => options.filter((obj) => obj.value !== 'Cluster:');
+networkSearchActions.setNetworkSearchModifiers = (options) =>
     getNetworkSearchActions.setNetworkSearchModifiers(filterSearchOptions(options));
-networkSearchActions.setNetworkSearchSuggestions = options =>
+networkSearchActions.setNetworkSearchSuggestions = (options) =>
     getNetworkSearchActions.setNetworkSearchSuggestions(filterSearchOptions(options));
 
 // Actions
 //---------
 
 export const actions = {
-    ...networkSearchActions
+    ...networkSearchActions,
 };
 
 // Reducers
@@ -36,7 +36,7 @@ export const actions = {
 //---------------------------------------------------------------------------------
 
 const reducer = combineReducers({
-    ...searchReducers('network')
+    ...searchReducers('network'),
 });
 
 export default reducer;
@@ -46,5 +46,5 @@ export default reducer;
 //---------------------------------------------------------------------------------
 
 export const selectors = {
-    ...getSearchSelectors('network')
+    ...getSearchSelectors('network'),
 };

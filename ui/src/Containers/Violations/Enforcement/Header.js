@@ -45,11 +45,11 @@ function Header({ lifecycleStage, enforcementCount }) {
 
 Header.propTypes = {
     lifecycleStage: PropTypes.string.isRequired,
-    enforcementCount: PropTypes.number
+    enforcementCount: PropTypes.number,
 };
 
 Header.defaultProps = {
-    enforcementCount: 0
+    enforcementCount: 0,
 };
 
 export default Header;

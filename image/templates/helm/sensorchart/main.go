@@ -88,11 +88,13 @@ func mainCmd(args []string) error {
 	err = utils.Should(renderTemplate(chartYaml, tmpl, version, tmpDir),
 		renderTemplate(sensorYaml, tmpl, version, fmt.Sprintf("%s/templates", tmpDir)),
 		renderTemplate(admissionControllerYaml, tmpl, version, fmt.Sprintf("%s/templates", tmpDir)),
-		renderTemplate(valuesYaml, tmpl, nil, tmpDir))
+		renderTemplate(valuesYaml, tmpl, nil, tmpDir),
+	)
 
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -107,7 +109,6 @@ func renderTemplate(path string, tmpl *template.Template, params interface{}, de
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

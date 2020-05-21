@@ -23,7 +23,7 @@ const SuccessViewTabs = ({ modificationName, modification }) => {
     let toDeleteSection;
     if (shouldDelete) {
         toDeleteSection = toDelete
-            .map(entry => `# kubectl -n ${entry.namespace} delete networkpolicy ${entry.name}`)
+            .map((entry) => `# kubectl -n ${entry.namespace} delete networkpolicy ${entry.name}`)
             .join('\n');
     }
 
@@ -59,15 +59,15 @@ SuccessViewTabs.propTypes = {
         toDelete: PropTypes.arrayOf(
             PropTypes.shape({
                 namespace: PropTypes.string.isRequired,
-                name: PropTypes.string.isRequired
+                name: PropTypes.string.isRequired,
             })
-        )
-    })
+        ),
+    }),
 };
 
 SuccessViewTabs.defaultProps = {
     modification: null,
-    modificationName: ''
+    modificationName: '',
 };
 
 const SuccessView = ({
@@ -76,7 +76,7 @@ const SuccessView = ({
     modificationState,
     policyGraphState,
     timeWindow,
-    modificationSource
+    modificationSource,
 }) => {
     if (modification === null || modificationState !== 'SUCCESS' || policyGraphState !== 'SUCCESS')
         return null;
@@ -130,19 +130,19 @@ SuccessView.propTypes = {
         toDelete: PropTypes.arrayOf(
             PropTypes.shape({
                 namespace: PropTypes.string.isRequired,
-                name: PropTypes.string.isRequired
+                name: PropTypes.string.isRequired,
             })
-        )
+        ),
     }),
     modificationState: PropTypes.string.isRequired,
     policyGraphState: PropTypes.string.isRequired,
-    timeWindow: PropTypes.string.isRequired
+    timeWindow: PropTypes.string.isRequired,
 };
 
 SuccessView.defaultProps = {
     modification: null,
     modificationName: '',
-    modificationSource: 'GENERATED'
+    modificationSource: 'GENERATED',
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -151,7 +151,7 @@ const mapStateToProps = createStructuredSelector({
     modification: selectors.getNetworkPolicyModification,
     modificationState: selectors.getNetworkPolicyModificationState,
     policyGraphState: selectors.getNetworkPolicyGraphState,
-    timeWindow: selectors.getNetworkActivityTimeWindow
+    timeWindow: selectors.getNetworkActivityTimeWindow,
 });
 
 export default connect(mapStateToProps)(SuccessView);

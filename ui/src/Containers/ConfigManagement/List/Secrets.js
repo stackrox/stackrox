@@ -4,11 +4,11 @@ import { SECRETS as QUERY } from 'queries/secret';
 import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
-import URLService from 'modules/URLService';
+import URLService from 'utils/URLService';
 import { sortValueByLength, sortDate } from 'sorters/sorters';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'modules/queryService';
+import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
 import List from './List';
 import TableCellLink from './Link';
@@ -25,7 +25,7 @@ const secretTypeEnumMapping = {
     DSA_PRIVATE_KEY: 'DSA Private Key',
     CERT_PRIVATE_KEY: 'Certificate Private Key',
     ENCRYPTED_PRIVATE_KEY: 'Encrypted Private Key',
-    IMAGE_PULL_SECRET: 'Image Pull Secret'
+    IMAGE_PULL_SECRET: 'Image Pull Secret',
 };
 
 const buildTableColumns = (match, location, entityContext) => {
@@ -34,13 +34,13 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: 'Id',
             headerClassName: 'hidden',
             className: 'hidden',
-            accessor: 'id'
+            accessor: 'id',
         },
         {
             Header: `Secret`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
-            accessor: 'name'
+            accessor: 'name',
         },
         {
             Header: `Created`,
@@ -51,7 +51,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(createdAt, dateTimeFormat);
             },
             accessor: 'createdAt',
-            sortMethod: sortDate
+            sortMethod: sortDate,
         },
         {
             Header: `File Types`,
@@ -64,11 +64,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!files.length) return 'No File Types';
                 return (
                     <span>
-                        {uniq(files.map(file => secretTypeEnumMapping[file.type])).join(', ')}
+                        {uniq(files.map((file) => secretTypeEnumMapping[file.type])).join(', ')}
                     </span>
                 );
             },
-            sortMethod: sortValueByLength
+            sortMethod: sortValueByLength,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -85,7 +85,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           .push(entityTypes.CLUSTER, clusterId)
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
-                  }
+                  },
               },
         {
             Header: `Deployments`,
@@ -103,13 +103,13 @@ const buildTableColumns = (match, location, entityContext) => {
                 const text = `${deployments.length} ${pluralize('Deployment', deployments.length)}`;
                 return <TableCellLink dataTestId="deployment" pdf={pdf} url={url} text={text} />;
             },
-            sortMethod: sortValueByLength
-        }
+            sortMethod: sortValueByLength,
+        },
     ];
-    return tableColumns.filter(col => col);
+    return tableColumns.filter((col) => col);
 };
 
-const createTableRows = data => {
+const createTableRows = (data) => {
     return data.secrets;
 };
 
@@ -121,7 +121,7 @@ const Secrets = ({
     onRowClick,
     query,
     data,
-    entityContext
+    entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location, entityContext);
@@ -141,8 +141,8 @@ const Secrets = ({
             defaultSorted={[
                 {
                     id: 'name',
-                    desc: false
-                }
+                    desc: false,
+                },
             ]}
             data={data}
             autoFocusSearchInput={autoFocusSearchInput}

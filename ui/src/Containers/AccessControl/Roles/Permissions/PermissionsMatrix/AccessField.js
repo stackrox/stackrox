@@ -11,7 +11,7 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
     const options = [
         { label: accessControl.NO_ACCESS, value: NO_ACCESS },
         { label: accessControl.READ_ACCESS, value: READ_ACCESS },
-        { label: accessControl.READ_WRITE_ACCESS, value: READ_WRITE_ACCESS }
+        { label: accessControl.READ_WRITE_ACCESS, value: READ_WRITE_ACCESS },
     ];
     const value = input ? input.value : resourceToAccess[resourceName];
     const name = input ? input.name : '';
@@ -39,15 +39,15 @@ AccessField.propTypes = {
     input: PropTypes.shape({
         value: PropTypes.oneOfType([PropTypes.array, PropTypes.string]),
         name: PropTypes.string,
-        onChange: PropTypes.func
+        onChange: PropTypes.func,
     }),
     resourceToAccess: PropTypes.shape({}).isRequired,
     resourceName: PropTypes.string.isRequired,
-    isEditing: PropTypes.bool.isRequired
+    isEditing: PropTypes.bool.isRequired,
 };
 
 AccessField.defaultProps = {
-    input: null
+    input: null,
 };
 
 export default AccessField;

@@ -7,7 +7,7 @@ import Scatterplot from './Scatterplot';
 
 export default {
     title: 'Scatterplot',
-    component: Scatterplot
+    component: Scatterplot,
 };
 
 const data = [
@@ -21,13 +21,13 @@ const data = [
     { x: 71, y: 6.6, color: 'var(--warning-400)', url: '/main/configmanagement/cluster/88d17fde' },
     { x: 80, y: 1.6, color: 'var(--base-400)', url: '/main/configmanagement/cluster/88d17fde' },
     { x: 81, y: 6.3, color: 'var(--warning-400)', url: '/main/configmanagement/cluster/88d17fde' },
-    { x: 83, y: 9.1, color: 'var(--alert-400)', url: '/main/configmanagement/cluster/88d17fde' }
+    { x: 83, y: 9.1, color: 'var(--alert-400)', url: '/main/configmanagement/cluster/88d17fde' },
 ];
 const legendData = [
     { title: 'Low', color: severityColorMap[severities.LOW_SEVERITY] },
     { title: 'Medium', color: severityColorMap[severities.MEDIUM_SEVERITY] },
     { title: 'High', color: severityColorMap[severities.HIGH_SEVERITY] },
-    { title: 'Critical', color: severityColorMap[severities.CRITICAL_SEVERITY] }
+    { title: 'Critical', color: severityColorMap[severities.CRITICAL_SEVERITY] },
 ];
 
 export const withData = () => {

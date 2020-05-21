@@ -1,17 +1,15 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { createStructuredSelector } from 'reselect';
-import { connect } from 'react-redux';
-
-import { selectors } from 'reducers';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Panel, { headerClassName } from 'Components/Panel';
-import Button from 'Containers/AccessControl/AuthProviders/AuthProvider/Button';
+import Message from 'Components/Message';
+import HeaderButtons from 'Containers/AccessControl/AuthProviders/AuthProvider/HeaderButtons';
 import Form from 'Containers/AccessControl/AuthProviders/AuthProvider/Form/Form';
 import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details';
 import { getAuthProviderLabelByValue } from 'constants/accessControl';
+import FeatureEnabled from 'Containers/FeatureEnabled';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 class AuthProvider extends Component {
     static propTypes = {
@@ -19,21 +17,24 @@ class AuthProvider extends Component {
             name: PropTypes.string,
             id: PropTypes.string,
             type: PropTypes.string,
-            active: PropTypes.bool
+            active: PropTypes.bool,
         }),
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
         onEdit: PropTypes.func.isRequired,
         onCancel: PropTypes.func.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        featureFlags: PropTypes.shape({}).isRequired
+        responseError: PropTypes.shape({
+            message: PropTypes.string,
+        }),
     };
 
     static defaultProps = {
-        selectedAuthProvider: null
+        selectedAuthProvider: null,
+        responseError: null,
     };
 
-    populateDefaultValues = initialValues => {
+    populateDefaultValues = (initialValues) => {
         const newInitialValues = { ...initialValues };
         newInitialValues.uiEndpoint = window.location.host;
         newInitialValues.enabled = true;
@@ -43,14 +44,7 @@ class AuthProvider extends Component {
         return newInitialValues;
     };
 
-    transformInitialValues = initialValues => {
-        const ROX_REFRESH_TOKENS = isBackendFeatureFlagEnabled(
-            this.props.featureFlags,
-            knownBackendFlags.ROX_REFRESH_TOKENS,
-            false
-        );
-        if (!ROX_REFRESH_TOKENS) return initialValues;
-
+    transformInitialValues = (initialValues) => {
         // TODO-ivan: eventually logic for different auth provider type should live
         // with the form component that renders form for the corresponding auth provider
         // type, probably makes sense to refactor after moving away from redux-form
@@ -60,7 +54,7 @@ class AuthProvider extends Component {
             // backend doesn't return the exact value for the client secret for the security reasons,
             // instead it'll return some obfuscated data, but not an empty one
             alteredConfig.clientOnly = {
-                clientSecretStored: !!alteredConfig.client_secret
+                clientSecretStored: !!alteredConfig.client_secret,
             };
 
             if (initialValues.name) {
@@ -73,7 +67,7 @@ class AuthProvider extends Component {
 
             return {
                 ...initialValues,
-                config: alteredConfig
+                config: alteredConfig,
             };
         }
         if (initialValues.type === 'saml') {
@@ -82,20 +76,13 @@ class AuthProvider extends Component {
             alteredConfig.type = alteredConfig.idp_issuer ? 'static' : 'dynamic';
             return {
                 ...initialValues,
-                config: alteredConfig
+                config: alteredConfig,
             };
         }
         return initialValues;
     };
 
-    transformValuesBeforeSaving = values => {
-        const ROX_REFRESH_TOKENS = isBackendFeatureFlagEnabled(
-            this.props.featureFlags,
-            knownBackendFlags.ROX_REFRESH_TOKENS,
-            false
-        );
-        if (!ROX_REFRESH_TOKENS) return values;
-
+    transformValuesBeforeSaving = (values) => {
         if (values.type === 'oidc') {
             const alteredConfig = { ...values.config };
 
@@ -117,14 +104,14 @@ class AuthProvider extends Component {
 
             return {
                 ...values,
-                config: alteredConfig
+                config: alteredConfig,
             };
         }
         if (values.type === 'saml') {
             const alteredConfig = { ...values.config };
             if (alteredConfig.type === 'dynamic') {
                 ['idp_issuer', 'idp_sso_url', 'idp_nameid_format', 'idp_cert_pem'].forEach(
-                    p => delete alteredConfig[p]
+                    (p) => delete alteredConfig[p]
                 );
             } else if (alteredConfig.type === 'static') {
                 delete alteredConfig.idp_metadata_url;
@@ -133,20 +120,35 @@ class AuthProvider extends Component {
 
             return {
                 ...values,
-                config: alteredConfig
+                config: alteredConfig,
             };
         }
         return values;
     };
 
-    onSave = values => {
+    onSave = (values) => {
         const transformedValues = this.transformValuesBeforeSaving(values);
         this.props.onSave(transformedValues);
     };
 
+    handleTest = () => {
+        if (!this.props.selectedAuthProvider?.active) {
+            const windowFeatures =
+                'location=no,menubar=no,scrollbars=yes,toolbar=no,width=768,height=512,left=0,top=0'; // browser not required to honor these attrs
+
+            const windowObjectReference = window.open(
+                `/sso/login/${this.props.selectedAuthProvider.id}?test=true`,
+                `Test Login for ${this.props.selectedAuthProvider.name}`,
+                windowFeatures
+            );
+
+            windowObjectReference.focus();
+        }
+    };
+
     getGroupsByAuthProviderId = (groups, id) => {
         const filteredGroups = groups.filter(
-            group =>
+            (group) =>
                 group.props &&
                 group.props.authProviderId &&
                 group.props.authProviderId === id &&
@@ -157,7 +159,7 @@ class AuthProvider extends Component {
 
     getDefaultRoleByAuthProviderId = (groups, id) => {
         let defaultRoleGroups = groups.filter(
-            group =>
+            (group) =>
                 group.props &&
                 group.props.authProviderId &&
                 group.props.authProviderId === id &&
@@ -168,7 +170,7 @@ class AuthProvider extends Component {
             return defaultRoleGroups[0].roleName;
         }
         // if there is no default role specified for this auth provider then use the global default role
-        defaultRoleGroups = groups.filter(group => !group.props);
+        defaultRoleGroups = groups.filter((group) => !group.props);
         if (defaultRoleGroups.length) return defaultRoleGroups[0].roleName;
         return 'Admin';
     };
@@ -178,7 +180,7 @@ class AuthProvider extends Component {
     );
 
     displayContent = () => {
-        const { selectedAuthProvider, isEditing, groups } = this.props;
+        const { selectedAuthProvider, isEditing, groups, responseError } = this.props;
         let initialValues = { ...selectedAuthProvider };
         if (!selectedAuthProvider.name) {
             initialValues = this.populateDefaultValues(initialValues);
@@ -189,22 +191,43 @@ class AuthProvider extends Component {
         const modifiedInitialValues = {
             ...this.transformInitialValues(initialValues),
             groups: filteredGroups,
-            defaultRole
+            defaultRole,
         };
+
         const content = isEditing ? (
-            <Form
-                key={initialValues.type}
-                onSubmit={this.onSave}
-                initialValues={modifiedInitialValues}
-            />
+            <>
+                {responseError && <Message type="error" message={responseError.message} />}
+                <Form
+                    key={initialValues.type}
+                    onSubmit={this.onSave}
+                    initialValues={modifiedInitialValues}
+                />
+            </>
         ) : (
-            <Details
-                authProvider={selectedAuthProvider}
-                groups={filteredGroups}
-                defaultRole={defaultRole}
-            />
+            <>
+                {!selectedAuthProvider.active && (
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_AUTH_TEST_MODE_UI}>
+                        <div className="w-full pt-4 pl-4 pr-4">
+                            <Message
+                                type="guidance"
+                                message={
+                                    <span>
+                                        Select <strong className="font-700">Test Login</strong> to
+                                        check that your authentication provider is working properly.
+                                    </span>
+                                }
+                            />
+                        </div>
+                    </FeatureEnabled>
+                )}
+                <Details
+                    authProvider={selectedAuthProvider}
+                    groups={filteredGroups}
+                    defaultRole={defaultRole}
+                />
+            </>
         );
-        return content;
+        return <div className="w-full">{content}</div>;
     };
 
     render() {
@@ -220,14 +243,21 @@ class AuthProvider extends Component {
                 : `Create New ${getAuthProviderLabelByValue(
                       selectedAuthProvider.type
                   )} Auth Provider`;
-            const buttonText = selectedAuthProvider.active ? 'Edit Roles' : 'Edit Provider';
+            const editButtonText = selectedAuthProvider.active ? 'Edit Roles' : 'Edit Provider';
+            const onTest =
+                selectedAuthProvider &&
+                (selectedAuthProvider.type === 'oidc' || selectedAuthProvider.type === 'saml') &&
+                !selectedAuthProvider.active
+                    ? this.handleTest
+                    : null;
             headerComponents = (
-                <Button
-                    text={buttonText}
+                <HeaderButtons
+                    editText={editButtonText}
                     isEditing={isEditing}
                     onEdit={onEdit}
                     onSave={this.onSave}
                     onCancel={onCancel}
+                    onTest={onTest}
                 />
             );
         }
@@ -248,8 +278,4 @@ class AuthProvider extends Component {
     }
 }
 
-const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags
-});
-
-export default connect(mapStateToProps)(AuthProvider);
+export default AuthProvider;

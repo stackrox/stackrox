@@ -10,7 +10,7 @@ import Metadata from './Metadata';
 
 export default {
     title: 'Metadata',
-    component: Metadata
+    component: Metadata,
 };
 
 export const basicMetadata = () => {
@@ -18,20 +18,20 @@ export const basicMetadata = () => {
     const cvssScoreBreakdown = [
         {
             key: 'CVSS Score',
-            value: 4.6
+            value: 4.6,
         },
         {
             key: 'Vector',
-            value: 'AV:L/AC:L/Au:N/C:P/I:P'
+            value: 'AV:L/AC:L/Au:N/C:P/I:P',
         },
         {
             key: 'Impact Score',
-            value: 2.3
+            value: 2.3,
         },
         {
             key: 'Exploitability Score',
-            value: 7.5
-        }
+            value: 7.5,
+        },
     ];
 
     return (
@@ -43,26 +43,26 @@ export const basicMetadata = () => {
 
 export const withStatsListMetadata = () => {
     const clusterStats = [
-        <RiskScore score={3} />,
-        <>
+        <RiskScore key="one" score={3} />,
+        <div key="two">
             <span className="pr-1">Policy status:</span>
             <StatusChip status="fail" />
-        </>
+        </div>,
     ];
 
     const metadataKeyValuePairs = [
         {
             key: 'Created',
-            value: <DateTimeField asString date="2019-10-25T21:53:14Z" />
+            value: <DateTimeField asString date="2019-10-25T21:53:14Z" />,
         },
         {
             key: 'K8s version',
-            value: 'v1.14.7'
+            value: 'v1.14.7',
         },
         {
             key: 'Istio Enabled',
-            value: 'No'
-        }
+            value: 'No',
+        },
     ];
 
     return (
@@ -78,42 +78,42 @@ export const withPopoverListsMetadata = () => {
     const keyValuePairs = [
         {
             key: 'Created',
-            value: '10/12/2019 | 8:59:17AM'
+            value: '10/12/2019 | 8:59:17AM',
         },
         {
             key: 'Deployment Type',
-            value: 'Deployment'
+            value: 'Deployment',
         },
         {
             key: 'Replicas',
-            value: 1
-        }
+            value: 1,
+        },
     ];
 
     const labels = [
         {
             key: 'app',
             value: 'central',
-            __typename: 'Label'
+            __typename: 'Label',
         },
         {
             key: 'app.kubernetes.io/name',
             value: 'stackrox',
-            __typename: 'Label'
-        }
+            __typename: 'Label',
+        },
     ];
 
     const annotations = [
         {
             key: 'email',
             value: 'support@stackrox.com',
-            __typename: 'Label'
+            __typename: 'Label',
         },
         {
             key: 'owner',
             value: 'stackrox',
-            __typename: 'Label'
-        }
+            __typename: 'Label',
+        },
     ];
 
     return (

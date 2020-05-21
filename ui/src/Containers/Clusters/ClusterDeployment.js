@@ -14,7 +14,7 @@ const ClusterDeploymentPage = ({
     clusterCheckedIn,
     editing,
     createUpgraderSA,
-    toggleSA
+    toggleSA,
 }) => (
     <div className="w-full">
         <div className="px-4">
@@ -113,7 +113,7 @@ ClusterDeploymentPage.propTypes = {
     clusterCheckedIn: PropTypes.bool.isRequired,
     editing: PropTypes.bool.isRequired,
     createUpgraderSA: PropTypes.bool.isRequired,
-    toggleSA: PropTypes.func.isRequired
+    toggleSA: PropTypes.func.isRequired,
 };
 
 export default ClusterDeploymentPage;

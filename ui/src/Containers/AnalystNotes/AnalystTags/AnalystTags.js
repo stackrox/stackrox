@@ -5,7 +5,7 @@ import difference from 'lodash/difference';
 import pluralize from 'pluralize';
 
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';
-import captureGraphQLErrors from 'modules/captureGraphQLErrors';
+import captureGraphQLErrors from 'utils/captureGraphQLErrors';
 import analystNotesLabels from 'messages/analystnotes';
 import Tags from 'Components/Tags';
 import Message from 'Components/Message';
@@ -20,12 +20,12 @@ const AnalystTags = ({
     autoComplete,
     autoCompleteVariables,
     isCollapsible,
-    onInputChange
+    onInputChange,
 }) => {
     const { GET_TAGS, ADD_TAGS, REMOVE_TAGS } = getQueriesByType(type);
 
     const { loading: isLoading, error, data } = useQuery(GET_TAGS, {
-        variables
+        variables,
     });
 
     // resolves once the modification + refetching happens
@@ -34,12 +34,12 @@ const AnalystTags = ({
         {
             query: GET_PROCESS_COMMENTS_TAGS_COUNT,
             variables,
-            exclude: type !== ANALYST_NOTES_TYPES.PROCESS
+            exclude: type !== ANALYST_NOTES_TYPES.PROCESS,
         },
         {
             query: SEARCH_AUTOCOMPLETE_QUERY,
-            variables: autoCompleteVariables
-        }
+            variables: autoCompleteVariables,
+        },
     ]);
 
     const [addTags, { loading: isWaitingToAddTags, error: errorOnAddTags }] = useMutation(
@@ -73,11 +73,11 @@ const AnalystTags = ({
         const addedTags = difference(updatedTags, tags);
         if (addedTags.length)
             addTags({
-                variables: { ...variables, tags: addedTags }
+                variables: { ...variables, tags: addedTags },
             });
         if (removedTags.length)
             removeTags({
-                variables: { ...variables, tags: removedTags }
+                variables: { ...variables, tags: removedTags },
             });
     }
 
@@ -102,12 +102,12 @@ AnalystTags.propTypes = {
     autoComplete: PropTypes.arrayOf(PropTypes.string),
     autoCompleteVariables: PropTypes.shape({}).isRequired,
     isCollapsible: PropTypes.bool,
-    onInputChange: PropTypes.func.isRequired
+    onInputChange: PropTypes.func.isRequired,
 };
 
 AnalystTags.defaultProps = {
     autoComplete: [],
-    isCollapsible: true
+    isCollapsible: true,
 };
 
 export default React.memo(AnalystTags);

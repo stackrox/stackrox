@@ -4,7 +4,7 @@ import Labeled from './Labeled';
 
 export default {
     title: 'Labeled',
-    component: Labeled
+    component: Labeled,
 };
 
 export const withTextLabelAndValue = () => <Labeled label="Label">Value</Labeled>;

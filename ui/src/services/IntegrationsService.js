@@ -28,19 +28,31 @@ function getPath(type, action) {
  */
 export function fetchIntegration(source) {
     const path = getPath(source, 'fetch');
-    return axios.get(path).then(response => ({
-        response: response.data
+    return axios.get(path).then((response) => ({
+        response: response.data,
     }));
 }
 
 /**
- * Saves an integration by source.
+ * Saves an integration by source. If it can potentially use stored credentials, use the
+ * updatePassword option to determine if you should
  *
+ * @param {string} source - The source of the integration
+ * @param {Object} data - The form data
+ * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function saveIntegration(source, data) {
+export function saveIntegration(source, data, options = {}) {
     if (!data.id) throw new Error('Integration entity must have an id to be saved');
-    return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+    const { updatePassword } = options;
+    // if the integration is not one that could possibly have stored credentials, use the previous API
+    if (updatePassword === null) return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+    // if it does, format the request data and use the new API
+    const integration = {
+        config: data,
+        updatePassword,
+    };
+    return axios.patch(`${getPath(source, 'save')}/${data.id}`, integration);
 }
 
 /**
@@ -53,12 +65,24 @@ export function createIntegration(source, data) {
 }
 
 /**
- * Tests an integration by source.
+ * Tests an integration by source. If it can potentially use stored credentials, use the
+ * updatePassword option to determine if you should
  *
+ * @param {string} source - The source of the integration
+ * @param {Object} data - The form data
+ * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function testIntegration(source, data) {
-    return axios.post(`${getPath(source, 'test')}/test`, data);
+export function testIntegration(source, data, options = {}) {
+    const { updatePassword } = options;
+    // if the integration is not one that could possibly have stored credentials, use the previous API
+    if (updatePassword === null) return axios.post(`${getPath(source, 'test')}/test`, data);
+    // if it does, format the request data and use the new API
+    const integration = {
+        config: data,
+        updatePassword,
+    };
+    return axios.post(`${getPath(source, 'test')}/test/updated`, integration);
 }
 
 /**
@@ -76,7 +100,7 @@ export function deleteIntegration(source, id) {
  * @returns {Promise<Object, Error>}
  */
 export function deleteIntegrations(source, ids = []) {
-    return Promise.all(ids.map(id => deleteIntegration(source, id)));
+    return Promise.all(ids.map((id) => deleteIntegration(source, id)));
 }
 
 /**

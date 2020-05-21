@@ -7,7 +7,7 @@ import dateFns from 'date-fns';
 import LabeledValue from 'Components/LabeledValue';
 import dateTimeFormat from 'constants/dateTimeFormat';
 
-const formatDate = date => dateFns.format(date, dateTimeFormat);
+const formatDate = (date) => dateFns.format(date, dateTimeFormat);
 
 const Token = ({ token }) => {
     if (!token) return null;
@@ -20,7 +20,7 @@ const Token = ({ token }) => {
                 </span>
                 <CopyToClipboard text={token}>
                     <button type="button" className="btn-success h-8 w-8">
-                        {<Icon.Copy className="h-4 w-4" />}
+                        <Icon.Copy className="h-4 w-4" />
                     </button>
                 </CopyToClipboard>
             </div>
@@ -30,18 +30,18 @@ const Token = ({ token }) => {
 };
 
 Token.propTypes = {
-    token: PropTypes.string
+    token: PropTypes.string,
 };
 
 Token.defaultProps = {
-    token: ''
+    token: '',
 };
 
 const APITokenDetails = ({ token, metadata }) => (
     <div className="p-4 w-full" data-testid="api-token-details">
         <Token token={token} />
         <LabeledValue label="Name" value={metadata.name} />
-        <LabeledValue label="Role" value={metadata.role} />
+        <LabeledValue label="Roles" value={metadata.roles.join(', ')} />
         <LabeledValue label="Issued" value={formatDate(metadata.issuedAt)} />
         <LabeledValue label="Expiration" value={formatDate(metadata.expiration)} />
         <LabeledValue label="Revoked" value={metadata.revoked ? 'Yes' : 'No'} />
@@ -52,15 +52,15 @@ APITokenDetails.propTypes = {
     token: PropTypes.string,
     metadata: PropTypes.shape({
         name: PropTypes.string.isRequired,
-        role: PropTypes.string.isRequired,
+        roles: PropTypes.arrayOf(PropTypes.string).isRequired,
         issuedAt: PropTypes.string.isRequired,
         expiration: PropTypes.string.isRequired,
-        revoked: PropTypes.bool.isRequired
-    }).isRequired
+        revoked: PropTypes.bool.isRequired,
+    }).isRequired,
 };
 
 APITokenDetails.defaultProps = {
-    token: ''
+    token: '',
 };
 
 export default APITokenDetails;

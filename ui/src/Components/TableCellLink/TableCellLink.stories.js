@@ -5,7 +5,7 @@ import TableCellLink from './TableCellLink';
 
 export default {
     title: 'TableCellLink',
-    component: TableCellLink
+    component: TableCellLink,
 };
 
 export const basicTableCellLink = () => (

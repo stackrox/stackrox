@@ -8,7 +8,7 @@ import {
     types as searchTypes,
     getActions as getSearchActions,
     reducers as searchReducers,
-    getSelectors as getSearchSelectors
+    getSelectors as getSearchSelectors,
 } from 'reducers/pageSearch';
 import mergeEntitiesById from 'utils/mergeEntitiesById';
 
@@ -18,7 +18,7 @@ export const clusterTypes = ['SWARM_CLUSTER', 'OPENSHIFT_CLUSTER', 'KUBERNETES_C
 
 export const wizardPages = Object.freeze({
     FORM: 'FORM',
-    DEPLOYMENT: 'DEPLOYMENT'
+    DEPLOYMENT: 'DEPLOYMENT',
 });
 
 // Action types
@@ -35,7 +35,7 @@ export const types = {
     SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER'),
     DELETE_CLUSTERS: 'clusters/DELETE_CLUSTERS',
     DOWNLOAD_CLUSTER_YAML: 'clusters/DOWNLOAD_CLUSTER_YAML',
-    ...searchTypes('clusters')
+    ...searchTypes('clusters'),
 };
 
 // Actions
@@ -43,16 +43,16 @@ export const types = {
 export const actions = {
     fetchClusters: createFetchingActions(types.FETCH_CLUSTERS),
     fetchCluster: createFetchingActions(types.FETCH_CLUSTER),
-    selectCluster: clusterId => ({ type: types.SELECT_CLUSTER, clusterId }),
-    startWizard: clusterId => ({ type: types.START_WIZARD, clusterId }),
+    selectCluster: (clusterId) => ({ type: types.SELECT_CLUSTER, clusterId }),
+    startWizard: (clusterId) => ({ type: types.START_WIZARD, clusterId }),
     nextWizardPage: () => ({ type: types.NEXT_WIZARD_PAGE }),
     prevWizardPage: () => ({ type: types.PREV_WIZARD_PAGE }),
     updateWizardState: (page, clusterId) => ({ type: types.UPDATE_WIZARD_STATE, page, clusterId }),
     finishWizard: () => ({ type: types.FINISH_WIZARD }),
     saveCluster: createFetchingActions(types.SAVE_CLUSTER),
-    deleteClusters: clusterIds => ({ type: types.DELETE_CLUSTERS, clusterIds }),
-    downloadClusterYaml: clusterId => ({ type: types.DOWNLOAD_CLUSTER_YAML, clusterId }),
-    ...getSearchActions('clusters')
+    deleteClusters: (clusterIds) => ({ type: types.DELETE_CLUSTERS, clusterIds }),
+    downloadClusterYaml: (clusterId) => ({ type: types.DOWNLOAD_CLUSTER_YAML, clusterId }),
+    ...getSearchActions('clusters'),
 };
 
 // Reducers
@@ -107,21 +107,18 @@ const reducer = combineReducers({
     byId,
     selectedCluster,
     wizard,
-    ...searchReducers('clusters')
+    ...searchReducers('clusters'),
 });
 
 export default reducer;
 
 // Selectors
 
-const getClustersById = state => state.byId;
-const getClusters = createSelector(
-    [getClustersById],
-    clusters => Object.values(clusters)
-);
-const getSelectedClusterId = state => state.selectedCluster;
-const getWizardCurrentPage = state => (state.wizard ? state.wizard.page : null);
-const getWizardClusterId = state => (state.wizard ? state.wizard.clusterId : null);
+const getClustersById = (state) => state.byId;
+const getClusters = createSelector([getClustersById], (clusters) => Object.values(clusters));
+const getSelectedClusterId = (state) => state.selectedCluster;
+const getWizardCurrentPage = (state) => (state.wizard ? state.wizard.page : null);
+const getWizardClusterId = (state) => (state.wizard ? state.wizard.clusterId : null);
 
 export const selectors = {
     getClustersById,
@@ -129,5 +126,5 @@ export const selectors = {
     getSelectedClusterId,
     getWizardCurrentPage,
     getWizardClusterId,
-    ...getSearchSelectors('clusters')
+    ...getSearchSelectors('clusters'),
 };

@@ -18,5 +18,5 @@ export function pluralizeHas(len) {
 
 export default {
     truncate,
-    pluralizeHas
+    pluralizeHas,
 };
