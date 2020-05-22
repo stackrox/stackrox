@@ -433,8 +433,8 @@ updateTestRail: &updateTestRail
   run:
     name: Update test results in TestRail
     command: |
-      if [[ -z "${CIRCLE_TAG}" ]]; then
-        echo "Only run TestRail updater on tag builds... skipping."
+      if [[ -z "${CIRCLE_TAG}" ]] || [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+        echo "Only run TestRail updater on tagged release/RC builds... skipping."
         exit 0
       fi
 
