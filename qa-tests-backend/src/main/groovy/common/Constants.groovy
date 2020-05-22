@@ -9,6 +9,8 @@ class Constants {
     static final EMAIL_NOTIFER_FROM = "stackrox"
     static final EMAIL_NOTIFER_SENDER = "${UUID.randomUUID()}@stackrox.com"
     static final EMAIL_NOTIFER_FULL_FROM = "${EMAIL_NOTIFER_FROM} <${EMAIL_NOTIFER_SENDER}>"
+    static final FAILURE_LOG_DIR = "/tmp/qa-tests-backend-logs"
+    static final FAILURE_LOG_LIMIT = 10
     static final Map<String, String> CSV_COLUMN_MAPPING = [
             "Standard" : "standard",
             "Cluster" : "cluster",

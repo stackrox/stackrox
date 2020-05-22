@@ -379,6 +379,11 @@ storeK8sLogs: &storeK8sLogs
     path: /tmp/k8s-service-logs
     destination: k8s-service-logs
 
+storeQALogs: &storeQALogs
+  store_artifacts:
+    path: /tmp/qa-tests-backend-logs
+    destination: qa-tests-backend-logs
+
 storeProfilingResults: &storeProfilingResults
   store_artifacts:
     path: /tmp/pprof.zip
@@ -1033,6 +1038,7 @@ commands:
       - *storeDBBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
+      - *storeQALogs
       - *connectToMonitoring
       - *collectMonitoringImages
       - *storeMonitoringImages
@@ -1317,6 +1323,7 @@ commands:
       - get-and-store-debug-dump
       - check-stackrox-logs
       - *storeK8sLogs
+      - *storeQALogs
 
       - destroy-openshift-cluster:
           when: always
@@ -3012,7 +3019,8 @@ jobs:
       - *collectK8sLogs
       - get-and-store-debug-dump
       - *storeK8sLogs
-
+      - *storeQALogs
+      
       - teardown-gke
 
   gke-api-scale-tests:
@@ -3201,6 +3209,7 @@ jobs:
       - *storeDBBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
+      - *storeQALogs
 
       - run:
           name: Destroy EKS cluster
@@ -3296,6 +3305,7 @@ jobs:
       - *storeDBBackupArtifact
       - check-stackrox-logs
       - *storeK8sLogs
+      - *storeQALogs
 
       - run:
           name: Pack kops volume

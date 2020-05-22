@@ -1,5 +1,6 @@
 package util
 
+import common.Constants
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
@@ -29,13 +30,25 @@ class Helpers {
         if (failure instanceof AssumptionViolatedException) {
             return false
         }
+
         retryAttempt++
-        if (retryAttempt <= MAX_RETRY_ATTEMTPS) {
+        def willRetry = retryAttempt <= MAX_RETRY_ATTEMTPS
+        if (willRetry) {
             println "An exception occurred which will cause a retry: " + failure
-            println "Test Failed... Attempting Retry #${retryAttempt}"
-            return true
         }
-        return false
+
+        if (Env.IN_CI) {
+            if (retryAttempt == 1) {
+                collectLogsForFailure()
+            } else {
+                println "Will not collect logs after retry runs."
+            }
+        }
+
+        if (willRetry) {
+            println "Test Failed... Attempting Retry #${retryAttempt}"
+        }
+        return willRetry
     }
 
     static void resetRetryAttempts() {
@@ -54,5 +67,20 @@ class Helpers {
     static void withDo(Object self, Closure closure) {
         self.with(closure)
     }
-}
 
+    private static void collectLogsForFailure() {
+        try {
+            def logDir = new File(Constants.FAILURE_LOG_DIR + "/k8s-service-logs")
+            if (logDir.exists() && logDir.listFiles().size() >= Constants.FAILURE_LOG_LIMIT) {
+                println "Log capture limit reached. Not collecting for this failure."
+                return
+            }
+            def collectionDir = logDir.getAbsolutePath() + "/" + UUID.randomUUID()
+            println "Will collect logs for this failure under ${collectionDir}"
+            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}".execute(null, new File("..")).text
+        }
+        catch (Exception e) {
+            println "Could not collect logs: ${e}"
+        }
+    }
+}

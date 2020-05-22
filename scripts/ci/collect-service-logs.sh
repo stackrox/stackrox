@@ -7,14 +7,14 @@ set -eu
 # future examination.
 #
 # Usage:
-#   collect-service-logs.sh NAMESPACE
+#   collect-service-logs.sh NAMESPACE [DIR]
 #
 # Example:
 # $ ./scripts/ci/collect-service-logs.sh stackrox
 #
 # Assumptions:
 # - Must be called from the root of the Apollo git repository.
-# - Logs are saved under /tmp/k8s-service-logs/
+# - Logs are saved under /tmp/k8s-service-logs/ or DIR if passed
 
 usage() {
     echo "./scripts/ci/collect-service-logs.sh <namespace>"
@@ -28,7 +28,12 @@ main() {
         exit 1
     fi
 
-    log_dir="/tmp/k8s-service-logs/${namespace}"
+    if [ $# -gt 1 ]; then
+        log_dir="$2"
+    else
+        log_dir="/tmp/k8s-service-logs"
+    fi
+    log_dir="${log_dir}/${namespace}"
     mkdir -p "$log_dir"
 
 	set +e
