@@ -2,11 +2,14 @@ package querybuilders
 
 import (
 	"fmt"
+	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ForK8sRBAC returns a specific query builder for K8s RBAC.
@@ -56,6 +59,36 @@ func ForCVSS() QueryBuilder {
 			{
 				Field:  search.CVESuppressed.String(),
 				Values: []string{"false"},
+			},
+		}
+	})
+}
+
+// ForWriteableHostMount returns a query builder for writeable host mounts.
+func ForWriteableHostMount() QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		values := mapValues(group, nil)
+		// Should never happen, will be enforced by validation.
+		if len(values) != 1 {
+			utils.Should(errors.Errorf("received unexpected number of values for host mount field: %v", values))
+			return nil
+		}
+		asBool, err := strconv.ParseBool(values[0])
+		// Should never happen, will be enforced by validation.
+		if err != nil {
+			utils.Should(errors.Wrap(err, "invalid value for host mount field path"))
+			return nil
+		}
+		return []*query.FieldQuery{
+			{
+				Field: search.VolumeReadonly.String(),
+				// The policy specifies whether it's _writable_, while we store
+				// whether the field is read-only, so we need to invert.
+				Values: []string{strconv.FormatBool(!asBool)},
+			},
+			{
+				Field:  search.VolumeType.String(),
+				Values: []string{"HostPath"},
 			},
 		}
 	})

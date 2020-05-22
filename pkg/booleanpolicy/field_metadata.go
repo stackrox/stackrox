@@ -53,7 +53,6 @@ func registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder, cont
 	fieldsToQB[fieldName] = m
 }
 
-// This block enumerates field short names.
 func init() {
 	registerFieldMetadata(fieldnames.AddCaps, querybuilders.ForFieldLabelExact(search.AddCapabilities), violationmessages.ContainerContextFields, capabilitiesValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.CVE, querybuilders.ForCVE(), violationmessages.VulnContextFields, stringValueRegex)
@@ -93,7 +92,6 @@ func init() {
 	registerFieldMetadata(fieldnames.VolumeSource, querybuilders.ForFieldLabelRegex(search.VolumeSource), violationmessages.VolumeContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.VolumeType, querybuilders.ForFieldLabelRegex(search.VolumeType), violationmessages.VolumeContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.WhitelistsEnabled, querybuilders.ForFieldLabel(augmentedobjs.NotWhitelistedCustomTag), violationmessages.ProcessWhitelistContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
-	// TODO(rc) check volume type is hostpath and not read only
-	registerFieldMetadata(fieldnames.WritableHostMount, nil, violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
+	registerFieldMetadata(fieldnames.WritableHostMount, querybuilders.ForWriteableHostMount(), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.WritableVolume, querybuilders.ForFieldLabelBoolean(search.VolumeReadonly, true), violationmessages.VolumeContextFields, booleanValueRegex, negationForbidden, operatorsForbidden)
 }

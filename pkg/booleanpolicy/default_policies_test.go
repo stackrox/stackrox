@@ -29,6 +29,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const (
+	writableHostMountPolicyName = "Writeable Host Mount"
+)
+
+func changeName(p *storage.Policy, newName string) *storage.Policy {
+	p.Name = newName
+	return p
+}
+
 func TestDefaultPolicies(t *testing.T) {
 	suite.Run(t, new(DefaultPoliciesTestSuite))
 }
@@ -37,6 +46,7 @@ type DefaultPoliciesTestSuite struct {
 	suite.Suite
 
 	defaultPolicies map[string]*storage.Policy
+	customPolicies  map[string]*storage.Policy
 
 	deployments             map[string]*storage.Deployment
 	images                  map[string]*storage.Image
@@ -56,6 +66,14 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 	for _, p := range defaultPolicies {
 		suite.defaultPolicies[p.GetName()] = p
 	}
+
+	suite.customPolicies = make(map[string]*storage.Policy)
+	for _, customPolicy := range []*storage.Policy{
+		changeName(policyWithSingleKeyValue(fieldnames.WritableHostMount, "true", false), writableHostMountPolicyName),
+	} {
+		suite.customPolicies[customPolicy.GetName()] = customPolicy
+	}
+
 	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
 }
 
@@ -81,9 +99,16 @@ func (suite *DefaultPoliciesTestSuite) TestNoDuplicatePolicyIDs() {
 }
 
 func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *storage.Policy {
-	p, ok := suite.defaultPolicies[name]
-	suite.Require().True(ok, "Policy %s not found", name)
-	return p
+	p := suite.defaultPolicies[name]
+	if p != nil {
+		return p
+	}
+	p = suite.customPolicies[name]
+	if p != nil {
+		return p
+	}
+	suite.FailNow("Policy not found: ", name)
+	return nil
 }
 
 func (suite *DefaultPoliciesTestSuite) addDepAndImages(deployment *storage.Deployment, images ...*storage.Image) {
@@ -386,7 +411,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			{
 				Name: "dockersock",
 				Volumes: []*storage.Volume{
-					{Source: "/var/run/docker.sock", Name: "DOCKERSOCK"},
+					{Source: "/var/run/docker.sock", Name: "DOCKERSOCK", Type: "HostPath", ReadOnly: true},
 					{Source: "NOTDOCKERSOCK"},
 				}},
 		},
@@ -524,8 +549,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			{
 				Name: "hostmount",
 				Volumes: []*storage.Volume{
-					{Source: "/etc/passwd", Name: "HOSTMOUNT"},
-					{Source: "/var/lib/kubelet", Name: "KUBELET"},
+					{Source: "/etc/passwd", Name: "HOSTMOUNT", Type: "HostPath"},
+					{Source: "/var/lib/kubelet", Name: "KUBELET", Type: "HostPath", ReadOnly: true},
 				}},
 		},
 	}
@@ -627,7 +652,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				dockerSockDep.GetId(): {
 					{
-						Message: "Writable volume 'DOCKERSOCK' has source '/var/run/docker.sock'",
+						Message: "Read-only volume 'DOCKERSOCK' has source '/var/run/docker.sock' and type 'HostPath'",
 					},
 				},
 			},
@@ -943,11 +968,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Mounting Sensitive Host Directories",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				hostMountDep.GetId(): {
-					{Message: "Writable volume 'KUBELET' has source '/var/lib/kubelet'"},
-					{Message: "Writable volume 'HOSTMOUNT' has source '/etc/passwd'"},
+					{Message: "Read-only volume 'KUBELET' has source '/var/lib/kubelet' and type 'HostPath'"},
+					{Message: "Writable volume 'HOSTMOUNT' has source '/etc/passwd' and type 'HostPath'"},
 				},
 				dockerSockDep.GetId(): {
-					{Message: "Writable volume 'DOCKERSOCK' has source '/var/run/docker.sock'"},
+					{Message: "Read-only volume 'DOCKERSOCK' has source '/var/run/docker.sock' and type 'HostPath'"},
+				},
+			},
+		},
+		{
+			policyName: writableHostMountPolicyName,
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				hostMountDep.GetId(): {
+					{Message: "Writable volume 'HOSTMOUNT' has source '/etc/passwd' and type 'HostPath'"},
 				},
 			},
 		},
