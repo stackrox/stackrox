@@ -19,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+const maxNumberOfKeyValuePairs = 5
+
 var (
 	timestampPtrType = reflect.TypeOf((*types.Timestamp)(nil))
 )
@@ -447,23 +449,94 @@ func generateEnumMatcher(value string, enumRef protoreflect.ProtoEnum, matchAll 
 }
 
 func generateMapMatcher(value string, _ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
-	var baseMatcher func(*reflect.MapIter) bool
 	if matchAll && value != "" {
 		return nil, errors.New("non-empty value for matchAll")
 	}
-	if !matchAll {
-		var err error
-		baseMatcher, err = mapeval.Matcher(value)
-		if err != nil {
-			return nil, err
-		}
+
+	baseMatcher, err := mapeval.Matcher(value)
+	if err != nil {
+		return nil, err
 	}
+
 	return func(instance reflect.Value) []valueMatchedPair {
 		if instance.Kind() != reflect.Map {
 			return nil
 		}
 
 		iter := instance.MapRange()
-		return []valueMatchedPair{{value: "", matched: matchAll || baseMatcher(iter)}}
+		value, matched := baseMatcher(iter, maxNumberOfKeyValuePairs)
+		var res string
+		if matchAll {
+			kvPairs := make(map[mapeval.KeyValue]struct{})
+			appendMapVals(kvPairs, maxNumberOfKeyValuePairs, value)
+			res = getStringExpFromKeyValuePairs(kvPairs)
+		} else {
+			res = getStringRepFromMapMatchedResults(value)
+		}
+
+		return []valueMatchedPair{{value: res, matched: matchAll || matched}}
 	}, nil
+}
+
+func getStringExpFromKeyValuePairs(kvPairs map[mapeval.KeyValue]struct{}) string {
+	var res string
+	for kv := range kvPairs {
+		res += fmt.Sprintf("(%s: %s)", kv.Key, kv.Value)
+	}
+
+	return res
+}
+
+func appendMapVals(foundPairs map[mapeval.KeyValue]struct{}, pairs int, value *mapeval.MatcherResults) {
+	if pairs <= 0 || value == nil {
+		return
+	}
+
+	for idx := 0; pairs > 0 && idx < len(value.MapVals); idx++ {
+		kv := value.MapVals[idx]
+		if _, ok := foundPairs[*kv]; ok {
+			continue
+		}
+
+		pairs--
+		foundPairs[*kv] = struct{}{}
+	}
+}
+
+func getStringRepFromMapMatchedResults(value *mapeval.MatcherResults) string {
+	if value == nil {
+		return ""
+	}
+
+	matchedKVPairs := make(map[mapeval.KeyValue]struct{})
+	pairs := 0
+	shouldPrintMapVals := false
+	for _, g := range value.Groups {
+		if pairs >= maxNumberOfKeyValuePairs {
+			break
+		}
+
+		for _, sm := range g.ShouldMatch {
+			if pairs >= maxNumberOfKeyValuePairs {
+				break
+			}
+
+			if _, ok := matchedKVPairs[*sm]; ok {
+				continue
+			}
+
+			pairs++
+			matchedKVPairs[*sm] = struct{}{}
+		}
+
+		if len(g.ShouldNotMatch) > 0 {
+			shouldPrintMapVals = true
+		}
+	}
+
+	if shouldPrintMapVals && pairs < maxNumberOfKeyValuePairs {
+		appendMapVals(matchedKVPairs, maxNumberOfKeyValuePairs-pairs, value)
+	}
+
+	return getStringExpFromKeyValuePairs(matchedKVPairs)
 }

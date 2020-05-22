@@ -29,6 +29,25 @@ type groupConstraint struct {
 	shouldMatch    []*kvConstraint
 }
 
+// KeyValue is a basic abstraction for matched key values.
+type KeyValue struct {
+	Key   string
+	Value string
+}
+
+type matchedGroup struct {
+	ShouldNotMatch []*KeyValue
+	ShouldMatch    []*KeyValue
+}
+
+// MatcherResults is the results returned from the matcher.
+type MatcherResults struct {
+	// Groups joined that disjunction, that are satisfied.
+	Groups []*matchedGroup
+	// MapVals returns 'numValuesToReturn' values from the map.
+	MapVals []*KeyValue
+}
+
 func assignRegExpFromString(val string) (*regexp.Regexp, error) {
 	if val == "" {
 		return nil, nil
@@ -76,36 +95,68 @@ func valueMatchesRequest(req *regexp.Regexp, val string) bool {
 	return req == nil || regexutils.MatchWholeString(req, val)
 }
 
-func verifyAgainstCG(gE *groupConstraint, kvMatchStates map[*kvConstraint]bool, key, value string) {
+func verifyAgainstCG(gE *groupConstraint, kvMatchStates map[*kvConstraint][]*KeyValue, key, value string) {
 	for _, r := range gE.shouldNotMatch {
-		kvMatchStates[r] = kvMatchStates[r] || (valueMatchesRequest(r.key, key) && valueMatchesRequest(r.value, value))
+		if valueMatchesRequest(r.key, key) && valueMatchesRequest(r.value, value) {
+			kvMatchStates[r] = append(kvMatchStates[r], &KeyValue{
+				Key:   key,
+				Value: value,
+			})
+		}
 	}
 
 	for _, d := range gE.shouldMatch {
-		kvMatchStates[d] = kvMatchStates[d] || (valueMatchesRequest(d.key, key) && valueMatchesRequest(d.value, value))
+		if valueMatchesRequest(d.key, key) && valueMatchesRequest(d.value, value) {
+			kvMatchStates[d] = append(kvMatchStates[d], &KeyValue{
+				Key:   key,
+				Value: value,
+			})
+		}
 	}
 }
 
-func matchesCG(gE *groupConstraint, kvMatchStates map[*kvConstraint]bool) bool {
+func matchesCG(gE *groupConstraint, kvMatchStates map[*kvConstraint][]*KeyValue) *matchedGroup {
 	for _, r := range gE.shouldNotMatch {
-		if kvMatchStates[r] {
-			return false
+		if len(kvMatchStates[r]) > 0 {
+			return nil
 		}
 	}
 	// All shouldNotMatch requirements failed at this point.
 
 	for _, d := range gE.shouldMatch {
-		if !kvMatchStates[d] {
-			return false
+		if len(kvMatchStates[d]) == 0 {
+			return nil
 		}
 	}
 	// Now, all shouldMatch requirements failed at this point, so this map matches this particular conjunction
 	// group.
-	return true
+	res := &matchedGroup{}
+	for _, r := range gE.shouldNotMatch {
+		key := ""
+		if r.key != nil {
+			key = r.key.String()
+		}
+
+		val := ""
+		if r.value != nil {
+			val = r.value.String()
+		}
+
+		res.ShouldNotMatch = append(res.ShouldNotMatch, &KeyValue{
+			Key:   key,
+			Value: val,
+		})
+	}
+
+	for _, d := range gE.shouldMatch {
+		res.ShouldMatch = append(res.ShouldMatch, kvMatchStates[d]...)
+	}
+
+	return res
 }
 
-// Matcher returns a matcher for a map against a query string.
-func Matcher(value string) (func(*reflect.MapIter) bool, error) {
+// Matcher returns a matcher for a map against a query string. It also returns upto N values of the map.
+func Matcher(value string) (func(*reflect.MapIter, int) (*MatcherResults, bool), error) {
 	// The format for the query is taken to be a disjunction of groups.
 	// A group is composed of conjunction of shouldNotMatch and shouldMatch (k,*) (*,v) (k,v) pairs.
 	// A shouldMatch pair returns true if it is contained in the map.
@@ -130,33 +181,48 @@ func Matcher(value string) (func(*reflect.MapIter) bool, error) {
 		disjunctionGroups = append(disjunctionGroups, cg)
 	}
 
-	return func(iter *reflect.MapIter) bool {
-		kvMatchStates := make(map[*kvConstraint]bool)
+	return func(iter *reflect.MapIter, numValuesToReturn int) (*MatcherResults, bool) {
+		kvMatchStates := make(map[*kvConstraint][]*KeyValue)
+		var res *MatcherResults
+		count := 0
 		for iter.Next() {
 			k, v := iter.Key(), iter.Value()
 			// Only string type key, value are allowed.
 			key, ok := k.Interface().(string)
 			if !ok {
-				return false
+				return nil, false
 			}
 
 			value, ok := v.Interface().(string)
 			if !ok {
-				return false
+				return nil, false
 			}
 
 			for _, cg := range disjunctionGroups {
 				verifyAgainstCG(cg, kvMatchStates, key, value)
 			}
+
+			if numValuesToReturn > count {
+				if res == nil {
+					res = &MatcherResults{}
+				}
+
+				res.MapVals = append(res.MapVals, &KeyValue{Key: key, Value: value})
+				count++
+			}
 		}
 
 		for _, cg := range disjunctionGroups {
 			// Apply disjunction and return true if any group is true.
-			if matchesCG(cg, kvMatchStates) {
-				return true
+			if mg := matchesCG(cg, kvMatchStates); mg != nil {
+				if res == nil {
+					res = &MatcherResults{}
+				}
+
+				res.Groups = append(res.Groups, mg)
 			}
 		}
 
-		return false
+		return res, res != nil && len(res.Groups) > 0
 	}, nil
 }

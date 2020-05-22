@@ -86,15 +86,16 @@ var (
 )
 
 type testCase struct {
-	desc           string
-	q              *query.Query
-	obj            *TopLevel
-	expectedResult *Result
+	desc              string
+	q                 *query.Query
+	obj               *TopLevel
+	expectedResult    *Result
+	skipResValueCheck bool
 }
 
 func assertResultsAsExpected(t *testing.T, c testCase, actualRes *Result, actualMatched bool) {
 	assert.Equal(t, c.expectedResult != nil, actualMatched)
-	if c.expectedResult != nil {
+	if c.expectedResult != nil && !c.skipResValueCheck {
 		require.NotNil(t, actualRes)
 		assert.ElementsMatch(t, c.expectedResult.Matches, actualRes.Matches)
 	}
@@ -180,7 +181,7 @@ func TestMap(t *testing.T) {
 						"x": "y",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(x: y)"),
 		},
 
 		{
@@ -207,7 +208,7 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(x: 3)"),
 		},
 
 		{
@@ -222,7 +223,8 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult:    resultWithSingleMatch("BaseMap", "(x: 3)(b: z)(a: y)"),
+			skipResValueCheck: true,
 		},
 
 		{
@@ -258,7 +260,7 @@ func TestMap(t *testing.T) {
 						"happy": "a",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(happy: a)"),
 		},
 
 		{
@@ -273,7 +275,8 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult:    resultWithSingleMatch("BaseMap", "(x: 3)(b: z)(a: y)"),
+			skipResValueCheck: true,
 		},
 
 		{
@@ -309,7 +312,7 @@ func TestMap(t *testing.T) {
 						"a": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(a: happy)"),
 		},
 
 		{
@@ -322,7 +325,7 @@ func TestMap(t *testing.T) {
 						"a": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(a: happy)"),
 		},
 
 		{
@@ -335,7 +338,7 @@ func TestMap(t *testing.T) {
 						"a": "lucky",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(a: lucky)"),
 		},
 
 		{
@@ -384,7 +387,7 @@ func TestMap(t *testing.T) {
 						"lucky": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(lucky: happy)"),
 		},
 
 		{
@@ -409,7 +412,7 @@ func TestMap(t *testing.T) {
 						"a": "lucky",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(a: lucky)"),
 		},
 
 		{
@@ -460,7 +463,7 @@ func TestMap(t *testing.T) {
 						"happy": "true",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
 		},
 
 		{
@@ -474,7 +477,58 @@ func TestMap(t *testing.T) {
 						"happy": "true",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
+		},
+
+		{
+			desc: "simple map, complex query last, matches",
+			q:    qComplexQuery,
+			obj: &TopLevel{
+				ValA: "whatever",
+				Base: Base{
+					ValBaseMap: map[string]string{
+						"true": "lucky",
+						"blah": "bleh",
+					}},
+			},
+			expectedResult:    resultWithSingleMatch("BaseMap", "(true: lucky)(blah: bleh)"),
+			skipResValueCheck: true,
+		},
+
+		{
+			desc: "simple map, complex query extra k,v pairs(take only 5 because required), matches",
+			q:    qComplexQuery,
+			obj: &TopLevel{
+				ValA: "whatever",
+				Base: Base{
+					ValBaseMap: map[string]string{
+						"true": "lucky",
+						"blah": "bleh",
+						"k1":   "v1",
+						"k2":   "v2",
+						"k3":   "v3",
+					}},
+			},
+			expectedResult:    resultWithSingleMatch("BaseMap", "(true: lucky)(blah: bleh)(k1: v1)(k2: v2)(k3: v3)"),
+			skipResValueCheck: true,
+		},
+
+		{
+			desc: "simple map, complex query extra k,v pairs(dont take extra), matches",
+			q:    qComplexQuery,
+			obj: &TopLevel{
+				ValA: "whatever",
+				Base: Base{
+					ValBaseMap: map[string]string{
+						"lucky": "happy",
+						"happy": "true",
+						"k1":    "v1",
+						"k2":    "v2",
+						"k3":    "v3",
+						"k4":    "v4",
+					}},
+			},
+			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
 		},
 	})
 }
