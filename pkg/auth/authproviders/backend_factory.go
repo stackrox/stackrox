@@ -12,15 +12,15 @@ type BackendFactory interface {
 	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (Backend, error)
 
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
-	// workflow consists of extracting the specific auth provider ID from the request, usually via a `state` parameter,
-	// and returning this provider ID from the function (with the Registry taking care of forwarding the request to that
-	// provider's HTTP handler). If there are any provider-independent HTTP endpoints (such as the SP metadata for
-	// SAML), this can be handled in this function as well - an empty provider ID along with a nil error needs to be
-	// returned in that case.
-	ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, err error)
+	// workflow consists of extracting the specific auth provider ID and clientState from the request, usually via a
+	// `state` parameter, and returning this provider ID and clientState from the function (with the Registry taking
+	// care of forwarding the request to that provider's HTTP handler). If there are any provider-independent HTTP
+	// endpoints (such as the SP metadata for SAML), this can be handled in this function as well - an empty
+	// provider ID along with a nil error needs to be returned in that case.
+	ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error)
 
-	// ResolveProvider takes care of looking up the provider ID from an (opaque) state string.
-	ResolveProvider(state string) (providerID string, err error)
+	// ResolveProvider takes care of looking up the provider ID and clientState from an (opaque) state string.
+	ResolveProviderAndClientState(state string) (providerID string, clientState string, err error)
 
 	RedactConfig(config map[string]string) map[string]string
 	MergeConfig(newCfg, oldCfg map[string]string) map[string]string

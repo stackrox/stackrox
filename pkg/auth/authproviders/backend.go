@@ -36,7 +36,7 @@ type Backend interface {
 	// ProcessHTTPRequest dispatches HTTP/1.1 requests intended for this provider. If the request is a callback from
 	// a login page, and the login was successful, the respective ExternalUserClaim is returned. If a non-login HTTP
 	// call should be handled, a nil claim and error should be returned.
-	ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*AuthResponse, string, error)
+	ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*AuthResponse, error)
 	// ExchangeToken is called to exchange an external token, referring to the auth provider, against a Rox-issued
 	// token.
 	ExchangeToken(ctx context.Context, externalToken, state string) (*AuthResponse, string, error)

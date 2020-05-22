@@ -208,35 +208,56 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, id string, ignoreActi
 	return nil
 }
 
-func (r *registryImpl) ExchangeToken(ctx context.Context, externalToken, typ, state string) (string, string, error) {
+func (r *registryImpl) ResolveProvider(typ, state string) (Provider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
-		return "", "", status.Errorf(codes.InvalidArgument, "invalid auth provider type %q", typ)
+		return nil, status.Errorf(codes.InvalidArgument, "invalid auth provider type %q", typ)
 	}
 
-	providerID, err := factory.ResolveProvider(state)
+	providerID, _, err := factory.ResolveProviderAndClientState(state)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
-		return "", "", status.Errorf(codes.NotFound, "could not locate auth provider %q", providerID)
+		return nil, status.Errorf(codes.NotFound, "could not locate auth provider %q", providerID)
+	}
+	return provider, nil
+}
+
+func (r *registryImpl) GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error) {
+	factory := r.getFactory(typ)
+	if factory == nil {
+		return nil, "", status.Errorf(codes.InvalidArgument, "invalid auth provider type %q", typ)
+	}
+
+	providerID, clientState, err := factory.ResolveProviderAndClientState(state)
+	if err != nil {
+		return nil, clientState, err
+	}
+	provider := r.getAuthProvider(providerID)
+	if provider == nil {
+		return nil, clientState, status.Errorf(codes.NotFound, "could not locate auth provider %q", providerID)
 	}
 
 	backend, err := provider.GetOrCreateBackend(ctx)
 	if err != nil {
-		return "", "", errors.Wrap(err, "auth provider backend unavailable")
+		return nil, clientState, errors.Wrap(err, "auth provider backend unavailable")
 	}
 
-	authResp, clientState, err := backend.ExchangeToken(ctx, externalToken, state)
+	authResp, _, err := backend.ExchangeToken(ctx, externalToken, state)
 	if err != nil {
-		return "", "", err
+		return nil, clientState, err
 	}
-	token, err := issueTokenForResponse(ctx, provider, authResp)
+	return authResp, clientState, nil
+}
+
+func (r *registryImpl) IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, error) {
+	token, err := issueTokenForResponse(ctx, provider, authResponse)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	return token.Token, clientState, nil
+	return token.Token, nil
 }
 
 func (r *registryImpl) addProvider(provider Provider) {

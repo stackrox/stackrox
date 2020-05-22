@@ -44,29 +44,29 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
+func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.URL.Path != f.callbackURLPath {
-		return "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 
 	if r.Method != http.MethodPost {
-		return "", httputil.Errorf(http.StatusMethodNotAllowed, "method %s is not supported for this URL", r.Method)
+		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "method %s is not supported for this URL", r.Method)
 	}
 
 	if err := r.ParseForm(); err != nil {
-		return "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
+		return "", "", httputil.Errorf(http.StatusBadRequest, "could not parse form data: %v", err)
 	}
 
-	return f.ResolveProvider(r.FormValue("state"))
+	return f.ResolveProviderAndClientState(r.FormValue("state"))
 }
 
-func (f *factory) ResolveProvider(state string) (string, error) {
-	providerID, _ := idputil.SplitState(state)
+func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
+	providerID, clientState := idputil.SplitState(state)
 	if providerID == "" {
-		return "", httputil.NewError(http.StatusBadRequest, "malformed state")
+		return "", clientState, httputil.NewError(http.StatusBadRequest, "malformed state")
 	}
 
-	return providerID, nil
+	return providerID, clientState, nil
 }
 
 func (f *factory) RedactConfig(config map[string]string) map[string]string {

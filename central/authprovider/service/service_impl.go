@@ -6,17 +6,20 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/authprovider/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -202,12 +205,37 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 }
 
 func (s *serviceImpl) ExchangeToken(ctx context.Context, request *v1.ExchangeTokenRequest) (*v1.ExchangeTokenResponse, error) {
-	token, clientState, err := s.registry.ExchangeToken(ctx, request.GetExternalToken(), request.GetType(), request.GetState())
+	provider, err := s.registry.ResolveProvider(request.GetType(), request.GetState())
 	if err != nil {
 		return nil, err
 	}
-	return &v1.ExchangeTokenResponse{
-		Token:       token,
+
+	authResponse, clientState, err := s.registry.GetExternalUserClaim(ctx, request.GetExternalToken(), request.GetType(), request.GetState())
+	if err != nil {
+		return nil, err
+	}
+
+	clientState, testMode := idputil.ParseClientState(clientState)
+	response := &v1.ExchangeTokenResponse{
 		ClientState: clientState,
-	}, nil
+		Test:        testMode,
+	}
+
+	if testMode {
+		// We need all access for retrieving roles.
+		userMetadata, err := authproviders.CreateRoleBasedIdentity(sac.WithAllAccess(ctx), provider, authResponse)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot create role based identity")
+		}
+		response.User = userMetadata
+		return response, nil
+	}
+
+	// We need all access for retrieving roles.
+	token, err := s.registry.IssueToken(ctx, provider, authResponse)
+	if err != nil {
+		return nil, err
+	}
+	response.Token = token
+	return response, nil
 }

@@ -124,28 +124,24 @@ func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*authproviders.A
 	}, nil
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	if r.URL.Path != p.acsURLPath {
-		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodPost {
-		return nil, "", httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
+		return nil, httputil.NewError(http.StatusMethodNotAllowed, "Method Not Allowed")
 	}
 
 	samlResponse := r.FormValue("SAMLResponse")
 	if samlResponse == "" {
-		return nil, "", httputil.NewError(http.StatusBadRequest, "no SAML response transmitted")
+		return nil, httputil.NewError(http.StatusBadRequest, "no SAML response transmitted")
 	}
 
 	authResp, err := p.consumeSAMLResponse(samlResponse)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-
-	relayState := r.FormValue("RelayState")
-	_, clientState := idputil.SplitState(relayState)
-
-	return authResp, clientState, err
+	return authResp, err
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {

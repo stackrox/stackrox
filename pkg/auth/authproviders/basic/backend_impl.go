@@ -85,17 +85,17 @@ func newBackend(urlPathPrefix string, basicAuthMgr *basic.Manager) (*backendImpl
 	return backendImpl, nil
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.urlPathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 
 	if restPath != challengeHandlerPath {
-		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodGet {
-		return nil, "", httputil.NewError(http.StatusBadRequest, "Bad Request")
+		return nil, httputil.NewError(http.StatusBadRequest, "Bad Request")
 	}
 
 	// If logging in via basic auth, the identity extractor of the request pipeline should already have validated our
@@ -107,25 +107,25 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 				Claims:     basicAuthIdentity.AsExternalUser(),
 				Expiration: time.Now().Add(defaultTTL),
 			}
-			return authResp, r.URL.Query().Get(clientStateQueryParamName), nil
+			return authResp, nil
 		}
 	}
 
 	// Otherwise, cause the browser to display the challenge dialog.
 	microTS, err := strconv.ParseInt(r.URL.Query().Get("micro_ts"), 10, 64)
 	if err != nil {
-		return nil, "", httputil.NewError(http.StatusInternalServerError, "Unparseable microtimestamp")
+		return nil, httputil.NewError(http.StatusInternalServerError, "Unparseable microtimestamp")
 	}
 
 	age := p.monoClock.SinceEpoch() - time.Microsecond*time.Duration(microTS)
 
 	if age > loginTimeLimit {
-		return nil, "", errors.New("invalid username or password")
+		return nil, errors.New("invalid username or password")
 	}
 
 	w.Header().Set("WWW-Authenticate", `Basic realm="StackRox" charset="UTF-8"`)
 	w.WriteHeader(http.StatusUnauthorized)
-	return nil, "", nil
+	return nil, nil
 }
 
 func (p *backendImpl) Validate(ctx context.Context, claims *tokens.Claims) error {

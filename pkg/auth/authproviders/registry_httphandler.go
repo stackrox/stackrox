@@ -1,17 +1,23 @@
 package authproviders
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/sac"
 )
 
 const (
@@ -26,10 +32,11 @@ func (r *registryImpl) URLPathPrefix() string {
 	return r.urlPathPrefix
 }
 
-func (r *registryImpl) errorURL(err error, typ string, clientState string) *url.URL {
+func (r *registryImpl) errorURL(err error, typ string, clientState string, testMode bool) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
+			"test":  {strconv.FormatBool(testMode)},
 			"error": {err.Error()},
 			"type":  {typ},
 			"state": {clientState},
@@ -37,11 +44,27 @@ func (r *registryImpl) errorURL(err error, typ string, clientState string) *url.
 	}
 }
 
-func (r *registryImpl) tokenURL(rawToken string, typ string, clientState string) *url.URL {
+func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
 			"token": {rawToken},
+			"type":  {typ},
+			"state": {clientState},
+		}.Encode(),
+	}
+}
+
+func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState string, testMode bool) *url.URL {
+	userJSON, err := json.Marshal(user)
+	if err != nil {
+		return r.errorURL(err, typ, clientState, testMode)
+	}
+	return &url.URL{
+		Path: r.redirectURL,
+		Fragment: url.Values{
+			"test":  {strconv.FormatBool(testMode)},
+			"user":  {base64.RawURLEncoding.EncodeToString(userJSON)},
 			"type":  {typ},
 			"state": {clientState},
 		}.Encode(),
@@ -68,6 +91,19 @@ func (r *registryImpl) logoutPath() string {
 	return path.Join(r.sessionURLPrefix(), logoutPath)
 }
 
+func (r *registryImpl) loginURL(providerID string) string {
+	return path.Join(r.loginURLPrefix(), providerID)
+}
+
+func (r *registryImpl) error(w http.ResponseWriter, err error, typ, clientState string, testMode bool) {
+	if httpErr, ok := err.(httputil.HTTPError); ok {
+		http.Error(w, httpErr.Error(), httpErr.HTTPStatusCode())
+		return
+	}
+	w.Header().Set("Location", r.errorURL(err, typ, clientState, testMode).String())
+	w.WriteHeader(http.StatusSeeOther)
+}
+
 func (r *registryImpl) initHTTPMux() {
 	r.HandleFunc(r.providersURLPrefix(), r.providersHTTPHandler)
 	r.HandleFunc(r.loginURLPrefix(), r.loginHTTPHandler)
@@ -85,6 +121,8 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 
 	providerID := req.URL.Path[len(prefix):]
 	clientState := req.URL.Query().Get("clientState")
+	testMode, _ := strconv.ParseBool(req.URL.Query().Get("test"))
+	clientState = idputil.AttachTestStateOrEmpty(clientState, testMode)
 
 	provider := r.getAuthProvider(providerID)
 	if provider == nil {
@@ -92,14 +130,13 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	ri := requestinfo.FromContext(req.Context())
-
 	backend, err := provider.GetOrCreateBackend(req.Context())
 	if err != nil {
-		w.Header().Set("Location", r.errorURL(errors.Wrap(err, "auth provider is unavailable"), provider.Type(), "").String())
-		w.WriteHeader(http.StatusSeeOther)
+		r.error(w, errors.Wrap(err, "auth provider is unavailable"), provider.Type(), "", testMode)
 		return
 	}
+
+	ri := requestinfo.FromContext(req.Context())
 	loginURL := backend.LoginURL(clientState, &ri)
 	if loginURL == "" {
 		http.Error(w, "could not get login URL", http.StatusInternalServerError)
@@ -156,10 +193,6 @@ func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, err
 	}, nil
 }
 
-func (r *registryImpl) loginURL(providerID string) string {
-	return path.Join(r.loginURLPrefix(), providerID)
-}
-
 func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Request) {
 	prefix := r.providersURLPrefix()
 	if !strings.HasPrefix(req.URL.Path, prefix) {
@@ -177,7 +210,6 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 	}
 
 	typ := parts[0]
-
 	factory := r.getFactory(typ)
 	if factory == nil {
 		log.Debugf("Factory with type %q not found", typ)
@@ -185,7 +217,9 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		return
 	}
 
-	providerID, err := factory.ProcessHTTPRequest(w, req)
+	providerID, clientState, err := factory.ProcessHTTPRequest(w, req)
+	clientState, testMode := idputil.ParseClientState(clientState)
+
 	var provider Provider
 	if err == nil {
 		provider = r.getAuthProvider(providerID)
@@ -196,38 +230,44 @@ func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Req
 		}
 	}
 	if err != nil {
-		if httpErr, ok := err.(httputil.HTTPError); ok {
-			http.Error(w, httpErr.Error(), httpErr.HTTPStatusCode())
-			return
-		}
-		w.Header().Set("Location", r.errorURL(err, typ, "").String())
-		w.WriteHeader(http.StatusSeeOther)
+		r.error(w, err, typ, "", testMode)
 		return
 	}
 
 	backend, err := provider.GetOrCreateBackend(req.Context())
 	if err != nil {
-		w.Header().Set("Location", r.errorURL(err, typ, "").String())
-		w.WriteHeader(http.StatusSeeOther)
+		r.error(w, err, typ, "", testMode)
 		return
 	}
-	authResp, clientState, err := backend.ProcessHTTPRequest(w, req)
-	var tokenInfo *tokens.TokenInfo
-	var refreshToken string
 
-	if err == nil && authResp != nil {
-		tokenInfo, err = issueTokenForResponse(req.Context(), provider, authResp)
-		refreshToken = authResp.RefreshToken
+	authResp, err := backend.ProcessHTTPRequest(w, req)
+	if err != nil {
+		r.error(w, err, typ, clientState, testMode)
+		return
 	}
 
-	if err != nil {
-		if httpErr, ok := err.(httputil.HTTPError); ok {
-			http.Error(w, httpErr.Error(), httpErr.HTTPStatusCode())
+	if testMode {
+		// We need all access for retrieving roles.
+		user, err := CreateRoleBasedIdentity(sac.WithAllAccess(req.Context()), provider, authResp)
+		if err != nil {
+			r.error(w, errors.Wrap(err, "cannot create role based identity"), typ, clientState, testMode)
 			return
 		}
-		w.Header().Set("Location", r.errorURL(err, typ, clientState).String())
+
+		w.Header().Set("Location", r.userMetadataURL(user, typ, clientState, testMode).String())
 		w.WriteHeader(http.StatusSeeOther)
 		return
+	}
+
+	var tokenInfo *tokens.TokenInfo
+	var refreshToken string
+	if authResp != nil {
+		tokenInfo, err = issueTokenForResponse(req.Context(), provider, authResp)
+		if err != nil {
+			r.error(w, err, typ, clientState, testMode)
+			return
+		}
+		refreshToken = authResp.RefreshToken
 	}
 
 	if tokenInfo == nil {

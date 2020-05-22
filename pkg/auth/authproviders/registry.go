@@ -20,14 +20,17 @@ type Registry interface {
 
 	GetProvider(id string) Provider
 	GetProviders(name, typ *string) []Provider
+	ResolveProvider(typ, state string) (Provider, error)
 
 	CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error)
 	UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error)
 	DeleteProvider(ctx context.Context, id string, ignoreActive bool) error
-	ExchangeToken(ctx context.Context, externalToken string, typ string, state string) (string, string, error)
 
 	// RegisterBackendFactory registers the given factory (creator) under the specified type. The creation of the
 	// factory is not delayed; the reason this function does not receive a factory instance directly is only to allow
 	// passing the URL prefix.
 	RegisterBackendFactory(ctx context.Context, typ string, factoryCreator BackendFactoryCreator) error
+
+	GetExternalUserClaim(ctx context.Context, externalToken, typ, state string) (*AuthResponse, string, error)
+	IssueToken(ctx context.Context, provider Provider, authResponse *AuthResponse) (string, error)
 }

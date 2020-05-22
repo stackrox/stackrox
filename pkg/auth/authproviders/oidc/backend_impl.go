@@ -71,7 +71,9 @@ func (p *backendImpl) ExchangeToken(ctx context.Context, token, state string) (*
 	responseValues.Set("state", state)
 	responseValues.Set("id_token", token)
 
-	return p.processIDPResponse(ctx, responseValues)
+	_, clientState := idputil.SplitState(state)
+	authResp, err := p.processIDPResponse(ctx, responseValues)
+	return authResp, clientState, err
 }
 
 func (p *backendImpl) RefreshAccessToken(ctx context.Context, refreshToken string) (*authproviders.AuthResponse, error) {
@@ -293,28 +295,24 @@ func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) 
 	return p.oauthCfgForRequest(ri).AuthCodeURL(state, options...)
 }
 
-func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
-	_, clientState := idputil.SplitState(responseData.Get("state"))
-
+func (p *backendImpl) processIDPResponseForImplicitFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	rawIDToken := responseData.Get("id_token")
 	if rawIDToken == "" {
-		return nil, clientState, errors.New("required form fields not found")
+		return nil, errors.New("required form fields not found")
 	}
 
 	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
 	if err != nil {
-		return nil, clientState, errors.Wrap(err, "id token verification failed")
+		return nil, errors.Wrap(err, "id token verification failed")
 	}
 
-	return authResp, clientState, nil
+	return authResp, nil
 }
 
-func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
-	_, clientState := idputil.SplitState(responseData.Get("state"))
-
+func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	code := responseData.Get("code")
 	if code == "" {
-		return nil, clientState, errors.New("required form fields not found")
+		return nil, errors.New("required form fields not found")
 	}
 
 	ri := requestinfo.FromContext(ctx)
@@ -322,32 +320,32 @@ func (p *backendImpl) processIDPResponseForCodeFlow(ctx context.Context, respons
 
 	token, err := oauthCfg.Exchange(ctx, code)
 	if err != nil {
-		return nil, clientState, errors.Wrap(err, "failed to obtain ID token for code")
+		return nil, errors.Wrap(err, "failed to obtain ID token for code")
 	}
 
 	rawIDToken, _ := token.Extra("id_token").(string) // needs to be present thanks to `openid` scope
 	if rawIDToken == "" {
-		return nil, clientState, errors.New("response from server did not contain ID token in violation of OIDC spec")
+		return nil, errors.New("response from server did not contain ID token in violation of OIDC spec")
 	}
 
 	authResp, err := p.verifyIDToken(ctx, rawIDToken, verifyNonce)
 	if err != nil {
-		return nil, clientState, errors.Wrap(err, "ID token verification failed")
+		return nil, errors.Wrap(err, "ID token verification failed")
 	}
 
 	authResp.RefreshToken = token.RefreshToken
 
-	return authResp, clientState, nil
+	return authResp, nil
 }
 
-func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) processIDPResponse(ctx context.Context, responseData url.Values) (*authproviders.AuthResponse, error) {
 	if p.useCodeFlow() {
 		return p.processIDPResponseForCodeFlow(ctx, responseData)
 	}
 	return p.processIDPResponseForImplicitFlow(ctx, responseData)
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
 	return p.processIDPResponse(r.Context(), r.Form)
 }

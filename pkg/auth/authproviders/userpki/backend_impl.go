@@ -88,23 +88,23 @@ func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*authproviders.AuthResponse, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.pathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return nil, "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
+		return nil, utils.Should(httputil.Errorf(http.StatusNotFound, "invalid URL %q, expected sub-path of %q", r.URL.Path, p.pathPrefix))
 	}
 
 	if restPath != authenticateHandlerPath {
 		log.Debugf("Invalid REST path %q", restPath)
-		return nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if r.Method != http.MethodGet {
-		return nil, "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
+		return nil, httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
 
 	ri := requestinfo.FromContext(r.Context())
 	if len(ri.VerifiedChains) == 0 {
-		return nil, "", errNoCertificate
+		return nil, errNoCertificate
 	}
 
 	for _, chain := range ri.VerifiedChains {
@@ -124,10 +124,10 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 			Claims:     externalUser(userCert),
 			Expiration: userCert.NotAfter,
 		}
-		return authResp, "", nil
+		return authResp, nil
 	}
 
-	return nil, "", errInvalidCertificate
+	return nil, errInvalidCertificate
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {

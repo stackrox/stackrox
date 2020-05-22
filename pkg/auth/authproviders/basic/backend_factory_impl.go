@@ -46,16 +46,16 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
+func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, f.urlPathPrefix)
 	if len(restPath) == len(r.URL.Path) {
-		return "", httputil.NewError(http.StatusNotFound, "Not Found")
+		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
 	if restPath == "" {
-		return "", httputil.NewError(http.StatusForbidden, "Forbidden")
+		return "", "", httputil.NewError(http.StatusForbidden, "Forbidden")
 	}
 	pathComponents := strings.SplitN(restPath, "/", 2)
-	return pathComponents[0], nil
+	return pathComponents[0], r.URL.Query().Get(clientStateQueryParamName), nil
 }
 
 func (f *factory) RedactConfig(config map[string]string) map[string]string {
@@ -66,10 +66,10 @@ func (f *factory) MergeConfig(newCfg, oldCfg map[string]string) map[string]strin
 	return newCfg
 }
 
-func (f *factory) ResolveProvider(state string) (string, error) {
-	providerID, _ := idputil.SplitState(state)
+func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
+	providerID, clientState := idputil.SplitState(state)
 	if len(providerID) == 0 {
-		return "", errors.New("empty state")
+		return "", clientState, errors.New("empty state")
 	}
-	return providerID, nil
+	return providerID, clientState, nil
 }

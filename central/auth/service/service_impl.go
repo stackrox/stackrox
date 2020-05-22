@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/user"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"google.golang.org/grpc"
@@ -43,22 +44,6 @@ func (s *serviceImpl) GetAuthStatus(ctx context.Context, request *v1.Empty) (*v1
 	return authStatusForID(id)
 }
 
-func convertAttributes(attrMap map[string][]string) []*v1.UserAttribute {
-	if attrMap == nil {
-		return nil
-	}
-	result := make([]*v1.UserAttribute, 0, len(attrMap))
-
-	for k, vs := range attrMap {
-		attr := &v1.UserAttribute{
-			Key:    k,
-			Values: vs,
-		}
-		result = append(result, attr)
-	}
-	return result
-}
-
 func fillAccessLists(userInfo *storage.UserInfo) {
 	if userInfo == nil {
 		return
@@ -78,7 +63,7 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 	result := &v1.AuthStatus{
 		Expires:        exp,
 		UserInfo:       id.User().Clone(),
-		UserAttributes: convertAttributes(id.Attributes()),
+		UserAttributes: user.ConvertAttributes(id.Attributes()),
 	}
 	fillAccessLists(result.UserInfo)
 

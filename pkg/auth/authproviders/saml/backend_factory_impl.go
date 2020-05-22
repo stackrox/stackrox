@@ -110,25 +110,29 @@ func (f *factory) UnregisterBackend(be *backendImpl) {
 	}
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {
+func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, string, error) {
 	if !strings.HasPrefix(r.URL.Path, f.urlPathPrefix) {
-		return "", httputil.NewError(http.StatusInternalServerError, "received invalid request")
+		return "", "", httputil.NewError(http.StatusInternalServerError, "received invalid request")
 	}
+
+	relayState := r.FormValue("RelayState")
+	_, clientState := idputil.SplitState(relayState)
 
 	relativePath := r.URL.Path[len(f.urlPathPrefix):]
 	if relativePath == acsRelativePath {
-		return f.processACSRequest(r)
+		providerID, err := f.processACSRequest(r)
+		return providerID, clientState, err
 	}
 
-	return "", httputil.NewError(http.StatusNotFound, "Not Found")
+	return "", clientState, httputil.NewError(http.StatusNotFound, "Not Found")
 }
 
-func (f *factory) ResolveProvider(state string) (string, error) {
-	providerID, _ := idputil.SplitState(state)
+func (f *factory) ResolveProviderAndClientState(state string) (string, string, error) {
+	providerID, clientState := idputil.SplitState(state)
 	if providerID == "" {
-		return "", fmt.Errorf("malformed state %q", state)
+		return "", clientState, fmt.Errorf("malformed state %q", state)
 	}
-	return providerID, nil
+	return providerID, clientState, nil
 }
 
 func (f *factory) autoRouteACSRequest(req *http.Request) (string, error) {

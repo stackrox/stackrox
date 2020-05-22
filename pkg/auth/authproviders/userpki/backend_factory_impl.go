@@ -38,26 +38,26 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
-func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, err error) {
+func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.Method != http.MethodGet {
-		return "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
+		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}
 
 	restURL := strings.TrimPrefix(r.URL.Path, f.callbackURLPath)
 	if len(restURL) == len(r.URL.Path) {
-		return "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
+		return "", "", utils.Should(httputil.Errorf(http.StatusNotFound, "invalid path %q, expected sub-path of %q", r.URL.Path, f.callbackURLPath))
 	}
 
 	if restURL == "" {
-		return "", httputil.Errorf(http.StatusNotFound, "Not Found")
+		return "", "", httputil.Errorf(http.StatusNotFound, "Not Found")
 	}
 
 	providerID, _ = stringutils.Split2(restURL, "/")
-	return providerID, nil
+	return providerID, "", nil
 }
 
-func (f *factory) ResolveProvider(state string) (providerID string, err error) {
-	return state, nil
+func (f *factory) ResolveProviderAndClientState(state string) (providerID string, clientState string, err error) {
+	return state, "", nil
 }
 
 func (f *factory) RedactConfig(config map[string]string) map[string]string {
