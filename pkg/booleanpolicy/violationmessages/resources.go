@@ -1,12 +1,15 @@
-package violations
+package violationmessages
 
 import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func resourcePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := `{{.Name}} of {{.Value}} {{.Unit}}{{if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+const (
+	resourceTemplate = `{{.Name}} of {{.Value}} {{.Unit}}{{if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+)
+
+func resourcePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		Name          string
@@ -33,7 +36,7 @@ func resourcePrinter(sectionName string, fieldMap map[string][]string) ([]string
 	}
 	messages := make([]string, 0, len(r))
 	for _, values := range r {
-		msg, err := executeTemplate(msgTemplate, values)
+		msg, err := executeTemplate(resourceTemplate, values)
 		if err != nil {
 			return nil, err
 		}

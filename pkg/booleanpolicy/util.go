@@ -2,11 +2,15 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
-	runtimeFields = set.NewFrozenStringSet(ProcessName, ProcessArguments, ProcessAncestor, ProcessUID, WhitelistsEnabled)
+	runtimeFields = set.NewFrozenStringSet(
+		fieldnames.ProcessName, fieldnames.ProcessArguments, fieldnames.ProcessAncestor, fieldnames.ProcessUID,
+		fieldnames.WhitelistsEnabled,
+	)
 )
 
 // ContainsOneOf returns whether the policy contains at least one group with a field in fieldSet.

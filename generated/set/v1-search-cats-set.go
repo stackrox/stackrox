@@ -151,14 +151,34 @@ func (k V1SearchCategorySet) Difference(other V1SearchCategorySet) V1SearchCateg
 	return retained
 }
 
-// Intersect returns a new set with the intersection of the members of both sets.
-func (k V1SearchCategorySet) Intersect(other V1SearchCategorySet) V1SearchCategorySet {
-	maxIntLen := len(k)
-	smaller, larger := k, other
+// Helper function for intersections.
+func (k V1SearchCategorySet) getSmallerLargerAndMaxIntLen(other V1SearchCategorySet) (smaller V1SearchCategorySet, larger V1SearchCategorySet, maxIntLen int) {
+	maxIntLen = len(k)
+	smaller, larger = k, other
 	if l := len(other); l < maxIntLen {
 		maxIntLen = l
 		smaller, larger = larger, smaller
 	}
+	return smaller, larger, maxIntLen
+}
+
+// Intersects returns whether the set has a non-empty intersection with the other set.
+func (k V1SearchCategorySet) Intersects(other V1SearchCategorySet) bool {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
+	if maxIntLen == 0 {
+		return false
+	}
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Intersect returns a new set with the intersection of the members of both sets.
+func (k V1SearchCategorySet) Intersect(other V1SearchCategorySet) V1SearchCategorySet {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
 	if maxIntLen == 0 {
 		return nil
 	}

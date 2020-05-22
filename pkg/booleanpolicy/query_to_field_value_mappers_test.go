@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -52,7 +53,7 @@ func (s *SearchMapperTestSuite) TestNoMapper() {
 func (s *SearchMapperTestSuite) TestConvertInstructionKeyword() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: DockerfileLine,
+		FieldName: fieldnames.DockerfileLine,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "abc=",
@@ -65,7 +66,7 @@ func (s *SearchMapperTestSuite) TestConvertInstructionKeyword() {
 func (s *SearchMapperTestSuite) TestConvertInstructionValue() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: DockerfileLine,
+		FieldName: fieldnames.DockerfileLine,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "=abc",
@@ -78,7 +79,7 @@ func (s *SearchMapperTestSuite) TestConvertInstructionValue() {
 func (s *SearchMapperTestSuite) TestConvertEnvironmentKey() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: EnvironmentVariable,
+		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "abc==",
@@ -91,7 +92,7 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentKey() {
 func (s *SearchMapperTestSuite) TestConvertEnvironmentValue() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: EnvironmentVariable,
+		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "=abc=",
@@ -104,7 +105,7 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentValue() {
 func (s *SearchMapperTestSuite) TestConvertEnvironmentVarSrc() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: EnvironmentVariable,
+		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "==abc",
@@ -115,17 +116,17 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentVarSrc() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertAnnotation() {
-	s.testDirectMapSearchString(search.Annotation, DisallowedAnnotation)
+	s.testDirectMapSearchString(search.Annotation, fieldnames.DisallowedAnnotation)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageLabel() {
-	s.testDirectMapSearchString(search.ImageLabel, DisallowedImageLabel)
+	s.testDirectMapSearchString(search.ImageLabel, fieldnames.DisallowedImageLabel)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeReadonly() {
 	searchTerms := []string{"abc", "true"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: WritableVolume,
+		FieldName: fieldnames.WritableVolume,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "false",
@@ -139,7 +140,7 @@ func (s *SearchMapperTestSuite) TestConvertImageCreatedTime() {
 	// We only convert searches of the form >Nd.  Other searches have no equivalent policy fields.
 	searchTerms := []string{"abc", ">30d", "<50d"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ImageAge,
+		FieldName: fieldnames.ImageAge,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "30",
@@ -152,7 +153,7 @@ func (s *SearchMapperTestSuite) TestConvertImageCreatedTime() {
 func (s *SearchMapperTestSuite) TestConvertImageScanTime() {
 	searchTerms := []string{"abc", ">1337D"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ImageScanAge,
+		FieldName: fieldnames.ImageScanAge,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "1337",
@@ -167,7 +168,7 @@ func (s *SearchMapperTestSuite) TestConvertServiceAccountPermissionLevel() {
 	s.testMapSearchString(search.ServiceAccountPermissionLevel, searchTerms, nil, false, true)
 	searchTermsWithResults := []string{"ELEVATED_IN_NAMESPACE", "CLUSTER_ADMIN"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: MinimumRBACPermissions,
+		FieldName: fieldnames.MinimumRBACPermissions,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "ELEVATED_IN_NAMESPACE",
@@ -178,21 +179,21 @@ func (s *SearchMapperTestSuite) TestConvertServiceAccountPermissionLevel() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertExposureLevel() {
-	s.testDirectMapSearchString(search.ExposureLevel, PortExposure)
+	s.testDirectMapSearchString(search.ExposureLevel, fieldnames.PortExposure)
 }
 
 func (s *SearchMapperTestSuite) TestConvertAddCapabilities() {
-	s.testDirectMapSearchString(search.AddCapabilities, AddCaps)
+	s.testDirectMapSearchString(search.AddCapabilities, fieldnames.AddCaps)
 }
 
 func (s *SearchMapperTestSuite) TestConvertCVE() {
-	s.testDirectMapSearchString(search.CVE, CVE)
+	s.testDirectMapSearchString(search.CVE, fieldnames.CVE)
 }
 
 func (s *SearchMapperTestSuite) TestConvertCVSS() {
 	searchTerms := []string{">88", "7644"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: CVSS,
+		FieldName: fieldnames.CVSS,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "> 88",
@@ -208,7 +209,7 @@ func (s *SearchMapperTestSuite) TestConvertCVSS() {
 func (s *SearchMapperTestSuite) TestConvertCPUCoresLimit() {
 	searchTerms := []string{"5", "<7", ">=98"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ContainerCPULimit,
+		FieldName: fieldnames.ContainerCPULimit,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "5",
@@ -227,7 +228,7 @@ func (s *SearchMapperTestSuite) TestConvertCPUCoresLimit() {
 func (s *SearchMapperTestSuite) TestConvertCPUCoresRequest() {
 	searchTerms := []string{"5", "<7", ">=98"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ContainerCPURequest,
+		FieldName: fieldnames.ContainerCPURequest,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "5",
@@ -246,7 +247,7 @@ func (s *SearchMapperTestSuite) TestConvertCPUCoresRequest() {
 func (s *SearchMapperTestSuite) TestConvertMemoryLimit() {
 	searchTerms := []string{"5", "<7", ">=98"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ContainerMemLimit,
+		FieldName: fieldnames.ContainerMemLimit,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "5",
@@ -265,7 +266,7 @@ func (s *SearchMapperTestSuite) TestConvertMemoryLimit() {
 func (s *SearchMapperTestSuite) TestConvertMemoryRequest() {
 	searchTerms := []string{"5", "<7", ">=98"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ContainerMemRequest,
+		FieldName: fieldnames.ContainerMemRequest,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "5",
@@ -282,13 +283,13 @@ func (s *SearchMapperTestSuite) TestConvertMemoryRequest() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertFixedBy() {
-	s.testDirectMapSearchString(search.FixedBy, FixedBy)
+	s.testDirectMapSearchString(search.FixedBy, fieldnames.FixedBy)
 }
 
 func (s *SearchMapperTestSuite) TestConvertComponent() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ImageComponent,
+		FieldName: fieldnames.ImageComponent,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "abc=",
@@ -301,7 +302,7 @@ func (s *SearchMapperTestSuite) TestConvertComponent() {
 func (s *SearchMapperTestSuite) TestConvertComponentVersion() {
 	searchTerms := []string{"abc"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: ImageComponent,
+		FieldName: fieldnames.ImageComponent,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "=abc",
@@ -312,61 +313,61 @@ func (s *SearchMapperTestSuite) TestConvertComponentVersion() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageRegistry() {
-	s.testDirectMapSearchString(search.ImageRegistry, ImageRegistry)
+	s.testDirectMapSearchString(search.ImageRegistry, fieldnames.ImageRegistry)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageRemote() {
-	s.testDirectMapSearchString(search.ImageRemote, ImageRemote)
+	s.testDirectMapSearchString(search.ImageRemote, fieldnames.ImageRemote)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageTag() {
-	s.testDirectMapSearchString(search.ImageTag, ImageTag)
+	s.testDirectMapSearchString(search.ImageTag, fieldnames.ImageTag)
 }
 
 func (s *SearchMapperTestSuite) TestConvertPort() {
-	s.testDirectMapSearchString(search.Port, Port)
+	s.testDirectMapSearchString(search.Port, fieldnames.Port)
 }
 
 func (s *SearchMapperTestSuite) TestConvertPrivileged() {
-	s.testDirectMapSearchString(search.Privileged, Privileged)
+	s.testDirectMapSearchString(search.Privileged, fieldnames.Privileged)
 }
 
 func (s *SearchMapperTestSuite) TestConvertProcessAncestor() {
-	s.testDirectMapSearchString(search.ProcessAncestor, ProcessAncestor)
+	s.testDirectMapSearchString(search.ProcessAncestor, fieldnames.ProcessAncestor)
 }
 
 func (s *SearchMapperTestSuite) TestConvertProcessArguments() {
-	s.testDirectMapSearchString(search.ProcessArguments, ProcessArguments)
+	s.testDirectMapSearchString(search.ProcessArguments, fieldnames.ProcessArguments)
 }
 
 func (s *SearchMapperTestSuite) TestConvertProcessName() {
-	s.testDirectMapSearchString(search.ProcessName, ProcessName)
+	s.testDirectMapSearchString(search.ProcessName, fieldnames.ProcessName)
 }
 
 func (s *SearchMapperTestSuite) TestConvertProcessUID() {
-	s.testDirectMapSearchString(search.ProcessUID, ProcessUID)
+	s.testDirectMapSearchString(search.ProcessUID, fieldnames.ProcessUID)
 }
 
 func (s *SearchMapperTestSuite) TestConvertPortProtocol() {
-	s.testDirectMapSearchString(search.PortProtocol, Protocol)
+	s.testDirectMapSearchString(search.PortProtocol, fieldnames.Protocol)
 }
 
 func (s *SearchMapperTestSuite) TestConvertReadOnlyRootFilesystem() {
-	s.testDirectMapSearchString(search.ProcessArguments, ProcessArguments)
+	s.testDirectMapSearchString(search.ReadOnlyRootFilesystem, fieldnames.ReadOnlyRootFS)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeDestination() {
-	s.testDirectMapSearchString(search.VolumeDestination, VolumeDestination)
+	s.testDirectMapSearchString(search.VolumeDestination, fieldnames.VolumeDestination)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeName() {
-	s.testDirectMapSearchString(search.VolumeName, VolumeName)
+	s.testDirectMapSearchString(search.VolumeName, fieldnames.VolumeName)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeSource() {
-	s.testDirectMapSearchString(search.VolumeSource, VolumeSource)
+	s.testDirectMapSearchString(search.VolumeSource, fieldnames.VolumeSource)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeType() {
-	s.testDirectMapSearchString(search.VolumeType, VolumeType)
+	s.testDirectMapSearchString(search.VolumeType, fieldnames.VolumeType)
 }

@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func dropCapabilityPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+func dropCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	if lenContainers := len(fieldMap[augmentedobjs.ContainerNameCustomTag]); lenContainers != 1 {
 		return nil, errors.Errorf("unexpected number of container names: %d", lenContainers)
 	}
@@ -18,7 +18,7 @@ func dropCapabilityPrinter(sectionName string, fieldMap map[string][]string) ([]
 	if containerName := fieldMap[augmentedobjs.ContainerNameCustomTag][0]; containerName != "" {
 		fmt.Fprintf(&sb, "%s ", containerName)
 	}
-	sb.WriteString("adds ")
+	sb.WriteString("does not drop ")
 	switch capLen := len(fieldMap[search.DropCapabilities.String()]); {
 	case capLen == 1:
 		sb.WriteString("capability ")
@@ -31,7 +31,7 @@ func dropCapabilityPrinter(sectionName string, fieldMap map[string][]string) ([]
 	return []string{sb.String()}, nil
 }
 
-func addCapabilityPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+func addCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	if lenContainers := len(fieldMap[augmentedobjs.ContainerNameCustomTag]); lenContainers != 1 {
 		return nil, errors.Errorf("unexpected number of container names: %d", lenContainers)
 	}

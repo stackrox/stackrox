@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"errors"
@@ -9,8 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func volumePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := "{{- if .ReadOnly }}Read-only{{else}}Writable{{end}} volume '{{- .VolumeName}}' has {{ .VolumeDetails }}"
+const (
+	volumeTemplate = `{{- if .ReadOnly }}Read-only{{else}}Writable{{end}} volume '{{- .VolumeName}}' has {{ .VolumeDetails }}`
+)
+
+func volumePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		ReadOnly      bool
@@ -38,5 +41,5 @@ func volumePrinter(sectionName string, fieldMap map[string][]string) ([]string, 
 	}
 	r.VolumeDetails = stringSliceToSentence(volumeDetails)
 
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(volumeTemplate, r)
 }

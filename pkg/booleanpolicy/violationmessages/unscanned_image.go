@@ -1,15 +1,18 @@
-package violations
+package violationmessages
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 )
 
-func imageScanPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	imageScanTemplate = `{{if .ContainerName}}Image in container '{{.ContainerName}}'{{else}}Image{{end}} has {{if not .Scanned}}not {{end}}been scanned`
+)
+
+func imageScanPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
+		Scanned       bool
 	}
-	msgTemplate := "{{if .ContainerName}}Image in container '{{.ContainerName}}'{{else}}Image{{end}} has not been scanned"
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	var err error
@@ -18,7 +21,7 @@ func imageScanPrinter(sectionName string, fieldMap map[string][]string) ([]strin
 		return nil, err
 	}
 	if imageScan != "<nil>" {
-		return nil, errors.New("image has been scanned")
+		r.Scanned = true
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(imageScanTemplate, r)
 }

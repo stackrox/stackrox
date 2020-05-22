@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"fmt"
@@ -16,8 +16,11 @@ var (
 		"INTERNAL": "using internal cluster IP"}
 )
 
-func portExposurePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := "Deployment port(s) %s"
+const (
+	portExposureTemplate = `Deployment port(s) %s`
+)
+
+func portExposurePrinter(fieldMap map[string][]string) ([]string, error) {
 	exposureLevel, err := getSingleValueFromFieldMap(search.ExposureLevel.String(), fieldMap)
 	if err != nil || exposureLevel == "" {
 		return nil, errors.New("missing port exposure level")
@@ -26,5 +29,5 @@ func portExposurePrinter(sectionName string, fieldMap map[string][]string) ([]st
 	if !ok {
 		return nil, errors.New("unexpected port exposure level")
 	}
-	return []string{fmt.Sprintf(msgTemplate, portExposureDesc)}, nil
+	return []string{fmt.Sprintf(portExposureTemplate, portExposureDesc)}, nil
 }

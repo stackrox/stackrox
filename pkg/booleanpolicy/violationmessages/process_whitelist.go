@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"strconv"
@@ -7,8 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func processWhitelistPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := `{{if .NotWhitelisted}}Unexpected{{else}}Expected{{end}} process{{if .ProcessName}} '{{.ProcessName}}'{{end}} in container{{if .ContainerName}} '{{.ContainerName}}'{{end}}`
+const (
+	whitelistTemplate = `{{if .NotWhitelisted}}Unexpected{{else}}Expected{{end}} process{{if .ProcessName}} '{{.ProcessName}}'{{end}} in container{{if .ContainerName}} '{{.ContainerName}}'{{end}}`
+)
+
+func processWhitelistPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName  string
 		ProcessName    string
@@ -24,5 +27,5 @@ func processWhitelistPrinter(sectionName string, fieldMap map[string][]string) (
 	if r.NotWhitelisted, err = strconv.ParseBool(notWhitelisted); err != nil {
 		return nil, err
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(whitelistTemplate, r)
 }

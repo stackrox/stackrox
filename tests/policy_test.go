@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -594,7 +594,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 	mockPolicySection := &storage.PolicySection{
 		PolicyGroups: []*storage.PolicyGroup{
 			{
-				FieldName:       booleanpolicy.CVE,
+				FieldName:       fieldnames.CVE,
 				BooleanOperator: storage.BooleanOperator_OR,
 				Values: []*storage.PolicyValue{
 					{
@@ -603,7 +603,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 				},
 			},
 			{
-				FieldName:       booleanpolicy.FixedBy,
+				FieldName:       fieldnames.FixedBy,
 				BooleanOperator: storage.BooleanOperator_OR,
 				Values: []*storage.PolicyValue{
 					{

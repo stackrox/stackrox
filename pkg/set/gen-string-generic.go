@@ -149,14 +149,34 @@ func (k StringSet) Difference(other StringSet) StringSet {
 	return retained
 }
 
-// Intersect returns a new set with the intersection of the members of both sets.
-func (k StringSet) Intersect(other StringSet) StringSet {
-	maxIntLen := len(k)
-	smaller, larger := k, other
+// Helper function for intersections.
+func (k StringSet) getSmallerLargerAndMaxIntLen(other StringSet) (smaller StringSet, larger StringSet, maxIntLen int) {
+	maxIntLen = len(k)
+	smaller, larger = k, other
 	if l := len(other); l < maxIntLen {
 		maxIntLen = l
 		smaller, larger = larger, smaller
 	}
+	return smaller, larger, maxIntLen
+}
+
+// Intersects returns whether the set has a non-empty intersection with the other set.
+func (k StringSet) Intersects(other StringSet) bool {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
+	if maxIntLen == 0 {
+		return false
+	}
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Intersect returns a new set with the intersection of the members of both sets.
+func (k StringSet) Intersect(other StringSet) StringSet {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
 	if maxIntLen == 0 {
 		return nil
 	}

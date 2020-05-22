@@ -149,14 +149,34 @@ func (k IntSet) Difference(other IntSet) IntSet {
 	return retained
 }
 
-// Intersect returns a new set with the intersection of the members of both sets.
-func (k IntSet) Intersect(other IntSet) IntSet {
-	maxIntLen := len(k)
-	smaller, larger := k, other
+// Helper function for intersections.
+func (k IntSet) getSmallerLargerAndMaxIntLen(other IntSet) (smaller IntSet, larger IntSet, maxIntLen int) {
+	maxIntLen = len(k)
+	smaller, larger = k, other
 	if l := len(other); l < maxIntLen {
 		maxIntLen = l
 		smaller, larger = larger, smaller
 	}
+	return smaller, larger, maxIntLen
+}
+
+// Intersects returns whether the set has a non-empty intersection with the other set.
+func (k IntSet) Intersects(other IntSet) bool {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
+	if maxIntLen == 0 {
+		return false
+	}
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Intersect returns a new set with the intersection of the members of both sets.
+func (k IntSet) Intersect(other IntSet) IntSet {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
 	if maxIntLen == 0 {
 		return nil
 	}

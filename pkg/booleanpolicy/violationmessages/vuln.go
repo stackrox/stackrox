@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"strings"
@@ -18,13 +18,17 @@ func getComponentAndVersion(fieldMap map[string][]string) (component string, ver
 	return component, version
 }
 
-func cvePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
 	// Example message: Fixable CVE-2020-0101 (CVSS 8.2) found in component nginx 1.12.0-debian1ubuntu2 in container “nginx-proxy
-	msgTemplate := `
+	cveTemplate = `
     {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .CVSS}} (CVSS {{.CVSS}}){{end}} found
     {{- if .Component}} in component {{.Component}}-{{.ComponentVersion}}{{end}}
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
     {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
+)
+
+func cvePrinter(fieldMap map[string][]string) ([]string, error) {
+
 	type cveResultFields struct {
 		ContainerName    string
 		ImageName        string
@@ -44,19 +48,22 @@ func cvePrinter(sectionName string, fieldMap map[string][]string) ([]string, err
 	r.CVSS = maybeGetSingleValueFromFieldMap(search.CVSS.String(), fieldMap)
 	r.FixedBy = maybeGetSingleValueFromFieldMap(search.FixedBy.String(), fieldMap)
 	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(cveTemplate, r)
 }
 
-func componentPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	componentTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' includes{{else}}Image includes{{end}} component {{.Component}}{{ if .ComponentVersion }} {{.ComponentVersion}}{{end}}`
+)
+
+func componentPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName    string
 		Component        string
 		ComponentVersion string
 	}
-	msgTemplate := "{{if .ContainerName}}Container '{{.ContainerName}}' includes{{else}}Image includes{{end}} component {{.Component}}{{ if .ComponentVersion }} {{.ComponentVersion}}{{end}}"
 
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(componentTemplate, r)
 }

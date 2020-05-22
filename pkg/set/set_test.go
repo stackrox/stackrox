@@ -109,11 +109,14 @@ func TestIntersection(t *testing.T) {
 	aAndB := a.Intersect(b)
 
 	assertSetContainsExactly(t, aAndB, "b", "c")
+	assert.True(t, a.Intersects(b))
 
 	emptyAndA := StringSet{}.Intersect(a)
 	assertSetContainsExactly(t, emptyAndA)
+	assert.False(t, StringSet{}.Intersects(a))
 	aAndEmpty := a.Intersect(StringSet{})
 	assertSetContainsExactly(t, aAndEmpty)
+	assert.False(t, a.Intersects(StringSet{}))
 
 	// Test for no aliasing
 	assert.True(t, emptyAndA.Add("f"))

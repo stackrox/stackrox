@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
@@ -641,7 +642,7 @@ func (s *PolicyServiceTestSuite) TestOnePolicyField() {
 	defer s.envIsolator.RestoreAll()
 
 	expectedPolicyGroup := &storage.PolicyGroup{
-		FieldName:       booleanpolicy.CVE,
+		FieldName:       fieldnames.CVE,
 		BooleanOperator: storage.BooleanOperator_OR,
 		Values: []*storage.PolicyValue{
 			{
@@ -659,7 +660,7 @@ func (s *PolicyServiceTestSuite) TestMultiplePolicyFields() {
 
 	expectedPolicyGroups := []*storage.PolicyGroup{
 		{
-			FieldName:       booleanpolicy.CVE,
+			FieldName:       fieldnames.CVE,
 			BooleanOperator: storage.BooleanOperator_OR,
 			Values: []*storage.PolicyValue{
 				{
@@ -668,7 +669,7 @@ func (s *PolicyServiceTestSuite) TestMultiplePolicyFields() {
 			},
 		},
 		{
-			FieldName:       booleanpolicy.ImageComponent,
+			FieldName:       fieldnames.ImageComponent,
 			BooleanOperator: storage.BooleanOperator_OR,
 			Values: []*storage.PolicyValue{
 				{
@@ -687,7 +688,7 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 
 	expectedPolicyGroup := []*storage.PolicyGroup{
 		{
-			FieldName:       booleanpolicy.CVE,
+			FieldName:       fieldnames.CVE,
 			BooleanOperator: storage.BooleanOperator_OR,
 			Values: []*storage.PolicyValue{
 				{
@@ -718,7 +719,7 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 
 	expectedPolicyGroups := []*storage.PolicyGroup{
 		{
-			FieldName: booleanpolicy.EnvironmentVariable,
+			FieldName: fieldnames.EnvironmentVariable,
 			Values: []*storage.PolicyValue{
 				{
 					Value: "z=x=v",
@@ -735,7 +736,7 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 			},
 		},
 		{
-			FieldName: booleanpolicy.DockerfileLine,
+			FieldName: fieldnames.DockerfileLine,
 			Values: []*storage.PolicyValue{
 				{
 					Value: "a=",

@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"strings"
@@ -16,11 +16,13 @@ var (
 		"RESOURCE_FIELD": "resource field"}
 )
 
-func envPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-
-	msgTemplate := `Environment variable '{{.Name}}' is present
+const (
+	envTemplate = `Environment variable '{{.Name}}' is present
 	{{- if .ContainerName}} in container '{{.ContainerName}}'{{end}}
 	{{- if .Source}} and references a {{.Source}}{{end}}`
+)
+
+func envPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		Source        string
@@ -38,5 +40,5 @@ func envPrinter(sectionName string, fieldMap map[string][]string) ([]string, err
 	}
 	r.Source = envVarSourceToNameMap[strings.ToUpper(envVar[0])]
 	r.Name = envVar[1]
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(envTemplate, r)
 }

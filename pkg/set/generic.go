@@ -150,14 +150,34 @@ func (k KeyTypeSet) Difference(other KeyTypeSet) KeyTypeSet {
 	return retained
 }
 
-// Intersect returns a new set with the intersection of the members of both sets.
-func (k KeyTypeSet) Intersect(other KeyTypeSet) KeyTypeSet {
-	maxIntLen := len(k)
-	smaller, larger := k, other
+// Helper function for intersections.
+func (k KeyTypeSet) getSmallerLargerAndMaxIntLen(other KeyTypeSet) (smaller KeyTypeSet, larger KeyTypeSet, maxIntLen int) {
+	maxIntLen = len(k)
+	smaller, larger = k, other
 	if l := len(other); l < maxIntLen {
 		maxIntLen = l
 		smaller, larger = larger, smaller
 	}
+	return smaller, larger, maxIntLen
+}
+
+// Intersects returns whether the set has a non-empty intersection with the other set.
+func (k KeyTypeSet) Intersects(other KeyTypeSet) bool {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
+	if maxIntLen == 0 {
+		return false
+	}
+	for elem := range smaller {
+		if _, ok := larger[elem]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// Intersect returns a new set with the intersection of the members of both sets.
+func (k KeyTypeSet) Intersect(other KeyTypeSet) KeyTypeSet {
+	smaller, larger, maxIntLen := k.getSmallerLargerAndMaxIntLen(other)
 	if maxIntLen == 0 {
 		return nil
 	}

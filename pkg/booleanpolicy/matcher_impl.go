@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
-	"github.com/stackrox/rox/pkg/booleanpolicy/violations"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 )
@@ -17,7 +17,7 @@ type matcherImpl struct {
 	stage      storage.LifecycleStage
 }
 
-func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.AugmentedObj, stage storage.LifecycleStage) (*evaluator.Result, error) {
+func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.AugmentedObj) (*evaluator.Result, error) {
 	finalResult, matched := sectionAndEval.evaluator.Evaluate(obj.Value())
 	if !matched {
 		return nil, nil
@@ -42,19 +42,23 @@ func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *stora
 	var atLeastOneMatched bool
 	var processIndicatorMatched bool
 	for _, eval := range m.evaluators {
-		result, err := matchWithEvaluator(eval, obj, m.stage)
+		result, err := matchWithEvaluator(eval, obj)
 		if err != nil {
 			return nil, err
 		}
 		if result == nil {
 			continue
 		}
-		alertViolations, isProcessViolation, err := violations.ViolationPrinter(m.stage, eval.section, result, indicator)
+		alertViolations, isProcessViolation, err := violationmessages.Render(m.stage, eval.section, result, indicator)
 		if err != nil {
 			return nil, err
 		}
-		atLeastOneMatched = atLeastOneMatched || len(alertViolations) > 0
-		processIndicatorMatched = processIndicatorMatched || isProcessViolation
+		if len(alertViolations) > 0 {
+			atLeastOneMatched = true
+		}
+		if isProcessViolation {
+			processIndicatorMatched = true
+		}
 		v.AlertViolations = append(v.AlertViolations, alertViolations...)
 	}
 	if !atLeastOneMatched && !processIndicatorMatched {

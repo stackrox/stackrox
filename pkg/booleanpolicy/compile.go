@@ -71,10 +71,11 @@ func constructRemainingContextQueries(stage storage.LifecycleStage, section *sto
 			}
 		}
 	}
-	fieldsToAdd := contextFieldSet.Difference(fieldSet)
-	contextQueries := make([]*query.FieldQuery, 0, len(fieldsToAdd))
-	for contextField := range fieldsToAdd {
-		contextQueries = append(contextQueries, matchAllQueryForField(contextField))
+	var contextQueries []*query.FieldQuery
+	for contextField := range contextFieldSet {
+		if !fieldSet.Contains(contextField) {
+			contextQueries = append(contextQueries, matchAllQueryForField(contextField))
+		}
 	}
 	return contextQueries
 }

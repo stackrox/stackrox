@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"strings"
@@ -11,9 +11,11 @@ var (
 	maxDockerfileLineLength = 32
 )
 
-func linePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	lineTemplate = `Dockerfile line '{{.Instruction}} {{.Line}}' present{{- if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+)
 
-	msgTemplate := `Dockerfile line '{{.Instruction}} {{.Line}}' present{{- if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+func linePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		Instruction   string
@@ -34,5 +36,5 @@ func linePrinter(sectionName string, fieldMap map[string][]string) ([]string, er
 	if len(r.Line) > maxDockerfileLineLength {
 		r.Line = r.Line[:maxDockerfileLineLength] + "..."
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(lineTemplate, r)
 }

@@ -1,7 +1,6 @@
-package violations
+package violationmessages
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -9,13 +8,17 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func readOnlyRootFSPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	readOnlyRootFSTemplate = `Container {{if .ContainerName}}'{{.ContainerName}}'{{end}} 
+	{{- if .ReadOnlyRootFS }} using read-only root filesystem{{else}} using read-write root filesystem{{end}}`
+)
+
+func readOnlyRootFSPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName  string
 		ReadOnlyRootFS bool
 	}
-	msgTemplate := `Container {{if .ContainerName}}'{{.ContainerName}}'{{end}} 
-	{{- if .ReadOnlyRootFS }} using read-only root filesystem{{else}} using read-write root filesystem{{end}}`
+
 	r := resultFields{}
 	var err error
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
@@ -26,48 +29,57 @@ func readOnlyRootFSPrinter(sectionName string, fieldMap map[string][]string) ([]
 	if r.ReadOnlyRootFS, err = strconv.ParseBool(readOnlyRootFS); err != nil {
 		return nil, err
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(readOnlyRootFSTemplate, r)
 }
 
-func imageAgePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	imageAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of creation {{.ImageCreationTime}}`
+)
+
+func imageAgePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName     string
 		ImageCreationTime string
 	}
-	msgTemplate := "{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of creation {{.ImageCreationTime}}"
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	var err error
 	if r.ImageCreationTime, err = getSingleValueFromFieldMap(search.ImageCreatedTime.String(), fieldMap); err != nil {
 		return nil, err
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(imageAgeTemplate, r)
 }
 
-func imageScanAgePrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	imageScanAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of last scan {{.ImageScanTime}}`
+)
+
+func imageScanAgePrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		ImageScanTime string
 	}
-	msgTemplate := `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of last scan {{.ImageScanTime}}`
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	var err error
 	if r.ImageScanTime, err = getSingleValueFromFieldMap(search.ImageScanTime.String(), fieldMap); err != nil {
 		return nil, err
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(imageScanAgeTemplate, r)
 }
 
-func imageDetailsPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	imageDetailsTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
+)
+
+func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		ImageDetails  string
 	}
-	msgTemplate := "{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}"
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
-	imageDetails := make([]string, 0)
+	var imageDetails []string
 	if imageTag, err := getSingleValueFromFieldMap(search.ImageTag.String(), fieldMap); err == nil {
 		imageDetails = append(imageDetails, fmt.Sprintf("tag '%s'", imageTag))
 	}
@@ -77,20 +89,24 @@ func imageDetailsPrinter(sectionName string, fieldMap map[string][]string) ([]st
 	if imageRegistry, err := getSingleValueFromFieldMap(search.ImageRegistry.String(), fieldMap); err == nil {
 		imageDetails = append(imageDetails, fmt.Sprintf("registry '%s'", imageRegistry))
 	}
+	// This is okay, it can happen if this fieldMap has values for other fields.
 	if len(imageDetails) == 0 {
-		return nil, errors.New("missing image details")
+		return nil, nil
 	}
 	r.ImageDetails = stringSliceToSortedSentence(imageDetails)
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(imageDetailsTemplate, r)
 }
 
-// Print violation message for match against policyFieldsToPrinters privileged container
-func privilegedPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
+const (
+	privilegedTemplate = `Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} is{{if not .Privileged}} not{{end}} privileged`
+)
+
+// Render violation message for match against policyFieldsToPrinters privileged container
+func privilegedPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		ContainerName string
 		Privileged    bool
 	}
-	msgTemplate := "Container{{if .ContainerName}} '{{.ContainerName}}'{{end}} is{{if not .Privileged}} not{{end}} privileged"
 	r := resultFields{}
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	privileged, err := getSingleValueFromFieldMap(search.Privileged.String(), fieldMap)
@@ -100,5 +116,5 @@ func privilegedPrinter(sectionName string, fieldMap map[string][]string) ([]stri
 	if r.Privileged, err = strconv.ParseBool(privileged); err != nil {
 		return nil, err
 	}
-	return executeTemplate(msgTemplate, r)
+	return executeTemplate(privilegedTemplate, r)
 }

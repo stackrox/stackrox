@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"github.com/stackrox/rox/generated/storage"
@@ -13,7 +13,7 @@ type ContextQueryFields map[storage.LifecycleStage]set.FrozenStringSet
 // Context Fields to be added to queries
 var (
 	ImageContextFields = newContextFields(
-		[]string{},
+		nil,
 		[]string{augmentedobjs.ContainerNameCustomTag})
 	VulnContextFields = newContextFields(
 		[]string{search.CVE.String(), search.CVSS.String(), augmentedobjs.ComponentAndVersionCustomTag},

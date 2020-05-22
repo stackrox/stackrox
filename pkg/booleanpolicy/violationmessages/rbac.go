@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"fmt"
@@ -17,8 +17,11 @@ var (
 		"CLUSTER_ADMIN":         "cluster admin access"}
 )
 
-func rbacPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := "Service account permission level with %s"
+const (
+	rbacTemplate = `Service account permission level with %s`
+)
+
+func rbacPrinter(fieldMap map[string][]string) ([]string, error) {
 	permissionLevel, err := getSingleValueFromFieldMap(search.ServiceAccountPermissionLevel.String(), fieldMap)
 	if err != nil || permissionLevel == "" {
 		return nil, errors.New("missing permission level")
@@ -27,5 +30,5 @@ func rbacPrinter(sectionName string, fieldMap map[string][]string) ([]string, er
 	if !ok {
 		return nil, errors.New("unexpected permission level")
 	}
-	return []string{fmt.Sprintf(msgTemplate, permissionDesc)}, nil
+	return []string{fmt.Sprintf(rbacTemplate, permissionDesc)}, nil
 }

@@ -1,4 +1,4 @@
-package violations
+package violationmessages
 
 import (
 	"fmt"
@@ -36,8 +36,11 @@ func getResourceNameAndKVSentence(baseResourceName string, keyValues []string) (
 	return resourceName, stringSliceToSortedSentence(keyValueMatches)
 }
 
-func mapPrinter(sectionName string, fieldMap map[string][]string) ([]string, error) {
-	msgTemplate := `{{.Object}} includes {{.Resource}}{{if .KVs}} {{.KVs}}{{end}}`
+const (
+	mapTemplate = `{{.Object}} includes {{.Resource}}{{if .KVs}} {{.KVs}}{{end}}`
+)
+
+func mapPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
 		Object   string
 		Resource string
@@ -59,7 +62,7 @@ func mapPrinter(sectionName string, fieldMap map[string][]string) ([]string, err
 
 	messages := make([]string, 0, len(r))
 	for _, values := range r {
-		msg, err := executeTemplate(msgTemplate, values)
+		msg, err := executeTemplate(mapTemplate, values)
 		if err != nil {
 			return nil, err
 		}

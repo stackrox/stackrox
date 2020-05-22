@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -123,7 +124,7 @@ func convertImageScanAge(fields *storage.PolicyFields) []*storage.PolicyGroup {
 
 	return []*storage.PolicyGroup{
 		{
-			FieldName: ImageScanAge,
+			FieldName: fieldnames.ImageScanAge,
 			Values:    getPolicyValues(fields.GetScanAgeDays()),
 		},
 	}
@@ -136,7 +137,7 @@ func convertNoScanExists(fields *storage.PolicyFields) []*storage.PolicyGroup {
 
 	return []*storage.PolicyGroup{
 		{
-			FieldName: UnscannedImage,
+			FieldName: fieldnames.UnscannedImage,
 			Values:    getPolicyValues(fields.GetNoScanExists()),
 		},
 	}
@@ -150,14 +151,14 @@ func convertEnv(fields *storage.PolicyFields) []*storage.PolicyGroup {
 
 	return []*storage.PolicyGroup{
 		{
-			FieldName: EnvironmentVariable,
+			FieldName: fieldnames.EnvironmentVariable,
 			Values:    getPolicyValues(fmt.Sprintf("%s=%s=%s", p.GetEnvVarSource(), p.GetKey(), p.GetValue())),
 		},
 	}
 }
 
 func convertRequiredLabel(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	if p := convertKeyValuePolicy(fields.GetRequiredLabel(), RequiredLabel); p != nil {
+	if p := convertKeyValuePolicy(fields.GetRequiredLabel(), fieldnames.RequiredLabel); p != nil {
 		return []*storage.PolicyGroup{p}
 	}
 
@@ -165,7 +166,7 @@ func convertRequiredLabel(fields *storage.PolicyFields) []*storage.PolicyGroup {
 }
 
 func convertRequiredAnnotation(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	if p := convertKeyValuePolicy(fields.GetRequiredAnnotation(), RequiredAnnotation); p != nil {
+	if p := convertKeyValuePolicy(fields.GetRequiredAnnotation(), fieldnames.RequiredAnnotation); p != nil {
 		return []*storage.PolicyGroup{p}
 	}
 
@@ -173,7 +174,7 @@ func convertRequiredAnnotation(fields *storage.PolicyFields) []*storage.PolicyGr
 }
 
 func convertDisallowedAnnotation(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	if p := convertKeyValuePolicy(fields.GetDisallowedAnnotation(), DisallowedAnnotation); p != nil {
+	if p := convertKeyValuePolicy(fields.GetDisallowedAnnotation(), fieldnames.DisallowedAnnotation); p != nil {
 		return []*storage.PolicyGroup{p}
 	}
 
@@ -181,7 +182,7 @@ func convertDisallowedAnnotation(fields *storage.PolicyFields) []*storage.Policy
 }
 
 func convertRequiredImageLabel(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	if p := convertKeyValuePolicy(fields.GetRequiredImageLabel(), RequiredImageLabel); p != nil {
+	if p := convertKeyValuePolicy(fields.GetRequiredImageLabel(), fieldnames.RequiredImageLabel); p != nil {
 		return []*storage.PolicyGroup{p}
 	}
 
@@ -189,7 +190,7 @@ func convertRequiredImageLabel(fields *storage.PolicyFields) []*storage.PolicyGr
 }
 
 func convertDisallowedImageLabel(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	if p := convertKeyValuePolicy(fields.GetDisallowedImageLabel(), DisallowedImageLabel); p != nil {
+	if p := convertKeyValuePolicy(fields.GetDisallowedImageLabel(), fieldnames.DisallowedImageLabel); p != nil {
 		return []*storage.PolicyGroup{p}
 	}
 
@@ -202,7 +203,7 @@ func convertPrivileged(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: Privileged,
+		FieldName: fieldnames.Privileged,
 		Values:    getPolicyValues(fields.GetPrivileged()),
 	},
 	}
@@ -214,7 +215,7 @@ func convertWhitelistEnabled(fields *storage.PolicyFields) []*storage.PolicyGrou
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: WhitelistsEnabled,
+		FieldName: fieldnames.WhitelistsEnabled,
 		Values:    getPolicyValues(fields.GetWhitelistEnabled()),
 	}}
 }
@@ -226,7 +227,7 @@ func convertFixedBy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: FixedBy,
+		FieldName: fieldnames.FixedBy,
 		Values:    getPolicyValues(p),
 	}}
 }
@@ -237,7 +238,7 @@ func convertReadOnlyRootFs(fields *storage.PolicyFields) []*storage.PolicyGroup 
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: ReadOnlyRootFS,
+		FieldName: fieldnames.ReadOnlyRootFS,
 		Values:    getPolicyValues(fields.GetReadOnlyRootFs()),
 	}}
 }
@@ -281,7 +282,7 @@ func convertImageNamePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup
 	var res []*storage.PolicyGroup
 	if p.GetRegistry() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ImageRegistry,
+			FieldName: fieldnames.ImageRegistry,
 			Values:    getPolicyValues(p.GetRegistry()),
 		})
 	}
@@ -289,14 +290,14 @@ func convertImageNamePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup
 	if p.GetRemote() != "" {
 		actualValue := fmt.Sprintf("%s.*%s.*", search.RegexPrefix, p.GetRemote())
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ImageRemote,
+			FieldName: fieldnames.ImageRemote,
 			Values:    getPolicyValues(actualValue),
 		})
 	}
 
 	if p.GetTag() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ImageTag,
+			FieldName: fieldnames.ImageTag,
 			Values:    getPolicyValues(p.GetTag()),
 		})
 	}
@@ -310,7 +311,7 @@ func convertImageAgeDays(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: ImageAge,
+		FieldName: fieldnames.ImageAge,
 		Values:    getPolicyValues(fields.GetImageAgeDays()),
 	}}
 }
@@ -322,7 +323,7 @@ func convertDockerFileLineRule(fields *storage.PolicyFields) []*storage.PolicyGr
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: DockerfileLine,
+		FieldName: fieldnames.DockerfileLine,
 		Values:    getPolicyValues(fmt.Sprintf("%s=%s", lineRule.GetInstruction(), lineRule.GetValue())),
 	}}
 }
@@ -333,7 +334,7 @@ func convertCvss(fields *storage.PolicyFields) []*storage.PolicyGroup {
 		return nil
 	}
 
-	return []*storage.PolicyGroup{convertNumericalPolicy(p, CVSS)}
+	return []*storage.PolicyGroup{convertNumericalPolicy(p, fieldnames.CVSS)}
 }
 
 func convertCve(fields *storage.PolicyFields) []*storage.PolicyGroup {
@@ -343,7 +344,7 @@ func convertCve(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: CVE,
+		FieldName: fieldnames.CVE,
 		Values:    getPolicyValues(p),
 	}}
 }
@@ -388,7 +389,7 @@ func convertComponent(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: ImageComponent,
+		FieldName: fieldnames.ImageComponent,
 		Values: []*storage.PolicyValue{
 			{
 				Value: fmt.Sprintf("%s=%s", p.GetName(), p.GetVersion()),
@@ -421,28 +422,28 @@ func convertVolumePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	var res []*storage.PolicyGroup
 	if p.GetName() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: VolumeName,
+			FieldName: fieldnames.VolumeName,
 			Values:    getPolicyValues(p.GetName()),
 		})
 	}
 
 	if p.GetType() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: VolumeType,
+			FieldName: fieldnames.VolumeType,
 			Values:    getPolicyValues(p.GetType()),
 		})
 	}
 
 	if p.GetDestination() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: VolumeDestination,
+			FieldName: fieldnames.VolumeDestination,
 			Values:    getPolicyValues(p.GetDestination()),
 		})
 	}
 
 	if p.GetSource() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: VolumeSource,
+			FieldName: fieldnames.VolumeSource,
 			Values:    getPolicyValues(p.GetSource()),
 		})
 	}
@@ -450,7 +451,7 @@ func convertVolumePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	ro := p.GetSetReadOnly()
 	if ro != nil {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: WritableVolume,
+			FieldName: fieldnames.WritableVolume,
 			Values:    getPolicyValues(!p.GetReadOnly()),
 		})
 	}
@@ -467,14 +468,14 @@ func convertPortPolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	var res []*storage.PolicyGroup
 	if p.GetPort() != 0 {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: Port,
+			FieldName: fieldnames.Port,
 			Values:    getPolicyValues(int64(p.GetPort())),
 		})
 	}
 
 	if p.GetProtocol() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: Protocol,
+			FieldName: fieldnames.Protocol,
 			Values:    getPolicyValues(p.GetProtocol()),
 		})
 	}
@@ -491,28 +492,28 @@ func convertProcessPolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	var res []*storage.PolicyGroup
 	if p.GetName() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ProcessName,
+			FieldName: fieldnames.ProcessName,
 			Values:    getPolicyValues(p.GetName()),
 		})
 	}
 
 	if p.GetAncestor() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ProcessAncestor,
+			FieldName: fieldnames.ProcessAncestor,
 			Values:    getPolicyValues(p.GetAncestor()),
 		})
 	}
 
 	if p.GetArgs() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ProcessArguments,
+			FieldName: fieldnames.ProcessArguments,
 			Values:    getPolicyValues(p.GetArgs()),
 		})
 	}
 
 	if p.GetUid() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: ProcessUID,
+			FieldName: fieldnames.ProcessUID,
 			Values:    getPolicyValues(p.GetUid()),
 		})
 	}
@@ -527,7 +528,7 @@ func convertHostMountPolicy(fields *storage.PolicyFields) []*storage.PolicyGroup
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: WritableHostMount,
+		FieldName: fieldnames.WritableHostMount,
 		Values:    getPolicyValues(!p.GetReadOnly()),
 	},
 	}
@@ -540,7 +541,7 @@ func convertDropCapabilities(fields *storage.PolicyFields) []*storage.PolicyGrou
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName:       DropCaps,
+		FieldName:       fieldnames.DropCaps,
 		BooleanOperator: storage.BooleanOperator_OR,
 		Values:          getStringListPolicyValues(dropCaps),
 	}}
@@ -553,7 +554,7 @@ func convertAddCapabilities(fields *storage.PolicyFields) []*storage.PolicyGroup
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName:       AddCaps,
+		FieldName:       fieldnames.AddCaps,
 		BooleanOperator: storage.BooleanOperator_OR,
 		Values:          getStringListPolicyValues(addCaps),
 	}}
@@ -567,16 +568,16 @@ func convertContainerResourcePolicy(fields *storage.PolicyFields) []*storage.Pol
 
 	var res []*storage.PolicyGroup
 	if resPolicy.GetCpuResourceLimit() != nil {
-		res = append(res, convertNumericalPolicy(resPolicy.GetCpuResourceLimit(), ContainerCPULimit))
+		res = append(res, convertNumericalPolicy(resPolicy.GetCpuResourceLimit(), fieldnames.ContainerCPULimit))
 	}
 	if resPolicy.GetCpuResourceRequest() != nil {
-		res = append(res, convertNumericalPolicy(resPolicy.GetCpuResourceRequest(), ContainerCPURequest))
+		res = append(res, convertNumericalPolicy(resPolicy.GetCpuResourceRequest(), fieldnames.ContainerCPURequest))
 	}
 	if resPolicy.GetMemoryResourceLimit() != nil {
-		res = append(res, convertNumericalPolicy(resPolicy.GetMemoryResourceLimit(), ContainerMemLimit))
+		res = append(res, convertNumericalPolicy(resPolicy.GetMemoryResourceLimit(), fieldnames.ContainerMemLimit))
 	}
 	if resPolicy.GetMemoryResourceRequest() != nil {
-		res = append(res, convertNumericalPolicy(resPolicy.GetMemoryResourceRequest(), ContainerMemRequest))
+		res = append(res, convertNumericalPolicy(resPolicy.GetMemoryResourceRequest(), fieldnames.ContainerMemRequest))
 	}
 	return res
 }
@@ -594,7 +595,7 @@ func convertPermissionPolicy(fields *storage.PolicyFields) []*storage.PolicyGrou
 
 	return []*storage.PolicyGroup{
 		{
-			FieldName: MinimumRBACPermissions,
+			FieldName: fieldnames.MinimumRBACPermissions,
 			Values:    getPolicyValues(permissionLevel),
 		},
 	}
@@ -637,7 +638,7 @@ func convertExposureLevelPolicy(fields *storage.PolicyFields) []*storage.PolicyG
 
 	return []*storage.PolicyGroup{
 		{
-			FieldName: PortExposure,
+			FieldName: fieldnames.PortExposure,
 			Values:    getStringListPolicyValues(levelStrings),
 		},
 	}

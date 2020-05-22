@@ -12,6 +12,7 @@ import (
 	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -153,7 +154,6 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 
 type testCase struct {
 	policyName                string
-	skip                      bool
 	expectedViolations        map[string][]*storage.Alert_Violation
 	expectedProcessViolations map[string][]*storage.ProcessIndicator
 
@@ -955,11 +955,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	for _, c := range deploymentTestCases {
 		p := suite.MustGetPolicy(c.policyName)
-		// Skip unsupported tests, but ensure we don't continue to do this by the time we enable
-		// the flag.
-		if c.skip && !features.BooleanPolicyLogic.Enabled() {
-			continue
-		}
 		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
 			if len(c.shouldNotMatch) == 0 {
 				assert.True(t, (c.expectedViolations != nil) != (c.expectedProcessViolations != nil), "Every test case must "+
@@ -1257,10 +1252,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 
 	for _, c := range imageTestCases {
-		// Temporarily skip unsupported tests.
-		if !features.BooleanPolicyLogic.Enabled() && c.skip {
-			continue
-		}
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			assert.Nil(t, c.expectedProcessViolations)
@@ -1476,7 +1467,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.expectedMatches), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(MinimumRBACPermissions, c.value, c.negate))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.MinimumRBACPermissions, c.value, c.negate))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1526,7 +1517,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1584,7 +1575,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(DropCaps, c.values, false, c.op))
+			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.DropCaps, c.values, false, c.op))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1629,9 +1620,9 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 	}
 
 	// Plain groups
-	aptGetGroup := policyGroupWithSingleKeyValue(ProcessName, "apt-get", false)
-	privilegedGroup := policyGroupWithSingleKeyValue(Privileged, "true", false)
-	whitelistGroup := policyGroupWithSingleKeyValue(WhitelistsEnabled, "true", false)
+	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
+	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.Privileged, "true", false)
+	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.WhitelistsEnabled, "true", false)
 
 	for _, testCase := range []struct {
 		groups []*storage.PolicyGroup
@@ -1657,7 +1648,10 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
 				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
 			},
-			expectedProcessMatches: map[string][]string{},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
+				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
+			},
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
 				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
@@ -1709,7 +1703,9 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
 			},
-			expectedProcessMatches: map[string][]string{},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
+			},
 		},
 		{
 			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, whitelistGroup},
