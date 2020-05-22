@@ -45,5 +45,6 @@ BooleanPolicySection.defaultProps = {
 export default reduxForm({
     form: 'policyCreationForm',
     enableReinitialize: true,
+    immutableProps: ['initialValues'],
     destroyOnUnmount: false,
 })(connect(null)(BooleanPolicySection));

@@ -18,17 +18,12 @@ function PolicyDetails({ initialValues, featureFlags }) {
         false
     );
 
-    const PolicyConfigurationSection = BPLenabled ? (
-        <BooleanPolicySection readOnly initialValues={initialValues} />
-    ) : (
-        <ConfigurationFields policy={initialValues} />
-    );
-
     return (
         <div className="w-full h-full">
             <div className="flex flex-col w-full overflow-auto pb-5">
                 <Fields policy={initialValues} />
-                {PolicyConfigurationSection}
+                {BPLenabled && <BooleanPolicySection readOnly initialValues={initialValues} />}
+                {!BPLenabled && <ConfigurationFields policy={initialValues} />}
             </div>
         </div>
     );
