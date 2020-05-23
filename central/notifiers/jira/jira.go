@@ -99,6 +99,32 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 		"nestedList": func(s string) string {
 			return fmt.Sprintf("** %v\r\n", s)
 		},
+		"section": func(s string) string {
+			return fmt.Sprintf("\r\n * %v", s)
+		},
+		"group": func(s string) string {
+			return fmt.Sprintf("\r\n ** %s", s)
+		},
+		"valuePrinter": func(values []*storage.PolicyValue, op storage.BooleanOperator, negated bool) string {
+			var opString string
+			if op == storage.BooleanOperator_OR {
+				opString = " OR "
+			} else {
+				opString = " AND "
+			}
+
+			var valueStrings []string
+			for _, value := range values {
+				valueStrings = append(valueStrings, value.GetValue())
+			}
+
+			valuesString := strings.Join(valueStrings, opString)
+			if negated {
+				valuesString = fmt.Sprintf("NOT (%s)", valuesString)
+			}
+
+			return valuesString
+		},
 	}
 	alertLink := notifiers.AlertLink(j.notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)

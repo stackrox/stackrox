@@ -26,6 +26,12 @@ func TestFormatPolicy(t *testing.T) {
 		"nestedList": func(s string) string {
 			return fmt.Sprintf("\t\t - %v\r\n", s)
 		},
+		"section": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t%v\r\n", s)
+		},
+		"group": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t\t- %v", s)
+		},
 	}
 	alertLink := AlertLink("https://localhost:8080", "alert-id")
 	_, err := FormatPolicy(fixtures.GetAlert(), alertLink, funcMap)

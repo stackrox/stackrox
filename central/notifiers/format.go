@@ -8,8 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type policyFormatStruct struct {
@@ -22,6 +24,39 @@ type policyFormatStruct struct {
 	Severity  string
 	Time      string
 }
+
+const bplPolicyFormat = `
+{{stringify "Alert ID:" .Id | line}}
+{{stringify "Alert URL:" .AlertLink | line}}
+{{stringify "Time (UTC):" .Time | line}}
+{{stringify "Severity:" .Severity | line}}
+{{header "Violations:"}}
+	{{range .Violations}}{{list .Message}}{{end}}
+{{header "Policy Definition:"}}
+	{{"Description:" | subheader}}
+	{{.Policy.Description | list}}
+	{{"Rationale:" | subheader}}
+	{{.Policy.Rationale | list}}
+	{{"Remediation:" | subheader}}
+	{{.Policy.Remediation | list}}
+
+	{{ subheader "Policy Criteria:"}}
+	{{range .Policy.PolicySections}}
+		{{ stringify "Section:" .SectionName | section}}
+		{{range .PolicyGroups}}
+			{{group .FieldName}}{{": "}}{{valuePrinter .Values .BooleanOperator .Negate}}
+		{{end}}
+	{{end}}
+
+	{{if .Deployment}}{{line ""}}{{subheader "Deployment:"}}
+		{{stringify "ID:" .Deployment.Id | list}}
+		{{stringify "Name:" .Deployment.Name | list}}
+		{{stringify "Cluster:" .Deployment.ClusterName | list}}
+		{{stringify "ClusterId:" .Deployment.ClusterId | list}}
+		{{if .Deployment.Namespace }}{{stringify "Namespace:" .Deployment.Namespace | list}}{{end}}
+		{{stringify "Images:"  .Images | list}}
+	{{end}}
+`
 
 const policyFormat = `
 {{stringify "Alert ID:" .Id | line}}
@@ -90,25 +125,30 @@ const policyFormat = `
 	{{end}}
 `
 
-var requiredFunctions = map[string]struct{}{
-	"header":     {},
-	"subheader":  {},
-	"line":       {},
-	"list":       {},
-	"nestedList": {},
-}
+var requiredFunctions = set.NewFrozenStringSet(
+	"header",
+	"subheader",
+	"line",
+	"list",
+	"nestedList",
+	"section",
+	"group",
+)
 
 // FormatPolicy takes in an alert, a link and funcMap that must define specific formatting functions
 func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
 	if funcMap == nil {
 		return "", errors.New("Function map passed to FormatPolicy cannot be nil")
 	}
-	for k := range requiredFunctions {
+	for _, k := range requiredFunctions.AsSlice() {
 		if _, ok := funcMap[k]; !ok {
 			return "", fmt.Errorf("FuncMap key '%v' must be defined", k)
 		}
 	}
 	funcMap["stringify"] = stringify
+	if _, ok := funcMap["valuePrinter"]; !ok {
+		funcMap["valuePrinter"] = valuePrinter
+	}
 	portPolicy := alert.GetPolicy().GetFields().GetPortPolicy()
 	portStr := fmt.Sprintf("%v/%v", portPolicy.GetPort(), portPolicy.GetProtocol())
 	data := policyFormatStruct{
@@ -121,7 +161,11 @@ func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncM
 		Time:      readable.ProtoTime(alert.Time),
 	}
 	// Remove all the formatting
-	f := strings.Replace(policyFormat, "\t", "", -1)
+	format := policyFormat
+	if features.BooleanPolicyLogic.Enabled() {
+		format = bplPolicyFormat
+	}
+	f := strings.Replace(format, "\t", "", -1)
 	f = strings.Replace(f, "\n", "", -1)
 
 	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
@@ -172,6 +216,29 @@ func stringify(inter ...interface{}) string {
 		result[i] = fmt.Sprintf("%v", in)
 	}
 	return strings.Join(result, " ")
+}
+
+func valuePrinter(values []*storage.PolicyValue, op storage.BooleanOperator, negated bool) string {
+	var opString string
+	if op == storage.BooleanOperator_OR {
+		opString = " OR "
+	} else {
+		opString = " AND "
+	}
+
+	var valueStrings []string
+	for _, value := range values {
+		valueStrings = append(valueStrings, value.GetValue())
+	}
+
+	valuesString := strings.Join(valueStrings, opString)
+	if negated {
+		valuesString = fmt.Sprintf("NOT (%s)", valuesString)
+	}
+
+	valuesString = valuesString + "\r\n"
+
+	return valuesString
 }
 
 // GetNotifiersCompatiblePolicySeverity converts the enum value to more meaningful policy severity string

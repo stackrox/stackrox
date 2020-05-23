@@ -198,6 +198,12 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 		"codeBlock": func(s string) string {
 			return fmt.Sprintf("\n %s \n", s)
 		},
+		"section": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t%s\r\n", s)
+		},
+		"group": func(s string) string {
+			return fmt.Sprintf("\r\n\t\t\t - %s", s)
+		},
 	}
 	alertLink := notifiers.AlertLink(e.notifier.UiEndpoint, alert.GetId())
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)

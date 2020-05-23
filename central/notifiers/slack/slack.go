@@ -19,6 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+const (
+	tabSpace      = "        "
+	dblTabSpace   = tabSpace + tabSpace
+	threeTabSpace = dblTabSpace + tabSpace
+)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -54,8 +60,6 @@ type attachmentField struct {
 }
 
 func (s *slack) getDescription(alert *storage.Alert) (string, error) {
-	tabSpace := "        "
-	dblTabSpace := tabSpace + tabSpace
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("\r\n*%v*\r\n", s)
@@ -71,6 +75,35 @@ func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 		},
 		"nestedList": func(s string) string {
 			return fmt.Sprintf("%v- %v\r\n", dblTabSpace, s)
+		},
+		"section": func(s string) string {
+			return fmt.Sprintf("\r\n%v*%v*\r\n", dblTabSpace, s)
+		},
+		"group": func(s string) string {
+			return fmt.Sprintf("\r\n%v*%v*", threeTabSpace, s)
+		},
+		"valuePrinter": func(values []*storage.PolicyValue, op storage.BooleanOperator, negated bool) string {
+			var opString string
+			if op == storage.BooleanOperator_OR {
+				opString = " OR "
+			} else {
+				opString = " AND "
+			}
+
+			var valueStrings []string
+			for _, value := range values {
+				codeString := fmt.Sprintf("`%s`", value.GetValue())
+				valueStrings = append(valueStrings, codeString)
+			}
+
+			valuesString := strings.Join(valueStrings, opString)
+			if negated {
+				valuesString = fmt.Sprintf("NOT (%s)", valuesString)
+			}
+
+			valuesString = valuesString + "\r\n"
+
+			return valuesString
 		},
 	}
 	alertLink := notifiers.AlertLink(s.Notifier.UiEndpoint, alert.GetId())

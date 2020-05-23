@@ -14,11 +14,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	and = "AND"
+	or  = "OR"
 )
 
 var (
@@ -104,12 +110,16 @@ func (t *teams) getPolicySection(alert *storage.Alert) (section, error) {
 
 	section := section{Title: "Policy Details", Facts: facts}
 
-	if policy.GetFields() != nil {
-		facts := t.getPolicyFieldsFacts(reflect.ValueOf(policy.GetFields()).Elem())
-		if len(facts) > 0 {
-			section.Facts = append(section.Facts, facts...)
+	var criteriaFacts []fact
+	if features.BooleanPolicyLogic.Enabled() {
+		criteriaFacts = t.getSectionFacts(policy.GetPolicySections())
+	} else {
+		if policy.GetFields() != nil {
+			criteriaFacts = t.getPolicyFieldsFacts(reflect.ValueOf(policy.GetFields()).Elem())
 		}
 	}
+
+	section.Facts = append(section.Facts, criteriaFacts...)
 
 	return section, nil
 }
@@ -187,6 +197,51 @@ func (t *teams) getPolicyFieldsFacts(policyFields reflect.Value) []fact {
 		facts = append(facts, fact{Name: fieldName, Value: text})
 	}
 	return facts
+}
+
+func (t *teams) getSectionFacts(policySections []*storage.PolicySection) []fact {
+	var facts []fact
+	for _, section := range policySections {
+		sectionName := "Section "
+		if section.GetSectionName() != "" {
+			sectionName = fmt.Sprintf("%s %q", sectionName, section.GetSectionName())
+		}
+
+		groupsString := fmt.Sprintf("%s\n__________", groupsToString(section.GetPolicyGroups()))
+
+		facts = append(facts, fact{
+			Name:  sectionName,
+			Value: groupsString,
+		})
+	}
+	return facts
+}
+
+func groupsToString(groups []*storage.PolicyGroup) string {
+	var groupStrings []string
+	for _, group := range groups {
+		var op string
+		if group.GetBooleanOperator() == storage.BooleanOperator_OR {
+			op = or
+		} else {
+			op = and
+		}
+		valString := valueListToString(group.GetValues(), op)
+		if group.GetNegate() {
+			valString = fmt.Sprintf("NOT (%s)", valString)
+		}
+		groupStrings = append(groupStrings, fmt.Sprintf("\n- %s: %s", group.GetFieldName(), valString))
+	}
+	return strings.Join(groupStrings, "")
+}
+
+func valueListToString(values []*storage.PolicyValue, opString string) string {
+	var valueList []string
+	for _, value := range values {
+		valueList = append(valueList, value.GetValue())
+	}
+	joinWithWhitespace := fmt.Sprintf(" %s ", opString)
+	return strings.Join(valueList, joinWithWhitespace)
 }
 
 func translateSlice(level int, original reflect.Value) string {
