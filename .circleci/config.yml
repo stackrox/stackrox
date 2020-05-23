@@ -3888,6 +3888,8 @@ workflows:
           filters:
             branches:
               only: master
+            tags:
+              only: /.*-nightly-.*/
 
   update_dev_license:
     triggers:
