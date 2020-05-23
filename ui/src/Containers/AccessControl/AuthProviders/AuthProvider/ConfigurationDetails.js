@@ -67,11 +67,21 @@ const UserPkiDetails = ({ authProvider: { name, config } }) => (
     </>
 );
 
+const IapDetails = ({ authProvider: { name, config } }) => (
+    <>
+        <CommonDetails name={name} />
+        <Labeled label="Audience">
+            <pre className="font-500 whitespace-pre-line">{config.audience}</pre>
+        </Labeled>
+    </>
+);
+
 const detailsComponents = {
     oidc: OidcDetails,
     auth0: Auth0Details,
     saml: SamlDetails,
     userpki: UserPkiDetails,
+    iap: IapDetails,
 };
 
 const ConfigurationDetails = ({ authProvider }) => {

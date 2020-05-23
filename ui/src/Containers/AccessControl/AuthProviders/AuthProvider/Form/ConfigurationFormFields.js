@@ -300,11 +300,25 @@ const UserPkiFormFields = ({ disabled }) => (
     </>
 );
 
+const IapFormFields = ({ disabled }) => (
+    <>
+        <CommonFields />
+        <Labeled label={<FormFieldLabel text="Audience" required />}>
+            <ReduxTextField
+                name="config.audience"
+                placeholder={'/projects/<PROJECT_NUMBER>/global/backendServices/<SERVICE_ID>'}
+                disabled={disabled}
+            />
+        </Labeled>
+    </>
+);
+
 const formFieldsComponents = {
     oidc: OidcFormFields,
     auth0: Auth0FormFields,
     saml: SamlFormFields,
     userpki: UserPkiFormFields,
+    iap: IapFormFields,
 };
 
 const ConfigurationFormFields = ({ providerType, disabled, configValues, change }) => {

@@ -35,13 +35,19 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+{{if eq .Values.exposure.type "NodePort"}}
+  annotations:
+    cloud.google.com/app-protocols: '{"api": "HTTPS"}'
+    service.alpha.kubernetes.io/app-protocols: '{"api": "HTTPS"}'
+{{- end}}
   name: central-loadbalancer
   namespace: {{.Values.namespace}}
   labels:
     app.kubernetes.io/name: stackrox
 spec:
   ports:
-  - port: {{.Values.exposure.port}}
+  - name: api
+    port: {{.Values.exposure.port}}
     targetPort: api
   selector:
     app: central

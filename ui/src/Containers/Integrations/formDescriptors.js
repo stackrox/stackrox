@@ -144,7 +144,23 @@ const formDescriptors = {
                 immutable: true,
             },
         ],
+        iap: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: '',
+            },
+            {
+                label: 'Audience',
+                jsonpath: 'config.audience',
+                type: 'textarea',
+                placeholder: '/projects/<PROJECT_NUMBER>/global/backendServices/<SERVICE_ID>',
+                immutable: true,
+            },
+        ],
     },
+
     notifiers: {
         generic: [
             {

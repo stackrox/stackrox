@@ -29,6 +29,10 @@ export const availableAuthProviders = [
         label: 'User Certificates',
         value: 'userpki',
     },
+    {
+        label: 'Google IAP',
+        value: 'iap',
+    },
 ];
 
 export function getAuthProviderLabelByValue(value) {

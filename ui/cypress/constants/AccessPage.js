@@ -33,6 +33,7 @@ export const selectors = {
         },
         addProviderSelect: 'select:contains("Add an Auth Provider")',
         newAuth0Option: 'auth0',
+        newIAPOption: 'iap',
         newOidcOption: 'OpenID Connect',
         authProviderPanel: '[data-testid="auth-provider-panel"]',
         authProviderPanelHeader: '[data-testid="auth-provider-panel-header"]',

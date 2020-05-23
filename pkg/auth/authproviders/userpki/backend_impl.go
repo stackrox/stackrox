@@ -98,6 +98,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 		log.Debugf("Invalid REST path %q", restPath)
 		return nil, httputil.NewError(http.StatusNotFound, "Not Found")
 	}
+
 	if r.Method != http.MethodGet {
 		return nil, httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
 	}

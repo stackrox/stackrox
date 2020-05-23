@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	backendCreationInterval = 10 * time.Second
-
+	backendCreationInterval     = 10 * time.Second
 	asyncBackendCreationTimeout = 30 * time.Second
 )
 

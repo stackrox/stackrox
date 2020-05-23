@@ -106,6 +106,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/iap"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	authProviderUserpki "github.com/stackrox/rox/pkg/auth/authproviders/userpki"
@@ -147,6 +148,7 @@ var (
 		"auth0":                      oidc.NewFactory, // legacy
 		saml.TypeName:                saml.NewFactory,
 		authProviderUserpki.TypeName: authProviderUserpki.NewFactoryFactory(tlsconfig.ManagerInstance()),
+		iap.TypeName:                 iap.NewFactory,
 	}
 
 	imageIntegrationContext = sac.WithGlobalAccessScopeChecker(context.Background(),

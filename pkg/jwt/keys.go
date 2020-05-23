@@ -70,7 +70,8 @@ func (j *JWKSGetter) fetch() {
 		return
 	}
 	for _, jwk := range jwks.Keys {
-		j.known[jwk.KeyID] = &jwk
+		jwkCopy := jwk
+		j.known[jwkCopy.KeyID] = &jwkCopy
 	}
 }
 

@@ -15,6 +15,10 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'config.idp_issuer', Header: 'Issuer' },
         ],
+        iap: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'config.audience', Header: 'Audience' },
+        ],
     },
     notifiers: {
         slack: [
