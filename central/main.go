@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -205,6 +206,9 @@ func main() {
 		debughandler.MustStartServerAsync("")
 
 		devmode.StartBinaryWatchdog("central")
+
+		runtime.SetBlockProfileRate(1)
+		runtime.SetMutexProfileFraction(1)
 	}
 
 	log.Infof("Running StackRox Version: %s", pkgVersion.GetMainVersion())
