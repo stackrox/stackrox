@@ -107,3 +107,36 @@ function compareCounts(a, b) {
 
     return 0;
 }
+
+/**
+ * convert all policy values to strings, to match BPL API requirements
+ * *
+ * @param   {object}  policy  a Policy Wizard-form policy
+ *
+ * @return  {object}          that policy, with all values transformed to
+ */
+export function transformPolicyCriteriaValuesToStrings(policy) {
+    const newPolicySections = !policy?.policySections
+        ? []
+        : policy.policySections.map((section) => {
+              const newPolicyGroups = !section?.policyGroups
+                  ? []
+                  : section?.policyGroups.map((group) => {
+                        const newValues = !group.values
+                            ? null
+                            : group.values.map((valueObj) => {
+                                  const currentVal = valueObj.value;
+                                  const newVal =
+                                      typeof currentVal !== 'string'
+                                          ? currentVal.toString()
+                                          : currentVal;
+                                  return { ...valueObj, value: newVal };
+                              });
+                        return newValues ? { ...group, values: newValues } : group;
+                    });
+              return { ...section, policyGroups: newPolicyGroups };
+          });
+    const transformedPolicy = { ...policy, policySections: newPolicySections };
+
+    return transformedPolicy;
+}

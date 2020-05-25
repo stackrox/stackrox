@@ -3,6 +3,7 @@ import queryString from 'qs';
 import FileSaver from 'file-saver';
 
 import { addBrandedTimestampToString } from 'utils/dateUtils';
+import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 import axios from './instance';
 import { policy as policySchema } from './schemas';
 
@@ -187,7 +188,9 @@ export function enableDisableNotificationsForPolicies(policyIds, notifierIds, di
  */
 export function savePolicy(policy) {
     if (!policy.id) throw new Error('Policy entity must have an id to be saved');
-    return axios.put(`${baseUrl}/${policy.id}`, policy);
+    const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
+
+    return axios.put(`${baseUrl}/${policy.id}`, transformedPolicy);
 }
 
 /**
@@ -197,7 +200,9 @@ export function savePolicy(policy) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function createPolicy(policy) {
-    return axios.post(`${baseUrl}`, policy);
+    const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
+
+    return axios.post(`${baseUrl}`, transformedPolicy);
 }
 
 /**
@@ -207,7 +212,9 @@ export function createPolicy(policy) {
  * @returns {Promise<AxiosResponse, Error>}
  */
 export function startDryRun(policy) {
-    return axios.post(`${baseUrl}/dryrunjob`, policy);
+    const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
+
+    return axios.post(`${baseUrl}/dryrunjob`, transformedPolicy);
 }
 
 /**

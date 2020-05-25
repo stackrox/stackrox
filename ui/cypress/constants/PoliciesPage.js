@@ -109,6 +109,12 @@ export const selectors = {
             editBtn: '[data-testid="section-header-edit-btn"]',
             confirmBtn: '[data-testid="section-header-confirm-btn"]',
         },
+        form: {
+            selectArrow: '[data-testid="policy-field-value"] .react-select__dropdown-indicator',
+            selectOption: '[data-testid="policy-field-value"] .react-select__option',
+            numericInput: '[data-testid="policy-field-value"]  .react-numeric-input input',
+            textInput: '[data-testid="policy-field-value"] > input',
+        },
         removePolicySectionBtn: '[data-testid="remove-policy-section-btn"]',
         policyKey: '[data-testid="draggable-policy-key"]',
         policySectionDropTarget: '[data-testid="policy-section-drop-target"]',

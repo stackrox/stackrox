@@ -17,7 +17,7 @@ const emptyPolicySection = {
 function getNewPolicySection(length) {
     return {
         ...emptyPolicySection,
-        sectionName: `Policy Section ${length}`,
+        sectionName: `Policy Section ${length + 1}`,
     };
 }
 
