@@ -85,7 +85,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                         data-testid="page-number-input"
                         aria-label="Page Number"
                     />
-                    of {totalPages}
+                    of {totalPages === 0 ? 1 : totalPages}
                 </div>
                 <button
                     type="button"
@@ -100,7 +100,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                     type="button"
                     className="flex items-center rounded-full text-base-600 hover:bg-primary-200 hover:text-primary-600 p-1"
                     onClick={nextPage}
-                    disabled={page === totalPages - 1 || totalPages === 0}
+                    disabled={page >= totalPages - 1}
                     data-testid="next-page-button"
                 >
                     <Icon.ChevronRight className="h-6 w-6" />
