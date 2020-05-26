@@ -42,9 +42,13 @@ func newBackend(audience string, loginURL string) (authproviders.Backend, error)
 	}, nil
 }
 
+type googleClaims struct {
+	AccessLevels []string `json:"access_levels,omitempty"`
+}
 type extraClaims struct {
-	Email string `json:"email,omitempty"`
-	Hd    string `json:"hd,omitempty"`
+	Email  string       `json:"email,omitempty"`
+	Hd     string       `json:"hd,omitempty"`
+	Google googleClaims `json:"google,omitempty"`
 }
 
 type backendImpl struct {
@@ -79,7 +83,6 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 	if token == "" {
 		return nil, errors.New("invalid request, expected assertion not found")
 	}
-
 	return p.getAuthResponse(token)
 }
 
@@ -141,9 +144,10 @@ func (p *backendImpl) getAuthResponse(token string) (*authproviders.AuthResponse
 			FullName: extraClaims.Email,
 			Email:    extraClaims.Email,
 			Attributes: map[string][]string{
-				"userid": {claims.Subject},
-				"email":  {extraClaims.Email},
-				"hd":     {extraClaims.Hd},
+				"userid":        {claims.Subject},
+				"email":         {extraClaims.Email},
+				"hd":            {extraClaims.Hd},
+				"access_levels": extraClaims.Google.AccessLevels,
 			},
 		},
 		Expiration:   claims.Expiry.Time(),
