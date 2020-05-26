@@ -5,6 +5,8 @@ import (
 
 	"github.com/dgraph-io/badger"
 	ptypes "github.com/gogo/protobuf/types"
+	clusterDackBox "github.com/stackrox/rox/central/cluster/dackbox"
+	namespaceDackBox "github.com/stackrox/rox/central/namespace/dackbox"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -60,9 +62,11 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store *StoreImpl, de
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(&storage.ListDeployment{
-			Id:      d.GetId(),
-			Name:    d.GetName(),
-			Created: d.GetCreated(),
+			Id:        d.GetId(),
+			Name:      d.GetName(),
+			ClusterId: d.GetClusterId(),
+			Namespace: d.GetNamespace(),
+			Created:   d.GetCreated(),
 		}, gotList)
 	}
 
@@ -73,40 +77,86 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store *StoreImpl, de
 }
 
 func (suite *DeploymentStoreTestSuite) TestDeployments() {
-	deployments := []*storage.Deployment{
+	deployments1 := []*storage.Deployment{
 		{
-			Id:      "fooID",
-			Name:    "foo",
-			Type:    "Replicated",
-			Created: ptypes.TimestampNow(),
+			Id:          "fooID",
+			Name:        "foo",
+			ClusterId:   "c1",
+			NamespaceId: "n1",
+			Namespace:   "n1",
+			Type:        "Replicated",
+			Created:     ptypes.TimestampNow(),
 		},
 		{
-			Id:      "barID",
-			Name:    "bar",
-			Type:    "Global",
-			Created: ptypes.TimestampNow(),
+			Id:          "barID",
+			Name:        "bar",
+			ClusterId:   "c1",
+			NamespaceId: "n2",
+			Namespace:   "n2",
+			Type:        "Global",
+			Created:     ptypes.TimestampNow(),
 		},
 	}
 
 	// Test Add
-	for _, d := range deployments {
+	for _, d := range deployments1 {
 		suite.NoError(suite.store.UpsertDeployment(d))
 	}
 
-	suite.verifyDeploymentsAre(suite.store, deployments...)
+	suite.verifyDeploymentsAre(suite.store, deployments1...)
 
 	// This verifies that things work as expected on restarts.
 	newStore, err := New(suite.dacky, concurrency.NewKeyFence())
 	suite.NoError(err)
 
-	suite.verifyDeploymentsAre(newStore, deployments...)
+	suite.verifyDeploymentsAre(newStore, deployments1...)
 
-	// Test Remove
-	for _, d := range deployments {
-		suite.NoError(suite.store.RemoveDeployment(d.GetId()))
+	deployments2 := []*storage.Deployment{
+		{
+			Id:          "fooID",
+			Name:        "foo",
+			ClusterId:   "c2",
+			NamespaceId: "n1",
+			Namespace:   "n1",
+			Type:        "Replicated",
+			Created:     ptypes.TimestampNow(),
+		},
+		{
+			Id:          "barID",
+			Name:        "bar",
+			ClusterId:   "c1",
+			NamespaceId: "n2",
+			Namespace:   "n2",
+			Type:        "Global",
+			Created:     ptypes.TimestampNow(),
+		},
 	}
 
+	for _, d := range deployments2 {
+		suite.NoError(suite.store.UpsertDeployment(d))
+	}
+
+	suite.verifyDeploymentsAre(newStore, deployments2...)
+
+	// Check that when the cluster is updated for the deployments, old cluster info is overwritten.
+	gView1 := suite.dacky.NewGraphView()
+	defer gView1.Discard()
+	suite.Equal([][]byte{clusterDackBox.BucketHandler.GetKey("c2")}, gView1.GetRefsTo(namespaceDackBox.BucketHandler.GetKey("n1")))
+	suite.Equal([][]byte{clusterDackBox.BucketHandler.GetKey("c1")}, gView1.GetRefsTo(namespaceDackBox.BucketHandler.GetKey("n2")))
+
+	// Test Remove
+	for _, d := range deployments2 {
+		suite.NoError(suite.store.RemoveDeployment(d.GetId()))
+	}
 	suite.verifyDeploymentsAre(suite.store)
+
+	// Verify that when all deployments are removed, the namespace and cluster mappings for those deployments are also removed.
+	gView2 := suite.dacky.NewGraphView()
+	defer gView2.Discard()
+	suite.Equal(0, gView2.CountRefsFrom(clusterDackBox.BucketHandler.GetKey("c1")))
+	suite.Equal(0, gView2.CountRefsFrom(clusterDackBox.BucketHandler.GetKey("c1")))
+	suite.Equal(0, gView2.CountRefsTo(namespaceDackBox.BucketHandler.GetKey("n1")))
+	suite.Equal(0, gView2.CountRefsTo(namespaceDackBox.BucketHandler.GetKey("n2")))
 
 	newStore, err = New(suite.dacky, concurrency.NewKeyFence())
 	suite.NoError(err)

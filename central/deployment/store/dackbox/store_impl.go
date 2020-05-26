@@ -206,7 +206,14 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 		txn := b.dacky.NewTransaction()
 		defer txn.Discard()
 
-		err := txn.Graph().AddRefs(clusterKey, namespaceKey)
+		// Clear cluster pointing to the namespace before setting the new one.
+		// This is to handle situations where a new cluster bundle is generated for an existing cluster, as the cluster
+		// ID will change, the the IDs for child objects will remain the same.
+		err := txn.Graph().DeleteRefsTo(namespaceKey)
+		if err != nil {
+			return err
+		}
+		err = txn.Graph().AddRefs(clusterKey, namespaceKey)
 		if err != nil {
 			return err
 		}
@@ -236,7 +243,7 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 func (b *StoreImpl) RemoveDeployment(id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
-	allKeys := b.collectDeploymentKeys(id)
+	clusterKey, namespaceKey, allKeys := b.collectDeploymentKeys(id)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(allKeys...), func() error {
 		txn := b.dacky.NewTransaction()
 		defer txn.Discard()
@@ -250,11 +257,27 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 			return err
 		}
 
+		// If the namespace has no more deployments, remove refs in both directions.
+		if namespaceKey != nil && len(deploymentDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(namespaceKey))) == 0 {
+			if err := txn.Graph().DeleteRefsFrom(namespaceKey); err != nil {
+				return err
+			}
+			if err := txn.Graph().DeleteRefsTo(namespaceKey); err != nil {
+				return err
+			}
+		}
+
+		// If the cluster has no more namespaces, remove its refs. (Clusters only have forward refs)
+		if clusterKey != nil && len(namespaceDackBox.BucketHandler.FilterKeys(txn.Graph().GetRefsFrom(clusterKey))) == 0 {
+			if err := txn.Graph().DeleteRefsFrom(clusterKey); err != nil {
+				return err
+			}
+		}
 		return txn.Commit()
 	})
 }
 
-func (b *StoreImpl) collectDeploymentKeys(id string) [][]byte {
+func (b *StoreImpl) collectDeploymentKeys(id string) ([]byte, []byte, [][]byte) {
 	graphView := b.dacky.NewGraphView()
 	defer graphView.Discard()
 
@@ -269,7 +292,7 @@ func (b *StoreImpl) collectDeploymentKeys(id string) [][]byte {
 
 	// Deployment should have a single namespace link up. If not, early exit.
 	if len(namespaceKeys) != 1 {
-		return allKeys
+		return nil, nil, allKeys
 	}
 	namespaceKey := namespaceKeys[0]
 
@@ -278,8 +301,12 @@ func (b *StoreImpl) collectDeploymentKeys(id string) [][]byte {
 
 	clusterKeys := clusterDackBox.BucketHandler.FilterKeys(graphView.GetRefsTo(namespaceKey))
 	allKeys = allKeys.Union(clusterKeys)
+	if len(clusterKeys) != 1 {
+		return nil, nil, allKeys
+	}
+	clusterKey := clusterKeys[0]
 
-	return allKeys
+	return clusterKey, namespaceKey, allKeys
 }
 
 func convertDeploymentToListDeployment(d *storage.Deployment) *storage.ListDeployment {
