@@ -339,7 +339,7 @@ func (resolver *PolicyViolationEventResolver) Timestamp() *graphql.Time {
 	return &graphql.Time{Time: resolver.timestamp}
 }
 
-func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v1.Query) ([]*PolicyViolationEventResolver, error) {
+func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v1.Query, predicateFn func(*storage.Alert) bool) ([]*PolicyViolationEventResolver, error) {
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -348,6 +348,15 @@ func (resolver *Resolver) getPolicyViolationEvents(ctx context.Context, query *v
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving alerts from search")
 	}
+
+	n := 0
+	for _, alert := range alerts {
+		if predicateFn(alert) {
+			alerts[n] = alert
+			n++
+		}
+	}
+	alerts = alerts[:n]
 
 	policyViolationEvents := make([]*PolicyViolationEventResolver, 0, len(alerts))
 	for _, alert := range alerts {

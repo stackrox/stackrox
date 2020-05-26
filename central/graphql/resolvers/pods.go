@@ -93,18 +93,23 @@ func (resolver *podResolver) ContainerCount() int32 {
 func (resolver *podResolver) policyViolationEvents(ctx context.Context) ([]*PolicyViolationEventResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Pods, "PolicyViolationEvents")
 
-	// We search by PodID (name) to filter out processes involving other pods.
-	// PodID is guaranteed to be unique within a deployment during the pod's
-	// lifetime and all process indicators should have this field.
-	// Not all process indicators will have PodUID, so we cannot filter based on that.
 	q := search.NewConjunctionQuery(
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, resolver.data.GetDeploymentId()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 		search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery(),
-		search.NewQueryBuilder().AddExactMatches(search.PodID, resolver.data.GetName()).ProtoQuery(),
 	)
 
-	return resolver.root.getPolicyViolationEvents(ctx, q)
+	predicateFn := func(alert *storage.Alert) bool {
+		for _, proc := range alert.GetProcessViolation().GetProcesses() {
+			// Filter by pod name because not all alerts may have PodUID (introduced in 42).
+			if proc.GetPodId() == resolver.data.GetName() {
+				return true
+			}
+		}
+		return false
+	}
+
+	return resolver.root.getPolicyViolationEvents(ctx, q, predicateFn)
 }
 
 // processActivityEvents returns all the process activities associated with this pod.
