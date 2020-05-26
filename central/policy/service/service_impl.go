@@ -315,14 +315,8 @@ func (s *serviceImpl) SubmitDryRunPolicyJob(ctx context.Context, request *storag
 		return nil, err
 	}
 
-	t := func(c concurrency.ErrorWaitable, res *backgroundtasks.ExecutionResult) error {
-		resp, err := s.predicateBasedDryRunPolicy(ctx, c, request)
-		if err != nil {
-			return err
-		}
-
-		res.Result = resp
-		return nil
+	t := func(c concurrency.ErrorWaitable) (interface{}, error) {
+		return s.predicateBasedDryRunPolicy(ctx, c, request)
 	}
 
 	metadata := map[string]interface{}{identityUIDKey: authn.IdentityFromContext(ctx).UID()}

@@ -11,13 +11,13 @@ import (
 //lint:file-ignore U1000 Unused functions are due to test skip.
 
 func panicTask(args ...interface{}) Task {
-	return func(ctx concurrency.ErrorWaitable, res *ExecutionResult) error {
+	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
 		panic(args)
 	}
 }
 
 func simpleTask(ds ...time.Duration) Task {
-	return func(ctx concurrency.ErrorWaitable, res *ExecutionResult) error {
+	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
 		if len(ds) == 0 {
 			time.Sleep(10 * time.Millisecond)
 		}
@@ -26,29 +26,26 @@ func simpleTask(ds ...time.Duration) Task {
 			time.Sleep(d)
 		}
 
-		return nil
+		return nil, nil
 	}
 }
 
 func addWithContext(nums ...int) Task {
-	return func(ctx concurrency.ErrorWaitable, res *ExecutionResult) error {
+	return func(ctx concurrency.ErrorWaitable) (interface{}, error) {
 		ch := make(chan int, 1)
 		idx := 0
 		sum := 0
 		for {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil, ctx.Err()
 
 			case n, ok := <-ch:
 				if !ok {
-					res.Result = sum
-					return nil
+					return sum, nil
 				}
 
 				sum += n
-				// Add intermediate result.
-				res.Result = sum
 			case <-time.After(2 * time.Millisecond):
 				if idx == len(nums) {
 					close(ch)
@@ -159,10 +156,9 @@ func TestBackgroundTasksManager(t *testing.T) {
 	testKey := "K"
 	testVal := "V"
 	meta[testKey] = testVal
-	c := func(ctx concurrency.ErrorWaitable, res *ExecutionResult) error {
+	c := func(ctx concurrency.ErrorWaitable) (interface{}, error) {
 		time.Sleep(4 * time.Millisecond)
-		res.Result = addFunc(testArgs...)
-		return nil
+		return addFunc(testArgs...), nil
 	}
 
 	id, err = m.AddTask(meta, c)
@@ -201,11 +197,11 @@ func TestTaskCancellation(t *testing.T) {
 	err = m.CancelTask(id)
 	assert.NilError(t, err)
 	time.Sleep(3 * time.Millisecond)
-	// Task should be cancelled, with intermediate results (depends on the fn).
+	// Task should be cancelled, with nil results.
 	for {
 		_, res, completed, err = m.GetTaskStatusAndMetadata(id)
 		if completed {
-			assert.Equal(t, res.(int) != addFunc(testArgs...), true)
+			assert.Equal(t, res, nil)
 			assert.ErrorContains(t, err, "context canceled")
 			break
 		}

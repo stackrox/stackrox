@@ -33,8 +33,7 @@ type taskWrapper struct {
 	cancel context.CancelFunc
 }
 
-func (t *taskWrapper) execute(ctx context.Context) (res *ExecutionResult, err error) {
-	res = &ExecutionResult{}
+func (t *taskWrapper) execute(ctx context.Context) (res interface{}, err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -46,7 +45,7 @@ func (t *taskWrapper) execute(ctx context.Context) (res *ExecutionResult, err er
 		}
 	}()
 
-	err = t.exec(ctx, res)
+	res, err = t.exec(ctx)
 	panicked = false
 	return
 }
@@ -167,7 +166,7 @@ func (m *managerImpl) startTaskExec(ctx context.Context, t *taskWrapper) {
 		m.completedTasksMutex.Lock()
 		defer m.completedTasksMutex.Unlock()
 		m.completedTasks[t.id] = time.Now()
-		t.result = res.Result
+		t.result = res
 		t.err = err
 	}(t)
 }

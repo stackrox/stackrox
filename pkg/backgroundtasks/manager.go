@@ -5,12 +5,7 @@ import (
 )
 
 // Task is the functional type through which this manager accepts tasks.
-type Task func(ctx concurrency.ErrorWaitable, result *ExecutionResult) error
-
-// ExecutionResult records the result into Result. Tasks should fill in their desired results into Result.
-type ExecutionResult struct {
-	Result interface{}
-}
+type Task func(ctx concurrency.ErrorWaitable) (interface{}, error)
 
 // Manager takes care of accepting and running background processes.
 type Manager interface {
