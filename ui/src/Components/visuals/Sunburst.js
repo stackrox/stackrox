@@ -146,7 +146,7 @@ class BasicSunburst extends React.Component {
     getSunburstProps = () => {
         const defaultSunburstProps = {
             colorType: 'literal',
-            // TO DO: factor out into dimension mapping
+            // TODO: factor out into dimension mapping
             width: this.props.small ? 200 : 265,
             height: this.props.small ? 200 : 271,
             className: 'cursor-pointer pointer-events-none my-auto',

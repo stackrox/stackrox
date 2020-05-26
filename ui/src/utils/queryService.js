@@ -42,7 +42,7 @@ function objectToWhereClause(query, delimiter = '+') {
 function entityContextToQueryObject(entityContext) {
     if (!entityContext) return {};
 
-    // TO DO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
+    // TODO: waiting for backend to use COMPONENT ID instead of NAME and VERSION. workaround for now
     return Object.keys(entityContext).reduce((acc, key) => {
         const entityQueryObj = {};
         if (key === entityTypes.IMAGE) {

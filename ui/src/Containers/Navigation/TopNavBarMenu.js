@@ -8,6 +8,7 @@ import { MoreHorizontal } from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
+import Avatar from 'Components/Avatar';
 import getUserAttributeMap from 'utils/userDataUtils';
 
 const topNavMenuBtnClass =
@@ -29,10 +30,10 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
         if (userAttributes) {
             const userAttributeMap = getUserAttributeMap(userAttributes);
             const { name, email, username } = userAttributeMap;
-            const header = name || username;
+            const userDisplayedName = name || username;
             const menuOptionComponent = (
                 <div className="flex flex-col pl-2">
-                    <div className="font-700">{header}</div>
+                    <div className="font-700">{userDisplayedName}</div>
                     {email && <div className="lowercase text-base-500 italic pt-px">{email}</div>}
                     <div className="pt-1">
                         <span className="font-700 pr-2">Roles ({userInfo.roles.length}):</span>
@@ -41,11 +42,8 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
                 </div>
             );
             options.unshift({ component: menuOptionComponent, link: '/main/user' });
-            buttonIcon = null;
-            buttonText = header
-                .split(' ')
-                .map((nameStr) => nameStr[0])
-                .join('');
+            buttonIcon = <Avatar name={userDisplayedName} className="mx-3" />;
+            buttonText = null;
         }
     }
 

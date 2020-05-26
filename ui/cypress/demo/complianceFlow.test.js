@@ -48,7 +48,7 @@ describe('Compliance Flow', () => {
         cy.get(ComplianceSelectors.export.pdfButton).click();
         cy.get('div:contains("Exporting")').should('exist');
 
-        // TO DO: ROX-3477 test downloaded data
+        // TODO: ROX-3477 test downloaded data
     });
 
     it('clicking Export -> CSV should export to CSV', () => {
@@ -56,6 +56,6 @@ describe('Compliance Flow', () => {
         cy.get(ComplianceSelectors.export.exportButton).click();
         cy.get(ComplianceSelectors.export.csvButton).click();
 
-        // TO DO: ROX-3477 test downloaded data
+        // TODO: ROX-3477 test downloaded data
     });
 });
