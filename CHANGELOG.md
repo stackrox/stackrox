@@ -6,6 +6,10 @@ All notable changes to this project that require documentation updates will be d
 - UI: In Platform Configuration > Interactions: 1. replace "AWS ECR" with "Amazon ECR" and 2. replace "S3" (and "AWS S3" placeholder for Integration Name in New Integration pane) with "Amazon S3" (ROX-4912)
 - Docker Registry Integration now doesn't require entering password every time an existing integration is tested or updated (part of ROX-4539).
 - UI: Replace `Page 1 of 0` with `Page 1 of 1` for 0 results in table pagination (ROX-1072)
+- Added `ExportPolicies(POST /v1/policies/export)` API which accepts a list of policy IDs and returns a list of json policies
+- Added `ImportPolicies(POST /v1/policies/import)` API which accepts a json list of policies, imports them into your StackRox installation, and returns a list with success/failure details per policy
+- Added UI to export a single policy from the policy details on the System Policies page
+- Added UI to import a single policy from the System Policies page
 
 ## [43.0]
 - Detection APIs were not properly handling suppressed CVEs and they were being included in evaluation. This is now resolved.
