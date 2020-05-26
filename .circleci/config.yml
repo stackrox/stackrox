@@ -2475,6 +2475,7 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
       - ROX_BOOLEAN_POLICY_LOGIC: true
+      - ROX_CURRENT_USER_INFO: true
 
     steps:
       - checkout

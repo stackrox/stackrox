@@ -118,7 +118,15 @@ class MainPage extends Component {
                         component={AsyncLicensePage}
                         requiredPermission="Licenses"
                     />
-                    <ProtectedRoute path={userPath} component={AsyncUserPage} />
+                    <ProtectedRoute
+                        path={userPath}
+                        component={AsyncUserPage}
+                        featureFlagEnabled={isBackendFeatureFlagEnabled(
+                            this.props.featureFlags,
+                            knownBackendFlags.ROX_CURRENT_USER_INFO,
+                            false
+                        )}
+                    />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute
                         path={vulnManagementPath}

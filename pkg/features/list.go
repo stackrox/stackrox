@@ -39,4 +39,7 @@ var (
 
 	// AuthTestMode feature flag allows test mode flow for new auth provider in UI
 	AuthTestMode = registerFeature("Enable Auth Test Mode UI", "ROX_AUTH_TEST_MODE_UI", false)
+
+	// CurrentUserInfo enables showing information about the current user in UI
+	CurrentUserInfo = registerFeature("Enable Auth Test Mode UI", "ROX_CURRENT_USER_INFO", false)
 )

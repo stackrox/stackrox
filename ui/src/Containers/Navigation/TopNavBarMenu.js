@@ -10,11 +10,12 @@ import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
 import Avatar from 'Components/Avatar';
 import getUserAttributeMap from 'utils/userDataUtils';
+import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
-function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
+function TopNavBarMenu({ logout, shouldHaveReadPermission, userData, featureFlags }) {
     const options = [{ label: 'Logout', onClick: () => logout() }];
 
     if (shouldHaveReadPermission('Licenses')) {
@@ -25,7 +26,7 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
     let buttonText = null;
     const buttonTextClassName = 'border rounded-full mx-3 p-3 text-xl border-base-400';
 
-    if (process.env.NODE_ENV === 'development') {
+    if (isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_CURRENT_USER_INFO, false)) {
         const { userInfo, userAttributes } = userData;
         if (userAttributes) {
             const userAttributeMap = getUserAttributeMap(userAttributes);
@@ -74,11 +75,18 @@ TopNavBarMenu.propTypes = {
         }),
         userAttributes: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
+    featureFlags: PropTypes.arrayOf(
+        PropTypes.shape({
+            envVar: PropTypes.string.isRequired,
+            enabled: PropTypes.bool.isRequired,
+        })
+    ).isRequired,
 };
 
 const mapStateToProps = createStructuredSelector({
     shouldHaveReadPermission: selectors.shouldHaveReadPermission,
     userData: selectors.getCurrentUser,
+    featureFlags: selectors.getFeatureFlags,
 });
 
 const mapDispatchToProps = (dispatch) => ({
