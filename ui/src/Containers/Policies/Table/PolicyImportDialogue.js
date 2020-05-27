@@ -59,7 +59,15 @@ const PolicyImportDialogue = ({ closeAction, importPolicySuccess }) => {
                 const fileContent = reader.result;
                 try {
                     const jsonObj = JSON.parse(fileContent);
-                    setPolicies(jsonObj.policies);
+                    if (jsonObj?.policies && jsonObj.policies.length > 0) {
+                        setPolicies(jsonObj.policies);
+                    } else {
+                        setMessageObj({
+                            type: 'error',
+                            message:
+                                'The file you selected does not have at least one policy in its policies list.',
+                        });
+                    }
                 } catch (err) {
                     setMessageObj({ type: 'error', message: err.message });
                 }
@@ -184,7 +192,7 @@ const PolicyImportDialogue = ({ closeAction, importPolicySuccess }) => {
                             </div>
                         </div>
                     </div>
-                    {policies.length > 0 && (
+                    {policies?.length > 0 && (
                         <div className="flex flex-col bg-base-100 flex-grow flex-shrink-0 mb-2">
                             <h3 className="b-2 font-700 text-lg">
                                 The following {`${pluralize('policy', policies.length)}`} will be
