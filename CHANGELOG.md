@@ -10,6 +10,7 @@ All notable changes to this project that require documentation updates will be d
 - Added `ImportPolicies(POST /v1/policies/import)` API which accepts a json list of policies, imports them into your StackRox installation, and returns a list with success/failure details per policy
 - Added UI to export a single policy from the policy details on the System Policies page
 - Added UI to import a single policy from the System Policies page
+- Sensor resource requests and limits have been increased to 1 core / 1GB and 2 cores / 4GB respectively.
 
 ## [43.0]
 - Detection APIs were not properly handling suppressed CVEs and they were being included in evaluation. This is now resolved.

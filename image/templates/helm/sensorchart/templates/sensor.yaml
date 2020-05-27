@@ -77,11 +77,11 @@ spec:
           - kubernetes-sensor
         resources:
           requests:
-            memory: "500Mi"
-            cpu: "500m"
+            memory: "1Gi"
+            cpu: "1"
           limits:
-            memory: "1000Mi"
-            cpu: "1000m"
+            memory: "4Gi"
+            cpu: "2"
         securityContext:
           runAsNonRoot: true
           readOnlyRootFilesystem: true
