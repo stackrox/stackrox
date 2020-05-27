@@ -129,9 +129,10 @@ Menu.propTypes = {
             PropTypes.shape({
                 className: PropTypes.string,
                 icon: PropTypes.object,
-                label: PropTypes.string.isRequired,
+                label: PropTypes.string,
                 link: PropTypes.string,
                 onClick: PropTypes.func,
+                component: PropTypes.node,
             })
         ).isRequired,
         PropTypes.shape({}),

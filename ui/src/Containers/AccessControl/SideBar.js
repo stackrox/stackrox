@@ -76,9 +76,11 @@ const SideBar = ({
                         selectedIdAttribute="name"
                     />
                 </div>
-                <div className="flex items-center justify-center p-4 border-t border-base-300">
-                    {addRowButton}
-                </div>
+                {addRowButton && (
+                    <div className="flex items-center justify-center p-4 border-t border-base-300">
+                        {addRowButton}
+                    </div>
+                )}
             </div>
         </Panel>
     );
@@ -89,7 +91,7 @@ SideBar.propTypes = {
     rows: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     selected: PropTypes.shape({}),
     onSelectRow: PropTypes.func.isRequired,
-    addRowButton: PropTypes.node.isRequired,
+    addRowButton: PropTypes.node,
     onCancel: PropTypes.func,
     onDelete: PropTypes.func,
     type: PropTypes.string.isRequired,
@@ -99,6 +101,7 @@ SideBar.defaultProps = {
     onCancel: null,
     onDelete: null,
     selected: null,
+    addRowButton: null,
 };
 
 export default SideBar;

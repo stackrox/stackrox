@@ -1,0 +1,35 @@
+{
+  "userId": "user-id",
+  "userInfo": {
+    "username": "ai@stackrox.com",
+    "permissions": {
+      "name": "Admin",
+      "globalAccess": "READ_WRITE_ACCESS",
+      "resourceToAccess": {
+        "AuthProvider": "READ_WRITE_ACCESS",
+        "Cluster": "READ_WRITE_ACCESS",
+        "User": "READ_WRITE_ACCESS"
+      }
+    },
+    "roles": [
+      {
+        "name": "Admin",
+        "globalAccess": "READ_WRITE_ACCESS",
+        "resourceToAccess": {
+          "AuthProvider": "READ_WRITE_ACCESS",
+          "Cluster": "READ_WRITE_ACCESS",
+          "User": "READ_WRITE_ACCESS"
+        }
+      }
+    ],
+    "role": {
+      "name": "Admin",
+      "globalAccess": "READ_WRITE_ACCESS",
+      "resourceToAccess": {}
+    }
+  },
+  "userAttributes": [
+    { "key": "email", "values": ["ai@stackrox.com"] },
+    { "key": "name", "values": ["Artificial Intelligence"] }
+  ]
+}

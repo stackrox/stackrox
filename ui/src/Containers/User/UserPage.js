@@ -5,25 +5,27 @@ import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
 import PageHeader from 'Components/PageHeader';
-import getUserAttributeMap from 'utils/userDataUtils';
+import User from 'utils/User';
 import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
 
 const UserPage = ({ userData }) => {
-    const [selectedPage, setSelectedPage] = useState(userData.userInfo.roles[0]);
-    const { userAttributes, userInfo } = userData;
-    const userAttributeMap = getUserAttributeMap(userAttributes);
-    const header = userAttributeMap.name;
-    const subHeader = userAttributeMap.email;
+    const user = new User(userData);
+    const [selectedPage, setSelectedPage] = useState(user.roles[0]);
+
     return (
         <section className="flex flex-1 h-full w-full">
             <div className="flex flex-1 flex-col w-full">
-                <PageHeader header={header} subHeader={subHeader} capitalize={false} />
+                <PageHeader
+                    header={user.name || user.username}
+                    subHeader={user.email}
+                    capitalize={false}
+                />
                 <div className="flex bg-base-200">
                     <div className="m-4 shadow-sm w-1/4">
                         <SideBar
                             header="StackRox User Roles"
-                            rows={userInfo.roles}
+                            rows={user.roles}
                             selected={selectedPage}
                             onSelectRow={setSelectedPage}
                             type="role"

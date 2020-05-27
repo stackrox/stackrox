@@ -9,7 +9,7 @@ import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
 import Avatar from 'Components/Avatar';
-import getUserAttributeMap from 'utils/userDataUtils';
+import User from 'utils/User';
 import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 const topNavMenuBtnClass =
@@ -27,25 +27,33 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData, featureFlag
     const buttonTextClassName = 'border rounded-full mx-3 p-3 text-xl border-base-400';
 
     if (isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_CURRENT_USER_INFO, false)) {
-        const { userInfo, userAttributes } = userData;
-        if (userAttributes) {
-            const userAttributeMap = getUserAttributeMap(userAttributes);
-            const { name, email, username } = userAttributeMap;
-            const userDisplayedName = name || username;
-            const menuOptionComponent = (
-                <div className="flex flex-col pl-2">
-                    <div className="font-700">{userDisplayedName}</div>
-                    {email && <div className="lowercase text-base-500 italic pt-px">{email}</div>}
-                    <div className="pt-1">
-                        <span className="font-700 pr-2">Roles ({userInfo.roles.length}):</span>
-                        <span>{userInfo.roles[0].name}</span>
-                    </div>
+        const user = new User(userData);
+        const menuOptionComponent = (
+            <div className="flex flex-col pl-2">
+                <div
+                    // TODO: Ideally we display both name and username as-is w/o capitalization, yet Menu component is too smart
+                    className={`font-700 ${!user.name && 'lowercase'}`}
+                    data-testid="menu-user-name"
+                >
+                    {user.name || user.username}
                 </div>
-            );
-            options.unshift({ component: menuOptionComponent, link: '/main/user' });
-            buttonIcon = <Avatar name={userDisplayedName} className="mx-3" />;
-            buttonText = null;
-        }
+                {user.email && (
+                    <div
+                        className="lowercase text-base-500 italic pt-px"
+                        data-testid="menu-user-email"
+                    >
+                        {user.email}
+                    </div>
+                )}
+                <div className="pt-1" data-testid="menu-user-roles">
+                    <span className="font-700 pr-2">Roles ({user.roles.length}):</span>
+                    <span>{user.roles.map((role) => role.name).join(', ')}</span>
+                </div>
+            </div>
+        );
+        options.unshift({ component: menuOptionComponent, link: '/main/user' });
+        buttonIcon = <Avatar name={user.name || user.username} className="mx-3" />;
+        buttonText = '';
     }
 
     return (
@@ -67,6 +75,7 @@ TopNavBarMenu.propTypes = {
     shouldHaveReadPermission: PropTypes.func.isRequired,
     userData: PropTypes.shape({
         userInfo: PropTypes.shape({
+            username: PropTypes.string,
             roles: PropTypes.arrayOf(
                 PropTypes.shape({
                     name: PropTypes.string,

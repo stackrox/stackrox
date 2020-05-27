@@ -108,7 +108,7 @@ describe('Authentication', () => {
             cy.visit(dashboardURL);
 
             cy.get(navSelectors.menuButton).click();
-            cy.get(navSelectors.logoutButton).click();
+            cy.get(navSelectors.menuList.logoutButton).click();
             cy.wait('@logout');
             cy.url().should('contain', loginUrl);
         });
