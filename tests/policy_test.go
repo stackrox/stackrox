@@ -624,7 +624,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, response.GetAlteredSearchTerms())
 	require.Len(t, response.GetPolicy().GetPolicySections(), 1)
-	require.Equal(t, response.GetPolicy().GetPolicySections()[0], mockPolicySection)
+	require.ElementsMatch(t, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups(), mockPolicySection.GetPolicyGroups())
 }
 
 func verifyConvertInvalidSearchToPolicyFails(t *testing.T) {
