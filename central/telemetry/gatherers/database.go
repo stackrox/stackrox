@@ -3,6 +3,7 @@ package gatherers
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/telemetry/data"
@@ -36,11 +37,15 @@ func (d *databaseGatherer) Gather() *data.StorageInfo {
 		DiskUsedBytes:     used,
 		StorageType:       "unknown", // TODO: Figure out how to determine storage type (pvc etc.)
 		Databases: []*data.DatabaseStats{
-			d.badger.Gather(),
 			d.bolt.Gather(),
-			d.rocks.Gather(),
 		},
 		Errors: errList.ErrorStrings(),
+	}
+
+	if env.RocksDB.BooleanSetting() {
+		storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
+	} else {
+		storageInfo.Databases = append(storageInfo.Databases, d.badger.Gather())
 	}
 
 	databaseStats := d.bleve.Gather()

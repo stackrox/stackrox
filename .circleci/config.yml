@@ -2984,6 +2984,50 @@ jobs:
             make -C qa-tests-backend upgrade-test
 
       - run:
+          name: Set DB to RocksDB
+          command: |
+            kubectl -n stackrox set env deploy/central ROX_ROCKSDB=true
+
+      - *waitForAPI
+
+      - run:
+          name: Validate Migration to RocksDB
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+            make -C qa-tests-backend upgrade-test
+
+      - run:
+          name: Restore 41.4 backup to current head
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
+
+      - *waitForAPI
+
+      - run:
+          name: Validate 41.4 backup to head on RocksDB
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+            make -C qa-tests-backend upgrade-test
+
+      - *waitForAPI
+
+      - run:
+          name: Roll back to BadgerDB from RocksDB
+          command: |
+            kubectl -n stackrox set env deploy/central ROX_ROCKSDB=false
+
+      - *waitForAPI
+
+      - run:
+          name: Validate BadgerDB after rollback
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+            make -C qa-tests-backend upgrade-test
+
+      - run:
           name: Fetch bundle for the "remote" cluster in the DB
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" sensor get-bundle remote

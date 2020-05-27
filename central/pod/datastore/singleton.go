@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -24,7 +24,7 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		var err error
-		if features.RocksDB.Enabled() {
+		if env.RocksDB.BooleanSetting() {
 			ps, err = NewRocksDB(
 				globaldb.GetRocksDB(),
 				globalindex.GetPodIndex(),

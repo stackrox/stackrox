@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
@@ -13,7 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/tecbot/gorocksdb"
 )
@@ -64,25 +65,38 @@ func run() error {
 		return nil
 	}
 
-	badgerDB, err := badgerhelpers.NewWithDefaults()
-	if err != nil {
-		return errors.Wrap(err, "failed to open badger DB")
-	}
-
 	var rocksdb *gorocksdb.DB
-	if features.RocksDB.Enabled() {
+	var rocksDBSeqNum int
+	if env.RocksDB.BooleanSetting() {
 		rocksdb, err = rockshelper.New()
 		if err != nil {
 			return errors.Wrap(err, "failed to open rocksdb")
 		}
+
+		rocksDBSeqNum, err = runner.GetCurrentSeqNumRocksDB(rocksdb)
+		if err != nil {
+			return errors.Wrap(err, "failed to fetch sequence number from rocksdb")
+		}
 	}
+
+	var badgerDB *badger.DB
+	if rocksdb == nil || rocksDBSeqNum == 0 {
+		badgerDB, err = badgerhelpers.NewWithDefaults()
+		if err != nil {
+			return errors.Wrap(err, "failed to open badger DB")
+		}
+	}
+
 	defer func() {
 		if err := boltDB.Close(); err != nil {
 			log.WriteToStderrf("Error closing DB: %v", err)
 		}
-		if err := badgerDB.Close(); err != nil {
-			log.WriteToStderrf("Error closing badger DB: %v", err)
+		if badgerDB != nil {
+			if err := badgerDB.Close(); err != nil {
+				log.WriteToStderrf("Error closing badger DB: %v", err)
+			}
 		}
+
 		if rocksdb != nil {
 			rocksdb.Close()
 		}

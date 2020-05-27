@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -85,7 +85,7 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 
 	var writeHeavyVersion *storage.Version
 	var writeHeavyDBName string
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		writeHeavyVersion, err = s.getRocksDBVersion()
 		if err != nil {
 			return nil, err
@@ -104,7 +104,7 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 		return nil, fmt.Errorf("bolt database has no version, but %s does (%+v); this is invalid", writeHeavyDBName, writeHeavyVersion)
 	}
 	if writeHeavyVersion.GetSeqNum() != commonVersion.GetSeqNum() {
-		return nil, fmt.Errorf("badger database version mismatch: %+v vs %+v", writeHeavyVersion, commonVersion)
+		return nil, fmt.Errorf("%s database version mismatch: %+v vs %+v", writeHeavyDBName, writeHeavyVersion, commonVersion)
 	}
 
 	return commonVersion, err
@@ -125,7 +125,7 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		writeOpts := gorocksdb.NewDefaultWriteOptions()
 		// Purposefully sync this
 		writeOpts.SetSync(true)

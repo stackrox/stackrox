@@ -28,9 +28,6 @@ var (
 	// DryRunPolicyJobMechanism enables submitting dry run of a policy as a job, and querying the status using job id.
 	DryRunPolicyJobMechanism = registerFeature("Dry run policy job mechanism", "ROX_DRY_RUN_JOB", true)
 
-	// RocksDB enables using RocksDB as a database instead of BadgerDB
-	RocksDB = registerFeature("Use RocksDB instead of BadgerDB", "ROX_ROCKSDB", true)
-
 	// BooleanPolicyLogic enables support for an extended policy logic
 	BooleanPolicyLogic = registerFeature("Enable Boolean Policy Logic", "ROX_BOOLEAN_POLICY_LOGIC", false)
 

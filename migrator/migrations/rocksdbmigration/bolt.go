@@ -1,4 +1,4 @@
-package m36tom37
+package rocksdbmigration
 
 import (
 	"github.com/etcd-io/bbolt"
@@ -59,7 +59,7 @@ func migrateBolt(databases *types.Databases) error {
 		if err != nil {
 			return err
 		}
-		log.WriteToStderrf("Rewrote %d keys form Bolt Bucket %s", count, bucket)
+		log.WriteToStderrf("Rewrote %d keys from Bolt Bucket %s", count, bucket)
 	}
 	return nil
 }

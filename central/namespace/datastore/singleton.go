@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/namespace/store/bolt"
 	"github.com/stackrox/rox/central/namespace/store/rocksdb"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -23,7 +23,7 @@ var (
 
 func initialize() {
 	var storage store.Store
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())

@@ -1,4 +1,4 @@
-package m36tom37
+package rocksdbmigration
 
 import (
 	"fmt"

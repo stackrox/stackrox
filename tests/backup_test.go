@@ -13,7 +13,7 @@ import (
 	deploymentBadgerStore "github.com/stackrox/rox/central/deployment/store/badger"
 	"github.com/stackrox/rox/central/globaldb/badgerutils"
 	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -60,7 +60,7 @@ func TestBackup(t *testing.T) {
 	require.NoError(t, err)
 	defer utils.IgnoreError(zipFile.Close)
 
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		checkZipForRocks(t, zipFile)
 	} else {
 		checkZipForBadger(t, zipFile)

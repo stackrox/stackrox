@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
@@ -19,7 +19,7 @@ var (
 
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *gorocksdb.DB {
-	if !features.RocksDB.Enabled() {
+	if !env.RocksDB.BooleanSetting() {
 		return nil
 	}
 	rocksInit.Do(func() {

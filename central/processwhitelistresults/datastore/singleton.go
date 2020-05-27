@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -21,7 +21,7 @@ var (
 
 func initialize() {
 	var storage store.Store
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 	} else {
 		var err error

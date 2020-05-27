@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -34,7 +34,7 @@ var (
 
 func initialize() {
 	var storage store.Store
-	if features.RocksDB.Enabled() {
+	if env.RocksDB.BooleanSetting() {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 	} else {
 		storage = badgerStore.New(globaldb.GetGlobalBadgerDB())

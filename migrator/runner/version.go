@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -71,10 +71,10 @@ func getCurrentSeqNumBadger(db *badger.DB) (int, error) {
 	return int(badgerVersion.GetSeqNum()), nil
 }
 
-// getCurrentSeqNumRocksDB returns the current seq-num found in the rocks DB.
+// GetCurrentSeqNumRocksDB returns the current seq-num found in the rocks DB.
 // A returned value of 0 means that no version information was found in the DB;
 // this special value is only returned when we're upgrading from a version not using badger.
-func getCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
+func GetCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 	var version storage.Version
 
 	opts := gorocksdb.NewDefaultReadOptions()
@@ -97,8 +97,8 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 
 	var writeHeavySeqNum int
 	var writeHeavyDBName string
-	if features.RocksDB.Enabled() {
-		writeHeavySeqNum, err = getCurrentSeqNumRocksDB(databases.RocksDB)
+	if env.RocksDB.BooleanSetting() {
+		writeHeavySeqNum, err = GetCurrentSeqNumRocksDB(databases.RocksDB)
 		if err != nil {
 			return 0, errors.Wrap(err, "getting current rocksdb sequence number")
 		}
@@ -119,6 +119,15 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 	return boltSeqNum, nil
 }
 
+func updateRocksDB(db *gorocksdb.DB, versionBytes []byte) error {
+	writeOpts := gorocksdb.NewDefaultWriteOptions()
+	defer writeOpts.Destroy()
+	if err := db.Put(writeOpts, versionBucketName, versionBytes); err != nil {
+		return errors.Wrap(err, "updating version in rocksdb")
+	}
+	return nil
+}
+
 func updateVersion(databases *types.Databases, newVersion *storage.Version) error {
 	versionBytes, err := proto.Marshal(newVersion)
 	if err != nil {
@@ -136,17 +145,19 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	err = databases.BadgerDB.Update(func(txn *badger.Txn) error {
-		return txn.Set(versionBucketName, versionBytes)
-	})
-	if err != nil {
-		return errors.Wrap(err, "updating version in badger")
-	}
-
-	writeOpts := gorocksdb.NewDefaultWriteOptions()
-	defer writeOpts.Destroy()
-	if err := databases.RocksDB.Put(writeOpts, versionBucketName, versionBytes); err != nil {
-		return errors.Wrap(err, "updating version in rocksdb")
+	// If BadgerDB != nil, then we're going to migrate to it at the end of this function so we should update the version
+	// number until the migration
+	if env.RocksDB.BooleanSetting() && databases.BadgerDB == nil {
+		if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
+			return err
+		}
+	} else {
+		err = databases.BadgerDB.Update(func(txn *badger.Txn) error {
+			return txn.Set(versionBucketName, versionBytes)
+		})
+		if err != nil {
+			return errors.Wrap(err, "updating version in badger")
+		}
 	}
 
 	return nil
