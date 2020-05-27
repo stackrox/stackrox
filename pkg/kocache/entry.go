@@ -89,6 +89,10 @@ func (e *entry) doPopulate(client *http.Client, upstreamURL string, opts Options
 		return errors.Errorf("creating HTTP request: %v", err)
 	}
 
+	if opts.ModifyRequest != nil {
+		opts.ModifyRequest(req)
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.Errorf("making upstream request: %v", err)

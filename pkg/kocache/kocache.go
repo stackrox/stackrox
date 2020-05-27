@@ -36,6 +36,8 @@ type Options struct {
 	CleanupAge       time.Duration
 	ErrorCleanUpAge  time.Duration
 	CleanupInterval  time.Duration
+
+	ModifyRequest func(*http.Request)
 }
 
 func (o *Options) applyDefaults() {
