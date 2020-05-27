@@ -132,6 +132,13 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		got, exists, err := suite.store.GetImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
+		// Upsert sets each (*storage.CVE).CreatedAt if this CVE doesn't already exist in the store.
+		// We cannot control this timestamp from tests, so it's best to just ignore this field.
+		for _, component := range got.GetScan().GetComponents() {
+			for _, vuln := range component.GetVulns() {
+				vuln.DiscoveredAt = nil
+			}
+		}
 		suite.Equal(d, got)
 
 		listGot, exists, err := suite.store.ListImage(d.GetId())
@@ -161,6 +168,11 @@ func (suite *ImageStoreTestSuite) TestImages() {
 		got, exists, err := suite.store.GetImage(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
+		for _, component := range got.GetScan().GetComponents() {
+			for _, vuln := range component.GetVulns() {
+				vuln.DiscoveredAt = nil
+			}
+		}
 		suite.Equal(d, got)
 
 		listGot, exists, err := suite.store.ListImage(d.GetId())

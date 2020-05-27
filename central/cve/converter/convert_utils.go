@@ -229,6 +229,7 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		CvssV3:             protoCVE.GetCvssV3(),
 		PublishedOn:        protoCVE.GetPublishedOn(),
 		LastModified:       protoCVE.GetLastModified(),
+		DiscoveredAt:       protoCVE.GetCreatedAt(),
 		Suppressed:         protoCVE.GetSuppressed(),
 		SuppressActivation: protoCVE.GetSuppressActivation(),
 		SuppressExpiry:     protoCVE.GetSuppressExpiry(),

@@ -83,6 +83,7 @@ message License {
 }
 
 // TODO: Remove when migration is in place
+// Next Tag: 16
 message EmbeddedVulnerability {
     enum ScoreVersion {
         V2 = 0; // No unset for automatic backwards compatibility
@@ -108,6 +109,8 @@ message EmbeddedVulnerability {
     CVSSV3                    cvss_v3               = 7;
     google.protobuf.Timestamp published_on          = 9 [(gogoproto.moretags) = "search:\"CVE Published On,store\""];
     google.protobuf.Timestamp last_modified         = 10;
+    // Time when the CVE was first seen in the system.
+    google.protobuf.Timestamp discovered_at         = 15;
     VulnerabilityType vulnerability_type            = 11;
     bool                      suppressed            = 12 [(gogoproto.moretags) = "search:\"CVE Snoozed,store\""];
     google.protobuf.Timestamp suppress_activation   = 13;
