@@ -44,7 +44,7 @@ image_exists "${DATA_IMAGE}"
 
 # Create tmp directory with stackrox directory structure
 bundle_root="$(mktemp -d)"
-mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui,lib}
+mkdir -p "${bundle_root}"/{assets/downloads/cli,stackrox/bin,ui,usr/local/bin}
 chmod -R 755 "${bundle_root}"
 
 # =============================================================================
@@ -68,6 +68,7 @@ cp -pr "${INPUT_ROOT}/ui/build/"*           "${bundle_root}/ui/"
 # Extract and copy encrypted data file from container image
 enc_file="stackrox-data.tgze"
 extract_from_image "${DATA_IMAGE}" "${enc_file}" "${bundle_root}/stackrox/${enc_file}"
+extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/local/bin/ldb"
 
 # Install all the required compression packages for RocksDB to compile
 rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"

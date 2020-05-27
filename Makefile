@@ -12,8 +12,8 @@ GOARCH := amd64
 DEFAULT_GOOS := linux
 GO111MODULE := on
 GOPRIVATE := github.com/stackrox
-BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-1
-RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-1
+BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-2
+RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-2
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 

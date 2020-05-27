@@ -21,10 +21,16 @@ RUN cd /tmp && \
     cd rocksdb && \
     make static_lib
 
+RUN cd /tmp/rocksdb && DEBUG_LEVEL=0 make ldb
+
+RUN wget -O- https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz | tar -xJf -
+RUN upx-3.96-amd64_linux/upx -9 /tmp/rocksdb/ldb
+
 FROM golang:1.13.9-alpine3.11
 
 COPY --from=builder /tmp/rocksdb/librocksdb.a /lib/rocksdb/librocksdb.a
 COPY --from=builder /tmp/rocksdb/include /lib/rocksdb/include
+COPY --from=builder /tmp/rocksdb/ldb /usr/local/bin/ldb
 
 ENV CGO_CFLAGS="-I/lib/rocksdb/include"
 ENV CGO_LDFLAGS="-L/lib/rocksdb -lrocksdb -lstdc++ -lm -lz -lbz2 -lsnappy -llz4 -lzstd"

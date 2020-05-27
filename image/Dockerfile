@@ -27,6 +27,8 @@ ENV PATH="/stackrox:$PATH"
 
 ENV ROX_ROXCTL_IN_MAIN_IMAGE="true"
 
+COPY --from=builder /usr/local/bin/ldb /usr/local/bin/ldb
+
 COPY ./central-entrypoint.sh /stackrox/
 COPY ./bin/migrator /stackrox/bin/
 COPY ./bin/central /stackrox/
