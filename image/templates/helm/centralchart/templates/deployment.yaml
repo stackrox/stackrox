@@ -23,6 +23,8 @@ spec:
       labels:
         app.kubernetes.io/name: stackrox
         app: central
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
     spec:
       {{if .Values.nodeSelector -}}
       nodeSelector:

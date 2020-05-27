@@ -23,6 +23,8 @@ spec:
       labels:
         app.kubernetes.io/name: stackrox
         app: scanner
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8080,8443"
     spec:
       {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
       affinity:
@@ -154,6 +156,8 @@ spec:
       labels:
         app.kubernetes.io/name: stackrox
         app: scanner-db
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "5432"
     spec:
       {{if eq .Values.clusterType "OPENSHIFT_CLUSTER"}}
       affinity:

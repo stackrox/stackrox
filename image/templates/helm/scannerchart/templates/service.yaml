@@ -10,7 +10,7 @@ spec:
   - name: https-scanner
     port: 8080
     targetPort: 8080
-  - name: grpc-scanner
+  - name: grpcs-scanner
     port: 8443
     targetPort: 8443
   selector:
@@ -26,9 +26,52 @@ metadata:
     app.kubernetes.io/name: stackrox
 spec:
   ports:
-  - name: http-db
+  - name: db
     port: 5432
     targetPort: 5432
   selector:
     app: scanner-db
   type: ClusterIP
+
+{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1/DestinationRule" }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: scanner-internal-no-istio-mtls
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for ports 8080 and 8443, since StackRox services use built-in mTLS."
+spec:
+  host: scanner.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 8080
+        tls:
+          mode: DISABLE
+      - port:
+          number: 8443
+        tls:
+          mode: DISABLE
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: scanner-db-internal-no-istio-mtls
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: stackrox
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for port 5432, since StackRox services use built-in mTLS."
+spec:
+  host: scanner-db.{{ .Values.namespace }}.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 5432
+        tls:
+          mode: DISABLE
+{{ end }}

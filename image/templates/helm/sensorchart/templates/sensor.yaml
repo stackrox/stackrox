@@ -23,6 +23,8 @@ spec:
       namespace: stackrox
       labels:
         app: sensor
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443,9443"
     spec:
       {{if eq .Values.cluster.type "OPENSHIFT_CLUSTER"}}
       affinity:
@@ -149,6 +151,27 @@ spec:
     app: sensor
   type: ClusterIP
   sessionAffinity: None
+
+{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1/DestinationRule" }}
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: sensor-internal-no-istio-mtls
+  namespace: stackrox
+  labels:
+    app.kubernetes.io/name: stackrox
+  annotations:
+    stackrox.io/description: "Disable Istio mTLS for port 443, since StackRox services use built-in mTLS."
+spec:
+  host: sensor.stackrox.svc.cluster.local
+  trafficPolicy:
+    portLevelSettings:
+      - port:
+          number: 443
+        tls:
+          mode: DISABLE
+{{ end }}
 ---
 apiVersion: v1
 kind: Service

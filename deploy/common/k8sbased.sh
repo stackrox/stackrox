@@ -9,9 +9,22 @@ function launch_service {
     local dir="$1"
     local service="$2"
 
+    local helm_version
+    helm_version="$(helm version --short)"
+    if [[ -z "$helm_version" ]]; then
+      echo >&2 "helm not found or doesn't work"
+      exit 1
+    elif [[ "$helm_version" == v2.* ]]; then
+      echo "Detected Helm v2"
+      helm_install() { helm install "$dir/$1" --name "$1" --tiller-connection-timeout 10 ; }
+    else
+      echo "Detected Helm v3"
+      helm_install() { helm install "$1" "$dir/$1" ; }
+    fi
+
     if [[ "${OUTPUT_FORMAT}" == "helm" ]]; then
         for i in {1..5}; do
-            if helm install "$dir/$service" --name $service --tiller-connection-timeout 10; then
+            if helm_install "$service"; then
                 break
             fi
             sleep 5

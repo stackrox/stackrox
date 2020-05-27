@@ -130,6 +130,8 @@ spec:
       namespace: stackrox
       labels:
         app: admission-control
+      annotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: "8443"
     spec:
       # Attempt to schedule these on master nodes
       affinity:
