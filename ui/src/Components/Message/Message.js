@@ -45,7 +45,7 @@ function Message(props) {
                     {icons[props.type]}
                 </div>
             </div>
-            <div className="flex pl-3">{props.message}</div>
+            <div className="flex flex-grow pl-3">{props.message}</div>
         </div>
     );
 }

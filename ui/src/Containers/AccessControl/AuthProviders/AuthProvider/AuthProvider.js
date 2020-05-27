@@ -132,18 +132,16 @@ class AuthProvider extends Component {
     };
 
     handleTest = () => {
-        if (!this.props.selectedAuthProvider?.active) {
-            const windowFeatures =
-                'location=no,menubar=no,scrollbars=yes,toolbar=no,width=768,height=512,left=0,top=0'; // browser not required to honor these attrs
+        const windowFeatures =
+            'location=no,menubar=no,scrollbars=yes,toolbar=no,width=768,height=512,left=0,top=0'; // browser not required to honor these attrs
 
-            const windowObjectReference = window.open(
-                `/sso/login/${this.props.selectedAuthProvider.id}?test=true`,
-                `Test Login for ${this.props.selectedAuthProvider.name}`,
-                windowFeatures
-            );
+        const windowObjectReference = window.open(
+            `/sso/login/${this.props.selectedAuthProvider.id}?test=true`,
+            `Test Login for ${this.props.selectedAuthProvider.name}`,
+            windowFeatures
+        );
 
-            windowObjectReference.focus();
-        }
+        windowObjectReference.focus();
     };
 
     getGroupsByAuthProviderId = (groups, id) => {
@@ -179,6 +177,10 @@ class AuthProvider extends Component {
         <NoResultsMessage message="No Auth Providers integrated. Please add one." />
     );
 
+    testModeSupported = (provider) => {
+        return provider.type === 'auth0' || provider.type === 'oidc' || provider.type === 'saml';
+    };
+
     displayContent = () => {
         const { selectedAuthProvider, isEditing, groups, responseError } = this.props;
         let initialValues = { ...selectedAuthProvider };
@@ -205,7 +207,7 @@ class AuthProvider extends Component {
             </>
         ) : (
             <>
-                {!selectedAuthProvider.active && (
+                {this.testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_AUTH_TEST_MODE_UI}>
                         <div className="w-full pt-4 pl-4 pr-4">
                             <Message
@@ -245,9 +247,7 @@ class AuthProvider extends Component {
                   )} Auth Provider`;
             const editButtonText = selectedAuthProvider.active ? 'Edit Roles' : 'Edit Provider';
             const onTest =
-                selectedAuthProvider &&
-                (selectedAuthProvider.type === 'oidc' || selectedAuthProvider.type === 'saml') &&
-                !selectedAuthProvider.active
+                selectedAuthProvider && this.testModeSupported(selectedAuthProvider)
                     ? this.handleTest
                     : null;
             headerComponents = (

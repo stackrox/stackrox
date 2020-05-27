@@ -1,8 +1,8 @@
 package authproviders
 
 import (
+	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders/idputil"
@@ -56,15 +57,16 @@ func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 }
 
 func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState string, testMode bool) *url.URL {
-	userJSON, err := json.Marshal(user)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := new(jsonpb.Marshaler).Marshal(&buf, user); err != nil {
 		return r.errorURL(err, typ, clientState, testMode)
 	}
+
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
 			"test":  {strconv.FormatBool(testMode)},
-			"user":  {base64.RawURLEncoding.EncodeToString(userJSON)},
+			"user":  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
 			"type":  {typ},
 			"state": {clientState},
 		}.Encode(),

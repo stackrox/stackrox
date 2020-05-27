@@ -176,6 +176,55 @@ describe('Auth Sagas', () => {
             });
     });
 
+    it('should handle SAML response with test mode', () => {
+        const storeLocationMock = jest.fn();
+        const user =
+            'eyJ1c2VySWQiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsImV4cGlyZXMiOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiIsImF1dGhQcm92aWRlciI6eyJpZCI6ImRlZjQzMDdjLTczMmEtNDUzZS05NzAyLTE2ZDU3NjA5MGE1NCIsIm5hbWUiOiJWYW5TYW1sT2t0YTEiLCJ0eXBlIjoic2FtbCIsInVpRW5kcG9pbnQiOiJsb2NhbGhvc3Q6ODAwMCIsImVuYWJsZWQiOnRydWUsImxvZ2luVXJsIjoiL3Nzby9sb2dpbi9kZWY0MzA3Yy03MzJhLTQ1M2UtOTcwMi0xNmQ1NzYwOTBhNTQifSwidXNlckluZm8iOnsidXNlcm5hbWUiOiJ0ZXN0QHN0YWNrcm94LmNvbSIsInBlcm1pc3Npb25zIjp7Im5hbWUiOiJBZG1pbiIsImdsb2JhbEFjY2VzcyI6IlJFQURfV1JJVEVfQUNDRVNTIn0sInJvbGVzIjpbeyJuYW1lIjoiQWRtaW4iLCJnbG9iYWxBY2Nlc3MiOiJSRUFEX1dSSVRFX0FDQ0VTUyJ9XX0sInVzZXJBdHRyaWJ1dGVzIjpbeyJrZXkiOiJlbWFpbCIsInZhbHVlcyI6WyJqd0BzdGFja3JveC5jb20iXX0seyJrZXkiOiJ1c2VyaWQiLCJ2YWx1ZXMiOlsidGVzdEBzdGFja3JveC5jb20iXX1dfQ';
+        const requestedLocation = '/test-login-results';
+        // TODO: mock auth action call, too
+        // const setAuthProviderTestResultsMock = jest.fn();
+
+        return expectSaga(saga)
+            .provide([
+                ...createStateSelectors(),
+                [call(AuthService.fetchLoginAuthProviders), { response: [] }],
+                // TODO: mock auth action call, too
+                // [
+                //     call(actions.setAuthProviderTestResults, {}),
+                //     dynamic(setAuthProviderTestResultsMock),
+                // ],
+                [call(AuthService.getAndClearRequestedLocation), requestedLocation],
+                [
+                    call(AuthService.storeRequestedLocation, requestedLocation),
+                    dynamic(storeLocationMock),
+                ],
+                [
+                    call(LicenseService.fetchLicenses),
+                    {
+                        response: {
+                            licenses: [{ status: LICENSE_STATUS.VALID }],
+                        },
+                    },
+                ],
+                [call(AuthService.logout), null],
+                [call(fetchUserRolePermissions), { response: {} }],
+            ])
+            .put(push(requestedLocation))
+            .dispatch(
+                createLocationChange(
+                    '/auth/response/generic',
+                    null,
+                    `#state=&test=true&type=saml&user=${user}`
+                )
+            )
+            .silentRun()
+            .then(() => {
+                // TODO: mock auth action call, too
+                // expect(setAuthProviderTestResultsMock.mock.calls.length).toBe(1);
+                expect(storeLocationMock.mock.calls.length).toBe(1);
+            });
+    });
+
     it('should logout in case of 401 HTTP error', () =>
         expectSaga(saga)
             .provide([

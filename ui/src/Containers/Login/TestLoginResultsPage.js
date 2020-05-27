@@ -6,6 +6,7 @@ import { createStructuredSelector } from 'reselect';
 import { useTheme } from 'Containers/ThemeProvider';
 import Message from 'Components/Message';
 import { selectors } from 'reducers';
+import upperFirst from 'lodash/upperFirst';
 import AppWrapper from '../AppWrapper';
 
 function closeThisWindow() {
@@ -13,25 +14,44 @@ function closeThisWindow() {
 }
 
 function getMessageBody(response) {
+    const messageClass = 'flex flex-col items-left w-full';
     const headingClass = 'font-700 mb-2';
 
-    if (response?.userAttributes) {
-        const userAttributes = Object.entries(response.userAttributes);
-        const displayedAttributes = userAttributes
-            .map(([key, value]) => `${key}: ${value}`)
-            .join(', ');
+    if (!response?.userAttributes) {
         return (
-            <div>
-                <h3 className={headingClass}>Authentication successful</h3>
-                <p className="pb-2 mb-2 border-b border-success-700">User ID: {response?.userID}</p>
-                <p>User attributes: {displayedAttributes}</p>
+            <div className={messageClass}>
+                <h1 className={headingClass}>Authentication error</h1>
+                <p> {upperFirst(response?.error) || 'An unrecognized error occurred.'}</p>
             </div>
         );
     }
+
+    const displayAttributes = response.userAttributes.map((curr) => {
+        return (
+            <li key={curr.key}>
+                <span id={curr.key}>{curr.key}</span>:{' '}
+                <span aria-labelledby={curr.key}>{curr.values}</span>
+            </li>
+        );
+    });
+
+    const content = (
+        <>
+            <p className="pb-2 mb-2 border-b border-success-700">
+                <span className="italic" id="user-id-label">
+                    User ID:
+                </span>{' '}
+                <span aria-labelledby="user-id-label">{response?.userID}</span>
+            </p>
+            <h2 className="italic">User Attributes:</h2>
+            <ul className="list-none">{displayAttributes}</ul>
+        </>
+    );
+
     return (
-        <div>
-            <h3 className={headingClass}>Authentication error</h3>
-            <p>{response?.error || 'An unrecognized error occurred.'}</p>
+        <div className={messageClass}>
+            <h1 className={headingClass}>Authentication successful</h1>
+            <>{content}</>
         </div>
     );
 }

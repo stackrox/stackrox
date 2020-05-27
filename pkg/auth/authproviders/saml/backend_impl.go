@@ -137,11 +137,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 		return nil, httputil.NewError(http.StatusBadRequest, "no SAML response transmitted")
 	}
 
-	authResp, err := p.consumeSAMLResponse(samlResponse)
-	if err != nil {
-		return nil, err
-	}
-	return authResp, err
+	return p.consumeSAMLResponse(samlResponse)
 }
 
 func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*authproviders.AuthResponse, string, error) {

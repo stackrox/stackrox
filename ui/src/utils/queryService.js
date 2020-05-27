@@ -1,4 +1,5 @@
 import pluralize from 'pluralize';
+
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { NODE_FRAGMENT } from 'queries/node';

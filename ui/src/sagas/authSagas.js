@@ -3,6 +3,7 @@ import { delay } from 'redux-saga';
 import { push } from 'react-router-redux';
 import queryString from 'qs';
 import Raven from 'raven-js';
+import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, accessControlPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
@@ -115,9 +116,10 @@ function parseFragment(location) {
 function* handleOidcResponse(location) {
     const hash = parseFragment(location);
     // eslint-disable-next-line camelcase
-    if (hash.error || !hash?.id_token) {
+    if (hash.error) {
         return hash;
     }
+
     try {
         const { id_token: idToken, state } = hash;
         const result = yield call(AuthService.exchangeAuthToken, idToken, 'oidc', state);
@@ -138,6 +140,37 @@ function handleGenericResponse(location) {
     return { token: hash.token };
 }
 
+function* handleErrAuthResponse(result, defaultErrMsg) {
+    if (!result?.error) {
+        yield put(actions.handleIdpError({ error: defaultErrMsg }));
+    }
+    yield put(actions.handleIdpError(result));
+}
+
+function* handleTestLoginAuthResponse(location, type, result) {
+    const parsedResult = {
+        error: result?.error || null,
+    };
+
+    if (result?.user) {
+        let user = {};
+        try {
+            user = JSON.parse(Base64.decode(result.user)); // built-in atob not URL or UTF safe
+        } catch (error) {
+            // not base64 encoded
+            user = result?.user;
+        }
+        parsedResult.userID = user.userId || null;
+        parsedResult.userAttributes = user.userAttributes || null;
+    }
+
+    // save the test response for the results page to display
+    yield put(actions.setAuthProviderTestResults(parsedResult));
+
+    // set up the redirect to the results page
+    yield call(AuthService.storeRequestedLocation, testLoginResultsPath);
+}
+
 function* dispatchAuthResponse(type, location) {
     // For every handler registered under `/auth/response/<type>`, add a function that returns the token.
     const responseHandlers = {
@@ -150,32 +183,21 @@ function* dispatchAuthResponse(type, location) {
     if (handler) {
         result = yield call(handler, location);
     } else {
-        result = { error: `unknown auth response type ${type}` };
+        yield call(handleErrAuthResponse, result, `unknown auth response type ${type}`);
     }
 
-    if (result.token) {
+    if (result?.test === true || result?.test === 'true') {
+        // `test` property can be a string or boolean, depending on the type of provider
+        //    but if it is present in any form, its a test of the provider and not an actual login
+        yield call(handleTestLoginAuthResponse, location, type, result);
+    } else if (result?.token) {
         yield call(AuthService.storeAccessToken, result.token);
 
         // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
         // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
         yield delay(10);
-    } else if (result?.userAttributes || result?.error) {
-        // save the test response for the results page to display
-        const parsedAttributes = JSON.parse(result.userAttributes || null);
-        const parsedResult = {
-            ...result,
-            userAttributes: parsedAttributes,
-            error: result.error || null,
-        };
-        yield put(actions.setAuthProviderTestResults(parsedResult));
-
-        // set up the redirect to the results page
-        yield call(AuthService.storeRequestedLocation, testLoginResultsPath);
     } else {
-        if (!result || !result.error) {
-            result = { error: `no auth token received via method ${type}` };
-        }
-        yield put(actions.handleIdpError(result));
+        yield call(handleErrAuthResponse, result, `no auth token received via method ${type}`);
     }
 
     yield fork(getLicenses);

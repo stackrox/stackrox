@@ -85,7 +85,7 @@ const authProviders = (state = [], action) => {
 
 const authProviderTestResults = (state = {}, action) => {
     if (action.type === types.SET_AUTH_PROVIDER_TEST_RESULTS) {
-        return isEqual(action.response, state) ? state : action.value;
+        return isEqual(action.value, state) ? state : action.value;
     }
     return state;
 };

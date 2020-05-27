@@ -39,7 +39,7 @@ func CreateRoleBasedIdentity(ctx context.Context, provider Provider, authResp *A
 	// config might contain semi-sensitive values, so strip it
 	var authProvider *storage.AuthProvider
 	if provider.StorageView() != nil {
-		authProvider = provider.StorageView()
+		authProvider = provider.StorageView().Clone()
 		authProvider.Config = nil
 	}
 
