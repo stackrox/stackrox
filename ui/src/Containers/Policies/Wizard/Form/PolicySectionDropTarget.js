@@ -39,13 +39,17 @@ function PolicySectionDropTarget({ allFields, addPolicyFieldCardHandler }) {
 
     const disabledDrop = !canDrop && isOver;
 
+    const disabledDropStyle = disabledDrop
+        ? 'bg-base-300 border-base-400'
+        : 'bg-base-200 border-base-300';
+    const canDropStyle = !disabledDrop && canDrop ? 'border-accent-700' : '';
+    const isOverStyle = !disabledDrop && isOver ? 'bg-accent-300' : '';
+
     return (
         <div
             ref={drop}
             data-testid="policy-section-drop-target"
-            className={`${
-                disabledDrop ? 'bg-base-300 border-base-400' : 'bg-base-200 border-base-300'
-            } rounded border-2 border-dashed flex font-700 justify-center p-3 text-base-500 text-sm uppercase`}
+            className={`${disabledDropStyle} ${canDropStyle} ${isOverStyle} rounded border-2 border-dashed flex font-700 justify-center p-3 text-base-500 text-sm uppercase`}
         >
             Drop a policy field inside
         </div>
