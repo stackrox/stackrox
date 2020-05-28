@@ -14,8 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/process/filter"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/tecbot/gorocksdb"
 )
 
 // DataStore is an intermediary to PodStorage.
@@ -43,7 +43,7 @@ func New(db *badger.DB, bleveIndex bleve.Index, indicators piDS.DataStore, proce
 }
 
 // NewRocksDB creates a pod datastore based on RocksDB
-func NewRocksDB(db *gorocksdb.DB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
+func NewRocksDB(db *rocksdbBase.RocksDB, bleveIndex bleve.Index, indicators piDS.DataStore, processFilter filter.Filter) (DataStore, error) {
 	store := cache.NewCachedStore(rocksdb.New(db))
 	indexer := index.New(bleveIndex)
 	searcher := search.New(store, indexer)

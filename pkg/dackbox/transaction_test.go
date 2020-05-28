@@ -41,10 +41,11 @@ func (s *DackBoxTransactionTestSuite) TearDownTest() {
 
 func (s *DackBoxTransactionTestSuite) TestRefView() {
 	// Start with all three keys pointing to the same two keys.
-	firstGraph := s.sdb.NewTransaction()
+	firstGraph, err := s.sdb.NewTransaction()
+	s.NoError(err)
 	defer firstGraph.Discard()
 
-	err := firstGraph.Graph().SetRefs([]byte("f1"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
+	err = firstGraph.Graph().SetRefs([]byte("f1"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
 	s.NoError(err)
 	err = firstGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t1"), []byte("t2")})
 	s.NoError(err)
@@ -63,7 +64,8 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	s.NoError(err)
 
 	// Change one key to point to two new keys, and update the other with a no-op change.
-	secondGraph := s.sdb.NewTransaction()
+	secondGraph, err := s.sdb.NewTransaction()
+	s.NoError(err)
 	defer secondGraph.Discard()
 
 	err = secondGraph.Graph().SetRefs([]byte("f2"), sortedkeys.SortedKeys{[]byte("t3"), []byte("t4")})
@@ -81,7 +83,8 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	s.Equal([][]byte{[]byte("f2")}, secondGraph.Graph().GetRefsTo([]byte("t4")))
 
 	// Create a third view before commit to check that we don't see any of the second views changes.
-	thirdGraph := s.sdb.NewTransaction()
+	thirdGraph, err := s.sdb.NewTransaction()
+	s.NoError(err)
 	defer thirdGraph.Discard()
 
 	// Delete a ref in the second view after three has been created.
@@ -93,7 +96,8 @@ func (s *DackBoxTransactionTestSuite) TestRefView() {
 	s.NoError(err)
 
 	// Create a third view before commit to check that we don't see any of the second views changes.
-	forthGraph := s.sdb.NewTransaction()
+	forthGraph, err := s.sdb.NewTransaction()
+	s.NoError(err)
 	defer forthGraph.Discard()
 
 	// Check that the third view sees only the first views changes.

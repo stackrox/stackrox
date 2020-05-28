@@ -42,7 +42,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestDefaultPolicies(t *testing.T) {
@@ -53,7 +52,7 @@ type DefaultPoliciesTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
-	db         *gorocksdb.DB
+	db         *rocksdb.RocksDB
 	dir        string
 
 	testCtx  context.Context

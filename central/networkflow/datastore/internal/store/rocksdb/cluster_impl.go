@@ -3,18 +3,18 @@ package rocksdb
 import (
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/common"
-	"github.com/tecbot/gorocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // NewClusterStore returns a new ClusterStore instance using the provided badger DB instance.
-func NewClusterStore(db *gorocksdb.DB) store.ClusterStore {
+func NewClusterStore(db *rocksdb.RocksDB) store.ClusterStore {
 	return &clusterStoreImpl{
 		db: db,
 	}
 }
 
 type clusterStoreImpl struct {
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 }
 
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.

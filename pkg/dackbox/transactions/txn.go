@@ -2,7 +2,7 @@ package transactions
 
 // DBTransactionFactory describes a creator for a transaction
 type DBTransactionFactory interface {
-	NewTransaction(update bool) DBTransaction
+	NewTransaction(update bool) (DBTransaction, error)
 }
 
 // DBTransaction is an abstraction of a database transaction

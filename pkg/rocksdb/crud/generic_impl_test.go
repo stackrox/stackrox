@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (
@@ -39,7 +39,7 @@ type CRUDTestSuite struct {
 	suite.Suite
 
 	dir string
-	db  *gorocksdb.DB
+	db  *rocksdb.RocksDB
 
 	crud db.Crud
 }
@@ -50,11 +50,8 @@ func (s *CRUDTestSuite) SetupTest() {
 
 	s.dir = dir
 
-	openOpts := gorocksdb.NewDefaultOptions()
-	openOpts.SetCreateIfMissing(true)
-	s.db, err = gorocksdb.OpenDb(openOpts, dir)
+	s.db, err = rocksdb.New(dir)
 	s.NoError(err)
-
 	s.crud = NewCRUD(s.db, []byte("bucket"), alertKeyFunc, alloc)
 }
 

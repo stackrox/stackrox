@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -19,7 +20,7 @@ var key = []byte("\x00")
 type storeImpl struct {
 	bucketRef bolthelper.BucketRef
 	badgerDB  *badger.DB
-	rocksDB   *gorocksdb.DB
+	rocksDB   *rocksdb.RocksDB
 }
 
 func (s *storeImpl) getBoltVersion() (*storage.Version, error) {
@@ -61,6 +62,11 @@ func (s *storeImpl) getBadgerVersion() (*storage.Version, error) {
 }
 
 func (s *storeImpl) getRocksDBVersion() (*storage.Version, error) {
+	if err := s.rocksDB.IncRocksDBInProgressOps(); err != nil {
+		return nil, err
+	}
+	defer s.rocksDB.DecRocksDBInProgressOps()
+
 	readOpt := gorocksdb.NewDefaultReadOptions()
 	defer readOpt.Destroy()
 
@@ -126,6 +132,11 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 	}
 
 	if env.RocksDB.BooleanSetting() {
+		if err := s.rocksDB.IncRocksDBInProgressOps(); err != nil {
+			return err
+		}
+		defer s.rocksDB.DecRocksDBInProgressOps()
+
 		writeOpts := gorocksdb.NewDefaultWriteOptions()
 		// Purposefully sync this
 		writeOpts.SetSync(true)

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestRocksDBDackBox(t *testing.T) {
@@ -19,7 +18,7 @@ type TestSuite struct {
 	suite.Suite
 
 	dir     string
-	db      *gorocksdb.DB
+	db      *rocksdb.RocksDB
 	factory transactions.DBTransactionFactory
 }
 
@@ -41,31 +40,37 @@ func (s *TestSuite) TestTransactions() {
 	value := []byte("value")
 	value2 := []byte("value2")
 
-	txn := s.factory.NewTransaction(false)
+	txn, err := s.factory.NewTransaction(false)
+	s.NoError(err)
+
 	retrievedValue, exists, err := txn.Get(key)
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(retrievedValue)
 	txn.Discard()
 
-	txn = s.factory.NewTransaction(true)
+	txn, err = s.factory.NewTransaction(true)
+	s.NoError(err)
 	s.NoError(txn.Set(key, value))
 	s.NoError(txn.Commit())
 	txn.Discard()
 
-	txn = s.factory.NewTransaction(false)
+	txn, err = s.factory.NewTransaction(false)
+	s.NoError(err)
 	retrievedValue, exists, err = txn.Get(key)
 	s.NoError(err)
 	s.True(exists)
 	s.Equal(value, retrievedValue)
 	txn.Discard()
 
-	txn = s.factory.NewTransaction(true)
+	txn, err = s.factory.NewTransaction(true)
+	s.NoError(err)
 	s.NoError(txn.Set(key, value2))
 	s.NoError(txn.Commit())
 	txn.Discard()
 
-	txn = s.factory.NewTransaction(false)
+	txn, err = s.factory.NewTransaction(false)
+	s.NoError(err)
 	retrievedValue, exists, err = txn.Get(key)
 	s.NoError(err)
 	s.True(exists)
@@ -74,8 +79,9 @@ func (s *TestSuite) TestTransactions() {
 }
 
 func (s *TestSuite) TestTransactionPanicOnUpdate() {
-
-	txn1 := s.factory.NewTransaction(false)
+	txn1, err := s.factory.NewTransaction(false)
+	s.NoError(err)
+	defer txn1.Discard()
 	s.Panics(func() {
 		_ = txn1.Set([]byte("1"), []byte("2"))
 	})
@@ -93,9 +99,11 @@ func (s *TestSuite) TestConcurrentTransactions() {
 	value2 := []byte("value2")
 
 	// Create two txns, neither should be able to see the values that the other writes
-	txn1 := s.factory.NewTransaction(true)
+	txn1, err := s.factory.NewTransaction(true)
+	s.NoError(err)
 	defer txn1.Discard()
-	txn2 := s.factory.NewTransaction(true)
+	txn2, err := s.factory.NewTransaction(true)
+	s.NoError(err)
 	defer txn2.Discard()
 
 	s.NoError(txn1.Set(key, value))
@@ -118,7 +126,8 @@ func (s *TestSuite) TestConcurrentTransactions() {
 
 	// New transactions should see both key and key2
 
-	txn3 := s.factory.NewTransaction(false)
+	txn3, err := s.factory.NewTransaction(false)
+	s.NoError(err)
 	defer txn3.Discard()
 	val, exists, err := txn3.Get(key)
 	s.NoError(err)
@@ -131,7 +140,8 @@ func (s *TestSuite) TestConcurrentTransactions() {
 	s.Equal(value2, val2)
 
 	// Delete the values
-	txn4 := s.factory.NewTransaction(true)
+	txn4, err := s.factory.NewTransaction(true)
+	s.NoError(err)
 	defer txn4.Discard()
 	s.NoError(txn4.Delete(key))
 	s.NoError(txn4.Delete(key2))
@@ -149,7 +159,8 @@ func (s *TestSuite) TestConcurrentTransactions() {
 	s.Equal(value2, val2)
 
 	// txn5 should have them removed
-	txn5 := s.factory.NewTransaction(false)
+	txn5, err := s.factory.NewTransaction(false)
+	s.NoError(err)
 	defer txn5.Discard()
 
 	_, exists, err = txn5.Get(key)

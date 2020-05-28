@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestGatherers(t *testing.T) {
@@ -31,7 +30,7 @@ type gathererTestSuite struct {
 	bolt      *bbolt.DB
 	badger    *badger.DB
 	badgerDir string
-	rocks     *gorocksdb.DB
+	rocks     *rocksdb.RocksDB
 	rocksDir  string
 	index     bleve.Index
 
@@ -48,7 +47,7 @@ func (s *gathererTestSuite) SetupSuite() {
 	s.badger = badgerDB
 	s.badgerDir = dir
 
-	rocksDB, dir, err := rocksdb.NewTemp(s.T().Name() + ".db")
+	rocksDB := rocksdbtest.RocksDBForT(s.T())
 	s.Require().NoError(err, "Failed to make BadgerDB: %s", err)
 	s.rocks = rocksDB
 	s.rocksDir = dir

@@ -19,12 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestAuthz(t *testing.T) {
@@ -144,7 +144,7 @@ func TestLabelsMap(t *testing.T) {
 	}
 }
 
-func testDackBoxInstance(t *testing.T, db *gorocksdb.DB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
+func testDackBoxInstance(t *testing.T, db *rocksdb.RocksDB, index bleve.Index) (*dackbox.DackBox, indexer.WrapperRegistry, queue.WaitableQueue) {
 	indexingQ := queue.NewWaitableQueue()
 	dacky, err := dackbox.NewRocksDBDackBox(db, indexingQ, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(t, err)

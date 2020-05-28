@@ -2,15 +2,20 @@ package rocksdb
 
 import (
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 	"github.com/tecbot/gorocksdb"
 )
 
 type rocksDBWrapper struct {
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 }
 
-func (b *rocksDBWrapper) NewTransaction(update bool) transactions.DBTransaction {
+func (b *rocksDBWrapper) NewTransaction(update bool) (transactions.DBTransaction, error) {
+	if err := b.db.IncRocksDBInProgressOps(); err != nil {
+		return nil, err
+	}
+
 	snapshot := b.db.NewSnapshot()
 	readOpts := gorocksdb.NewDefaultReadOptions()
 	readOpts.SetSnapshot(snapshot)
@@ -31,25 +36,25 @@ func (b *rocksDBWrapper) NewTransaction(update bool) transactions.DBTransaction 
 	if update {
 		wrapper.batch = gorocksdb.NewWriteBatch()
 	}
-	return wrapper
+	return wrapper, nil
 }
 
 // NewRocksDBWrapper is a wrapper around a rocksDB so it implements the DBTransactionFactory interface
-func NewRocksDBWrapper(db *gorocksdb.DB) transactions.DBTransactionFactory {
+func NewRocksDBWrapper(db *rocksdb.RocksDB) transactions.DBTransactionFactory {
 	return &rocksDBWrapper{
 		db: db,
 	}
 }
 
 type txnWrapper struct {
-	db       *gorocksdb.DB
+	db       *rocksdb.RocksDB
 	isUpdate bool
 
-	batch *gorocksdb.WriteBatch
-
-	readOpts *gorocksdb.ReadOptions
-	itOpts   *gorocksdb.ReadOptions
-	snapshot *gorocksdb.Snapshot
+	hasDecrementedInProgressOp bool
+	batch                      *gorocksdb.WriteBatch
+	readOpts                   *gorocksdb.ReadOptions
+	itOpts                     *gorocksdb.ReadOptions
+	snapshot                   *gorocksdb.Snapshot
 }
 
 func (t *txnWrapper) Delete(keys ...[]byte) error {
@@ -94,6 +99,8 @@ func (t *txnWrapper) BucketKeyCount(prefix []byte) (int, error) {
 }
 
 func (t *txnWrapper) Commit() error {
+	defer t.Discard()
+
 	writeOpts := generic.DefaultWriteOptions()
 	defer writeOpts.Destroy()
 
@@ -101,6 +108,10 @@ func (t *txnWrapper) Commit() error {
 }
 
 func (t *txnWrapper) Discard() {
+	if !t.hasDecrementedInProgressOp {
+		t.db.DecRocksDBInProgressOps()
+		t.hasDecrementedInProgressOp = true
+	}
 	if t.batch != nil {
 		t.batch.Destroy()
 		t.batch = nil

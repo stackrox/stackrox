@@ -14,8 +14,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	rocksdbBase "github.com/stackrox/rox/pkg/rocksdb"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/tecbot/gorocksdb"
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
@@ -61,7 +61,7 @@ func New(storage store.Store, commentsStorage commentsStore.Store, indexer index
 }
 
 // NewWithDb returns a new soleInstance of DataStore using the input indexer, and searcher.
-func NewWithDb(db *gorocksdb.DB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
+func NewWithDb(db *rocksdbBase.RocksDB, commentsDB *bolt.DB, bIndex bleve.Index) DataStore {
 	store := rocksdb.NewFullStore(db)
 	commentsStore := commentsStore.New(commentsDB)
 	indexer := index.New(bIndex)

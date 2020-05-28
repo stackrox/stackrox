@@ -34,7 +34,10 @@ func New(dacky *dackbox.DackBox) (store.Store, error) {
 }
 
 func (b *storeImpl) Exists(id string) (bool, error) {
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return false, err
+	}
 	defer dackTxn.Discard()
 
 	exists, err := b.reader.ExistsIn(edgeDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -48,7 +51,10 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 func (b *storeImpl) Count() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "ImageComponentEdge")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return 0, err
+	}
 	defer dackTxn.Discard()
 
 	count, err := b.reader.CountIn(edgeDackBox.Bucket, dackTxn)
@@ -62,7 +68,10 @@ func (b *storeImpl) Count() (int, error) {
 func (b *storeImpl) GetAll() ([]*storage.ImageComponentEdge, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "ImageComponentEdge")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs, err := b.reader.ReadAllIn(edgeDackBox.Bucket, dackTxn)
@@ -80,7 +89,10 @@ func (b *storeImpl) GetAll() ([]*storage.ImageComponentEdge, error) {
 func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ImageComponentEdge")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer dackTxn.Discard()
 
 	msg, err := b.reader.ReadIn(edgeDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -94,7 +106,10 @@ func (b *storeImpl) Get(id string) (cve *storage.ImageComponentEdge, exists bool
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponentEdge, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "ImageComponentEdge")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs := make([]proto.Message, 0, len(ids)/2)
@@ -123,7 +138,10 @@ func (b *storeImpl) Upsert(cves ...*storage.ImageComponentEdge) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Upsert, "ImageComponentEdge")
 
 	for batch := 0; batch < len(cves); batch += batchSize {
-		dackTxn := b.dacky.NewTransaction()
+		dackTxn, err := b.dacky.NewTransaction()
+		if err != nil {
+			return err
+		}
 		defer dackTxn.Discard()
 
 		for idx := batch; idx < len(cves) && idx < batch+batchSize; idx++ {
@@ -144,7 +162,10 @@ func (b *storeImpl) Delete(ids ...string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.RemoveMany, "ImageComponentEdge")
 
 	for batch := 0; batch < len(ids); batch += batchSize {
-		dackTxn := b.dacky.NewTransaction()
+		dackTxn, err := b.dacky.NewTransaction()
+		if err != nil {
+			return err
+		}
 		defer dackTxn.Discard()
 
 		for idx := batch; idx < len(ids) && idx < batch+batchSize; idx++ {

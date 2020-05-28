@@ -134,7 +134,10 @@ func needsInitialIndexing(index bleve.Index, bucket []byte) (bool, error) {
 func queueBucketForIndexing(dacky *dackbox.DackBox, indexQ queue.WaitableQueue, category v1.SearchCategory, dirtyBucket, bucket []byte, reader crud.Reader) error {
 	defer debug.FreeOSMemory()
 
-	txn := dacky.NewReadOnlyTransaction()
+	txn, err := dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return err
+	}
 	defer txn.Discard()
 
 	// Read all keys that need re-indexing.

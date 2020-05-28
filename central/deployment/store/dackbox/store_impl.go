@@ -34,7 +34,10 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (*StoreImpl, err
 func (b *StoreImpl) CountDeployments() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return 0, err
+	}
 	defer txn.Discard()
 
 	count, err := deploymentDackBox.Reader.CountIn(deploymentDackBox.Bucket, txn)
@@ -49,11 +52,14 @@ func (b *StoreImpl) CountDeployments() (int, error) {
 func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer txn.Discard()
 
 	var ids []string
-	err := txn.BucketKeyForEach(deploymentDackBox.Bucket, true, func(k []byte) error {
+	err = txn.BucketKeyForEach(deploymentDackBox.Bucket, true, func(k []byte) error {
 		ids = append(ids, string(k))
 		return nil
 	})
@@ -64,7 +70,10 @@ func (b *StoreImpl) GetDeploymentIDs() ([]string, error) {
 func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer txn.Discard()
 
 	msg, err := deploymentDackBox.ListReader.ReadIn(deploymentDackBox.ListBucketHandler.GetKey(id), txn)
@@ -79,7 +88,10 @@ func (b *StoreImpl) ListDeployment(id string) (deployment *storage.ListDeploymen
 func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeployment, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer txn.Discard()
 
 	var msgs []proto.Message
@@ -106,7 +118,10 @@ func (b *StoreImpl) ListDeploymentsWithIDs(ids ...string) ([]*storage.ListDeploy
 func (b *StoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer txn.Discard()
 
 	msgs, err := deploymentDackBox.ListReader.ReadAllIn(deploymentDackBox.ListBucket, txn)
@@ -125,7 +140,10 @@ func (b *StoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 func (b *StoreImpl) GetDeployments() ([]*storage.Deployment, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer txn.Discard()
 
 	msgs, err := deploymentDackBox.Reader.ReadAllIn(deploymentDackBox.Bucket, txn)
@@ -144,7 +162,10 @@ func (b *StoreImpl) GetDeployments() ([]*storage.Deployment, error) {
 func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer txn.Discard()
 
 	msg, err := deploymentDackBox.Reader.ReadIn(deploymentDackBox.BucketHandler.GetKey(id), txn)
@@ -159,7 +180,10 @@ func (b *StoreImpl) GetDeployment(id string) (deployment *storage.Deployment, ex
 func (b *StoreImpl) GetDeploymentsWithIDs(ids ...string) ([]*storage.Deployment, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 
-	txn := b.dacky.NewReadOnlyTransaction()
+	txn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer txn.Discard()
 
 	var msgs []proto.Message
@@ -203,13 +227,16 @@ func (b *StoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	)...)
 
 	return b.keyFence.DoStatusWithLock(keysToLock, func() error {
-		txn := b.dacky.NewTransaction()
+		txn, err := b.dacky.NewTransaction()
+		if err != nil {
+			return err
+		}
 		defer txn.Discard()
 
 		// Clear cluster pointing to the namespace before setting the new one.
 		// This is to handle situations where a new cluster bundle is generated for an existing cluster, as the cluster
 		// ID will change, the the IDs for child objects will remain the same.
-		err := txn.Graph().DeleteRefsTo(namespaceKey)
+		err = txn.Graph().DeleteRefsTo(namespaceKey)
 		if err != nil {
 			return err
 		}
@@ -245,10 +272,13 @@ func (b *StoreImpl) RemoveDeployment(id string) error {
 
 	clusterKey, namespaceKey, allKeys := b.collectDeploymentKeys(id)
 	return b.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(allKeys...), func() error {
-		txn := b.dacky.NewTransaction()
+		txn, err := b.dacky.NewTransaction()
+		if err != nil {
+			return err
+		}
 		defer txn.Discard()
 
-		err := deploymentDackBox.Deleter.DeleteIn(deploymentDackBox.BucketHandler.GetKey(id), txn)
+		err = deploymentDackBox.Deleter.DeleteIn(deploymentDackBox.BucketHandler.GetKey(id), txn)
 		if err != nil {
 			return err
 		}

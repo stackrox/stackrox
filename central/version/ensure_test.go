@@ -12,8 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestEnsurer(t *testing.T) {
@@ -25,7 +25,7 @@ type EnsurerTestSuite struct {
 
 	boltDB       *bolt.DB
 	badgerDB     *badger.DB
-	rocksDB      *gorocksdb.DB
+	rocksDB      *rocksdb.RocksDB
 	versionStore store.Store
 }
 
@@ -36,7 +36,7 @@ func (suite *EnsurerTestSuite) SetupTest() {
 	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
 	suite.Require().NoError(err, "Failed to create BadgerDB")
 
-	rocksDB, _, err := rocksdb.NewTemp(suite.T().Name())
+	rocksDB := rocksdbtest.RocksDBForT(suite.T())
 	suite.Require().NoError(err, "Failed to create RocksDB")
 
 	suite.boltDB = boltDB

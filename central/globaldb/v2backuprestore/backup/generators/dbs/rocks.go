@@ -24,7 +24,7 @@ var marginOfSafety = 0.5
 
 // NewRocksBackup returns a generator for RocksDB backups.
 // We take in the path that holds the DB as well so that we can estimate the db's size with statfs_t.
-func NewRocksBackup(db *gorocksdb.DB) *RocksBackup {
+func NewRocksBackup(db *rocksdb.RocksDB) *RocksBackup {
 	return &RocksBackup{
 		db: db,
 	}
@@ -32,11 +32,16 @@ func NewRocksBackup(db *gorocksdb.DB) *RocksBackup {
 
 // RocksBackup is an implementation of a DirectoryGenerator which writes a backup of RocksDB to the input path.
 type RocksBackup struct {
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 }
 
 // WriteDirectory writes a backup of RocksDB to the input path.
 func (rgen *RocksBackup) WriteDirectory(ctx context.Context) (string, error) {
+	if err := rgen.db.IncRocksDBInProgressOps(); err != nil {
+		return "", err
+	}
+	defer rgen.db.DecRocksDBInProgressOps()
+
 	path, err := findScratchPath()
 	if err != nil {
 		return "", errors.Wrap(err, "could not find space sufficient for backup generation")
@@ -50,7 +55,7 @@ func (rgen *RocksBackup) WriteDirectory(ctx context.Context) (string, error) {
 	defer backupEngine.Close()
 
 	// Check DB size vs. availability.
-	err = backupEngine.CreateNewBackup(rgen.db)
+	err = backupEngine.CreateNewBackup(rgen.db.DB)
 	if err != nil {
 		return "", errors.Wrap(err, "error generating backup directory")
 	}

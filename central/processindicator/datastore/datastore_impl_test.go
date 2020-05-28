@@ -38,7 +38,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestIndicatorDatastore(t *testing.T) {
@@ -53,7 +52,7 @@ type IndicatorDataStoreTestSuite struct {
 	indexer         index.Indexer
 	searcher        processSearch.Searcher
 
-	rocksDB *gorocksdb.DB
+	rocksDB *rocksdb.RocksDB
 	dir     string
 	boltDB  *bolt.DB
 
@@ -76,7 +75,7 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Indicator)))
 
 	var err error
-	suite.rocksDB, suite.dir, err = rocksdb.NewTemp(testutils.DBFileName(suite))
+	suite.rocksDB = rocksdbtest.RocksDBForT(suite.T())
 	suite.NoError(err)
 	suite.storage = rocksStore.New(suite.rocksDB)
 

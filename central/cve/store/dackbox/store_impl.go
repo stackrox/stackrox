@@ -34,7 +34,10 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, er
 }
 
 func (b *storeImpl) Exists(id string) (bool, error) {
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return false, err
+	}
 	defer dackTxn.Discard()
 
 	exists, err := vulnDackBox.Reader.ExistsIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -48,7 +51,10 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 func (b *storeImpl) Count() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "CVE")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return 0, err
+	}
 	defer dackTxn.Discard()
 
 	count, err := vulnDackBox.Reader.CountIn(vulnDackBox.Bucket, dackTxn)
@@ -62,7 +68,10 @@ func (b *storeImpl) Count() (int, error) {
 func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "CVE")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs, err := vulnDackBox.Reader.ReadAllIn(vulnDackBox.Bucket, dackTxn)
@@ -80,7 +89,10 @@ func (b *storeImpl) GetAll() ([]*storage.CVE, error) {
 func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "CVE")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer dackTxn.Discard()
 
 	msg, err := vulnDackBox.Reader.ReadIn(vulnDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -94,7 +106,10 @@ func (b *storeImpl) Get(id string) (cve *storage.CVE, exists bool, err error) {
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.CVE, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "CVE")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs := make([]proto.Message, 0, len(ids))
@@ -145,7 +160,10 @@ func (b *storeImpl) Upsert(cves ...*storage.CVE) error {
 }
 
 func (b *storeImpl) upsertNoBatch(cves ...*storage.CVE) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	for _, cve := range cves {
@@ -184,7 +202,10 @@ func (b *storeImpl) UpsertClusterCVEs(parts ...converter.ClusterCVEParts) error 
 }
 
 func (b *storeImpl) upsertClusterCVEsNoBatch(parts ...converter.ClusterCVEParts) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	for _, clusterCVE := range parts {
@@ -232,7 +253,10 @@ func (b *storeImpl) Delete(ids ...string) error {
 }
 
 func (b *storeImpl) deleteNoBatch(ids ...string) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	for _, id := range ids {

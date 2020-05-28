@@ -39,7 +39,10 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, noUpdateTimestam
 func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer branch.Discard()
 
 	msg, err := imageDackBox.ListReader.ReadIn(imageDackBox.ListBucketHandler.GetKey(types.NewDigest(id).Digest()), branch)
@@ -55,7 +58,10 @@ func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool,
 
 // Exists returns if and image exists in the DB with the given id.
 func (b *storeImpl) Exists(id string) (bool, error) {
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return false, err
+	}
 	defer branch.Discard()
 
 	exists, err := imageDackBox.Reader.ExistsIn(imageDackBox.BucketHandler.GetKey(id), branch)
@@ -70,7 +76,10 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 func (b *storeImpl) GetImages() ([]*storage.Image, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer branch.Discard()
 
 	keys, err := imageDackBox.Reader.ReadKeysIn(imageDackBox.Bucket, branch)
@@ -96,7 +105,10 @@ func (b *storeImpl) GetImages() ([]*storage.Image, error) {
 func (b *storeImpl) CountImages() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image")
 
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return 0, err
+	}
 	defer branch.Discard()
 
 	count, err := imageDackBox.Reader.CountIn(imageDackBox.Bucket, branch)
@@ -111,7 +123,10 @@ func (b *storeImpl) CountImages() (int, error) {
 func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image")
 
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer branch.Discard()
 
 	image, err = b.readImage(branch, id)
@@ -125,7 +140,10 @@ func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err 
 func (b *storeImpl) GetImagesBatch(digests []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	branch := b.dacky.NewReadOnlyTransaction()
+	branch, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer branch.Discard()
 
 	var images []*storage.Image
@@ -164,7 +182,10 @@ func (b *storeImpl) Upsert(image *storage.Image) error {
 func (b *storeImpl) Delete(id string) error {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Remove, "Image")
 
-	keyTxn := b.dacky.NewReadOnlyTransaction()
+	keyTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return err
+	}
 	defer keyTxn.Discard()
 	keys, err := gatherKeysForImage(keyTxn, id)
 	if err != nil {
@@ -201,7 +222,10 @@ func gatherKeysForImageParts(parts *ImageParts) [][]byte {
 }
 
 func (b *storeImpl) writeImageParts(parts *ImageParts, iTime *protoTypes.Timestamp) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	var componentKeys [][]byte
@@ -279,10 +303,13 @@ func (b *storeImpl) writeCVEParts(txn *dackbox.Transaction, parts *CVEParts, iTi
 
 func (b *storeImpl) deleteImageKeys(keys *imageKeySet) error {
 	// Delete the keys
-	upsertTxn := b.dacky.NewTransaction()
+	upsertTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer upsertTxn.Discard()
 
-	err := imageDackBox.Deleter.DeleteIn(keys.imageKey, upsertTxn)
+	err = imageDackBox.Deleter.DeleteIn(keys.imageKey, upsertTxn)
 	if err != nil {
 		return err
 	}

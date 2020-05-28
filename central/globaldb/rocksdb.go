@@ -9,16 +9,15 @@ import (
 	"github.com/stackrox/rox/pkg/rocksdb"
 	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (
 	rocksInit sync.Once
-	rocksDB   *gorocksdb.DB
+	rocksDB   *rocksdb.RocksDB
 )
 
 // GetRocksDB returns the global rocksdb instance
-func GetRocksDB() *gorocksdb.DB {
+func GetRocksDB() *rocksdb.RocksDB {
 	if !env.RocksDB.BooleanSetting() {
 		return nil
 	}
@@ -33,7 +32,7 @@ func GetRocksDB() *gorocksdb.DB {
 	return rocksDB
 }
 
-func startMonitoringRocksDB(db *gorocksdb.DB) {
+func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 	ticker := time.NewTicker(gatherFrequency)
 	for range ticker.C {
 		for _, bucket := range registeredBuckets {

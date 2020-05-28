@@ -7,11 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
 	badgerTxns "github.com/stackrox/rox/pkg/dackbox/transactions/badger"
-	"github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
+	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/tecbot/gorocksdb"
 )
 
 func newDackBox(dbFactory transactions.DBTransactionFactory, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
@@ -36,8 +36,8 @@ func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirty
 }
 
 // NewRocksDBDackBox creates an instance of dackbox based on RocksDB
-func NewRocksDBDackBox(db *gorocksdb.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
-	return newDackBox(rocksdb.NewRocksDBWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
+func NewRocksDBDackBox(db *rocksdb.RocksDB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
+	return newDackBox(rocksdbTxns.NewRocksDBWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
 }
 
 // DackBox is the StackRox DB layer. It provides transactions consisting of both a KV layer, and an ID->[]ID map layer.
@@ -54,14 +54,17 @@ type DackBox struct {
 }
 
 // NewTransaction returns a new Transaction object for read and write operations on both key/value pairs, and ids.
-func (rc *DackBox) NewTransaction() *Transaction {
+func (rc *DackBox) NewTransaction() (*Transaction, error) {
 	rc.lock.RLock()
 	defer rc.lock.RUnlock()
 
 	// Hold the current state of the graph for the transaction.
 	ts := rc.history.Hold()
 	// Create a read-write DB transaction.
-	txn := rc.db.NewTransaction(true)
+	txn, err := rc.db.NewTransaction(true)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create a graph modification. This will record changes made to a new, empty, underlying graph.
 	modification := graph.NewModifiedGraph(graph.NewGraph())
@@ -79,18 +82,21 @@ func (rc *DackBox) NewTransaction() *Transaction {
 		dirtyMap:      make(map[string]proto.Message),
 		discard:       rc.discard,
 		commit:        rc.commit,
-	}
+	}, nil
 }
 
 // NewReadOnlyTransaction returns a Transaction object for read only operations.
-func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
+func (rc *DackBox) NewReadOnlyTransaction() (*Transaction, error) {
 	rc.lock.RLock()
 	defer rc.lock.RUnlock()
 
 	// Hold the current state of the graph for the transaction.
 	ts := rc.history.Hold()
 	// Create a read-only DB transaction.
-	txn := rc.db.NewTransaction(false)
+	txn, err := rc.db.NewTransaction(false)
+	if err != nil {
+		return nil, err
+	}
 
 	// Wrap an empty graph with a remote graph. It will serve as a cache to store values read from the history.
 	remote := graph.NewRemoteGraph(graph.NewGraph(), rc.readerAt(ts))
@@ -103,7 +109,7 @@ func (rc *DackBox) NewReadOnlyTransaction() *Transaction {
 		modification:  nil,
 		discard:       rc.discard,
 		commit:        rc.commit,
-	}
+	}, nil
 }
 
 // NewGraphView returns a read only view of the ID->[]ID graph.
@@ -124,7 +130,10 @@ func (rc *DackBox) AckIndexed(keys ...[]byte) error {
 		return nil
 	}
 
-	txn := rc.db.NewTransaction(true)
+	txn, err := rc.db.NewTransaction(true)
+	if err != nil {
+		return err
+	}
 	defer txn.Discard()
 	for _, key := range keys {
 		if err := txn.Delete(dbhelper.GetBucketKey(rc.dirtyPrefix, key)); err != nil {
@@ -201,10 +210,13 @@ func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modif
 func loadGraphIntoMem(dbFactory transactions.DBTransactionFactory, graphPrefix []byte) (*graph.Graph, error) {
 	initial := graph.NewGraph()
 
-	txn := dbFactory.NewTransaction(false)
+	txn, err := dbFactory.NewTransaction(false)
+	if err != nil {
+		return nil, err
+	}
 	defer txn.Discard()
 
-	err := txn.BucketForEach(graphPrefix, true, func(k, v []byte) error {
+	err = txn.BucketForEach(graphPrefix, true, func(k, v []byte) error {
 		sk, err := sortedkeys.Unmarshal(v)
 		if err != nil {
 			return err

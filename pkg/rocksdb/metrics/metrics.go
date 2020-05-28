@@ -6,8 +6,8 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
-	"github.com/tecbot/gorocksdb"
 )
 
 const (
@@ -41,7 +41,7 @@ func init() {
 }
 
 // UpdateRocksDBPrefixSizeMetric sets the rocksdb metric for number of objects with a specific prefix
-func UpdateRocksDBPrefixSizeMetric(db *gorocksdb.DB, prefix []byte, metricPrefix, objType string) {
+func UpdateRocksDBPrefixSizeMetric(db *rocksdb.RocksDB, prefix []byte, metricPrefix, objType string) {
 	var count, bytes int
 	err := generic.DefaultBucketForEach(db, prefix, false, func(k, v []byte) error {
 		count++

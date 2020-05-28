@@ -3,6 +3,7 @@ package generic
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -11,7 +12,7 @@ var (
 )
 
 // newTxnHelper returns a db wrapper that will increment txn counts
-func newTxnHelper(db *gorocksdb.DB, objectType []byte) *txnHelper {
+func newTxnHelper(db *rocksdb.RocksDB, objectType []byte) *txnHelper {
 	wrapper := &txnHelper{
 		db:     db,
 		prefix: append(transactionPrefix, objectType...),
@@ -22,7 +23,7 @@ func newTxnHelper(db *gorocksdb.DB, objectType []byte) *txnHelper {
 
 // txnHelper overrides the Update function to increment txn counts
 type txnHelper struct {
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 
 	prefix []byte
 }
@@ -45,6 +46,11 @@ func (b *txnHelper) AddStringKeysToIndex(batch *gorocksdb.WriteBatch, keys ...st
 
 // AckKeysIndexed acknowledges that keys were indexed
 func (b *txnHelper) AckKeysIndexed(keys ...string) error {
+	if err := b.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer b.db.DecRocksDBInProgressOps()
+
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
@@ -60,6 +66,11 @@ func (b *txnHelper) AckKeysIndexed(keys ...string) error {
 
 // GetKeysToIndex retrieves the number of keys to index
 func (b *txnHelper) GetKeysToIndex() ([]string, error) {
+	if err := b.db.IncRocksDBInProgressOps(); err != nil {
+		return nil, err
+	}
+	defer b.db.DecRocksDBInProgressOps()
+
 	var keys []string
 	err := BucketKeyForEach(b.db, defaultIteratorOptions, b.prefix, true, func(k []byte) error {
 		keys = append(keys, string(k))

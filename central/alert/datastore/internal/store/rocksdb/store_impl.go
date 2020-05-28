@@ -4,11 +4,11 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
-	"github.com/tecbot/gorocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // NewFullStore returns the alert store interface
-func NewFullStore(db *gorocksdb.DB) store.Store {
+func NewFullStore(db *rocksdb.RocksDB) store.Store {
 	return &fullStoreImpl{
 		Store: New(db),
 	}

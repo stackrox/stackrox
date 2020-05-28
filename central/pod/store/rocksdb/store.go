@@ -13,7 +13,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/db"
 	
-	"github.com/tecbot/gorocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
 
@@ -52,7 +52,7 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 
-func New(db *gorocksdb.DB) Store {
+func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "Pod")
 	return &storeImpl{
 		crud: generic.NewCRUD(db, bucket, keyFunc, alloc),

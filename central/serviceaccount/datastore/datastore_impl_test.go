@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestServiceAccountDataStore(t *testing.T) {
@@ -29,7 +28,7 @@ func TestServiceAccountDataStore(t *testing.T) {
 type ServiceAccountDataStoreTestSuite struct {
 	suite.Suite
 
-	db         *gorocksdb.DB
+	db         *rocksdbHelper.RocksDB
 	dir        string
 	bleveIndex bleve.Index
 

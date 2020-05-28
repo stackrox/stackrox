@@ -30,7 +30,10 @@ func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence) (store.Store, er
 }
 
 func (b *storeImpl) Exists(id string) (bool, error) {
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return false, err
+	}
 	defer dackTxn.Discard()
 
 	exists, err := componentDackBox.Reader.ExistsIn(componentDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -44,7 +47,10 @@ func (b *storeImpl) Exists(id string) (bool, error) {
 func (b *storeImpl) GetAll() ([]*storage.ImageComponent, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetAll, "Image Component")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs, err := componentDackBox.Reader.ReadAllIn(componentDackBox.Bucket, dackTxn)
@@ -62,7 +68,10 @@ func (b *storeImpl) GetAll() ([]*storage.ImageComponent, error) {
 func (b *storeImpl) Count() (int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Count, "Image Component")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return 0, err
+	}
 	defer dackTxn.Discard()
 
 	count, err := componentDackBox.Reader.CountIn(componentDackBox.Bucket, dackTxn)
@@ -77,7 +86,10 @@ func (b *storeImpl) Count() (int, error) {
 func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, err error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.Get, "Image Component")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, false, err
+	}
 	defer dackTxn.Discard()
 
 	msg, err := componentDackBox.Reader.ReadIn(componentDackBox.BucketHandler.GetKey(id), dackTxn)
@@ -92,7 +104,10 @@ func (b *storeImpl) Get(id string) (image *storage.ImageComponent, exists bool, 
 func (b *storeImpl) GetBatch(ids []string) ([]*storage.ImageComponent, []int, error) {
 	defer metrics.SetDackboxOperationDurationTime(time.Now(), ops.GetMany, "Image Component")
 
-	dackTxn := b.dacky.NewReadOnlyTransaction()
+	dackTxn, err := b.dacky.NewReadOnlyTransaction()
+	if err != nil {
+		return nil, nil, err
+	}
 	defer dackTxn.Discard()
 
 	msgs := make([]proto.Message, 0, len(ids))
@@ -143,7 +158,10 @@ func (b *storeImpl) Upsert(components ...*storage.ImageComponent) error {
 }
 
 func (b *storeImpl) upsertNoBatch(components ...*storage.ImageComponent) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	for _, component := range components {
@@ -185,7 +203,10 @@ func (b *storeImpl) Delete(ids ...string) error {
 }
 
 func (b *storeImpl) deleteNoBatch(ids ...string) error {
-	dackTxn := b.dacky.NewTransaction()
+	dackTxn, err := b.dacky.NewTransaction()
+	if err != nil {
+		return err
+	}
 	defer dackTxn.Discard()
 
 	for _, id := range ids {

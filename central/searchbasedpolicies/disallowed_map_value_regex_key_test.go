@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestDisallowedMapValueWithRegexKey(t *testing.T) {
@@ -30,7 +29,7 @@ type DisallowedMapValueWithRegexKeyTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
-	db         *gorocksdb.DB
+	db         *rocksdb.RocksDB
 	dir        string
 
 	testCtx context.Context
@@ -49,7 +48,7 @@ func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
 	s.bleveIndex, err = globalindex.TempInitializeIndices("")
 	s.Require().NoError(err)
 
-	s.db, s.dir, err = rocksdb.NewTemp("default_policies_test.db")
+	s.db = rocksdbtest.RocksDBForT(s.T())
 	s.Require().NoError(err)
 
 	processStore := processIndicatorBadgerStore.New(s.db)

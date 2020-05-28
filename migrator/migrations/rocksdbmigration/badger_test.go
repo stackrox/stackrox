@@ -35,7 +35,7 @@ func TestMigrateBadger(t *testing.T) {
 
 	err = migrateBadger(&types.Databases{
 		BadgerDB: db,
-		RocksDB:  rocksDB,
+		RocksDB:  rocksDB.DB,
 	})
 	require.NoError(t, err)
 

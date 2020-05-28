@@ -3,7 +3,7 @@ package generic
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/db"
-	"github.com/tecbot/gorocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 )
 
 // Deserializer is the function that takes in a []byte value and returns a proto message
@@ -26,7 +26,7 @@ func deserializerFunc(alloc AllocFunc) Deserializer {
 }
 
 // NewCRUD returns a new Crud instance for the given bucket reference.
-func NewCRUD(db *gorocksdb.DB, prefix []byte, keyFunc KeyFunc, alloc AllocFunc) db.Crud {
+func NewCRUD(db *rocksdb.RocksDB, prefix []byte, keyFunc KeyFunc, alloc AllocFunc) db.Crud {
 	return &crudImpl{
 		db:        db,
 		txnHelper: newTxnHelper(db, prefix),

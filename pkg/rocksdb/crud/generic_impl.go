@@ -4,6 +4,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/dbhelper"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -17,7 +18,7 @@ var (
 
 type crudImpl struct {
 	*txnHelper
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 
 	prefix          []byte
 	keyFunc         KeyFunc
@@ -34,6 +35,10 @@ func (c *crudImpl) getPrefixedKeyBytes(id []byte) []byte {
 }
 
 func (c *crudImpl) Count() (int, error) {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return 0, err
+	}
+	defer c.db.DecRocksDBInProgressOps()
 	var count int
 	err := ForEachOverKeySet(c.db, defaultIteratorOptions, c.prefix, false, func(k []byte) error {
 		count++
@@ -43,6 +48,10 @@ func (c *crudImpl) Count() (int, error) {
 }
 
 func (c *crudImpl) Get(id string) (proto.Message, bool, error) {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return nil, false, err
+	}
+	defer c.db.DecRocksDBInProgressOps()
 	key := c.getPrefixedKey(id)
 
 	slice, err := c.db.Get(defaultReadOptions, key)
@@ -61,6 +70,10 @@ func (c *crudImpl) Get(id string) (proto.Message, bool, error) {
 }
 
 func (c *crudImpl) Exists(id string) (exists bool, err error) {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return false, err
+	}
+	defer c.db.DecRocksDBInProgressOps()
 	slice, err := c.db.Get(defaultReadOptions, c.getPrefixedKey(id))
 	if err != nil {
 		return false, errors.Wrapf(err, "getting id %s", id)
@@ -70,6 +83,11 @@ func (c *crudImpl) Exists(id string) (exists bool, err error) {
 }
 
 func (c *crudImpl) GetMany(ids []string) (msgs []proto.Message, missingIndices []int, err error) {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return nil, nil, err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	keys := make([][]byte, 0, len(ids))
 	for _, id := range ids {
 		keys = append(keys, c.getPrefixedKey(id))
@@ -107,6 +125,11 @@ func (c *crudImpl) addToWriteBatch(batch *gorocksdb.WriteBatch, msg proto.Messag
 }
 
 func (c *crudImpl) Upsert(msg proto.Message) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
@@ -121,6 +144,11 @@ func (c *crudImpl) Upsert(msg proto.Message) error {
 }
 
 func (c *crudImpl) UpsertMany(msgs []proto.Message) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
@@ -137,6 +165,11 @@ func (c *crudImpl) UpsertMany(msgs []proto.Message) error {
 }
 
 func (c *crudImpl) Delete(id string) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
@@ -151,6 +184,11 @@ func (c *crudImpl) Delete(id string) error {
 }
 
 func (c *crudImpl) DeleteMany(ids []string) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	batch := gorocksdb.NewWriteBatch()
 	defer batch.Destroy()
 
@@ -166,6 +204,11 @@ func (c *crudImpl) DeleteMany(ids []string) error {
 }
 
 func (c *crudImpl) GetKeys() ([]string, error) {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return nil, err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
 	var keys []string
 	err := BucketKeyForEach(c.db, defaultIteratorOptions, c.prefix, true, func(k []byte) error {
 		keys = append(keys, string(k))
@@ -175,6 +218,10 @@ func (c *crudImpl) GetKeys() ([]string, error) {
 }
 
 func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
 	return BucketForEach(c.db, defaultIteratorOptions, c.prefix, false, func(k, v []byte) error {
 		msg, err := c.deserializeFunc(v)
 		if err != nil {

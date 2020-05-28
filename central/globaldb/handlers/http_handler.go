@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/osutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/tecbot/gorocksdb"
 )
 
 var (
@@ -29,7 +29,7 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.Handler {
+func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return serializeDB(boltDB, badgerDB, rocksDB)
 }
 
@@ -49,7 +49,7 @@ func deferredRestart(ctx context.Context) {
 }
 
 // RestoreDB is a handler that takes in a DB and restores Central to it
-func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.Handler {
+func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
 		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
@@ -97,7 +97,7 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http
 	})
 }
 
-func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB) http.HandlerFunc {
+func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)

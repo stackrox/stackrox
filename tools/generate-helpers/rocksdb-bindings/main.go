@@ -26,7 +26,7 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/db"
 	{{if .Cache}}"github.com/stackrox/rox/pkg/db/mapcache"{{end}}
-	"github.com/tecbot/gorocksdb"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	generic "github.com/stackrox/rox/pkg/rocksdb/crud"
 )
 
@@ -65,7 +65,7 @@ func keyFunc(msg proto.Message) []byte {
 
 // New returns a new Store instance using the provided rocksdb instance.
 {{if .Cache}}
-func New(db *gorocksdb.DB) (Store, error) {
+func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
@@ -77,7 +77,7 @@ func New(db *gorocksdb.DB) (Store, error) {
 	}, nil
 }
 {{else}}
-func New(db *gorocksdb.DB) Store {
+func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
 	return &storeImpl{
 		crud: generic.NewCRUD(db, bucket, keyFunc, alloc),

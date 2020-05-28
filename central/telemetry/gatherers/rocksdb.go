@@ -3,16 +3,16 @@ package gatherers
 import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/stackrox/rox/pkg/telemetry/data"
-	"github.com/tecbot/gorocksdb"
 )
 
 type rocksdbGatherer struct {
-	db *gorocksdb.DB
+	db *rocksdb.RocksDB
 }
 
-func newRocksDBGatherer(db *gorocksdb.DB) *rocksdbGatherer {
+func newRocksDBGatherer(db *rocksdb.RocksDB) *rocksdbGatherer {
 	return &rocksdbGatherer{
 		db: db,
 	}

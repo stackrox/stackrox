@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tecbot/gorocksdb"
 )
 
 const (
@@ -103,7 +102,7 @@ func getExpectedCounts(froms []string, linkFactor, graphDepth int) map[string]in
 	return expectedCounts
 }
 
-func setupTest(t require.TestingT) (*gorocksdb.DB, *dackbox.DackBox, string) {
+func setupTest(t require.TestingT) (*rocksdb.RocksDB, *dackbox.DackBox, string) {
 	db, dir, err := rocksdb.NewTemp("reference")
 	require.NoErrorf(t, err, "failed to create DB")
 
@@ -146,16 +145,17 @@ func genSubGraph(t require.TestingT, dacky *dackbox.DackBox, from []byte, prefix
 }
 
 func addLink(t require.TestingT, dacky *dackbox.DackBox, from []byte, to []byte) {
-	view := dacky.NewTransaction()
+	view, err := dacky.NewTransaction()
+	assert.NoError(t, err)
 	defer view.Discard()
 
-	err := view.Graph().AddRefs(from, to)
+	err = view.Graph().AddRefs(from, to)
 	require.NoError(t, err, "addRef should have succeeded")
 	err = view.Commit()
 	require.NoError(t, err, "commit should have succeeded")
 }
 
-func tearDown(db *gorocksdb.DB, dir string) {
+func tearDown(db *rocksdb.RocksDB, dir string) {
 	db.Close()
 	_ = os.RemoveAll(dir)
 }

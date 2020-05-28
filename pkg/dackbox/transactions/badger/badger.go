@@ -10,10 +10,10 @@ type badgerWrapper struct {
 	db *badger.DB
 }
 
-func (b *badgerWrapper) NewTransaction(update bool) transactions.DBTransaction {
+func (b *badgerWrapper) NewTransaction(update bool) (transactions.DBTransaction, error) {
 	return &txnWrapper{
 		txn: b.db.NewTransaction(update),
-	}
+	}, nil
 }
 
 // NewBadgerWrapper wraps a BadgerDB so it implements the TransactionFactory

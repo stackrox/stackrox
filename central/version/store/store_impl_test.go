@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
-	"github.com/tecbot/gorocksdb"
 )
 
 func TestVersionStore(t *testing.T) {
@@ -23,7 +22,7 @@ type VersionStoreTestSuite struct {
 
 	boltDB   *bolt.DB
 	badgerDB *badger.DB
-	rocksDB  *gorocksdb.DB
+	rocksDB  *rocksdb.RocksDB
 	store    Store
 }
 

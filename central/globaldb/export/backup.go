@@ -11,12 +11,12 @@ import (
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/tecbot/gorocksdb"
 )
 
 // Backup backs up the given databases (optionally removing secrets) and writes a ZIP archive to the given writer.
-func Backup(ctx context.Context, boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *gorocksdb.DB, out io.Writer) error {
+func Backup(ctx context.Context, boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB, out io.Writer) error {
 	zipWriter := zip.NewWriter(out)
 	defer utils.IgnoreError(zipWriter.Close)
 

@@ -41,7 +41,7 @@ func TestMigrateBolt(t *testing.T) {
 
 	err = migrateBolt(&types.Databases{
 		BoltDB:  db,
-		RocksDB: rocksDB,
+		RocksDB: rocksDB.DB,
 	})
 	require.NoError(t, err)
 
