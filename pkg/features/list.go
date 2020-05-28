@@ -38,5 +38,5 @@ var (
 	AuthTestMode = registerFeature("Enable Auth Test Mode UI", "ROX_AUTH_TEST_MODE_UI", true)
 
 	// CurrentUserInfo enables showing information about the current user in UI
-	CurrentUserInfo = registerFeature("Enable Current User Info UI", "ROX_CURRENT_USER_INFO", false)
+	CurrentUserInfo = registerFeature("Enable Current User Info UI", "ROX_CURRENT_USER_INFO", true)
 )
