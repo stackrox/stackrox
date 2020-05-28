@@ -14,12 +14,16 @@ import (
 )
 
 func runRocksDBMigrationIfNecessary(databases *types.Databases) error {
-	// Migrate BadgerDB -> RocksDB if we need to
+	// If we are not using RocksDB or BadgerDB is nil, which means a migration already occurred
+	// then return
+	if !env.RocksDB.BooleanSetting() || databases.BadgerDB == nil {
+		return nil
+	}
+
+	// Migrate BadgerDB -> RocksDB
 	// If Badger was opened, then the migration still needs to be done
-	if env.RocksDB.BooleanSetting() && databases.BadgerDB != nil {
-		if err := rocksdbmigration.Migrate(databases); err != nil {
-			return errors.Wrap(err, "migrating to RocksDB")
-		}
+	if err := rocksdbmigration.Migrate(databases); err != nil {
+		return errors.Wrap(err, "migrating to RocksDB")
 	}
 	// Update RocksDB version to mark successful migration
 	migration, ok := migrations.Get(pkgMigrations.CurrentDBVersionSeqNum - 1)

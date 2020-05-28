@@ -162,6 +162,11 @@ setupClientTLSCerts: &setupClientTLSCerts
       cci-export CLIENT_CERT_PATH "${cert_dir}/tls.crt"
       cci-export CLIENT_KEY_PATH "${cert_dir}/tls.key"
 
+bounceCentral: &bounceCentral
+  run:
+    name: "Bounce Central"
+    command: |
+      kubectl -n stackrox delete po $(kubectl -n stackrox get po -l app=central -o=jsonpath='{.items[0].metadata.name}') --grace-period=0
 
 waitForAPI: &waitForAPI
   run:
@@ -482,6 +487,21 @@ commands:
               circleci step halt
             fi
 
+  validate-upgrade:
+    description: "Validates the upgrade was successful against upgrade tests"
+    parameters:
+      upgrade-cluster-id:
+        type: string
+      desc:
+        type: string
+    steps:
+      - run:
+          name: "<< parameters.desc >>"
+          command: |
+            export CLUSTER=K8S
+            cci-export UPGRADE_CLUSTER_ID << parameters.upgrade-cluster-id >>
+            make -C qa-tests-backend upgrade-test
+
   check-label-exists-or-skip:
     description: "Checks GitHub for the given label, and skips the test if we're on a PR and the label is NOT present."
     parameters:
@@ -561,8 +581,20 @@ commands:
           destination: debug
 
   check-stackrox-logs:
+    parameters:
+      collect:
+        type: boolean
+        default: false
     description: Checks StackRox logs to ensure all services operated normally
     steps:
+      - when:
+          condition: << parameters.collect >>
+          steps:
+            - run:
+                name: Collect the StackRox logs
+                command: |
+                  ./scripts/ci/collect-service-logs.sh stackrox
+
       - run:
           name: Verify that StackRox services did not restart during the runs
           command: |
@@ -2767,12 +2799,9 @@ jobs:
 
       - *waitForAPI
 
-      - run:
-          name: Run upgrade tests on migrated version
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "260e11a3-cbea-464c-95f0-588fa7695b49"
-            make -C qa-tests-backend upgrade-test
+      - validate-upgrade:
+          upgrade-cluster-id: "260e11a3-cbea-464c-95f0-588fa7695b49"
+          desc: "Run upgrade tests on migrated version"
 
       - *restoreGradle
 
@@ -2792,12 +2821,9 @@ jobs:
 
       - *waitForAPI
 
-      - run:
-          name: Run upgrade tests on restored versions
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "260e11a3-cbea-464c-95f0-588fa7695b49"
-            make -C qa-tests-backend upgrade-test
+      - validate-upgrade:
+          upgrade-cluster-id: "260e11a3-cbea-464c-95f0-588fa7695b49"
+          desc: "Run upgrade tests on restored versions"
 
       - *storeQATestResults
       - *storeQASpockReports
@@ -2968,12 +2994,11 @@ jobs:
 
       - *waitForAPI
 
-      - run:
-          name: Validate 41.4 to current head migration
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-            make -C qa-tests-backend upgrade-test
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate 41.4 to current head migration"
+      - check-stackrox-logs:
+          collect: true
 
       - run:
           name: Restore 41.4 backup to current head
@@ -2981,13 +3006,20 @@ jobs:
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
 
       - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate restore from 41.4 to current head"
 
-      - run:
-          name: Validate 41.4 backup -> migration to head
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-            make -C qa-tests-backend upgrade-test
+      - check-stackrox-logs:
+          collect: true
+
+      - *bounceCentral
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate Central bounces and comes back up successfully"
+      - check-stackrox-logs:
+          collect: true
 
       - run:
           name: Set DB to RocksDB
@@ -2995,13 +3027,11 @@ jobs:
             kubectl -n stackrox set env deploy/central ROX_ROCKSDB=true
 
       - *waitForAPI
-
-      - run:
-          name: Validate Migration to RocksDB
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-            make -C qa-tests-backend upgrade-test
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate Migration to RocksDB"
+      - check-stackrox-logs:
+          collect: true
 
       - run:
           name: Restore 41.4 backup to current head
@@ -3009,15 +3039,19 @@ jobs:
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
 
       - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate 41.4 restore to RocksDB"
+      - check-stackrox-logs:
+          collect: true
 
-      - run:
-          name: Validate 41.4 backup to head on RocksDB
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-            make -C qa-tests-backend upgrade-test
-
+      - *bounceCentral
       - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate RocksDB Bouncing"
+      - check-stackrox-logs:
+          collect: true
 
       - run:
           name: Roll back to BadgerDB from RocksDB
@@ -3025,13 +3059,19 @@ jobs:
             kubectl -n stackrox set env deploy/central ROX_ROCKSDB=false
 
       - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate restoring from RocksDB to BadgerDB"
+      - check-stackrox-logs:
+          collect: true
 
-      - run:
-          name: Validate BadgerDB after rollback
-          command: |
-            export CLUSTER=K8S
-            cci-export UPGRADE_CLUSTER_ID "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-            make -C qa-tests-backend upgrade-test
+      - *bounceCentral
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate BadgerDB Bouncing post rollback from RocksDB"
+      - check-stackrox-logs:
+          collect: true
 
       - run:
           name: Fetch bundle for the "remote" cluster in the DB
