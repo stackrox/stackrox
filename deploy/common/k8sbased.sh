@@ -272,7 +272,7 @@ function launch_sensor {
     echo "Deploying Sensor..."
     $k8s_dir/sensor-deploy/sensor.sh
 
-    if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
+    if [[ -n "${CI}" || $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
        if [[ "${HOTRELOAD}" == "true" ]]; then
          hotload_binary kubernetes-sensor kubernetes sensor
        fi

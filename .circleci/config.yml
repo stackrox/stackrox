@@ -2850,6 +2850,11 @@ jobs:
           name: Install the sensor
           command: ./sensor-remote/sensor.sh
 
+      - run:
+          name: "Patch down the sensor resources"
+          command: |
+            kubectl -n stackrox patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
+
       - *waitForSensorK8s
 
       - run:
