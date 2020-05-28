@@ -110,14 +110,31 @@ describe('User Info', () => {
             );
         });
 
-        it('should open user permissions by role on page landing', () => {
+        it('should properly highlight user permissions by role button', () => {
             cy.visit(userPageUrl);
+            const highlightedCssClass = 'bg-tertiary-200';
+            function checkUserPermissionsHighlightedAndShown() {
+                cy.get(userPageSelectors.userPermissionsButton).should(
+                    'have.class',
+                    highlightedCssClass
+                );
+                cy.get(userPageSelectors.permissionsPanel.header).should(
+                    'contain.text',
+                    'User Permissions'
+                );
+            }
 
-            cy.get(userPageSelectors.userPermissionsButton).should('have.class', 'bg-tertiary-200'); // means it's selected
-            cy.get(userPageSelectors.permissionsPanel.header).should(
-                'contain.text',
-                'User Permissions'
+            // it should happen when first time landing on a page
+            checkUserPermissionsHighlightedAndShown();
+
+            cy.get(userPageSelectors.rolesPanel.table.row.firstRow).click();
+            cy.get(userPageSelectors.userPermissionsButton).should(
+                'not.have.class',
+                highlightedCssClass
             );
+
+            cy.get(userPageSelectors.userPermissionsButton).click();
+            checkUserPermissionsHighlightedAndShown();
         });
 
         it('should display aggregated permissions for basic auth user', () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createStructuredSelector, createSelector } from 'reselect';
 import { ArrowRightCircle } from 'react-feather';
 
 import { selectors } from 'reducers';
@@ -10,14 +10,14 @@ import User from 'utils/User';
 import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
 
-const UserPage = ({ userData }) => {
+const UserPage = ({ userData, resourceToAccessByRole }) => {
     const user = new User(userData);
     const authProviderName =
         user.usedAuthProvider?.type === 'basic' ? 'Basic' : user.usedAuthProvider?.name;
     const aggregatedPermissionsPage = {
         username: user.username || 'Unknown',
         authProviderName,
-        resourceToAccess: user.resourceToAccessByRole,
+        resourceToAccess: resourceToAccessByRole,
     };
     const [selectedPage, setSelectedPage] = useState(aggregatedPermissionsPage);
     function onAggregatedPermissionsClick() {
@@ -38,7 +38,8 @@ const UserPage = ({ userData }) => {
                             type="button"
                             onClick={onAggregatedPermissionsClick}
                             className={`flex w-full h-14 border pl-4 pr-3 justify-between mb-4 text-base-600 items-center tracking-wide leading-normal font-700 uppercase ${
-                                selectedPage === aggregatedPermissionsPage
+                                selectedPage.resourceToAccess ===
+                                aggregatedPermissionsPage.resourceToAccess
                                     ? 'border-tertiary-400 bg-tertiary-200'
                                     : 'hover:bg-base-200 bg-base-100 border-base-400'
                             }`}
@@ -76,10 +77,22 @@ UserPage.propTypes = {
             permissions: PropTypes.shape({}),
         }),
     }).isRequired,
+    resourceToAccessByRole: PropTypes.objectOf(
+        PropTypes.shape({
+            read: PropTypes.arrayOf(PropTypes.string).isRequired,
+            write: PropTypes.arrayOf(PropTypes.string).isRequired,
+        })
+    ).isRequired,
 };
+
+const resourceToAccessByRoleSelector = createSelector(
+    [selectors.getCurrentUser],
+    (userData) => new User(userData).resourceToAccessByRole
+);
 
 const mapStateToProps = createStructuredSelector({
     userData: selectors.getCurrentUser,
+    resourceToAccessByRole: resourceToAccessByRoleSelector,
 });
 
 export default connect(mapStateToProps, null)(UserPage);
