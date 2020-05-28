@@ -2,6 +2,8 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
 - UI: In Platform Configuration > Interactions: 1. replace "AWS ECR" with "Amazon ECR" and 2. replace "S3" (and "AWS S3" placeholder for Integration Name in New Integration pane) with "Amazon S3" (ROX-4912)
 - Docker Registry Integration now doesn't require entering password every time an existing integration is tested or updated (part of ROX-4539).
@@ -12,6 +14,7 @@ All notable changes to this project that require documentation updates will be d
 - Added UI to import a single policy from the System Policies page
 - Sensor resource requests and limits have been increased to 1 core / 1GB and 2 cores / 4GB respectively.
 - Added User Page in UI to show current User Permissions and Roles
+- `roxctl` commands now gives users an error message when unexpected arguments are given (ROX-4709)
 
 ## [43.0]
 - Detection APIs were not properly handling suppressed CVEs and they were being included in evaluation. This is now resolved.
