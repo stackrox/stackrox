@@ -25,6 +25,11 @@ describe('User Info', () => {
         cy.route('GET', api.auth.authStatus, 'fixture:auth/multiRolesUserStatus').as('authStatus');
     }
 
+    function mockWithBasicAuthUser() {
+        cy.server();
+        cy.route('GET', api.auth.authStatus, 'fixture:auth/basicAuthAdminStatus').as('authStatus');
+    }
+
     describe('User Info in Top Navigation', () => {
         it('should show initials in the user avatar', () => {
             mockWithAdminUser();
@@ -83,10 +88,10 @@ describe('User Info', () => {
             mockWithMultiRolesUser();
             cy.visit(userPageUrl);
 
-            cy.get(`${userPageSelectors.rolesSidePanel.table.cells}:contains("Admin")`);
-            cy.get(`${userPageSelectors.rolesSidePanel.table.cells}:contains("Analyst")`);
+            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Admin")`);
+            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Analyst")`);
             cy.get(
-                `${userPageSelectors.rolesSidePanel.table.cells}:contains("Continuous Integration")`
+                `${userPageSelectors.rolesPanel.table.cells}:contains("Continuous Integration")`
             );
         });
 
@@ -94,11 +99,63 @@ describe('User Info', () => {
             mockWithMultiRolesUser();
             cy.visit(userPageUrl);
 
-            cy.get(`${userPageSelectors.rolesSidePanel.table.cells}:contains("Analyst")`).click();
+            cy.get(`${userPageSelectors.rolesPanel.table.cells}:contains("Analyst")`).click();
 
             // check that read is allowed and write is forbidden
-            cy.get(userPageSelectors.permissionsMatrix.allowedIcon('User', 'read'));
-            cy.get(userPageSelectors.permissionsMatrix.forbiddenIcon('User', 'write'));
+            cy.get(
+                userPageSelectors.permissionsPanel.permissionsMatrix.allowedIcon('User', 'read')
+            );
+            cy.get(
+                userPageSelectors.permissionsPanel.permissionsMatrix.forbiddenIcon('User', 'write')
+            );
+        });
+
+        it('should open user permissions by role on page landing', () => {
+            cy.visit(userPageUrl);
+
+            cy.get(userPageSelectors.userPermissionsButton).should('have.class', 'bg-tertiary-200'); // means it's selected
+            cy.get(userPageSelectors.permissionsPanel.header).should(
+                'contain.text',
+                'User Permissions'
+            );
+        });
+
+        it('should display aggregated permissions for basic auth user', () => {
+            mockWithBasicAuthUser();
+            cy.visit(userPageUrl);
+
+            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
+                'contain.text',
+                'admin'
+            );
+            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
+                'contain.text',
+                'Basic'
+            );
+        });
+
+        it('should show correct aggregated permissions', () => {
+            mockWithMultiRolesUser();
+            cy.visit(userPageUrl);
+
+            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should('contain.text', 'ai');
+            cy.get(userPageSelectors.permissionsPanel.roleNameHeader).should(
+                'contain.text',
+                'My OIDC Provider'
+            );
+
+            cy.get(
+                userPageSelectors.permissionsPanel.permissionsMatrix.permissionColumn(
+                    'User',
+                    'read'
+                )
+            ).should('contain.text', 'Admin, Analyst');
+            cy.get(
+                userPageSelectors.permissionsPanel.permissionsMatrix.permissionColumn(
+                    'User',
+                    'write'
+                )
+            ).should('contain.text', 'Admin');
         });
     });
 });

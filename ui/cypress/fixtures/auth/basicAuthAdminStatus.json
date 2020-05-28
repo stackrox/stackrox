@@ -2,17 +2,19 @@
   "userId": "user-id",
   "authProvider": {
     "id": "id",
-    "name": "My OIDC Provider",
-    "type": "oidc",
+    "name": "Login with username/password",
+    "type": "basic",
     "validated": true,
     "active": true
   },
   "userInfo": {
-    "username": "ai",
+    "username": "admin",
     "permissions": {
       "name": "Admin",
       "globalAccess": "READ_WRITE_ACCESS",
       "resourceToAccess": {
+        "AuthProvider": "READ_WRITE_ACCESS",
+        "Cluster": "READ_WRITE_ACCESS",
         "User": "READ_WRITE_ACCESS"
       }
     },
@@ -21,20 +23,10 @@
         "name": "Admin",
         "globalAccess": "READ_WRITE_ACCESS",
         "resourceToAccess": {
+          "AuthProvider": "READ_WRITE_ACCESS",
+          "Cluster": "READ_WRITE_ACCESS",
           "User": "READ_WRITE_ACCESS"
         }
-      },
-      {
-        "name": "Analyst",
-        "globalAccess": "READ_ACCESS",
-        "resourceToAccess": {
-          "User": "READ_ACCESS"
-        }
-      },
-      {
-        "name": "Continuous Integration",
-        "globalAccess": "NO_ACCESS",
-        "resourceToAccess": {}
       }
     ],
     "role": {
@@ -44,6 +36,5 @@
     }
   },
   "userAttributes": [
-    { "key": "email", "values": ["ai@stackrox.com"] }
   ]
 }

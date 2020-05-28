@@ -9,7 +9,9 @@ export const headerClassName = 'flex w-full h-14 border-b border-base-400';
 
 const Panel = (props) => (
     <div
-        className={`flex flex-col h-full border-r border-base-400 overflow-auto w-full ${props.className}`}
+        className={`flex flex-col border-r border-base-400 overflow-auto w-full ${
+            props.className
+        } ${props.short ? '' : 'h-full'}`}
         data-testid={props.id}
     >
         <div className="flex-no-wrap">
@@ -70,6 +72,7 @@ Panel.propTypes = {
     headerComponents: PropTypes.element,
     leftButtons: PropTypes.node,
     isUpperCase: PropTypes.bool,
+    short: PropTypes.bool,
 };
 
 Panel.defaultProps = {
@@ -85,6 +88,7 @@ Panel.defaultProps = {
     headerComponents: null,
     leftButtons: null,
     isUpperCase: true,
+    short: false,
 };
 
 export default Panel;

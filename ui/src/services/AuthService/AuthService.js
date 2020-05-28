@@ -109,10 +109,10 @@ export const storeAccessToken = (token) => accessTokenManager.setToken(token);
  */
 export function getAuthStatus() {
     return axios.get('/v1/auth/status').then(({ data }) => {
-        const { expires, userAttributes, userId, userInfo } = data;
+        const { expires, refreshUrl, ...userAuthData } = data;
         // while it's a side effect, it's the best place to do it
         accessTokenManager.updateTokenInfo({ expiry: expires });
-        return { userAttributes, userId, userInfo };
+        return userAuthData;
     });
 }
 

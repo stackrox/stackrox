@@ -21,10 +21,12 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
                 <span className="p-2">{resourceName}</span>
             </td>
             <td className="p-2 text-center border-b border-base-300">
-                <ReadWriteIcon value={value} type="READ" />
+                {value.read && (value.read.join(', ') || 'None')}
+                {!value.read && <ReadWriteIcon value={value} type="READ" />}
             </td>
             <td className="p-2 text-center border-b border-base-300">
-                <ReadWriteIcon value={value} type="WRITE" />
+                {value.write && (value.write.join(', ') || 'None')}
+                {!value.write && <ReadWriteIcon value={value} type="WRITE" />}
             </td>
             {isEditing && (
                 <td className="p-2 border-b border-base-300">

@@ -30,7 +30,11 @@ const Permissions = ({
         return content;
     }
     if (!selectedRole) return null;
-    const headerText = selectedRole.name ? `"${selectedRole.name}" Permissions` : 'Create New Role';
+    let headerText = 'Create New Role';
+    const { name, username } = selectedRole;
+    if (name || username) {
+        headerText = name ? `"${name}" Permissions` : 'User Permissions';
+    }
     const headerComponents = defaultRoles[selectedRole.name] ? (
         <span className="uppercase text-base-500 leading-normal font-700">system default</span>
     ) : (
@@ -59,8 +63,9 @@ Permissions.propTypes = {
         name: PropTypes.string,
         globalAccess: PropTypes.string,
         resourceToAccess: PropTypes.shape({}),
+        username: PropTypes.string,
     }),
-    isEditing: PropTypes.bool.isRequired,
+    isEditing: PropTypes.bool,
     onSave: PropTypes.func,
     onCancel: PropTypes.func,
     onEdit: PropTypes.func,
@@ -68,6 +73,7 @@ Permissions.propTypes = {
 };
 
 Permissions.defaultProps = {
+    isEditing: false,
     selectedRole: null,
     onSave: null,
     onCancel: null,
