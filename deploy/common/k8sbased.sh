@@ -11,16 +11,19 @@ function launch_service {
 
     if [[ "${OUTPUT_FORMAT}" == "helm" ]]; then
         local helm_version
-        helm_version="$(helm version --short)"
+        helm_version="$(helm version --short -c | sed -e 's/^Client: //g')"
         if [[ -z "$helm_version" ]]; then
           echo >&2 "helm not found or doesn't work"
           exit 1
         elif [[ "$helm_version" == v2.* ]]; then
           echo "Detected Helm v2"
           helm_install() { helm install "$dir/$1" --name "$1" --tiller-connection-timeout 10 ; }
-        else
+        elif [[ "$helm_version" == v3.* ]]; then
           echo "Detected Helm v3"
           helm_install() { helm install "$1" "$dir/$1" ; }
+        else
+          echo "Unknown helm version: ${helm_version}"
+          return 1
         fi
 
         for _ in {1..5}; do
