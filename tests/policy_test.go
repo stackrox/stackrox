@@ -197,6 +197,7 @@ func createUniquePolicy(t *testing.T, service v1.PolicyServiceClient) *storage.P
 	newUniquePolicy := exportPolicy(t, service, knownPolicyID)
 	newUniquePolicy.Name = uuid.NewV4().String()
 	newUniquePolicy.Id = uuid.NewV4().String()
+	newUniquePolicy.SORTName = newUniquePolicy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{newUniquePolicy},
@@ -274,6 +275,7 @@ func verifyImportSucceeds(t *testing.T) {
 	policy := exportPolicy(t, service, knownPolicyID)
 	policy.Name = "A new name"
 	policy.Id = "integrationtestpolicy"
+	policy.SORTName = policy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
@@ -334,6 +336,7 @@ func verifyImportDuplicateIDFails(t *testing.T) {
 	policy := exportPolicy(t, service, knownPolicyID)
 
 	policy.Name = "New name"
+	policy.SORTName = policy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
@@ -366,6 +369,7 @@ func verifyImportNoIDSucceeds(t *testing.T) {
 	policy := exportPolicy(t, service, knownPolicyID)
 	policy.Name = "Some unique name"
 	policy.Id = ""
+	policy.SORTName = policy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{policy},
@@ -384,9 +388,11 @@ func verifyImportMultipleSucceeds(t *testing.T) {
 	policy1 := validPolicy.Clone()
 	policy1.Id = "new policy ID"
 	policy1.Name = "This is a valid policy"
+	policy1.SORTName = policy1.Name
 	policy2 := validPolicy.Clone()
 	policy2.Id = "another new policy ID"
 	policy2.Name = "This is another valid policy"
+	policy2.SORTName = policy2.Name
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -407,6 +413,7 @@ func verifyImportMixedSuccess(t *testing.T) {
 	policy1 := validPolicy.Clone()
 	policy1.Id = "Probably I should make these UUIDs"
 	policy1.Name = "This is a valid and totally unique policy"
+	policy1.SORTName = policy1.Name
 	// Policy 2 should have a duplicate name error
 	policy2 := validPolicy.Clone()
 	policy2.Id = "another new entirely different policy ID"
@@ -430,6 +437,7 @@ func verifyNotifiersRemoved(t *testing.T) {
 	policy := validPolicy.Clone()
 	policy.Id = "verifyNotifiersRemoved policy ID"
 	policy.Name = "verifyNotifiersRemoved is a valid policy"
+	policy.SORTName = policy.Name
 	policy.Notifiers = []string{"This is not a notifier"}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -454,6 +462,7 @@ func verifyWhitelistsRemoved(t *testing.T) {
 	policy := validPolicy.Clone()
 	policy.Id = "verifyWhitelistsRemoved policy ID"
 	policy.Name = "verifyWhitelistsRemoved is a valid policy"
+	policy.SORTName = policy.Name
 	policy.Whitelists = []*storage.Whitelist{
 		{
 			Deployment: &storage.Whitelist_Deployment{
@@ -486,6 +495,7 @@ func verifyScopesRemoved(t *testing.T) {
 	policy := validPolicy.Clone()
 	policy.Id = "verifyScopesRemoved policy ID"
 	policy.Name = "verifyScopesRemoved is a valid policy"
+	policy.SORTName = policy.Name
 	policy.Scope = []*storage.Scope{
 		{
 			Cluster: "This is not a cluster",
@@ -542,6 +552,7 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 
 	newPolicy := existingPolicy.Clone()
 	newPolicy.Name = uuid.NewV4().String()
+	newPolicy.SORTName = newPolicy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{newPolicy},
@@ -567,6 +578,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 
 	newPolicy := existingPolicyDuplicateID.Clone()
 	newPolicy.Name = existingPolicyDuplicateName.GetName()
+	newPolicy.SORTName = newPolicy.Name
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
 		Policies: []*storage.Policy{newPolicy},

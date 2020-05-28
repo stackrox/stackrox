@@ -196,6 +196,8 @@ func (ds *datastoreImpl) ImportPolicies(ctx context.Context, importPolicies []*s
 		return nil, false, errorsPkg.Wrap(err, "removing cluster scopes and notifiers")
 	}
 
+	store.FillSortHelperFields(importPolicies...)
+
 	// Store the policies and report any errors
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()

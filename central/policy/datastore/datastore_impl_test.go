@@ -72,15 +72,16 @@ func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storag
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 	policy := &storage.Policy{
-		Name: "Some Name",
-		Id:   "Some ID",
+		Name:     "Some Name",
+		Id:       "Some ID",
+		SORTName: "Some Name",
 	}
 
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -90,8 +91,9 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	policy := &storage.Policy{
-		Name: "Some Name",
-		Id:   "Some ID",
+		Name:     "Some Name",
+		Id:       "Some ID",
+		SORTName: "Some Name",
 	}
 
 	otherName := "Joseph Rules"
@@ -107,7 +109,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -118,8 +120,9 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 	name := "Some Name"
 	policy := &storage.Policy{
-		Name: name,
-		Id:   "Some ID",
+		Name:     name,
+		Id:       "Some ID",
+		SORTName: name,
 	}
 
 	errString := "some error string"
@@ -134,7 +137,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -145,8 +148,9 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID() {
 	name := "Some Name"
 	policy := &storage.Policy{
-		Name: name,
-		Id:   "Some ID",
+		Name:     name,
+		Id:       "Some ID",
+		SORTName: name,
 	}
 
 	errString := "some error string"
@@ -165,7 +169,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID()
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -176,17 +180,20 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateNameAndDuplicateID()
 func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	succeedName := "Some Name"
 	policySucceed := &storage.Policy{
-		Name: succeedName,
-		Id:   "Succeed ID",
+		Name:     succeedName,
+		Id:       "Succeed ID",
+		SORTName: succeedName,
 	}
 	fail1Name := "fail 1 name"
 	policyFail1 := &storage.Policy{
-		Name: fail1Name,
-		Id:   "Fail 1 ID",
+		Name:     fail1Name,
+		Id:       "Fail 1 ID",
+		SORTName: fail1Name,
 	}
 	policyFail2 := &storage.Policy{
-		Name: "import failure name",
-		Id:   "Fail 2 ID",
+		Name:     "import failure name",
+		Id:       "Fail 2 ID",
+		SORTName: "import failure name",
 	}
 
 	errString := "some error string"
@@ -219,7 +226,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 
 	s.store.EXPECT().AddPolicy(policyFail2).Return(policyFail2.GetId(), errorFail2)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policySucceed, policyFail1, policyFail2}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 3)
@@ -234,8 +241,9 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	name := "Some Name"
 	policy := &storage.Policy{
-		Name: name,
-		Id:   "Some ID",
+		Name:     name,
+		Id:       "Some ID",
+		SORTName: name,
 	}
 
 	errString := "This is not a structured error type"
@@ -244,7 +252,7 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetId(), storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -255,13 +263,15 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	id1 := "ID1"
 	policy1 := &storage.Policy{
-		Name: "new name 1",
-		Id:   id1,
+		Name:     "new name 1",
+		Id:       id1,
+		SORTName: "new name 1",
 	}
 	policy2Name := "a very good name"
 	policy2 := &storage.Policy{
-		Name: policy2Name,
-		Id:   "new ID 2",
+		Name:     policy2Name,
+		Id:       "new ID 2",
+		SORTName: policy2Name,
 	}
 	// Same ID as policy1, unique name
 	existingPolicy1 := &storage.Policy{
@@ -286,7 +296,7 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	s.store.EXPECT().UpdatePolicy(policy2).Return(nil)
 	s.indexer.EXPECT().AddPolicy(policy2).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy1, policy2}, true)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 2)
@@ -299,8 +309,9 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 	clusterName := "test"
 	notifierName := "test"
 	policy := &storage.Policy{
-		Name: "Some Name",
-		Id:   "Some ID",
+		Name:     "Some Name",
+		Id:       "Some ID",
+		SORTName: "Some Name",
 		Scope: []*storage.Scope{
 			{
 				Cluster: clusterName,
@@ -318,21 +329,23 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 		Notifiers: []string{notifierName},
 	}
 
+	resultPolicy := &storage.Policy{
+		Name:     "Some Name",
+		Id:       "Some ID",
+		SORTName: "Some Name",
+	}
+
 	s.clusterDatastore.EXPECT().GetClusters(s.ctx).Return(nil, nil)
 	s.notifierDatastore.EXPECT().GetNotifier(s.ctx, notifierName).Return(nil, false, nil)
 	s.store.EXPECT().GetAllPolicies().Return(nil, nil)
-	s.store.EXPECT().AddPolicy(policy).Return(policy.GetName(), nil)
-	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
+	s.store.EXPECT().AddPolicy(resultPolicy).Return(resultPolicy.GetName(), nil)
+	s.indexer.EXPECT().AddPolicy(resultPolicy).Return(nil)
 
 	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
 
-	resultPolicy := &storage.Policy{
-		Name: "Some Name",
-		Id:   "Some ID",
-	}
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
 	s.Equal(resp.GetPolicy(), resultPolicy)
@@ -346,8 +359,9 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	clusterID := "test"
 	notifierName := "test"
 	policy := &storage.Policy{
-		Name: "Some Name",
-		Id:   "Some ID",
+		Name:     "Some Name",
+		Id:       "Some ID",
+		SORTName: "Some Name",
 		Scope: []*storage.Scope{
 			{
 				Cluster: clusterID,
@@ -376,7 +390,7 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.store.EXPECT().AddPolicy(policy).Return(policy.GetName(), nil)
 	s.indexer.EXPECT().AddPolicy(policy).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.ctx, []*storage.Policy{policy.Clone()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
