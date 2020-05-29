@@ -29,8 +29,8 @@ func Command() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "check",
-		Short: "Check deployments for deploy time policy violations.",
-		Long:  "Check deployments for deploy time policy violations.",
+		Short: "Check deployments for deploy time policy violations",
+		Long:  "Check deployments for deploy time policy violations",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if file == "" {
 				return errors.New("--file must be set")

@@ -31,8 +31,8 @@ func Command() *cobra.Command {
 	var output string
 	c := &cobra.Command{
 		Use:          "backup",
-		Short:        "Save a snapshot of the DB as a backup.",
-		Long:         "Save a snapshot of the DB as a backup.",
+		Short:        "Save a snapshot of the database as a backup.",
+		Long:         "Save a snapshot of the database as a backup.",
 		SilenceUsage: true,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return getBackup(flags.Timeout(c), output)

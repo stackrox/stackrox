@@ -11,8 +11,8 @@ import (
 func openshift() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "openshift",
-		Short: "openshift specifies that you want to deploy into an OpenShift cluster",
-		Long:  `openshift specifies that you want to deploy into an OpenShift cluster`,
+		Short: "Specifies that you want to deploy into an OpenShift cluster",
+		Long:  `Specifies that you want to deploy into an OpenShift cluster`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cluster.Type = storage.ClusterType_OPENSHIFT_CLUSTER
 			if err := clusterValidation.Validate(&cluster).ToError(); err != nil {

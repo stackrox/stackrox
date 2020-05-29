@@ -13,8 +13,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "db",
-		Short: "DB is the list of commands that control DB operations",
-		Long:  "DB is the list of commands that control DB operations",
+		Short: "The list of commands that control database operations",
+		Long:  "The list of commands that control database operations",
 	}
 	c.AddCommand(backup.Command())
 	c.AddCommand(restore.V2Command())

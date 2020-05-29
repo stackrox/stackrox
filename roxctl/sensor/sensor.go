@@ -11,8 +11,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "sensor",
-		Short: "Sensor is the list of commands that pertain to the Sensor service",
-		Long:  "Sensor is the list of commands that pertain to the Sensor service",
+		Short: "The list of commands that pertain to the Sensor service",
+		Long:  "The list of commands that pertain to the Sensor service",
 	}
 	c.AddCommand(
 		generate.Command(),

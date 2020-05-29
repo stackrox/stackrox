@@ -26,7 +26,7 @@ import (
 func versionCommand() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "version",
-		Short: "Version of the CLI",
+		Short: "Print the roxctl version number",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
 				enc := json.NewEncoder(os.Stdout)

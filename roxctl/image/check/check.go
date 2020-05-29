@@ -24,8 +24,8 @@ func Command() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "check",
-		Short: "Check images for build time policy violations.",
-		Long:  "Check images for build time policy violations.",
+		Short: "Check images for build time policy violations",
+		Long:  "Check images for build time policy violations",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if image == "" {
 				return errors.New("--image must be set")

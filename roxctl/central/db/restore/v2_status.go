@@ -21,8 +21,8 @@ import (
 func v2RestoreStatusCmd() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "status",
-		Short: "Show information about an active DB restore process",
-		Long:  "Show information about an active DB restore process",
+		Short: "Show information about an active database restore process",
+		Long:  "Show information about an active database restore process",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return showRestoreStatus(flags.Timeout(c))
 		}),

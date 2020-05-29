@@ -24,8 +24,8 @@ func Command() *cobra.Command {
 	)
 	c := &cobra.Command{
 		Use:   "compact",
-		Short: "Compact allows you to aggressively compact a DB offline",
-		Long:  "Compact allows you to aggressively compact a DB offline",
+		Short: "Compact the database offline",
+		Long:  "Compact the database offline",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return compact(path, discardRatio, iterations)
 		}),

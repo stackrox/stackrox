@@ -13,8 +13,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "image",
-		Short: "Image defines the actions that you can take against a specific image.",
-		Long:  "Image defines the actions that you can take against a specific image.",
+		Short: "Operations that can be performed on a specific image",
+		Long:  "Operations that can be performed on a specific image",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

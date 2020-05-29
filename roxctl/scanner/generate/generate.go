@@ -16,8 +16,8 @@ func Command() *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate creates the required YAML files to deploy StackRox Scanner.",
-		Long:  "Generate creates the required YAML files to deploy StackRox Scanner.",
+		Short: "Generate the required YAML files to deploy StackRox Scanner",
+		Long:  "Generate the required YAML files to deploy StackRox Scanner",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return run.Run(c, &params, opts)
 		}),

@@ -20,8 +20,8 @@ func Command() *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "upload-db",
-		Short: "upload-db uploads a vulnerability database for the StackRox Scanner to use.",
-		Long:  "upload-db uploads a vulnerability database for the StackRox Scanner to use.",
+		Short: "Upload a vulnerability database for the StackRox Scanner to use.",
+		Long:  "Upload a vulnerability database for the StackRox Scanner to use.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			file, err := os.Open(filename)
 			if err != nil {

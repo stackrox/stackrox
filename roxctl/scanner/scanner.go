@@ -13,8 +13,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "scanner",
-		Short: "Scanner is the list of commands that pertain to the StackRox Scanner",
-		Long:  "Scanner is the list of commands that pertain to the StackRox Scanner",
+		Short: "The list of commands that pertain to the StackRox Scanner",
+		Long:  "The list of commands that pertain to the StackRox Scanner",
 	}
 	flags.AddTimeoutWithDefault(c, time.Minute)
 	c.AddCommand(

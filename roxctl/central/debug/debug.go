@@ -24,8 +24,8 @@ var (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "debug",
-		Short: "Debug handles commands that you can run for debugging purposes.",
-		Long:  "Debug handles commands that you can run for debugging purposes.",
+		Short: "The list of commands for debugging purposes.",
+		Long:  "The list of commands for debugging purposes.",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

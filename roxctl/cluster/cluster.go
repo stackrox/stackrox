@@ -10,8 +10,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "cluster",
-		Short: "Cluster is the list of commands that pertain to operations on cluster objects",
-		Long:  "Cluster is the list of commands that pertain to operations on cluster objects",
+		Short: "The list of commands that pertain to operations on cluster objects",
+		Long:  "The list of commands that pertain to operations on cluster objects",
 	}
 	c.AddCommand(delete.Command())
 	flags.AddTimeout(c)

@@ -39,8 +39,8 @@ func writeOutProfiles(path string) {
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "db",
-		Short: "DB commands relate to DB management directly on a DB",
-		Long:  "DB commands relate to DB management directly on a DB",
+		Short: "Database management operations",
+		Long:  "Database management operations",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

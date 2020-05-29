@@ -15,7 +15,7 @@ func Generate() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate helm chart for GCP marketplace",
-		Long:  "Generate helm chart from GCP marketplace values yaml",
+		Long:  "Generate helm chart for GCP marketplace from the values YAML file",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			valuesFilename, _ := c.Flags().GetString("values-file")
 			outputDir, _ := c.Flags().GetString("output-dir")

@@ -81,8 +81,8 @@ func Command() *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate creates the required YAML files to deploy StackRox Sensor.",
-		Long:  "Generate creates the required YAML files to deploy StackRox Sensor.",
+		Short: "Generate the required YAML files to deploy StackRox Sensor",
+		Long:  "Generate the required YAML files to deploy StackRox Sensor",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

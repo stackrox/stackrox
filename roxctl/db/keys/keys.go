@@ -18,8 +18,8 @@ func Command() *cobra.Command {
 	var prefix string
 	c := &cobra.Command{
 		Use:   "keys",
-		Short: "Keys opens the BadgerDB and allows the user to get key counts",
-		Long:  "Keys opens the BadgerDB and allows the user to get key counts",
+		Short: "Open BadgerDB instance and get key counts",
+		Long:  "Open BadgerDB instance and get key counts",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return keys(path, prefix)
 		}),

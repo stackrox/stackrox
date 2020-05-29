@@ -12,8 +12,8 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:   "deployment",
-		Short: "Deployment defines the actions that you can take against a specific deployment.",
-		Long:  "Deployment defines the actions that you can take against a specific deployment.",
+		Short: "Operations that can be performed on a specific deployment",
+		Long:  "Operations that can be performed on a specific deployment",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},
