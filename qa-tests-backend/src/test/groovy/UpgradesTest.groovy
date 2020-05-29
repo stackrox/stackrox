@@ -17,6 +17,20 @@ import util.Env
 class UpgradesTest extends BaseSpecification {
     private final static String CLUSTERID = Env.mustGet("UPGRADE_CLUSTER_ID")
 
+    private static final COMPLIANCE_QUERY = """query getAggregatedResults(
+        \$groupBy: [ComplianceAggregation_Scope!],
+        \$unit: ComplianceAggregation_Scope!,
+        \$where: String) {
+            results: aggregatedResults(groupBy: \$groupBy, unit: \$unit, where: \$where) {
+                results {
+                    aggregationKeys {
+                          id
+                    }
+                    unit
+                }
+            }
+        }"""
+
     @Category(Upgrade)
     def "Verify cluster exists and that field values are retained"() {
         given:
@@ -145,6 +159,31 @@ class UpgradesTest extends BaseSpecification {
                      id
                 }
             }"""
+    }
+
+    @Unroll
+    @Category(Upgrade)
+    def "verify that we find the correct number of compliance results"() {
+        when:
+        "Fetch the compliance results by #unit from GraphQL"
+        def gqlService = new GraphQLService()
+        def resultRet = gqlService.Call(COMPLIANCE_QUERY, [ groupBy: groupBy, unit: unit ])
+        assert resultRet.getCode() == 200
+        println "return code " + resultRet.getCode()
+
+        then:
+        "Check that we got the correct number of #unit from GraphQL "
+        assert resultRet.getValue() != null
+        def resultList = resultRet.getValue()["results"]
+        assert resultList.size() >= numResults
+
+        where:
+        "Data Inputs Are:"
+        groupBy                   | unit      | numResults
+        ["STANDARD", "CLUSTER"]   | "CHECK"   | 1
+        ["STANDARD", "NAMESPACE"] | "CHECK"   | 1
+        ["STANDARD", "CLUSTER"]   | "CONTROL" | 1
+        ["STANDARD", "NAMESPACE"] | "CONTROL" | 1
     }
 
     // TODO
