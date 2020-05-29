@@ -1,8 +1,10 @@
 package evaluator
 
 import (
+	"container/heap"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -16,10 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
-
-const maxNumberOfKeyValuePairs = 5
 
 var (
 	timestampPtrType = reflect.TypeOf((*types.Timestamp)(nil))
@@ -44,8 +45,7 @@ func createBaseEvaluator(fieldName string, fieldType reflect.Type, values []stri
 	if lenValues > 1 && operator != query.Or && operator != query.And {
 		return nil, errors.Errorf("invalid operator: %s", operator)
 	}
-	kind := fieldType.Kind()
-	generatorForKind, err := getMatcherGeneratorForKind(kind)
+	generatorForKind, err := getMatcherGeneratorForKind(fieldType.Kind())
 	if err != nil {
 		return nil, err
 	}
@@ -465,12 +465,17 @@ func generateEnumMatcher(value string, enumRef protoreflect.ProtoEnum, matchAll 
 	}, nil
 }
 
-func generateMapMatcher(value string, _ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
+const (
+	maxNumberOfKeyValuePairs = 3
+	maxValueLength           = 64
+)
+
+func generateMapMatcher(value string, typ reflect.Type, matchAll bool) (baseMatcherAndExtractor, error) {
 	if matchAll && value != "" {
 		return nil, errors.New("non-empty value for matchAll")
 	}
 
-	baseMatcher, err := mapeval.Matcher(value)
+	baseMatcher, err := mapeval.Matcher(value, typ)
 	if err != nil {
 		return nil, err
 	}
@@ -481,79 +486,60 @@ func generateMapMatcher(value string, _ reflect.Type, matchAll bool) (baseMatche
 		}
 
 		iter := instance.MapRange()
-		value, matched := baseMatcher(iter, maxNumberOfKeyValuePairs)
+		mapResult, matched := baseMatcher(iter, maxNumberOfKeyValuePairs)
 		var res string
 		if matchAll {
-			kvPairs := make(map[mapeval.KeyValue]struct{})
-			appendMapVals(kvPairs, maxNumberOfKeyValuePairs, value)
-			res = getStringExpFromKeyValuePairs(kvPairs)
+			res = printKVs(mapResult.KeyValues, mapResult.NumElements)
 		} else {
-			res = getStringRepFromMapMatchedResults(value)
+			res = printMatchingKVsOrKVs(mapResult, mapResult.NumElements)
 		}
 
 		return []valueMatchedPair{{value: res, matched: matchAll || matched}}
 	}, nil
 }
 
-func getStringExpFromKeyValuePairs(kvPairs map[mapeval.KeyValue]struct{}) string {
-	var res string
-	for kv := range kvPairs {
-		res += fmt.Sprintf("(%s: %s)", kv.Key, kv.Value)
+func printKVs(kvPairs heap.Interface, totalElements int) string {
+	var asSlice []*mapeval.KeyValue
+	if length := kvPairs.Len(); length > 0 {
+		asSlice = make([]*mapeval.KeyValue, length)
+		for i := 0; i < length; i++ {
+			// The heap is a max-heap, but we want to sort it in increasing value, so we fill
+			// in backwards.
+			asSlice[length-1-i] = heap.Pop(kvPairs).(*mapeval.KeyValue)
+		}
 	}
-
-	return res
+	return printKVsFromSortedSlice(asSlice, totalElements)
 }
 
-func appendMapVals(foundPairs map[mapeval.KeyValue]struct{}, pairs int, value *mapeval.MatcherResults) {
-	if pairs <= 0 || value == nil {
-		return
+func printKVsFromSortedSlice(kvPairs []*mapeval.KeyValue, totalElements int) string {
+	if len(kvPairs) == 0 {
+		return "<empty>"
 	}
 
-	for idx := 0; pairs > 0 && idx < len(value.MapVals); idx++ {
-		kv := value.MapVals[idx]
-		if _, ok := foundPairs[*kv]; ok {
-			continue
+	var sb strings.Builder
+	for i, kvPair := range kvPairs {
+		sb.WriteString(fmt.Sprintf("%s=%s", kvPair.Key, stringutils.Truncate(kvPair.Value, maxValueLength)))
+		if i < len(kvPairs)-1 {
+			sb.WriteString(", ")
 		}
-
-		pairs--
-		foundPairs[*kv] = struct{}{}
 	}
+	if numExtraPairs := totalElements - len(kvPairs); numExtraPairs > 0 {
+		sb.WriteString(fmt.Sprintf(" and %d more", numExtraPairs))
+	}
+	return sb.String()
 }
 
-func getStringRepFromMapMatchedResults(value *mapeval.MatcherResults) string {
-	if value == nil {
-		return ""
+func printMatchingKVsOrKVs(value *mapeval.MatcherResults, totalElements int) string {
+	if len(value.MatchingKeyValues) > 0 {
+		asSlice := make([]*mapeval.KeyValue, 0, len(value.MatchingKeyValues))
+		for k := range value.MatchingKeyValues {
+			asSlice = append(asSlice, k)
+		}
+		sort.Slice(asSlice, func(i, j int) bool {
+			return asSlice[i].Key < asSlice[j].Key
+		})
+		return printKVsFromSortedSlice(asSlice, len(asSlice))
 	}
 
-	matchedKVPairs := make(map[mapeval.KeyValue]struct{})
-	pairs := 0
-	shouldPrintMapVals := false
-	for _, g := range value.Groups {
-		if pairs >= maxNumberOfKeyValuePairs {
-			break
-		}
-
-		for _, sm := range g.ShouldMatch {
-			if pairs >= maxNumberOfKeyValuePairs {
-				break
-			}
-
-			if _, ok := matchedKVPairs[*sm]; ok {
-				continue
-			}
-
-			pairs++
-			matchedKVPairs[*sm] = struct{}{}
-		}
-
-		if len(g.ShouldNotMatch) > 0 {
-			shouldPrintMapVals = true
-		}
-	}
-
-	if shouldPrintMapVals && pairs < maxNumberOfKeyValuePairs {
-		appendMapVals(matchedKVPairs, maxNumberOfKeyValuePairs-pairs, value)
-	}
-
-	return getStringExpFromKeyValuePairs(matchedKVPairs)
+	return printKVs(value.KeyValues, totalElements)
 }

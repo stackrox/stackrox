@@ -42,24 +42,24 @@ func SimpleMatchFieldQuery(field, value string) *Query {
 	}}
 }
 
-// ShouldMatchIfAllOf builds a conjunction of all query groups.
-func ShouldMatchIfAllOf(queryGroups ...string) string {
+// MapShouldMatchAllOf builds a conjunction of all query groups.
+func MapShouldMatchAllOf(queryGroups ...string) string {
 	return strings.Join(queryGroups, mapeval.ConjunctionMarker)
 }
 
-// ShouldContain builds a query that matches a map if it contains the particular key value pair. Key/Value could be
+// MapShouldContain builds a query that matches a map if it contains the particular key value pair. Key/Value could be
 // left empty (using "").
-func ShouldContain(key, value string) string {
-	return string(fmt.Sprintf("%s=%s", key, value))
+func MapShouldContain(key, value string) string {
+	return fmt.Sprintf("%s=%s", key, value)
 }
 
-// ShouldNotContain builds a query that matches a map if it does not contain a particular key value pair.
+// MapShouldNotContain builds a query that matches a map if it does not contain a particular key value pair.
 // Key/Value could be left empty (using "").
-func ShouldNotContain(key, value string) string {
+func MapShouldNotContain(key, value string) string {
 	return fmt.Sprintf("%s%s=%s", mapeval.ShouldNotMatchMarker, key, value)
 }
 
-// CompileMapQuery builds a disjunction of all query groups.
-func CompileMapQuery(queryGroups ...string) string {
+// MapShouldMatchAnyOf builds a disjunction of all query groups.
+func MapShouldMatchAnyOf(queryGroups ...string) string {
 	return strings.Join(queryGroups, mapeval.DisjunctionMarker)
 }

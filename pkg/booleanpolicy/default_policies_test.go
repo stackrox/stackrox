@@ -539,6 +539,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		Id: "ENFORCEMENTBYPASS",
 		Annotations: map[string]string{
 			"admission.stackrox.io/break-glass": "ticket-1234",
+			"some-other":                        "annotation",
 		},
 	}
 	suite.addDepAndImages(depWithEnforcementBypassAnnotation)
@@ -959,8 +960,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Emergency Deployment Annotation",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				depWithEnforcementBypassAnnotation.GetId(): {
-					// TODO(rc) with map values
-					{Message: "Deployment includes no annotations"},
+					{Message: "Disallowed annotations found: admission.stackrox.io/break-glass=ticket-1234"},
 				},
 			},
 		},
@@ -1280,7 +1280,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			shouldNotMatch: map[string]struct{}{
 				"requiredImageLabelImage": {},
 			},
-			sampleViolationForMatched: "Image includes no labels",
+			sampleViolationForMatched: "Required label not found (found labels: <empty>)",
 		},
 	}
 
@@ -1342,15 +1342,21 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	}
 	suite.addDepAndImages(noAnnotation)
 
+	noValidAnnotation := &storage.Deployment{
+		Id: "noValidAnnotation",
+		Annotations: map[string]string{
+			"email":               "notavalidemail",
+			"someotherannotation": "vv@stackrox.com",
+		},
+	}
+	suite.addDepAndImages(noValidAnnotation)
+
 	validAnnotation := &storage.Deployment{
 		Id: "validAnnotation",
 		Annotations: map[string]string{
 			"email": "joseph@rules.gov",
 		},
 	}
-	// TODO(rc) update when we have map values
-	expectedViolations := []*storage.Alert_Violation{{Message: "Deployment includes no annotations"}}
-
 	suite.addDepAndImages(validAnnotation)
 
 	legacyPolicy := suite.defaultPolicies["Required Annotation: Email"]
@@ -1360,15 +1366,34 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	m, err := BuildDeploymentMatcher(policy)
 	suite.NoError(err)
 
-	matched, err := m.MatchDeployment(context.Background(), noAnnotation, nil)
-	suite.NoError(err)
-
-	suite.Len(matched.AlertViolations, 1)
-	suite.ElementsMatch(matched.AlertViolations, expectedViolations)
-
-	matched, err = m.MatchDeployment(context.Background(), validAnnotation, nil)
-	suite.NoError(err)
-	suite.Empty(matched.AlertViolations)
+	for _, testCase := range []struct {
+		dep                *storage.Deployment
+		expectedViolations []string
+	}{
+		{
+			noAnnotation,
+			[]string{"Required annotation not found (found annotations: <empty>)"},
+		},
+		{
+			noValidAnnotation,
+			[]string{"Required annotation not found (found annotations: email=notavalidemail, someotherannotation=vv@stackrox.com)"},
+		},
+		{
+			validAnnotation,
+			nil,
+		},
+	} {
+		c := testCase
+		suite.Run(c.dep.GetId(), func() {
+			matched, err := m.MatchDeployment(context.Background(), c.dep, nil)
+			suite.NoError(err)
+			expectedMessages := make([]*storage.Alert_Violation, 0, len(c.expectedViolations))
+			for _, v := range c.expectedViolations {
+				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
+			}
+			suite.ElementsMatch(matched.AlertViolations, expectedMessages)
+		})
+	}
 }
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {

@@ -86,16 +86,15 @@ var (
 )
 
 type testCase struct {
-	desc              string
-	q                 *query.Query
-	obj               *TopLevel
-	expectedResult    *Result
-	skipResValueCheck bool
+	desc           string
+	q              *query.Query
+	obj            *TopLevel
+	expectedResult *Result
 }
 
 func assertResultsAsExpected(t *testing.T, c testCase, actualRes *Result, actualMatched bool) {
 	assert.Equal(t, c.expectedResult != nil, actualMatched)
-	if c.expectedResult != nil && !c.skipResValueCheck {
+	if c.expectedResult != nil {
 		require.NotNil(t, actualRes)
 		assert.ElementsMatch(t, c.expectedResult.Matches, actualRes.Matches)
 	}
@@ -150,18 +149,17 @@ func runTestCases(t *testing.T, testCases []testCase) {
 }
 
 func TestMap(t *testing.T) {
-	qTopLevelBRequired := query.SimpleMatchFieldQuery("BaseMap", "!\t=happy")
-	qTopLevelBDisallowed := query.SimpleMatchFieldQuery("BaseMap", "x=3")
-	qTopLevelBDisallowedRequired := query.SimpleMatchFieldQuery("BaseMap", "x=3;\t!\t=happy")
-	qTopLevelBDisallowedRequired2 := query.SimpleMatchFieldQuery("BaseMap", "x=3;\t!\thappy=")
-	qTopLevelBRequiredDisjunction := query.SimpleMatchFieldQuery("BaseMap", "!\thappy=;\t!\t=lucky")
-	qTopLevelBRequiredConjunction := query.SimpleMatchFieldQuery("BaseMap", "!\thappy=,\t!\t=lucky")
-	qTopLevelBRequiredDisallowedConjunction := query.SimpleMatchFieldQuery("BaseMap", "!\thappy=,\t=lucky")
-	qComplexQuery := query.SimpleMatchFieldQuery("BaseMap", "!\thappy=,\t=lucky;\thappy=true")
+	containsX3 := query.MapShouldContain("x", "3")
+
+	containsValLucky := query.MapShouldContain("", "lucky")
+	notContainsKeyHappy := query.MapShouldNotContain("happy", "")
+	notContainsValHappy := query.MapShouldNotContain("", "happy")
+	notContainsValLucky := query.MapShouldNotContain("", "lucky")
+
 	runTestCases(t, []testCase{
 		{
 			desc: "simple map, required query, doesnt match",
-			q:    qTopLevelBRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", notContainsValHappy),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -170,10 +168,9 @@ func TestMap(t *testing.T) {
 					}},
 			},
 		},
-
 		{
 			desc: "simple map, required query, matches",
-			q:    qTopLevelBRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", notContainsValHappy),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -181,12 +178,12 @@ func TestMap(t *testing.T) {
 						"x": "y",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(x: y)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "x=y"),
 		},
 
 		{
 			desc: "simple map, disallowed query, doesnt match",
-			q:    qTopLevelBDisallowed,
+			q:    query.SimpleMatchFieldQuery("BaseMap", containsX3),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -198,7 +195,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, disallowed query, matches",
-			q:    qTopLevelBDisallowed,
+			q:    query.SimpleMatchFieldQuery("BaseMap", containsX3),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -208,12 +205,12 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(x: 3)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "x=3"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query, matches",
-			q:    qTopLevelBDisallowedRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsValHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -223,24 +220,23 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult:    resultWithSingleMatch("BaseMap", "(x: 3)(b: z)(a: y)"),
-			skipResValueCheck: true,
+			expectedResult: resultWithSingleMatch("BaseMap", "x=3"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query, matches",
-			q:    qTopLevelBDisallowedRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsValHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
 					ValBaseMap: map[string]string{}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "<empty>"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query, does not match",
-			q:    qTopLevelBDisallowedRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsValHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -252,7 +248,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, disallowed & required query, matches",
-			q:    qTopLevelBDisallowedRequired,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsValHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -260,12 +256,12 @@ func TestMap(t *testing.T) {
 						"happy": "a",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(happy: a)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "happy=a"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query 2, matches",
-			q:    qTopLevelBDisallowedRequired2,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsKeyHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -275,24 +271,23 @@ func TestMap(t *testing.T) {
 						"x": "3",
 					}},
 			},
-			expectedResult:    resultWithSingleMatch("BaseMap", "(x: 3)(b: z)(a: y)"),
-			skipResValueCheck: true,
+			expectedResult: resultWithSingleMatch("BaseMap", "x=3"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query 2, matches",
-			q:    qTopLevelBDisallowedRequired2,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsKeyHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
 					ValBaseMap: map[string]string{}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", ""),
+			expectedResult: resultWithSingleMatch("BaseMap", "<empty>"),
 		},
 
 		{
 			desc: "simple map, disallowed & required query 2, does not match",
-			q:    qTopLevelBDisallowedRequired2,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsKeyHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -304,7 +299,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, disallowed & required query 2, matches",
-			q:    qTopLevelBDisallowedRequired2,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(containsX3, notContainsKeyHappy)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -312,12 +307,12 @@ func TestMap(t *testing.T) {
 						"a": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(a: happy)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "a=happy"),
 		},
 
 		{
 			desc: "simple map, required disjunction query , matches",
-			q:    qTopLevelBRequiredDisjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -325,12 +320,12 @@ func TestMap(t *testing.T) {
 						"a": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(a: happy)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "a=happy"),
 		},
 
 		{
 			desc: "simple map, required disjunction query , matches",
-			q:    qTopLevelBRequiredDisjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -338,12 +333,12 @@ func TestMap(t *testing.T) {
 						"a": "lucky",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(a: lucky)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "a=lucky"),
 		},
 
 		{
 			desc: "simple map, required disjunction query , does not match",
-			q:    qTopLevelBRequiredDisjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -355,7 +350,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, required conjunction query , does not match",
-			q:    qTopLevelBRequiredConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -367,7 +362,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, required conjunction query , does not match",
-			q:    qTopLevelBRequiredConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -379,7 +374,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, required conjunction query , matches",
-			q:    qTopLevelBRequiredConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, notContainsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -387,12 +382,12 @@ func TestMap(t *testing.T) {
 						"lucky": "happy",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(lucky: happy)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "lucky=happy"),
 		},
 
 		{
 			desc: "simple map, required disallowed conjunction query , does not match",
-			q:    qTopLevelBRequiredDisallowedConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -404,7 +399,7 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, required disallowed conjunction query , matches",
-			q:    qTopLevelBRequiredDisallowedConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -412,12 +407,12 @@ func TestMap(t *testing.T) {
 						"a": "lucky",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(a: lucky)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "a=lucky"),
 		},
 
 		{
 			desc: "simple map, required disallowed conjunction query , does not match",
-			q:    qTopLevelBRequiredDisallowedConjunction,
+			q:    query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky)),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -429,7 +424,8 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, complex query , does not match",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -441,7 +437,8 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, complex query , does not match",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -454,7 +451,8 @@ func TestMap(t *testing.T) {
 
 		{
 			desc: "simple map, complex query , matches",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -463,12 +461,13 @@ func TestMap(t *testing.T) {
 						"happy": "true",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "happy=true"),
 		},
 
 		{
 			desc: "simple map, complex query , matches",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -477,12 +476,13 @@ func TestMap(t *testing.T) {
 						"happy": "true",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "happy=true"),
 		},
 
 		{
 			desc: "simple map, complex query last, matches",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -491,31 +491,32 @@ func TestMap(t *testing.T) {
 						"blah": "bleh",
 					}},
 			},
-			expectedResult:    resultWithSingleMatch("BaseMap", "(true: lucky)(blah: bleh)"),
-			skipResValueCheck: true,
+			expectedResult: resultWithSingleMatch("BaseMap", "true=lucky"),
 		},
 
 		{
-			desc: "simple map, complex query extra k,v pairs(take only 5 because required), matches",
-			q:    qComplexQuery,
+			desc: "simple map, complex query extra k,v pairs, matches",
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, notContainsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
 					ValBaseMap: map[string]string{
-						"true": "lucky",
+						"a":    "notluckyalsoveryveryveryveryveryveryvvveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylong",
 						"blah": "bleh",
 						"k1":   "v1",
 						"k2":   "v2",
 						"k3":   "v3",
 					}},
 			},
-			expectedResult:    resultWithSingleMatch("BaseMap", "(true: lucky)(blah: bleh)(k1: v1)(k2: v2)(k3: v3)"),
-			skipResValueCheck: true,
+			expectedResult: resultWithSingleMatch("BaseMap",
+				"a=notluckyalsoveryveryveryveryveryveryvvveryveryveryveryveryveryve, blah=bleh, k1=v1 and 2 more"),
 		},
 
 		{
 			desc: "simple map, complex query extra k,v pairs(dont take extra), matches",
-			q:    qComplexQuery,
+			q: query.SimpleMatchFieldQuery("BaseMap", query.MapShouldMatchAnyOf(
+				query.MapShouldMatchAllOf(notContainsKeyHappy, containsValLucky), query.MapShouldContain("happy", "true"))),
 			obj: &TopLevel{
 				ValA: "whatever",
 				Base: Base{
@@ -528,7 +529,7 @@ func TestMap(t *testing.T) {
 						"k4":    "v4",
 					}},
 			},
-			expectedResult: resultWithSingleMatch("BaseMap", "(happy: true)"),
+			expectedResult: resultWithSingleMatch("BaseMap", "happy=true"),
 		},
 	})
 }

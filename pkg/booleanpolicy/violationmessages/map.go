@@ -1,72 +1,54 @@
 package violationmessages
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
-
-func extractMapKV(e string) (string, string, error) {
-	kvPair := strings.SplitN(e, augmentedobjs.CompositeFieldCharSep, 2)
-	if len(kvPair) != 2 {
-		return "", "", errors.New("invalid key value pair in map result")
-	}
-	return kvPair[0], kvPair[1], nil
-}
-
-func getResourceNameAndKVSentence(baseResourceName string, keyValues []string) (string, string) {
-	keyValueMatches := make([]string, 0, len(keyValues))
-	for _, keyValue := range keyValues {
-		key, value, err := extractMapKV(keyValue)
-		if err != nil || key == "" {
-			continue
-		}
-		keyValueMatches = append(keyValueMatches, fmt.Sprintf("'%s: %s'", key, value))
-	}
-	resourceName := baseResourceName
-	if len(keyValueMatches) == 0 {
-		resourceName = "no " + resourceName
-	}
-	if len(keyValueMatches) != 1 {
-		resourceName = resourceName + "s"
-	}
-	return resourceName, stringSliceToSortedSentence(keyValueMatches)
-}
 
 const (
-	mapTemplate = `{{.Object}} includes {{.Resource}}{{if .KVs}} {{.KVs}}{{end}}`
+	mapRequiredTemplate   = `Required {{.ResourceName}} not found (found {{.ResourceName}}s: {{.Value}})`
+	mapDisallowedTemplate = `Disallowed {{.ResourceName}}s found: {{.Value}}`
 )
 
-func mapPrinter(fieldMap map[string][]string) ([]string, error) {
-	type resultFields struct {
-		Object   string
-		Resource string
-		KVs      string
-	}
-	r := make([]resultFields, 0)
-	if annotations, ok := fieldMap[search.Annotation.String()]; ok {
-		resourceName, KVs := getResourceNameAndKVSentence("annotation", annotations)
-		r = append(r, resultFields{Resource: resourceName, KVs: KVs, Object: "Deployment"})
-	}
-	if labels, ok := fieldMap[search.Label.String()]; ok {
-		resourceName, KVs := getResourceNameAndKVSentence("label", labels)
-		r = append(r, resultFields{Resource: resourceName, KVs: KVs, Object: "Deployment"})
-	}
-	if imageLabels, ok := fieldMap[search.ImageLabel.String()]; ok {
-		resourceName, KVs := getResourceNameAndKVSentence("label", imageLabels)
-		r = append(r, resultFields{Resource: resourceName, KVs: KVs, Object: "Image"})
-	}
+func getRequiredMapPrinterFor(fieldLabel search.FieldLabel) func(map[string][]string) ([]string, error) {
+	return getMapPrinterFor(fieldLabel, false)
+}
 
-	messages := make([]string, 0, len(r))
-	for _, values := range r {
-		msg, err := executeTemplate(mapTemplate, values)
-		if err != nil {
-			return nil, err
-		}
-		messages = append(messages, msg...)
+func getDisallowedMapPrinterFor(fieldLabel search.FieldLabel) func(map[string][]string) ([]string, error) {
+	return getMapPrinterFor(fieldLabel, true)
+}
+
+func getMapPrinterFor(fieldLabel search.FieldLabel, disallowed bool) func(map[string][]string) ([]string, error) {
+	var baseResourceName string
+	switch fieldLabel {
+	case search.Annotation:
+		baseResourceName = "annotation"
+	case search.Label:
+		baseResourceName = "label"
+	case search.ImageLabel:
+		baseResourceName = "label"
+	default:
+		// Panic here is okay, since this function is called at program-init time.
+		utils.Must(errors.Errorf("unknown field label: %v", fieldLabel))
 	}
-	return messages, nil
+	return func(fieldMap map[string][]string) ([]string, error) {
+		type resultFields struct {
+			ResourceName string
+			Value        string
+		}
+		var r *resultFields
+		if values, ok := fieldMap[fieldLabel.String()]; ok {
+			r = &resultFields{ResourceName: baseResourceName, Value: strings.Join(values, "; ")}
+		}
+		if r == nil {
+			return nil, nil
+		}
+		if disallowed {
+			return executeTemplate(mapDisallowedTemplate, r)
+		}
+		return executeTemplate(mapRequiredTemplate, r)
+	}
 }

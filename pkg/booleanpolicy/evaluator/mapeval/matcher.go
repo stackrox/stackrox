@@ -1,6 +1,7 @@
 package mapeval
 
 import (
+	"container/heap"
 	"reflect"
 	"regexp"
 	"strings"
@@ -24,9 +25,63 @@ type kvConstraint struct {
 	value *regexp.Regexp
 }
 
-type groupConstraint struct {
+type conjunctionGroupConstraint struct {
 	shouldNotMatch []*kvConstraint
 	shouldMatch    []*kvConstraint
+}
+
+func (c *conjunctionGroupConstraint) newState() *conjunctionMatchState {
+	return &conjunctionMatchState{
+		constraints:        c,
+		shouldMatchResults: make([]bool, len(c.shouldMatch)),
+		matchedPairs:       make(map[*KeyValue]struct{}),
+	}
+}
+
+type conjunctionMatchState struct {
+	constraints        *conjunctionGroupConstraint
+	shouldMatchResults []bool
+	matchedPairs       map[*KeyValue]struct{}
+
+	shouldNotMatchFailed bool
+}
+
+func (c *conjunctionMatchState) checkAgainstNewKV(kv *KeyValue) {
+	if c.shouldNotMatchFailed {
+		return
+	}
+	for _, query := range c.constraints.shouldNotMatch {
+		if valueMatchesRegex(query.key, kv.Key) && valueMatchesRegex(query.value, kv.Value) {
+			c.shouldNotMatchFailed = true
+			return
+		}
+	}
+
+	var kvMatchedShouldMatch bool
+	for i, query := range c.constraints.shouldMatch {
+		if kvMatchedShouldMatch && c.shouldMatchResults[i] {
+			continue
+		}
+		if valueMatchesRegex(query.key, kv.Key) && valueMatchesRegex(query.value, kv.Value) {
+			kvMatchedShouldMatch = true
+			c.shouldMatchResults[i] = true
+		}
+	}
+	if kvMatchedShouldMatch {
+		c.matchedPairs[kv] = struct{}{}
+	}
+}
+
+func (c *conjunctionMatchState) matched() (map[*KeyValue]struct{}, bool) {
+	if c.shouldNotMatchFailed {
+		return nil, false
+	}
+	for _, res := range c.shouldMatchResults {
+		if !res {
+			return nil, false
+		}
+	}
+	return c.matchedPairs, true
 }
 
 // KeyValue is a basic abstraction for matched key values.
@@ -40,12 +95,54 @@ type matchedGroup struct {
 	ShouldMatch    []*KeyValue
 }
 
+// KeyValueSlice is a slice of KeyValues.
+// It is defined as a type to implement heap.Interface.
+// It is a max-heap.
+type KeyValueSlice []*KeyValue
+
+// Len implements heap.Interface.
+func (k *KeyValueSlice) Len() int {
+	return len(*k)
+}
+
+// Less implements heap.Interface.
+func (k *KeyValueSlice) Less(i, j int) bool {
+	return (*k)[i].Key > (*k)[j].Key
+}
+
+// Swap implements heap.Interface.
+func (k *KeyValueSlice) Swap(i, j int) {
+	(*k)[j], (*k)[i] = (*k)[i], (*k)[j]
+}
+
+// Push implements heap.Interface.
+func (k *KeyValueSlice) Push(x interface{}) {
+	*k = append(*k, x.(*KeyValue))
+}
+
+// Pop implements heap.Interface.
+func (k *KeyValueSlice) Pop() interface{} {
+	length := len(*k)
+	ret := (*k)[length-1]
+	*k = (*k)[0 : length-1]
+	return ret
+}
+
 // MatcherResults is the results returned from the matcher.
 type MatcherResults struct {
+	MatchingKeyValues map[*KeyValue]struct{}
+	KeyValues         heap.Interface
+	NumElements       int
 	// Groups joined that disjunction, that are satisfied.
 	Groups []*matchedGroup
 	// MapVals returns 'numValuesToReturn' values from the map.
 	MapVals []*KeyValue
+}
+
+func newMatcherResults() *MatcherResults {
+	kvs := make(KeyValueSlice, 0)
+	heap.Init(&kvs)
+	return &MatcherResults{KeyValues: &kvs}
 }
 
 func assignRegExpFromString(val string) (*regexp.Regexp, error) {
@@ -56,13 +153,13 @@ func assignRegExpFromString(val string) (*regexp.Regexp, error) {
 	return regexp.Compile(val)
 }
 
-func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*groupConstraint, error) {
+func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conjunctionGroupConstraint, error) {
 	ps := strings.Split(conjunctionPairsStr, ConjunctionMarker)
 	if len(ps) == 0 {
 		return nil, nil
 	}
 
-	conjunctionGroup := &groupConstraint{}
+	conjunctionGroup := &conjunctionGroupConstraint{}
 	for _, p := range ps {
 		if !strings.Contains(p, "=") {
 			return nil, errors.Errorf("Invalid key-value expression: %s", p)
@@ -91,72 +188,16 @@ func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*grou
 	return conjunctionGroup, nil
 }
 
-func valueMatchesRequest(req *regexp.Regexp, val string) bool {
-	return req == nil || regexutils.MatchWholeString(req, val)
+func valueMatchesRegex(query *regexp.Regexp, val string) bool {
+	return query == nil || regexutils.MatchWholeString(query, val)
 }
 
-func verifyAgainstCG(gE *groupConstraint, kvMatchStates map[*kvConstraint][]*KeyValue, key, value string) {
-	for _, r := range gE.shouldNotMatch {
-		if valueMatchesRequest(r.key, key) && valueMatchesRequest(r.value, value) {
-			kvMatchStates[r] = append(kvMatchStates[r], &KeyValue{
-				Key:   key,
-				Value: value,
-			})
-		}
+// Matcher returns a matcher for a map against a query string. The returned matcher also accepts an int for the number of
+// values in the map to return.
+func Matcher(value string, typ reflect.Type) (func(*reflect.MapIter, int) (*MatcherResults, bool), error) {
+	if typ.Key().Kind() != reflect.String || typ.Elem().Kind() != reflect.String {
+		return nil, errors.Errorf("invalid typ %v: only map[string]string is supported", typ)
 	}
-
-	for _, d := range gE.shouldMatch {
-		if valueMatchesRequest(d.key, key) && valueMatchesRequest(d.value, value) {
-			kvMatchStates[d] = append(kvMatchStates[d], &KeyValue{
-				Key:   key,
-				Value: value,
-			})
-		}
-	}
-}
-
-func matchesCG(gE *groupConstraint, kvMatchStates map[*kvConstraint][]*KeyValue) *matchedGroup {
-	for _, r := range gE.shouldNotMatch {
-		if len(kvMatchStates[r]) > 0 {
-			return nil
-		}
-	}
-	// All shouldNotMatch requirements failed at this point.
-
-	for _, d := range gE.shouldMatch {
-		if len(kvMatchStates[d]) == 0 {
-			return nil
-		}
-	}
-	// Now, all shouldMatch requirements failed at this point, so this map matches this particular conjunction
-	// group.
-	res := &matchedGroup{}
-	for _, r := range gE.shouldNotMatch {
-		key := ""
-		if r.key != nil {
-			key = r.key.String()
-		}
-
-		val := ""
-		if r.value != nil {
-			val = r.value.String()
-		}
-
-		res.ShouldNotMatch = append(res.ShouldNotMatch, &KeyValue{
-			Key:   key,
-			Value: val,
-		})
-	}
-
-	for _, d := range gE.shouldMatch {
-		res.ShouldMatch = append(res.ShouldMatch, kvMatchStates[d]...)
-	}
-
-	return res
-}
-
-// Matcher returns a matcher for a map against a query string. It also returns upto N values of the map.
-func Matcher(value string) (func(*reflect.MapIter, int) (*MatcherResults, bool), error) {
 	// The format for the query is taken to be a disjunction of groups.
 	// A group is composed of conjunction of shouldNotMatch and shouldMatch (k,*) (*,v) (k,v) pairs.
 	// A shouldMatch pair returns true if it is contained in the map.
@@ -167,7 +208,7 @@ func Matcher(value string) (func(*reflect.MapIter, int) (*MatcherResults, bool),
 	// The above expression is composed of two groups:
 	// The first group implies that the map matches if key 'a' is absent, and b=1 is present.
 	// The second group implies that the map matches if c=2 is present.
-	var disjunctionGroups []*groupConstraint
+	var conjunctionGroupConstraints []*conjunctionGroupConstraint
 	for _, conjunctionPairsStr := range strings.Split(value, DisjunctionMarker) {
 		cg, err := convertConjunctionPairsToGroupConstraint(conjunctionPairsStr)
 		if err != nil {
@@ -178,51 +219,59 @@ func Matcher(value string) (func(*reflect.MapIter, int) (*MatcherResults, bool),
 			continue
 		}
 
-		disjunctionGroups = append(disjunctionGroups, cg)
+		conjunctionGroupConstraints = append(conjunctionGroupConstraints, cg)
 	}
 
-	return func(iter *reflect.MapIter, numValuesToReturn int) (*MatcherResults, bool) {
-		kvMatchStates := make(map[*kvConstraint][]*KeyValue)
-		var res *MatcherResults
-		count := 0
+	return func(iter *reflect.MapIter, maxValues int) (*MatcherResults, bool) {
+		conjunctionGroupStates := make([]*conjunctionMatchState, 0, len(conjunctionGroupConstraints))
+		for _, c := range conjunctionGroupConstraints {
+			conjunctionGroupStates = append(conjunctionGroupStates, c.newState())
+		}
+		res := newMatcherResults()
 		for iter.Next() {
-			k, v := iter.Key(), iter.Value()
 			// Only string type key, value are allowed.
-			key, ok := k.Interface().(string)
-			if !ok {
-				return nil, false
+			// It will only happen in the event of a programming error anyway, since we check the map
+			// type above and return an error.
+			kv := &KeyValue{iter.Key().Interface().(string), iter.Value().Interface().(string)}
+
+			for _, state := range conjunctionGroupStates {
+				state.checkAgainstNewKV(kv)
 			}
 
-			value, ok := v.Interface().(string)
-			if !ok {
-				return nil, false
-			}
-
-			for _, cg := range disjunctionGroups {
-				verifyAgainstCG(cg, kvMatchStates, key, value)
-			}
-
-			if numValuesToReturn > count {
-				if res == nil {
-					res = &MatcherResults{}
+			if res.KeyValues.Len() < maxValues {
+				heap.Push(res.KeyValues, kv)
+			} else {
+				largestElem := heap.Pop(res.KeyValues).(*KeyValue)
+				// At this point, the heap contains the `maxValues` smallest (in terms of alphabetical order of key)
+				// kv pairs seen so far. If kv is smaller than the largest of these, then it will be in the new heap,
+				// and the old largestElem must go.
+				if kv.Key < largestElem.Key {
+					heap.Push(res.KeyValues, kv)
+				} else {
+					heap.Push(res.KeyValues, largestElem)
 				}
+			}
+			res.NumElements++
+		}
 
-				res.MapVals = append(res.MapVals, &KeyValue{Key: key, Value: value})
-				count++
+		var atLeastOneMatched bool
+		for _, state := range conjunctionGroupStates {
+			matchedPairs, matched := state.matched()
+			if matched {
+				atLeastOneMatched = true
+				if len(matchedPairs) > 0 {
+					if res.MatchingKeyValues == nil {
+						res.MatchingKeyValues = make(map[*KeyValue]struct{}, len(matchedPairs))
+					}
+					// This code depends on the fact that we have exactly one *KeyValue object for each
+					// element of the map, that we pass around everywhere.
+					for k := range matchedPairs {
+						res.MatchingKeyValues[k] = struct{}{}
+					}
+				}
 			}
 		}
 
-		for _, cg := range disjunctionGroups {
-			// Apply disjunction and return true if any group is true.
-			if mg := matchesCG(cg, kvMatchStates); mg != nil {
-				if res == nil {
-					res = &MatcherResults{}
-				}
-
-				res.Groups = append(res.Groups, mg)
-			}
-		}
-
-		return res, res != nil && len(res.Groups) > 0
+		return res, atLeastOneMatched
 	}, nil
 }
