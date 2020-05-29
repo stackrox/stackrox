@@ -1,0 +1,36 @@
+#! /bin/sh
+
+dbpath="/var/lib/stackrox/stackrox.db"
+backup_boltdbpath="/var/lib/stackrox/stackrox.db.pre-rocksdb-snapshot"
+rm "${backup_boltdbpath}.tmp" 2> /dev/null || true
+
+# If we want to move to RocksDB, we want to backup bolt in it's current state POST-migration
+if [ "${ROX_ROCKSDB}" == "true" ] && [ -f "${dbpath}" ] && [ ! -f "${backup_boltdbpath}" ]; then
+  echo >&2 "Backing up BoltDB before migration to RocksDB"
+  echo >&2 "Copying ${dbpath} to ${backup_boltdbpath}.tmp"
+  cp "$dbpath" "${backup_boltdbpath}.tmp"
+  echo >&2 "Atomically renaming ${backup_boltdbpath}.tmp to ${backup_boltdbpath}"
+  mv "${backup_boltdbpath}.tmp" "${backup_boltdbpath}"
+  echo >&2 "Successfully backed up BoltDB"
+fi
+
+# If we don't want RocksDB, then copy the backup if it exists back to the original location and we should
+# be able to start correctly with a BoltDB and BadgerDB
+if [ "${ROX_ROCKSDB}" != "true" ] && [ -f "$backup_boltdbpath" ]; then
+  echo  >&2 "Reverting back from RocksDB to saved snapshot of BoltDB and BadgerDB"
+
+  # Archive RocksDB on rollback
+  if [ -d /var/lib/stackrox/rocksdb ]; then
+    rocksdb_backup="/var/lib/stackrox/rocksdb-$(date +"%Y%m%d_%H%M%S")"
+    echo >&2 "Archiving existing RocksDB directory. Saving /var/lib/stackrox/rocksdb to ${rocksdb_backup}"
+    mv "/var/lib/stackrox/rocksdb" "${rocksdb_backup}"
+  fi
+
+  # Restore from backup taken
+  echo >&2 "Copying from ${backup_boltdbpath} to ${dbpath}"
+  mv "$backup_boltdbpath" "$dbpath"
+  echo >&2 "Removing indexes to force a rebuild"
+  rm -rf /var/lib/stackrox/scorch.bleve /var/lib/stackrox/index
+
+  /stackrox/bin/migrator
+fi

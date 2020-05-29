@@ -3059,6 +3059,31 @@ jobs:
           collect: true
 
       - run:
+          name: "Backup RocksDB"
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db backup --output rocksdb-backup.zip
+
+      - run:
+          name: "Restore RocksDB"
+          command: |
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file rocksdb-backup.zip
+
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate RocksDB Bouncing"
+      - check-stackrox-logs:
+          collect: true
+
+      - *bounceCentral
+      - *waitForAPI
+      - validate-upgrade:
+          upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
+          desc: "Validate RocksDB Bouncing after restoring"
+      - check-stackrox-logs:
+          collect: true
+
+      - run:
           name: Roll back to BadgerDB from RocksDB
           command: |
             kubectl -n stackrox set env deploy/central ROX_ROCKSDB=false

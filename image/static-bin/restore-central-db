@@ -6,8 +6,23 @@ if [ -d "/var/lib/stackrox/.restore" ]; then
 	echo "Database restore directory found. Moving database files to their desired location."
 	mkdir /var/lib/stackrox/.backup
 	mv /var/lib/stackrox/* /var/lib/stackrox/.backup  # this will ignore hidden directories such as .backup and .restore.
+
+	# If RocksDB is true, then we need to make sure that if we are restoring a backup with RocksDB
+	# that we preserve the saved BadgerDB and the backed up BoltDB
+	if [ "${ROX_ROCKSDB}" == "true" ] && [ ! -d /var/lib/stackrox/.restore/badgerdb ]; then
+		if [ -d /var/lib/stackrox/.backup/badgerdb ]; then
+			echo "Preserving BadgerDB"
+			cp -R /var/lib/stackrox/.backup/badgerdb "/var/lib/stackrox/badgerdb"
+		fi
+		# If a BoltDB backup exists, then preserve the backup
+		if [ -f /var/lib/stackrox/.backup/stackrox.db.pre-rocksdb-snapshot ]; then
+			echo "Preserving pre rocksdb snapshot"
+			cp /var/lib/stackrox/.backup/stackrox.db.pre-rocksdb-snapshot "/var/lib/stackrox/stackrox.db.pre-rocksdb-snapshot"
+		fi
+	fi
 	rm -rf /var/lib/stackrox/scorch.bleve /var/lib/stackrox/index # Remove the indexes because a restore needs to rebuild it anyways
 	mv /var/lib/stackrox/.restore/* /var/lib/stackrox/
+
 	rmdir /var/lib/stackrox/.restore
 else
 	echo "No database restore directory found (this is not an error)."

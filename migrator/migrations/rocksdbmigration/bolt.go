@@ -50,7 +50,10 @@ func migrateBoltBucket(boltDB *bbolt.DB, rocksDB *gorocksdb.DB, prefix []byte) (
 		return 0, err
 	}
 	err = rocksDB.Write(gorocksdb.NewDefaultWriteOptions(), rocksWriteBatch)
-	return count, err
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func migrateBolt(databases *types.Databases) error {
