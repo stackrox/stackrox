@@ -22,7 +22,7 @@ LOCAL_VOLUME_ARGS := -v$(CURDIR)/linux-gocache:/linux-gocache:delegated -v $(GOP
 RELEASE_GOTAGS := release
 ifdef CI
 ifneq ($(CIRCLE_TAG),)
-GOTAGS := "$(RELEASE_GOTAGS)"
+GOTAGS := $(RELEASE_GOTAGS)
 TAG := $(CIRCLE_TAG)
 endif
 endif
