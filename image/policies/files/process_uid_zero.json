@@ -19,10 +19,18 @@
   "disabled": true,
   "whitelists": [
     {
-      "name": "Don't alert on Kube System Namespace",
+      "name": "Don't alert on kube-system namespace",
       "deployment": {
         "scope": {
           "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
         }
       }
     },

@@ -25,6 +25,14 @@
       }
     },
     {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
       "name": "Don't alert on openshift-node namespace",
       "deployment": {
         "scope": {

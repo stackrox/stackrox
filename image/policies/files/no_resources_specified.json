@@ -57,6 +57,14 @@
       }
     },
     {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
       "name": "Don't alert on management-infra namespace",
       "deployment": {
         "scope": {

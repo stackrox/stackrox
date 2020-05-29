@@ -26,6 +26,14 @@
           "namespace": "kube-system"
         }
       }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
     }
   ],
   "disabled": true
