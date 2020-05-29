@@ -14,3 +14,7 @@ export const withTextLabel = () => {
 export const withTextLabelAndRequiredMarker = () => {
     return <FormFieldLabel text="Your Field" required />;
 };
+
+export const withTextLabelAndRequiredMarkerIsEmpty = () => {
+    return <FormFieldLabel text="Your Field" required empty />;
+};

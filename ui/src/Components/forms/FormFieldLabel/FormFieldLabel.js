@@ -1,19 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const FormFieldLabel = ({ text, required }) => (
+import FormFieldRequired from 'Components/forms/FormFieldRequired';
+
+const FormFieldLabel = ({ text, required, empty }) => (
     <p>
-        {text} {required && <i className="text-base-500">(required)</i>}
+        {text} {required && <FormFieldRequired empty={empty} />}
     </p>
 );
 
 FormFieldLabel.propTypes = {
     text: PropTypes.string.isRequired,
     required: PropTypes.bool,
+    empty: PropTypes.bool,
 };
 
 FormFieldLabel.defaultProps = {
     required: false,
+    empty: false,
 };
 
 export default FormFieldLabel;

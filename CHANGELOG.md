@@ -15,6 +15,7 @@ All notable changes to this project that require documentation updates will be d
 - Sensor resource requests and limits have been increased to 1 core / 1GB and 2 cores / 4GB respectively.
 - Added User Page in UI to show current User Permissions and Roles
 - `roxctl` commands now gives users an error message when unexpected arguments are given (ROX-4709)
+- UI: In Platform Configuration > Roles and Permissions > Add New Role form: 1. disable the Save button when required Role Name is empty; 2. display `(required)` at the right of the Role Name label with gold warning color if the input box is empty, otherwise with gray color (ROX-1808)
 
 ## [43.0]
 - Detection APIs were not properly handling suppressed CVEs and they were being included in evaluation. This is now resolved.
