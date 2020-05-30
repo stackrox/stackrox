@@ -102,11 +102,14 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "validate registry based image metadata"
         def imageDigest = ImageService.getImages().find { it.name == deployment.image }
-        if (!strictIntegrationTesting && !imageDigest) {
-            // Ignore flaky external service
-            Assume.assumeNoException("Failed to pull the image using ${integration}. Skipping test!")
+        try {
+            assert imageDigest?.id
+        } catch (Exception e) {
+            if (strictIntegrationTesting) {
+                throw (e)
+            }
+            Assume.assumeNoException("Failed to pull the image using ${integration}. Skipping test!", e)
         }
-        assert imageDigest?.id
         ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
         assert imageDetail.metadata?.layerShasCount >= 1
@@ -133,11 +136,14 @@ class ImageScanningTest extends BaseSpecification {
             ImageService.scanImage(deployment.image)
             imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
         }
-        if (!strictIntegrationTesting && imageDetail.scan.componentsCount == 0) {
-            // Ignore flaky external service
-            Assume.assumeNoException("Failed to scan the image using ${integration}. Skipping test!")
+        try {
+            assert imageDetail.scan.componentsCount > 0
+        } catch (Exception e) {
+            if (strictIntegrationTesting) {
+                throw (e)
+            }
+            Assume.assumeNoException("Failed to scan the image using ${integration}. Skipping test!", e)
         }
-        assert imageDetail.scan.componentsCount > 0
         for (String cve : cves) {
             println "Validating existence of ${cve} cve..."
             ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
