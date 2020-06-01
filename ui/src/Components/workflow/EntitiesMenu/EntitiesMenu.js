@@ -41,7 +41,7 @@ const EntitiesMenu = ({ text, options, grouped }) => {
 
     return (
         <Menu
-            className="h-full min-w-32"
+            className="min-w-32"
             menuClassName={grouped ? 'bg-primary-200 min-w-48' : ''}
             buttonClass={buttonClass}
             buttonText={text}

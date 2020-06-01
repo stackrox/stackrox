@@ -99,7 +99,9 @@ const WorkflowEntityPageLayout = ({ location }) => {
                                 customCsvExportHandler={customCsvExportHandler}
                             />
                         </div>
-                        <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                        <div className="flex items-center">
+                            <EntitiesMenu text="All Entities" options={useCaseEntityMap[useCase]} />
+                        </div>
                     </div>
                 </PageHeader>
                 <EntityTabs entityType={pageEntityType} activeTab={pageListType} />
