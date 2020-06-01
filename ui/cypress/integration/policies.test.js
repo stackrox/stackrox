@@ -562,18 +562,15 @@ describe('Policies page', () => {
             }
         });
 
-        it('should allow floats for CPU and CVSS configuration fields', () => {
-            const addCPUField = () => {
-                editPolicy();
-                cy.get(selectors.configurationField.selectArrow).first().click();
-                cy.get(selectors.configurationField.options)
-                    .contains('Container CPU Request')
-                    .click();
-                cy.get(selectors.configurationField.numericInput).last().type(2.2);
-                savePolicy();
-            };
+        it('should allow floats for numeric configuration fields, like CVSS', () => {
             cy.get(selectors.tableFirstRow).click({ force: true });
-            addCPUField();
+
+            editPolicy();
+            cy.get(selectors.configurationField.selectArrow).first().click();
+            cy.get(selectors.configurationField.options).contains('CVSS').click();
+            cy.get(selectors.configurationField.numericInput).last().type(2.2);
+
+            savePolicy();
         });
 
         it('should allow updating image fields in a policy', () => {
