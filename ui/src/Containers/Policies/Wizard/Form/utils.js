@@ -74,8 +74,40 @@ export function postFormatEnforcementField(policy) {
     return serverPolicy;
 }
 
-export function parseValueStr(value) {
+// TODO: work with API to update contract for returning number comparison fields
+//   until that improves, we short-circuit those fields here
+const nonStandardNumberFields = [
+    'CVSS',
+    'Container CPU Request',
+    'Container CPU Limit',
+    'Container Memory Request',
+    'Container Memory Limit',
+];
+
+const numericCompRe = /^([><=]+)?\D*(?=.)([+-]?([0-9]*)(\.([0-9]+))?)$/;
+
+export function parseNumericComparisons(str) {
+    const matches = str.match(numericCompRe);
+    return [matches[1], matches[2]];
+}
+export function parseValueStr(value, fieldName) {
     if (typeof value !== 'string') return value;
+
+    // TODO: work with API to update contract for returning number comparison fields
+    //   until that improves, we short-circuit those fields here
+    if (nonStandardNumberFields.includes(fieldName)) {
+        const [comparison, num] = parseNumericComparisons(value);
+        return comparison
+            ? {
+                  key: comparison,
+                  value: num,
+              }
+            : {
+                  key: '=',
+                  value: num,
+              };
+    }
+    // handle all other string fields
     const valueArr = value.split('=');
     // for nested policy criteria fields
     if (valueArr.length === 2) {
@@ -109,16 +141,21 @@ function preFormatNestedPolicyFields(policy) {
             values.forEach((value, valueIdx) => {
                 clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
                     valueIdx
-                ] = parseValueStr(value.value);
+                ] = parseValueStr(value.value, policyGroup.fieldName);
             });
         });
     });
     return clientPolicy;
 }
 
-export function formatValueStr({ source, key, value }) {
+export function formatValueStr({ source, key, value }, fieldName) {
     let valueStr = value;
-    if (source) {
+
+    if (nonStandardNumberFields.includes(fieldName)) {
+        // TODO: work with API to update contract for returning number comparison fields
+        //   until that improves, we short-circuit those fields here
+        valueStr = key !== '=' ? `${key} ${value}` : `${value}`;
+    } else if (source) {
         valueStr = `${source}=${key}=${value}`;
     } else if (key) {
         valueStr = `${key}=${value}`;
@@ -137,7 +174,7 @@ function postFormatNestedPolicyFields(policy) {
             const { values } = policyGroup;
             values.forEach((value, valueIdx) => {
                 serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] = {
-                    value: formatValueStr(value),
+                    value: formatValueStr(value, policyGroup.fieldName),
                 };
             });
             delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
