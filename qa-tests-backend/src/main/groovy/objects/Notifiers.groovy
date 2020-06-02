@@ -74,9 +74,6 @@ class EmailNotifier extends Notifier {
         try {
             mail.login()
         } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw(e)
-            }
             Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
         }
 
@@ -111,9 +108,6 @@ class EmailNotifier extends Notifier {
         try {
             mail.login()
         } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw(e)
-            }
             Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
         }
         Message[] notifications = []
