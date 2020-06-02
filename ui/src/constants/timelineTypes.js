@@ -23,6 +23,10 @@ export const eventTypes = {
     TERMINATION: 'ContainerTerminationEvent',
 };
 
+/**
+ * @typedef {string} ClusteredEventType
+ * @enum {ClusteredEventType}
+ */
 export const clusteredEventTypes = {
     ...eventTypes,
     WHITELISTED_PROCESS_ACTIVITY: 'WhitelistedProcessActivityEvent',

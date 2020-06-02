@@ -1,0 +1,387 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should show a clustered container restart event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        clip-rule="evenodd"
+        data-testid="clustered-restart-event"
+        fill-rule="evenodd"
+        height="25"
+        viewBox="0 0 22 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M9.531 7.708l6.848 11.67a1.402 1.402 0 01-.527 1.932c-.218.125-.466.19-.718.19H1.438A1.426 1.426 0 010 20.085c0-.248.066-.492.193-.707l6.848-11.67a1.449 1.449 0 012.49 0z"
+          fill="#ff9064"
+        />
+        <g
+          transform="translate(8)"
+        >
+          <rect
+            fill="#FFEBE3"
+            height="12"
+            rx="2"
+            stroke="#D87953"
+            width="13"
+            x=".5"
+            y=".5"
+          />
+          <text
+            fill="#8B4225"
+            font-family="OpenSans-Bold, Open Sans"
+            font-size="9"
+            font-weight="bold"
+            letter-spacing="-.18"
+          >
+            <tspan
+              x="2.043"
+              y="10"
+            >
+              9+
+            </tspan>
+          </text>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a clustered generic event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        data-testid="clustered-generic-event"
+        height="25"
+        viewBox="0 0 23 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g
+          fill="none"
+          fill-rule="evenodd"
+        >
+          <rect
+            fill="#4FAFD3"
+            height="14.5"
+            rx="7.25"
+            width="14.5"
+            y="7"
+          />
+          <g
+            transform="translate(9)"
+          >
+            <rect
+              fill="#E2F7FF"
+              height="12"
+              rx="2"
+              stroke="#8FCFE7"
+              width="13"
+              x=".5"
+              y=".5"
+            />
+            <text
+              fill="#2A7895"
+              font-family="OpenSans-Bold, Open Sans"
+              font-size="9"
+              font-weight="bold"
+              letter-spacing="-.18"
+            >
+              <tspan
+                x="2.521"
+                y="10"
+              >
+                9+
+              </tspan>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a clustered policy violation event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        data-testid="clustered-policy-violation-event"
+        height="25"
+        version="1.1"
+        viewBox="0 0 23 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g
+          fill="none"
+          fill-rule="evenodd"
+        >
+          <g
+            transform="translate(0 6.1)"
+          >
+            <rect
+              fill="#FF5782"
+              height="14.5"
+              rx="2.43"
+              width="14.5"
+            />
+            <path
+              d="M8.071 8.37H6.616l-.325-5.584h2.12L8.07 8.37zm-1.833 2.22c0-.346.091-.614.275-.804.184-.19.458-.286.82-.286.364 0 .639.094.825.282.186.189.279.458.279.808 0 .345-.096.613-.29.804-.192.19-.463.285-.813.285-.359 0-.631-.096-.817-.289-.186-.192-.28-.46-.28-.8z"
+              fill="#FFF"
+              fill-rule="nonzero"
+            />
+          </g>
+          <g
+            transform="translate(9)"
+          >
+            <rect
+              fill="#FFEBF0"
+              height="12"
+              rx="2"
+              stroke="#D48D9F"
+              width="13"
+              x=".5"
+              y=".5"
+            />
+            <text
+              fill="#9D2E4B"
+              font-family="OpenSans-Bold, Open Sans"
+              font-size="9"
+              font-weight="bold"
+              letter-spacing="-.18"
+            >
+              <tspan
+                x="2.043"
+                y="10"
+              >
+                9+
+              </tspan>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a clustered process activity event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        data-testid="clustered-process-activity-event"
+        height="25"
+        viewBox="0 0 23 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g
+          fill="none"
+          fill-rule="evenodd"
+        >
+          <rect
+            fill="#5677DD"
+            height="14.5"
+            rx="2.43"
+            transform="translate(0 6.1)"
+            width="14.5"
+          />
+          <g
+            transform="translate(9)"
+          >
+            <rect
+              fill="#EBF0FF"
+              height="12"
+              rx="2"
+              stroke="#8D9FD4"
+              width="13"
+              x=".5"
+              y=".5"
+            />
+            <text
+              fill="#2E4A9D"
+              font-family="OpenSans-Bold, Open Sans"
+              font-size="9"
+              font-weight="bold"
+              letter-spacing="-.18"
+            >
+              <tspan
+                x="2.043"
+                y="10"
+              >
+                9+
+              </tspan>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a clustered whitelisted process activity event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        data-testid="clustered-whitelisted-process-activity-event"
+        height="25"
+        viewBox="0 0 23 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g
+          fill="none"
+          fill-rule="evenodd"
+        >
+          <g
+            transform="translate(0 6)"
+          >
+            <rect
+              fill="#56DDB2"
+              height="14.58"
+              rx="2.43"
+              width="14.58"
+            />
+            <path
+              d="M4.459 6.768a.807.807 0 00-1.18-.072.91.91 0 00-.067 1.24l2.685 3.17a.81.81 0 001.281-.043l4.645-6.244a.909.909 0 00-.144-1.233.808.808 0 00-1.172.151L6.48 9.153l-2.02-2.385z"
+              fill="#FFF"
+              fill-rule="nonzero"
+            />
+          </g>
+          <g
+            transform="translate(9)"
+          >
+            <rect
+              fill="#EBFFF9"
+              height="12"
+              rx="2"
+              stroke="#8DD4BD"
+              width="13"
+              x=".5"
+              y=".5"
+            />
+            <text
+              fill="#2E9D7A"
+              font-family="OpenSans-Bold, Open Sans"
+              font-size="9"
+              font-weight="bold"
+              letter-spacing="-.18"
+            >
+              <tspan
+                x="2.043"
+                y="10"
+              >
+                9+
+              </tspan>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
+
+exports[`should show a container termination event marker 1`] = `
+<DocumentFragment>
+  <svg
+    data-testid="timeline-main-view"
+    height="100"
+    width="100"
+  >
+    <g
+      data-testid="timeline-clustered-event-marker"
+      transform="translate(NaN, 12.5)"
+    >
+      <svg
+        data-testid="clustered-termination-event"
+        height="25"
+        viewBox="0 0 22 22"
+        width="25"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <g
+          fill="none"
+          fill-rule="evenodd"
+        >
+          <path
+            d="M9.53 20.792l6.849-11.67a1.402 1.402 0 00-.527-1.932 1.456 1.456 0 00-.718-.19H1.438C.644 7 0 7.633 0 8.415c0 .248.066.492.193.707l6.848 11.67a1.45 1.45 0 002.49 0z"
+            fill="#FF9064"
+          />
+          <g
+            transform="translate(8)"
+          >
+            <rect
+              fill="#FFEBE3"
+              height="12"
+              rx="2"
+              stroke="#D87953"
+              width="13"
+              x=".5"
+              y=".5"
+            />
+            <text
+              fill="#8B4225"
+              font-family="OpenSans-Bold, Open Sans"
+              font-size="9"
+              font-weight="bold"
+              letter-spacing="-.18"
+            >
+              <tspan
+                x="2.043"
+                y="10"
+              >
+                9+
+              </tspan>
+            </text>
+          </g>
+        </g>
+      </svg>
+    </g>
+  </svg>
+</DocumentFragment>
+`;
