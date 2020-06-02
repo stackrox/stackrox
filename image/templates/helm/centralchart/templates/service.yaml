@@ -14,9 +14,9 @@ spec:
     app: central
   type: ClusterIP
 
-{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1/DestinationRule" }}
+{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1alpha3/DestinationRule" }}
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: central-internal-no-istio-mtls

@@ -152,9 +152,9 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 
-{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1/DestinationRule" }}
+{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1alpha3/DestinationRule" }}
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: sensor-internal-no-istio-mtls

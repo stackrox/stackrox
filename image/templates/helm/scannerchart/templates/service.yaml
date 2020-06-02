@@ -33,9 +33,9 @@ spec:
     app: scanner-db
   type: ClusterIP
 
-{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1beta1/DestinationRule" }}
+{{ if .Capabilities.APIVersions.Has "networking.istio.io/v1alpha3/DestinationRule" }}
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: scanner-internal-no-istio-mtls
@@ -57,7 +57,7 @@ spec:
         tls:
           mode: DISABLE
 ---
-apiVersion: networking.istio.io/v1beta1
+apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
   name: scanner-db-internal-no-istio-mtls
