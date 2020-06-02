@@ -1,18 +1,35 @@
 package regexutils
 
 import (
+	"fmt"
 	"regexp"
+
+	"github.com/pkg/errors"
 )
 
-// MatchWholeString uses a regex and ensures it matches the entire string
-func MatchWholeString(r *regexp.Regexp, s string) bool {
-	if r.String() == "" {
-		return true
-	}
+// A WholeStringMatcher is something that can match a string against a regex, but only matches
+// strings where the entire string matches the regex.
+type WholeStringMatcher interface {
+	MatchWholeString(s string) bool
+}
 
-	loc := r.FindStringIndex(s)
-	if loc == nil {
-		return false
+// CompileWholeStringMatcher takes a regex and compiles it into a WholeStringMatcher.
+// An empty regex matches _all_ strings.
+func CompileWholeStringMatcher(re string) (WholeStringMatcher, error) {
+	if re == "" {
+		return &wholeStringMatcher{}, nil
 	}
-	return loc[0] == 0 && loc[1] == len(s)
+	compiled, err := regexp.Compile(fmt.Sprintf("^(?:%s)$", re))
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid regex")
+	}
+	return &wholeStringMatcher{r: compiled}, nil
+}
+
+type wholeStringMatcher struct {
+	r *regexp.Regexp
+}
+
+func (w *wholeStringMatcher) MatchWholeString(s string) bool {
+	return w.r == nil || w.r.MatchString(s)
 }

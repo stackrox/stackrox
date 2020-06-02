@@ -2,10 +2,10 @@ package regexutils
 
 import (
 	"fmt"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMatchWholeString(t *testing.T) {
@@ -14,6 +14,16 @@ func TestMatchWholeString(t *testing.T) {
 		value    string
 		expected bool
 	}{
+		{
+			regex:    "",
+			value:    "",
+			expected: true,
+		},
+		{
+			regex:    "",
+			value:    "whatever",
+			expected: true,
+		},
 		{
 			regex:    "abc",
 			value:    "",
@@ -44,12 +54,58 @@ func TestMatchWholeString(t *testing.T) {
 			value:    "abc",
 			expected: true,
 		},
+		{
+			regex:    "anacron|cron|crond|crontab",
+			value:    "cron",
+			expected: true,
+		},
+		{
+			regex:    "anacron|cron|crond|crontab",
+			value:    "crontab",
+			expected: true,
+		},
+		{
+			regex:    "anacron|cron|crond|crontab",
+			value:    "cronta",
+			expected: false,
+		},
+		{
+			regex:    "abc$",
+			value:    "abc",
+			expected: true,
+		},
+		{
+			regex:    "abc$",
+			value:    "ab",
+			expected: false,
+		},
+		{
+			regex:    "^abc$",
+			value:    "abc",
+			expected: true,
+		},
+		{
+			regex:    "^abc$",
+			value:    "ab",
+			expected: false,
+		},
+		{
+			regex:    "^abc",
+			value:    "abc",
+			expected: true,
+		},
+		{
+			regex:    "^abc",
+			value:    "ab",
+			expected: false,
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s - %s", c.regex, c.value), func(t *testing.T) {
-			r := regexp.MustCompile(c.regex)
-			assert.Equal(t, c.expected, MatchWholeString(r, c.value))
+			m, err := CompileWholeStringMatcher(c.regex)
+			require.NoError(t, err)
+			assert.Equal(t, c.expected, m.MatchWholeString(c.value))
 		})
 	}
 }

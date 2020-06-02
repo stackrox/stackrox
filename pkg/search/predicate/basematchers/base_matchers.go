@@ -1,7 +1,6 @@
 package basematchers
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -185,14 +184,14 @@ func MapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[s
 }
 
 func forStringRegexMatch(regex string, negated bool) (func(string) bool, error) {
-	matcher, err := regexp.Compile(regex)
+	matcher, err := regexutils.CompileWholeStringMatcher(regex)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid regex: %q", regex)
 	}
 
 	return func(instance string) bool {
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
-		return regexutils.MatchWholeString(matcher, instance) != negated
+		return matcher.MatchWholeString(instance) != negated
 	}, nil
 }
 

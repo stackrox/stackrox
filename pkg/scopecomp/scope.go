@@ -1,8 +1,6 @@
 package scopecomp
 
 import (
-	"regexp"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/regexutils"
@@ -11,14 +9,14 @@ import (
 // CompiledScope a transformed scope into the relevant regexes
 type CompiledScope struct {
 	ClusterID  string
-	Namespace  *regexp.Regexp
-	LabelKey   *regexp.Regexp
-	LabelValue *regexp.Regexp
+	Namespace  regexutils.WholeStringMatcher
+	LabelKey   regexutils.WholeStringMatcher
+	LabelValue regexutils.WholeStringMatcher
 }
 
 // CompileScope takes in a scope and compiles it into regexes unless the regexes are invalid
 func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
-	namespaceReg, err := regexp.Compile(scope.GetNamespace())
+	namespaceReg, err := regexutils.CompileWholeStringMatcher(scope.GetNamespace())
 	if err != nil {
 		return nil, errors.Errorf("namespace regex %q could not be compiled", err)
 	}
@@ -29,11 +27,11 @@ func CompileScope(scope *storage.Scope) (*CompiledScope, error) {
 	}
 
 	if scope.GetLabel() != nil {
-		cs.LabelKey, err = regexp.Compile(scope.GetLabel().GetKey())
+		cs.LabelKey, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetKey())
 		if err != nil {
 			return nil, errors.Errorf("label key regex %q could not be compiled", err)
 		}
-		cs.LabelValue, err = regexp.Compile(scope.GetLabel().GetValue())
+		cs.LabelValue, err = regexutils.CompileWholeStringMatcher(scope.GetLabel().GetValue())
 		if err != nil {
 			return nil, errors.Errorf("label value regex %q could not be compiled", err)
 		}
@@ -49,7 +47,7 @@ func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
 	if c.ClusterID != "" && c.ClusterID != deployment.GetClusterId() {
 		return false
 	}
-	if !regexutils.MatchWholeString(c.Namespace, deployment.GetNamespace()) {
+	if !c.Namespace.MatchWholeString(deployment.GetNamespace()) {
 		return false
 	}
 
@@ -59,7 +57,7 @@ func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
 
 	var matched bool
 	for key, value := range deployment.GetLabels() {
-		if regexutils.MatchWholeString(c.LabelKey, key) && regexutils.MatchWholeString(c.LabelValue, value) {
+		if c.LabelKey.MatchWholeString(key) && c.LabelValue.MatchWholeString(value) {
 			matched = true
 			break
 		}
@@ -72,7 +70,7 @@ func (c *CompiledScope) MatchesNamespace(ns string) bool {
 	if c == nil {
 		return true
 	}
-	return regexutils.MatchWholeString(c.Namespace, ns)
+	return c.Namespace.MatchWholeString(ns)
 }
 
 // MatchesCluster evaluates a compiled scope against a cluster ID

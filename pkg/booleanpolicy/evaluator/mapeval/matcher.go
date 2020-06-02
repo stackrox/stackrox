@@ -3,7 +3,6 @@ package mapeval
 import (
 	"container/heap"
 	"reflect"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -21,8 +20,8 @@ const (
 )
 
 type kvConstraint struct {
-	key   *regexp.Regexp
-	value *regexp.Regexp
+	key   regexutils.WholeStringMatcher
+	value regexutils.WholeStringMatcher
 }
 
 type conjunctionGroupConstraint struct {
@@ -145,12 +144,12 @@ func newMatcherResults() *MatcherResults {
 	return &MatcherResults{KeyValues: &kvs}
 }
 
-func assignRegExpFromString(val string) (*regexp.Regexp, error) {
+func regexpMatcherFromString(val string) (regexutils.WholeStringMatcher, error) {
 	if val == "" {
 		return nil, nil
 	}
 
-	return regexp.Compile(val)
+	return regexutils.CompileWholeStringMatcher(val)
 }
 
 func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conjunctionGroupConstraint, error) {
@@ -167,12 +166,12 @@ func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conj
 
 		p, shouldNotMatchQuery := stringutils.MaybeTrimPrefix(p, ShouldNotMatchMarker)
 		k, v := stringutils.Split2(p, "=")
-		key, err := assignRegExpFromString(k)
+		key, err := regexpMatcherFromString(k)
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid key")
 		}
 
-		value, err := assignRegExpFromString(v)
+		value, err := regexpMatcherFromString(v)
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid value")
 		}
@@ -188,8 +187,8 @@ func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conj
 	return conjunctionGroup, nil
 }
 
-func valueMatchesRegex(query *regexp.Regexp, val string) bool {
-	return query == nil || regexutils.MatchWholeString(query, val)
+func valueMatchesRegex(matcher regexutils.WholeStringMatcher, val string) bool {
+	return matcher == nil || matcher.MatchWholeString(val)
 }
 
 // Matcher returns a matcher for a map against a query string. The returned matcher also accepts an int for the number of
