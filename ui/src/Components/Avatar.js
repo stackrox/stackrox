@@ -9,7 +9,7 @@ function Avatar({ imageSrc, name, className }) {
     return imageSrc ? (
         <img src={imageSrc} alt={initials} className={finalClassName} />
     ) : (
-        <span className={`p-3 text-xl ${finalClassName}`}>{initials}</span>
+        <span className={`text-xl ${finalClassName}`}>{initials}</span>
     );
 }
 

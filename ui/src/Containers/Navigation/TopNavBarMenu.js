@@ -52,21 +52,28 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData, featureFlag
             </div>
         );
         options.unshift({ component: menuOptionComponent, link: '/main/user' });
-        buttonIcon = <Avatar name={user.name || user.username} className="mx-3" />;
+        buttonIcon = (
+            <Avatar
+                name={user.name || user.username}
+                className="mx-3 h-10 w-10 flex items-center justify-center leading-none"
+            />
+        );
         buttonText = '';
     }
 
     return (
-        <Menu
-            className={`${topNavMenuBtnClass} border-l border-base-400`}
-            menuClassName="min-w-48"
-            buttonIcon={buttonIcon}
-            buttonText={buttonText}
-            buttonTextClassName={buttonTextClassName}
-            button
-            hideCaret
-            options={options}
-        />
+        <div className="flex items-center border-l border-base-400 hover:bg-base-200">
+            <Menu
+                className={`${topNavMenuBtnClass} h-full`}
+                menuClassName="min-w-48"
+                buttonIcon={buttonIcon}
+                buttonText={buttonText}
+                buttonTextClassName={buttonTextClassName}
+                button
+                hideCaret
+                options={options}
+            />
+        </div>
     );
 }
 

@@ -98,7 +98,7 @@ const Menu = ({
                     disabled={disabled}
                     data-testid={dataTestId}
                 >
-                    <div className="flex flex-1 justify-center items-center text-left">
+                    <div className="flex flex-1 justify-center items-center text-left h-full">
                         {buttonIcon}
                         {buttonText && <span className={buttonTextClassName}>{buttonText}</span>}
                         {!hideCaret && <ChevronDown className="h-4 ml-1 pointer-events-none w-4" />}
