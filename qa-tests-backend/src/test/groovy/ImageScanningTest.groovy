@@ -255,6 +255,7 @@ class ImageScanningTest extends BaseSpecification {
         "docker.io/jenkins/jenkins:lts"          | "docker registry"
         "docker.io/jenkins/jenkins:2.220-alpine" | "docker registry"
         "gke.gcr.io/heapster:v1.7.2"             | "one from gke"
+        "mcr.microsoft.com/dotnet/core/runtime:2.1-alpine" | "one from mcr"
     }
 
     def "Validate basic image details across all current images in StackRox"() {

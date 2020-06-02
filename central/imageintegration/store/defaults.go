@@ -64,6 +64,17 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 			},
 		},
 	},
+	{
+		Id:         "4b36a1c3-2d6f-452e-a70f-6c388a0ff947",
+		Name:       "Public Microsoft Container Registry",
+		Type:       "docker",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "mcr.microsoft.com",
+			},
+		},
+	},
 }
 
 // DelayedIntegration is a default integration to be added only when the trigger function returns true
