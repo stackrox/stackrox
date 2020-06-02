@@ -4,7 +4,14 @@ All notable changes to this project that require documentation updates will be d
 ## [NEXT RELEASE]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.
 - Default integration added for public Microsoft Container Registry
-
+- Heads up advisory on `roxctl sensor generate k8s` command option changes slated for release in 47.0:
+  1. `admission-controller` option will be renamed to `create-admission-controller` 
+  2. The default for `create-upgrader-sa` will change to `true`
+  3. The default for `collection-method` will change to `KERNEL_MODULE`
+  4. Deprecated option `runtime` will be removed
+  6. `image` option  will be renamed to `main-image-repository`
+  7. `collector-image` option will be renamed to `collector-image-repository`
+  8. `monitoring-endpoint` option, which has already been deprecated, will be removed
 ## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
 - UI: In Platform Configuration > Interactions: 1. replace "AWS ECR" with "Amazon ECR" and 2. replace "S3" (and "AWS S3" placeholder for Integration Name in New Integration pane) with "Amazon S3" (ROX-4912)
