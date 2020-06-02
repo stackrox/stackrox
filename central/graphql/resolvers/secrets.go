@@ -89,6 +89,10 @@ func (resolver *secretResolver) Deployments(ctx context.Context, args RawQuery) 
 		return nil, err
 	}
 
+	if len(resolver.data.Relationship.GetDeploymentRelationships()) == 0 {
+		return nil, nil
+	}
+
 	q, err := resolver.getDeploymentQuery(args)
 	if err != nil {
 		return nil, err
@@ -103,6 +107,10 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 		return 0, err
 	}
 
+	if len(resolver.data.Relationship.GetDeploymentRelationships()) == 0 {
+		return 0, nil
+	}
+
 	q, err := resolver.getDeploymentQuery(RawQuery{})
 	if err != nil {
 		return 0, err
@@ -111,7 +119,7 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(results)), err
+	return int32(len(results)), nil
 }
 
 func (resolver *secretResolver) getDeploymentQuery(args RawQuery) (*v1.Query, error) {
