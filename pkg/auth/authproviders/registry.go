@@ -22,6 +22,7 @@ type Registry interface {
 	GetProviders(name, typ *string) []Provider
 	ResolveProvider(typ, state string) (Provider, error)
 
+	ValidateProvider(ctx context.Context, options ...ProviderOption) error
 	CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error)
 	UpdateProvider(ctx context.Context, id string, options ...ProviderOption) (Provider, error)
 	DeleteProvider(ctx context.Context, id string, ignoreActive bool) error

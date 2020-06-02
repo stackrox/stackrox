@@ -162,6 +162,10 @@ func (s *serviceImpl) PutAuthProvider(ctx context.Context, request *storage.Auth
 	// Attempt to merge configs.
 	request.Config = provider.MergeConfigInto(request.GetConfig())
 
+	if err := s.registry.ValidateProvider(ctx, authproviders.WithStorageView(request)); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "auth provider validation check failed: %v", err)
+	}
+
 	// This will not log anyone out as the provider was not validated and thus no one has ever logged into it
 	if err := s.registry.DeleteProvider(ctx, request.GetId(), false); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

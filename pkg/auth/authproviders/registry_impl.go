@@ -154,6 +154,18 @@ func (r *registryImpl) RegisterBackendFactory(ctx context.Context, typ string, f
 	return nil
 }
 
+func (r *registryImpl) ValidateProvider(ctx context.Context, options ...ProviderOption) error {
+	// Add provider options that are helpful to validate the provider.
+	options = append(options, DefaultBackend(ctx, r.backendFactories))
+
+	// Create provider to validate backend creation
+	_, err := NewProvider(options...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOption) (Provider, error) {
 	// Add default options for creation.
 	options = append(options, DefaultOptionsForNewProvider(ctx, r.store, r.backendFactories, r.issuerFactory, r.roleMapperFactory, r.loginURL)...)
