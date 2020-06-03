@@ -20,8 +20,12 @@ describe('Global Search Modal', () => {
 
     it('Should have 6 tabs with the "All" tab selected by default', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.allTab).should('have.class', 'border-primary-400');
         cy.get(selectors.violationsTab).should('not.have.class', 'border-primary-400');
         cy.get(selectors.policiesTab).should('not.have.class', 'border-primary-400');
@@ -32,15 +36,23 @@ describe('Global Search Modal', () => {
 
     it('Should filter search results', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.globalSearchResults.header).should('not.have.text', '0 search results');
     });
 
     it('Should send you to the Violations page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.viewOnViolationsLabelChip).click();
         cy.location('pathname').should(
             'eq',
@@ -50,24 +62,36 @@ describe('Global Search Modal', () => {
 
     it('Should send you to the Risk page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.viewOnRiskLabelChip).click();
         cy.location('pathname').should('eq', '/main/risk/ppqqu24i8x16j7annv2bjphyy');
     });
 
     it('Should send you to the Policies page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.viewOnPoliciesLabelChip).click();
         cy.location('pathname').should('eq', '/main/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac');
     });
 
     it('Should send you to the Images page', () => {
         cy.wait('@globalSearchOptions');
-        cy.get(selectors.globalSearch.input).type('Cluster:{enter}');
-        cy.get(selectors.globalSearch.input).type('remote{enter}');
+        cy.get(selectors.globalSearch.input).type('Cluster:{enter}', {
+            force: true,
+        });
+        cy.get(selectors.globalSearch.input).type('remote{enter}', {
+            force: true,
+        });
         cy.get(selectors.viewOnImagesLabelChip).click();
         cy.location('pathname').should(
             'eq',
