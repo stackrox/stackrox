@@ -40,7 +40,11 @@ const MultiValue = (props) => (
     <selectComponents.MultiValue {...props} className={defaultComponentClassNames.multiValue} />
 );
 
-const defaultComponents = { Control, Menu, MultiValue };
+const MultiValueRemove = (props) => {
+    return props.selectProps.isDisabled ? null : <selectComponents.MultiValueRemove {...props} />;
+};
+
+const defaultComponents = { Control, Menu, MultiValue, MultiValueRemove };
 export const defaultSelectStyles = {
     option: (styles, { isFocused }) => ({
         ...styles,
@@ -77,6 +81,7 @@ function withAdjustedBehavior(SelectComponent) {
             styles: PropTypes.shape({}),
             'data-testid': PropTypes.string,
             isMulti: PropTypes.bool,
+            isDisabled: PropTypes.bool,
             disallowWhitespace: PropTypes.bool,
         };
 
@@ -92,6 +97,7 @@ function withAdjustedBehavior(SelectComponent) {
             styles: defaultSelectStyles,
             'data-testid': '',
             isMulti: false,
+            isDisabled: false,
             disallowWhitespace: false,
         };
 
@@ -193,6 +199,7 @@ function withAdjustedBehavior(SelectComponent) {
                 styles,
                 'data-testid': inputId,
                 isMulti,
+                isDisabled,
                 ...rest
             } = this.props;
             const valueToPass = this.transformValue(getOptionValue, options, value, optionValue);
@@ -220,6 +227,7 @@ function withAdjustedBehavior(SelectComponent) {
                     styles={styles}
                     inputId={inputId}
                     isMulti={isMulti}
+                    isDisabled={isDisabled}
                     {...rest}
                 />
             );
