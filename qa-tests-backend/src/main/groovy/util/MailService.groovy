@@ -6,14 +6,13 @@ import javax.mail.MessagingException
 import javax.mail.Session
 import javax.mail.Store
 import javax.mail.URLName
-import javax.mail.internet.InternetAddress
-import javax.mail.search.FromTerm
 import javax.mail.search.SearchTerm
 
 class MailService {
     private Session session
     private Store store
-    private Folder folder
+    private Folder defaultFolder
+    private Folder spamFolder
     private final String host
     private final String username
     private final String password
@@ -49,15 +48,18 @@ class MailService {
         if (exception) {
             throw exception
         }
-        folder = store.getFolder(url)
-        folder.open(Folder.READ_WRITE)
+        defaultFolder = store.getFolder(url)
+        defaultFolder.open(Folder.READ_WRITE)
+        spamFolder = store.getFolder("[Gmail]/Spam")
+        spamFolder.open(Folder.READ_WRITE)
         loggedIn = true
     }
 
     void logout() throws MessagingException {
         if (loggedIn) {
             try {
-                folder.close(false)
+                defaultFolder.close(false)
+                spamFolder.close(false)
                 store.close()
                 store = null
                 session = null
@@ -75,30 +77,10 @@ class MailService {
         login()
     }
 
-    Message[] getMessages() throws Exception {
-        try {
-            refreshConnection() //refresh inbox contents
-            return folder.getMessages()
-        } catch (Exception e) {
-            println e.toString()
-            throw e
-        }
-    }
-
-    Message[] getMessagesFromSender(String from) throws Exception {
-        try {
-            refreshConnection() //refresh inbox contents
-            return folder.search(new FromTerm(new InternetAddress(from)))
-        } catch (Exception e) {
-            println e.toString()
-            throw e
-        }
-    }
-
     Message[] searchMessages(SearchTerm term) throws Exception {
         try {
             refreshConnection() //refresh inbox contents
-            return folder.search(term)
+            return defaultFolder.search(term) + spamFolder.search(term)
         } catch (Exception e) {
             println e.toString()
             throw e

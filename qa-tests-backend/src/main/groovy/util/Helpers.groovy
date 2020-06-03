@@ -28,6 +28,7 @@ class Helpers {
 
     static boolean determineRetry(Throwable failure) {
         if (failure instanceof AssumptionViolatedException) {
+            println "Skipping retry for: " + failure
             return false
         }
 

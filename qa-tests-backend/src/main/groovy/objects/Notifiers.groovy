@@ -77,6 +77,7 @@ class EmailNotifier extends Notifier {
             Assume.assumeNoException("Failed to login to GMAIL service... skipping test!: ", e)
         }
 
+        println "looking for a message with subject containing: ${deployment.deploymentUid}"
         Timer t = new Timer(30, 3)
         Message[] notifications = []
         while (!notifications && t.IsValid()) {
