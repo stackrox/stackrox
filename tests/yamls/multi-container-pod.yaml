@@ -9,7 +9,7 @@ spec:
       emptyDir: {}
   containers:
     - name: 1st
-      image: nginx
+      image: nginx:1.18@sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72
       volumeMounts:
         - name: html
           mountPath: /usr/share/nginx/html
