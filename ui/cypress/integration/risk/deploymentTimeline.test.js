@@ -177,30 +177,26 @@ describe('Risk Page Deployment Event Timeline', () => {
 
             cy.wait('@getDeploymentEventTimeline');
 
-            Cypress.Promise.all([
-                cy.get(selectors.eventTimeline.timeline.namesList.firstListedName),
-                cy.get(selectors.eventTimeline.timeline.mainView.eventsInFirstRow),
-            ]).then(([firstListedName, events]) => {
-                const firstPodName = firstListedName.text();
-                const numEventsInFirstPod = events.length;
+            cy.get(selectors.eventTimeline.timeline.mainView.eventsInFirstRow).then(
+                (firstListedName) => {
+                    const firstPodName = firstListedName.text();
 
-                // click the button and drill down to see containers
-                cy.get(
-                    selectors.eventTimeline.timeline.namesList.drillDownButtonInFirstRow
-                ).click();
+                    // click the button and drill down to see containers
+                    cy.get(
+                        selectors.eventTimeline.timeline.namesList.drillDownButtonInFirstRow
+                    ).click();
 
-                cy.wait('@getPodEventTimeline');
+                    cy.wait('@getPodEventTimeline');
 
-                // the back button should be visible
-                cy.get(selectors.eventTimeline.backButton);
-                // the pod name should be shown in the panel header
-                cy.get(selectors.eventTimeline.panelHeader.header).should('contain', firstPodName);
-                // we should see the same number of events across containers
-                cy.get(selectors.eventTimeline.timeline.mainView.allEvents).should(
-                    'have.length',
-                    numEventsInFirstPod
-                );
-            });
+                    // the back button should be visible
+                    cy.get(selectors.eventTimeline.backButton);
+                    // the pod name should be shown in the panel header
+                    cy.get(selectors.eventTimeline.panelHeader.header).should(
+                        'contain',
+                        firstPodName
+                    );
+                }
+            );
         });
     });
 

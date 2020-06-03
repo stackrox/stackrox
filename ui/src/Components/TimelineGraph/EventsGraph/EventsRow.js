@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import getGroupedEvents from './getGroupedEvents';
 import EventMarker from './EventMarker';
+import ClusteredEventMarker from './ClusteredEventMarker';
 
 const EventsRow = ({
     entityName,
@@ -16,7 +18,18 @@ const EventsRow = ({
     margin,
 }) => {
     const eventMarkerSize = Math.max(0, height / 3);
+    const clusteredEventMarkerSize = Math.max(0, height / 2);
     const eventMarkerOffsetY = Math.max(0, height / 2);
+
+    const groupedEvents = getGroupedEvents({
+        events,
+        minDomain: minTimeRange,
+        maxDomain: maxTimeRange,
+        minRange: margin,
+        maxRange: Math.max(margin, width - margin),
+        partitionSize: clusteredEventMarkerSize,
+    });
+
     return (
         <g
             data-testid="timeline-events-row"
@@ -31,41 +44,63 @@ const EventsRow = ({
                 height={height}
                 width={width}
             />
-            {events.map(
-                ({
-                    id,
-                    type,
-                    name,
-                    args,
-                    uid,
-                    parentName,
-                    parentUid,
-                    reason,
-                    whitelisted,
-                    differenceInMilliseconds,
-                    timestamp,
-                }) => (
-                    <EventMarker
-                        key={id}
-                        name={name}
-                        args={args}
-                        uid={uid}
-                        parentName={parentName}
-                        parentUid={parentUid}
-                        reason={reason}
-                        type={type}
-                        timestamp={timestamp}
-                        whitelisted={whitelisted}
-                        differenceInMilliseconds={differenceInMilliseconds}
-                        translateX={translateX}
-                        translateY={eventMarkerOffsetY}
-                        size={eventMarkerSize}
-                        minTimeRange={minTimeRange}
-                        maxTimeRange={maxTimeRange}
-                        margin={margin}
-                    />
-                )
-            )}
+            {groupedEvents.map((group) => {
+                const {
+                    differenceInMilliseconds: groupedDifferenceInMilliseconds,
+                    events: eventsFromGroup,
+                } = group;
+                // if there is more than one event in the group, we will render a clustered event
+                if (eventsFromGroup.length > 1) {
+                    return (
+                        <ClusteredEventMarker
+                            key={group}
+                            events={eventsFromGroup}
+                            differenceInMilliseconds={groupedDifferenceInMilliseconds}
+                            translateX={translateX}
+                            translateY={eventMarkerOffsetY}
+                            size={clusteredEventMarkerSize}
+                            minTimeRange={minTimeRange}
+                            maxTimeRange={maxTimeRange}
+                            margin={margin}
+                        />
+                    );
+                }
+                return eventsFromGroup.map(
+                    ({
+                        id,
+                        type,
+                        name,
+                        args,
+                        uid,
+                        parentName,
+                        parentUid,
+                        reason,
+                        whitelisted,
+                        differenceInMilliseconds,
+                        timestamp,
+                    }) => (
+                        <EventMarker
+                            key={id}
+                            name={name}
+                            args={args}
+                            uid={uid}
+                            parentName={parentName}
+                            parentUid={parentUid}
+                            reason={reason}
+                            type={type}
+                            timestamp={timestamp}
+                            whitelisted={whitelisted}
+                            differenceInMilliseconds={differenceInMilliseconds}
+                            translateX={translateX}
+                            translateY={eventMarkerOffsetY}
+                            size={eventMarkerSize}
+                            minTimeRange={minTimeRange}
+                            maxTimeRange={maxTimeRange}
+                            margin={margin}
+                        />
+                    )
+                );
+            })}
         </g>
     );
 };
