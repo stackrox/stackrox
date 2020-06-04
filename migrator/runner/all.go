@@ -23,4 +23,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_34_to_m_35_apitoken_multiple_roles"
 	_ "github.com/stackrox/rox/migrator/migrations/m_35_to_m_36_normalize_clusters"
 	_ "github.com/stackrox/rox/migrator/migrations/m_36_to_m_37_add_default_mcr_integration"
+	_ "github.com/stackrox/rox/migrator/migrations/m_37_to_m_38_boolean_policy_logic"
 )
