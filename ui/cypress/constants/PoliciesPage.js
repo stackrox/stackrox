@@ -113,7 +113,7 @@ export const selectors = {
             selectArrow: '[data-testid="policy-field-value"] .react-select__dropdown-indicator',
             selectOption: '[data-testid="policy-field-value"] .react-select__option',
             numericInput: '[data-testid="policy-field-value"]  .react-numeric-input input',
-            textInput: '[data-testid="policy-field-value"] > input',
+            textInput: '[data-testid="policy-field-value"] input',
         },
         removePolicySectionBtn: '[data-testid="remove-policy-section-btn"]',
         policyKey: '[data-testid="draggable-policy-key"]',

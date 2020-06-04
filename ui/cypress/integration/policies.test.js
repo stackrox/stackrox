@@ -720,7 +720,7 @@ describe('Policies page', () => {
 
                 // third, check that the new field and its value saved successfully
                 cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last`).should(
-                    'have.text',
+                    'contain.text',
                     'Image pulled from registry:'
                 );
                 cy.get(`${selectors.booleanPolicySection.policyFieldCard}:last input`).should(

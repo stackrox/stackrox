@@ -23,12 +23,17 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
     switch (field.type) {
         case 'text':
             return (
-                <ReduxTextField
-                    key={path}
-                    name={path}
-                    disabled={readOnly || field.disabled}
-                    placeholder={field.placeholder}
-                />
+                <label className="flex flex-col flex-1">
+                    {field.label?.length > 0 && (
+                        <span className="font-600 pl-1 mb-1">{field.label}</span>
+                    )}
+                    <ReduxTextField
+                        key={path}
+                        name={path}
+                        disabled={readOnly || field.disabled}
+                        placeholder={field.placeholder}
+                    />
+                </label>
             );
         case 'checkbox':
             return <ReduxCheckboxField name={path} disabled={readOnly || field.disabled} />;
@@ -55,14 +60,19 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
             );
         case 'select':
             return (
-                <ReduxSelectField
-                    key={path}
-                    name={path}
-                    options={field.options}
-                    placeholder={field.placeholder}
-                    disabled={readOnly || field.disabled}
-                    defaultValue={field.default}
-                />
+                <label className="flex flex-col flex-1">
+                    {field.label?.length > 0 && (
+                        <span className="font-600 pl-1 mb-1">{field.label}</span>
+                    )}
+                    <ReduxSelectField
+                        key={path}
+                        name={path}
+                        options={field.options}
+                        placeholder={field.placeholder}
+                        disabled={readOnly || field.disabled}
+                        defaultValue={field.default}
+                    />
+                </label>
             );
         case 'multiselect':
             return (

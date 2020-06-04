@@ -7,9 +7,9 @@ function FormFieldRemoveButton({ field, onClick, className, dataTestId }) {
         return onClick(field);
     }
     return (
-        <div className="flex">
+        <div className="flex flex-col justify-end">
             <button
-                className={`${className} items-center px-3 text-center flex border-2 `}
+                className={`${className} items-center px-3 text-center flex border-2 h-10`}
                 onClick={handleClick}
                 type="button"
                 data-testid={dataTestId}

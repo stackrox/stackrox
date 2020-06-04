@@ -24,7 +24,7 @@ const RadioButtonGroup = ({
             <button
                 key={text}
                 type="button"
-                className={`flex flex-1 justify-center py-1 px-2 text-sm font-600 font-condensed text-base-600 hover:text-primary-600 uppercase ${
+                className={`flex flex-1 justify-center items-center py-1 px-2 text-sm font-600 font-condensed text-base-600 hover:text-primary-600 uppercase ${
                     index !== 0 ? 'border-l border-base-400' : ''
                 } ${
                     selected === modifiedValue
