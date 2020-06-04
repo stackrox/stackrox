@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	resourceTemplate = `{{.Name}} of {{.Value}} {{.Unit}}{{if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+	resourceTemplate = `{{.Name}} set to {{.Value}} {{.Unit}}{{if .ContainerName}} for container '{{.ContainerName}}'{{end}}`
 )
 
 func resourcePrinter(fieldMap map[string][]string) ([]string, error) {

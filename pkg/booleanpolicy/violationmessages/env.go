@@ -10,8 +10,8 @@ import (
 var (
 	envVarSourceToNameMap = map[string]string{
 		"RAW":            "",
-		"SECRET_KEY":     "secret key",
-		"CONFIG_MAP_KEY": "config map key",
+		"SECRET_KEY":     "Secret",
+		"CONFIG_MAP_KEY": "ConfigMap",
 		"FIELD":          "field",
 		"RESOURCE_FIELD": "resource field"}
 )

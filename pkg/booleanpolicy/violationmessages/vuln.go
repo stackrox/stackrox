@@ -19,10 +19,10 @@ func getComponentAndVersion(fieldMap map[string][]string) (component string, ver
 }
 
 const (
-	// Example message: Fixable CVE-2020-0101 (CVSS 8.2) found in component nginx 1.12.0-debian1ubuntu2 in container “nginx-proxy
+	// Example message: Fixable CVE-2020-0101 (CVSS 8.2) found in component 'nginx' (version 1.12.0-debian1ubuntu2) in container 'nginx-proxy', resolved by version 1.13.0-debian0ubuntu1
 	cveTemplate = `
     {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .CVSS}} (CVSS {{.CVSS}}){{end}} found
-    {{- if .Component}} in component {{.Component}}-{{.ComponentVersion}}{{end}}
+    {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
     {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
 )
@@ -52,7 +52,7 @@ func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	componentTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' includes{{else}}Image includes{{end}} component {{.Component}}{{ if .ComponentVersion }} {{.ComponentVersion}}{{end}}`
+	componentTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' includes{{else}}Image includes{{end}} component '{{.Component}}'{{ if .ComponentVersion }} (version {{.ComponentVersion}}){{end}}`
 )
 
 func componentPrinter(fieldMap map[string][]string) ([]string, error) {

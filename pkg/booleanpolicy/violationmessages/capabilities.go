@@ -16,7 +16,7 @@ func dropCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	var sb strings.Builder
 	sb.WriteString("Container ")
 	if containerName := fieldMap[augmentedobjs.ContainerNameCustomTag][0]; containerName != "" {
-		fmt.Fprintf(&sb, "%s ", containerName)
+		fmt.Fprintf(&sb, "'%s' ", containerName)
 	}
 	sb.WriteString("does not drop ")
 	switch capLen := len(fieldMap[search.DropCapabilities.String()]); {
@@ -38,7 +38,7 @@ func addCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	var sb strings.Builder
 	sb.WriteString("Container ")
 	if containerName := fieldMap[augmentedobjs.ContainerNameCustomTag][0]; containerName != "" {
-		fmt.Fprintf(&sb, "%s ", containerName)
+		fmt.Fprintf(&sb, "'%s' ", containerName)
 	}
 	sb.WriteString("adds ")
 	switch capLen := len(fieldMap[search.AddCapabilities.String()]); {

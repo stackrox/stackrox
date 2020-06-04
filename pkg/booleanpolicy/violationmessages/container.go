@@ -10,7 +10,7 @@ import (
 
 const (
 	readOnlyRootFSTemplate = `Container {{if .ContainerName}}'{{.ContainerName}}'{{end}} 
-	{{- if .ReadOnlyRootFS }} using read-only root filesystem{{else}} using read-write root filesystem{{end}}`
+	{{- if .ReadOnlyRootFS }} uses a read-only root filesystem{{else}} uses a read-write root filesystem{{end}}`
 )
 
 func readOnlyRootFSPrinter(fieldMap map[string][]string) ([]string, error) {
@@ -33,7 +33,7 @@ func readOnlyRootFSPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of creation {{.ImageCreationTime}}`
+	imageAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image{{else}}Image was{{end}} created at {{.ImageCreationTime}} (UTC)`
 )
 
 func imageAgePrinter(fieldMap map[string][]string) ([]string, error) {
@@ -51,7 +51,7 @@ func imageAgePrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageScanAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} time of last scan {{.ImageScanTime}}`
+	imageScanAgeTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image{{else}}Image was{{end}} last scanned at {{.ImageScanTime}} (UTC)`
 )
 
 func imageScanAgePrinter(fieldMap map[string][]string) ([]string, error) {

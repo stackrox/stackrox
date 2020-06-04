@@ -12,7 +12,7 @@ var (
 )
 
 const (
-	lineTemplate = `Dockerfile line '{{.Instruction}} {{.Line}}' present{{- if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
+	lineTemplate = `Dockerfile line '{{.Instruction}} {{.Line}}' found{{- if .ContainerName}} in container '{{.ContainerName}}'{{end}}`
 )
 
 func linePrinter(fieldMap map[string][]string) ([]string, error) {

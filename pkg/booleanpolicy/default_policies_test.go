@@ -604,7 +604,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				apkDep.GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component apk 1.2",
+						Message: "Container 'ASFASF' includes component 'apk' (version 1.2)",
 					},
 				},
 			},
@@ -614,7 +614,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				componentDeps["apt"].GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component apt",
+						Message: "Container 'ASFASF' includes component 'apt'",
 					},
 				},
 			},
@@ -624,7 +624,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				curlDep.GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component curl 1.3",
+						Message: "Container 'ASFASF' includes component 'curl' (version 1.3)",
 					},
 				},
 			},
@@ -634,7 +634,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				componentDeps["dnf"].GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component dnf",
+						Message: "Container 'ASFASF' includes component 'dnf'",
 					},
 				},
 			},
@@ -644,7 +644,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				componentDeps["wget"].GetId(): {
 					{
-						Message: "Container 'ASFASF' includes component wget",
+						Message: "Container 'ASFASF' includes component 'wget'",
 					},
 				},
 			},
@@ -664,7 +664,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				oldImageDep.GetId(): {
 					{
-						Message: fmt.Sprintf("Container 'oldimage' has image with time of creation %s", readable.Time(oldImageCreationTime)),
+						Message: fmt.Sprintf("Container 'oldimage' has image created at %s (UTC)", readable.Time(oldImageCreationTime)),
 					},
 				},
 			},
@@ -674,7 +674,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				oldScannedDep.GetId(): {
 					{
-						Message: fmt.Sprintf("Container 'oldscannedimage' has image with time of last scan %s", readable.Time(oldScannedTime)),
+						Message: fmt.Sprintf("Container 'oldscannedimage' has image last scanned at %s (UTC)", readable.Time(oldScannedTime)),
 					},
 				},
 			},
@@ -684,7 +684,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				imagePort22Dep.GetId(): {
 					{
-						Message: "Dockerfile line 'EXPOSE 22/tcp' present in container 'ASFASF'",
+						Message: "Dockerfile line 'EXPOSE 22/tcp' found in container 'ASFASF'",
 					},
 				},
 			},
@@ -719,17 +719,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
-						Message: "Container 'nginx' using read-write root filesystem",
+						Message: "Container 'nginx' uses a read-write root filesystem",
 					},
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "Container 'nginx110container' using read-write root filesystem",
+						Message: "Container 'nginx110container' uses a read-write root filesystem",
 					},
 				},
 				sysAdminDep.GetId(): {
 					{
-						Message: "Container 'cap-sys' using read-write root filesystem",
+						Message: "Container 'cap-sys' uses a read-write root filesystem",
 					},
 				},
 			},
@@ -739,7 +739,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				insecureCMDDep.GetId(): {
 					{
-						Message: "Dockerfile line 'CMD do an insecure thing' present in container 'ASFASF'",
+						Message: "Dockerfile line 'CMD do an insecure thing' found in container 'ASFASF'",
 					},
 				},
 			},
@@ -749,7 +749,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				runSecretsDep.GetId(): {
 					{
-						Message: "Dockerfile line 'VOLUME /run/secrets' present in container 'ASFASF'",
+						Message: "Dockerfile line 'VOLUME /run/secrets' found in container 'ASFASF'",
 					},
 				},
 			},
@@ -814,7 +814,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				sysAdminDep.GetId(): {
 					{
-						Message: "Container cap-sys adds capability CAP_SYS_ADMIN",
+						Message: "Container 'cap-sys' adds capability CAP_SYS_ADMIN",
 					},
 				},
 			},
@@ -824,12 +824,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				shellshockDep.GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 6) found in component shellshock-1.2 in container 'ASFASF'",
+						Message: "CVE-2014-6271 (CVSS 6) found in component 'shellshock' (version 1.2) in container 'ASFASF'",
 					},
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 5) found in component name-1.2.3.4 in container 'supervulnerable'",
+						Message: "CVE-2014-6271 (CVSS 5) found in component 'name' (version 1.2.3.4) in container 'supervulnerable'",
 					},
 				},
 			},
@@ -839,7 +839,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
-						Message: "CVE-2017-5638 (CVSS 8) found in component struts-1.2 in container 'ASFASF'",
+						Message: "CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF'",
 					},
 				},
 			},
@@ -849,7 +849,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
-						Message: "CVE-2014-0160 (CVSS 6) found in component heartbleed-1.2 in container 'nginx'",
+						Message: "CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx'",
 					},
 				},
 			},
@@ -858,9 +858,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "No resource requests or limits specified",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				fixtureDep.GetId(): {
-					{Message: "CPU limit of 0 cores"},
-					{Message: "Memory limit of 0 MB"},
-					{Message: "Memory request of 0 MB"},
+					{Message: "CPU limit set to 0 cores"},
+					{Message: "Memory limit set to 0 MB"},
+					{Message: "Memory request set to 0 MB"},
 				},
 			},
 		},
@@ -879,7 +879,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				secretKeyRefDep.GetId(): {
 					{
-						Message: "Environment variable 'THIS_IS_SECRET_VAR' is present and references a secret key",
+						Message: "Environment variable 'THIS_IS_SECRET_VAR' is present and references a Secret",
 					},
 				},
 			},
@@ -889,7 +889,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
-						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component heartbleed-1.2 in container 'nginx', resolved by version v1.2",
+						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
 					},
 					{
 						Message: "Container 'nginx' is privileged",
@@ -902,7 +902,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component struts-1.2 in container 'ASFASF', resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2) in container 'ASFASF', resolved by version v1.3",
 					},
 				},
 			},
@@ -912,15 +912,15 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				addDockerFileDep.GetId(): {
 					{
-						Message: "Dockerfile line 'ADD deploy.sh' present in container 'ASFASF'",
+						Message: "Dockerfile line 'ADD deploy.sh' found in container 'ASFASF'",
 					},
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "Dockerfile line 'ADD FILE:blah' present in container 'nginx110container'",
+						Message: "Dockerfile line 'ADD FILE:blah' found in container 'nginx110container'",
 					},
 					{
-						Message: "Dockerfile line 'ADD file:4eedf861fb567fffb2694b65ebd...' present in container 'supervulnerable'",
+						Message: "Dockerfile line 'ADD file:4eedf861fb567fffb2694b65ebd...' found in container 'supervulnerable'",
 					},
 				},
 			},
@@ -1100,7 +1100,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(apkDep): {
 					{
-						Message: "Image includes component apk 1.2",
+						Message: "Image includes component 'apk' (version 1.2)",
 					},
 				},
 			},
@@ -1110,7 +1110,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["apt"]): {
 					{
-						Message: "Image includes component apt",
+						Message: "Image includes component 'apt'",
 					},
 				},
 			},
@@ -1120,7 +1120,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(curlDep): {
 					{
-						Message: "Image includes component curl 1.3",
+						Message: "Image includes component 'curl' (version 1.3)",
 					},
 				},
 			},
@@ -1130,7 +1130,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["dnf"]): {
 					{
-						Message: "Image includes component dnf",
+						Message: "Image includes component 'dnf'",
 					},
 				},
 			},
@@ -1140,7 +1140,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["wget"]): {
 					{
-						Message: "Image includes component wget",
+						Message: "Image includes component 'wget'",
 					},
 				},
 			},
@@ -1150,7 +1150,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(oldImageDep): {
 					{
-						Message: fmt.Sprintf("Image has time of creation %s", readable.Time(oldImageCreationTime)),
+						Message: fmt.Sprintf("Image was created at %s (UTC)", readable.Time(oldImageCreationTime)),
 					},
 				},
 			},
@@ -1160,7 +1160,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(oldScannedDep): {
 					{
-						Message: fmt.Sprintf("Image has time of last scan %s", readable.Time(oldScannedTime)),
+						Message: fmt.Sprintf("Image was last scanned at %s (UTC)", readable.Time(oldScannedTime)),
 					},
 				},
 			},
@@ -1170,7 +1170,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(imagePort22Dep): {
 					{
-						Message: "Dockerfile line 'EXPOSE 22/tcp' present",
+						Message: "Dockerfile line 'EXPOSE 22/tcp' found",
 					},
 				},
 			},
@@ -1180,7 +1180,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(insecureCMDDep): {
 					{
-						Message: "Dockerfile line 'CMD do an insecure thing' present",
+						Message: "Dockerfile line 'CMD do an insecure thing' found",
 					},
 				},
 			},
@@ -1190,7 +1190,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(runSecretsDep): {
 					{
-						Message: "Dockerfile line 'VOLUME /run/secrets' present",
+						Message: "Dockerfile line 'VOLUME /run/secrets' found",
 					},
 				},
 			},
@@ -1222,12 +1222,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(shellshockDep): {
 					{
-						Message: "CVE-2014-6271 (CVSS 6) found in component shellshock-1.2",
+						Message: "CVE-2014-6271 (CVSS 6) found in component 'shellshock' (version 1.2)",
 					},
 				},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {
 					{
-						Message: "CVE-2014-6271 (CVSS 5) found in component name-1.2.3.4",
+						Message: "CVE-2014-6271 (CVSS 5) found in component 'name' (version 1.2.3.4)",
 					},
 				},
 			},
@@ -1237,7 +1237,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
-						Message: "CVE-2017-5638 (CVSS 8) found in component struts-1.2",
+						Message: "CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2)",
 					},
 				},
 			},
@@ -1247,7 +1247,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(heartbleedDep): {
 					{
-						Message: "CVE-2014-0160 (CVSS 6) found in component heartbleed-1.2",
+						Message: "CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2)",
 					},
 				},
 			},
@@ -1257,7 +1257,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
-						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component struts-1.2, resolved by version v1.3",
+						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2), resolved by version v1.3",
 					},
 				},
 			},
@@ -1267,17 +1267,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(addDockerFileDep): {
 					{
-						Message: "Dockerfile line 'ADD deploy.sh' present",
+						Message: "Dockerfile line 'ADD deploy.sh' found",
 					},
 				},
 				fixtureDep.GetContainers()[0].GetImage().GetId(): {
 					{
-						Message: "Dockerfile line 'ADD FILE:blah' present",
+						Message: "Dockerfile line 'ADD FILE:blah' found",
 					},
 				},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {
 					{
-						Message: "Dockerfile line 'ADD file:4eedf861fb567fffb2694b65ebd...' present",
+						Message: "Dockerfile line 'ADD file:4eedf861fb567fffb2694b65ebd...' found",
 					},
 				},
 			},
