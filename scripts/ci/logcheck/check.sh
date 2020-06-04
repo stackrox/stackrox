@@ -8,12 +8,18 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 BLACKLIST_FILE="${DIR}/blacklist-patterns"
+WHITELIST_FILE="${DIR}/whitelist-patterns"
 
 join_by() { local IFS="$1"; shift; echo "$*"; }
 
-IFS=$'\n' read -d '' -r -a subpatterns < <(egrep -v '^(#.*|\s*)$' "${BLACKLIST_FILE}")
+IFS=$'\n' read -d '' -r -a blacklist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${BLACKLIST_FILE}")
 
-pattern="$(join_by '|' "${subpatterns[@]}")"
+blacklist_pattern="$(join_by '|' "${blacklist_subpatterns[@]}")"
 
-grep >&2 -Pni "$pattern" "$@" && exit 1
+IFS=$'\n' read -d '' -r -a whitelist_subpatterns < <(egrep -v '^(#.*|\s*)$' "${WHITELIST_FILE}")
+
+whitelist_pattern="$(join_by '|' "${whitelist_subpatterns[@]}")"
+
+grep -vP "$whitelist_pattern" "$@" | grep >&2 -Pni "$blacklist_pattern" && exit 1
+
 exit 0

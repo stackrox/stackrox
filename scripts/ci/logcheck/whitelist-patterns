@@ -1,0 +1,5 @@
+# This file contains patterns that may be present in log files of any StackRox
+# service and that would otherwise trigger an error based on a 'blacklist' match.
+
+# postgres connections at startup messages are OK (ROX-4913)
+the database system is starting up
