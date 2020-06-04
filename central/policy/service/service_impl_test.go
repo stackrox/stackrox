@@ -205,8 +205,6 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 			},
 		},
 	}
-	// Runtime policy dry run exits early and returns empty results
-	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(runtimePolicy).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).Times(1)
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
 	s.Nil(resp.GetAlerts())

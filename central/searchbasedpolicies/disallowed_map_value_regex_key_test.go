@@ -34,15 +34,17 @@ type DisallowedMapValueWithRegexKeyTestSuite struct {
 
 	testCtx context.Context
 
+	envIsolator *testutils.EnvIsolator
+
 	processDataStore processIndicatorDataStore.DataStore
 	matcherBuilder   matcher.Builder
 	matcher          searchbasedpolicies.Matcher
 }
 
 func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
-	envIsolator := testutils.NewEnvIsolator(s.T())
-	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+	s.envIsolator = testutils.NewEnvIsolator(s.T())
+	s.envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "false")
 
 	var err error
 	s.bleveIndex, err = globalindex.TempInitializeIndices("")
@@ -77,6 +79,10 @@ func (s *DisallowedMapValueWithRegexKeyTestSuite) SetupSuite() {
 
 	s.matcher, err = s.matcherBuilder.ForPolicy(policy)
 	s.Require().NoError(err)
+}
+
+func (s *DisallowedMapValueWithRegexKeyTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 }
 
 func (s *DisallowedMapValueWithRegexKeyTestSuite) TearDownSuite() {

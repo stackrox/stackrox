@@ -64,6 +64,9 @@ func getSectionsAndEvals(factory *evaluator.Factory, p *storage.Policy, stage st
 		return nil, err
 	}
 
+	if len(p.GetPolicySections()) == 0 {
+		return nil, errors.New("no sections")
+	}
 	sectionsAndEvals := make([]sectionAndEvaluator, 0, len(p.GetPolicySections()))
 	for _, section := range p.GetPolicySections() {
 		sectionQ, err := sectionToQuery(section, stage)

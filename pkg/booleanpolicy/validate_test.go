@@ -4,11 +4,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/defaults"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,27 +14,6 @@ func TestPolicyValueValidator(t *testing.T) {
 
 type PolicyValueValidator struct {
 	suite.Suite
-}
-
-func (s *PolicyValueValidator) TestValidationDefaultPolicies() {
-	envIsolator := testutils.NewEnvIsolator(s.T())
-	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-
-	defaults.PoliciesPath = policies.Directory()
-	defaultPolicies, err := defaults.Policies()
-	s.Require().NoError(err)
-
-	policies := make(map[string]*storage.Policy, len(defaultPolicies))
-	for _, legacyPolicy := range defaultPolicies {
-		policies[legacyPolicy.GetName()], err = CloneAndEnsureConverted(legacyPolicy)
-		assert.Nil(s.T(), err)
-	}
-	for _, p := range policies {
-		s.T().Run(p.GetName(), func(t *testing.T) {
-			assert.NoError(s.T(), Validate(p), p)
-		})
-	}
 }
 
 func (s *PolicyValueValidator) TestRegex() {

@@ -50,6 +50,10 @@ func newCompiledPolicy(policy *storage.Policy, matcher searchbasedpolicies.Match
 			}
 			compiled.imageMatcher = imageMatcher
 		}
+
+		if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil {
+			return nil, errors.Errorf("no known lifecycle stage in policy %s", policy.GetName())
+		}
 	}
 
 	whitelists := make([]*compiledWhitelist, 0, len(policy.GetWhitelists()))

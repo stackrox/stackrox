@@ -1,4 +1,5 @@
-package booleanpolicy
+// This uses a separate package to avoid import cycles with pkg/defaults.
+package booleanpolicy_test
 
 import (
 	"context"
@@ -12,6 +13,7 @@ import (
 	gogoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/features"
@@ -1004,9 +1006,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				assert.Nil(t, c.expectedProcessViolations, "Cannot specify shouldNotMatch AND expectedProcessViolations")
 			}
 
-			convertedP, err := CloneAndEnsureConverted(p)
-			require.NoError(t, err)
-			m, err := BuildDeploymentMatcher(convertedP)
+			m, err := booleanpolicy.BuildDeploymentMatcher(p)
 			require.NoError(t, err)
 
 			if c.expectedProcessViolations != nil {
@@ -1296,9 +1296,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			assert.Nil(t, c.expectedProcessViolations)
 
-			convertedP, err := CloneAndEnsureConverted(p)
-			require.NoError(t, err)
-			m, err := BuildImageMatcher(convertedP)
+			m, err := booleanpolicy.BuildImageMatcher(p)
 			require.NoError(t, err)
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
@@ -1366,11 +1364,9 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	}
 	suite.addDepAndImages(validAnnotation)
 
-	legacyPolicy := suite.defaultPolicies["Required Annotation: Email"]
-	policy, err := CloneAndEnsureConverted(legacyPolicy)
-	suite.NoError(err)
+	policy := suite.defaultPolicies["Required Annotation: Email"]
 
-	m, err := BuildDeploymentMatcher(policy)
+	m, err := booleanpolicy.BuildDeploymentMatcher(policy)
 	suite.NoError(err)
 
 	for _, testCase := range []struct {
@@ -1422,7 +1418,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 
 func policyWithGroups(groups ...*storage.PolicyGroup) *storage.Policy {
 	return &storage.Policy{
-		PolicyVersion:  Version,
+		PolicyVersion:  booleanpolicy.Version,
 		Name:           uuid.NewV4().String(),
 		PolicySections: []*storage.PolicySection{{PolicyGroups: groups}},
 	}
@@ -1532,7 +1528,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.expectedMatches), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.MinimumRBACPermissions, c.value, c.negate))
+			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.MinimumRBACPermissions, c.value, c.negate))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1582,7 +1578,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
+			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.PortExposure, c.values, c.negate, storage.BooleanOperator_OR))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1640,7 +1636,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
-			matcher, err := BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.DropCaps, c.values, false, c.op))
+			matcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleFieldAndValues(fieldnames.DropCaps, c.values, false, c.op))
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
@@ -1787,7 +1783,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			m, err := BuildDeploymentMatcher(policyWithGroups(c.groups...))
+			m, err := booleanpolicy.BuildDeploymentMatcher(policyWithGroups(c.groups...))
 			require.NoError(t, err)
 
 			actualMatches := make(map[string][]string)

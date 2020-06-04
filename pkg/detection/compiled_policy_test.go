@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -14,7 +15,14 @@ import (
 )
 
 func constructPolicy(scopes []*storage.Scope, whitelists []*storage.Whitelist) *storage.Policy {
-	return &storage.Policy{PolicyVersion: booleanpolicy.Version, Name: "testname", Scope: scopes, Whitelists: whitelists, LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}}
+	return &storage.Policy{
+		PolicyVersion:   booleanpolicy.Version,
+		Name:            "testname",
+		Scope:           scopes,
+		Whitelists:      whitelists,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		PolicySections:  []*storage.PolicySection{{PolicyGroups: []*storage.PolicyGroup{{FieldName: fieldnames.VolumeName, Values: []*storage.PolicyValue{{Value: "something"}}}}}},
+	}
 }
 
 func newDeployment(id string) *storage.Deployment {

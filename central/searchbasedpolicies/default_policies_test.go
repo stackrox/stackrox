@@ -71,6 +71,8 @@ type DefaultPoliciesTestSuite struct {
 	deployments         map[string]*storage.Deployment
 	images              map[string]*storage.Image
 	deploymentsToImages map[string][]*storage.Image
+
+	envIsolator *testutils.EnvIsolator
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupSuite() {
@@ -92,9 +94,9 @@ func (suite *DefaultPoliciesTestSuite) SetupSuite() {
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
-	envIsolator := testutils.NewEnvIsolator(suite.T())
-	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.ImageLabelPolicy.EnvVar(), "true")
+	suite.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "false")
 
 	var err error
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
@@ -136,6 +138,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 func (suite *DefaultPoliciesTestSuite) TearDownTest() {
 	suite.NoError(suite.bleveIndex.Close())
 	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
+	suite.envIsolator.RestoreAll()
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNoDuplicatePolicyIDs() {

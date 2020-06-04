@@ -8,6 +8,9 @@ import (
 )
 
 func sectionToQuery(section *storage.PolicySection, stage storage.LifecycleStage) (*query.Query, error) {
+	if len(section.GetPolicyGroups()) == 0 {
+		return nil, errors.New("no groups")
+	}
 	fieldQueries := make([]*query.FieldQuery, 0, len(section.GetPolicyGroups()))
 	for _, group := range section.GetPolicyGroups() {
 		fqs, err := policyGroupToFieldQueries(group)

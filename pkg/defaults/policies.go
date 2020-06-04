@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -52,13 +53,17 @@ func Policies() (policies []*storage.Policy, err error) {
 		if !features.BooleanPolicyLogic.Enabled() && p.GetPolicyVersion() != "" {
 			continue
 		}
+		if features.BooleanPolicyLogic.Enabled() {
+			if err := booleanpolicy.EnsureConverted(p); err != nil {
+				errList.AddWrapf(err, "converting policy %s", p.GetName())
+				continue
+			}
+		}
 
 		policies = append(policies, p)
 	}
 
-	err = errList.ToError()
-
-	return
+	return policies, errList.ToError()
 }
 
 func readPolicyFile(path string) (*storage.Policy, error) {

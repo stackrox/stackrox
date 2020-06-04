@@ -8,10 +8,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -97,19 +95,11 @@ func addDefaults(store Store) {
 
 	// Preload the default policies.
 	policies, err := defaults.Policies()
-	if err != nil {
-		panic(err)
-	}
+	// Hard panic here is okay, since we can always guarantee that we will be able to get the default policies out.
+	utils.Must(err)
+
 	var count int
 	for _, p := range policies {
-		if !features.BooleanPolicyLogic.Enabled() && booleanpolicy.IsBooleanPolicy(p) {
-			continue
-		}
-		if features.BooleanPolicyLogic.Enabled() {
-			// Hard panic here is okay, since this is a default policy, and we can guarantee that
-			// all default policies can be converted.
-			utils.Must(booleanpolicy.EnsureConverted(p))
-		}
 		// If the ID or Name already exists then ignore
 		if policyIDSet.Contains(p.GetId()) || policyNameSet.Contains(p.GetName()) {
 			continue

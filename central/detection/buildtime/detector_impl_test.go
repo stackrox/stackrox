@@ -11,8 +11,6 @@ import (
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	detectionPkg "github.com/stackrox/rox/pkg/detection"
-	mappings "github.com/stackrox/rox/pkg/search/options/images"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,13 +27,7 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	compilerWithoutProcessIndicators := detectionPkg.NewLegacyPolicyCompiler(
-		matcher.NewBuilder(
-			matcher.NewRegistry(nil),
-			mappings.OptionsMap,
-		),
-	)
-	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), compilerWithoutProcessIndicators)
+	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), detectionPkg.NewPolicyCompiler())
 	detector := NewDetector(policySet)
 
 	defaults.PoliciesPath = policies.Directory()

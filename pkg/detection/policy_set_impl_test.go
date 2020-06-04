@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
-	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -17,13 +17,11 @@ func TestPolicySet(t *testing.T) {
 type PolicyTestSuite struct {
 	suite.Suite
 
-	mockController     *gomock.Controller
-	mockMatcherBuilder *matcherMocks.MockBuilder
+	mockController *gomock.Controller
 }
 
 func (suite *PolicyTestSuite) SetupTest() {
 	suite.mockController = gomock.NewController(suite.T())
-	suite.mockMatcherBuilder = matcherMocks.NewMockBuilder(suite.mockController)
 }
 
 func (suite *PolicyTestSuite) TearDownTest() {
@@ -31,9 +29,7 @@ func (suite *PolicyTestSuite) TearDownTest() {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(NewLegacyPolicyCompiler(suite.mockMatcherBuilder))
-
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(goodPolicy).Return(nil, nil)
+	policySet := NewPolicySet(NewPolicyCompiler())
 
 	err := policySet.UpsertPolicy(goodPolicy)
 	suite.NoError(err, "insertion should succeed")
@@ -49,9 +45,7 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(NewLegacyPolicyCompiler(suite.mockMatcherBuilder))
-
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(goodPolicy).Return(nil, nil)
+	policySet := NewPolicySet(NewPolicyCompiler())
 
 	err := policySet.UpsertPolicy(goodPolicy)
 	suite.NoError(err, "insertion should succeed")
@@ -66,7 +60,7 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(NewLegacyPolicyCompiler(suite.mockMatcherBuilder))
+	policySet := NewPolicySet(NewPolicyCompiler())
 
 	err := policySet.ForOne("1", func(compiled CompiledPolicy) error {
 		return nil
@@ -75,9 +69,7 @@ func (suite *PolicyTestSuite) TestForOneFails() {
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(NewLegacyPolicyCompiler(suite.mockMatcherBuilder))
-
-	suite.mockMatcherBuilder.EXPECT().ForPolicy(badPolicy).Return(nil, errors.New("cant create legacySearchBasedMatcher"))
+	policySet := NewPolicySet(NewPolicyCompiler())
 
 	err := policySet.UpsertPolicy(badPolicy)
 	suite.Error(err, "insertion should not succeed since the compile is set to fail")
@@ -92,7 +84,7 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 
-var goodPolicy = &storage.Policy{
+var goodPolicy = booleanpolicy.MustEnsureConverted(&storage.Policy{
 	Id:         "1",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
@@ -105,9 +97,10 @@ var goodPolicy = &storage.Policy{
 			Privileged: true,
 		},
 	},
-}
+	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+})
 
-var badPolicy = &storage.Policy{
+var badPolicy = booleanpolicy.MustEnsureConverted(&storage.Policy{
 	Id:         "2",
 	Name:       "latest",
 	Severity:   storage.Severity_LOW_SEVERITY,
@@ -120,4 +113,5 @@ var badPolicy = &storage.Policy{
 			Privileged: true,
 		},
 	},
-}
+	LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+})

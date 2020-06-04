@@ -9,8 +9,8 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
-	sbpMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/mocks"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,7 +25,6 @@ type PolicyValidatorTestSuite struct {
 	validator      *policyValidator
 	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
-	matcherBuilder *matcherMocks.MockBuilder
 
 	mockCtrl *gomock.Controller
 }
@@ -37,9 +36,8 @@ func (suite *PolicyValidatorTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.nStorage = notifierMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
-	suite.matcherBuilder = matcherMocks.NewMockBuilder(suite.mockCtrl)
 
-	suite.validator = newPolicyValidator(suite.nStorage, suite.matcherBuilder, suite.matcherBuilder)
+	suite.validator = newPolicyValidator(suite.nStorage, nil, nil)
 }
 
 func (suite *PolicyValidatorTestSuite) TearDownTest() {
@@ -173,6 +171,18 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 	suite.Error(err, "no special characters")
 }
 
+func booleanPolicyWithFields(lifecycleStage storage.LifecycleStage, fieldsToVals map[string]string) *storage.Policy {
+	groups := make([]*storage.PolicyGroup, 0, len(fieldsToVals))
+	for k, v := range fieldsToVals {
+		groups = append(groups, &storage.PolicyGroup{FieldName: k, Values: []*storage.PolicyValue{{Value: v}}})
+	}
+	return &storage.Policy{
+		PolicyVersion:   booleanpolicy.Version,
+		LifecycleStages: []storage.LifecycleStage{lifecycleStage},
+		PolicySections:  []*storage.PolicySection{{PolicyGroups: groups}},
+	}
+}
+
 func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	testCases := []struct {
 		description string
@@ -181,147 +191,76 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	}{
 		{
 			description: "Build time policy with non-image fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_BUILD,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{Remote: "blah"},
-					ContainerResourcePolicy: &storage.ResourcePolicy{
-						CpuResourceLimit: &storage.NumericalPolicy{
-							Value: 1.0,
-						},
-					},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, map[string]string{
+				fieldnames.ImageRemote:       "blah",
+				fieldnames.ContainerCPULimit: "1.0",
+			}),
 			errExpected: true,
 		},
 		{
 			description: "Build time policy with no image fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_BUILD,
-				},
-			},
+			p:           booleanPolicyWithFields(storage.LifecycleStage_BUILD, nil),
 			errExpected: true,
 		},
 		{
 			description: "valid build time",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_BUILD,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
-					},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, map[string]string{
+				fieldnames.ImageTag: "latest",
+			}),
 		},
 		{
 			description: "deploy time with no fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_DEPLOY,
-				},
-			},
+			p:           booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, nil),
 			errExpected: true,
 		},
 		{
 			description: "deploy time with runtime fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_DEPLOY,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
-					},
-					ProcessPolicy: &storage.ProcessPolicy{Name: "BLAH"},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, map[string]string{
+				fieldnames.ImageTag:    "latest",
+				fieldnames.ProcessName: "BLAH",
+			}),
 			errExpected: true,
 		},
+
 		{
 			description: "Valid deploy time",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_DEPLOY,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
-					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, map[string]string{
+				fieldnames.ImageTag:   "latest",
+				fieldnames.VolumeName: "BLAH",
+			}),
 		},
 		{
 			description: "Run time with no fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_RUNTIME,
-				},
-			},
+			p:           booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, nil),
 			errExpected: true,
 		},
 		{
 			description: "Run time with only deploy-time fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_RUNTIME,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
-					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
+				fieldnames.ImageTag:   "latest",
+				fieldnames.VolumeName: "BLAH",
+			}),
 			errExpected: true,
 		},
 		{
 			description: "Valid Run time with just process fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_RUNTIME,
-				},
-				Fields: &storage.PolicyFields{
-					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
+				fieldnames.ProcessName: "BLAH",
+			}),
 		},
 		{
 			description: "Valid Run time with all sorts of fields",
-			p: &storage.Policy{
-				LifecycleStages: []storage.LifecycleStage{
-					storage.LifecycleStage_RUNTIME,
-				},
-				Fields: &storage.PolicyFields{
-					ImageName: &storage.ImageNamePolicy{
-						Tag: "latest",
-					},
-					VolumePolicy: &storage.VolumePolicy{
-						Name: "Asfasf",
-					},
-					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
-				},
-			},
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, map[string]string{
+				fieldnames.ImageTag:    "latest",
+				fieldnames.VolumeName:  "BLAH",
+				fieldnames.ProcessName: "PROCESS",
+			}),
 		},
 	}
 
 	for _, c := range testCases {
 		suite.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
-			if c.errExpected {
-				suite.matcherBuilder.EXPECT().ForPolicy(c.p).Return(nil, errors.New("fail to build matcher"))
-			} else {
-				suite.matcherBuilder.EXPECT().ForPolicy(c.p).Return(sbpMocks.NewMockMatcher(suite.mockCtrl), nil)
-			}
 
 			err := suite.validator.validateCompilableForLifecycle(c.p)
 			if c.errExpected {
