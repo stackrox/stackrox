@@ -57,7 +57,7 @@ const EventsRow = ({
                 if (eventsFromGroup.length > 1) {
                     return (
                         <ClusteredEventMarker
-                            key={group}
+                            key={groupedDifferenceInMilliseconds}
                             events={eventsFromGroup}
                             differenceInMilliseconds={groupedDifferenceInMilliseconds}
                             translateX={translateX}
