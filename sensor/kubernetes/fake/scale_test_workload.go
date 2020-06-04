@@ -7,11 +7,11 @@ import (
 )
 
 func init() {
-	workloadRegistry["default"] = defaultWorkload
+	workloadRegistry["scale-test"] = scaleTestWorkload
 }
 
 var (
-	defaultWorkload = &workload{
+	scaleTestWorkload = &workload{
 		DeploymentWorkload: []deploymentWorkload{
 			{
 				DeploymentType: kubernetes.Deployment,
@@ -26,12 +26,12 @@ var (
 						AlertRate:       0.001,            // 0.1% of all processes will trigger a runtime alert
 					},
 					ContainerWorkload: containerWorkload{
-						NumImages: 0, // 0 => use all images in the fixtures list
+						NumImages: 50, // 0 => use all images in the fixtures list
 					},
 				},
 				UpdateInterval:    100 * time.Second,
 				LifecycleDuration: 10 * time.Minute,
-				NumLifecycles:     0, // 0 => Cycle indefinitely
+				NumLifecycles:     1, // 0 => Cycle indefinitely
 			},
 		},
 		NodeWorkload: nodeWorkload{

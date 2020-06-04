@@ -25,9 +25,13 @@ var (
 						ProcessInterval: 30 * time.Second, // deployments * pods / rate = process / second
 						AlertRate:       0.05,             // 5% of all processes will trigger a runtime alert
 					},
+					ContainerWorkload: containerWorkload{
+						NumImages: 0, // 0 => use all images in the fixtures list
+					},
 				},
 				UpdateInterval:    100 * time.Second,
 				LifecycleDuration: 10 * time.Minute,
+				NumLifecycles:     0, // 0 => Cycle indefinitely
 			},
 		},
 		NodeWorkload: nodeWorkload{

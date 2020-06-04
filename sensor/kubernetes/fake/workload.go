@@ -10,6 +10,11 @@ type deploymentWorkload struct {
 
 	UpdateInterval    time.Duration
 	LifecycleDuration time.Duration
+	NumLifecycles     int
+}
+
+type containerWorkload struct {
+	NumImages int
 }
 
 type processWorkload struct {
@@ -27,7 +32,8 @@ type podWorkload struct {
 	NumContainers     int
 	LifecycleDuration time.Duration
 
-	ProcessWorkload processWorkload
+	ContainerWorkload containerWorkload
+	ProcessWorkload   processWorkload
 }
 
 type nodeWorkload struct {

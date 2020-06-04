@@ -124,6 +124,14 @@ func GetRandomImage() ImageAndID {
 	return imageNames[rand.Int()%len(imageNames)]
 }
 
+// GetRandomImageN returns a random image from the first n of the list of sample images
+func GetRandomImageN(n int) ImageAndID {
+	if n > len(imageNames) {
+		panic("n must be <= the available images")
+	}
+	return imageNames[rand.Int()%n]
+}
+
 // ImageAndID encapsulates a name and id pair for a sample image
 type ImageAndID struct {
 	Name string

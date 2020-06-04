@@ -3200,7 +3200,7 @@ jobs:
           command: |
             ./deploy/k8s/sensor.sh
             kubectl -n stackrox set env deploy/sensor MUTEX_WATCHDOG_TIMEOUT_SECS=0
-            kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=default
+            kubectl -n stackrox set env deploy/sensor ROX_FAKE_KUBERNETES_WORKLOAD=scale-test
             kubectl -n stackrox patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"2Gi","cpu":"2"},"limits":{"memory":"12Gi","cpu":"4"}}}]}}}}'
             mkdir /tmp/pprof
             # 30 min run so that we are confident that the run has completely finished

@@ -38,7 +38,7 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 
 	var containers []corev1.Container
 	for i := 0; i < workload.PodWorkload.NumContainers; i++ {
-		containers = append(containers, getContainer())
+		containers = append(containers, getContainer(workload.PodWorkload.ContainerWorkload))
 	}
 
 	deployment := &appsv1.Deployment{
@@ -195,10 +195,16 @@ func getPod(replicaSet *appsv1.ReplicaSet) *corev1.Pod {
 	return pod
 }
 
-func getContainer() corev1.Container {
+func getContainer(workload containerWorkload) corev1.Container {
+	var imageName string
+	if workload.NumImages == 0 {
+		imageName = fixtures.GetRandomImage().FullName()
+	} else {
+		imageName = fixtures.GetRandomImageN(workload.NumImages).FullName()
+	}
 	return corev1.Container{
 		Name:  randString(),
-		Image: fixtures.GetRandomImage().FullName(),
+		Image: imageName,
 		Command: []string{
 			"sleep",
 			"6000",
@@ -287,7 +293,7 @@ func (w *WorkloadManager) manageDeployment(resources *deploymentResourcesToBeMan
 
 	// The previous function returning means that the deployments, replicaset and pods were all deleted
 	// Now we recreate the objects again
-	for {
+	for count := 0; resources.workload.NumLifecycles != 0 && count < resources.workload.NumLifecycles; count++ {
 		resources = w.getDeployment(resources.workload)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(deployment); err != nil {
@@ -306,7 +312,7 @@ func (w *WorkloadManager) manageDeployment(resources *deploymentResourcesToBeMan
 }
 
 func (w *WorkloadManager) manageDeploymentLifecycle(resources *deploymentResourcesToBeManaged) {
-	timer := newTimerWithJitter(resources.workload.LifecycleDuration)
+	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
 	defer timer.Stop()
 
 	deploymentNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
