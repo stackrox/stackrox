@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -155,7 +157,11 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(ctx context.Con
 			}
 		}
 		alert.ProcessViolation.Processes = filtered
-		builders.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
+		if features.BooleanPolicyLogic.Enabled() {
+			violationmessages.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
+		} else {
+			builders.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
+		}
 	}
 	isFullyResolved = !newProcessFound
 	return
@@ -200,7 +206,11 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		newProcessesSlice = newProcessesSlice[:maxProcessViolationsPerAlert]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
-	builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
+	if features.BooleanPolicyLogic.Enabled() {
+		violationmessages.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
+	} else {
+		builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
+	}
 	return
 }
 

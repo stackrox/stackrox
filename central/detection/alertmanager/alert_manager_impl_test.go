@@ -11,9 +11,10 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -36,7 +37,7 @@ func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator 
 
 func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
 	v := &storage.Alert_ProcessViolation{Processes: indicators}
-	builders.UpdateRuntimeAlertViolationMessage(v)
+	violationmessages.UpdateRuntimeAlertViolationMessage(v)
 	return &storage.Alert{
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
 		ProcessViolation: v,
@@ -57,6 +58,8 @@ type AlertManagerTestSuite struct {
 
 	mockCtrl *gomock.Controller
 	ctx      context.Context
+
+	envIsolator *testutils.EnvIsolator
 }
 
 func (suite *AlertManagerTestSuite) SetupTest() {
@@ -66,9 +69,12 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock, nil)
+	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
+	suite.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {
+	suite.envIsolator.RestoreAll()
 	suite.mockCtrl.Finish()
 }
 
@@ -213,6 +219,10 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
+	envIsolator := testutils.NewEnvIsolator(t)
+	defer envIsolator.RestoreAll()
+	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+
 	for _, c := range []struct {
 		desc           string
 		old            *storage.Alert

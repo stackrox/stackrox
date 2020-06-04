@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 )
 
 type matcherImpl struct {
@@ -66,7 +65,7 @@ func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *stora
 	}
 	if processIndicatorMatched {
 		v.ProcessViolation = &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{indicator}}
-		builders.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
+		violationmessages.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
 	}
 	return v, nil
 }
