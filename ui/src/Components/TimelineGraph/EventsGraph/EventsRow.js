@@ -21,8 +21,12 @@ const EventsRow = ({
     const clusteredEventMarkerSize = Math.max(0, height / 2);
     const eventMarkerOffsetY = Math.max(0, height / 2);
 
+    const eventsWithinView = events.filter(({ differenceInMilliseconds }) => {
+        return differenceInMilliseconds >= minTimeRange && differenceInMilliseconds <= maxTimeRange;
+    });
+
     const groupedEvents = getGroupedEvents({
-        events,
+        events: eventsWithinView,
         minDomain: minTimeRange,
         maxDomain: maxTimeRange,
         minRange: margin,

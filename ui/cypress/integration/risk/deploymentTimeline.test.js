@@ -177,7 +177,7 @@ describe('Risk Page Deployment Event Timeline', () => {
 
             cy.wait('@getDeploymentEventTimeline');
 
-            cy.get(selectors.eventTimeline.timeline.mainView.eventsInFirstRow).then(
+            cy.get(selectors.eventTimeline.timeline.namesList.firstListedName).then(
                 (firstListedName) => {
                     const firstPodName = firstListedName.text();
 
