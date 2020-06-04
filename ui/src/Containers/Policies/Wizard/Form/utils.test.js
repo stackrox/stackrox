@@ -106,6 +106,19 @@ describe('policyFormUtils', () => {
             expect(valueStr).toBe(`${source}=${key}=${value}`);
         });
 
+        it('should format Environment Variable empty value to value obj with value string', () => {
+            const source = 'source1';
+            const key = 'key1';
+            const value = '';
+            const valueObj = {
+                source,
+                key,
+                value,
+            };
+            const valueStr = formatValueStr(valueObj);
+            expect(valueStr).toBe(`${source}=${key}=${value}`);
+        });
+
         it('should format nested policy criteria values to value obj with value string', () => {
             const key = 'key1';
             const value = 'value1';

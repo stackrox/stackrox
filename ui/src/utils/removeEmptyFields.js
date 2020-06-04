@@ -1,16 +1,19 @@
 import flatten from 'flat';
 import omitBy from 'lodash/omitBy';
 
+const exceptedKeySubstring = 'policySections';
+
 export default function removeEmptyFields(obj) {
     const flattenedObj = flatten(obj);
     const omittedObj = omitBy(
         flattenedObj,
-        (value) =>
-            value === null ||
-            value === undefined ||
-            value === '' ||
-            value === [] ||
-            (Array.isArray(value) && !value.length)
+        (value, key) =>
+            !key.includes(exceptedKeySubstring) &&
+            (value === null ||
+                value === undefined ||
+                value === '' ||
+                value === [] ||
+                (Array.isArray(value) && !value.length))
     );
     const newObj = flatten.unflatten(omittedObj);
 
