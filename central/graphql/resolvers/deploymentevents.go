@@ -238,11 +238,15 @@ func (resolver *Resolver) getProcessActivityEvents(ctx context.Context, query *v
 			if procName != "" {
 				if _, exists := whitelists[keyStr]; !exists {
 					whitelist, exists, err := resolver.WhiteListDataStore.GetProcessWhitelist(ctx, key)
-					if err != nil || !exists {
+					if err != nil {
 						log.Error(errors.Wrapf(err, "retrieving whitelist data for process %s", indicator.GetSignal().GetName()))
-					} else {
-						whitelists[keyStr] = processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
+						continue
 					}
+					if !exists {
+						continue
+					}
+
+					whitelists[keyStr] = processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
 				}
 			}
 		}
