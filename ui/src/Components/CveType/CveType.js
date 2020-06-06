@@ -21,11 +21,12 @@ const CveType = ({ type, context }) => {
 };
 
 CveType.propTypes = {
-    type: PropTypes.oneOf(cveTypes).isRequired,
+    type: PropTypes.oneOf(cveTypes),
     context: PropTypes.oneOf(['callout', 'bare']),
 };
 
 CveType.defaultProps = {
+    type: '',
     context: 'bare',
 };
 

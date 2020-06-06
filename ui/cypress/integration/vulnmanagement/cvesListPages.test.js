@@ -16,6 +16,7 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
         cy.visit(url.list.cves);
         hasExpectedHeaderColumns([
             'CVE',
+            'Type',
             'Fixable',
             'CVSS Score',
             'Env. Impact',
@@ -40,6 +41,24 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
             .invoke('text')
             .then((value) => {
                 expect(value).not.to.include('No description available');
+            });
+    });
+
+    it('should display correct CVE type', () => {
+        cy.visit(url.list.cves);
+
+        cy.get(`${selectors.cveTypes}:first`)
+            .invoke('text')
+            .then((cveTypeText) => {
+                cy.get(`${selectors.cveTypes}:first`).click({
+                    force: true,
+                });
+
+                cy.get(selectors.cveType)
+                    .invoke('text')
+                    .then((overviewCveTypeText) => {
+                        expect(overviewCveTypeText).to.contain(cveTypeText);
+                    });
             });
     });
 

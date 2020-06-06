@@ -59,6 +59,7 @@ export const componentSortFields = {
  */
 export const cveSortFields = {
     CVE: 'CVE',
+    CVE_TYPE: 'CVE Type',
     CVSS_SCORE: 'CVSS',
     SUPPRESSED: 'CVE Snoozed',
     FIXABLE: 'Fixable',
@@ -71,7 +72,6 @@ export const cveSortFields = {
     SCANNED: 'Last Scanned',
     CVE_CREATED_TIME: 'CVE Created Time',
     IMAGE_SCAN_TIME: 'Image Scan Time',
-    CVE_TYPE: 'CVE Type',
     PUBLISHED: 'CVE Published On',
 };
 

@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 
 import { useTheme } from 'Containers/ThemeProvider';
 import CollapsibleSection from 'Components/CollapsibleSection';
+import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
 import LabelChip from 'Components/LabelChip';
 import Widget from 'Components/Widget';
@@ -29,6 +30,7 @@ const emptyCve = {
     scoreVersion: '',
     summary: '',
     vectors: {},
+    vulnerabilityType: '',
 };
 
 const VulnMgmtCveOverview = ({ data, entityContext }) => {
@@ -48,6 +50,7 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
         publishedOn,
         lastModified,
         scoreVersion,
+        vulnerabilityType,
     } = safeData;
 
     const linkToMoreInfo = isValidURL(link) ? (
@@ -141,6 +144,12 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
                                                 </span>
                                             )
                                         }
+                                        <span
+                                            className="w-full md:w-auto p-4 border-base-400 border-l"
+                                            data-testid="cve-type"
+                                        >
+                                            <CveType context="callout" type={vulnerabilityType} />
+                                        </span>
                                         <span className="w-full md:w-auto p-4 border-base-400 border-l">
                                             <LabelChip
                                                 text={`CVSS ${cvss && cvss.toFixed(1)}`}

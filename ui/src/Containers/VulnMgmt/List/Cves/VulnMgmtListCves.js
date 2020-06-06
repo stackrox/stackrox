@@ -17,6 +17,7 @@ import DateTimeField from 'Components/DateTimeField';
 import LabelChip from 'Components/LabelChip';
 import Menu from 'Components/Menu';
 import TableCountLink from 'Components/workflow/TableCountLink';
+import CveType from 'Components/CveType';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import PanelButton from 'Components/PanelButton';
 import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
@@ -67,11 +68,28 @@ export function getCveTableColumns(workflowState) {
             sortField: cveSortFields.CVE,
         },
         {
+            Header: `Type`,
+            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            // eslint-disable-next-line
+            Cell: ({ original }) => {
+                return (
+                    <span className="mx-auto" data-testid="cve-type">
+                        <CveType type={original.vulnerabilityType} />
+                    </span>
+                );
+            },
+            id: cveSortFields.CVE_TYPE,
+            accessor: 'vulnerabilityType',
+            sortField: cveSortFields.CVE_TYPE,
+            sortable: true,
+        },
+        {
             Header: `Fixable`,
             headerClassName: `w-1/10 text-center ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+            Cell: ({ original }) => {
                 const fixableFlag = original.isFixable ? (
                     <LabelChip text="Fixable" type="success" size="large" />
                 ) : (
@@ -160,7 +178,7 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-        Cell: ({ original, pdf }) => (
+            Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.IMAGE}
                     count={original.imageCount}
@@ -179,7 +197,7 @@ export function getCveTableColumns(workflowState) {
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
-        Cell: ({ original, pdf }) => (
+            Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.COMPONENT}
                     count={original.componentCount}

@@ -51,6 +51,7 @@ export const listSelectors = {
     suppressOneDayOption: '[data-testid="1 Day"]',
     suppressToggleViewPanelButton: '[data-testid="panel-button-toggle-suppressed-cves-view"]',
     cveUnsuppressRowButton: '[data-testid="row-action-unsuppress"]',
+    cveTypes: '.rt-tbody [data-testid="cve-type"]',
 };
 
 export const sidePanelListEntityPageSelectors = {
@@ -76,6 +77,7 @@ export const sidePanelListEntityPageSelectors = {
     emptyFindingsSection: '[data-testid="results-message"]',
     deploymentCountText: '.rt-td [data-testid="deploymentCountText"]',
     imageCountText: '.rt-td [data-testid="imageCountText"]',
+    cveType: '[data-testid="entity-overview"] [data-testid="cve-type"]',
 };
 
 export const dashboardSelectors = {
