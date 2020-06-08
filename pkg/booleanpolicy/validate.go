@@ -32,18 +32,18 @@ func validatePolicySection(s *storage.PolicySection) error {
 			errorList.AddStringf("policy criteria name %q is invalid", g.GetFieldName())
 			continue
 		}
+		if len(g.GetValues()) == 0 {
+			errorList.AddStringf("no values for field %q", g.GetFieldName())
+		}
 		if g.GetNegate() && m.negationForbidden {
 			errorList.AddStringf("policy criteria %q cannot be negated", g.GetFieldName())
-			continue
 		}
 		if len(g.GetValues()) > 1 && m.operatorsForbidden {
-			errorList.AddStringf("policy criteria %q does support more than one value %q", g.GetFieldName(), g.GetValues())
-			continue
+			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
 		}
 		for idx, v := range g.GetValues() {
 			if !m.valueRegex.MatchString(v.GetValue()) {
 				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex)
-				continue
 			}
 		}
 	}
