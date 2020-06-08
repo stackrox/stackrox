@@ -10,6 +10,7 @@ import objects.SplunkSearch
 
 import com.google.gson.Gson
 import com.jayway.restassured.response.Response
+import org.junit.AssumptionViolatedException
 
 class SplunkUtil {
     static final private Gson GSON = new GsonBuilder().create()
@@ -29,10 +30,21 @@ class SplunkUtil {
         int intervalSeconds = 3
         int iterations = timeoutSeconds / intervalSeconds
         List results = []
+        Exception exception = null
         Timer t = new Timer(iterations, intervalSeconds)
         while (results.size() == 0 && t.IsValid()) {
-            def searchId = createSearch(port)
+            def searchId = null
+            try {
+                searchId = createSearch(port)
+                exception = null
+            } catch (Exception e) {
+                exception = e
+            }
             results = getSplunkAlerts(port, searchId)
+        }
+
+        if (exception) {
+            throw exception
         }
         return results
     }
@@ -52,7 +64,7 @@ class SplunkUtil {
     }
 
     static String createSearch(int port) {
-        Response response
+        Response response = null
         try {
             withRetry(20, 3) {
                 response = given().auth().basic("admin", "changeme")
@@ -64,7 +76,15 @@ class SplunkUtil {
         catch (Exception e) {
             println("catching unknownhost exception for KOPS and other intermittent connection issues" + e)
         }
-        println "New Search created: ${GSON.fromJson(response.asString(), SplunkSearch).sid}"
-        return GSON.fromJson(response.asString(), SplunkSearch).sid
+
+        println response?.asString() //printout the response for debugging purposes
+        def searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
+        if (searchId == null) {
+            println "Failed to generate new search. SearchId is null..."
+            throw new AssumptionViolatedException("Failed to create new Splunk search!")
+        } else {
+            println "New Search created: ${searchId}"
+            return searchId
+        }
     }
 }
