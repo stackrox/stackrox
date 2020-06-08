@@ -16,6 +16,7 @@ const EventsRow = ({
     minTimeRange,
     maxTimeRange,
     margin,
+    isZooming,
 }) => {
     const eventMarkerSize = Math.max(0, height / 3);
     const clusteredEventMarkerSize = Math.max(0, height / 2);
@@ -25,14 +26,16 @@ const EventsRow = ({
         return differenceInMilliseconds >= minTimeRange && differenceInMilliseconds <= maxTimeRange;
     });
 
-    const groupedEvents = getGroupedEvents({
-        events: eventsWithinView,
-        minDomain: minTimeRange,
-        maxDomain: maxTimeRange,
-        minRange: margin,
-        maxRange: Math.max(margin, width - margin),
-        partitionSize: clusteredEventMarkerSize,
-    });
+    const groupedEvents = isZooming
+        ? []
+        : getGroupedEvents({
+              events: eventsWithinView,
+              minDomain: minTimeRange,
+              maxDomain: maxTimeRange,
+              minRange: margin,
+              maxRange: Math.max(margin, width - margin),
+              partitionSize: clusteredEventMarkerSize,
+          });
 
     return (
         <g
@@ -120,6 +123,7 @@ EventsRow.propTypes = {
     entityName: PropTypes.string.isRequired,
     events: PropTypes.arrayOf(PropTypes.object),
     isOdd: PropTypes.bool,
+    isZooming: PropTypes.bool,
 };
 
 EventsRow.defaultProps = {
@@ -128,6 +132,7 @@ EventsRow.defaultProps = {
     translateY: 0,
     events: [],
     isOdd: false,
+    isZooming: false,
 };
 
 export default EventsRow;

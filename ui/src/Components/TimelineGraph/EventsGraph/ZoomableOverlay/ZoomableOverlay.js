@@ -5,7 +5,7 @@ import { scaleLinear } from 'd3-scale';
 import D3Anchor from 'Components/D3Anchor';
 import { getZoomConfig } from 'Components/TimelineGraph/EventsGraph/ZoomableOverlay/zoomUtils';
 
-const Zoom = ({
+const ZoomableOverlay = ({
     translateX,
     translateY,
     width,
@@ -13,13 +13,18 @@ const Zoom = ({
     absoluteMinTimeRange,
     absoluteMaxTimeRange,
     onZoomChange,
+    onZoomStart,
+    onZoomEnd,
 }) => {
     const xScale2 = scaleLinear()
         .domain([absoluteMinTimeRange, absoluteMaxTimeRange])
         .range([0, width]);
-    const zoom = getZoomConfig(width, height).on('zoom', zoomed);
+    const zoom = getZoomConfig(width, height)
+        .on('zoom', zooming)
+        .on('start', onZoomStart)
+        .on('end', onZoomEnd);
 
-    function zoomed() {
+    function zooming() {
         if (event.sourceEvent && event.sourceEvent.type === 'end') return;
         if (event.type === 'zoom' && event.sourceEvent && event.sourceEvent.type !== 'zoom') {
             const t = event.transform;
@@ -49,4 +54,4 @@ const Zoom = ({
     );
 };
 
-export default Zoom;
+export default ZoomableOverlay;

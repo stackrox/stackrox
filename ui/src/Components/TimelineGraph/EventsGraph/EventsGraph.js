@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import EventsRow from './EventsRow';
@@ -22,9 +22,20 @@ const EventsGraph = ({
     isHeightAdjustable,
     onZoomChange,
 }) => {
+    const [isZooming, setZooming] = useState(false);
+
     const rowHeight = isHeightAdjustable
         ? Math.min(Math.max(MIN_ROW_HEIGHT, Math.floor(height / numRows) - 1), MAX_ROW_HEIGHT)
         : MAX_ROW_HEIGHT;
+
+    function onZoomStart() {
+        setZooming(true);
+    }
+
+    function onZoomEnd() {
+        setZooming(false);
+    }
+
     return (
         <g
             data-testid="timeline-events-graph"
@@ -41,6 +52,8 @@ const EventsGraph = ({
                     absoluteMinTimeRange={absoluteMinTimeRange}
                     absoluteMaxTimeRange={absoluteMaxTimeRange}
                     onZoomChange={onZoomChange}
+                    onZoomStart={onZoomStart}
+                    onZoomEnd={onZoomEnd}
                 />
             )}
             {data.map((datum, index) => {
@@ -59,6 +72,7 @@ const EventsGraph = ({
                         minTimeRange={minTimeRange}
                         maxTimeRange={maxTimeRange}
                         margin={margin}
+                        isZooming={isZooming}
                     />
                 );
             })}
