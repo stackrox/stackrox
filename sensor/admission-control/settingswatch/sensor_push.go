@@ -45,6 +45,7 @@ func (w *sensorPushWatch) run() {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 1 * time.Minute
 	eb.InitialInterval = 10 * time.Second
+	eb.MaxElapsedTime = 365 * 24 * time.Hour
 	eb.Reset()
 
 	tC := closedTimeC
@@ -65,6 +66,10 @@ func (w *sensorPushWatch) run() {
 			}
 
 			nextBackOff := eb.NextBackOff()
+			if nextBackOff == backoff.Stop {
+				log.Errorf("exceeded the maximum elapsed time %v to reconnect to Sensor", eb.MaxElapsedTime)
+				return
+			}
 			log.Warnf("Communication to sensor failed: %v. Retrying in %v", err, nextBackOff)
 			tC = time.After(nextBackOff)
 
