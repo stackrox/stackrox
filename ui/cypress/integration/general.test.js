@@ -1,3 +1,4 @@
+import { url as apidocsUrl } from '../constants/ApiReferencePage';
 import { url as dashboardUrl } from '../constants/DashboardPage';
 import { url as violationsUrl } from '../constants/ViolationsPage';
 import selectors from '../constants/GeneralPage';
@@ -47,12 +48,8 @@ describe('General sanity checks', () => {
         cy.visit('/');
         cy.get(selectors.navLinks.apidocs).as('apidocs');
         cy.get('@apidocs').click();
-        cy.get(selectors.navLinks.apiDocsMenuLinks).as('apiDocsLinks');
-        cy.get('@apiDocsLinks').should(($lis) => {
-            expect($lis).to.have.length(2);
-            expect($lis.eq(0)).to.contain('Documentation');
-            expect($lis.eq(1)).to.contain('API Reference');
-        });
+
+        cy.url().should('contain', apidocsUrl);
     });
 
     it('should allow to navigate to another page after exception happens on a page', () => {

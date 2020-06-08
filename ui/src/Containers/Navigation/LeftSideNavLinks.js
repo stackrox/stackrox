@@ -1,81 +1,63 @@
-import React from 'react';
-import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
-import { connect } from 'react-redux';
 
 import { knownBackendFlags } from 'utils/featureFlags';
-import { filterLinksByFeatureFlag } from './navHelpers';
-
-const iconClassName = 'h-4 w-4';
+import { configureLinks } from './NavigationPanel';
 
 export const navLinks = [
     {
         text: 'Dashboard',
         to: '/main/dashboard',
-        renderIcon: () => <Icon.BarChart2 className={iconClassName} />,
+        Icon: Icon.BarChart2,
     },
     {
         text: 'Network Graph',
         to: '/main/network',
-        renderIcon: () => <Icon.Share2 className={iconClassName} />,
+        Icon: Icon.Share2,
     },
     {
         text: 'Violations',
         to: '/main/violations',
-        renderIcon: () => <Icon.AlertTriangle className={iconClassName} />,
+        Icon: Icon.AlertTriangle,
     },
     {
         text: 'Compliance',
         to: '/main/compliance',
-        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
+        Icon: Icon.CheckSquare,
     },
     {
         text: 'Vulnerability Management',
         to: '/main/vulnerability-management',
-        renderIcon: () => <Icon.Layers className={iconClassName} />,
+        Icon: Icon.Layers,
         featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI,
     },
     {
         text: 'Configuration Management',
         to: '/main/configmanagement',
-        renderIcon: () => <Icon.UserCheck className={iconClassName} />,
+        Icon: Icon.UserCheck,
     },
     {
         text: 'Risk',
         to: '/main/risk',
-        renderIcon: () => <Icon.ShieldOff className={iconClassName} />,
+        Icon: Icon.ShieldOff,
     },
     {
         text: 'Platform Configuration',
         to: '',
-        renderIcon: () => <Icon.Settings className={iconClassName} />,
+        Icon: Icon.Settings,
         panelType: 'configure',
         data: 'configure',
+        paths: configureLinks.map(({ to }) => to),
     },
 ];
 
-const LeftSideNavLinks = ({ renderLink, featureFlags }) => (
-    <ul className="flex flex-col uppercase text-sm tracking-wide">
-        {filterLinksByFeatureFlag(featureFlags, navLinks).map((navLink) => (
-            <li key={navLink.text}>{renderLink(navLink)}</li>
-        ))}
-    </ul>
-);
-
-LeftSideNavLinks.propTypes = {
-    renderLink: PropTypes.func.isRequired,
-    featureFlags: PropTypes.arrayOf(
-        PropTypes.shape({
-            envVar: PropTypes.string.isRequired,
-            enabled: PropTypes.bool.isRequired,
-        })
-    ).isRequired,
+export const apidocsLink = {
+    text: 'API Reference',
+    to: '/main/apidocs', // overrides dark mode: see .redoc-wrap rule in app.css
+    Icon: Icon.Server,
 };
 
-const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
-});
-
-export default connect(mapStateToProps)(LeftSideNavLinks);
+export const productdocsLink = {
+    text: 'Help Center',
+    to: '/docs/product',
+    Icon: Icon.HelpCircle,
+};

@@ -14,10 +14,10 @@ import {
 } from 'routePaths';
 import { filterLinksByFeatureFlag } from './navHelpers';
 
-const navLinks = [
+export const configureLinks = [
     {
         text: 'Clusters',
-        to: clustersPath.replace('/:clusterId', ''),
+        to: clustersPath.replace('/:clusterId?', ''),
     },
     {
         text: 'System Policies',
@@ -62,7 +62,7 @@ class NavigationPanel extends Component {
             <li className="border-b-2 border-primary-500 px-1 py-5 pl-2 pr-2 text-base-100 font-700">
                 Configure StackRox Settings
             </li>
-            {filterLinksByFeatureFlag(this.props.featureFlags, navLinks).map((navLink) => (
+            {filterLinksByFeatureFlag(this.props.featureFlags, configureLinks).map((navLink) => (
                 <li key={navLink.text} className="text-sm">
                     <Link
                         to={navLink.to}

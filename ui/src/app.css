@@ -1019,6 +1019,10 @@ h6 {
     overflow: overlay;
 }
 
+.redoc-wrap {
+    @apply theme-light bg-base-100 !important;
+}
+
 .redoc-wrap,
 .redoc-wrap .menu-content {
     @apply h-full !important;
@@ -1222,7 +1226,6 @@ h6 {
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
     border-right: 8px solid var(--base-400);
-    left: -8px;
 }
 
 .table-group {

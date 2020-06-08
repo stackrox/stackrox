@@ -13,6 +13,7 @@ All notable changes to this project that require documentation updates will be d
   7. `collector-image` option will be renamed to `collector-image-repository`
   8. `monitoring-endpoint` option, which has already been deprecated, will be removed
 - Add CVE Type to CVE list and overview pages (ROX-4482)
+- UI: Open API Reference in current Web UI browser tab instead of a new tab and replace Help Center popup menu with two half-height links in left navigation for API Reference and Help Center (ROX-2200)
 
 ## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
