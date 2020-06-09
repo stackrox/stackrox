@@ -3,7 +3,6 @@ import common.Constants
 import groovy.util.logging.Slf4j
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ApiTokenService
-
 import io.stackrox.proto.storage.RoleOuterClass
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
@@ -24,6 +23,7 @@ import util.Helpers
 
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
+import java.text.SimpleDateFormat
 
 @Slf4j
 @Retry(condition = { Helpers.determineRetry(failure) })
@@ -189,6 +189,10 @@ class BaseSpecification extends Specification {
     }
 
     def setup() {
+        def date = new Date()
+        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        println "${sdf.format(date)} Starting testcase"
+
         //Always make sure to revert back to the allAccessToken before each test
         resetAuth()
     }
@@ -219,6 +223,10 @@ class BaseSpecification extends Specification {
     }
 
     def cleanup() {
+        def date = new Date()
+        def sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        println "${sdf.format(date)} Ending testcase"
+
         Helpers.resetRetryAttempts()
     }
 }
