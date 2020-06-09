@@ -453,6 +453,14 @@ updateTestRail: &updateTestRail
       make -C qa-tests-backend update-test-rail
     when: always
 
+getPrometheusMetricParser: &getPrometheusMetricParser
+  run:
+    name: Get prometheus-metric-parser
+    command: |
+      export GOPRIVATE=github.com/stackrox
+      go get github.com/stackrox/prometheus-metric-parser
+      prometheus-metric-parser help
+
 version: 2.1
 
 executors:
@@ -576,6 +584,7 @@ commands:
           name: Pull the dump from Central
           command: |
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central debug dump --output-dir debug-dump
+            ls -l debug-dump
       - store_artifacts:
           path: debug-dump
           destination: debug
@@ -1511,6 +1520,26 @@ commands:
             mkdir -p qa-tests-backend/gradle-results
             mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >> || true
           when: always
+
+  compare-with-baseline-metrics:
+    steps:
+      - run:
+          name: Compare with baseline metrics
+          command: |
+            mkdir /tmp/metrics
+            BASELINE=$(gsutil ls gs://stackrox-ci-metrics-baseline/stackrox_debug\* | sort | tail -1)
+            echo "Using ${BASELINE} as baseline metrics for comparison"
+            gsutil cp "${BASELINE}" /tmp/metrics
+            BASELINE=$(ls -1 /tmp/metrics | sort | tail -1)
+            THIS_RUN=$(echo ${PWD}/debug-dump/stackrox_debug*.zip)
+            echo "Comparing with ${THIS_RUN}"
+            COMPARE=${PWD}/scripts/ci/compare-debug-metrics.sh
+            # Ignore comparison failure until correct thresholds are determined. 
+            set +e
+            (cd /tmp/metrics && "${COMPARE}" "${BASELINE}" "${THIS_RUN}")
+            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+              gsutil cp "${THIS_RUN}" gs://stackrox-ci-metrics-baseline/
+            fi
 
 jobs:
   ###
@@ -3220,6 +3249,9 @@ jobs:
       - *storeK8sLogs
 
       - teardown-gke
+
+      - *getPrometheusMetricParser
+      - compare-with-baseline-metrics
 
   openshift-api-e2e-tests:
     executor: custom
