@@ -12,6 +12,7 @@ import { DASHBOARD_LIMIT } from 'constants/workflowPages.constants';
 import DashboardMenu from 'Components/DashboardMenu';
 import PoliciesCountTile from '../Components/PoliciesCountTile';
 import CvesCountTile from '../Components/CvesCountTile';
+import ImagesCountTile from '../Components/ImagesCountTile';
 import TopRiskyEntitiesByVulnerabilities from '../widgets/TopRiskyEntitiesByVulnerabilities';
 import TopRiskiestImagesAndComponents from '../widgets/TopRiskiestImagesAndComponents';
 import FrequentlyViolatedPolicies from '../widgets/FrequentlyViolatedPolicies';
@@ -24,7 +25,6 @@ const entityMenuTypes = [
     entityTypes.CLUSTER,
     entityTypes.NAMESPACE,
     entityTypes.DEPLOYMENT,
-    entityTypes.IMAGE,
     entityTypes.COMPONENT,
 ];
 
@@ -70,6 +70,7 @@ const VulnDashboardPage = ({ history }) => {
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
                     <PoliciesCountTile />
                     <CvesCountTile />
+                    <ImagesCountTile />
                     <div className="flex w-32">
                         <DashboardMenu
                             text="Application & Infrastructure"

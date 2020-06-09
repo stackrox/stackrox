@@ -70,6 +70,24 @@ describe('Vuln Management Dashboard Page', () => {
             });
     });
 
+    it('should show same number of images between the tile and the images list', () => {
+        cy.visit(url.dashboard);
+        cy.get(selectors.tileLinks)
+            .eq(2)
+
+            .find(selectors.tileLinkValue)
+            .invoke('text')
+            .then((value) => {
+                const numImages = value;
+                cy.get(selectors.tileLinks).eq(2).click();
+                cy.get(`[data-testid="panel"] [data-testid="panel-header"]`)
+                    .invoke('text')
+                    .then((panelHeaderText) => {
+                        expect(parseInt(panelHeaderText, 10)).to.equal(parseInt(numImages, 10));
+                    });
+            });
+    });
+
     it('should properly navigate to the policies list', () => {
         cy.visit(url.dashboard);
         cy.get(selectors.tileLinks).eq(0).click();
@@ -95,13 +113,6 @@ describe('Vuln Management Dashboard Page', () => {
         cy.get(selectors.applicationAndInfrastructureDropdown).click();
         cy.get(selectors.getMenuListItem('deployments')).click();
         cy.url().should('contain', url.list.deployments);
-    });
-
-    it('should properly navigate to the images list', () => {
-        cy.visit(url.dashboard);
-        cy.get(selectors.applicationAndInfrastructureDropdown).click();
-        cy.get(selectors.getMenuListItem('images')).click();
-        cy.url().should('contain', url.list.images);
     });
 
     // @TODO: add check that changing entity type re-displays the loader
