@@ -5,7 +5,7 @@ kubectl -n stackrox patch svc/central -p '{"spec":{"ports":[{"name":"monitoring"
 
 # Modify network policies to allow ingress
 kubectl apply -f - <<EOF
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   labels:
