@@ -107,7 +107,7 @@ require (
 
 replace (
 	github.com/PagerDuty/go-pagerduty => github.com/stackrox/go-pagerduty v0.0.0-20191021101800-15cb77365cca
-	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20200303185535-b6fb59df2573
+	github.com/blevesearch/bleve => github.com/stackrox/bleve v0.0.0-20200608193421-3039451d242c
 	github.com/couchbase/ghistogram => github.com/couchbase/ghistogram v0.0.1-0.20170308220240-d910dd063dd6
 	github.com/couchbase/vellum => github.com/couchbase/vellum v0.0.0-20190829182332-ef2e028c01fd
 	github.com/dgraph-io/badger => github.com/stackrox/badger v1.6.1-0.20200323231458-fbe3e8f8d16e

@@ -10,7 +10,6 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
@@ -20,18 +19,14 @@ import (
 // Anything that is time sensitive will need to pass a limit as a part of the pagination request
 // In general, prioritize correctness over latency
 const (
-	maxSearchResponses = math.MaxInt32
-
-	deleteBatchSize = 5000
+	maxSearchResponses = math.MaxInt64
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	defaultSubQueryContext = bleveContext{
-		pagination: &v1.QueryPagination{
-			Limit: maxSearchResponses,
-		},
+		pagination: &v1.QueryPagination{},
 	}
 )
 
@@ -300,28 +295,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 		return nil, err
 	}
 	return runQuery(ctx, bleveQuery, index, highlightContext)
-}
-
-// ResetIndex resets the index of the specific type to empty
-func ResetIndex(category v1.SearchCategory, idx bleve.Index) error {
-	req := bleve.NewSearchRequest(bleve.NewConjunctionQuery(typeQuery(category), bleve.NewMatchAllQuery()))
-	req.Size = math.MaxInt32
-	searchResult, err := idx.Search(req)
-	if err != nil {
-		return err
-	}
-
-	deleteBatcher := batcher.New(searchResult.Hits.Len(), deleteBatchSize)
-	for start, end, ok := deleteBatcher.Next(); ok; start, end, ok = deleteBatcher.Next() {
-		batch := idx.NewBatch()
-		for _, v := range searchResult.Hits[start:end] {
-			batch.Delete(v.ID)
-		}
-		if err := idx.Batch(batch); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func getSortOrder(pagination *v1.QueryPagination, optionsMap searchPkg.OptionsMap) (search.SortOrder, error) {
