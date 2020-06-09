@@ -1,3 +1,5 @@
+import table from '../selectors/table';
+
 export const url = '/main/integrations';
 
 export const selectors = {
@@ -20,6 +22,7 @@ export const selectors = {
         delete: 'button:contains("Delete")',
         test: 'button:contains("Test")',
         create: 'button:contains("Create")',
+        save: 'button:contains("Save")',
         confirm: 'button:contains("Confirm")',
         generate: 'button:contains("Generate"):not([disabled])',
         revoke: 'button:contains("Revoke")',
@@ -41,8 +44,14 @@ export const selectors = {
         typesSelect: 'form .react-select__control',
         endpointInput: "form input[name='docker.endpoint']",
     },
+    slackForm: {
+        nameInput: "form input[name='name']",
+        defaultWebhook: "form input[name='labelDefault']",
+        labelAnnotationKey: "form input[name='labelKey']",
+    },
     labeledValue: '[data-testid="labeled-value"]',
     plugins: '.mb-6:first div[role="button"]',
     dialog: '.dialog',
     checkboxes: 'input',
+    table,
 };

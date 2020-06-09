@@ -25,7 +25,45 @@ describe('Integrations page', () => {
         cy.get('div.ReactModalPortal');
     });
 
-    it('should add an integration with DockerHub', () => {
+    it('should test, create, update, and delete an integration with Slack', () => {
+        cy.get(selectors.slackTile).click();
+        cy.get(selectors.buttons.delete).should('not.exist');
+        cy.get(selectors.buttons.new).click();
+
+        // test that validation error happens when form is incomplete
+        cy.get(selectors.buttons.test).click();
+        cy.get('div').contains('error');
+
+        const nameInput = `Slack Test ${Math.random().toString(36).substring(7)}`;
+        const defaultWebhook = 'https://hooks.slack.com/services/EXAMPLE';
+        const labelAnnotationKey = 'slack-test';
+
+        cy.get(selectors.slackForm.nameInput).type(nameInput);
+        cy.get(selectors.slackForm.defaultWebhook).type(defaultWebhook);
+        cy.get(selectors.slackForm.labelAnnotationKey).type(labelAnnotationKey);
+
+        // the test button should not return an error with valid inputs
+        cy.get(selectors.buttons.test).click();
+        cy.get('div').should('not.contain', 'error');
+
+        // test creating an integration
+        cy.get(selectors.buttons.create).click();
+
+        // test updating an existing integration
+        cy.get(`${selectors.table.rows}:contains('${nameInput}')`).click();
+        cy.get(selectors.buttons.save).click();
+        cy.get(selectors.buttons.closePanel).click();
+
+        // test deleting an integration
+        cy.get(`.rt-tr:contains("${nameInput}") .rt-td input[type="checkbox"]`).check();
+        cy.get(selectors.buttons.delete).click({
+            force: true,
+        });
+        cy.get(selectors.buttons.confirm).click();
+        cy.get(`.rt-tr:contains("${nameInput}")`).should('not.exist');
+    });
+
+    it('should test, create, update, and delete an integration with DockerHub', () => {
         cy.get(selectors.dockerRegistryTile).click();
         cy.get(selectors.buttons.delete).should('not.exist');
         cy.get(selectors.buttons.new).click();
@@ -45,6 +83,11 @@ describe('Integrations page', () => {
         cy.get(selectors.dockerRegistryForm.endpointInput).type('registry-1.docker.io');
 
         cy.get(selectors.buttons.create).click();
+
+        // test updating an existing integration
+        cy.get(`${selectors.table.rows}:contains('${name}')`).click();
+        cy.get(selectors.buttons.save).click();
+        cy.get(selectors.buttons.closePanel).click();
 
         // delete the integration after to clean up
         cy.get(`.rt-tr:contains("${name}") .rt-td input[type="checkbox"]`).check();

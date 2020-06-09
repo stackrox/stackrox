@@ -68,7 +68,6 @@ class Form extends Component {
         const data = this.addDefaultFormValues();
         const options = setFormSubmissionOptions(source, type, data, { isNewIntegration });
         this.props.saveIntegration(source, type, data, options);
-        this.props.onClose();
     };
 
     // isEditMode returns true if the form is editing an existing entity

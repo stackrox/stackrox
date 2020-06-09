@@ -42,11 +42,13 @@ export function fetchIntegration(source) {
  * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function saveIntegration(source, data, options = {}) {
+export function saveIntegration(source, data, options) {
     if (!data.id) throw new Error('Integration entity must have an id to be saved');
-    const { updatePassword } = options;
+    const updatePassword = options?.updatePassword;
     // if the integration is not one that could possibly have stored credentials, use the previous API
-    if (updatePassword === null) return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+    if (updatePassword === undefined) {
+        return axios.put(`${getPath(source, 'save')}/${data.id}`, data);
+    }
     // if it does, format the request data and use the new API
     const integration = {
         config: data,
@@ -73,10 +75,12 @@ export function createIntegration(source, data) {
  * @param {Object} options - Contains a field like "updatePassword" to determine what API to use
  * @returns {Promise<Object, Error>}
  */
-export function testIntegration(source, data, options = {}) {
-    const { updatePassword } = options;
+export function testIntegration(source, data, options) {
+    const updatePassword = options?.updatePassword;
     // if the integration is not one that could possibly have stored credentials, use the previous API
-    if (updatePassword === null) return axios.post(`${getPath(source, 'test')}/test`, data);
+    if (updatePassword === undefined) {
+        return axios.post(`${getPath(source, 'test')}/test`, data);
+    }
     // if it does, format the request data and use the new API
     const integration = {
         config: data,
