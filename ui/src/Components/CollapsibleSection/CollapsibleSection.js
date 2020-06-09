@@ -51,13 +51,17 @@ const CollapsibleSection = ({
                     <div
                         className={`flex py-1 text-base-600 rounded-r-sm font-700 items-center ${titleClassName}`}
                     >
-                        <Button icon={Icon} onClick={toggleOpen} />
+                        <Button icon={Icon} onClick={toggleOpen} dataTestId="collapsible-btn" />
                         <span className="ml-2">{title}</span>
                     </div>
                 </div>
                 {headerComponents}
             </header>
-            <Content className={open ? '' : 'overflow-hidden'} pose={open ? 'open' : 'closed'}>
+            <Content
+                className={open ? '' : 'overflow-hidden'}
+                pose={open ? 'open' : 'closed'}
+                data-testid="collapsible-content"
+            >
                 {children}
             </Content>
         </div>

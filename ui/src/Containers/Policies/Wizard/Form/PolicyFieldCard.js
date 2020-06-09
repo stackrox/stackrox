@@ -45,6 +45,7 @@ function PolicyFieldCard({
                             {fieldKey.negatedName && (
                                 <div
                                     className={`flex items-center p-2 border-l-2 ${borderColorClass}`}
+                                    data-testid="not-toggle"
                                 >
                                     <label
                                         htmlFor={toggleFieldName}

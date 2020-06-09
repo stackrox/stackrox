@@ -25,6 +25,7 @@ function PolicyBuilderKeys({ keys, className }) {
                     key={categoryName}
                     headerClassName="py-1"
                     titleClassName="w-full"
+                    dataTestId="policy-key-group"
                 >
                     {categories[categoryName].map((key) => {
                         return <PolicyBuilderKey key={key.name} fieldKey={key} />;

@@ -4,6 +4,8 @@ import withAuth from '../helpers/basicAuth';
 import DndSimulatorDataTransfer from '../helpers/dndSimulatorDataTransfer';
 import checkFeatureFlag from '../helpers/features';
 
+const NUM_POLICY_CATEGORIES = 8;
+
 describe('Policies page', () => {
     withAuth();
 
@@ -842,35 +844,83 @@ describe('Policies page', () => {
             });
         });
 
-        // describe('AND operator', () => {
-        //     it('should toggle to OR when AND is clicked if the Policy Field is can be ANDed', () => {
+        describe('Boolean operator', () => {
+            it('should toggle to AND when OR is clicked if the Policy Field can be ANDed', () => {
+                addPolicy();
+                addPolicySection();
+                addPolicyFieldCard(0);
+                cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
+                const policyFieldCardAndOrOperator = `${selectors.booleanPolicySection.policyFieldCard} ${selectors.booleanPolicySection.andOrOperator}`;
+                cy.get(policyFieldCardAndOrOperator).should('contain', 'OR');
+                cy.get(policyFieldCardAndOrOperator).click();
+                cy.get(policyFieldCardAndOrOperator).should('contain', 'AND');
+                cy.get(policyFieldCardAndOrOperator).click();
+                cy.get(policyFieldCardAndOrOperator).should('contain', 'OR');
+            });
 
-        //     })
+            it('should be disabled if the Policy Field cannot be ANDed', () => {
+                addPolicy();
+                addPolicySection();
+                dragFieldIntoSection(
+                    `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                );
+                cy.get(selectors.booleanPolicySection.addPolicyFieldValueBtn).click();
+                const policyFieldCardAndOrOperator = `${selectors.booleanPolicySection.policyFieldCard} ${selectors.booleanPolicySection.andOrOperator}`;
+                cy.get(policyFieldCardAndOrOperator).should('contain', 'OR');
+                cy.get(policyFieldCardAndOrOperator).click();
+                cy.get(policyFieldCardAndOrOperator).should('contain', 'OR');
+            });
+        });
 
-        //     it('should be disabled if the Policy Field cannot be ORed', () => {
+        describe('Policy Field Card NOT toggle', () => {
+            it('should negate the Policy Field Card when the toggle is clicked & should show negated text', () => {
+                addPolicy();
+                addPolicySection();
+                addPolicyFieldCard(0);
+                cy.get(selectors.booleanPolicySection.policyFieldCard).should(
+                    'contain',
+                    'Image pulled from registry'
+                );
+                cy.get(selectors.booleanPolicySection.notToggle).click();
+                cy.get(selectors.booleanPolicySection.policyFieldCard).should(
+                    'contain',
+                    'Image not pulled from registry'
+                );
+            });
 
-        //     });
-        // });
+            it('should not exist if the Policy Field cannot be negated', () => {
+                addPolicy();
+                addPolicySection();
+                dragFieldIntoSection(
+                    `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
+                );
+                cy.get(selectors.booleanPolicySection.policyFieldCard).should(
+                    'contain',
+                    'Minimum days since image was built'
+                );
+                cy.get(selectors.booleanPolicySection.notToggle).should('not.exist');
+            });
+        });
 
-        // describe('OR operator', () => {
-        //     it('should toggle to AND when OR is clicked if the Policy Field can be ORed', () => {
-
-        //     })
-
-        //     it('should be disabled if the Policy Field cannot be ANDed', () => {
-
-        //     });
-        // })
-
-        // describe('Policy Field Card NOT toggle', () => {
-        //     it('should negate the Policy Field Card when the toggle is clicked & should show negated text', () => {
-
-        //     })
-
-        //     it('should be disabled if the Policy Field cannot be negated', () => {
-
-        //     })
-        // })
+        describe('Policy Field Keys', () => {
+            it('should be grouped into categories', () => {
+                addPolicy();
+                cy.get(selectors.booleanPolicySection.policyKeyGroupBtn).should((values) => {
+                    expect(values).to.have.length(NUM_POLICY_CATEGORIES);
+                });
+            });
+            it('should collapse categories when clicking the carrot', () => {
+                addPolicy();
+                cy.get(`${selectors.booleanPolicySection.policyKey}:first`)
+                    .scrollIntoView()
+                    .should('be.visible', 'Image Registry');
+                cy.get(`${selectors.booleanPolicySection.policyKeyGroupBtn}:first`).click();
+                cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`).should(
+                    'have.class',
+                    'overflow-hidden'
+                );
+            });
+        });
 
         describe('Multiple Policy Sections', () => {
             it('should add a Policy Section with a pre-populated Policy Section header', () => {
@@ -908,11 +958,20 @@ describe('Policies page', () => {
                     });
             });
 
-            it('should read in data properly when provided', () => {});
+            it('should read in data properly when provided', () => {
+                cy.get(selectors.policies.scanImage).click();
+                cy.get(selectors.booleanPolicySection.policySection)
+                    .scrollIntoView()
+                    .should('exist');
+                cy.get(selectors.booleanPolicySection.sectionHeader.text).should('exist');
+                cy.get(selectors.booleanPolicySection.policyFieldCard).should(
+                    'contain',
+                    'Minimum days since image was built'
+                );
+                cy.get(`${selectors.booleanPolicySection.policyFieldValue} input`).should(
+                    'be.disabled'
+                );
+            });
         });
-        // describe('Policy Field Keys', () => {
-        //     it('should be grouped into catgories', () => {});
-        //     it('should collapse categories when clicking the carrot', () => {});
-        // });
     });
 });
