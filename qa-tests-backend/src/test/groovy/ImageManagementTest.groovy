@@ -199,13 +199,13 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify risk is properly being attributed to run images"() {
         when:
         "Create deployment that runs an image and verify that image has a non-zero riskScore"
-        orchestrator.createDeployment(
-          new Deployment()
-            .setName("risk-image")
-            .setReplicas(1)
-            .setImage("mysql@sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
-            .setCommand(["sleep", "60000"])
-        )
+        def deployment = new Deployment()
+                .setName("risk-image")
+                .setReplicas(1)
+                .setImage("mysql@sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
+                .setCommand(["sleep", "60000"])
+
+        orchestrator.createDeployment(deployment)
 
         then:
         "Assert that riskScore is non-zero"
@@ -214,6 +214,9 @@ class ImageManagementTest extends BaseSpecification {
                     "sha256:f7985e36c668bb862a0e506f4ef9acdd1254cdf690469816f99633898895f7fa")
             assert image != null && image.riskScore != 0
         }
+
+        cleanup:
+        orchestrator.deleteDeployment(deployment)
     }
 
 }

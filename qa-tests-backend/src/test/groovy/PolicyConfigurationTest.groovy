@@ -596,10 +596,10 @@ class PolicyConfigurationTest extends BaseSpecification {
         "Remove Policy #policyName"
         policyID == null ?: CreatePolicyService.deletePolicy(policyID)
         violatedDeployments.each {
-            it.deploymentUid == null ?: orchestrator.deleteDeployment(it)
+            orchestrator.deleteDeployment(it)
         }
         nonViolatedDeployments.each {
-            it.deploymentUid == null ?: orchestrator.deleteDeployment(it)
+            orchestrator.deleteDeployment(it)
         }
 
         where:

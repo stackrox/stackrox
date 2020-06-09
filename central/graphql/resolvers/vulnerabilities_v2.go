@@ -146,16 +146,22 @@ func (resolver *cVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool
 	}
 
 	fixableCVEQuery := search.NewConjunctionQuery(q,
-		search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery(),
 		search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery(),
 	)
 
-	results, err := resolver.root.CVEDataStore.Search(resolver.ctx, fixableCVEQuery)
+	results, err := resolver.root.CVEDataStore.Search(resolver.scopeContext(resolver.ctx), fixableCVEQuery)
 	if err != nil {
 		return false, err
 	}
 
 	return len(results) != 0, nil
+}
+
+func (resolver *cVEResolver) scopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
+		Level: v1.SearchCategory_VULNERABILITIES,
+	})
 }
 
 // EnvImpact is the fraction of deployments that contains the CVE
@@ -177,7 +183,7 @@ func (resolver *cVEResolver) EnvImpact(ctx context.Context) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	withThisCVECount, err := deploymentLoader.CountFromQuery(ctx, resolver.cveQuery())
+	withThisCVECount, err := deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), search.EmptyQuery())
 	if err != nil {
 		return 0, err
 	}
@@ -206,8 +212,8 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 		return nil, err
 	}
 
-	cveQuery := resolver.cveQuery()
-	cveQuery.Pagination = &v1.QueryPagination{
+	q := search.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
 		Limit:  1,
 		Offset: 0,
 		SortOptions: []*v1.QuerySortOption{
@@ -218,7 +224,7 @@ func (resolver *cVEResolver) LastScanned(ctx context.Context) (*graphql.Time, er
 		},
 	}
 
-	images, err := imageLoader.FromQuery(ctx, cveQuery)
+	images, err := imageLoader.FromQuery(resolver.scopeContext(ctx), q)
 	if err != nil || len(images) == 0 {
 		return nil, err
 	} else if len(images) > 1 {
@@ -261,17 +267,14 @@ func (resolver *cVEResolver) Components(ctx context.Context, args PaginatedQuery
 	if err != nil {
 		return nil, err
 	}
-	componentQuery := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
 
-	pagination := query.GetPagination()
-	query.Pagination = nil
-	query, err = search.AddAsConjunction(componentQuery, query)
+	cveQuery := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+	query, err = search.AddAsConjunction(cveQuery, query)
 	if err != nil {
 		return nil, err
 	}
-	query.Pagination = pagination
 
-	return resolver.root.componentsV2Query(ctx, query)
+	return resolver.root.componentsV2Query(resolver.scopeContext(ctx), query)
 }
 
 // ComponentCount is the number of components that contain the CVE/Vulnerability.
@@ -285,11 +288,12 @@ func (resolver *cVEResolver) ComponentCount(ctx context.Context, args RawQuery) 
 	if err != nil {
 		return 0, err
 	}
+
 	componentLoader, err := loaders.GetComponentLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return componentLoader.CountFromQuery(ctx, query)
+	return componentLoader.CountFromQuery(resolver.scopeContext(ctx), query)
 }
 
 // Images are the images that contain the CVE/Vulnerability.
@@ -299,18 +303,11 @@ func (resolver *cVEResolver) Images(ctx context.Context, args PaginatedQuery) ([
 		return nil, err
 	}
 
-	pagination := query.GetPagination()
-	query, err = search.AddAsConjunction(resolver.cveQuery(), query)
-	if err != nil {
-		return nil, err
-	}
-	query.Pagination = pagination
-
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	return resolver.root.wrapImages(imageLoader.FromQuery(resolver.scopeContext(ctx), query))
 }
 
 // ImageCount is the number of images that contain the CVE/Vulnerability.
@@ -319,16 +316,11 @@ func (resolver *cVEResolver) ImageCount(ctx context.Context, args RawQuery) (int
 	if err != nil {
 		return 0, err
 	}
-	cveQuery := search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
-	query, err = search.AddAsConjunction(cveQuery, query)
-	if err != nil {
-		return 0, err
-	}
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return imageLoader.CountFromQuery(ctx, query)
+	return imageLoader.CountFromQuery(resolver.scopeContext(ctx), query)
 }
 
 // Deployments are the deployments that contain the CVE/Vulnerability.
@@ -341,18 +333,11 @@ func (resolver *cVEResolver) Deployments(ctx context.Context, args PaginatedQuer
 		return nil, err
 	}
 
-	pagination := query.GetPagination()
-	query, err = search.AddAsConjunction(resolver.cveQuery(), query)
-	if err != nil {
-		return nil, err
-	}
-	query.Pagination = pagination
-
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapDeployments(deploymentLoader.FromQuery(ctx, query))
+	return resolver.root.wrapDeployments(deploymentLoader.FromQuery(resolver.scopeContext(ctx), query))
 }
 
 // DeploymentCount is the number of deployments that contain the CVE/Vulnerability.
@@ -364,19 +349,12 @@ func (resolver *cVEResolver) DeploymentCount(ctx context.Context, args RawQuery)
 	if err != nil {
 		return 0, err
 	}
-	query, err = search.AddAsConjunction(resolver.cveQuery(), query)
-	if err != nil {
-		return 0, err
-	}
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return deploymentLoader.CountFromQuery(ctx, query)
-}
 
-func (resolver *cVEResolver) cveQuery() *v1.Query {
-	return search.NewQueryBuilder().AddExactMatches(search.CVE, resolver.data.GetId()).ProtoQuery()
+	return deploymentLoader.CountFromQuery(resolver.scopeContext(ctx), query)
 }
 
 // These return dummy values, as they should not be accessed from the top level vuln resolver, but the embedded
