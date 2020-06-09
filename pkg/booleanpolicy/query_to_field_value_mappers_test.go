@@ -116,11 +116,29 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentVarSrc() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertAnnotation() {
-	s.testDirectMapSearchString(search.Annotation, fieldnames.DisallowedAnnotation)
+	searchTerms := []string{"abc"}
+	expectedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.DisallowedAnnotation,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "abc=",
+			},
+		},
+	}
+	s.testMapSearchString(search.Annotation, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertImageLabel() {
-	s.testDirectMapSearchString(search.ImageLabel, fieldnames.DisallowedImageLabel)
+	searchTerms := []string{"abc"}
+	expectedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.DisallowedImageLabel,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "abc=",
+			},
+		},
+	}
+	s.testMapSearchString(search.ImageLabel, searchTerms, expectedGroup, false, true)
 }
 
 func (s *SearchMapperTestSuite) TestConvertVolumeReadonly() {

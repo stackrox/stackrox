@@ -18,8 +18,8 @@ var (
 		search.EnvironmentKey:                newMapper(fieldnames.EnvironmentVariable, envKeyCompoundMap),
 		search.EnvironmentValue:              newMapper(fieldnames.EnvironmentVariable, envValCompoundMap),
 		search.EnvironmentVarSrc:             newMapper(fieldnames.EnvironmentVariable, envSrcCompoundMap),
-		search.Annotation:                    newMapper(fieldnames.DisallowedAnnotation, directMap),
-		search.ImageLabel:                    newMapper(fieldnames.DisallowedImageLabel, directMap),
+		search.Annotation:                    newMapper(fieldnames.DisallowedAnnotation, leftRightCompoundMap),
+		search.ImageLabel:                    newMapper(fieldnames.DisallowedImageLabel, leftRightCompoundMap),
 		search.VolumeReadonly:                newMapper(fieldnames.WritableVolume, invertBooleanMap),
 		search.ImageCreatedTime:              newMapper(fieldnames.ImageAge, numberOfDaysSinceMap),
 		search.ImageScanTime:                 newMapper(fieldnames.ImageScanAge, numberOfDaysSinceMap),
@@ -161,6 +161,18 @@ func invertBooleanMap(searchTerms []string) ([]string, bool) {
 		droppedTerms = true
 	}
 	return policyTerms, droppedTerms
+}
+
+func leftRightCompoundMap(searchTerms []string) ([]string, bool) {
+	var mustBeCompound []string
+	for _, term := range searchTerms {
+		if !strings.Contains(term, "=") {
+			term = term + "="
+		}
+		mustBeCompound = append(mustBeCompound, term)
+	}
+
+	return mustBeCompound, false
 }
 
 func criteriaMap(searchTerms []string) ([]string, bool) {
