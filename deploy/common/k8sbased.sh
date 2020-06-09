@@ -192,6 +192,12 @@ function launch_central {
         fi
     fi
 
+    if [[ "${CGO_CHECKS}" == "true" ]]; then
+      echo "CGO_CHECKS set to true. Setting GODEBUG=cgocheck=2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
+      # Extend mutex watchdog timeout because cgochecks hamper performance
+      ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
+    fi
+
     if [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
         $unzip_dir/scanner/scripts/setup.sh

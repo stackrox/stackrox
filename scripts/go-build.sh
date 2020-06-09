@@ -57,9 +57,6 @@ go_build() {
 		main_srcdir="./${main_srcdir}"
 	fi
 	bin_name="$(basename "$main_srcdir")"
-	if [[ "$RACE" == "true" ]]; then
-	  bin_name="${bin_name}-race"
-	fi
 	output_file="bin/${GOOS}/${bin_name}"
 	if [[ "$GOOS" == "windows" ]]; then
 		output_file="${output_file}.exe"

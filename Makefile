@@ -326,11 +326,11 @@ build-prep: deps volatile-generated-srcs
 
 cli: build-prep
 ifdef CI
-	CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
-	CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
-	CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=darwin $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=linux $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=windows $(GOBUILD) ./roxctl
 else
-	CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./roxctl
+	RACE=0 CGO_ENABLED=0 GOOS=$(HOST_OS) $(GOBUILD) ./roxctl
 endif
 	# Copy the user's specific OS into gopath
 	cp bin/$(HOST_OS)/roxctl $(GOPATH)/bin/roxctl
@@ -375,7 +375,7 @@ endif
 main-rhel-build-dockerized:
 	@echo "+ $@"
 ifdef CI
-	docker container create -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(RHEL_BUILD_IMAGE) make main-build-nodeps
+	docker container create -e RACE -e CI -e CIRCLE_TAG -e GOTAGS --name builder $(RHEL_BUILD_IMAGE) make main-build-nodeps
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
@@ -427,7 +427,7 @@ test-prep:
 .PHONY: go-unit-tests
 go-unit-tests: build-prep test-prep
 	 set -o pipefail ; \
-	 CGO_ENABLED=1 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test -p 4 -race -cover -coverprofile test-output/coverage.out -v \
+	 CGO_ENABLED=1 GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 go test -p 4 -race -cover -coverprofile test-output/coverage.out -v \
 		$(shell git ls-files -- '*_test.go' | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list| grep -v '^github.com/stackrox/rox/tests$$') \
 		| tee test-output/test.log
 

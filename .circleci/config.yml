@@ -438,7 +438,7 @@ updateTestRail: &updateTestRail
   run:
     name: Update test results in TestRail
     command: |
-      if [[ -z "${CIRCLE_TAG}" ]] || [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+      if [[ -z "${CIRCLE_TAG}" ]] || .circleci/is-nightly-tag.sh; then
         echo "Only run TestRail updater on tagged release/RC builds... skipping."
         exit 0
       fi
@@ -1395,6 +1395,11 @@ commands:
       - run:
           name: Deploy central to remote cluster
           command: |
+            # If we're running a race check, then set CGO_CHECK=true so the central script will deploy it with strict checks
+            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+                cci-export CGO_CHECKS "true"
+            fi
+
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
             "${deploy_dir}/central.sh"
 
@@ -1553,7 +1558,7 @@ jobs:
       - run:
           name: Send Slack notification with Workflow link
           command: |
-            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+            if .circleci/is-nightly-tag.sh ; then
               webhook_url="$NIGHTLY_WORKFLOW_NOTIFY_WEBHOOK"
             elif [[ "$CIRCLE_TAG" =~ ^[[:digit:]]+(\.[[:digit:]]+)*(-rc.[[:digit:]]+)?$ ]]; then
               webhook_url="$RELEASE_WORKFLOW_NOTIFY_WEBHOOK"
@@ -1952,25 +1957,19 @@ jobs:
             make ossls-notice
 
       - run:
-          name: If nightly build OR ci-race-tests is set, overwrite all non-race binaries with the ones built with race
-          command: |
-            if [[ "${CIRCLE_TAG}" =~ ^nightly ]] || .circleci/pr_has_label.sh ci-race-tests; then
-              # build race images and then overwrite
-              RACE=true make main-build
-              for file in bin/linux/*-race; do
-                overwrite="${file%-race}"
-                cp "${file}" "${overwrite}"
-              done
-            fi
-
-      - run:
           name: Log in to Docker Hub to pull the docs image
           command: |
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD" docker.io
 
       - run:
           name: Build main image for RHEL which includes building the binaries because they need to be built specifically for RHEL
-          command: make main-image-rhel
+          command: |
+            if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
+              # build race images and then overwrite
+              RACE=true make main-image-rhel
+            else
+              make main-image-rhel
+            fi
 
       - run:
           name: Push new image
