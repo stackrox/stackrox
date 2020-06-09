@@ -363,6 +363,16 @@ func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storag
 	s.ElementsMatch(expectedScopes, response.GetPolicy().GetScope())
 }
 
+func (s *PolicyServiceTestSuite) testMalformedScope(query string) {
+	ctx := context.Background()
+	request := &v1.PolicyFromSearchRequest{
+		SearchParams: query,
+	}
+	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(gomock.Any()).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).AnyTimes()
+	_, err := s.tested.PolicyFromSearch(ctx, request)
+	s.Error(err)
+}
+
 func (s *PolicyServiceTestSuite) testLifecycles(query string, expectedLifecycles ...storage.LifecycleStage) {
 	ctx := context.Background()
 	request := &v1.PolicyFromSearchRequest{
@@ -389,6 +399,62 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
 	s.ElementsMatch(expectedPolicyGroups, policyGroups)
+
+	// These tests do not explicitly expect scopes so we should ensure that there are not scopes
+	s.Nil(response.GetPolicy().GetScope())
+}
+
+func (s *PolicyServiceTestSuite) TestMalformedScopes() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	queryString := "Label:"
+	s.testMalformedScope(queryString)
+
+	queryString = "Cluster:"
+	s.testMalformedScope(queryString)
+
+	queryString = "Namespace:"
+	s.testMalformedScope(queryString)
+}
+
+func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	expectedScope := &storage.Scope{
+		Namespace: "blah",
+	}
+	queryString := "Label:+Namespace:blah"
+	s.testScopes(queryString, nil, expectedScope)
+}
+
+func (s *PolicyServiceTestSuite) TestScopeWithMalformedNamespace() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	expectedScope := &storage.Scope{
+		Label: &storage.Scope_Label{
+			Key:   "blah",
+			Value: "blah",
+		},
+	}
+	queryString := "Label:blah=blah+Namespace:"
+	s.testScopes(queryString, nil, expectedScope)
+}
+
+func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	expectedScope := &storage.Scope{
+		Label: &storage.Scope_Label{
+			Key:   "blah",
+			Value: "blah",
+		},
+	}
+	queryString := "Label:blah=blah+Cluster:"
+	s.testScopes(queryString, nil, expectedScope)
 }
 
 func (s *PolicyServiceTestSuite) TestScope() {
@@ -536,6 +602,27 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyLabel() {
 	}
 	queryString := "Label:Joseph=Rules"
 	s.testScopes(queryString, nil, expectedScope)
+}
+
+func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	expectedScopes := []*storage.Scope{
+		{
+			Label: &storage.Scope_Label{
+				Key: "Joseph",
+			},
+		},
+		{
+			Label: &storage.Scope_Label{
+				Key:   "a",
+				Value: "b=c",
+			},
+		},
+	}
+	queryString := "Label:Joseph,a=b=c"
+	s.testScopes(queryString, nil, expectedScopes...)
 }
 
 func (s *PolicyServiceTestSuite) TestScopeClusterNamespace() {
@@ -709,6 +796,19 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
 	s.ElementsMatch(expectedPolicyGroup, policyGroups)
+}
+
+func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	ctx := context.Background()
+	request := &v1.PolicyFromSearchRequest{
+		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Label:+NotASearchTerm:jkjksdr",
+	}
+	_, err := s.tested.PolicyFromSearch(ctx, request)
+	s.Error(err)
+	s.Contains(err.Error(), "no valid policy groups or scopes")
 }
 
 func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {

@@ -41,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -941,12 +942,12 @@ func (s *serviceImpl) makeScopes(ctx context.Context, fieldMap map[search.FieldL
 	// For each combination of label, cluster, and namespace create a Scope
 	var scopes []*storage.Scope
 	for _, label := range labels {
+		labelKey, labelValue := stringutils.Split2(label, "=")
 		var labelObject *storage.Scope_Label
-		labelParts := strings.Split(label, "=")
-		if len(labelParts) == 2 {
+		if labelKey != "" || labelValue != "" {
 			labelObject = &storage.Scope_Label{
-				Key:   labelParts[0],
-				Value: labelParts[1],
+				Key:   labelKey,
+				Value: labelValue,
 			}
 		}
 		for _, clusterID := range clusterIDs {
