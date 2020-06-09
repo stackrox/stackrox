@@ -400,7 +400,7 @@ func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCateg
 		var resultsFromCategory []*v1.SearchResult
 		resultsFromCategory, err = searchFunc(ctx, parsedRequest)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("error searching for %s: %v", category, err)
 			err = status.Error(codes.Internal, err.Error())
 			return
 		}

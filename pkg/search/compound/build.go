@@ -50,7 +50,7 @@ func buildMultiSpec(q *v1.Query, specs []SearcherSpec) (*searchRequestSpec, erro
 	if err != nil {
 		return nil, err
 	} else if spec == nil {
-		return nil, errors.New("no matchable fields found")
+		return nil, nil
 	}
 	return spec, nil
 }

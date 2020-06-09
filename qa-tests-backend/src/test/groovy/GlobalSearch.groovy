@@ -89,6 +89,10 @@ class GlobalSearch extends BaseSpecification {
         "Deployment:qaglobalsearch" | [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
                                        SearchServiceOuterClass.SearchCategory.ALERTS] | "" | []
 
+        // Test options that do not apply to deployments and images, but are global in nature
+        "Policy:Latest tag" | [] | "Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES,
+                                                   SearchServiceOuterClass.SearchCategory.ALERTS]
+
         // The following two tests make sure that global search gives you all categories
         // when you don't specify a category.
         "Deployment:qaglobalsearch" | [] | "" |

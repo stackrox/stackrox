@@ -57,6 +57,12 @@ func (cs *compoundSearcherImpl) Search(ctx context.Context, q *v1.Query) ([]sear
 		return nil, err
 	}
 
+	// both req and err will be nil if there is an unhandled option trying to be searched
+	// e.g. Policy on deployments or images
+	if req == nil {
+		return nil, nil
+	}
+
 	// Optimize the tree by combining subtrees that reference the same searcher specification.
 	condensed, err := condense(req)
 	if err != nil {
