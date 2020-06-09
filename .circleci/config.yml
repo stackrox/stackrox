@@ -2295,6 +2295,7 @@ jobs:
       - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
       - ROX_EVENT_TIMELINE_UI: true
+      - ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI: true
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
@@ -3145,7 +3146,7 @@ jobs:
       - get-and-store-debug-dump
       - *storeK8sLogs
       - *storeQALogs
-      
+
       - teardown-gke
 
   gke-api-scale-tests:
