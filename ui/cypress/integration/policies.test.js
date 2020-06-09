@@ -663,6 +663,12 @@ describe('Policies page', () => {
                 .trigger('mouseup', { which: 1 });
         };
 
+        const clickPolicyKeyGroup = (categoryName) => {
+            cy.get(
+                `${selectors.booleanPolicySection.policyKeyGroup}:contains(${categoryName}) ${selectors.booleanPolicySection.collapsibleBtn}`
+            ).click();
+        };
+
         describe('Single Policy Field Card', () => {
             beforeEach(() => {
                 addPolicy();
@@ -678,6 +684,8 @@ describe('Policies page', () => {
             });
 
             it('should allow floats for CPU and CVSS configuration fields', () => {
+                // unfurl Container Configuration policy key group
+                clickPolicyKeyGroup('Container Configuration');
                 // first, select a CPU field
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("Container CPU Request")`
@@ -689,6 +697,8 @@ describe('Policies page', () => {
                 ).click();
                 cy.get(selectors.booleanPolicySection.form.numericInput).click().type(2.2);
 
+                // unfurl Image Contents policy field key group
+                clickPolicyKeyGroup('Image Contents');
                 // second, select CVSS field
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("CVSS")`
@@ -742,6 +752,8 @@ describe('Policies page', () => {
                 });
                 editPolicy();
 
+                // unfurl Image Contents Policy Key Group
+                clickPolicyKeyGroup('Image Contents');
                 // first, drag in an image scan age field
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("Image Scan Age")`
@@ -770,6 +782,8 @@ describe('Policies page', () => {
             });
 
             it('should not allow multiple Policy Field Values for boolean Policy Fields', () => {
+                // unfurl Container Configuration policy key group
+                clickPolicyKeyGroup('Container Configuration');
                 // to mock BPL policy here, but for now
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("Root")`
@@ -861,6 +875,8 @@ describe('Policies page', () => {
             it('should be disabled if the Policy Field cannot be ANDed', () => {
                 addPolicy();
                 addPolicySection();
+                // unfurl Image Contents policy key group
+                clickPolicyKeyGroup('Image Contents');
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
                 );
@@ -891,6 +907,8 @@ describe('Policies page', () => {
             it('should not exist if the Policy Field cannot be negated', () => {
                 addPolicy();
                 addPolicySection();
+                // unfurl Image Contents policy key group
+                clickPolicyKeyGroup('Image Contents');
                 dragFieldIntoSection(
                     `${selectors.booleanPolicySection.policyKey}:contains("Image Age")`
                 );
@@ -913,12 +931,21 @@ describe('Policies page', () => {
                 addPolicy();
                 cy.get(`${selectors.booleanPolicySection.policyKey}:first`)
                     .scrollIntoView()
-                    .should('be.visible', 'Image Registry');
+                    .should('be.visible');
                 cy.get(`${selectors.booleanPolicySection.policyKeyGroupBtn}:first`).click();
                 cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`).should(
                     'have.class',
                     'overflow-hidden'
                 );
+            });
+            it('should have categories collapsed by default if not first group', () => {
+                addPolicy();
+                cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:first`)
+                    .scrollIntoView()
+                    .should('be.visible');
+                cy.get(`${selectors.booleanPolicySection.policyKeyGroupContent}:last`)
+                    .scrollIntoView()
+                    .should('have.class', 'overflow-hidden');
             });
         });
 

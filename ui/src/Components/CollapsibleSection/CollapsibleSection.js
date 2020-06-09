@@ -18,7 +18,7 @@ const Content = posed.div({
     open: {
         height: 'auto',
         transition: {
-            duration: 0,
+            duration: 100,
         },
         flip: true,
     },
@@ -31,8 +31,9 @@ const CollapsibleSection = ({
     headerClassName,
     titleClassName,
     dataTestId,
+    defaultOpen,
 }) => {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState(defaultOpen);
 
     function toggleOpen() {
         setOpen(!open);
@@ -75,6 +76,7 @@ CollapsibleSection.propTypes = {
     headerComponents: PropTypes.element,
     titleClassName: PropTypes.string,
     dataTestId: PropTypes.string,
+    defaultOpen: PropTypes.bool,
 };
 
 CollapsibleSection.defaultProps = {
@@ -82,6 +84,7 @@ CollapsibleSection.defaultProps = {
     headerComponents: null,
     titleClassName: 'p-4 text-xl',
     dataTestId: null,
+    defaultOpen: true,
 };
 
 export default CollapsibleSection;

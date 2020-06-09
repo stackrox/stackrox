@@ -19,13 +19,14 @@ function PolicyBuilderKeys({ keys, className }) {
             <div className="-ml-6 -mr-3 bg-primary-500 mb-2 p-2 rounded-bl rounded-tl text-base-100">
                 Drag out a policy field
             </div>
-            {Object.keys(categories).map((categoryName) => (
+            {Object.keys(categories).map((categoryName, idx) => (
                 <CollapsibleSection
                     title={categoryName}
                     key={categoryName}
                     headerClassName="py-1"
                     titleClassName="w-full"
                     dataTestId="policy-key-group"
+                    defaultOpen={idx === 0}
                 >
                     {categories[categoryName].map((key) => {
                         return <PolicyBuilderKey key={key.name} fieldKey={key} />;

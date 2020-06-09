@@ -117,6 +117,8 @@ export const selectors = {
         },
         removePolicySectionBtn: '[data-testid="remove-policy-section-btn"]',
         policyKey: '[data-testid="draggable-policy-key"]',
+        policyKeyGroup: '[data-testid="policy-key-group"]',
+        collapsibleBtn: '[data-testid="collapsible-btn"]',
         policyKeyGroupBtn: '[data-testid="policy-key-group"] [data-testid="collapsible-btn"]',
         policyKeyGroupContent:
             '[data-testid="policy-key-group"] [data-testid="collapsible-content"]',
