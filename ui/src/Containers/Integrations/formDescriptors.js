@@ -631,6 +631,12 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: '',
             },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'docker.insecure',
+                type: 'toggle',
+                placeholder: '',
+            },
             skipTestIntegration,
         ],
         quay: [
@@ -867,6 +873,7 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: '',
             },
+            // No 'docker.insecure' toggle because always hosted externally.
             skipTestIntegration,
         ],
         anchore: [
@@ -961,6 +968,7 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: '',
             },
+            // No 'docker.insecure' toggle because always hosted externally.
             skipTestIntegration,
         ],
     },
