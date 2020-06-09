@@ -79,6 +79,8 @@ export const selectors = {
         searchModifier: '.react-select__multi-value__label:first',
         searchWord: '.react-select__multi-value__label:eq(1)',
     },
+    createPolicyButton:
+        '[data-testid="panel-button-create-policy-from-search"]:contains("Create Policy")',
     mounts: {
         label: 'div:contains("Mounts"):last',
         items: 'div:contains("Mounts"):last + ul li div',
