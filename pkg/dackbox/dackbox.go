@@ -152,17 +152,21 @@ func (rc *DackBox) readerAt(at uint64) graph.RemoteReadable {
 	}
 }
 
-func (rc *DackBox) discard(openedAt uint64, txn transactions.DBTransaction) {
+func (rc *DackBox) discardAsync(openedAt uint64, txn transactions.DBTransaction) {
+	// Discard the disk changes.
+	if txn != nil {
+		txn.Discard()
+	}
+
 	rc.lock.Lock()
 	defer rc.lock.Unlock()
 
 	// Release the held history no matter what.
 	rc.history.Release(openedAt)
+}
 
-	// Discard the disk changes.
-	if txn != nil {
-		txn.Discard()
-	}
+func (rc *DackBox) discard(openedAt uint64, txn transactions.DBTransaction) {
+	go rc.discardAsync(openedAt, txn)
 }
 
 func (rc *DackBox) commit(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyMap map[string]proto.Message) error {
