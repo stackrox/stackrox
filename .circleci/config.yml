@@ -2694,6 +2694,7 @@ jobs:
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_BOOLEAN_POLICY_LOGIC: true
       - ROX_AUTH_TEST_MODE_UI: true
+      - ROX_ROCKSDB: true
 
     steps:
       - run-qa-tests:
