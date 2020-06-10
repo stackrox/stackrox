@@ -40,14 +40,14 @@ class CVETest extends BaseSpecification {
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName(CVE_DEPLOYMENT_NAME)
-            .setImage("docker.io/library/nginx:1.11")
+            .setImage("docker.io/library/nginx:1.9") // Use 1.9 to avoid naming conflict with us.gcr.io/nginx:1.11
             .addLabel("app", "test")
 
     def setupSpec() {
         ImageIntegrationService.addStackroxScannerIntegration()
 
+        ImageService.scanImage("docker.io/library/nginx:1.9")
         ImageService.scanImage("docker.io/library/nginx:1.10")
-        ImageService.scanImage("docker.io/library/nginx:1.11")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
@@ -116,7 +116,7 @@ class CVETest extends BaseSpecification {
         assert foundCVE.envImpact > 0
         // Use ranges so any new image doesn't break it
         assert foundCVE.deploymentCount > 0 && foundCVE.deploymentCount < 10
-        assert foundCVE.imageCount > 0 && foundCVE.imageCount < 15
+        assert foundCVE.imageCount > 0 && foundCVE.imageCount < 20
         assert foundCVE.componentCount > 0 && foundCVE.componentCount < 10
         assert foundCVE.summary != ""
 
@@ -124,8 +124,9 @@ class CVETest extends BaseSpecification {
         "data inputs"
 
         query                                                                  | cve
-        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.11+CVE:CVE-2005-2541" | "CVE-2005-2541"
+        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.9+CVE:CVE-2005-2541"  | "CVE-2005-2541"
         "Label:name=cve-deployment+CVE:CVE-2005-2541"                          | "CVE-2005-2541"
+        "Image:nginx:1.9+CVE:CVE-2005-2541"                                    | "CVE-2005-2541"
         "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541"
         "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541"
         "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541"
