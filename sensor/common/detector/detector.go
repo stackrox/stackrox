@@ -323,7 +323,10 @@ func (d *detectorImpl) processIndicator(pi *storage.ProcessIndicator) {
 
 	// Run detection now
 	alerts := d.unifiedDetector.DetectProcess(deployment, images, pi, d.whitelistEval.IsOutsideLockedWhitelist(pi))
-
+	if len(alerts) == 0 {
+		// No need to process runtime alerts that have no violations
+		return
+	}
 	alertResults := &central.AlertResults{
 		DeploymentId: pi.GetDeploymentId(),
 		Alerts:       alerts,
