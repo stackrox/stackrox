@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import getGroupedEvents from './getGroupedEvents';
-import EventMarker from './EventMarker';
-import ClusteredEventMarker from './ClusteredEventMarker';
+import GroupedEvents from './GroupedEvents';
 
 const EventsRow = ({
     entityName,
@@ -18,24 +16,10 @@ const EventsRow = ({
     margin,
     isZooming,
 }) => {
-    const eventMarkerSize = Math.max(0, height / 3);
-    const clusteredEventMarkerSize = Math.max(0, height / 2);
-    const eventMarkerOffsetY = Math.max(0, height / 2);
-
+    // filter events to only show those in the viewable window
     const eventsWithinView = events.filter(({ differenceInMilliseconds }) => {
         return differenceInMilliseconds >= minTimeRange && differenceInMilliseconds <= maxTimeRange;
     });
-
-    const groupedEvents = isZooming
-        ? []
-        : getGroupedEvents({
-              events: eventsWithinView,
-              minDomain: minTimeRange,
-              maxDomain: maxTimeRange,
-              minRange: margin,
-              maxRange: Math.max(margin, width - margin),
-              partitionSize: clusteredEventMarkerSize,
-          });
 
     return (
         <g
@@ -51,63 +35,16 @@ const EventsRow = ({
                 height={height}
                 width={width}
             />
-            {groupedEvents.map((group) => {
-                const {
-                    differenceInMilliseconds: groupedDifferenceInMilliseconds,
-                    events: eventsFromGroup,
-                } = group;
-                // if there is more than one event in the group, we will render a clustered event
-                if (eventsFromGroup.length > 1) {
-                    return (
-                        <ClusteredEventMarker
-                            key={groupedDifferenceInMilliseconds}
-                            events={eventsFromGroup}
-                            differenceInMilliseconds={groupedDifferenceInMilliseconds}
-                            translateX={translateX}
-                            translateY={eventMarkerOffsetY}
-                            size={clusteredEventMarkerSize}
-                            minTimeRange={minTimeRange}
-                            maxTimeRange={maxTimeRange}
-                            margin={margin}
-                        />
-                    );
-                }
-                return eventsFromGroup.map(
-                    ({
-                        id,
-                        type,
-                        name,
-                        args,
-                        uid,
-                        parentName,
-                        parentUid,
-                        reason,
-                        whitelisted,
-                        differenceInMilliseconds,
-                        timestamp,
-                    }) => (
-                        <EventMarker
-                            key={id}
-                            name={name}
-                            args={args}
-                            uid={uid}
-                            parentName={parentName}
-                            parentUid={parentUid}
-                            reason={reason}
-                            type={type}
-                            timestamp={timestamp}
-                            whitelisted={whitelisted}
-                            differenceInMilliseconds={differenceInMilliseconds}
-                            translateX={translateX}
-                            translateY={eventMarkerOffsetY}
-                            size={eventMarkerSize}
-                            minTimeRange={minTimeRange}
-                            maxTimeRange={maxTimeRange}
-                            margin={margin}
-                        />
-                    )
-                );
-            })}
+            <GroupedEvents
+                events={eventsWithinView}
+                height={height}
+                width={width}
+                translateX={translateX}
+                minTimeRange={minTimeRange}
+                maxTimeRange={maxTimeRange}
+                margin={margin}
+                isZooming={isZooming}
+            />
         </g>
     );
 };
