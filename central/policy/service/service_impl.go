@@ -1064,7 +1064,7 @@ func combineStrings(toCombine [][]string) []string {
 	for i := 0; i < maxIterations; i++ {
 		combination := ""
 		for i := 0; i < len(indices); i++ {
-			if combination != "" {
+			if i > 0 {
 				combination = combination + "="
 			}
 			combination = combination + toCombine[i][indices[i]]

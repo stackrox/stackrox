@@ -55,8 +55,8 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "Environment Variable",
-			valid:   []string{"CONFIG_MAP_KEY=ENV=a", "SECRET_KEY=a=1", "UNSET=ENV=a", "SECRET_KEY=e0=.", "SECRET_KEY=a==", "SECRET_KEY=="},
-			invalid: []string{"", "a=", "a=b", "=", "==", "===", "=1", "=ENV=a", "SECRET_KEY", "a=ENV=a", "a=="},
+			valid:   []string{"CONFIG_MAP_KEY=ENV=a", "SECRET_KEY=a=1", "UNSET=ENV=a", "SECRET_KEY=e0=.", "SECRET_KEY=a==", "SECRET_KEY==", "=ENV=a", "==", "==="},
+			invalid: []string{"", "a=", "a=b", "=", "=1", "SECRET_KEY", "a=ENV=a", "a=="},
 			r:       environmentVariableWithSourceRegex,
 		},
 		{

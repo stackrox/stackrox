@@ -820,16 +820,16 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 			FieldName: fieldnames.EnvironmentVariable,
 			Values: []*storage.PolicyValue{
 				{
-					Value: "z=x=v",
+					Value: "v=z=x",
 				},
 				{
-					Value: "z=w=v",
+					Value: "v=z=w",
 				},
 				{
-					Value: "y=x=v",
+					Value: "v=y=x",
 				},
 				{
-					Value: "y=w=v",
+					Value: "v=y=w",
 				},
 			},
 		},
@@ -856,4 +856,32 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 	s.Empty(response.GetAlteredSearchTerms())
 	s.Len(response.GetPolicy().GetPolicySections(), 1)
 	s.ElementsMatch(expectedPolicyGroups, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+}
+
+func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
+	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	expectedPolicyGroup := []*storage.PolicyGroup{
+		{
+			FieldName: fieldnames.EnvironmentVariable,
+			Values: []*storage.PolicyValue{
+				{
+					Value: "=z=",
+				},
+			},
+		},
+	}
+
+	ctx := context.Background()
+	request := &v1.PolicyFromSearchRequest{
+		SearchParams: "Environment Key:z",
+	}
+	response, err := s.tested.PolicyFromSearch(ctx, request)
+	s.NoError(err)
+	s.False(response.GetHasNestedFields())
+	s.Empty(response.GetAlteredSearchTerms())
+	s.ElementsMatch(expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+	s.ElementsMatch(expectedLifecycleStages, response.GetPolicy().GetLifecycleStages())
 }

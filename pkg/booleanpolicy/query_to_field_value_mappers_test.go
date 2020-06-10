@@ -82,7 +82,7 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentKey() {
 		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
-				Value: "abc==",
+				Value: "=abc=",
 			},
 		},
 	}
@@ -95,7 +95,7 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentValue() {
 		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
-				Value: "=abc=",
+				Value: "==abc",
 			},
 		},
 	}
@@ -108,7 +108,7 @@ func (s *SearchMapperTestSuite) TestConvertEnvironmentVarSrc() {
 		FieldName: fieldnames.EnvironmentVariable,
 		Values: []*storage.PolicyValue{
 			{
-				Value: "==abc",
+				Value: "abc==",
 			},
 		},
 	}

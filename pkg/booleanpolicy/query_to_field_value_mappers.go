@@ -92,7 +92,7 @@ func envKeyCompoundMap(searchTerms []string) ([]string, bool) {
 	// Environment Variable Key should be mapped to the left side of a three-part compound policy field value
 	mapped := make([]string, len(searchTerms))
 	for i, term := range searchTerms {
-		mapped[i] = term + "=="
+		mapped[i] = "=" + term + "="
 	}
 	return mapped, false
 }
@@ -101,7 +101,7 @@ func envValCompoundMap(searchTerms []string) ([]string, bool) {
 	// Environment Variable Value should be mapped to the middle of a three-part compound policy field value
 	mapped := make([]string, len(searchTerms))
 	for i, term := range searchTerms {
-		mapped[i] = "=" + term + "="
+		mapped[i] = "==" + term
 	}
 	return mapped, false
 }
@@ -110,7 +110,7 @@ func envSrcCompoundMap(searchTerms []string) ([]string, bool) {
 	// Environment Variable Source should be mapped to the right side of a three-part compound policy field value
 	mapped := make([]string, len(searchTerms))
 	for i, term := range searchTerms {
-		mapped[i] = "==" + term
+		mapped[i] = term + "=="
 	}
 	return mapped, false
 }
