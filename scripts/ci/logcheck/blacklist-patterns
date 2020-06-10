@@ -10,3 +10,4 @@ fatal
 critical
 data race
 should (not|never) happen
+OMITTED.*LOG LINES DUE TO THROTTLING

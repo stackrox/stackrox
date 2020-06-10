@@ -600,15 +600,18 @@ func (l *Logger) GetLogLevel() string {
 }
 
 func (l *Logger) log(level int32, args ...interface{}) {
-	if l.LogLevel() <= level {
-		_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprint(args...)+l.fields.String())
+	if l.LogLevel() > level || !checkLogLineQuota(l.internal) {
+		return
 	}
+
+	_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprint(args...)+l.fields.String())
 }
 
 func (l *Logger) logf(level int32, format string, args ...interface{}) {
-	if l.LogLevel() <= level {
-		_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprintf(format, args...)+l.fields.String())
+	if l.LogLevel() > level || !checkLogLineQuota(l.internal) {
+		return
 	}
+	_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprintf(format, args...)+l.fields.String())
 }
 
 //Trace provide super low level detail
@@ -697,11 +700,17 @@ func (l *Logger) Panicf(format string, args ...interface{}) {
 
 //Log logs the message regardless of loglevel
 func (l *Logger) Log(args ...interface{}) {
+	if !checkLogLineQuota(l.internal) {
+		return
+	}
 	_ = l.internal.Output(l.stackTraceLevel, fmt.Sprint(args...)+l.fields.String())
 }
 
 //Logf logs the message regardless of loglevel
 func (l *Logger) Logf(format string, args ...interface{}) {
+	if !checkLogLineQuota(l.internal) {
+		return
+	}
 	_ = l.internal.Output(l.stackTraceLevel, fmt.Sprintf(format, args...)+l.fields.String())
 }
 

@@ -20,6 +20,8 @@ import (
 
 const (
 	timeout = 30 * time.Second
+
+	logInterval = 5 * time.Second
 )
 
 var (
@@ -147,17 +149,16 @@ func getContainers(c *client.Client) ([]internalTypes.ContainerJSON, error) {
 	}
 
 	log.Infof("Listed %d containers", len(containerList))
-	segmentSize := len(containerList) / 10
-	if segmentSize == 0 {
-		segmentSize = 1
-	}
+
+	lastLogTS := time.Now()
 	containers := make([]internalTypes.ContainerJSON, 0, len(containerList))
 	for i, container := range containerList {
 		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
 			return nil, err
 		}
-		if i != 0 && i%segmentSize == 0 {
+		if time.Since(lastLogTS) >= logInterval {
 			log.Infof("Processed %d/%d containers", i, len(containerList))
+			lastLogTS = time.Now()
 		}
 		if containerMatchesWhitelist(container) {
 			continue
@@ -198,15 +199,13 @@ func getImages(c *client.Client) ([]internalTypes.ImageWrap, error) {
 	}
 
 	log.Infof("Listed %d images", len(imageList))
-	segmentSize := len(imageList) / 10
-	if segmentSize == 0 {
-		segmentSize = 1
-	}
+	lastLogTS := time.Now()
 
 	images := make([]internalTypes.ImageWrap, 0, len(imageList))
 	for i, img := range imageList {
-		if i != 0 && i%segmentSize == 0 {
-			log.Infof("Processed %d/%d containers", i, len(imageList))
+		if time.Since(lastLogTS) >= logInterval {
+			log.Infof("Processed %d/%d images", i, len(imageList))
+			lastLogTS = time.Now()
 		}
 		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
 			return nil, err
