@@ -293,7 +293,7 @@ func (w *WorkloadManager) manageDeployment(resources *deploymentResourcesToBeMan
 
 	// The previous function returning means that the deployments, replicaset and pods were all deleted
 	// Now we recreate the objects again
-	for count := 0; resources.workload.NumLifecycles != 0 && count < resources.workload.NumLifecycles; count++ {
+	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
 		resources = w.getDeployment(resources.workload)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(deployment); err != nil {

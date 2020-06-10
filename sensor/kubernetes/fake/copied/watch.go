@@ -18,9 +18,7 @@ package fake
 
 import (
 	"errors"
-	"fmt"
 	"sync"
-	"sync/atomic"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
@@ -30,10 +28,6 @@ import (
 const (
 	// DefaultChanSize is the maximum size number of items in the channel before panic
 	DefaultChanSize int32 = 100000
-)
-
-var (
-	events int32
 )
 
 // RaceFreeFakeWatcher lets you test anything that consumes a watch.Interface; threadsafe.
@@ -90,18 +84,10 @@ func (f *RaceFreeFakeWatcher) Add(obj runtime.Object) {
 	if !f.Stopped {
 		select {
 		case f.result <- watch.Event{Type: watch.Added, Object: obj}:
-			f.printChanSize()
 			return
 		default:
 			panic(errors.New("channel full"))
 		}
-	}
-}
-
-func (f *RaceFreeFakeWatcher) printChanSize() {
-	prev := atomic.AddInt32(&events, 1)
-	if prev%100 == 0 && prev != 0 {
-		fmt.Println("Current chan size is", len(f.result))
 	}
 }
 
@@ -112,7 +98,6 @@ func (f *RaceFreeFakeWatcher) Modify(obj runtime.Object) {
 	if !f.Stopped {
 		select {
 		case f.result <- watch.Event{Type: watch.Modified, Object: obj}:
-			f.printChanSize()
 			return
 		default:
 			panic(errors.New("channel full"))
@@ -127,7 +112,6 @@ func (f *RaceFreeFakeWatcher) Delete(lastValue runtime.Object) {
 	if !f.Stopped {
 		select {
 		case f.result <- watch.Event{Type: watch.Deleted, Object: lastValue}:
-			f.printChanSize()
 			return
 		default:
 			panic(errors.New("channel full"))
@@ -142,7 +126,6 @@ func (f *RaceFreeFakeWatcher) Error(errValue runtime.Object) {
 	if !f.Stopped {
 		select {
 		case f.result <- watch.Event{Type: watch.Error, Object: errValue}:
-			f.printChanSize()
 			return
 		default:
 			panic(errors.New("channel full"))
@@ -157,7 +140,6 @@ func (f *RaceFreeFakeWatcher) Action(action watch.EventType, obj runtime.Object)
 	if !f.Stopped {
 		select {
 		case f.result <- watch.Event{Type: action, Object: obj}:
-			f.printChanSize()
 			return
 		default:
 			panic(errors.New("channel full"))
