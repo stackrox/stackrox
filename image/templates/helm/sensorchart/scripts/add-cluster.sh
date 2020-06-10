@@ -60,8 +60,8 @@ fi
  cluster=$(jq -r -n \
   --arg cn "${cluster_name}"  \
   --arg ct "${cluster_type}"  \
-  --arg mr "${image_repository_main}" \
-  --arg cr "${image_repository_collector}" \
+  --arg mimage "${image_registry_main}/${image_repository_main}" \
+  --arg cimage "${image_registry_collector}/${image_repository_collector}" \
   --arg ce "${endpoint_central}" \
   --argjson rs "${runtimeSupport}" \
   --arg cm "${config_collectionMethod}" \
@@ -75,7 +75,7 @@ fi
   --argjson db "${config_admissionControl_disableBypass}" \
   --arg ro "${config_registryOverride}" \
   --argjson td "${config_disableTaintTolerations}" \
-  '{"cluster": { "name": $cn, "type": $ct, "mainImage": $mr, "collectorImage": $cr,
+  '{"cluster": { "name": $cn, "type": $ct, "mainImage": $mimage, "collectorImage": $cimage,
   "centralApiEndpoint": $ce, "runtimeSupport": $rs, "collectionMethod": $cm, "admissionController": $ac,
   "admissionControllerUpdates": $acu, "dynamicConfig": { "admissionControllerConfig": { "enabled": $aes,
   "timeoutSeconds": $to, "scanInline": $si, "enforceOnUpdates": $aeu,
