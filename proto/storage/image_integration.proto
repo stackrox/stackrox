@@ -52,8 +52,8 @@ message ClairifyConfig {
 }
 
 message DockerConfig {
-    string endpoint = 1;
-    string username = 2;
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     bool insecure   = 4;
 }

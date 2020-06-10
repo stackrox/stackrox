@@ -64,7 +64,7 @@ func requestToAny(req interface{}) *types.Any {
 
 	// Must clone before potentially modifying it
 	msg = proto.Clone(msg)
-	secrets.ScrubSecretsFromStruct(msg)
+	secrets.ScrubSecretsFromStructWithReplacement(msg, "")
 	any, err := protoutils.MarshalAny(msg)
 	if err != nil {
 		return nil

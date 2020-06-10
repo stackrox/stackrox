@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,7 +93,7 @@ func TestValidateIntegration(t *testing.T) {
 			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
 				Endpoint: "endpoint",
 				Username: "username",
-				Password: "password",
+				Password: "",
 			}},
 			SkipTestIntegration: true,
 		},
@@ -105,7 +106,7 @@ func TestValidateIntegration(t *testing.T) {
 		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
 			Endpoint: "endpoint",
 			Username: "username",
-			Password: "******",
+			Password: secrets.ScrubReplacementStr,
 		}},
 		SkipTestIntegration: true,
 	}, true, nil).AnyTimes()
@@ -117,7 +118,7 @@ func TestValidateIntegration(t *testing.T) {
 		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
 			Endpoint: "endpoint",
 			Username: "username",
-			Password: "******",
+			Password: secrets.ScrubReplacementStr,
 		}},
 		SkipTestIntegration: true,
 	}
@@ -137,9 +138,9 @@ func TestValidateIntegration(t *testing.T) {
 	})
 	assert.Equal(t, storedConfig, maskedIntegrationConfig)
 	assert.NoError(t, err)
-	err = s.pullDataFromStoredConfig(requestWithADockerConfig.GetConfig(), tempConfig)
+	err = s.reconcileImageIntegrationUpdate(requestWithADockerConfig.GetConfig(), tempConfig)
 	// Ensure successfully pulled credentials from storedConfig
-	assert.Equal(t, requestWithADockerConfig.GetConfig().GetDocker(), tempConfig.GetDocker())
+	assert.Equal(t, tempConfig.GetDocker(), requestWithADockerConfig.GetConfig().GetDocker())
 	assert.NoError(t, err)
 
 	//Test case: config request with a different endpoint
@@ -163,7 +164,7 @@ func TestValidateIntegration(t *testing.T) {
 		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
 			Endpoint: "endpointDiff",
 			Username: "username",
-			Password: "******",
+			Password: secrets.ScrubReplacementStr,
 		}},
 		SkipTestIntegration: true,
 	}, true, nil).AnyTimes()
@@ -172,9 +173,9 @@ func TestValidateIntegration(t *testing.T) {
 		Id: requestWithDifferentEndpoint.GetConfig().GetId(),
 	})
 	assert.NoError(t, err)
-	err = s.pullDataFromStoredConfig(requestWithDifferentEndpoint.GetConfig(), storedConfig)
+	err = s.reconcileImageIntegrationUpdate(requestWithDifferentEndpoint.GetConfig(), storedConfig)
 	assert.Error(t, err)
-	assert.EqualErrorf(t, err, "must explicitly set password when changing username/endpoint", "formatted")
+	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Endpoint'")
 
 	//Test case: config request with a different username
 	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
@@ -197,7 +198,7 @@ func TestValidateIntegration(t *testing.T) {
 		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
 			Endpoint: "endpoint",
 			Username: "usernameDiff",
-			Password: "******",
+			Password: secrets.ScrubReplacementStr,
 		}},
 		SkipTestIntegration: true,
 	}, true, nil).AnyTimes()
@@ -206,7 +207,7 @@ func TestValidateIntegration(t *testing.T) {
 		Id: requestWithDifferentUsername.GetConfig().GetId(),
 	})
 	assert.NoError(t, err)
-	err = s.pullDataFromStoredConfig(requestWithDifferentUsername.GetConfig(), storedConfig)
+	err = s.reconcileImageIntegrationUpdate(requestWithDifferentUsername.GetConfig(), storedConfig)
 	assert.Error(t, err)
-	assert.EqualErrorf(t, err, "must explicitly set password when changing username/endpoint", "formatted")
+	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Username'")
 }

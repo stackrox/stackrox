@@ -72,7 +72,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func scrubImageIntegration(i *storage.ImageIntegration) {
-	secrets.ScrubSecretsFromStructWithReplacement(i, secrets.ReplacementStr)
+	secrets.ScrubSecretsFromStructWithReplacement(i, secrets.ScrubReplacementStr)
 }
 
 // GetImageIntegration retrieves the integration based on the id passed
@@ -217,7 +217,7 @@ func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.Up
 			return nil, status.Errorf(codes.NotFound, "Image integration %s not found", request.GetConfig().GetId())
 		}
 
-		if err := s.pullDataFromStoredConfig(request.Config, integration); err != nil {
+		if err := s.reconcileImageIntegrationUpdate(request.Config, integration); err != nil {
 			return nil, err
 		}
 	}
@@ -240,7 +240,7 @@ func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *
 			return nil, status.Errorf(codes.NotFound, "Image integration %s not found", request.GetConfig().GetId())
 		}
 
-		if err := s.pullDataFromStoredConfig(request.Config, integration); err != nil {
+		if err := s.reconcileImageIntegrationUpdate(request.Config, integration); err != nil {
 			return nil, err
 		}
 	}
@@ -330,16 +330,13 @@ func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bo
 	return false
 }
 
-func (s *serviceImpl) pullDataFromStoredConfig(request *storage.ImageIntegration, storedConfig *storage.ImageIntegration) error {
+func (s *serviceImpl) reconcileImageIntegrationUpdate(updateRequest *storage.ImageIntegration, storedConfig *storage.ImageIntegration) error {
 	switch storedConfig.GetIntegrationConfig().(type) {
 	case *storage.ImageIntegration_Docker:
-		if request.GetDocker().GetUsername() != storedConfig.GetDocker().GetUsername() {
-			return errors.New("must explicitly set password when changing username/endpoint")
+		if err := secrets.ValidateUpdatedStruct(updateRequest, storedConfig); err != nil {
+			return err
 		}
-		if request.GetDocker().GetEndpoint() != storedConfig.GetDocker().GetEndpoint() {
-			return errors.New("must explicitly set password when changing username/endpoint")
-		}
-		request.GetDocker().Password = storedConfig.GetDocker().GetPassword()
+		updateRequest.GetDocker().Password = storedConfig.GetDocker().GetPassword()
 	default:
 		return errors.New("the request doesn't have a valid integration config type")
 	}

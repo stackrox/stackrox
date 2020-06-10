@@ -5,69 +5,43 @@ import (
 )
 
 const (
+	// scrubStructTag field types are used to indicate credentials or credential dependent fields
 	scrubStructTag = "scrub"
+	// scrubTagAlways is a scrub tag type used to indicate a field is a credential
 	scrubTagAlways = "always"
-	// ReplacementStr is a string format of a masked secret
-	ReplacementStr = "******"
+	// scrubTagDependent is a scrub tag type used to indicate a field is dependent on credentials and could be used to exfiltrate credentials
+	scrubTagDependent = "dependent"
+	// ScrubReplacementStr is a string format of a masked credential
+	ScrubReplacementStr = "******"
 )
-
-// ScrubSecretsFromStruct removes secret keys from an object
-func ScrubSecretsFromStruct(obj interface{}) {
-	value := reflect.ValueOf(obj)
-	if value.Kind() == reflect.Ptr {
-		value = value.Elem()
-	}
-	if value.Kind() != reflect.Struct {
-		return
-	}
-
-	valueType := value.Type()
-	for i := 0; i < value.NumField(); i++ {
-		typeField := valueType.Field(i)
-		fieldKind := value.Field(i).Kind()
-		switch fieldKind {
-		case reflect.Struct:
-			in := value.Field(i).Interface()
-			ScrubSecretsFromStruct(&in)
-		case reflect.Ptr, reflect.Interface:
-			if !value.Field(i).IsNil() {
-				ScrubSecretsFromStruct(value.Field(i).Interface())
-			}
-		}
-		switch typeField.Tag.Get(scrubStructTag) {
-		case scrubTagAlways:
-			value.Field(i).Set(reflect.ValueOf(""))
-		}
-	}
-}
 
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
 func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) {
-	value := reflect.ValueOf(obj)
+	scrubSecretsFromStructWithReplacement(reflect.ValueOf(obj), replacement)
+}
+
+func scrubSecretsFromStructWithReplacement(value reflect.Value, replacement string) {
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
 	}
 	if value.Kind() != reflect.Struct {
 		return
 	}
-
 	valueType := value.Type()
 	for i := 0; i < value.NumField(); i++ {
-		typeField := valueType.Field(i)
-		fieldKind := value.Field(i).Kind()
-		switch fieldKind {
+		fieldValue := value.Field(i)
+		switch fieldValue.Kind() {
 		case reflect.Struct:
-			in := value.Field(i).Interface()
-			ScrubSecretsFromStructWithReplacement(&in, replacement)
+			scrubSecretsFromStructWithReplacement(fieldValue, replacement)
 		case reflect.Ptr, reflect.Interface:
-			if !value.Field(i).IsNil() {
-				ScrubSecretsFromStructWithReplacement(value.Field(i).Interface(), replacement)
+			if !fieldValue.IsNil() {
+				scrubSecretsFromStructWithReplacement(fieldValue.Elem(), replacement)
 			}
 		}
-		switch typeField.Tag.Get(scrubStructTag) {
+		switch valueType.Field(i).Tag.Get(scrubStructTag) {
 		case scrubTagAlways:
-			if value.Field(i).String() != "" {
-				value.Field(i).Set(reflect.ValueOf(replacement))
+			if fieldValue.String() != "" {
+				fieldValue.Set(reflect.ValueOf(replacement))
 			}
 		}
 	}
