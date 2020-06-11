@@ -333,10 +333,9 @@ func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bo
 func (s *serviceImpl) reconcileImageIntegrationUpdate(updateRequest *storage.ImageIntegration, storedConfig *storage.ImageIntegration) error {
 	switch storedConfig.GetIntegrationConfig().(type) {
 	case *storage.ImageIntegration_Docker:
-		if err := secrets.ValidateUpdatedStruct(updateRequest, storedConfig); err != nil {
+		if err := secrets.ReconcileScrubbedStructWithExisting(updateRequest, storedConfig); err != nil {
 			return err
 		}
-		updateRequest.GetDocker().Password = storedConfig.GetDocker().GetPassword()
 	default:
 		return errors.New("the request doesn't have a valid integration config type")
 	}

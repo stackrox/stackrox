@@ -7,12 +7,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ValidateUpdatedStruct checks that scrub:always fields are empty/masked and scrub:dependent fields are equal to existing
-func ValidateUpdatedStruct(updated interface{}, existing interface{}) error {
-	return validateUpdatedStruct(reflect.ValueOf(updated), reflect.ValueOf(existing), []string{})
+// ReconcileScrubbedStructWithExisting replaces scrub:always fields in updated with the corresponding field values in existing
+func ReconcileScrubbedStructWithExisting(updated interface{}, existing interface{}) error {
+	// walk updated first to verify scrub:always fields are empty/masked and scrub:dependent fields are equal to existing
+	if err := reconcileScrubbedWithExisting(reflect.ValueOf(updated), reflect.ValueOf(existing), true, nil); err != nil {
+		return err
+	}
+	// walk updated after verification and reconcile scrub:always fields with existing
+	return reconcileScrubbedWithExisting(reflect.ValueOf(updated), reflect.ValueOf(existing), false, nil)
 }
 
-func validateUpdatedStruct(updated reflect.Value, existing reflect.Value, path []string) error {
+func reconcileScrubbedWithExisting(updated reflect.Value, existing reflect.Value, verifyOnly bool, path []string) error {
 	updated = reflect.Indirect(updated)
 	existing = reflect.Indirect(existing)
 	if !updated.IsValid() || !existing.IsValid() {
@@ -32,7 +37,7 @@ func validateUpdatedStruct(updated reflect.Value, existing reflect.Value, path [
 		existingField := existing.Field(i)
 		switch updatedField.Kind() {
 		case reflect.Struct:
-			if err := validateUpdatedStruct(updatedField, existingField, path); err != nil {
+			if err := reconcileScrubbedWithExisting(updatedField, existingField, verifyOnly, path); err != nil {
 				return err
 			}
 		case reflect.Ptr, reflect.Interface:
@@ -41,7 +46,7 @@ func validateUpdatedStruct(updated reflect.Value, existing reflect.Value, path [
 					strings.Join(append(path, updatedType.Field(i).Name), "."))
 			}
 			if !updatedField.IsNil() {
-				if err := validateUpdatedStruct(updatedField.Elem(), existingField.Elem(), path); err != nil {
+				if err := reconcileScrubbedWithExisting(updatedField.Elem(), existingField.Elem(), verifyOnly, path); err != nil {
 					return err
 				}
 			}
@@ -51,6 +56,15 @@ func validateUpdatedStruct(updated reflect.Value, existing reflect.Value, path [
 			if !updatedField.IsZero() && updatedField.String() != ScrubReplacementStr {
 				return errors.Errorf("non-zero or unmasked credential field '%s'",
 					strings.Join(append(path, updatedType.Field(i).Name), "."))
+			}
+			if updatedField.Type() != existingField.Type() {
+				return errors.Errorf("field type mismatch %s!=%s", updatedField.Type(), existingField.Type())
+			}
+			if updatedField.Kind() != reflect.String {
+				return errors.Errorf("expected string kind, got %s", updatedField.Kind())
+			}
+			if !verifyOnly {
+				updatedField.Set(reflect.ValueOf(existingField.String()))
 			}
 		case scrubTagDependent:
 			if !reflect.DeepEqual(updatedField.Interface(), existingField.Interface()) {

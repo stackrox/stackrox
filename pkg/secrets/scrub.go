@@ -2,6 +2,9 @@ package secrets
 
 import (
 	"reflect"
+
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -17,10 +20,24 @@ const (
 
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
 func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) {
-	scrubSecretsFromStructWithReplacement(reflect.ValueOf(obj), replacement)
+	scrubber := func(field reflect.Value, scrubTag string) {
+		switch scrubTag {
+		case scrubTagAlways:
+			if field.Kind() != reflect.String {
+				utils.Should(errors.Errorf("expected string kind, got %s", field.Kind()))
+			}
+			if field.Type() != reflect.TypeOf(replacement) {
+				utils.Should(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
+			}
+			if field.String() != "" {
+				field.Set(reflect.ValueOf(replacement))
+			}
+		}
+	}
+	visitStructTags(reflect.ValueOf(obj), scrubber)
 }
 
-func scrubSecretsFromStructWithReplacement(value reflect.Value, replacement string) {
+func visitStructTags(value reflect.Value, visitor func(field reflect.Value, tag string)) {
 	if value.Kind() == reflect.Ptr {
 		value = value.Elem()
 	}
@@ -32,17 +49,12 @@ func scrubSecretsFromStructWithReplacement(value reflect.Value, replacement stri
 		fieldValue := value.Field(i)
 		switch fieldValue.Kind() {
 		case reflect.Struct:
-			scrubSecretsFromStructWithReplacement(fieldValue, replacement)
+			visitStructTags(fieldValue, visitor)
 		case reflect.Ptr, reflect.Interface:
 			if !fieldValue.IsNil() {
-				scrubSecretsFromStructWithReplacement(fieldValue.Elem(), replacement)
+				visitStructTags(fieldValue.Elem(), visitor)
 			}
 		}
-		switch valueType.Field(i).Tag.Get(scrubStructTag) {
-		case scrubTagAlways:
-			if fieldValue.String() != "" {
-				fieldValue.Set(reflect.ValueOf(replacement))
-			}
-		}
+		visitor(fieldValue, valueType.Field(i).Tag.Get(scrubStructTag))
 	}
 }
