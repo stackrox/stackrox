@@ -3,10 +3,10 @@ package common
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
 // PerNodeCheck takes a function that handles a ComplianceReturn object and writes a check around that

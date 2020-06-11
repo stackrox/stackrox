@@ -7,8 +7,8 @@ import (
 
 	"github.com/docker/docker/api/types/mount"
 	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"

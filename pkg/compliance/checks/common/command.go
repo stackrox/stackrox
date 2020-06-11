@@ -4,42 +4,52 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/assert"
+	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	pkgSet "github.com/stackrox/rox/pkg/set"
 )
 
+// FailOverride is passed as an option and will override the fail values if set
+type FailOverride func(msg string) []*storage.ComplianceResultValue_Evidence
+
+// CommandEvaluationFunc is a generic function that checks command lines
+type CommandEvaluationFunc func([]string, string, string, string, ...FailOverride) []*storage.ComplianceResultValue_Evidence
+type helperEvaluationFunc func([]string, string, string, string) (message string, passes bool)
+
+// Info returns info with values set for the flag. Info is used when there is no strict determination of if the check is met
+func Info(values []string, key, _, defaultVal string, _ ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	if len(values) == 0 {
+		return NoteListf("%q is to the default value of %q", key, defaultVal)
+	}
+	return NoteListf("%q is set to %q", key, msgfmt.FormatStrings(values...))
+}
+
+// Set checks whether or not a value is set in the command line
+func Set(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, valuesAreSet, overrides)
+}
+
+func getFailOverride(overrides []FailOverride) FailOverride {
+	if len(overrides) == 0 {
+		return nil
+	}
+	if len(overrides) > 1 {
+		assert.Panicf("fail overrides can only have one element, but has %d", len(overrides))
+	}
+	return overrides[0]
+}
+
 // GetProcess returns the commandline object that matches the process name
-func GetProcess(ret *compliance.ComplianceReturn, processName string) (*compliance.CommandLine, bool) {
+func GetProcess(ret *standards.ComplianceData, processName string) (*compliance.CommandLine, bool) {
 	for _, c := range ret.CommandLines {
 		if strings.Contains(c.Process, processName) {
 			return c, true
 		}
 	}
 	return nil, false
-}
-
-// GetArgForFlag returns the arg that matches the passed key
-func GetArgForFlag(args []*compliance.CommandLine_Args, key string) *compliance.CommandLine_Args {
-	for _, a := range args {
-		if a.Key == key {
-			return a
-		}
-	}
-	return nil
-}
-
-// GetValuesForFlag returns the values based on the key passes
-func GetValuesForFlag(args []*compliance.CommandLine_Args, key string) []string {
-	var values []string
-	for _, a := range args {
-		if a.Key == key {
-			values = append(values, a.GetValues()...)
-		}
-	}
-	return values
 }
 
 // GetValuesForCommandFromFlagsAndConfig returns the values for specific key from the args and unmarshalled config
@@ -65,78 +75,66 @@ func GetValuesForCommandFromFlagsAndConfig(args []*compliance.CommandLine_Args, 
 	return values
 }
 
-// FailOverride is passed as an option and will override the fail values if set
-type FailOverride func(ctx framework.ComplianceContext, msg string)
-
-func getFailOverride(overrides []FailOverride) FailOverride {
-	if len(overrides) == 0 {
-		return nil
+// GetValuesForFlag returns the values based on the key passes
+func GetValuesForFlag(args []*compliance.CommandLine_Args, key string) []string {
+	var values []string
+	for _, a := range args {
+		if a.Key == key {
+			values = append(values, a.GetValues()...)
+		}
 	}
-	if len(overrides) > 1 {
-		assert.Panicf("fail overrides can only have one element, but has %d", len(overrides))
-	}
-	return overrides[0]
+	return values
 }
 
-// CommandEvaluationFunc is a generic function that checks command lines
-type CommandEvaluationFunc func(framework.ComplianceContext, []string, string, string, string, ...FailOverride)
-type helperEvaluationFunc func([]string, string, string, string) (message string, passes bool)
-
-// Info returns info with values set for the flag. Info is used when there is no strict determination of if the check is met
-func Info(ctx framework.ComplianceContext, values []string, key, _, defaultVal string, _ ...FailOverride) {
-	if len(values) == 0 {
-		framework.Notef(ctx, "%q is to the default value of %q", key, defaultVal)
-		return
+// GetArgForFlag returns the arg that matches the passed key
+func GetArgForFlag(args []*compliance.CommandLine_Args, key string) *compliance.CommandLine_Args {
+	for _, a := range args {
+		if a.Key == key {
+			return a
+		}
 	}
-	framework.Notef(ctx, "%q is set to %q", key, msgfmt.FormatStrings(values...))
-}
-
-// Set checks whether or not a value is set in the command line
-func Set(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, valuesAreSet, overrides)
+	return nil
 }
 
 // Unset checks whether or not a value is not set in the command line
-func Unset(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, unset, overrides)
+func Unset(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, unset, overrides)
 }
 
 // Matches checks whether or not a value matches the target value exactly
-func Matches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, matches, overrides)
+func Matches(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, matches, overrides)
 }
 
 // OnlyContains checks whether or not a value contains only the target values (where target values are delimited by ",")
-func OnlyContains(ctx framework.ComplianceContext, values []string, key, targets, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, targets, defaultVal, onlyContains, overrides)
+func OnlyContains(values []string, key, targets, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, targets, defaultVal, onlyContains, overrides)
 }
 
 // NotMatches checks where or not a value matches the target value exactly
-func NotMatches(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, notMatches, overrides)
+func NotMatches(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, notMatches, overrides)
 }
 
 // Contains checks where or not a value contains the target value
-func Contains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, contains, overrides)
+func Contains(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, contains, overrides)
 }
 
 // NotContains checks where or not a value contains the target value
-func NotContains(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, overrides ...FailOverride) {
-	resultWrapper(ctx, values, key, target, defaultVal, notContains, overrides)
+func NotContains(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
+	return resultWrapper(values, key, target, defaultVal, notContains, overrides)
 }
 
-func resultWrapper(ctx framework.ComplianceContext, values []string, key, target, defaultVal string, f helperEvaluationFunc, overrides []FailOverride) {
+func resultWrapper(values []string, key, target, defaultVal string, f helperEvaluationFunc, overrides []FailOverride) []*storage.ComplianceResultValue_Evidence {
 	msg, pass := f(values, key, target, defaultVal)
 	if pass {
-		framework.Pass(ctx, msg)
-	} else {
-		if override := getFailOverride(overrides); override != nil {
-			override(ctx, msg)
-		} else {
-			framework.Fail(ctx, msg)
-		}
+		return PassList(msg)
 	}
+	if override := getFailOverride(overrides); override != nil {
+		return override(msg)
+	}
+	return FailList(msg)
 }
 
 func valuesAreSet(values []string, key, _, _ string) (string, bool) {

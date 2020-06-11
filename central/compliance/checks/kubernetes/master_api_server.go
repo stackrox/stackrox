@@ -2,9 +2,9 @@ package kubernetes
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/checks/msgfmt"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apiserver/pkg/apis/config/v1"
 )
