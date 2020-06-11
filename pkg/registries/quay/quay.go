@@ -58,6 +58,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 		Username: username,
 		Password: config.GetOauthToken(),
 		Endpoint: config.GetEndpoint(),
+		Insecure: config.GetInsecure(),
 	}
 	dockerRegistry, err := docker.NewDockerRegistryWithConfig(cfg, integration)
 	if err != nil {

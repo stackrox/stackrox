@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/transports"
@@ -83,6 +84,9 @@ func newScanner(integration *storage.ImageIntegration) (*tenable, error) {
 	}
 	client := &http.Client{
 		Timeout: requestTimeout,
+		Transport: &http.Transport{
+			Proxy: proxy.FromConfig(),
+		},
 	}
 	scanner := &tenable{
 		client:      client,

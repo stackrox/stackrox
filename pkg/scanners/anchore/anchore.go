@@ -2,6 +2,7 @@ package anchore
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -14,6 +15,7 @@ import (
 	anchoreClient "github.com/stackrox/anchore-client/client"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -87,6 +89,16 @@ func newScanner(ii *storage.ImageIntegration, activeRegistries registries.Set) (
 	config := anchoreClient.NewConfiguration()
 	config.BasePath = fmt.Sprintf("%s/v1", endpoint)
 	config.AddDefaultHeader("Authorization", basicAuth(conf.GetUsername(), conf.GetPassword()))
+	config.HTTPClient = &http.Client{
+		Timeout: defaultTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: conf.GetInsecure(),
+			},
+			Proxy: proxy.FromConfig(),
+		},
+	}
+
 	client := anchoreClient.NewAPIClient(config)
 
 	scanner := &anchore{

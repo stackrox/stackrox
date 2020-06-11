@@ -1,6 +1,7 @@
 package clair
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -66,6 +68,12 @@ func newScanner(integration *storage.ImageIntegration) (*clair, error) {
 
 	client := &http.Client{
 		Timeout: requestTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: config.GetInsecure(),
+			},
+			Proxy: proxy.FromConfig(),
+		},
 	}
 	scanner := &clair{
 		client:                client,

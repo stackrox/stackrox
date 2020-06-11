@@ -1,6 +1,7 @@
 package quay
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -64,6 +66,12 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) 
 
 	client := &http.Client{
 		Timeout: requestTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: config.GetInsecure(),
+			},
+			Proxy: proxy.FromConfig(),
+		},
 	}
 	scanner := &quay{
 		client: client,
