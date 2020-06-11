@@ -43,8 +43,8 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "Dockerfile Line",
-			valid:   []string{"ADD=."},
-			invalid: []string{"", "ADD", "=."},
+			valid:   []string{"ADD=.", "=.", "ADD=", "="},
+			invalid: []string{"", "ADD"},
 			r:       dockerfileLineValueRegex,
 		},
 		{
