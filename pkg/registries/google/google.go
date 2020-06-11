@@ -1,17 +1,33 @@
 package google
 
 import (
-	"github.com/pkg/errors"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
 	username = "_json_key"
 )
+
+type googleRegistry struct {
+	types.ImageRegistry
+	project string
+}
+
+// Match overrides the underlying Match function in types.ImageRegistry because our google registries are scoped by
+// GCP projects
+func (g *googleRegistry) Match(image *storage.ImageName) bool {
+	if stringutils.GetUpTo(image.GetRemote(), "/") != g.project {
+		return false
+	}
+	return g.ImageRegistry.Match(image)
+}
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
@@ -32,12 +48,11 @@ func validate(google *storage.GoogleConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error) {
-	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
-	if !ok {
+func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+	config := integration.GetGoogle()
+	if config == nil {
 		return nil, errors.New("Google configuration required")
 	}
-	config := googleConfig.Google
 	if err := validate(config); err != nil {
 		return nil, err
 	}
@@ -46,5 +61,12 @@ func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error
 		Password: config.GetServiceAccount(),
 		Endpoint: config.GetEndpoint(),
 	}
-	return docker.NewDockerRegistryWithConfig(cfg, integration)
+	reg, err := docker.NewDockerRegistryWithConfig(cfg, integration)
+	if err != nil {
+		return nil, err
+	}
+	return &googleRegistry{
+		ImageRegistry: reg,
+		project:       strings.ToLower(config.GetProject()),
+	}, nil
 }

@@ -49,3 +49,24 @@ func TestSplitNPadded(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUpTo(t *testing.T) {
+	for _, testCase := range []struct {
+		s        string
+		sep      string
+		expected string
+	}{
+		{"Hello", "", ""},
+		{"Hello", "l", "He"},
+		{"Hello", "/", "Hello"},
+		{"", "", ""},
+		{"hi/hello", "/", "hi"},
+		{"/hello", "/", ""},
+		{"hi/", "/", "hi"},
+	} {
+		c := testCase
+		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			assert.Equal(t, c.expected, GetUpTo(c.s, c.sep))
+		})
+	}
+}

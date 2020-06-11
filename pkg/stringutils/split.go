@@ -22,3 +22,9 @@ func SplitNPadded(str string, sep string, n int) []string {
 	}
 	return res
 }
+
+// GetUpTo gets the values up to the separator or returns the input string if the separator does not exist
+func GetUpTo(str, sep string) string {
+	part1, _ := Split2(str, sep)
+	return part1
+}
