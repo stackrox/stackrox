@@ -85,9 +85,9 @@ func (w *WorkloadManager) clearActions() {
 func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
-	namespace := getNamespace()
-	namespace.Name = "default"
-	objects = append(objects, namespace)
+	for _, n := range getNamespaces() {
+		objects = append(objects, n)
+	}
 
 	nodes := w.getNodes(w.workload.NodeWorkload)
 	for _, node := range nodes {

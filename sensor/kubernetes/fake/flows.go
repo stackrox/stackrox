@@ -24,9 +24,8 @@ var (
 )
 
 type pool struct {
-	pool  set.StringSet
-	slice []string
-	lock  sync.Mutex
+	pool set.StringSet
+	lock sync.RWMutex
 }
 
 func newPool() *pool {
@@ -42,7 +41,6 @@ func (p *pool) add(val string) bool {
 	if added := p.pool.Add(val); !added {
 		return false
 	}
-	p.slice = p.pool.AsSlice()
 	return true
 }
 
@@ -51,17 +49,13 @@ func (p *pool) remove(val string) {
 	defer p.lock.Unlock()
 
 	p.pool.Remove(val)
-	p.slice = p.pool.AsSlice()
 }
 
 func (p *pool) randomElem() (string, bool) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if len(p.slice) == 0 {
-		return "", false
-	}
-	return p.slice[rand.Intn(len(p.slice))], true
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	val := p.pool.GetArbitraryElem()
+	return val, val != ""
 }
 
 func generateIP() string {

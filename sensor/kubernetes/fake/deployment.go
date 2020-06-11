@@ -41,6 +41,10 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 		containers = append(containers, getContainer(workload.PodWorkload.ContainerWorkload))
 	}
 
+	namespace, valid := namespacePool.randomElem()
+	if !valid {
+		namespace = "default"
+	}
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -48,7 +52,7 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randString(),
-			Namespace: "default",
+			Namespace: namespace,
 			UID:       newUUID(),
 			CreationTimestamp: metav1.Time{
 				Time: time.Now(),
@@ -63,7 +67,7 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace:   "default",
+					Namespace:   namespace,
 					Labels:      labels,
 					Annotations: labels,
 				},
