@@ -2,11 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { eventTypes } from 'constants/timelineTypes';
+import { eventPropTypes, defaultEventPropTypes } from 'constants/propTypes/timelinePropTypes';
 import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import ProcessActivityTooltipFields from './ProcessActivityTooltipFields';
-import TerminationTooltipFields from './TerminationTooltipFields';
-import DefaultTooltipFields from './DefaultTooltipFields';
+import ProcessActivityTooltipFields from './EventTooltipFields/ProcessActivityTooltipFields';
+import TerminationTooltipFields from './EventTooltipFields/TerminationTooltipFields';
+import DefaultTooltipFields from './EventTooltipFields/DefaultTooltipFields';
 
 const EventTooltip = ({
     type,
@@ -51,23 +52,12 @@ const EventTooltip = ({
 };
 
 EventTooltip.propTypes = {
-    type: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    parentName: PropTypes.string,
-    parentUid: PropTypes.number,
-    args: PropTypes.string,
-    uid: PropTypes.number,
-    reason: PropTypes.string,
-    timestamp: PropTypes.string.isRequired,
+    ...eventPropTypes,
     children: PropTypes.oneOfType([PropTypes.arrayOf(PropTypes.node), PropTypes.node]).isRequired,
 };
 
 EventTooltip.defaultProps = {
-    uid: null,
-    parentName: null,
-    parentUid: null,
-    args: null,
-    reason: null,
+    ...defaultEventPropTypes,
 };
 
 export default EventTooltip;

@@ -5,27 +5,27 @@ import { eventLabels } from 'messages/timeline';
 import { getDateTime } from 'utils/dateUtils';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
-const TerminationTooltipFields = ({ type, reason, timestamp }) => {
+const DefaultTooltipFields = ({ name, type, timestamp }) => {
     const typeValue = eventLabels[type];
     const eventTimeValue = getDateTime(timestamp);
 
     return (
         <>
+            <TooltipFieldValue field="Name" value={name} />
             <TooltipFieldValue field="Type" value={typeValue} />
-            <TooltipFieldValue field="Reason" value={reason} />
             <TooltipFieldValue field="Event time" value={eventTimeValue} />
         </>
     );
 };
 
-TerminationTooltipFields.propTypes = {
+DefaultTooltipFields.propTypes = {
+    name: PropTypes.string,
     type: PropTypes.string.isRequired,
-    reason: PropTypes.string,
     timestamp: PropTypes.string.isRequired,
 };
 
-TerminationTooltipFields.defaultProps = {
-    reason: null,
+DefaultTooltipFields.defaultProps = {
+    name: null,
 };
 
-export default TerminationTooltipFields;
+export default DefaultTooltipFields;

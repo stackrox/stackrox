@@ -5,7 +5,15 @@ import { eventLabels } from 'messages/timeline';
 import { getDateTime } from 'utils/dateUtils';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
-const ProcessActivityTooltipFields = ({ type, args, uid, parentName, parentUid, timestamp }) => {
+const ProcessActivityTooltipFields = ({
+    name,
+    type,
+    args,
+    uid,
+    parentName,
+    parentUid,
+    timestamp,
+}) => {
     const hasParent = parentName !== null || parentUid !== -1;
     const isParentUidUnknown = parentName !== null && parentUid === -1;
     const hasUidChanged = parentUid !== uid;
@@ -26,6 +34,7 @@ const ProcessActivityTooltipFields = ({ type, args, uid, parentName, parentUid, 
 
     return (
         <>
+            <TooltipFieldValue field="Name" value={name} />
             <TooltipFieldValue field="Type" value={typeValue} />
             <TooltipFieldValue field="Arguments" value={argsValue} />
             <TooltipFieldValue field="Parent Name" value={parentNameValue} />
@@ -42,6 +51,7 @@ const ProcessActivityTooltipFields = ({ type, args, uid, parentName, parentUid, 
 };
 
 ProcessActivityTooltipFields.propTypes = {
+    name: PropTypes.string,
     type: PropTypes.string.isRequired,
     parentName: PropTypes.string,
     parentUid: PropTypes.number,
@@ -51,6 +61,7 @@ ProcessActivityTooltipFields.propTypes = {
 };
 
 ProcessActivityTooltipFields.defaultProps = {
+    name: null,
     uid: null,
     parentName: null,
     parentUid: null,

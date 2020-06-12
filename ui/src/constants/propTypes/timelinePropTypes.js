@@ -12,6 +12,15 @@ export const eventPropTypes = {
     whitelisted: PropTypes.bool,
 };
 
+export const defaultEventPropTypes = {
+    args: null,
+    uid: null,
+    parentName: null,
+    parentUid: null,
+    reason: null,
+    whitelisted: null,
+};
+
 export const clusteredEventPropTypes = {
     size: PropTypes.number.isRequired,
     numEvents: PropTypes.number.isRequired,
