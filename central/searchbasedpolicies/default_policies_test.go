@@ -208,6 +208,12 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 }
 
 func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string, lineage []string, uid uint32) *storage.ProcessIndicator {
+	lineageInfo := make([]*storage.ProcessSignal_LineageInfo, len(lineage))
+	for i, ancestor := range lineage {
+		lineageInfo[i] = &storage.ProcessSignal_LineageInfo{
+			ParentExecFilePath: ancestor,
+		}
+	}
 	indicator := &storage.ProcessIndicator{
 		Id:           uuid.NewV4().String(),
 		DeploymentId: deploymentID,
@@ -216,7 +222,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			Args:         args,
 			ExecFilePath: path,
 			Time:         gogoTypes.TimestampNow(),
-			Lineage:      lineage,
+			LineageInfo:  lineageInfo,
 			Uid:          uid,
 		},
 	}

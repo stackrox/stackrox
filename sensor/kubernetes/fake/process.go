@@ -10,9 +10,13 @@ import (
 )
 
 var (
-	processAncestors = []string{
-		"java",
-		"bash",
+	processAncestors = []*storage.ProcessSignal_LineageInfo{
+		{
+			ParentExecFilePath: "java",
+		},
+		{
+			ParentExecFilePath: "bash",
+		},
 	}
 
 	goodProcessNames = []string{
@@ -273,6 +277,6 @@ func getProcess(name string, containerID string) *storage.ProcessSignal {
 		Name:         name,
 		Args:         "abc def ghi jkl lmn op qrs tuv",
 		ExecFilePath: fmt.Sprintf("/bin/%s", name),
-		Lineage:      processAncestors,
+		LineageInfo:  processAncestors,
 	}
 }

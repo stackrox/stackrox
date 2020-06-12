@@ -162,6 +162,12 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 	if len(deployment.GetContainers()) == 0 {
 		deployment.Containers = []*storage.Container{{Name: uuid.NewV4().String()}}
 	}
+	lineageInfo := make([]*storage.ProcessSignal_LineageInfo, len(lineage))
+	for i, ancestor := range lineage {
+		lineageInfo[i] = &storage.ProcessSignal_LineageInfo{
+			ParentExecFilePath: ancestor,
+		}
+	}
 	indicator := &storage.ProcessIndicator{
 		Id:            uuid.NewV4().String(),
 		DeploymentId:  deploymentID,
@@ -171,7 +177,7 @@ func (suite *DefaultPoliciesTestSuite) addIndicator(deploymentID, name, args, pa
 			Args:         args,
 			ExecFilePath: path,
 			Time:         gogoTypes.TimestampNow(),
-			Lineage:      lineage,
+			LineageInfo:  lineageInfo,
 			Uid:          uid,
 		},
 	}

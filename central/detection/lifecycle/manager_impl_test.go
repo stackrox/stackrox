@@ -55,7 +55,11 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 		Pid:          rand.Uint32(),
 		Uid:          rand.Uint32(),
 		Gid:          rand.Uint32(),
-		Lineage:      []string{uuid.NewV4().String()},
+		LineageInfo: []*storage.ProcessSignal_LineageInfo{
+			{
+				ParentExecFilePath: uuid.NewV4().String(),
+			},
+		},
 	}
 
 	indicator := &storage.ProcessIndicator{
