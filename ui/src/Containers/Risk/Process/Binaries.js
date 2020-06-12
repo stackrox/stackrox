@@ -21,22 +21,30 @@ function Binaries({ processes }) {
         return (
             <BinaryCollapsible commandLineArgs={args} key={args}>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="pt-4 px-4">
-                        <ProcessTags
-                            deploymentID={deploymentId}
-                            containerName={containerName}
-                            execFilePath={execFilePath}
-                            args={args}
-                        />
-                    </div>
-                    <div className="py-4 px-4">
-                        <ProcessComments
-                            deploymentID={deploymentId}
-                            containerName={containerName}
-                            execFilePath={execFilePath}
-                            args={args}
-                        />
-                    </div>
+                    {({ featureEnabled }) => {
+                        return (
+                            featureEnabled && (
+                                <>
+                                    <div className="pt-4 px-4">
+                                        <ProcessTags
+                                            deploymentID={deploymentId}
+                                            containerName={containerName}
+                                            execFilePath={execFilePath}
+                                            args={args}
+                                        />
+                                    </div>
+                                    <div className="py-4 px-4">
+                                        <ProcessComments
+                                            deploymentID={deploymentId}
+                                            containerName={containerName}
+                                            execFilePath={execFilePath}
+                                            args={args}
+                                        />
+                                    </div>
+                                </>
+                            )
+                        );
+                    }}
                 </FeatureEnabled>
                 <ProcessSignal signals={signals} />
             </BinaryCollapsible>

@@ -23,7 +23,13 @@ function FormPanel({ header, fieldGroups, onClose, initialValues }) {
                 <form className="flex flex-col w-full overflow-auto pb-5">
                     <FieldGroupCards initialValues={initialValues} fieldGroups={fieldGroups} />
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC}>
-                        <BooleanPolicySection initialValues={initialValues} />
+                        {({ featureEnabled }) => {
+                            return (
+                                featureEnabled && (
+                                    <BooleanPolicySection initialValues={initialValues} />
+                                )
+                            );
+                        }}
                     </FeatureEnabled>
                 </form>
             </div>

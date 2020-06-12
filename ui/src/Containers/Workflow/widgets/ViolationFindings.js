@@ -61,12 +61,26 @@ const ViolationFindings = ({ data, message }) => {
                     </ul>
                 </Widget>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="lg:sx-2 md:sx-1 sy-1">
-                        <ViolationTags resourceId={policyViolation.id} isCollapsible={false} />
-                    </div>
-                    <div className="sx-1 sy-1">
-                        <ViolationComments resourceId={policyViolation.id} isCollapsible={false} />
-                    </div>
+                    {({ featureEnabled }) => {
+                        return (
+                            featureEnabled && (
+                                <>
+                                    <div className="lg:sx-2 md:sx-1 sy-1">
+                                        <ViolationTags
+                                            resourceId={policyViolation.id}
+                                            isCollapsible={false}
+                                        />
+                                    </div>
+                                    <div className="sx-1 sy-1">
+                                        <ViolationComments
+                                            resourceId={policyViolation.id}
+                                            isCollapsible={false}
+                                        />
+                                    </div>
+                                </>
+                            )
+                        );
+                    }}
                 </FeatureEnabled>
             </div>
         );

@@ -11,14 +11,20 @@ function HeaderButtons({ editText, isEditing, onEdit, onCancel, onTest, editDisa
             <div className="flex">
                 {!!onTest && (
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_AUTH_TEST_MODE_UI}>
-                        <button
-                            className="mr-2 border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
-                            type="button"
-                            onClick={onTest}
-                            disabled={editDisabled}
-                        >
-                            Test Login
-                        </button>
+                        {({ featureEnabled }) => {
+                            return (
+                                featureEnabled && (
+                                    <button
+                                        className="mr-2 border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
+                                        type="button"
+                                        onClick={onTest}
+                                        disabled={editDisabled}
+                                    >
+                                        Test Login
+                                    </button>
+                                )
+                            );
+                        }}
                     </FeatureEnabled>
                 )}
                 <button

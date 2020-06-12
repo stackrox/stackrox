@@ -22,7 +22,9 @@ function RiskPageHeader({ autoFocusSearchInput, isViewFiltered, searchOptions })
                 autoFocus={autoFocusSearchInput}
             />
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC}>
-                <CreatePolicyFromSearch />
+                {({ featureEnabled }) => {
+                    return featureEnabled && <CreatePolicyFromSearch />;
+                }}
             </FeatureEnabled>
         </PageHeader>
     );

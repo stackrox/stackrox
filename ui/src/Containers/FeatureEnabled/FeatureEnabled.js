@@ -5,11 +5,9 @@ import { createStructuredSelector } from 'reselect';
 import { isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
 const FeatureEnabled = ({ featureFlags, featureFlag, children }) => {
-    const featureFlagEnabled = isBackendFeatureFlagEnabled(featureFlags, featureFlag, false);
+    const featureEnabled = isBackendFeatureFlagEnabled(featureFlags, featureFlag, false);
 
-    if (!featureFlagEnabled) return null;
-
-    return children;
+    return children({ featureEnabled });
 };
 
 const mapStateToProps = createStructuredSelector({

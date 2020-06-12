@@ -52,23 +52,28 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
     return (
         <>
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                {numCheckedAlertIds !== 0 && (
-                    <PanelButton
-                        icon={<Tag className="h-4 ml-1" />}
-                        dataTestId="bulk-add-tags-button"
-                        className="btn btn-base ml-2"
-                        onClick={showTagConfirmationDialog}
-                        tooltip={`Add Tags for ${pluralize(
-                            'Violation',
-                            numCheckedAlertIds
-                        )} (${numCheckedAlertIds})`}
-                    >
-                        {`Add Tags for ${pluralize(
-                            'Violation',
-                            numCheckedAlertIds
-                        )} (${numCheckedAlertIds})`}
-                    </PanelButton>
-                )}
+                {({ featureEnabled }) => {
+                    return (
+                        featureEnabled &&
+                        numCheckedAlertIds !== 0 && (
+                            <PanelButton
+                                icon={<Tag className="h-4 ml-1" />}
+                                dataTestId="bulk-add-tags-button"
+                                className="btn btn-base ml-2"
+                                onClick={showTagConfirmationDialog}
+                                tooltip={`Add Tags for ${pluralize(
+                                    'Violation',
+                                    numCheckedAlertIds
+                                )} (${numCheckedAlertIds})`}
+                            >
+                                {`Add Tags for ${pluralize(
+                                    'Violation',
+                                    numCheckedAlertIds
+                                )} (${numCheckedAlertIds})`}
+                            </PanelButton>
+                        )
+                    );
+                }}
             </FeatureEnabled>
             {checkedRuntimeAlerts !== 0 && (
                 <PanelButton

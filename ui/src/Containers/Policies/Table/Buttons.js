@@ -108,16 +108,22 @@ class Buttons extends Component {
                 {selectionCount === 0 && (
                     <>
                         <FeatureEnabled featureFlag={knownBackendFlags.ROX_POLICY_IMPORT_EXPORT}>
-                            <PanelButton
-                                icon={<Upload className="h-4 w-4 ml-1" />}
-                                className="btn btn-base mr-2"
-                                onClick={this.startPolicyImport}
-                                disabled={buttonsDisabled}
-                                tooltip="Import a policy"
-                                dataTestId="import-policy-btn"
-                            >
-                                Import Policy
-                            </PanelButton>
+                            {({ featureEnabled }) => {
+                                return (
+                                    featureEnabled && (
+                                        <PanelButton
+                                            icon={<Upload className="h-4 w-4 ml-1" />}
+                                            className="btn btn-base mr-2"
+                                            onClick={this.startPolicyImport}
+                                            disabled={buttonsDisabled}
+                                            tooltip="Import a policy"
+                                            dataTestId="import-policy-btn"
+                                        >
+                                            Import Policy
+                                        </PanelButton>
+                                    )
+                                );
+                            }}
                         </FeatureEnabled>
                         <PanelButton
                             icon={<Plus className="h-4 w-4 ml-1" />}

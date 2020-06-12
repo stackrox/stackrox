@@ -46,15 +46,21 @@ function DetailsButtons({ wizardPolicy, setWizardStage, setWizardPolicy, addToas
                 Clone
             </PanelButton>
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_POLICY_IMPORT_EXPORT}>
-                <PanelButton
-                    icon={<Download className="h-4 w-4" />}
-                    className="btn btn-base mr-2"
-                    onClick={exportOnePolicy}
-                    tooltip="Export policy"
-                    dataTestId="single-policy-export"
-                >
-                    Export
-                </PanelButton>
+                {({ featureEnabled }) => {
+                    return (
+                        featureEnabled && (
+                            <PanelButton
+                                icon={<Download className="h-4 w-4" />}
+                                className="btn btn-base mr-2"
+                                onClick={exportOnePolicy}
+                                tooltip="Export policy"
+                                dataTestId="single-policy-export"
+                            >
+                                Export
+                            </PanelButton>
+                        )
+                    );
+                }}
             </FeatureEnabled>
             <PanelButton
                 icon={<Edit className="h-4 w-4" />}

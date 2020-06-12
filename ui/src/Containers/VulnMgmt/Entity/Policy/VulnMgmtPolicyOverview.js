@@ -288,18 +288,24 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                             <FeatureEnabled
                                 featureFlag={knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC}
                             >
-                                <div className="sy-2">
-                                    <Widget
-                                        header="Policy Criteria"
-                                        className="pdf-page pdf-stretch h-full"
-                                    >
-                                        <BooleanPolicySection
-                                            readOnly
-                                            hasHeader={false}
-                                            initialValues={initialValues}
-                                        />
-                                    </Widget>
-                                </div>
+                                {({ featureEnabled }) => {
+                                    return (
+                                        featureEnabled && (
+                                            <div className="sy-2">
+                                                <Widget
+                                                    header="Policy Criteria"
+                                                    className="pdf-page pdf-stretch h-full"
+                                                >
+                                                    <BooleanPolicySection
+                                                        readOnly
+                                                        hasHeader={false}
+                                                        initialValues={initialValues}
+                                                    />
+                                                </Widget>
+                                            </div>
+                                        )
+                                    );
+                                }}
                             </FeatureEnabled>
                         )}
                         <div className="sx-1">

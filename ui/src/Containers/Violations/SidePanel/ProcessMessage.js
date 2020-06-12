@@ -45,16 +45,22 @@ function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
             <div className="flex text-base-600">
                 <span className="py-2 px-2 bg-caution-200">{execFilePath}</span>
                 <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    <div className="flex flex-1 justify-end">
-                        <FormCollapsibleButton
-                            deploymentID={deploymentId}
-                            containerName={containerName}
-                            execFilePath={execFilePath}
-                            args={args}
-                            isOpen={areAnalystNotesVisible}
-                            onClick={selectProcessIdHandler}
-                        />
-                    </div>
+                    {({ featureEnabled }) => {
+                        return (
+                            featureEnabled && (
+                                <div className="flex flex-1 justify-end">
+                                    <FormCollapsibleButton
+                                        deploymentID={deploymentId}
+                                        containerName={containerName}
+                                        execFilePath={execFilePath}
+                                        args={args}
+                                        isOpen={areAnalystNotesVisible}
+                                        onClick={selectProcessIdHandler}
+                                    />
+                                </div>
+                            )
+                        );
+                    }}
                 </FeatureEnabled>
             </div>
             <div className="flex flex-1 text-base-600 px-4 py-2 justify-between">
@@ -69,26 +75,31 @@ function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
             </div>
             {ancestors}
             <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                {areAnalystNotesVisible && (
-                    <>
-                        <div className="pt-4 px-4">
-                            <ProcessTags
-                                deploymentID={deploymentId}
-                                containerName={containerName}
-                                execFilePath={execFilePath}
-                                args={args}
-                            />
-                        </div>
-                        <div className="py-4 px-4">
-                            <ProcessComments
-                                deploymentID={deploymentId}
-                                containerName={containerName}
-                                execFilePath={execFilePath}
-                                args={args}
-                            />
-                        </div>
-                    </>
-                )}
+                {({ featureEnabled }) => {
+                    return (
+                        featureEnabled &&
+                        areAnalystNotesVisible && (
+                            <>
+                                <div className="pt-4 px-4">
+                                    <ProcessTags
+                                        deploymentID={deploymentId}
+                                        containerName={containerName}
+                                        execFilePath={execFilePath}
+                                        args={args}
+                                    />
+                                </div>
+                                <div className="py-4 px-4">
+                                    <ProcessComments
+                                        deploymentID={deploymentId}
+                                        containerName={containerName}
+                                        execFilePath={execFilePath}
+                                        args={args}
+                                    />
+                                </div>
+                            </>
+                        )
+                    );
+                }}
             </FeatureEnabled>
         </div>
     );

@@ -209,17 +209,25 @@ class AuthProvider extends Component {
             <>
                 {this.testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
                     <FeatureEnabled featureFlag={knownBackendFlags.ROX_AUTH_TEST_MODE_UI}>
-                        <div className="w-full pt-4 pl-4 pr-4">
-                            <Message
-                                type="guidance"
-                                message={
-                                    <span>
-                                        Select <strong className="font-700">Test Login</strong> to
-                                        check that your authentication provider is working properly.
-                                    </span>
-                                }
-                            />
-                        </div>
+                        {({ featureEnabled }) => {
+                            return (
+                                featureEnabled && (
+                                    <div className="w-full pt-4 pl-4 pr-4">
+                                        <Message
+                                            type="guidance"
+                                            message={
+                                                <span>
+                                                    Select{' '}
+                                                    <strong className="font-700">Test Login</strong>{' '}
+                                                    to check that your authentication provider is
+                                                    working properly.
+                                                </span>
+                                            }
+                                        />
+                                    </div>
+                                )
+                            );
+                        }}
                     </FeatureEnabled>
                 )}
                 <Details
