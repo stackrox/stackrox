@@ -29,6 +29,7 @@ const DeploymentEventTimeline = ({
     currentPage,
     pageSize,
     onPageChange,
+    showClusteredEvents,
 }) => {
     const { loading, error, data } = useQuery(GET_DEPLOYMENT_EVENT_TIMELINE, {
         variables: {
@@ -99,6 +100,7 @@ const DeploymentEventTimeline = ({
                 pageSize={pageSize}
                 onPageChange={onPageChange}
                 absoluteMaxTimeRange={absoluteMaxTimeRange}
+                showClusteredEvents={showClusteredEvents}
             />
         </Panel>
     );
@@ -113,6 +115,7 @@ DeploymentEventTimeline.propTypes = {
     currentPage: PropTypes.number.isRequired,
     pageSize: PropTypes.number.isRequired,
     onPageChange: PropTypes.func.isRequired,
+    showClusteredEvents: PropTypes.bool.isRequired,
 };
 
 export default DeploymentEventTimeline;

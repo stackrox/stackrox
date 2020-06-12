@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 
+import ClusteredEventsVisibilityContext from 'Components/TimelineGraph/ClusteredEventsVisibilityContext';
 import GroupedEvents from './GroupedEvents';
+import Events from './Events';
 
 const EventsRow = ({
     entityName,
@@ -16,6 +18,7 @@ const EventsRow = ({
     margin,
     isZooming,
 }) => {
+    const showClusteredEvents = useContext(ClusteredEventsVisibilityContext);
     // filter events to only show those in the viewable window
     const eventsWithinView = events.filter(({ differenceInMilliseconds }) => {
         return differenceInMilliseconds >= minTimeRange && differenceInMilliseconds <= maxTimeRange;
@@ -35,16 +38,30 @@ const EventsRow = ({
                 height={height}
                 width={width}
             />
-            <GroupedEvents
-                events={eventsWithinView}
-                height={height}
-                width={width}
-                translateX={translateX}
-                minTimeRange={minTimeRange}
-                maxTimeRange={maxTimeRange}
-                margin={margin}
-                isZooming={isZooming}
-            />
+            {showClusteredEvents && (
+                <GroupedEvents
+                    events={eventsWithinView}
+                    height={height}
+                    width={width}
+                    translateX={translateX}
+                    minTimeRange={minTimeRange}
+                    maxTimeRange={maxTimeRange}
+                    margin={margin}
+                    isZooming={isZooming}
+                />
+            )}
+            {!showClusteredEvents && (
+                <Events
+                    events={eventsWithinView}
+                    height={height}
+                    width={width}
+                    translateX={translateX}
+                    minTimeRange={minTimeRange}
+                    maxTimeRange={maxTimeRange}
+                    margin={margin}
+                    isZooming={isZooming}
+                />
+            )}
         </g>
     );
 };

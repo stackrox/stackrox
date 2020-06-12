@@ -28,6 +28,7 @@ const PodEventTimeline = ({
     currentPage,
     pageSize,
     onPageChange,
+    showClusteredEvents,
 }) => {
     const { loading, error, data } = useQuery(GET_POD_EVENT_TIMELINE, {
         variables: {
@@ -104,6 +105,7 @@ const PodEventTimeline = ({
                 pageSize={pageSize}
                 onPageChange={onPageChange}
                 absoluteMaxTimeRange={absoluteMaxTimeRange}
+                showClusteredEvents={showClusteredEvents}
             />
         </Panel>
     );
@@ -119,6 +121,7 @@ PodEventTimeline.propTypes = {
     currentPage: PropTypes.number.isRequired,
     pageSize: PropTypes.number.isRequired,
     onPageChange: PropTypes.func.isRequired,
+    showClusteredEvents: PropTypes.bool.isRequired,
 };
 
 export default PodEventTimeline;
