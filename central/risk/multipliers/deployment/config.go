@@ -91,9 +91,9 @@ func (s *serviceConfigMultiplier) scoreSecrets(deployment *storage.Deployment) s
 
 var relevantCapAdds = set.NewFrozenStringSet(
 	"ALL",
-	"CAP_SYS_ADMIN",
-	"CAP_NET_ADMIN",
-	"CAP_SYS_MODULE",
+	"SYS_ADMIN",
+	"NET_ADMIN",
+	"SYS_MODULE",
 )
 
 func (s *serviceConfigMultiplier) scoreCapabilities(deployment *storage.Deployment) (capAddFactor, capDropFactor string) {
@@ -102,7 +102,7 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *storage.Deployme
 	for _, container := range deployment.GetContainers() {
 		context := container.GetSecurityContext()
 		for _, cap := range context.GetAddCapabilities() {
-			if relevantCapAdds.Contains(cap) {
+			if relevantCapAdds.Contains(strings.ToUpper(cap)) {
 				capsAdded.Add(cap)
 			}
 		}

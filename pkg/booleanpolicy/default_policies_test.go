@@ -523,7 +523,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			{
 				Name: "cap-sys",
 				SecurityContext: &storage.SecurityContext{
-					AddCapabilities: []string{"CAP_SYS_ADMIN"},
+					AddCapabilities: []string{"SYS_ADMIN"},
 				},
 			},
 		},
@@ -822,7 +822,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				sysAdminDep.GetId(): {
 					{
-						Message: "Container 'cap-sys' adds capability CAP_SYS_ADMIN",
+						Message: "Container 'cap-sys' adds capability SYS_ADMIN",
+					},
+				},
+				fixtureDep.GetId(): {
+					{
+						Message: "Container 'nginx110container' adds capability SYS_ADMIN",
 					},
 				},
 			},
@@ -1601,7 +1606,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 
 // TODO(rc) check violation messages for drop caps
 func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
-	testCaps := []string{"CAP_SYS_MODULE", "CAP_SYS_NICE", "CAP_SYS_PTRACE"}
+	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
 
 	deployments := make(map[string]*storage.Deployment)
 	for _, idxs := range [][]int{{0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
@@ -1610,7 +1615,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.DropCapabilities = append(dep.Containers[0].SecurityContext.DropCapabilities, testCaps[idx])
 		}
-		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.DropCapabilities, ","), "CAP_SYS_", "")] = dep
+		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.DropCapabilities, ","), "SYS_", "")] = dep
 	}
 
 	for _, testCase := range []struct {
@@ -1620,22 +1625,22 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	}{
 		{
 			// Nothing drops this capability
-			[]string{"CAP_SYSLOG"},
+			[]string{"SYSLOG"},
 			storage.BooleanOperator_OR,
 			[]string{"MODULE", "NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
 		},
 		{
-			[]string{"CAP_SYS_NICE"},
+			[]string{"SYS_NICE"},
 			storage.BooleanOperator_OR,
 			[]string{"MODULE", "PTRACE"},
 		},
 		{
-			[]string{"CAP_SYS_NICE", "CAP_SYS_PTRACE"},
+			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_OR,
 			[]string{"MODULE"},
 		},
 		{
-			[]string{"CAP_SYS_NICE", "CAP_SYS_PTRACE"},
+			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_AND,
 			[]string{"MODULE", "PTRACE", "NICE", "MODULE,NICE"},
 		},

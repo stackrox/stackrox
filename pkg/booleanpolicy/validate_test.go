@@ -67,8 +67,8 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "capabilities",
-			valid:   []string{"CAP_SYS_ADMIN"},
-			invalid: []string{"", "CAP_N_CRUNCH"},
+			valid:   []string{"SYS_ADMIN"},
+			invalid: []string{"", "CAP_N_CRUNCH", "CAP_SYS_ADMIN", "N_CRUNCH"},
 			r:       capabilitiesValueRegex,
 		},
 		{

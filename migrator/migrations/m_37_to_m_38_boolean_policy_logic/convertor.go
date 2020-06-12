@@ -3,6 +3,7 @@ package m37tom38
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -534,30 +535,33 @@ func convertHostMountPolicy(fields *storage.PolicyFields) []*storage.PolicyGroup
 	}
 }
 
-func convertDropCapabilities(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	droppedCaps := fields.GetDropCapabilities()
-	if droppedCaps == nil {
+const (
+	capPrefix = "CAP_"
+)
+
+func convertCapabilities(values []string, fieldName string) []*storage.PolicyGroup {
+	if len(values) == 0 {
 		return nil
+	}
+	for i := range values {
+		if len(values[i]) > len(capPrefix) && strings.EqualFold(values[i][:len(capPrefix)], capPrefix) {
+			values[i] = values[i][len(capPrefix):]
+		}
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName:       dropCaps,
+		FieldName:       fieldName,
 		BooleanOperator: storage.BooleanOperator_OR,
-		Values:          getStringListPolicyValues(droppedCaps),
+		Values:          getStringListPolicyValues(values),
 	}}
 }
 
-func convertAddCapabilities(fields *storage.PolicyFields) []*storage.PolicyGroup {
-	addedCaps := fields.GetAddCapabilities()
-	if addedCaps == nil {
-		return nil
-	}
+func convertDropCapabilities(fields *storage.PolicyFields) []*storage.PolicyGroup {
+	return convertCapabilities(fields.GetDropCapabilities(), dropCaps)
+}
 
-	return []*storage.PolicyGroup{{
-		FieldName:       addCaps,
-		BooleanOperator: storage.BooleanOperator_OR,
-		Values:          getStringListPolicyValues(addedCaps),
-	}}
+func convertAddCapabilities(fields *storage.PolicyFields) []*storage.PolicyGroup {
+	return convertCapabilities(fields.GetAddCapabilities(), addCaps)
 }
 
 func convertContainerResourcePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {

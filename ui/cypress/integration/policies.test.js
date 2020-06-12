@@ -182,7 +182,7 @@ describe('Policies page', () => {
         it('should show Add Capabilities value in edit mode', () => {
             cy.get(selectors.policies.addCapabilities).click({ force: true });
             editPolicy();
-            cy.get(selectors.form.selectValue).contains('CAP_SYS_ADMIN');
+            cy.get(selectors.form.selectValue).contains('SYS_ADMIN');
             closePolicySidePanel();
         });
 
