@@ -190,7 +190,6 @@ class IntegrationModal extends Component {
             <Form
                 initialValues={modifiedSelectedIntegration}
                 isNewIntegration={isNewIntegration}
-                enableReinitialize
                 source={source}
                 type={type}
                 onClose={this.closeIntegrationForm}

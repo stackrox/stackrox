@@ -313,6 +313,7 @@ const mapDispatchToProps = (dispatch) => ({
     triggerBackup: (source, id) => dispatch(actions.triggerBackup(source, id)),
 });
 
-export default reduxForm({ form: 'integrationForm' })(
-    connect(mapStateToProps, mapDispatchToProps)(Form)
-);
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(reduxForm({ enableReinitialize: true, form: 'integrationForm' })(Form));
