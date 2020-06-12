@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -19,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
 	sbpMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/mocks"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/status"
@@ -186,6 +189,40 @@ func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 	s.Nil(resp)
 	s.Error(err)
 	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
+	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
+	defer s.envIsolator.RestoreAll()
+
+	ctx := context.Background()
+	mockPolicy := &storage.Policy{
+		Id:                 mockRequestOneID.PolicyIds[0],
+		SORTName:           "abc",
+		SORTLifecycleStage: "def",
+	}
+	expectedPolicy := &storage.Policy{
+		Id: mockRequestOneID.PolicyIds[0],
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil, nil)
+	resp, err := s.tested.ExportPolicies(ctx, mockRequestOneID)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Len(resp.GetPolicies(), 1)
+	s.Equal(expectedPolicy, resp.Policies[0])
+}
+
+func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {
+	expectedSORTFields := set.NewStringSet("SORTLifecycleStage", "SORTEnforcement", "SORTName")
+	var policy storage.Policy
+	policyType := reflect.TypeOf(policy)
+	numFields := policyType.NumField()
+	for i := 0; i < numFields; i++ {
+		fieldName := policyType.Field(i).Name
+		if strings.HasPrefix(fieldName, "SORT") {
+			s.Contains(expectedSORTFields, fieldName, "Found unexpected SORT field %s, SORT fields must be cleared in exported policies in removeInternal()", fieldName)
+		}
+	}
 }
 
 func (s *PolicyServiceTestSuite) TestDryRunRuntime() {

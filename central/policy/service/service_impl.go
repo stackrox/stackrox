@@ -716,9 +716,21 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 		}
 		return nil, statusMsg.Err()
 	}
+	for _, policy := range policyList {
+		removeInternal(policy)
+	}
 	return &storage.ExportPoliciesResponse{
 		Policies: policyList,
 	}, nil
+}
+
+func removeInternal(policy *storage.Policy) {
+	if policy == nil {
+		return
+	}
+	policy.SORTLifecycleStage = ""
+	policy.SORTEnforcement = false
+	policy.SORTName = ""
 }
 
 func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
@@ -770,6 +782,9 @@ func (s *serviceImpl) ImportPolicies(ctx context.Context, request *v1.ImportPoli
 				})
 			}
 		}
+		// Clone here because this may be the same object stored by the DB
+		importResponse.Policy = importResponse.GetPolicy().Clone()
+		removeInternal(importResponse.Policy)
 	}
 
 	if err := s.syncPoliciesWithSensors(); err != nil {
