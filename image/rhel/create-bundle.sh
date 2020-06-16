@@ -74,10 +74,10 @@ extract_from_image "${BUILDER_IMAGE}" "/usr/local/bin/ldb" "${bundle_root}/usr/l
 rpm_base_url="http://mirror.centos.org/centos/8/BaseOS/x86_64/os/Packages"
 rpm_suffix="el8.x86_64.rpm"
 
-curl -s -o "${bundle_root}/lz4.rpm" "${rpm_base_url}/lz4-1.8.1.2-4.${rpm_suffix}"
-curl -s -o "${bundle_root}/bzip2.rpm" "${rpm_base_url}/bzip2-1.0.6-26.${rpm_suffix}"
-curl -s -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.7-5.${rpm_suffix}"
-curl -s -o "${bundle_root}/zlib.rpm" "${rpm_base_url}/zlib-1.2.11-10.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/lz4.rpm" "${rpm_base_url}/lz4-1.8.1.2-4.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/bzip2.rpm" "${rpm_base_url}/bzip2-1.0.6-26.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/snappy.rpm" "${rpm_base_url}/snappy-1.1.7-5.${rpm_suffix}"
+curl -s -f -o "${bundle_root}/zlib.rpm" "${rpm_base_url}/zlib-1.2.11-13.${rpm_suffix}"
 
 # =============================================================================
 

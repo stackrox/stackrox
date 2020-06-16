@@ -2737,6 +2737,7 @@ jobs:
                 label: ci-kernel-module-tests
                 run-on-master: true
                 run-on-tags: true
+          use-main-rhel: true # TODO remove before commit
 
   gke-api-upgrade-tests:
     executor: custom
