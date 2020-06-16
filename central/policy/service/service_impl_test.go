@@ -339,7 +339,7 @@ func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 			{
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Privileged",
+						FieldName: "Privileged Container",
 						Values: []*storage.PolicyValue{
 							{
 								Value: "true",

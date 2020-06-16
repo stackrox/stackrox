@@ -95,8 +95,8 @@ func GetImageRegistries(p *storage.Policy) []string {
 
 var (
 	portOrPortExposureFields = set.NewFrozenStringSet(
-		fieldnames.Port,
-		fieldnames.Protocol,
+		fieldnames.ExposedPort,
+		fieldnames.ExposedPortProtocol,
 		fieldnames.PortExposure,
 	)
 )

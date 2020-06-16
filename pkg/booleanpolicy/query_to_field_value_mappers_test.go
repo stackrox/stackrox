@@ -144,7 +144,7 @@ func (s *SearchMapperTestSuite) TestConvertImageLabel() {
 func (s *SearchMapperTestSuite) TestConvertVolumeReadonly() {
 	searchTerms := []string{"abc", "true"}
 	expectedGroup := &storage.PolicyGroup{
-		FieldName: fieldnames.WritableVolume,
+		FieldName: fieldnames.WritableMountedVolume,
 		Values: []*storage.PolicyValue{
 			{
 				Value: "false",
@@ -343,11 +343,11 @@ func (s *SearchMapperTestSuite) TestConvertImageTag() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertPort() {
-	s.testDirectMapSearchString(search.Port, fieldnames.Port)
+	s.testDirectMapSearchString(search.Port, fieldnames.ExposedPort)
 }
 
 func (s *SearchMapperTestSuite) TestConvertPrivileged() {
-	s.testDirectMapSearchString(search.Privileged, fieldnames.Privileged)
+	s.testDirectMapSearchString(search.Privileged, fieldnames.PrivilegedContainer)
 }
 
 func (s *SearchMapperTestSuite) TestConvertProcessAncestor() {
@@ -367,7 +367,7 @@ func (s *SearchMapperTestSuite) TestConvertProcessUID() {
 }
 
 func (s *SearchMapperTestSuite) TestConvertPortProtocol() {
-	s.testDirectMapSearchString(search.PortProtocol, fieldnames.Protocol)
+	s.testDirectMapSearchString(search.PortProtocol, fieldnames.ExposedPortProtocol)
 }
 
 func (s *SearchMapperTestSuite) TestConvertReadOnlyRootFilesystem() {

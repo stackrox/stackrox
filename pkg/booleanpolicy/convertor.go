@@ -213,7 +213,7 @@ func convertPrivileged(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	}
 
 	return []*storage.PolicyGroup{{
-		FieldName: fieldnames.Privileged,
+		FieldName: fieldnames.PrivilegedContainer,
 		Values:    getPolicyValues(fields.GetPrivileged()),
 	},
 	}
@@ -461,7 +461,7 @@ func convertVolumePolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	ro := p.GetSetReadOnly()
 	if ro != nil {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: fieldnames.WritableVolume,
+			FieldName: fieldnames.WritableMountedVolume,
 			Values:    getPolicyValues(!p.GetReadOnly()),
 		})
 	}
@@ -478,14 +478,14 @@ func convertPortPolicy(fields *storage.PolicyFields) []*storage.PolicyGroup {
 	var res []*storage.PolicyGroup
 	if p.GetPort() != 0 {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: fieldnames.Port,
+			FieldName: fieldnames.ExposedPort,
 			Values:    getPolicyValues(int64(p.GetPort())),
 		})
 	}
 
 	if p.GetProtocol() != "" {
 		res = append(res, &storage.PolicyGroup{
-			FieldName: fieldnames.Protocol,
+			FieldName: fieldnames.ExposedPortProtocol,
 			Values:    getPolicyValues(p.GetProtocol()),
 		})
 	}

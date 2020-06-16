@@ -207,7 +207,7 @@ var (
 						},
 					},
 					{
-						FieldName: "Writable Volume",
+						FieldName: "Writable Mounted Volume",
 						Values: []*storage.PolicyValue{
 							{
 								Value: "false",

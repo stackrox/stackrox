@@ -1693,7 +1693,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 
 	// Plain groups
 	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
-	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.Privileged, "true", false)
+	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
 	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.WhitelistsEnabled, "true", false)
 
 	for _, testCase := range []struct {

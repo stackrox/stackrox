@@ -616,8 +616,8 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: true,
     },
     {
-        label: 'Writable Volume',
-        name: 'Writable Volume',
+        label: 'Writable Mounted Volume',
+        name: 'Writable Mounted Volume',
         longName: 'Mounted Volume Writability',
         jsonpath: 'fields.volumePolicy.readOnly',
         category: policyCriteriaCategories.STORAGE,

@@ -347,7 +347,6 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			desc: "port policy",
 			policyFields: &storage.PolicyFields{
@@ -360,7 +359,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 				{
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: port,
+							FieldName: exposedPort,
 							Values: []*storage.PolicyValue{
 								{
 									Value: "1234",
@@ -369,7 +368,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 						},
 
 						{
-							FieldName: protocol,
+							FieldName: exposedPortProtocol,
 							Values: []*storage.PolicyValue{
 								{
 									Value: "protocol",
@@ -594,7 +593,7 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 				{
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: privileged,
+							FieldName: privilegedContainer,
 							Values: []*storage.PolicyValue{
 								{
 									Value: "true",
@@ -964,6 +963,29 @@ func TestConvertPolicyFieldsToSections(t *testing.T) {
 								},
 								{
 									Value: "HOST",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			desc: "writable mounted volume policy",
+			policyFields: &storage.PolicyFields{
+				VolumePolicy: &storage.VolumePolicy{
+					SetReadOnly: &storage.VolumePolicy_ReadOnly{ReadOnly: false},
+				},
+			},
+			expectedPolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: writableMountedVolume,
+							Values: []*storage.PolicyValue{
+								{
+									Value: "true",
 								},
 							},
 						},
