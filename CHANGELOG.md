@@ -16,6 +16,7 @@ All notable changes to this project that require documentation updates will be d
 - UI: Open API Reference in current Web UI browser tab instead of a new tab and replace Help Center popup menu with two half-height links in left navigation for API Reference and Help Center (ROX-2200)
 - UI: Move Images link on VM dashboard out of Applications menu, and into tile like Policies and CVEs link (ROX-5052)
 - UI: Add Disable TLS Certificate Validation (Insecure) toggle for JFrog Artifactory registry in Platform Configuration > Integrations > New Integration (ROX-5031)
+- UI: Add Disable TLS Certificate Validation (Insecure) toggle for Anchore Scanner, CoreOS Clair (Scanner), and Quay.io (Registry + Scanner) in Platform Configuration > Integrations > New Integration (ROX-5084)
 
 ## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.

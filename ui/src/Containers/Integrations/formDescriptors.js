@@ -668,6 +668,12 @@ const formDescriptors = {
                 type: 'text',
                 placeholder: '',
             },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'quay.insecure',
+                type: 'toggle',
+                placeholder: '',
+            },
             skipTestIntegration,
         ],
         clair: [
@@ -689,6 +695,12 @@ const formDescriptors = {
                 jsonpath: 'clair.endpoint',
                 type: 'text',
                 placeholder: 'https://clair.example.com',
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'clair.insecure',
+                type: 'toggle',
+                placeholder: '',
             },
         ],
         clairify: [
@@ -906,6 +918,12 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'anchore.password',
                 type: 'password',
+                placeholder: '',
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'anchore.insecure',
+                type: 'toggle',
                 placeholder: '',
             },
         ],
