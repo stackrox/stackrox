@@ -804,7 +804,7 @@ const policyConfigurationDescriptor = [
         name: 'Writable Host Mount',
         longName: 'Host Mount Writability',
         jsonpath: 'fields.hostMountPolicy.readOnly',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        category: policyCriteriaCategories.STORAGE,
         type: 'radioGroup',
         radioButtons: [
             {
