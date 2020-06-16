@@ -110,7 +110,7 @@ const SecretValues = ({ files }) => {
         file => !file.metadata || (file.metadata && file.metadata.__typename !== 'ImagePullSecret')
     );
     const filesCount = filesWithoutImagePullSecrets.length;
-    const widgetHeader = `${filesCount} ${pluralize('file', filesCount)}`;
+    const widgetHeader = `${filesCount} ${pluralize('value', filesCount)}`;
     const secretValues = filesWithoutImagePullSecrets.map((file, i) => {
         const { name, type, metadata } = file;
         const { algorithm } = metadata || {};

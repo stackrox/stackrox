@@ -3,19 +3,25 @@ import org.junit.experimental.categories.Category
 import groups.BAT
 import objects.Deployment
 import io.stackrox.proto.storage.SecretOuterClass.Secret
+import spock.lang.Unroll
 import util.Timer
 
 class SecretsTest extends BaseSpecification {
 
-    private static Deployment renderDeployment(String deploymentName, String secretName) {
-        return new Deployment()
+    private static Deployment renderDeployment(String deploymentName, String secretName, boolean fromEnv) {
+        Deployment deploy = new Deployment()
                 .setName (deploymentName)
                 .setNamespace("qa")
                 .setImage ("busybox")
                 .addLabel ( "app", "test" )
-                .addVolume("test", "/etc/try")
-                .addSecretName("test", secretName)
                 .setCommand(["sleep", "600"])
+        if (fromEnv) {
+            deploy.setEnvFromSecrets([secretName])
+        } else {
+            deploy.addVolume("test", "/etc/try")
+                    .addSecretName("test", secretName)
+        }
+        return deploy
     }
 
     @Category(BAT)
@@ -34,8 +40,9 @@ class SecretsTest extends BaseSpecification {
         orchestrator.deleteSecret(secretName)
     }
 
+    @Unroll
     @Category(BAT)
-    def "Verify the secret item should show the binding deployments"() {
+    def "Verify the secret item should show the binding deployments (from env var: #fromEnv)"() {
         when:
         "Create a Secret"
         String secretName = "qasec"
@@ -44,7 +51,7 @@ class SecretsTest extends BaseSpecification {
         and:
         "Create a Deployment using above created secret"
         String deploymentName = "depwithsecrets"
-        Deployment deployment = renderDeployment(deploymentName, secretName)
+        Deployment deployment = renderDeployment(deploymentName, secretName, fromEnv)
         orchestrator.createDeployment(deployment)
 
         then:
@@ -57,16 +64,21 @@ class SecretsTest extends BaseSpecification {
         "Remove Secret #secretName and Deployment #deploymentName"
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
         orchestrator.deleteSecret(secretName)
+
+        where:
+        "Data inputs are"
+        fromEnv << [false, true]
     }
 
+    @Unroll
     @Category(BAT)
-    def "Verify the secret should not show the deleted binding deployment"() {
+    def "Verify the secret should not show the deleted binding deployment (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretName = "qasec"
         String deploymentName = "depwithsecrets"
         String secID = orchestrator.createSecret("qasec")
-        Deployment deployment = renderDeployment(deploymentName, secretName)
+        Deployment deployment = renderDeployment(deploymentName, secretName, fromEnv)
 
         orchestrator.createDeployment(deployment)
 
@@ -104,17 +116,22 @@ class SecretsTest extends BaseSpecification {
         cleanup:
         "Remove Secret #secretName"
         orchestrator.deleteSecret(secretName)
+
+        where:
+        "Data inputs are"
+        fromEnv << [false, true]
     }
 
+    @Unroll
     @Category(BAT)
-    def "Verify the secret information should not be infected by the previous secrets"() {
+    def "Verify the secret information should not be infected by the previous secrets (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretName = "qasec"
         String deploymentName = "depwithsecrets"
 
         String secID = orchestrator.createSecret(secretName)
-        Deployment deployment = renderDeployment(deploymentName, secretName)
+        Deployment deployment = renderDeployment(deploymentName, secretName, fromEnv)
         orchestrator.createDeployment(deployment)
 
         and:
@@ -122,7 +139,7 @@ class SecretsTest extends BaseSpecification {
         orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         String deploymentSecName = "depwithsecretssec"
-        Deployment deploymentSec = renderDeployment(deploymentSecName, secretName)
+        Deployment deploymentSec = renderDeployment(deploymentSecName, secretName, fromEnv)
         orchestrator.createDeployment(deploymentSec)
 
         then:
@@ -137,30 +154,35 @@ class SecretsTest extends BaseSpecification {
         "Remove Deployment #deploymentName and Secret #secretName"
         orchestrator.deleteAndWaitForDeploymentDeletion(deploymentSec)
         orchestrator.deleteSecret(secretName)
+
+        where:
+        "Data inputs are"
+        fromEnv << [false, true]
     }
 
+    @Unroll
     @Category(BAT)
-    def "Verify secrets page should not be messed up when a deployment's secret changed"() {
+    def "Verify secrets page should not be messed up when a deployment's secret changed (from env var: #fromEnv)"() {
         when:
         "Create a Secret and bind deployment with it"
         String secretNameOne = "qasec1"
         String deploymentNameOne = "depwithsecrets1"
         String secIDOne = orchestrator.createSecret("qasec1")
-        Deployment deploymentOne = renderDeployment(deploymentNameOne, secretNameOne)
+        Deployment deploymentOne = renderDeployment(deploymentNameOne, secretNameOne, fromEnv)
         orchestrator.createDeployment(deploymentOne)
 
         String secretNameTwo = "qasec2"
         String deploymentNameTwo = "depwithsecrets2"
         String secIDTwo = orchestrator.createSecret("qasec2")
-        Deployment deploymentTwo = renderDeployment(deploymentNameTwo, secretNameTwo)
+        Deployment deploymentTwo = renderDeployment(deploymentNameTwo, secretNameTwo, fromEnv)
         orchestrator.createDeployment(deploymentTwo)
 
         and:
         "Delete this deployment and create another deployment binding with the secret name with different name"
         orchestrator.deleteAndWaitForDeploymentDeletion(deploymentOne, deploymentTwo)
 
-        deploymentOne = renderDeployment(deploymentNameOne, secretNameTwo)
-        deploymentTwo = renderDeployment(deploymentNameTwo, secretNameOne)
+        deploymentOne = renderDeployment(deploymentNameOne, secretNameTwo, fromEnv)
+        deploymentTwo = renderDeployment(deploymentNameTwo, secretNameOne, fromEnv)
         orchestrator.createDeployment(deploymentOne)
         orchestrator.createDeployment(deploymentTwo)
 
@@ -177,5 +199,9 @@ class SecretsTest extends BaseSpecification {
         orchestrator.deleteAndWaitForDeploymentDeletion(deploymentOne, deploymentTwo)
         orchestrator.deleteSecret(secretNameOne)
         orchestrator.deleteSecret(secretNameTwo)
+
+        where:
+        "Data inputs are"
+        fromEnv << [false, true]
     }
 }

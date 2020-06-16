@@ -404,6 +404,7 @@ func (w *DeploymentWrap) populateResources(podSpec v1.PodSpec) {
 	}
 }
 
+// Populates volumes and secrets that are referenced by both volumes and environment variables.
 func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 	volumeSourceMap := w.getVolumeSourceMap(podSpec)
 	for i, c := range podSpec.Containers {
@@ -433,6 +434,22 @@ func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 			w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
 				Name: s.Name,
 			})
+		}
+
+		for _, e := range c.EnvFrom {
+			if e.SecretRef != nil {
+				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
+					Name: e.SecretRef.Name,
+				})
+			}
+		}
+
+		for _, e := range c.Env {
+			if e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil {
+				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
+					Name: e.ValueFrom.SecretKeyRef.Name,
+				})
+			}
 		}
 	}
 }

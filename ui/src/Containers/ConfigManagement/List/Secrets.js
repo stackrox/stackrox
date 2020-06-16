@@ -54,14 +54,14 @@ const buildTableColumns = (match, location, entityContext) => {
             sortMethod: sortDate,
         },
         {
-            Header: `File Types`,
+            Header: `Types`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'files',
             // eslint-disable-next-line
             Cell: ({ original }) => {
                 const { files } = original;
-                if (!files.length) return 'No File Types';
+                if (!files.length) return 'No Types';
                 return (
                     <span>
                         {uniq(files.map((file) => secretTypeEnumMapping[file.type])).join(', ')}

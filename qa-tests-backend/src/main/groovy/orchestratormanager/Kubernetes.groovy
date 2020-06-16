@@ -4,6 +4,7 @@ import common.YamlGenerator
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
+import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
@@ -18,6 +19,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
+import io.fabric8.kubernetes.api.model.SecretEnvSource
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.Service
@@ -317,6 +319,12 @@ class Kubernetes implements OrchestratorMain {
         Set<String> secretSet = [] as Set
         if (d != null) {
             d.getSpec()?.getTemplate()?.getSpec()?.getVolumes()?.each { secretSet.add(it.secret.secretName) }
+            d.getSpec()?.getTemplate()?.getSpec()?.getContainers()?.getAt(0)?.getEnvFrom()?.each {
+                // Only care about secrets for now.
+                if (it.getSecretRef() != null) {
+                    secretSet.add(it.secretRef.name)
+                }
+            }
         }
         return secretSet
     }
@@ -1523,6 +1531,11 @@ class Kubernetes implements OrchestratorMain {
             k, v -> new EnvVar(k, v, null)
         }
 
+        List<EnvFromSource> envFromSecrets = new LinkedList<>()
+        for (String secret : deployment.getEnvFromSecrets()) {
+            envFromSecrets.add(new EnvFromSource(null, null, new SecretEnvSource(secret, false)))
+        }
+
         List<Volume> volumes = []
         deployment.volumes.each {
             v -> Volume vol = new Volume(
@@ -1568,6 +1581,7 @@ class Kubernetes implements OrchestratorMain {
                 ports: depPorts,
                 volumeMounts: volMounts,
                 env: envVars,
+                envFrom: envFromSecrets,
                 resources: new ResourceRequirements(limits, requests),
                 securityContext: new SecurityContext(privileged: deployment.isPrivileged)
         )
