@@ -231,7 +231,9 @@ function launch_central {
     echo "Successfully deployed Central!"
 
     echo "Access the UI at: https://${API_ENDPOINT}"
-    setup_auth0 "${API_ENDPOINT}"
+    if [[ "$AUTH0_SUPPORT" == "true" ]]; then
+        setup_auth0 "${API_ENDPOINT}"
+    fi
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
       "${COMMON_DIR}/monitoring.sh"

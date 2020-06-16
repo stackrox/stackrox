@@ -52,6 +52,9 @@ echo "ROX_BADGER_DB is set to ${ROX_BADGER_DB}"
 export API_ENDPOINT="${API_ENDPOINT:-localhost:8000}"
 echo "API_ENDPOINT is set to ${API_ENDPOINT}"
 
+export AUTH0_SUPPORT="${AUTH0_SUPPORT:-true}"
+echo "AUTH0_SUPPORT is set to ${AUTH0_SUPPORT}"
+
 export TRUSTED_CA_FILE="${TRUSTED_CA_FILE:-}"
 if [[ -n "${TRUSTED_CA_FILE}" ]]; then
   [[ -f "${TRUSTED_CA_FILE}" ]] || { echo "Trusted CA file ${TRUSTED_CA_FILE} not found"; return 1; }

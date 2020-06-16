@@ -1388,6 +1388,9 @@ commands:
       post-central-deploy-steps:
         type: steps
         default: []
+      helm-from-repo:
+        type: boolean
+        default: false
 
     steps:
       - *setupHelm
@@ -1398,6 +1401,15 @@ commands:
             # If we're running a race check, then set CGO_CHECK=true so the central script will deploy it with strict checks
             if .circleci/is-nightly-tag.sh || .circleci/pr_has_label.sh ci-race-tests; then
                 cci-export CGO_CHECKS "true"
+            fi
+
+            # Use stackrox.io if helm-from-repo is true
+            if [[ << parameters.helm-from-repo >> == "true" ]]; then
+              cci-export MAIN_IMAGE_REPO "stackrox.io/main"
+              cci-export REGISTRY_USERNAME "$STACKROX_IO_USERNAME"
+              cci-export REGISTRY_PASSWORD "$STACKROX_IO_PASSWORD"
+              docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" stackrox.io
+              docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" collector.stackrox.io
             fi
 
             deploy_dir="deploy/<< parameters.orchestrator-flavor >>"
@@ -1441,16 +1453,28 @@ commands:
                 | jq -r '.token // ""')"
               export ROX_API_TOKEN=${rox_auth_token}
               MAIN_TAG=$(make --quiet tag)
-              BASE_DIR="/go/src/github.com/stackrox/rox"
-              RENDERED_CHART_DIR="/tmp/${MAIN_TAG}"
-              make render-helm-yamls
-              # Copy values.yaml into generated tmp dir, run setup.sh and helm install
-              cd ${RENDERED_CHART_DIR}
-              cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
-              ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
               extra_args=()
-              if [[ -f feature-flag-values.yaml ]]; then
-                  extra_args+=(-f feature-flag-values.yaml)
+              if [[ << parameters.helm-from-repo >> == "true" ]]; then
+                cd /go/src/github.com/stackrox
+                git clone git@github.com:stackrox/helm-charts.git
+                BASE_DIR="/go/src/github.com/stackrox/helm-charts"
+                RENDERED_CHART_DIR="${BASE_DIR}/${MAIN_TAG}"
+                cd ${RENDERED_CHART_DIR}
+                sed -i -e 's/  name:/  name: remote/g' values.yaml
+                sed -i -e 's/    createService: false/    createService: true/g' values.yaml
+                cat values.yaml
+                ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
+              else
+                BASE_DIR="/go/src/github.com/stackrox/rox"
+                RENDERED_CHART_DIR="/tmp/${MAIN_TAG}"
+                make render-helm-yamls
+                # Copy values.yaml into generated tmp dir, run setup.sh and helm install
+                cd ${RENDERED_CHART_DIR}
+                cp ${BASE_DIR}/qa-tests-backend/helm/values.<< parameters.orchestrator-flavor >>.yaml values.yaml
+                ./scripts/setup.sh -f values.yaml -e ${API_ENDPOINT}
+                if [[ -f feature-flag-values.yaml ]]; then
+                    extra_args+=(-f feature-flag-values.yaml)
+                fi
               fi
               helm install --namespace stackrox -f values.yaml --name sensor . "${extra_args[@]}"
               rm -rf "${RENDERED_CHART_DIR}"
@@ -2115,6 +2139,14 @@ jobs:
 
       - provision-gke-cluster:
           cluster-id: upgrade-test
+
+  provision-test-helm-charts-repo:
+    executor: custom
+    steps:
+      - checkout
+      - provision-gke-cluster:
+          cluster-id: test-helm-charts
+          num-nodes: 2
 
   build-scale-monitoring-and-mock-server:
     executor: custom
@@ -3730,6 +3762,51 @@ jobs:
             export QUAY_BEARER_TOKEN=${QUAY_BEARER_TOKEN}
             ./release/scripts/vuln_check.sh
 
+  test-helm-charts-repo:
+    executor: custom
+    environment:
+      - SCANNER_SUPPORT: true
+      - ROX_SENSOR_DETECTION: true
+      - AUTH0_SUPPORT: false
+
+    steps:
+      - checkout
+      - check-backend-changes
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - setup_remote_docker
+      - setup-gcp
+      - setup-dep-env
+
+      - attach-gke-cluster:
+          cluster-id: test-helm-charts
+
+      - *setupGoogleAppCreds
+      - run:
+          name: Creating License Key
+          command: |
+            echo "Issuing a CI license for testing the release build"
+            ROX_LICENSE_KEY="$(licenses/ci.sh)"
+            cci-export ROX_LICENSE_KEY "$ROX_LICENSE_KEY"
+
+      - deploy-stackrox:
+          sensor-deploy-flavor: helm
+          helm-from-repo: true
+          post-central-deploy-steps:
+            - *setupClientTLSCerts
+            - setup-egress-proxies
+
+      - *collectK8sLogs
+      - get-and-store-debug-dump
+      - *backupDB
+      - *storeDBBackupArtifact
+      - check-stackrox-logs
+      - *storeK8sLogs
+      - teardown-gke
+
 
   ###
   # Infrastructure and workflow utility jobs
@@ -4054,6 +4131,16 @@ workflows:
               only: master
             tags:
               only: /.*-nightly-.*/
+
+      - provision-test-helm-charts-repo:
+          <<: *runOnlyOnReleaseBuilds
+          context: docker-io-pull
+      - test-helm-charts-repo:
+          <<: *runOnlyOnReleaseBuilds
+          context: docker-io-pull
+          requires:
+            - push-release
+            - provision-test-helm-charts-repo
 
   update_dev_license:
     triggers:
