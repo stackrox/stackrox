@@ -24,7 +24,7 @@ function BooleanPolicySection({ readOnly, hasHeader }) {
         );
     return (
         <DndProvider backend={Backend}>
-            <div className="w-full flex">
+            <div className="w-full h-full flex">
                 <FieldArray name="policySections" component={PolicySections} />
                 <PolicyBuilderKeys keys={policyConfiguration.descriptor} />
             </div>

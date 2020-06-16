@@ -304,7 +304,7 @@ function* watchWizardState() {
         const policy = yield select(selectors.getWizardPolicy);
         switch (stage) {
             case wizardStages.details:
-            case wizardStages.edit:
+            case wizardStages.editBPL:
                 yield fork(cancelDryRun);
                 break;
             case wizardStages.prepreview:

@@ -1,19 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { ArrowRight } from 'react-feather';
 import { getFormValues } from 'redux-form';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
+import { ArrowLeft, ArrowRight } from 'react-feather';
 
 import { selectors } from 'reducers';
 import wizardStages from 'Containers/Policies/Wizard/wizardStages';
-import { actions as wizardActions } from 'reducers/policies/wizard';
 import { actions as notificationActions } from 'reducers/notifications';
+import { actions as wizardActions } from 'reducers/policies/wizard';
 import PanelButton from 'Components/PanelButton';
 import { formatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
-function FormButtons({
+function CriteriaFormButtons({
     policies,
     wizardPolicy,
     formData,
@@ -22,10 +21,9 @@ function FormButtons({
     setWizardPolicy,
     addToast,
     removeToast,
-    BPLisEnabled,
 }) {
-    function goToCriteria() {
-        setWizardStage(wizardStages.editBPL);
+    function goBackToEdit() {
+        setWizardStage(wizardStages.edit);
     }
 
     function goToPreview() {
@@ -65,18 +63,28 @@ function FormButtons({
     }
 
     return (
-        <PanelButton
-            icon={<ArrowRight className="h-4 w-4" />}
-            className="btn btn-base mr-2"
-            onClick={BPLisEnabled ? goToCriteria : goToPreview}
-            tooltip="Go to policy criteria"
-        >
-            Next
-        </PanelButton>
+        <>
+            <PanelButton
+                icon={<ArrowLeft className="h-4 w-4" />}
+                className="btn btn-base mr-2"
+                onClick={goBackToEdit}
+                tooltip="Back to previous step"
+            >
+                Previous
+            </PanelButton>
+            <PanelButton
+                icon={<ArrowRight className="h-4 w-4" />}
+                className="btn btn-base mr-2"
+                onClick={goToPreview}
+                tooltip="Go to next step"
+            >
+                Next
+            </PanelButton>
+        </>
     );
 }
 
-FormButtons.propTypes = {
+CriteriaFormButtons.propTypes = {
     policies: PropTypes.arrayOf(PropTypes.object).isRequired,
     wizardPolicy: PropTypes.shape({
         id: PropTypes.string,
@@ -90,29 +98,19 @@ FormButtons.propTypes = {
     setWizardPolicy: PropTypes.func.isRequired,
     addToast: PropTypes.func.isRequired,
     removeToast: PropTypes.func.isRequired,
-    BPLisEnabled: PropTypes.bool.isRequired,
 };
 
-FormButtons.defaultProps = {
+CriteriaFormButtons.defaultProps = {
     formData: {
         name: '',
     },
 };
-
-const getBPLisEnabled = createSelector([selectors.getFeatureFlags], (featureFlags) => {
-    return isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC,
-        false
-    );
-});
 
 const mapStateToProps = createStructuredSelector({
     policies: selectors.getFilteredPolicies,
     wizardPolicy: selectors.getWizardPolicy,
     formData: getFormValues('policyCreationForm'),
     wizardPolicyIsNew: selectors.getWizardIsNew,
-    BPLisEnabled: getBPLisEnabled,
 });
 
 const mapDispatchToProps = {
@@ -123,4 +121,4 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification,
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(FormButtons);
+export default connect(mapStateToProps, mapDispatchToProps)(CriteriaFormButtons);

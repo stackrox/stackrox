@@ -1,6 +1,7 @@
 const wizardStages = {
     details: 'DETAILS',
     edit: 'EDIT',
+    editBPL: 'EDIT_BOOLEAN_POLICY_LOGIC',
     prepreview: 'PREPREVIEW',
     preview: 'PREVIEW',
     enforcement: 'ENFORCEMENT',

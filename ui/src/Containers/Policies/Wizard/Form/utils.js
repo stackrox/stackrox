@@ -148,7 +148,9 @@ function preFormatNestedPolicyFields(policy) {
     return clientPolicy;
 }
 
-export function formatValueStr({ source, key, value }, fieldName) {
+export function formatValueStr(valueObj, fieldName) {
+    if (!valueObj) return valueObj;
+    const { source, key, value } = valueObj;
     let valueStr = value;
 
     if (nonStandardNumberFields.includes(fieldName)) {

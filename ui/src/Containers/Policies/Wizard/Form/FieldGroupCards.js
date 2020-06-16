@@ -182,4 +182,6 @@ const mapDispatchToProps = (dispatch) => ({
 export default reduxForm({
     form: 'policyCreationForm',
     enableReinitialize: true,
+    destroyOnUnmount: false,
+    keepDirtyOnReinitialize: true,
 })(connect(mapStateToProps, mapDispatchToProps)(FieldGroupCards));

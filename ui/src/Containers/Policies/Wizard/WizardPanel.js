@@ -11,6 +11,7 @@ import PolicyDetailsPanel from 'Containers/Policies/Wizard/Details/PolicyDetails
 import EnforcementPanel from 'Containers/Policies/Wizard/Enforcement/EnforcementPanel';
 import PreviewPanel from 'Containers/Policies/Wizard/Preview/PreviewPanel';
 import FormPanel from 'Containers/Policies/Wizard/Form/FormPanel';
+import CriteriaFormPanel from 'Containers/Policies/Wizard/Form/BPL/CriteriaFormPanel';
 
 // Panel is the contents of the wizard.
 function Panel({
@@ -26,7 +27,6 @@ function Panel({
 
     switch (wizardStage) {
         case wizardStages.edit:
-        case wizardStages.prepreview:
             return (
                 <FormPanel
                     header={header}
@@ -35,6 +35,9 @@ function Panel({
                     fieldGroups={fieldGroups}
                 />
             );
+        case wizardStages.editBPL:
+        case wizardStages.prepreview:
+            return <CriteriaFormPanel header={header} onClose={onClose} />;
         case wizardStages.preview:
             return <PreviewPanel header={header} onClose={onClose} />;
         case wizardStages.enforcement:

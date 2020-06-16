@@ -5,14 +5,20 @@ import withAuth from '../../helpers/basicAuth';
 describe('Risk search to new policy', () => {
     withAuth();
 
-    it('should create a policy with a multiselect field, like Add Capabilities', () => {
-        cy.visit(`${riskUrl}?s[Add%20Capabilities]=NET_BIND_SERVICE`);
+    const navigateToPolicy = (url) => {
+        cy.visit(url);
 
         cy.get(riskSelectors.createPolicyButton).click();
 
         cy.location().should((location) => {
             expect(location.pathname).to.eq(policiesUrl);
         });
+        cy.get(policySelectors.nextButton).click();
+    };
+
+    it('should create a policy with a multiselect field, like Add Capabilities', () => {
+        navigateToPolicy(`${riskUrl}?s[Add%20Capabilities]=NET_BIND_SERVICE`);
+
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first`).should(
             'contain.text',
             'Add Capabilities:'
@@ -23,13 +29,8 @@ describe('Risk search to new policy', () => {
     });
 
     it('should create a policy with a numeric comparison criterion, like CPU Cores Limit', () => {
-        cy.visit(`${riskUrl}?s[CPU%20Cores%20Limit]=2`);
+        navigateToPolicy(`${riskUrl}?s[CPU%20Cores%20Limit]=2`);
 
-        cy.get(riskSelectors.createPolicyButton).click();
-
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(policiesUrl);
-        });
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first`).should(
             'contain.text',
             'Container CPU Limit:'
@@ -44,13 +45,8 @@ describe('Risk search to new policy', () => {
     });
 
     it('should create a policy with a key/value criterion with only the key specified, like Dockerfile Instruction key', () => {
-        cy.visit(`${riskUrl}?s[Dockerfile%20Instruction%20Keyword]=RUN`);
+        navigateToPolicy(`${riskUrl}?s[Dockerfile%20Instruction%20Keyword]=RUN`);
 
-        cy.get(riskSelectors.createPolicyButton).click();
-
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(policiesUrl);
-        });
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first .uppercase`).should(
             'include.text',
             'Disallowed Dockerfile line:'
@@ -61,13 +57,8 @@ describe('Risk search to new policy', () => {
     });
 
     it('should create a policy with a key/value criterion with only the value specified, like Dockerfile Instruction value', () => {
-        cy.visit(`${riskUrl}?s[Dockerfile%20Instruction%20Value]=%5B"%2Fbin%2Fsh"%5D`);
+        navigateToPolicy(`${riskUrl}?s[Dockerfile%20Instruction%20Value]=%5B"%2Fbin%2Fsh"%5D`);
 
-        cy.get(riskSelectors.createPolicyButton).click();
-
-        cy.location().should((location) => {
-            expect(location.pathname).to.eq(policiesUrl);
-        });
         cy.get(`${policySelectors.booleanPolicySection.policyFieldCard}:first .uppercase`).should(
             'include.text',
             'Disallowed Dockerfile line:'
