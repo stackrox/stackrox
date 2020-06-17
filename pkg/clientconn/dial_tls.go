@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 
+	"golang.stackrox.io/grpc-http1/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -22,4 +23,11 @@ func DialTLS(ctx context.Context, endpoint string, tlsClientConf *tls.Config, op
 	allOpts = append(allOpts, opts...)
 
 	return grpc.DialContext(ctx, endpoint, allOpts...)
+}
+
+// DialTLSWebSocket establishes a gRPC connection via a WebSocket proxy to the given endpoint,
+// optionally using TLS for securing the transport layer and the given dial options.
+// Note: if tlsClientConf is nil, the options *must* contain `WithInsecure()`, otherwise the connection will fail.
+func DialTLSWebSocket(ctx context.Context, endpoint string, tlsClientConf *tls.Config, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+	return client.ConnectViaWSProxy(ctx, endpoint, tlsClientConf, client.DialOpts(opts...))
 }

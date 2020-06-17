@@ -673,6 +673,10 @@ commands:
         type: boolean
         default: false
 
+      use-websocket:
+        type: boolean
+        default: false
+
     steps:
       - run:
           name: Setup deployment env
@@ -680,6 +684,9 @@ commands:
             <<# parameters.docker-login >>
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
             <</ parameters.docker-login >>
+            <<# parameters.use-websocket >>
+            cci-export CLUSTER_API_ENDPOINT "wss://central.stackrox:443"
+            <</ parameters.use-websocket >>
             cci-export REGISTRY_USERNAME "$DOCKER_IO_PULL_USERNAME"
             cci-export REGISTRY_PASSWORD "$DOCKER_IO_PULL_PASSWORD"
             cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
@@ -2384,7 +2391,8 @@ jobs:
       - *setupRoxctl
       - setup_remote_docker
       - setup-gcp
-      - setup-dep-env
+      - setup-dep-env:
+          use-websocket: true
 
       - attach-gke-cluster:
           cluster-id: api-nongroovy-tests
@@ -3234,7 +3242,8 @@ jobs:
 
       - *setupRoxctl
       - setup-gcp
-      - setup-dep-env
+      - setup-dep-env:
+          use-websocket: true
       - attach-gke-cluster:
           cluster-id: scale-test
       - remove-existing-stackrox-resources

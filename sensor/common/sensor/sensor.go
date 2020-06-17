@@ -118,7 +118,7 @@ func createKOCacheSource(centralEndpoint string) (probeupload.ProbeSource, error
 }
 
 // Start registers APIs and starts background tasks.
-// It returns once tasks have succesfully started.
+// It returns once tasks have successfully started.
 func (s *Sensor) Start() {
 	// Start up connections.
 	log.Infof("Connecting to Central server %s", s.centralEndpoint)

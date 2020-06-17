@@ -10,12 +10,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
-	downgradingServer "github.com/stackrox/rox/pkg/grpc/http1downgrade/server"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/tlsutils"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	downgradingServer "golang.stackrox.io/grpc-http1/server"
 	"google.golang.org/grpc"
 )
 
@@ -97,13 +97,13 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 	}
 
 	if httpLis != nil {
-		httpHandler := httpHandler
+		actualHTTPHandler := httpHandler
 		if c.ServeGRPC {
-			httpHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, httpHandler)
+			actualHTTPHandler = downgradingServer.CreateDowngradingHandler(grpcSrv, actualHTTPHandler)
 		}
 
 		httpSrv := &http.Server{
-			Handler:   httpHandler,
+			Handler:   actualHTTPHandler,
 			TLSConfig: tlsConf,
 			ErrorLog:  golog.New(httpErrorLogger{}, "", golog.LstdFlags),
 		}
@@ -112,7 +112,7 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			if err := http2.ConfigureServer(httpSrv, &h2Srv); err != nil {
 				log.Warnf("Failed to instantiated endpoint listening at %q for HTTP/2", c.ListenEndpoint)
 			} else {
-				httpSrv.Handler = h2c.NewHandler(httpHandler, &h2Srv)
+				httpSrv.Handler = h2c.NewHandler(actualHTTPHandler, &h2Srv)
 			}
 		}
 		result = append(result, serverAndListener{

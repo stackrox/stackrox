@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -211,6 +213,10 @@ func OptionsForEndpoint(endpoint string, extraConnOpts ...ConnectionOption) (Opt
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
 func AuthenticatedGRPCConnection(endpoint string, server mtls.Subject, extraConnOpts ...ConnectionOption) (conn *grpc.ClientConn, err error) {
+	if strings.HasPrefix(endpoint, "ws://") || strings.HasPrefix(endpoint, "wss://") {
+		_, endpoint = stringutils.Split2(endpoint, "://")
+		extraConnOpts = append(extraConnOpts, UseDialTLSFunc(DialTLSWebSocket))
+	}
 	clientConnOpts, err := OptionsForEndpoint(endpoint, extraConnOpts...)
 	if err != nil {
 		return nil, err
@@ -297,6 +303,10 @@ func HTTPTransport(server mtls.Subject, endpoint string, clientConnOpts Options,
 // AuthenticatedHTTPTransport creates an HTTP transport for talking to the given service at the specified endpoint.
 // The transport accepts URL without a schema and a host; however, if provided, they must match the expected values.
 func AuthenticatedHTTPTransport(endpoint string, server mtls.Subject, baseTransport *http.Transport, extraConnOpts ...ConnectionOption) (http.RoundTripper, error) {
+	if strings.HasPrefix(endpoint, "ws://") || strings.HasPrefix(endpoint, "wss://") {
+		_, endpoint = stringutils.Split2(endpoint, "://")
+		// No need to add the WebSocket TLS Dialer since this is not gRPC.
+	}
 	clientConnOpts, err := OptionsForEndpoint(endpoint, extraConnOpts...)
 	if err != nil {
 		return nil, err
