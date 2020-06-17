@@ -70,7 +70,7 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
                         options={field.options}
                         placeholder={field.placeholder}
                         disabled={readOnly || field.disabled}
-                        defaultValue={field.default}
+                        value={field.default}
                     />
                 </label>
             );

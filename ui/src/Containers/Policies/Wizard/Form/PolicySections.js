@@ -24,7 +24,7 @@ function getNewPolicySection(length) {
 function PolicySections({ fields, readOnly, className, hasHeader }) {
     const newPolicySection = getNewPolicySection(fields.length);
     return (
-        <div className={`p-3 ${className}`}>
+        <div className={`p-3 ${className} overflow-y-scroll`}>
             {hasHeader && <h2 className="text-2xl pb-2">Policy Criteria</h2>}
             {!readOnly && hasHeader && (
                 <div className="text-sm italic pb-5 text-base-500">

@@ -157,8 +157,8 @@ export function formatValueStr(valueObj, fieldName) {
         // TODO: work with API to update contract for returning number comparison fields
         //   until that improves, we short-circuit those fields here
         valueStr = key !== '=' ? `${key} ${value}` : `${value}`;
-    } else if (source) {
-        valueStr = `${source}=${key}=${value}`;
+    } else if (source || fieldName === 'Environment Variable') {
+        valueStr = `${source || ''}=${key}=${value}`;
     } else if (key) {
         valueStr = `${key}=${value}`;
     }

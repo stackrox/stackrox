@@ -102,7 +102,7 @@ describe('policyFormUtils', () => {
                 key,
                 value,
             };
-            const valueStr = formatValueStr(valueObj);
+            const valueStr = formatValueStr(valueObj, 'Environment Variable');
             expect(valueStr).toBe(`${source}=${key}=${value}`);
         });
 
@@ -115,7 +115,20 @@ describe('policyFormUtils', () => {
                 key,
                 value,
             };
-            const valueStr = formatValueStr(valueObj);
+            const valueStr = formatValueStr(valueObj, 'Environment Variable');
+            expect(valueStr).toBe(`${source}=${key}=${value}`);
+        });
+
+        it('should format Environment Variable empty source to value obj with source string', () => {
+            const source = '';
+            const key = 'key1';
+            const value = '';
+            const valueObj = {
+                source,
+                key,
+                value,
+            };
+            const valueStr = formatValueStr(valueObj, 'Environment Variable');
             expect(valueStr).toBe(`${source}=${key}=${value}`);
         });
 
