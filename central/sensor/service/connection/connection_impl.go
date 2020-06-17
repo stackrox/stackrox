@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/reflectutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -35,7 +36,8 @@ type sensorConnection struct {
 
 	sensorEventHandler *sensorEventHandler
 
-	queues map[string]*dedupingQueue
+	queues      map[string]*dedupingQueue
+	queuesMutex sync.Mutex
 
 	eventPipeline pipeline.ClusterPipeline
 
@@ -79,19 +81,39 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedSig
 }
 
-func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor) {
+// multiplexedPush pushes the given message to a dedicated queue for the respective event type.
+// The queues parameter, if non-nil, will be used to look up the queue by event type. If the `queues`
+// map is nil or does not contain an entry for the respective type, a queue is retrieved from the
+// mutex-protected `c.queues` map (and created if exists), and afterwards stored in the `queues` map
+// if non-nil.
+// The envisioned use for this is that a caller invoking `multiplexedPush` repeatedly will maintain
+// an exclusively used (i.e., not requiring protection via a mutex) map, that will automatically be
+// populated with a subset of the entries from `c.queues`. This avoids mutex lock acquisitions for every
+// invocation of `multiplexedPush` with a previously seen (from the perspective of the caller)
+// event type.
+func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.MsgFromSensor, queues map[string]*dedupingQueue) {
 	typ := reflectutils.Type(msg.Msg)
-	queue := c.queues[typ]
+	queue := queues[typ]
 	if queue == nil {
-		queue = newDedupingQueue(stripTypePrefix(typ))
-		c.queues[typ] = queue
-		go c.handleMessages(ctx, queue)
+		concurrency.WithLock(&c.queuesMutex, func() {
+			queue = c.queues[typ]
+			if queue == nil {
+				queue = newDedupingQueue(stripTypePrefix(typ))
+				go c.handleMessages(ctx, queue)
+				c.queues[typ] = queue
+			}
+		})
+		if queues != nil {
+			queues[typ] = queue
+		}
 	}
 	queue.push(msg)
 }
 
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
 	server := recorder.WrapStream(grpcServer)
+
+	queues := make(map[string]*dedupingQueue)
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
 		if err != nil {
@@ -99,7 +121,7 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			return
 		}
 
-		c.multiplexedPush(ctx, msg)
+		c.multiplexedPush(ctx, msg, queues)
 	}
 }
 
@@ -135,7 +157,7 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 }
 
 func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
-	c.multiplexedPush(sac.WithAllAccess(context.Background()), msg)
+	c.multiplexedPush(sac.WithAllAccess(context.Background()), msg, nil)
 }
 
 func (c *sensorConnection) NetworkPolicies() networkpolicies.Controller {
