@@ -240,7 +240,12 @@ func (resolver *podResolver) Events(ctx context.Context) ([]*DeploymentEventReso
 // convertTimestamp is a thin wrapper over types.TimestampFromProto.
 // That function is used often and, if it errors, we log errors each time.
 // This function just saves the need to write so much repeat code.
+// The second return value must be checked upon each call to ensure the returned time is valid.
 func convertTimestamp(name, resource string, t *types.Timestamp) (time.Time, bool) {
+	if t == nil {
+		return time.Time{}, false
+	}
+
 	timestamp, err := types.TimestampFromProto(t)
 	if err != nil {
 		log.Errorf("unable to convert timestamp for %s %s: %v", resource, name, err)
