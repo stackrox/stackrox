@@ -17,9 +17,7 @@ import (
 
 func v2RestoreCancelCommand() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "cancel",
-		Short: "Cancel the ongoing database restore process",
-		Long:  "Cancel the ongoing database restore process",
+		Use: "cancel",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			return cancelActiveRestore(c)
 		}),

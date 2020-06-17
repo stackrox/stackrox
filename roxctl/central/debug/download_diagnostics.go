@@ -21,9 +21,7 @@ func DownloadDiagnosticsCommand() *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{
-		Use:   "download-diagnostics",
-		Short: `Download a bundle with extended diagnostic information`,
-		Long:  `Download a bundle with extended diagnostic information`,
+		Use: "download-diagnostics",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			fmt.Fprintln(os.Stderr, "Downloading diagnostic bundle...")
 			return retrieveDiagnosticBundle(flags.Timeout(c), outputDir)

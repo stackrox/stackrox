@@ -24,9 +24,7 @@ func DumpCommand() *cobra.Command {
 	)
 
 	c := &cobra.Command{
-		Use:   "dump",
-		Short: "Retrieve a zip file containing debug metrics",
-		Long:  "Retrieve a zip file containing debug metrics",
+		Use: "dump",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			fmt.Fprint(os.Stderr, "Retrieving debug metrics. This may take a couple minutes...\n")
 			return retrieveDump(flags.Timeout(c), withLogs, outputDir)

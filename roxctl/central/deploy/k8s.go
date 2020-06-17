@@ -1,8 +1,6 @@
 package deploy
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -45,10 +43,7 @@ func (w *persistentFlagsWrapper) Var(value pflag.Value, name, usage string, grou
 
 func orchestratorCommand(shortName, longName string) *cobra.Command {
 	c := &cobra.Command{
-		Use:   shortName,
-		Short: fmt.Sprintf("%s specifies that you are going to launch StackRox Central in %s.", shortName, longName),
-		Long: fmt.Sprintf(`%s specifies that you are going to launch StackRox Central in %s.
-Output is a zip file printed to stdout.`, shortName, longName),
+		Use: shortName,
 		Annotations: map[string]string{
 			categoryAnnotation: "Enter orchestrator",
 		},

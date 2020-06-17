@@ -17,11 +17,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-const (
-	short = "Delete a user certificate authentication provider"
-	long  = short + "\n\n" + "This will remove the configured authentication provider and all associated group mappings"
-)
-
 var (
 	errNoProviderArg    = errors.New("provider ID/name parameter required")
 	errProviderNotFound = errors.New("provider doesn't exist")
@@ -31,10 +26,8 @@ var (
 func Command() *cobra.Command {
 
 	c := &cobra.Command{
-		Use:   "delete id|name",
-		Short: short,
-		Long:  long,
-		RunE:  deleteProvider,
+		Use:  "delete id|name",
+		RunE: deleteProvider,
 	}
 	flags.AddForce(c)
 	return c

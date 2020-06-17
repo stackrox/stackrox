@@ -22,9 +22,7 @@ const (
 func Command() *cobra.Command {
 	var name string
 	c := &cobra.Command{
-		Use:   "delete",
-		Short: "Delete removes the Sensor from Central, but does not delete any orchestrator objects",
-		Long:  "Delete removes the Sensor from Central, but does not delete any orchestrator objects",
+		Use: "delete",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if name == "" {
 				return errors.New("--name is required")

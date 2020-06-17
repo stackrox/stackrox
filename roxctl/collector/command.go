@@ -8,9 +8,7 @@ import (
 // Command defines the collector command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "collector",
-		Short: "collector is the list of commands that pertain to the Collector service",
-		Long:  "collector is the list of commands that pertain to the Collector service",
+		Use: "collector",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

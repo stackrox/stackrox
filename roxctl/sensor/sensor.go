@@ -10,9 +10,7 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "sensor",
-		Short: "The list of commands that pertain to the Sensor service",
-		Long:  "The list of commands that pertain to the Sensor service",
+		Use: "sensor",
 	}
 	c.AddCommand(
 		generate.Command(),

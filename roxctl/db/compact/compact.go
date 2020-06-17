@@ -23,9 +23,7 @@ func Command() *cobra.Command {
 		iterations   int
 	)
 	c := &cobra.Command{
-		Use:   "compact",
-		Short: "Compact the database offline",
-		Long:  "Compact the database offline",
+		Use: "compact",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return compact(path, discardRatio, iterations)
 		}),

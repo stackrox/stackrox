@@ -38,9 +38,7 @@ func writeOutProfiles(path string) {
 // Command defines the central command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "db",
-		Short: "Database management operations",
-		Long:  "Database management operations",
+		Use: "db",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

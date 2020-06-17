@@ -7,16 +7,10 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
-const (
-	description = "License controls operations related to licenses for the StackRox security platform"
-)
-
 // Command controls all of the functions in this subpackage. See usage string below for details.
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "license",
-		Short: description,
-		Long:  description,
+		Use: "license",
 	}
 	c.AddCommand(add.Command())
 	c.AddCommand(info.Command())

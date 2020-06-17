@@ -28,9 +28,7 @@ func Command() *cobra.Command {
 		json bool
 	)
 	c := &cobra.Command{
-		Use:   "check",
-		Short: "Check deployments for deploy time policy violations",
-		Long:  "Check deployments for deploy time policy violations",
+		Use: "check",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if file == "" {
 				return errors.New("--file must be set")

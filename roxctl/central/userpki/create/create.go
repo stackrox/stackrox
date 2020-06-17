@@ -18,13 +18,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 )
 
-const (
-	short = "Create a new user certificate authority provider"
-	long  = short + "\n" + `
-Uses the supplied PEM-encoded root certificate files to create a new
-user certificate authentication provider.`
-)
-
 var (
 	flagPEMFiles      []string
 	flagRoleName      string
@@ -36,10 +29,8 @@ var (
 // Command adds the userpki create command
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "create name",
-		Short: short,
-		Long:  long,
-		RunE:  createProvider,
+		Use:  "create name",
+		RunE: createProvider,
 	}
 	c.Flags().StringSliceVarP(&flagPEMFiles, "cert", "c", nil, "Root CA certificate PEM files (can supply multiple)")
 	utils.Must(c.MarkFlagRequired("cert"))

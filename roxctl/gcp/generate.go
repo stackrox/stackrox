@@ -13,9 +13,7 @@ import (
 // Generate defines the gcp generate command.
 func Generate() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate helm chart for GCP marketplace",
-		Long:  "Generate helm chart for GCP marketplace from the values YAML file",
+		Use: "generate",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			valuesFilename, _ := c.Flags().GetString("values-file")
 			outputDir, _ := c.Flags().GetString("output-dir")

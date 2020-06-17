@@ -16,9 +16,7 @@ func Command() *cobra.Command {
 	var path string
 	var workers int
 	c := &cobra.Command{
-		Use:   "flatten",
-		Short: "Flatten the LSM tree of the BadgerDB to a single level",
-		Long:  "Flatten the LSM tree of the BadgerDB to a single level",
+		Use: "flatten",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return flatten(path, workers)
 		}),

@@ -11,9 +11,7 @@ import (
 
 func k8s() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "k8s",
-		Short: "Specifies that you want to deploy into a Kubernetes cluster",
-		Long:  `Specifies that you want to deploy into a Kubernetes cluster`,
+		Use: "k8s",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			cluster.Type = storage.ClusterType_KUBERNETES_CLUSTER
 			if err := clusterValidation.Validate(&cluster); err.ToError() != nil {

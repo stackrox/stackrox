@@ -22,10 +22,8 @@ var (
 // Command adds the userpki list command
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "list",
-		Short: "List all user certificate authority providers",
-		Long:  "List all user certificate authority providers",
-		RunE:  listProviders,
+		Use:  "list",
+		RunE: listProviders,
 	}
 	c.Flags().BoolVarP(&json, "json", "j", false, "JSON output")
 	return c

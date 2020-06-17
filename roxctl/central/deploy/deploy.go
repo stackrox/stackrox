@@ -248,8 +248,7 @@ func OutputZip(config renderer.Config) error {
 
 func interactive() *cobra.Command {
 	return &cobra.Command{
-		Use:   "interactive",
-		Short: "Interactive runs the CLI in interactive mode with user prompts",
+		Use: "interactive",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			c := Command()
 			c.SilenceUsage = true
@@ -262,9 +261,7 @@ func interactive() *cobra.Command {
 // Command defines the deploy command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate creates the required YAML files to deploy StackRox Central.",
-		Long:  "Generate creates the required YAML files to deploy StackRox Central.",
+		Use: "generate",
 		Run: func(c *cobra.Command, _ []string) {
 			if !mode.IsInInteractiveMode() {
 				_ = c.Help()

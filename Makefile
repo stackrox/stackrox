@@ -661,7 +661,7 @@ endif
 .PHONY: roxvet
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
-	@go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
+	@go vet -vettool "$(ROXVET_BIN)" $(shell go list -e ./...)
 
 ##########
 ## Misc ##

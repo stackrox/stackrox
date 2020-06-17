@@ -16,17 +16,11 @@ import (
 	"github.com/stackrox/rox/roxctl/common/util"
 )
 
-const (
-	description = "Get information about a license"
-)
-
 // Command defines the command.. See usage strings for details.
 func Command() *cobra.Command {
 	var licenseData []byte
 	c := &cobra.Command{
-		Use:   "info",
-		Short: description,
-		Long:  description,
+		Use: "info",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			if len(licenseData) == 0 {
 				return errors.New("no license data supplied")

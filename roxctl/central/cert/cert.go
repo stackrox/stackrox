@@ -20,9 +20,7 @@ import (
 func Command() *cobra.Command {
 	var filename string
 	cmd := &cobra.Command{
-		Use:   "cert",
-		Short: "Download Central's TLS certificate",
-		Long:  "Downloads the public certificate used by Central",
+		Use: "cert",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return certs(filename)
 		}),

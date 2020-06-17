@@ -31,9 +31,7 @@ var (
 func V2Command() *cobra.Command {
 	var file string
 	c := &cobra.Command{
-		Use:   "restore <file>",
-		Short: "Restore the Central DB from a local file.",
-		Long:  "Restore the Central DB from a local file.",
+		Use: "restore <file>",
 		RunE: func(c *cobra.Command, args []string) error {
 			if len(args) > 1 {
 				return errors.Errorf("too many positional arguments (%d given)", len(args))

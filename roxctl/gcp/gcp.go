@@ -8,8 +8,6 @@ import (
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use:    "gcp",
-		Short:  "GCP marketplace deployment commands",
-		Long:   "GCP marketplace deployment commands",
 		Hidden: true,
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()

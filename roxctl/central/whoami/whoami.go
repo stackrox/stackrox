@@ -18,9 +18,7 @@ import (
 // Command defines the central command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "whoami",
-		Short: "Authentication information",
-		Long:  "Whoami prints information about the current authentication method",
+		Use: "whoami",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			timeout := flags.Timeout(c)
 			return whoami(timeout)

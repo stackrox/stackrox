@@ -10,9 +10,7 @@ import (
 // Command adds the userpki command
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "userpki",
-		Short: "Commands to administer user PKI certificates",
-		Long:  "Commands to administer user PKI certificates",
+		Use: "userpki",
 	}
 	c.AddCommand(list.Command())
 	c.AddCommand(create.Command())

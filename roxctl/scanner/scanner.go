@@ -12,9 +12,7 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "scanner",
-		Short: "The list of commands that pertain to the StackRox Scanner",
-		Long:  "The list of commands that pertain to the StackRox Scanner",
+		Use: "scanner",
 	}
 	flags.AddTimeoutWithDefault(c, time.Minute)
 	c.AddCommand(

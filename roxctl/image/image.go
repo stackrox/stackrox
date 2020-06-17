@@ -12,9 +12,7 @@ import (
 // Command defines the image command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "image",
-		Short: "Operations that can be performed on a specific image",
-		Long:  "Operations that can be performed on a specific image",
+		Use: "image",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

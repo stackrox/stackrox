@@ -80,9 +80,7 @@ func Command() *cobra.Command {
 	var monitoringEndpointNoop string
 
 	c := &cobra.Command{
-		Use:   "generate",
-		Short: "Generate the required YAML files to deploy StackRox Sensor",
-		Long:  "Generate the required YAML files to deploy StackRox Sensor",
+		Use: "generate",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

@@ -9,9 +9,7 @@ import (
 // Command controls all of the functions being applied to a sensor
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "cluster",
-		Short: "The list of commands that pertain to operations on cluster objects",
-		Long:  "The list of commands that pertain to operations on cluster objects",
+		Use: "cluster",
 	}
 	c.AddCommand(delete.Command())
 	flags.AddTimeout(c)

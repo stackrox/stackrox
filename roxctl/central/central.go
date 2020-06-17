@@ -14,9 +14,7 @@ import (
 // Command defines the central command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "central",
-		Short: "Central is the list of commands that pertain to the Central service",
-		Long:  "Central is the list of commands that pertain to the Central service",
+		Use: "central",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

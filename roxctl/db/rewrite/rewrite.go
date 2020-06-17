@@ -22,9 +22,7 @@ func Command() *cobra.Command {
 	var path string
 	var outputDB string
 	c := &cobra.Command{
-		Use:   "rewrite",
-		Short: "Rewrite opens the BadgerDB and does a logical rewrite to a new DB",
-		Long:  "Rewrite opens the BadgerDB and does a logical rewrite to a new DB",
+		Use: "rewrite",
 		RunE: util.RunENoArgs(func(*cobra.Command) error {
 			return rewrite(path, outputDB)
 		}),

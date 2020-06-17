@@ -5,18 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	description = "Upload the files from a collector support package to Central"
-)
-
 // Command defines the command. See usage strings for details.
 func Command() *cobra.Command {
 	overwrite := false
 
 	c := &cobra.Command{
-		Use:   "upload <package-file>",
-		Short: description,
-		Long:  description,
+		Use: "upload <package-file>",
 		RunE: func(c *cobra.Command, args []string) error {
 			if len(args) > 1 {
 				return errors.Errorf("too many positional arguments (expected 1, got %d)", len(args))

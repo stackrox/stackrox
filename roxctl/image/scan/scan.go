@@ -21,9 +21,7 @@ func Command() *cobra.Command {
 		force bool
 	)
 	c := &cobra.Command{
-		Use:   "scan",
-		Short: "Scan an image and return the result",
-		Long:  "Scan an image and return the result",
+		Use: "scan",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if image == "" {
 				return errors.New("--image must be set")

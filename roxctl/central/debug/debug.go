@@ -23,9 +23,7 @@ var (
 // Command defines the debug command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "debug",
-		Short: "The list of commands for debugging purposes.",
-		Long:  "The list of commands for debugging purposes.",
+		Use: "debug",
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},

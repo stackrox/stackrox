@@ -64,9 +64,7 @@ func Command() *cobra.Command {
 	var outputDir string
 
 	c := &cobra.Command{
-		Use:   "get-bundle <cluster-name-or-id>",
-		Short: "Downloads the bundle with the required YAML files to deploy StackRox Sensor.",
-		Long:  "Downloads the bundle with the required YAML files to deploy StackRox Sensor.",
+		Use: "get-bundle <cluster-name-or-id>",
 		RunE: func(c *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				_ = c.Help()
