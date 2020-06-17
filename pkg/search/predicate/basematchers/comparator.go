@@ -2,6 +2,7 @@ package basematchers
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -47,6 +48,10 @@ func uintComparator(cmp string) (func(a, b uint64) bool, error) {
 	}
 }
 
+const (
+	floatTol = 1e-4
+)
+
 func floatComparator(cmp string) (func(a, b float64) bool, error) {
 	switch cmp {
 	case LessThanOrEqualTo:
@@ -58,7 +63,7 @@ func floatComparator(cmp string) (func(a, b float64) bool, error) {
 	case GreaterThan:
 		return func(a, b float64) bool { return a > b }, nil
 	case "":
-		return func(a, b float64) bool { return a == b }, nil
+		return func(a, b float64) bool { return math.Abs(a-b) < floatTol }, nil
 	default:
 		return nil, fmt.Errorf("unrecognized comparator: %s", cmp)
 	}

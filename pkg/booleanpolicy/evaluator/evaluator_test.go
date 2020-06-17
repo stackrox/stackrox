@@ -1365,7 +1365,8 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base int, does not match",
 			obj: &TopLevel{
 				Base: Base{
-					ValBaseInt: 1},
+					ValBaseInt: 1,
+				},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1377,7 +1378,8 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base uint, matches",
 			obj: &TopLevel{
 				Base: Base{
-					ValBaseUint: 1},
+					ValBaseUint: 1,
+				},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1390,7 +1392,8 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base uint, does not match",
 			obj: &TopLevel{
 				Base: Base{
-					ValBaseUint: 1},
+					ValBaseUint: 1,
+				},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1402,7 +1405,8 @@ func TestDifferentBaseTypes(t *testing.T) {
 			desc: "base float, matches and is a whole number",
 			obj: &TopLevel{
 				Base: Base{
-					ValBaseFloat: 1.0},
+					ValBaseFloat: 1.0,
+				},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
@@ -1412,10 +1416,27 @@ func TestDifferentBaseTypes(t *testing.T) {
 			expectedResult: resultWithSingleMatch("BaseFloat", "1"),
 		},
 		{
+			desc: "base float, exact match",
+			obj: &TopLevel{
+				Base: Base{
+					// This is not exactly 1.1, but close enough, so make sure that
+					// we treat this as equal.
+					ValBaseFloat: 35337666376.11 / 32125151251.,
+				},
+			},
+			q: &query.Query{
+				FieldQueries: []*query.FieldQuery{
+					{Field: "BaseFloat", Values: []string{"1.1"}},
+				},
+			},
+			expectedResult: resultWithSingleMatch("BaseFloat", "1.1"),
+		},
+		{
 			desc: "base float, matches",
 			obj: &TopLevel{
 				Base: Base{
-					ValBaseFloat: 1.1},
+					ValBaseFloat: 1.1,
+				},
 			},
 			q: &query.Query{
 				FieldQueries: []*query.FieldQuery{
