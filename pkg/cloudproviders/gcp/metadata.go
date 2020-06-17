@@ -6,6 +6,7 @@ import (
 
 	"cloud.google.com/go/compute/metadata"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -27,6 +28,11 @@ func isNotDefinedError(err error) bool {
 // GetMetadata returns the cluster metadata if on GCP or an error
 // If not on GCP, then returns nil, nil.
 func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
+	// In offline mode we skip fetching instance metadata to suppress metadata.google.internal DNS lookup
+	if env.OfflineModeEnv.BooleanSetting() {
+		return nil, nil
+	}
+
 	if !metadata.OnGCE() {
 		return nil, nil
 	}
