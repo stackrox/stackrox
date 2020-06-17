@@ -49,8 +49,10 @@ export function getImageTableColumns(workflowState) {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { vulnCounter, id } = original;
-                if (!vulnCounter || vulnCounter.all.total === 0) return 'No CVEs';
+                const { vulnCounter, id, scan } = original;
+                if (!vulnCounter || vulnCounter.all.total === 0) {
+                    return scan?.scanTime ? 'No CVEs' : 'Image not scanned';
+                }
 
                 const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
                 const url = newState.toUrl();

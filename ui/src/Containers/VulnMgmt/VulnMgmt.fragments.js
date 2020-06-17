@@ -117,6 +117,11 @@ export const DEPLOYMENT_LIST_FRAGMENT = gql`
         imageCount
         latestViolation(query: $policyQuery)
         priority
+        images {
+            scan {
+                scanTime
+            }
+        }
     }
 `;
 

@@ -19,6 +19,7 @@ import WorkflowListPage from 'Containers/Workflow/WorkflowListPage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { deploymentSortFields } from 'constants/sortFields';
+import { getRatioOfScannedImages } from './deployments.utils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
 
 export const defaultDeploymentSort = [
@@ -53,9 +54,18 @@ export function getDeploymentTableColumns(workflowState) {
             className: `w-1/8 ${defaultColumnClassName}`,
             entityType: entityTypes.CVE,
             Cell: ({ original, pdf }) => {
-                const { vulnCounter, id } = original;
-                if (!vulnCounter || (vulnCounter.all && vulnCounter.all.total === 0))
+                const { vulnCounter, id, images } = original;
+                if (!vulnCounter || (vulnCounter.all && vulnCounter.all.total === 0)) {
+                    const scanRatio = getRatioOfScannedImages(images);
+
+                    if (!scanRatio.scanned && !scanRatio.total) {
+                        return `No images scanned`;
+                    }
+                    if (scanRatio.scanned !== scanRatio.total) {
+                        return `${scanRatio.scanned || 0} / ${scanRatio.total || 0} images scanned`;
+                    }
                     return 'No CVEs';
+                }
 
                 const newState = workflowState.pushListItem(id).pushList(entityTypes.CVE);
                 const url = newState.toUrl();

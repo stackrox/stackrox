@@ -120,6 +120,24 @@ const commonRules = {
     ],
 };
 
+const testRules = {
+    ...commonRules,
+
+    'jest/no-focused-tests': 'error',
+    'jest/expect-expect': [
+        'error',
+        {
+            assertFunctionNames: ['expect', 'expectSaga'],
+        },
+    ],
+    'testing-library/consistent-data-testid': [
+        2,
+        {
+            testIdPattern: '^[A-Za-z]+[\\w\\-\\.]*$',
+        },
+    ],
+};
+
 module.exports = {
     plugins: ['prettier'],
     parser: 'babel-eslint',
@@ -129,8 +147,10 @@ module.exports = {
         'import/resolver': {
             node: {
                 moduleDirectory: ['node_modules', 'src/'],
+                extensions: ['.js', '.ts', '.tsx'],
             },
         },
+        'import/extensions': ['.js', '.ts', '.tsx'],
     },
     rules: commonRules,
     overrides: [
@@ -139,17 +159,29 @@ module.exports = {
             env: {
                 browser: true,
             },
-            rules: commonRules,
+            rules: {
+                ...commonRules,
+
+                // override Airbnb's style to add typescript support
+                'import/extensions': [
+                    'error',
+                    'ignorePackages',
+                    {
+                        js: 'never',
+                        mjs: 'never',
+                        ts: 'never',
+                        tsx: 'never',
+                    },
+                ],
+            },
         },
         {
             files: ['**/*.ts', '**/*.tsx'],
-            plugins: ['@typescript-eslint', 'prettier', 'jest'],
+            plugins: ['@typescript-eslint', 'prettier'],
             parser: '@typescript-eslint/parser',
             extends: [
                 'react-app',
-                'plugin:testing-library/react',
                 'plugin:react/recommended',
-                'plugin:jest/recommended',
                 'plugin:@typescript-eslint/recommended',
                 'plugin:@typescript-eslint/recommended-requiring-type-checking',
                 'airbnb-typescript',
@@ -165,7 +197,7 @@ module.exports = {
             rules: commonRules,
         },
         {
-            files: ['src/**/*.test.js', 'src/**/*.test.ts'],
+            files: ['src/**/*.test.js'],
             plugins: ['prettier', 'jest'],
             extends: [
                 'react-app',
@@ -180,23 +212,28 @@ module.exports = {
                 browser: true,
                 jest: true,
             },
-            rules: {
-                ...commonRules,
-
-                'jest/no-focused-tests': 'error',
-                'jest/expect-expect': [
-                    'error',
-                    {
-                        assertFunctionNames: ['expect', 'expectSaga'],
-                    },
-                ],
-                'testing-library/consistent-data-testid': [
-                    2,
-                    {
-                        testIdPattern: '^[A-Za-z]+[\\w\\-\\.]*$',
-                    },
-                ],
+            rules: testRules,
+        },
+        {
+            files: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+            plugins: ['prettier', 'jest'],
+            extends: [
+                'react-app',
+                'plugin:testing-library/react',
+                'plugin:jest/recommended',
+                'plugin:react/recommended',
+                'plugin:@typescript-eslint/recommended',
+                'plugin:@typescript-eslint/recommended-requiring-type-checking',
+                'airbnb-typescript',
+                'prettier',
+                'prettier/@typescript-eslint',
+                'prettier/react',
+            ],
+            env: {
+                browser: true,
+                jest: true,
             },
+            rules: testRules,
         },
         {
             files: ['cypress/**/*'],
