@@ -15,6 +15,9 @@ RUN cd /tmp && \
     make install && \
     make install DESTDIR=/dist
 
+# This compiles RocksDB without using SSE4.2
+ENV PORTABLE=1
+
 # Compile Rocksdb
 RUN cd /tmp && \
     git clone -b "${ROCKSDB_VERSION}" --depth 1 https://github.com/facebook/rocksdb.git && \

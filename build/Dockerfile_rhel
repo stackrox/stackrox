@@ -12,6 +12,9 @@ RUN  curl -L https://github.com/facebook/zstd/archive/v${ZSTD_VERSION}.tar.gz | 
     mv /tmp/zstd-${ZSTD_VERSION} /tmp/zstd && \
     cd /tmp/zstd && make && make install
 
+# This compiles RocksDB without using SSE4.2
+ENV PORTABLE=1
+
 RUN cd /tmp && \
     git clone -b "${ROCKSDB_VERSION}" --depth 1 https://github.com/facebook/rocksdb.git && \
     cd rocksdb && \

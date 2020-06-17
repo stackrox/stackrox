@@ -12,8 +12,8 @@ GOARCH := amd64
 DEFAULT_GOOS := linux
 GO111MODULE := on
 GOPRIVATE := github.com/stackrox
-BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-2
-RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-2
+BUILD_IMAGE := stackrox/main:rocksdb-builder-6.7.3-3
+RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-3
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
@@ -348,6 +348,11 @@ bin/%/admission-control: build-prep
 main-builder-image:
 	@echo "+ $@"
 	docker build -t $(BUILD_IMAGE) build/
+
+.PHONY: main-builder-image-rhel
+main-builder-image-rhel:
+	@echo "+ $@"
+	docker build -t $(RHEL_BUILD_IMAGE) -f build/Dockerfile_rhel build/
 
 .PHONY: main-build
 main-build: build-prep main-build-dockerized
