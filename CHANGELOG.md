@@ -17,7 +17,7 @@ All notable changes to this project that require documentation updates will be d
 - UI: Move Images link on VM dashboard out of Applications menu, and into tile like Policies and CVEs link (ROX-5052)
 - UI: Add Disable TLS Certificate Validation (Insecure) toggle for JFrog Artifactory registry in Platform Configuration > Integrations > New Integration (ROX-5031)
 - UI: Add Disable TLS Certificate Validation (Insecure) toggle for Anchore Scanner, CoreOS Clair (Scanner), and Quay.io (Registry + Scanner) in Platform Configuration > Integrations > New Integration (ROX-5084)
-
+- Added the ability to make secret creation for sensor, collector and admission controller optional when deploying using Helm charts.
 ## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
 - UI: In Platform Configuration > Interactions: 1. replace "AWS ECR" with "Amazon ECR" and 2. replace "S3" (and "AWS S3" placeholder for Integration Name in New Integration pane) with "Amazon S3" (ROX-4912)

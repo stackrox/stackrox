@@ -27,4 +27,5 @@ config:
   registryOverride:
   disableTaintTolerations: false
   createUpgraderServiceAccount: true
+  createSecrets: true
 

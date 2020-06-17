@@ -27,6 +27,7 @@ config:
   registryOverride:
   disableTaintTolerations: !! default false (not .TolerationsEnabled ) !!
   createUpgraderServiceAccount: !! default false .CreateUpgraderSA !!
+  createSecrets: true
 
 envVars: !! if empty .EnvVars !! []
   !! else !!
