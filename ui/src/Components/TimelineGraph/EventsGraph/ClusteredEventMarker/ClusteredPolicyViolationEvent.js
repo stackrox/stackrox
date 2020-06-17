@@ -9,6 +9,7 @@ const ClusteredPolicyViolationEvent = forwardRef(({ size, numEvents }, ref) => {
     const numEventsText = getNumEventsText(numEvents);
     return (
         <svg
+            className="cursor-pointer"
             data-testid="clustered-policy-violation-event"
             width={size}
             height={size}

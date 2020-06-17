@@ -1,18 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { eventTypes } from 'constants/timelineTypes';
 import { eventLabels } from 'messages/timeline';
 import { getDateTime } from 'utils/dateUtils';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
-const TerminationTooltipFields = ({ name, type, reason, timestamp }) => {
-    const typeValue = eventLabels[type];
+const TerminationTooltipFields = ({ name, reason, timestamp }) => {
     const eventTimeValue = getDateTime(timestamp);
 
     return (
         <>
             <TooltipFieldValue field="Name" value={name} />
-            <TooltipFieldValue field="Type" value={typeValue} />
+            <TooltipFieldValue field="Type" value={eventLabels[eventTypes.TERMINATION]} />
             <TooltipFieldValue field="Reason" value={reason} />
             <TooltipFieldValue field="Event time" value={eventTimeValue} />
         </>
@@ -21,7 +21,6 @@ const TerminationTooltipFields = ({ name, type, reason, timestamp }) => {
 
 TerminationTooltipFields.propTypes = {
     name: PropTypes.string,
-    type: PropTypes.string.isRequired,
     reason: PropTypes.string,
     timestamp: PropTypes.string.isRequired,
 };

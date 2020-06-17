@@ -1,24 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { eventTypes } from 'constants/timelineTypes';
 import { eventLabels } from 'messages/timeline';
 import { getDateTime } from 'utils/dateUtils';
 import TooltipFieldValue from 'Components/TooltipFieldValue';
 
-const ProcessActivityTooltipFields = ({
-    name,
-    type,
-    args,
-    uid,
-    parentName,
-    parentUid,
-    timestamp,
-}) => {
+const ProcessActivityTooltipFields = ({ name, args, uid, parentName, parentUid, timestamp }) => {
     const hasParent = parentName !== null || parentUid !== -1;
     const isParentUidUnknown = parentName !== null && parentUid === -1;
     const hasUidChanged = parentUid !== uid;
 
-    const typeValue = eventLabels[type];
     const argsValue = args.length === 0 ? 'None' : args;
     const parentNameValue = hasParent ? parentName : 'No Parent';
     const eventTimeValue = getDateTime(timestamp);
@@ -35,7 +27,7 @@ const ProcessActivityTooltipFields = ({
     return (
         <>
             <TooltipFieldValue field="Name" value={name} />
-            <TooltipFieldValue field="Type" value={typeValue} />
+            <TooltipFieldValue field="Type" value={eventLabels[eventTypes.PROCESS_ACTIVITY]} />
             <TooltipFieldValue field="Arguments" value={argsValue} />
             <TooltipFieldValue field="Parent Name" value={parentNameValue} />
             <TooltipFieldValue field="Parent UID" value={parentUidValue} />
@@ -52,7 +44,6 @@ const ProcessActivityTooltipFields = ({
 
 ProcessActivityTooltipFields.propTypes = {
     name: PropTypes.string,
-    type: PropTypes.string.isRequired,
     parentName: PropTypes.string,
     parentUid: PropTypes.number,
     args: PropTypes.string,

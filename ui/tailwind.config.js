@@ -415,6 +415,7 @@ module.exports = {
             max: 'max-content',
         },
         maxHeight: {
+            '100': '25rem',
             full: '100%',
             screen: '100vh',
         },

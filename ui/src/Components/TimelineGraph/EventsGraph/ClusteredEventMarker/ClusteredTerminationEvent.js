@@ -9,6 +9,7 @@ const ClusteredTerminationEvent = forwardRef(({ size, numEvents }, ref) => {
     const numEventsText = getNumEventsText(numEvents);
     return (
         <svg
+            className="cursor-pointer"
             data-testid="clustered-termination-event"
             width={size}
             height={size}

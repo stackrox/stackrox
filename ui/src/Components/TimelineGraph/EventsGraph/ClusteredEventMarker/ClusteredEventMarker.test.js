@@ -4,16 +4,22 @@ import { render } from '@testing-library/react';
 import ClusteredEventMarker from './ClusteredEventMarker';
 
 test('should show a clustered generic event marker', async () => {
-    const events = [...Array(9).keys()].map((_, index) => {
+    const events = [...Array(9).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
             timestamp: '2020-04-20T20:20:20.358227916Z',
         };
     });
     events.push({
-        name: `event-11`,
+        id: 10,
+        name: `event-10`,
         type: 'ProcessActivityEvent',
+        args: '-g daemon off;',
+        parentName: null,
+        parentUid: -1,
+        uid: 1000,
         timestamp: '2020-04-20T20:20:20.358227916Z',
     });
     const { queryByTestId, asFragment } = render(
@@ -34,8 +40,9 @@ test('should show a clustered generic event marker', async () => {
 });
 
 test('should show a clustered policy violation event marker', async () => {
-    const events = [...Array(10).keys()].map((_, index) => {
+    const events = [...Array(10).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'PolicyViolationEvent',
             timestamp: '2020-04-20T20:20:20.358227916Z',
@@ -59,8 +66,9 @@ test('should show a clustered policy violation event marker', async () => {
 });
 
 test('should show a clustered process activity event marker', async () => {
-    const events = [...Array(10).keys()].map((_, index) => {
+    const events = [...Array(10).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'ProcessActivityEvent',
             args: '-g daemon off;',
@@ -88,8 +96,9 @@ test('should show a clustered process activity event marker', async () => {
 });
 
 test('should show a clustered whitelisted process activity event marker', async () => {
-    const events = [...Array(10).keys()].map((_, index) => {
+    const events = [...Array(10).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'ProcessActivityEvent',
             args: '-g daemon off;',
@@ -118,8 +127,9 @@ test('should show a clustered whitelisted process activity event marker', async 
 });
 
 test('should show a clustered container restart event marker', async () => {
-    const events = [...Array(10).keys()].map((_, index) => {
+    const events = [...Array(10).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'ContainerRestartEvent',
             timestamp: '2020-04-20T20:20:20.358227916Z',
@@ -143,8 +153,9 @@ test('should show a clustered container restart event marker', async () => {
 });
 
 test('should show a container termination event marker', async () => {
-    const events = [...Array(10).keys()].map((_, index) => {
+    const events = [...Array(10).keys()].map((index) => {
         return {
+            id: index,
             name: `event-${index}`,
             type: 'ContainerTerminationEvent',
             reason: 'Because of Covid-19',

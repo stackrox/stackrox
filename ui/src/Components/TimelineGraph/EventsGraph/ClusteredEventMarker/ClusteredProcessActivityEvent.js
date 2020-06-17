@@ -10,6 +10,7 @@ const ClusteredProcessActivityEvent = forwardRef(({ whitelisted, size, numEvents
     const numEventsText = getNumEventsText(numEvents);
     return whitelisted ? (
         <svg
+            className="cursor-pointer"
             data-testid="clustered-whitelisted-process-activity-event"
             width={size}
             height={size}
@@ -52,6 +53,7 @@ const ClusteredProcessActivityEvent = forwardRef(({ whitelisted, size, numEvents
         </svg>
     ) : (
         <svg
+            className="cursor-pointer"
             data-testid="clustered-process-activity-event"
             width={size}
             height={size}

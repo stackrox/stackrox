@@ -8,6 +8,7 @@ import { getWidth } from 'utils/d3Utils';
 import { clusteredEventTypes } from 'constants/timelineTypes';
 import mainViewSelector from 'Components/TimelineGraph/MainView/selectors';
 import D3Anchor from 'Components/D3Anchor';
+import ClusteredEventsTooltip from 'Components/TimelineGraph/EventsGraph/ClusteredEventsTooltip';
 import ClusteredGenericEvent from './ClusteredGenericEvent';
 import ClusteredPolicyViolationEvent from './ClusteredPolicyViolationEvent';
 import ClusteredRestartEvent from './ClusteredRestartEvent';
@@ -71,24 +72,32 @@ const ClusteredEventMarker = ({
             translateY={translateY}
             onUpdate={onUpdate}
         >
-            {clusterEventType === clusteredEventTypes.GENERIC && (
-                <ClusteredGenericEvent size={size} numEvents={numEvents} />
-            )}
-            {clusterEventType === clusteredEventTypes.POLICY_VIOLATION && (
-                <ClusteredPolicyViolationEvent size={size} numEvents={numEvents} />
-            )}
-            {clusterEventType === clusteredEventTypes.PROCESS_ACTIVITY && (
-                <ClusteredProcessActivityEvent size={size} numEvents={numEvents} />
-            )}
-            {clusterEventType === clusteredEventTypes.WHITELISTED_PROCESS_ACTIVITY && (
-                <ClusteredProcessActivityEvent size={size} whitelisted numEvents={numEvents} />
-            )}
-            {clusterEventType === clusteredEventTypes.RESTART && (
-                <ClusteredRestartEvent size={size} numEvents={numEvents} />
-            )}
-            {clusterEventType === clusteredEventTypes.TERMINATION && (
-                <ClusteredTerminationEvent size={size} numEvents={numEvents} />
-            )}
+            <ClusteredEventsTooltip events={events}>
+                <g>
+                    {clusterEventType === clusteredEventTypes.GENERIC && (
+                        <ClusteredGenericEvent size={size} numEvents={numEvents} />
+                    )}
+                    {clusterEventType === clusteredEventTypes.POLICY_VIOLATION && (
+                        <ClusteredPolicyViolationEvent size={size} numEvents={numEvents} />
+                    )}
+                    {clusterEventType === clusteredEventTypes.PROCESS_ACTIVITY && (
+                        <ClusteredProcessActivityEvent size={size} numEvents={numEvents} />
+                    )}
+                    {clusterEventType === clusteredEventTypes.WHITELISTED_PROCESS_ACTIVITY && (
+                        <ClusteredProcessActivityEvent
+                            size={size}
+                            whitelisted
+                            numEvents={numEvents}
+                        />
+                    )}
+                    {clusterEventType === clusteredEventTypes.RESTART && (
+                        <ClusteredRestartEvent size={size} numEvents={numEvents} />
+                    )}
+                    {clusterEventType === clusteredEventTypes.TERMINATION && (
+                        <ClusteredTerminationEvent size={size} numEvents={numEvents} />
+                    )}
+                </g>
+            </ClusteredEventsTooltip>
         </D3Anchor>
     );
 };

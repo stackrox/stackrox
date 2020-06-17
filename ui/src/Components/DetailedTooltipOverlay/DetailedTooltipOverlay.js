@@ -7,14 +7,17 @@ const DetailedTooltipOverlay = ({ className, title, subtitle, body, footer }) =>
     if (!title || !body) return null;
 
     return (
-        <TooltipOverlay className={`min-w-32 ${className}`}>
-            <div className="text-left flex flex-col border-b border-primary-400 mb-1 leading-loose">
+        <TooltipOverlay className={`min-w-32 max-h-100 flex flex-col flex-1 ${className}`}>
+            <div className="text-left flex flex-col border-b border-primary-400 leading-loose">
                 <h2 className="font-700" data-testid="tooltip-title">
                     {title}
                 </h2>
                 {subtitle && <span data-testid="tooltip-subtitle">{subtitle}</span>}
             </div>
-            <div className="text-left pt-2" data-testid="tooltip-body">
+            <div
+                className="flex flex-1 flex-col text-left pt-2 overflow-auto"
+                data-testid="tooltip-body"
+            >
                 {body}
             </div>
             {!!footer && (
