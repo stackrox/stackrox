@@ -1557,13 +1557,23 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	}
 }
 
-// TODO(rc) check violation messages for port exposure
 func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	deployments := make(map[string]*storage.Deployment)
 	for exposureLevelStr, exposureLevel := range storage.PortConfig_ExposureLevel_value {
 		dep := fixtures.GetDeployment().Clone()
 		dep.Ports = []*storage.PortConfig{{ExposureInfos: []*storage.PortConfig_ExposureInfo{{Level: storage.PortConfig_ExposureLevel(exposureLevel)}}}}
 		deployments[exposureLevelStr] = dep
+	}
+
+	assertMessageMatches := func(t *testing.T, depRef string, violations []*storage.Alert_Violation) {
+		depRefToExpectedMsg := map[string]string{
+			"EXTERNAL": "exposed with load balancer",
+			"NODE":     "exposed on node port",
+			"INTERNAL": "using internal cluster IP",
+			"HOST":     "exposed on host port",
+		}
+		require.Len(t, violations, 1)
+		assert.Equal(t, fmt.Sprintf("Deployment port(s) %s", depRefToExpectedMsg[depRef]), violations[0].GetMessage())
 	}
 
 	for _, testCase := range []struct {
@@ -1596,6 +1606,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 				violations, err := matcher.MatchDeployment(context.Background(), dep, suite.getImagesForDeployment(dep))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
+					assertMessageMatches(t, depRef, violations.AlertViolations)
 					matched.Add(depRef)
 				}
 			}
@@ -1604,18 +1615,31 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	}
 }
 
-// TODO(rc) check violation messages for drop caps
 func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 	testCaps := []string{"SYS_MODULE", "SYS_NICE", "SYS_PTRACE"}
 
 	deployments := make(map[string]*storage.Deployment)
-	for _, idxs := range [][]int{{0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
+	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
 		dep := fixtures.GetDeployment().Clone()
 		dep.Containers[0].SecurityContext.DropCapabilities = make([]string, 0, len(idxs))
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.DropCapabilities = append(dep.Containers[0].SecurityContext.DropCapabilities, testCaps[idx])
 		}
 		deployments[strings.ReplaceAll(strings.Join(dep.Containers[0].SecurityContext.DropCapabilities, ","), "SYS_", "")] = dep
+	}
+
+	assertMessageMatches := func(t *testing.T, depRef string, violations []*storage.Alert_Violation) {
+		depRefToExpectedMsg := map[string]string{
+			"":                   "no capabilities",
+			"MODULE":             "SYS_MODULE",
+			"NICE":               "SYS_NICE",
+			"PTRACE":             "SYS_PTRACE",
+			"MODULE,NICE":        "SYS_MODULE and SYS_NICE",
+			"NICE,PTRACE":        "SYS_NICE and SYS_PTRACE",
+			"MODULE,NICE,PTRACE": "SYS_MODULE, SYS_NICE, and SYS_PTRACE",
+		}
+		require.Len(t, violations, 1)
+		assert.Equal(t, fmt.Sprintf("Container 'nginx110container' does not drop expected capabilities (drops %s)", depRefToExpectedMsg[depRef]), violations[0].GetMessage())
 	}
 
 	for _, testCase := range []struct {
@@ -1627,22 +1651,22 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			// Nothing drops this capability
 			[]string{"SYSLOG"},
 			storage.BooleanOperator_OR,
-			[]string{"MODULE", "NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
+			[]string{"", "MODULE", "NICE", "PTRACE", "MODULE,NICE", "NICE,PTRACE", "MODULE,NICE,PTRACE"},
 		},
 		{
 			[]string{"SYS_NICE"},
 			storage.BooleanOperator_OR,
-			[]string{"MODULE", "PTRACE"},
+			[]string{"", "MODULE", "PTRACE"},
 		},
 		{
 			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_OR,
-			[]string{"MODULE"},
+			[]string{"", "MODULE"},
 		},
 		{
 			[]string{"SYS_NICE", "SYS_PTRACE"},
 			storage.BooleanOperator_AND,
-			[]string{"MODULE", "PTRACE", "NICE", "MODULE,NICE"},
+			[]string{"", "MODULE", "PTRACE", "NICE", "MODULE,NICE"},
 		},
 	} {
 		c := testCase
@@ -1655,6 +1679,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
+					assertMessageMatches(t, depRef, violations.AlertViolations)
 				}
 			}
 			assert.ElementsMatch(t, matched.AsSlice(), c.expectedMatches, "Got %v, expected: %v", matched.AsSlice(), c.expectedMatches)
