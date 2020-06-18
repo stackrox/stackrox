@@ -2,6 +2,8 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.
 - Default integration added for public Microsoft Container Registry
 - Heads up advisory on `roxctl sensor generate k8s` command option changes slated for release in 47.0:
