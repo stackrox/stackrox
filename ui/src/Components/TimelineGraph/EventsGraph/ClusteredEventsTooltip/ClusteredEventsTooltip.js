@@ -6,7 +6,7 @@ import { eventTypes } from 'constants/timelineTypes';
 import { eventPropTypes } from 'constants/propTypes/timelinePropTypes';
 import Tooltip from 'Components/Tooltip';
 import DetailedTooltipOverlay from 'Components/DetailedTooltipOverlay';
-import getTimeRangeOfEvents from './getTimeRangeOfEvents';
+import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
 import ProcessActivityTooltipFields from '../EventTooltipFields/ProcessActivityTooltipFields';
 import TerminationTooltipFields from '../EventTooltipFields/TerminationTooltipFields';
 import DefaultTooltipFields from '../EventTooltipFields/DefaultTooltipFields';
@@ -16,11 +16,11 @@ import RestartEvent from '../EventMarker/RestartEvent';
 import TerminationEvent from '../EventMarker/TerminationEvent';
 
 const ClusteredEventsTooltip = ({ events, children }) => {
-    const { timeRangeOfEvents, unit } = getTimeRangeOfEvents(events);
+    const timeRangeTextOfEvents = getTimeRangeTextOfEvents(events);
     const tooltipTitle = `${events.length} ${pluralize(
         'Event',
         events.length
-    )} within ${timeRangeOfEvents} ${unit}`;
+    )} within ${timeRangeTextOfEvents}`;
     const sections = events.map(
         ({ id, type, name, args, uid, parentName, parentUid, timestamp, reason, whitelisted }) => {
             let section = null;
