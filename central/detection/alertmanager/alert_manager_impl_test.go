@@ -11,7 +11,7 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
@@ -37,7 +37,7 @@ func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator 
 
 func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
 	v := &storage.Alert_ProcessViolation{Processes: indicators}
-	violationmessages.UpdateRuntimeAlertViolationMessage(v)
+	printer.UpdateRuntimeAlertViolationMessage(v)
 	return &storage.Alert{
 		LifecycleStage:   storage.LifecycleStage_RUNTIME,
 		ProcessViolation: v,

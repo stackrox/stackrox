@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
@@ -65,7 +66,7 @@ func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *stora
 	}
 	if processIndicatorMatched {
 		v.ProcessViolation = &storage.Alert_ProcessViolation{Processes: []*storage.ProcessIndicator{indicator}}
-		violationmessages.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
+		printer.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
 	}
 	return v, nil
 }

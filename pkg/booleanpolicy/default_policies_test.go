@@ -902,10 +902,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
-						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
+						Message: "Container 'nginx' is privileged",
 					},
 					{
-						Message: "Container 'nginx' is privileged",
+						Message: "Fixable CVE-2014-0160 (CVSS 6) found in component 'heartbleed' (version 1.2) in container 'nginx', resolved by version v1.2",
 					},
 				},
 			},
@@ -1062,7 +1062,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						if c.policyName == "Images with no scans" {
 							if len(suite.deployments[id].GetContainers()) == 1 {
 								msg := fmt.Sprintf(c.sampleViolationForMatched, suite.deployments[id].GetContainers()[0].GetName())
-								assert.ElementsMatch(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
+								assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: msg}})
 							}
 						}
 					}
@@ -1073,7 +1073,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				violations, expected := c.expectedViolations[id]
 				if expected {
 					assert.Contains(t, actualViolations, id)
-					assert.ElementsMatch(t, violations, actualViolations[id])
+					assert.Equal(t, violations, actualViolations[id])
 				} else {
 					assert.NotContains(t, actualViolations, id)
 				}
@@ -1322,7 +1322,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
-				assert.ElementsMatch(t, violations, actualViolations[id])
+				assert.Equal(t, violations, actualViolations[id])
 			}
 			if len(c.shouldNotMatch) > 0 {
 				if c.policyName == "Required Image Label" {
@@ -1341,7 +1341,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				for id := range suite.images {
 					if _, shouldNotMatch := c.shouldNotMatch[id]; !shouldNotMatch {
 						assert.Contains(t, actualViolations, id)
-						assert.ElementsMatch(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
+						assert.Equal(t, actualViolations[id], []*storage.Alert_Violation{{Message: c.sampleViolationForMatched}})
 					}
 				}
 			}
@@ -1401,11 +1401,11 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 		suite.Run(c.dep.GetId(), func() {
 			matched, err := m.MatchDeployment(context.Background(), c.dep, nil)
 			suite.NoError(err)
-			expectedMessages := make([]*storage.Alert_Violation, 0, len(c.expectedViolations))
+			var expectedMessages []*storage.Alert_Violation
 			for _, v := range c.expectedViolations {
 				expectedMessages = append(expectedMessages, &storage.Alert_Violation{Message: v})
 			}
-			suite.ElementsMatch(matched.AlertViolations, expectedMessages)
+			suite.Equal(matched.AlertViolations, expectedMessages)
 		})
 	}
 }
@@ -1547,7 +1547,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
-					assert.ElementsMatch(t, violations.AlertViolations, c.expectedViolations[depRef])
+					assert.Equal(t, violations.AlertViolations, c.expectedViolations[depRef])
 				} else {
 					assert.Empty(t, c.expectedViolations[depRef])
 				}

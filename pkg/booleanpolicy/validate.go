@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // Validate validates the policy, to make sure it's a well-formed Boolean policy.
@@ -26,6 +27,7 @@ func Validate(p *storage.Policy) error {
 func validatePolicySection(s *storage.PolicySection) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
 
+	seenFields := set.NewStringSet()
 	for _, g := range s.GetPolicyGroups() {
 		m, ok := fieldsToQB[g.GetFieldName()]
 		if !ok {
@@ -34,6 +36,9 @@ func validatePolicySection(s *storage.PolicySection) error {
 		}
 		if len(g.GetValues()) == 0 {
 			errorList.AddStringf("no values for field %q", g.GetFieldName())
+		}
+		if !seenFields.Add(g.GetFieldName()) {
+			errorList.AddStringf("field name %q found in multiple groups", g.GetFieldName())
 		}
 		if g.GetNegate() && m.negationForbidden {
 			errorList.AddStringf("policy criteria %q cannot be negated", g.GetFieldName())

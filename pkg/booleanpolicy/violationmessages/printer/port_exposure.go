@@ -1,4 +1,4 @@
-package violationmessages
+package printer
 
 import (
 	"fmt"

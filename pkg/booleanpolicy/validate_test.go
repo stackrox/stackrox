@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -107,4 +109,14 @@ func (s *PolicyValueValidator) TestRegex() {
 			}
 		})
 	}
+}
+
+func TestValidateMultipleSections(t *testing.T) {
+	group := &storage.PolicyGroup{FieldName: fieldnames.CVE, Values: []*storage.PolicyValue{{Value: "CVE-2017-1234"}}}
+	assert.NoError(t, Validate(&storage.Policy{Name: "name", PolicyVersion: Version, PolicySections: []*storage.PolicySection{
+		{SectionName: "good", PolicyGroups: []*storage.PolicyGroup{group}},
+	}}))
+	assert.Error(t, Validate(&storage.Policy{Name: "name", PolicyVersion: Version, PolicySections: []*storage.PolicySection{
+		{SectionName: "bad", PolicyGroups: []*storage.PolicyGroup{group, group}},
+	}}))
 }

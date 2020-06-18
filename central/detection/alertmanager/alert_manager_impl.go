@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
+	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -158,7 +158,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(ctx context.Con
 		}
 		alert.ProcessViolation.Processes = filtered
 		if features.BooleanPolicyLogic.Enabled() {
-			violationmessages.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
+			printer.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
 		} else {
 			builders.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
 		}
@@ -207,7 +207,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
 	if features.BooleanPolicyLogic.Enabled() {
-		violationmessages.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
+		printer.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
 	} else {
 		builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
 	}

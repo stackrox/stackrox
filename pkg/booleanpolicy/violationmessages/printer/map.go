@@ -1,4 +1,4 @@
-package violationmessages
+package printer
 
 import (
 	"strings"
@@ -13,12 +13,24 @@ const (
 	mapDisallowedTemplate = `Disallowed {{.ResourceName}}s found: {{.Value}}`
 )
 
-func getRequiredMapPrinterFor(fieldLabel search.FieldLabel) func(map[string][]string) ([]string, error) {
-	return getMapPrinterFor(fieldLabel, false)
+func requiredLabelPrinter(fieldMap map[string][]string) ([]string, error) {
+	return getMapPrinterFor(search.Label, false)(fieldMap)
 }
 
-func getDisallowedMapPrinterFor(fieldLabel search.FieldLabel) func(map[string][]string) ([]string, error) {
-	return getMapPrinterFor(fieldLabel, true)
+func requiredAnnotationPrinter(fieldMap map[string][]string) ([]string, error) {
+	return getMapPrinterFor(search.Annotation, false)(fieldMap)
+}
+
+func requiredImageLabelPrinter(fieldMap map[string][]string) ([]string, error) {
+	return getMapPrinterFor(search.ImageLabel, false)(fieldMap)
+}
+
+func disallowedImageLabelPrinter(fieldMap map[string][]string) ([]string, error) {
+	return getMapPrinterFor(search.ImageLabel, true)(fieldMap)
+}
+
+func disallowedAnnotationPrinter(fieldMap map[string][]string) ([]string, error) {
+	return getMapPrinterFor(search.Annotation, true)(fieldMap)
 }
 
 func getMapPrinterFor(fieldLabel search.FieldLabel, disallowed bool) func(map[string][]string) ([]string, error) {
