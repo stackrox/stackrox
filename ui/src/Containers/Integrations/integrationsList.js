@@ -206,6 +206,12 @@ const integrationsList = {
             source: 'backups',
             image: s3,
         },
+        {
+            label: 'Google Cloud Storage',
+            type: 'gcs',
+            source: 'backups',
+            image: google,
+        },
     ],
     authPlugins: [
         {

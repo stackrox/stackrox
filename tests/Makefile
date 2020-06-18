@@ -8,4 +8,8 @@ destructive-tests:
 	@echo "+ $@"
 	@go test -cover -tags destructive -run TestClusterDeletion 2>&1 | tee test.log
 
+external-backup-tests:
+	@echo "+ $@"
+	@go test -cover -tags externalbackups -run TestGCSExternalBackup 2>&1 | tee test.log
+
 include ../make/stackrox.mk

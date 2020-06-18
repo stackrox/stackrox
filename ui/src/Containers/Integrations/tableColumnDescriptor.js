@@ -168,6 +168,23 @@ const tableColumnDescriptor = Object.freeze({
                 Header: 'Schedule',
             },
         ],
+        gcs: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'gcs.bucket', Header: 'Bucket' },
+            {
+                id: 'schedule',
+                accessor: (data) => {
+                    const { schedule } = data;
+                    if (schedule.weekly) {
+                        return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
+                            times[schedule.hour]
+                        } UTC`;
+                    }
+                    return `Daily @ ${times[schedule.hour]} UTC`;
+                },
+                Header: 'Schedule',
+            },
+        ],
     },
     authPlugins: {
         scopedAccess: [

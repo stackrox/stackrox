@@ -2554,6 +2554,22 @@ jobs:
       - check-stackrox-logs
 
       - run:
+          name: Deploy and restore DB to version 41.4
+          command: |
+            # Download 41.4 backup
+            gsutil cp gs://stackrox-ci-upgrade-test-dbs/41.4-upgrade-db.zip .
+
+            # Restore 41.4 backup
+            roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
+
+      - *waitForAPI
+
+      - run:
+          name: Run tests relating to external backups
+          command: |
+            make -C tests external-backup-tests
+
+      - run:
           name: Destructive API tests
           command: |
             make -C tests destructive-tests

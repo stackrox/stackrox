@@ -146,6 +146,12 @@ func (s *s3) prefixKey(key string) string {
 }
 
 func (s *s3) Backup(reader io.ReadCloser) error {
+	defer func() {
+		if err := reader.Close(); err != nil {
+			log.Errorf("Error closing reader: %v", err)
+		}
+	}()
+
 	log.Info("Starting S3 Backup")
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
@@ -156,16 +162,11 @@ func (s *s3) Backup(reader io.ReadCloser) error {
 		Body:   reader,
 	}
 	if err := s.send(backupMaxTimeout, ui); err != nil {
-		if err := reader.Close(); err != nil {
-			log.Errorf("Error closing reader: %v", err)
-		}
 		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.integration.GetS3().GetBucket(), formattedKey)
 	}
 	log.Info("Successfully backed up to S3")
 	return s.pruneBackupsIfNecessary()
 }
-
-func (s *s3) Restore() error { return nil }
 
 func (s *s3) Test() error {
 	formattedKey := s.prefixKey("test")

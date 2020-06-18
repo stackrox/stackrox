@@ -1052,6 +1052,43 @@ const formDescriptors = {
                 placeholder: '',
             },
         ],
+        gcs: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Google Cloud Storage',
+            },
+            {
+                label: 'Backups To Retain',
+                jsonpath: 'backupsToKeep',
+                type: 'number',
+                placeholder: '5',
+            },
+            {
+                label: 'Schedule',
+                jsonpath: 'schedule',
+                type: 'schedule',
+            },
+            {
+                label: 'Bucket',
+                jsonpath: 'gcs.bucket',
+                type: 'text',
+                placeholder: 'stackrox-backups',
+            },
+            {
+                label: 'Object Path Prefix (Optional)',
+                jsonpath: 'gcs.objectPrefix',
+                type: 'text',
+                placeholder: '',
+            },
+            {
+                label: 'Service Account JSON',
+                jsonpath: 'gcs.serviceAccount',
+                type: 'password',
+                placeholder: '',
+            },
+        ],
     },
     authPlugins: {
         scopedAccess: [
