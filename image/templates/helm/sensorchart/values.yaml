@@ -28,6 +28,7 @@ config:
   disableTaintTolerations: !! default false (not .TolerationsEnabled ) !!
   createUpgraderServiceAccount: !! default false .CreateUpgraderSA !!
   createSecrets: true
+  offlineMode: !! default false .OfflineMode !!
 
 envVars: !! if empty .EnvVars !! []
   !! else !!

@@ -28,3 +28,4 @@ config:
   disableTaintTolerations: false
   createUpgraderServiceAccount: false
   createSecrets: true
+  offlineMode: false

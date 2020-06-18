@@ -94,6 +94,8 @@ spec:
         - name: ROX_OPENSHIFT_API
           value: "true"
           {{- end}}
+        - name: ROX_OFFLINE_MODE
+          value: {{.Values.config.offlineMode | quote}}
         {{ range .Values.envVars -}}
         - name: {{ .name }}
           value: {{ .value | quote}}

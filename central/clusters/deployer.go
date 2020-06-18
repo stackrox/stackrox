@@ -95,6 +95,8 @@ func FieldsFromClusterAndRenderOpts(c *storage.Cluster, opts RenderOptions) (map
 		"AdmissionController": false,
 
 		"K8sCommand": command,
+
+		"OfflineMode": env.OfflineModeEnv.BooleanSetting(),
 	}
 
 	if features.AdmissionControlService.Enabled() && c.AdmissionController {

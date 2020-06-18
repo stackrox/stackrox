@@ -59,8 +59,8 @@ func mainCmd(args []string) error {
 		return errors.Wrapf(err, "directory %s expected to exist, but doesn't", tmpDir)
 	}
 
+	ev := envVars{}
 	if devbuild.IsEnabled() {
-		ev := envVars{}
 		for _, feature := range features.Flags {
 			ev.Env = append(ev.Env, envVar{feature.EnvVar(), strconv.FormatBool(feature.Enabled())})
 		}
