@@ -87,11 +87,15 @@ describe('Violation Page: Tags', () => {
         cy.get(selectors.sidePanel.tags.input).type(`${tag}{enter}`);
         cy.wait(['@getTags', '@tagsAutocomplete']);
 
-        cy.get(`${selectors.activeRow} input[type="checkbox"]`).should('not.be.checked').check();
+        cy.get(`${selectors.activeRow} input[type="checkbox"]`).should('not.be.checked');
+        cy.get(`${selectors.activeRow} input[type="checkbox"]`).check();
         // also check some other violation
-        cy.get(`${selectors.rows}:not(${selectors.activeRow}):first input[type="checkbox"]`)
-            .should('not.be.checked')
-            .check();
+        cy.get(`${selectors.rows}:not(${selectors.activeRow}):first input[type="checkbox"]`).should(
+            'not.be.checked'
+        );
+        cy.get(
+            `${selectors.rows}:not(${selectors.activeRow}):first input[type="checkbox"]`
+        ).check();
 
         cy.get(selectors.sidePanel.closeButton).click(); // close the side panel, we don't need it right now
 

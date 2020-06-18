@@ -62,6 +62,79 @@ describe('Risk Page Pod Event Timeline', () => {
 
     withAuth();
 
+    describe('Clustering Events', () => {
+        // eslint-disable-next-line func-names
+        before(function () {
+            // skip the whole suite if timeline view clustered events ui isn't enabled
+            if (checkFeatureFlag('ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI', false)) {
+                this.skip();
+            }
+        });
+
+        it('should show the clustered event markers', () => {
+            setRoutes();
+            // mocking data to thoroughly test the clustering
+            cy.route(
+                'POST',
+                api.graphql(api.risks.graphqlOps.getPodEventTimeline),
+                'fixture:risks/eventTimeline/clusteredPodEventTimeline.json'
+            ).as('getPodEventTimeline');
+
+            openEventTimeline();
+
+            cy.wait('@getDeploymentEventTimeline');
+
+            // click the button and drill down to see containers
+            cy.get(selectors.eventTimeline.timeline.namesList.drillDownButtonInFirstRow).click();
+
+            cy.wait('@getPodEventTimeline');
+
+            cy.get(selectors.eventTimeline.timeline.mainView.allClusteredEvents).should(
+                'have.length',
+                2
+            );
+            // there should be a clustered event for events of different types
+            cy.get(selectors.eventTimeline.timeline.mainView.clusteredEvent.generic).should(
+                'exist'
+            );
+            // there should be a clustered event for events of the same type
+            cy.get(selectors.eventTimeline.timeline.mainView.clusteredEvent.processActivity).should(
+                'exist'
+            );
+        });
+
+        it('should show the clustered event tooltip', () => {
+            setRoutes();
+            // mocking data to thoroughly test the filtering
+            cy.route(
+                'POST',
+                api.graphql(api.risks.graphqlOps.getPodEventTimeline),
+                'fixture:risks/eventTimeline/clusteredPodEventTimeline.json'
+            ).as('getPodEventTimeline');
+
+            openEventTimeline();
+
+            cy.wait('@getDeploymentEventTimeline');
+
+            // click the button and drill down to see containers
+            cy.get(selectors.eventTimeline.timeline.namesList.drillDownButtonInFirstRow).click();
+
+            cy.wait('@getPodEventTimeline');
+
+            cy.get(selectors.eventTimeline.timeline.mainView.clusteredEvent.generic).click();
+
+            cy.get(selectors.tooltip.title).should('contain', '3 Events within 0 ms');
+            cy.get(selectors.tooltip.bodyContent.eventDetails).should('have.length', 3);
+
+            cy.get(
+                selectors.eventTimeline.timeline.mainView.clusteredEvent.processActivity
+            ).click();
+
+            cy.get(selectors.tooltip.title).should('contain', '2 Events within 0 ms');
+            cy.get(selectors.tooltip.bodyContent.eventDetails).should('have.length', 2);
+        });
+    });
+
     describe('Filtering Events By Type', () => {
         const FILTER_OPTIONS = {
             SHOW_ALL: 0,

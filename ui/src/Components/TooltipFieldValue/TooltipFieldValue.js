@@ -22,7 +22,7 @@ TooltipFieldValue.propTypes = {
 };
 
 TooltipFieldValue.defaultProps = {
-    dataTestId: null,
+    dataTestId: 'tooltip-field-value',
     value: null,
     type: null,
 };

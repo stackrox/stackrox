@@ -34,7 +34,7 @@ const getTimeRangeTextOfEvents = (events) => {
             return `${time.timeDifference} ${pluralize(time.unit, time.timeDifference)}`;
         })
         .join(' and ');
-    return timeRangeTextOfEvents;
+    return timeRangeTextOfEvents || '0 ms';
 };
 
 export default getTimeRangeTextOfEvents;
