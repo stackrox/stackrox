@@ -49,6 +49,7 @@ function hotload_binary {
 
 function launch_central {
     local k8s_dir="$1"
+    local common_dir="${k8s_dir}/../common"
 
     echo "Generating central config..."
 
@@ -103,7 +104,7 @@ function launch_central {
     add_args "--offline=$OFFLINE_MODE"
 
     add_args "--license"
-    add_maybe_file_arg "${ROX_LICENSE_KEY:-${k8s_dir}/../common/dev-license.lic}"
+    add_maybe_file_arg "${ROX_LICENSE_KEY:-${common_dir}/dev-license.lic}"
 
     if [[ -n "$SCANNER_IMAGE" ]]; then
         add_args "--scanner-image=$SCANNER_IMAGE"
@@ -126,7 +127,7 @@ function launch_central {
     pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
 
     if [[ "${STORAGE_CLASS}" == "faster" ]]; then
-        kubectl apply -f "${k8s_dir}/ssd-storageclass.yaml"
+        kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
     fi
 
     if [[ "${STORAGE}" == "none" && -n $STORAGE_CLASS ]]; then
@@ -171,7 +172,7 @@ function launch_central {
         echo
 
         if [[ "${is_local_dev}" == "true" ]]; then
-            ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
+            ${ORCH_CMD} -n stackrox patch deployment monitoring --patch "$(cat "${common_dir}/monitoring-resources-patch.yaml")"
         fi
     fi
 
@@ -204,9 +205,9 @@ function launch_central {
         launch_service $unzip_dir scanner
 
         if [[ -n "$CI" ]]; then
-          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat $k8s_dir/../common/scanner-patch.yaml)"
+          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
         elif [[ "${is_local_dev}" == "true" ]]; then
-          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat $k8s_dir/scanner-local-patch.yaml)"
+          ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
         fi
 
         echo
