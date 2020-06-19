@@ -6,6 +6,8 @@ import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.EnvFromSource
 import io.fabric8.kubernetes.api.model.EnvVar
+import io.fabric8.kubernetes.api.model.EnvVarBuilder
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
@@ -20,6 +22,7 @@ import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretEnvSource
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.Service
@@ -75,6 +78,7 @@ import objects.K8sSubject
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
+import objects.SecretKeyRef
 import okhttp3.Response
 import util.Timer
 
@@ -1529,6 +1533,16 @@ class Kubernetes implements OrchestratorMain {
 
         List<EnvVar> envVars = deployment.env.collect {
             k, v -> new EnvVar(k, v, null)
+        }
+
+        deployment.envValueFromSecretKeyRef.forEach {
+            String k, SecretKeyRef v -> envVars.add(new EnvVarBuilder()
+                    .withName(k)
+                    .withValueFrom(new EnvVarSourceBuilder()
+                            .withSecretKeyRef(
+                                    new SecretKeySelectorBuilder().withKey(v.key).withName(v.name).build())
+                            .build())
+                    .build())
         }
 
         List<EnvFromSource> envFromSecrets = new LinkedList<>()

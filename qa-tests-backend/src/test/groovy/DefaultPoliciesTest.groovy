@@ -171,7 +171,9 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         for (ListAlert violation: unexpectedViolations) {
             def fullViolation = AlertService.getViolation(violation.getId())
-            print fullViolation
+            println ">>> An unexpected violation: "
+            println fullViolation
+            println "<<<"
             for (AlertOuterClass.Alert.Deployment.Container container:
                     fullViolation.getDeployment().getContainersList()) {
                 print ImageService.getImage(container.getImage().getId())

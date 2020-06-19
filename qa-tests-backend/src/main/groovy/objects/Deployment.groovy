@@ -22,6 +22,7 @@ class Deployment {
     Integer replicas = 1
     Map<String, String> env = [:]
     List<String> envFromSecrets = []
+    Map<String, SecretKeyRef> envValueFromSecretKeyRef = [:]
     Boolean isPrivileged = false
     Map<String , String> limits = [:]
     Map<String , String> request = [:]
@@ -127,6 +128,11 @@ class Deployment {
 
     Deployment setEnvFromSecrets(List<String> envFromSecrets) {
         this.envFromSecrets = envFromSecrets
+        return this
+    }
+
+    Deployment addEnvValueFromSecretKeyRef(String envName, SecretKeyRef secretKeyRef) {
+        this.envValueFromSecretKeyRef.put(envName, secretKeyRef)
         return this
     }
 
