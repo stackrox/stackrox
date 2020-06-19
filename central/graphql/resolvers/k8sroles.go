@@ -18,6 +18,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("k8sRoles(query: String, pagination: Pagination): [K8SRole!]!"),
+		schema.AddQuery("k8sRoleCount(query: String): Int!"),
 		schema.AddExtraResolver("K8SRole", `cluster: Cluster!`),
 		schema.AddExtraResolver("K8SRole", `type: String!`),
 		schema.AddExtraResolver("K8SRole", `verbs: [String!]!`),
@@ -70,6 +71,23 @@ func (resolver *Resolver) K8sRoles(ctx context.Context, arg PaginatedQuery) ([]*
 	}.paginate(k8SRoleResolvers, nil)
 
 	return resolvers.([]*k8SRoleResolver), err
+}
+
+// K8SRoleCount returns count of all k8s roles across infrastructure
+func (resolver *Resolver) K8SRoleCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "K8SRoleCount")
+	if err := readK8sRoles(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.K8sRoleStore.Search(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *k8SRoleResolver) Type(ctx context.Context) (string, error) {
