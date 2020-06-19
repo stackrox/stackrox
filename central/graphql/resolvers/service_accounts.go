@@ -21,6 +21,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("serviceAccount(id: ID!): ServiceAccount"),
 		schema.AddQuery("serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!"),
+		schema.AddQuery("serviceAccountCount(query: String): Int!"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
 		schema.AddExtraResolver("ServiceAccount", `roles(query: String): [K8SRole!]!`),
@@ -61,6 +62,23 @@ func (resolver *Resolver) ServiceAccounts(ctx context.Context, args PaginatedQue
 		pv: query.Pagination,
 	}.paginate(resolver.wrapServiceAccounts(resolver.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, query)))
 	return resolvers.([]*serviceAccountResolver), err
+}
+
+// ServiceAccountCount returns count of all service accounts across infrastructure
+func (resolver *Resolver) ServiceAccountCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ServiceAccountCount")
+	if err := readServiceAccounts(ctx); err != nil {
+		return 0, err
+	}
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.ServiceAccountsDataStore.Search(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int32(len(results)), nil
 }
 
 func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, error) {
