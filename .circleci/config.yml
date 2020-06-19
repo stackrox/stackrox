@@ -3074,21 +3074,39 @@ jobs:
             roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore --file 41.4-upgrade-db.zip --timeout 2m
 
       - *waitForAPI
-
       - run:
           name: Checkout current commit again
           command: git reset --hard "${CIRCLE_SHA1}"
 
+      - run:
+          name: Roll up to a 44.x image so that RocksDB is available
+          command: |
+            kubectl -n stackrox set image deploy/central *=stackrox/main:3.0.44.x-7-g633d112298
+
+      - *waitForAPI
+      - run:
+          name: Set DB to RocksDB
+          command: |
+            kubectl -n stackrox set env deploy/central ROX_ROCKSDB=true
+      - check-stackrox-logs:
+          collect: true
+
+      - *waitForAPI
       - run:
           name: Set Central image to current SHA
           command: |
             kubectl -n stackrox set image deploy/central "central=stackrox/main:$(make --quiet tag)"
 
       - *waitForAPI
+      - run:
+          name: Rollback to Badger after migrations have been completed on RocksDB
+          command: |
+            kubectl -n stackrox set env deploy/central ROX_ROCKSDB=false
 
+      - *waitForAPI
       - validate-upgrade:
           upgrade-cluster-id: "ff725187-e4f3-4d10-b5bd-021fc19bf108"
-          desc: "Validate 41.4 to current head migration"
+          desc: "Validate rollback to BadgerDB once migrations have been performed on RocksDB"
       - check-stackrox-logs:
           collect: true
 
