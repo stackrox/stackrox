@@ -175,11 +175,15 @@ describe('Risk page', () => {
         });
 
         it('should not use invalid URL search param key/value pair in its search bar', () => {
+            cy.server();
+            cy.route('GET', api.risks.riskyDeploymentsWithPagination).as(
+                'deploymentsWithProcessInfo'
+            );
+
+            cy.wait('@deploymentsWithProcessInfo');
+
             // first, make sure the deployments API calls returned some number of rows
             cy.get(RiskPageSelectors.table.dataRows);
-
-            //  need to wait here, to prevent flakey results
-            cy.wait(1000);
 
             // second, save the "n Deployments" number in the table header
             cy.get(RiskPageSelectors.table.header)
@@ -189,11 +193,10 @@ describe('Risk page', () => {
                     const sillyOption = 'Wingardium';
                     const sillyValue = 'leviosa';
                     const urlWithSearch = `${url}?s[${sillyOption}]=${sillyValue}`;
+
                     cy.visit(urlWithSearch);
 
-                    // because we're testing with the real API, and we're checking that elements
-                    //   already on the page update, we need to wait here, to prevent flakey results
-                    cy.wait(1000);
+                    cy.wait('@deploymentsWithProcessInfo');
 
                     cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 0);
 
