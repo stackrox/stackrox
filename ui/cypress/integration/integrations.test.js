@@ -33,6 +33,7 @@ describe('Integrations page', () => {
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
         cy.get('div').contains('error');
+        cy.get(selectors.toast.closeButton).click();
 
         const nameInput = `Slack Test ${Math.random().toString(36).substring(7)}`;
         const defaultWebhook = 'https://hooks.slack.com/services/EXAMPLE';
@@ -45,14 +46,15 @@ describe('Integrations page', () => {
         // the test button should not return an error with valid inputs
         cy.get(selectors.buttons.test).click();
         cy.get('div').should('not.contain', 'error');
+        cy.get(selectors.toast.closeButton).click();
 
         // test creating an integration
-        cy.get(selectors.buttons.create).click();
+        cy.get(selectors.buttons.create).click({ force: true });
 
         // test updating an existing integration
         cy.get(`${selectors.table.rows}:contains('${nameInput}')`).click();
-        cy.get(selectors.buttons.save).click();
-        cy.get(selectors.buttons.closePanel).click();
+        cy.get(selectors.buttons.save).click({ force: true });
+        cy.get(selectors.buttons.closePanel).click({ force: true });
 
         // test deleting an integration
         cy.get(`.rt-tr:contains("${nameInput}") .rt-td input[type="checkbox"]`).check();
@@ -79,20 +81,21 @@ describe('Integrations page', () => {
         // test that validation error happens when form is incomplete
         cy.get(selectors.buttons.test).click();
         cy.get('div').contains('error');
+        cy.get(selectors.toast.closeButton).click();
 
         cy.get(selectors.dockerRegistryForm.endpointInput).type('registry-1.docker.io');
 
-        cy.get(selectors.buttons.create).click();
+        cy.get(selectors.buttons.create).click({ force: true });
 
         // test updating an existing integration
         cy.get(`${selectors.table.rows}:contains('${name}')`).click();
-        cy.get(selectors.buttons.save).click();
-        cy.get(selectors.buttons.closePanel).click();
+        cy.get(selectors.buttons.save).click({ force: true });
+        cy.get(selectors.buttons.closePanel).click({ force: true });
 
         // delete the integration after to clean up
         cy.get(`.rt-tr:contains("${name}") .rt-td input[type="checkbox"]`).check();
         cy.get(selectors.buttons.delete).click({ force: true });
-        cy.get(selectors.buttons.confirm).click();
+        cy.get(selectors.buttons.confirm).click({ force: true });
         cy.get(`.rt-tr:contains("${name}")`).should('not.exist');
     });
 });

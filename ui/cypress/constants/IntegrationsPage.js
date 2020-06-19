@@ -1,4 +1,5 @@
 import table from '../selectors/table';
+import toast from '../selectors/toast';
 
 export const url = '/main/integrations';
 
@@ -54,4 +55,5 @@ export const selectors = {
     dialog: '.dialog',
     checkboxes: 'input',
     table,
+    toast,
 };

@@ -24,7 +24,7 @@ class Notifications extends Component {
             <ToastContainer
                 toastClassName="toast-selector font-sans text-base-600 text-base-100 font-600 bg-base-100"
                 hideProgressBar
-                autoClose={3000}
+                autoClose={8000}
             >
                 {this.showLatestToast()}
             </ToastContainer>
