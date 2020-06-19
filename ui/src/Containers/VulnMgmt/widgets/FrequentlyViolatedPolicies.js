@@ -65,6 +65,8 @@ const processData = (data, workflowState, limit) => {
             );
 
             return {
+                // Alert count cann be treated as deployment count only under the assumption that
+                // Vulnerability Management policies do not have runtime violations.
                 x: alertCount,
                 y: `${name} / Enforced: ${isEnforced} / Severity: ${severityLabels[severity]}`,
                 url,

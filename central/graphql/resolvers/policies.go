@@ -96,12 +96,8 @@ func (resolver *policyResolver) AlertCount(ctx context.Context, args RawQuery) (
 		return 0, err // could return nil, nil to prevent errors from propagating.
 	}
 
-	resolvers, err := resolver.Alerts(ctx, PaginatedQuery{Query: args.Query})
-	if err != nil {
-		return 0, err
-	}
-
-	return int32(len(resolvers)), nil
+	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getRawPolicyQuery())
+	return resolver.root.ViolationCount(ctx, RawQuery{Query: &query})
 }
 
 // Deployments returns GraphQL resolvers for all deployments that this policy applies to
