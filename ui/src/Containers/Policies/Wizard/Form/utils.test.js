@@ -29,6 +29,14 @@ describe('policyFormUtils', () => {
             expect(valueObj.source).toBeUndefined();
         });
 
+        it('should parse array policy criteria values', () => {
+            const value = ['value1'];
+            const valueObj = parseValueStr(value);
+            expect(valueObj.key).toBeUndefined();
+            expect(valueObj.value).toEqual(value);
+            expect(valueObj.source).toBeUndefined();
+        });
+
         it('should not parse empty policy criteria value', () => {
             const value = '';
             const valueObj = parseValueStr(value);

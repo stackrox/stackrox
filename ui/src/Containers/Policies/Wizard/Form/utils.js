@@ -91,8 +91,6 @@ export function parseNumericComparisons(str) {
     return [matches[1], matches[2]];
 }
 export function parseValueStr(value, fieldName) {
-    if (typeof value !== 'string') return value;
-
     // TODO: work with API to update contract for returning number comparison fields
     //   until that improves, we short-circuit those fields here
     if (nonStandardNumberFields.includes(fieldName)) {
@@ -107,22 +105,24 @@ export function parseValueStr(value, fieldName) {
                   value: num,
               };
     }
-    // handle all other string fields
-    const valueArr = value.split('=');
-    // for nested policy criteria fields
-    if (valueArr.length === 2) {
-        return {
-            key: valueArr[0],
-            value: valueArr[1],
-        };
-    }
-    // for the Environment Variable policy criteria
-    if (valueArr.length === 3) {
-        return {
-            source: valueArr[0],
-            key: valueArr[1],
-            value: valueArr[2],
-        };
+    if (typeof value === 'string') {
+        // handle all other string fields
+        const valueArr = value.split('=');
+        // for nested policy criteria fields
+        if (valueArr.length === 2) {
+            return {
+                key: valueArr[0],
+                value: valueArr[1],
+            };
+        }
+        // for the Environment Variable policy criteria
+        if (valueArr.length === 3) {
+            return {
+                source: valueArr[0],
+                key: valueArr[1],
+                value: valueArr[2],
+            };
+        }
     }
     return {
         value,
@@ -137,11 +137,11 @@ function preFormatNestedPolicyFields(policy) {
     policy.policySections.forEach((policySection, sectionIdx) => {
         const { policyGroups } = policySection;
         policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
+            const { values, fieldName } = policyGroup;
             values.forEach((value, valueIdx) => {
                 clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
                     valueIdx
-                ] = parseValueStr(value.value, policyGroup.fieldName);
+                ] = parseValueStr(value.value, fieldName);
             });
         });
     });
