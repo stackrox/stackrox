@@ -1570,7 +1570,7 @@ commands:
             THIS_RUN=$(echo ${PWD}/debug-dump/stackrox_debug*.zip)
             echo "Comparing with ${THIS_RUN}"
             COMPARE=${PWD}/scripts/ci/compare-debug-metrics.sh
-            # Ignore comparison failure until correct thresholds are determined. 
+            # Ignore comparison failure until correct thresholds are determined.
             set +e
             (cd /tmp/metrics && "${COMPARE}" "${BASELINE}" "${THIS_RUN}")
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
@@ -2362,7 +2362,6 @@ jobs:
       - ROX_VULN_MGMT_UI: true
       - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
-      - ROX_EVENT_TIMELINE_UI: true
       - ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI: true
       - ROX_SENSOR_DETECTION: true
       - ROX_REQUIRED_IMAGE_LABEL_POLICY: true

@@ -33,13 +33,6 @@ function openEventTimeline() {
 }
 
 describe('Risk Page Deployment Event Timeline', () => {
-    before(() => {
-        // skip the whole suite if timeline view ui isn't enabled
-        if (checkFeatureFlag('ROX_EVENT_TIMELINE_UI', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     describe('Clustering Events', () => {

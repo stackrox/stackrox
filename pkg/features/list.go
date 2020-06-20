@@ -12,10 +12,6 @@ var (
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", true)
 
-	// EventTimelineUI enables the Event Timeline UI.
-	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	EventTimelineUI = registerFeature("Enable Event Timeline UI", "ROX_EVENT_TIMELINE_UI", true)
-
 	// EventTimelineClusteredEventsUI enables the Event Timeline UI for Clustered Events.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	EventTimelineClusteredEventsUI = registerFeature("Enable Event Timeline Clustered Events UI", "ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI", false)
