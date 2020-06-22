@@ -75,23 +75,23 @@ func scrubImageIntegration(i *storage.ImageIntegration) {
 	secrets.ScrubSecretsFromStructWithReplacement(i, secrets.ScrubReplacementStr)
 }
 
-// GetImageIntegration retrieves the integration based on the id passed
+// GetImageIntegration returns the image integration given its ID.
 func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*storage.ImageIntegration, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
+		return nil, status.Error(codes.InvalidArgument, "image integration id must be provided")
 	}
 	integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, status.Errorf(codes.NotFound, "Image integration %s not found", request.GetId())
+		return nil, status.Errorf(codes.NotFound, "image integration %s not found", request.GetId())
 	}
 	scrubImageIntegration(integration)
 	return integration, nil
 }
 
-// GetImageIntegrations retrieves all image integrations that matches the request filters
+// GetImageIntegrations returns all image integrations.
 func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) (*v1.GetImageIntegrationsResponse, error) {
 	integrations, err := s.datastore.GetImageIntegrations(ctx, request)
 	if err != nil {
@@ -134,32 +134,19 @@ func (s *serviceImpl) validateTestAndNormalize(ctx context.Context, request *sto
 	return nil
 }
 
-// PutImageIntegration updates an image integration in the system
-func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	if err := s.validateTestAndNormalize(ctx, request); err != nil {
-		return nil, err
-	}
-
-	if err := s.toNotify.NotifyUpdated(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if err := s.datastore.UpdateImageIntegration(ctx, request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	s.reprocessorLoop.ShortCircuit()
-	return &v1.Empty{}, nil
+// PutImageIntegration modifies a given image integration, without stored credential reconciliation
+func (s *serviceImpl) PutImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
+	return s.UpdateImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
 }
 
-// PostImageIntegration inserts a new image integration into the system if it doesn't already exist
+// PostImageIntegration creates a image integration.
 func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
 	if request.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
+		return nil, status.Error(codes.InvalidArgument, "id field should be empty when posting a new image integration")
 	}
 
 	if err := s.validateTestAndNormalize(ctx, request); err != nil {
-		return nil, err
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	id, err := s.datastore.AddImageIntegration(ctx, request)
@@ -169,7 +156,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	request.Id = id
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
-		_ = s.datastore.RemoveImageIntegration(ctx, request.Id)
+		_ = s.datastore.RemoveImageIntegration(ctx, request.GetId())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -177,10 +164,10 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	return request, nil
 }
 
-// DeleteImageIntegration deletes an integration from the system
+// DeleteImageIntegration removes a image integration given its ID.
 func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
+		return nil, status.Error(codes.InvalidArgument, "image integration id must be provided")
 	}
 	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
 		return nil, err
@@ -191,60 +178,41 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	return &v1.Empty{}, nil
 }
 
-// TestImageIntegration tests to see if the config is setup properly
-func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateIntegration(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.testImageIntegration(request); err != nil {
-		return nil, err
-	}
-	return &v1.Empty{}, nil
-}
-
+// UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
 func (s *serviceImpl) UpdateImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
-	if !request.GetUpdatePassword() {
-		if err := s.validateIntegration(ctx, request.Config); err != nil {
-			return nil, err
-		}
-
-		integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetConfig().GetId())
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, status.Errorf(codes.NotFound, "Image integration %s not found", request.GetConfig().GetId())
-		}
-
-		if err := s.reconcileImageIntegrationUpdate(request.Config, integration); err != nil {
-			return nil, err
-		}
+	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if _, err := s.PutImageIntegration(ctx, request.Config); err != nil {
+	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
 		return nil, err
 	}
+	if err := s.validateTestAndNormalize(ctx, request.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.datastore.UpdateImageIntegration(ctx, request.GetConfig()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if err := s.toNotify.NotifyUpdated(request.GetConfig()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	s.reprocessorLoop.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
-	if !request.GetUpdatePassword() {
-		if err := s.validateIntegration(ctx, request.Config); err != nil {
-			return nil, err
-		}
-		integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetConfig().GetId())
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			return nil, status.Errorf(codes.NotFound, "Image integration %s not found", request.GetConfig().GetId())
-		}
+// TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
+func (s *serviceImpl) TestImageIntegration(ctx context.Context, imageIntegration *storage.ImageIntegration) (*v1.Empty, error) {
+	return s.TestUpdatedImageIntegration(ctx, &v1.UpdateImageIntegrationRequest{Config: imageIntegration, UpdatePassword: true})
+}
 
-		if err := s.reconcileImageIntegrationUpdate(request.Config, integration); err != nil {
-			return nil, err
-		}
+// TestImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
+func (s *serviceImpl) TestUpdatedImageIntegration(ctx context.Context, request *v1.UpdateImageIntegrationRequest) (*v1.Empty, error) {
+	if err := s.validateIntegration(ctx, request.GetConfig()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if _, err := s.TestImageIntegration(ctx, request.Config); err != nil {
+	if err := s.reconcileUpdateImageIntegrationRequest(ctx, request); err != nil {
+		return nil, err
+	}
+	if err := s.testImageIntegration(request.GetConfig()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
@@ -301,13 +269,13 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 	}
 	for _, req := range clustersRequested {
 		if !s.clusterExists(req, existingClusters) {
-			errorList.AddStringf("Cluster %s does not exist", req)
+			errorList.AddStringf("cluster %s does not exist", req)
 		}
 	}
 
 	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
 	if request.GetName() == "" {
-		errorList.AddString("Name for integration is required")
+		errorList.AddString("name for integration is required")
 		return errorList.ToError()
 	}
 
@@ -316,7 +284,7 @@ func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.
 		return status.Error(codes.Internal, err.Error())
 	}
 	if len(integrations) != 0 && request.GetId() != integrations[0].GetId() {
-		errorList.AddStringf("Integration with name %q already exists", request.GetName())
+		errorList.AddStringf("integration with name %q already exists", request.GetName())
 	}
 	return errorList.ToError()
 }
@@ -330,14 +298,32 @@ func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bo
 	return false
 }
 
-func (s *serviceImpl) reconcileImageIntegrationUpdate(updateRequest *storage.ImageIntegration, storedConfig *storage.ImageIntegration) error {
-	switch storedConfig.GetIntegrationConfig().(type) {
-	case *storage.ImageIntegration_Docker:
-		if err := secrets.ReconcileScrubbedStructWithExisting(updateRequest, storedConfig); err != nil {
-			return err
-		}
-	default:
-		return errors.New("the request doesn't have a valid integration config type")
+func (s *serviceImpl) reconcileUpdateImageIntegrationRequest(ctx context.Context, updateRequest *v1.UpdateImageIntegrationRequest) error {
+	if updateRequest.GetUpdatePassword() {
+		return nil
+	}
+	if updateRequest.GetConfig() == nil {
+		return status.Error(codes.InvalidArgument, "request is missing image integration config")
+	}
+	if updateRequest.GetConfig().GetId() == "" {
+		return status.Error(codes.InvalidArgument, "id required for stored credential reconciliation")
+	}
+	integration, exists, err := s.datastore.GetImageIntegration(ctx, updateRequest.GetConfig().GetId())
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return status.Errorf(codes.NotFound, "image integration %s not found", updateRequest.GetConfig().GetId())
+	}
+	if err := s.reconcileImageIntegrationWithExisting(updateRequest.GetConfig(), integration); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	return nil
+}
+
+func (s *serviceImpl) reconcileImageIntegrationWithExisting(updatedConfig, storedConfig *storage.ImageIntegration) error {
+	if updatedConfig.GetIntegrationConfig() == nil {
+		return errors.New("the request doesn't have a valid integration config type")
+	}
+	return secrets.ReconcileScrubbedStructWithExisting(updatedConfig, storedConfig)
 }

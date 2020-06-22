@@ -278,6 +278,14 @@ func (s *authzDataStoreAccessTestSuite) TestEnforcesList() {
 	s.Nil(configs, "expected return value to be nil")
 }
 
+func (s *authzDataStoreAccessTestSuite) TestEnforcesGet() {
+	s.mockStorage.EXPECT().GetAuthzPluginConfig("id").Times(0)
+
+	plugin, err := s.getDataStore().GetAuthzPluginConfig(s.hasNoneCtx, "id")
+	s.Error(err, "expected permission denied error")
+	s.Nil(plugin, "expected return value to be nil")
+}
+
 func (s *authzDataStoreAccessTestSuite) TestAllowsList() {
 	dataStore := s.getDataStore()
 	s.mockStorage.EXPECT().ListAuthzPluginConfigs().Return(nil, nil)
@@ -288,6 +296,22 @@ func (s *authzDataStoreAccessTestSuite) TestAllowsList() {
 	s.mockStorage.EXPECT().ListAuthzPluginConfigs().Return(nil, nil)
 
 	_, err = dataStore.ListAuthzPluginConfigs(s.hasWriteCtx)
+	s.NoError(err, "expected no error trying to read with permissions")
+}
+
+func (s *authzDataStoreAccessTestSuite) TestAllowsGet() {
+	storedPlugin := &storage.AuthzPluginConfig{Id: "id"}
+	dataStore := s.getDataStore()
+	s.mockStorage.EXPECT().GetAuthzPluginConfig(storedPlugin.GetId()).Return(storedPlugin, nil)
+
+	plugin, err := dataStore.GetAuthzPluginConfig(s.hasReadCtx, storedPlugin.GetId())
+	s.Equal(plugin, storedPlugin)
+	s.NoError(err, "expected no error trying to read with permissions")
+
+	s.mockStorage.EXPECT().GetAuthzPluginConfig(storedPlugin.GetId()).Return(storedPlugin, nil)
+
+	plugin, err = dataStore.GetAuthzPluginConfig(s.hasWriteCtx, storedPlugin.GetId())
+	s.Equal(plugin, storedPlugin)
 	s.NoError(err, "expected no error trying to read with permissions")
 }
 

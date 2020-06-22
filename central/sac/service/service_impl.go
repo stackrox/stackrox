@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/client"
+	"github.com/stackrox/rox/pkg/secrets"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -79,6 +80,9 @@ func (s *serviceImpl) DryRunAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	if err := validateConfig(req.GetConfig()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	if _, err := s.reconcileUpsertAuthzPluginConfigRequest(ctx, req); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	if err := s.testConfig(ctx, req.GetConfig()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -89,6 +93,9 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 	configs, err := s.ds.ListAuthzPluginConfigs(ctx)
 	if err != nil {
 		return nil, err
+	}
+	for config := range configs {
+		secrets.ScrubSecretsFromStructWithReplacement(config, secrets.ScrubReplacementStr)
 	}
 	return &v1.GetAuthzPluginConfigsResponse{
 		Configs: configs,
@@ -130,6 +137,10 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	if err := validateConfig(cfg); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	reconciled, err := s.reconcileUpsertAuthzPluginConfigRequest(ctx, req)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
 	if cfg.GetEnabled() {
 		if err := s.testConfig(ctx, cfg); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "%v\nCheck the central logs for full error.", err)
@@ -144,6 +155,9 @@ func (s *serviceImpl) UpdateAuthzPluginConfig(ctx context.Context, req *v1.Upser
 	upsertedConfig, err := s.ds.UpsertAuthzPluginConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
+	}
+	if reconciled {
+		secrets.ScrubSecretsFromStructWithReplacement(upsertedConfig, secrets.ScrubReplacementStr)
 	}
 	return upsertedConfig, nil
 }
@@ -171,4 +185,31 @@ func (s *serviceImpl) testConfig(ctx context.Context, config *storage.AuthzPlugi
 		return err
 	}
 	return nil
+}
+
+func (s *serviceImpl) reconcileUpsertAuthzPluginConfigRequest(ctx context.Context, updateRequest *v1.UpsertAuthzPluginConfigRequest) (bool, error) {
+	if updateRequest.GetUpdatePassword() {
+		return false, nil
+	}
+	if updateRequest.GetConfig() == nil {
+		return false, status.Error(codes.InvalidArgument, "request is missing authz plugin config")
+	}
+	if updateRequest.GetConfig().GetId() == "" {
+		return false, status.Error(codes.NotFound, "id required for stored credential reconciliation")
+	}
+	existingAuthzPluginConfig, err := s.ds.GetAuthzPluginConfig(ctx, updateRequest.GetConfig().GetId())
+	if err != nil {
+		return false, status.Error(codes.Internal, err.Error())
+	}
+	if existingAuthzPluginConfig == nil {
+		return false, status.Errorf(codes.NotFound, "existing authz plugin %s not found", updateRequest.GetConfig().GetId())
+	}
+	if err := reconcileAuthzPluginConfigWithExisting(updateRequest.GetConfig(), existingAuthzPluginConfig); err != nil {
+		return false, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return true, nil
+}
+
+func reconcileAuthzPluginConfigWithExisting(updated, existing *storage.AuthzPluginConfig) error {
+	return secrets.ReconcileScrubbedStructWithExisting(updated, existing)
 }

@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestValidateIntegration(t *testing.T) {
@@ -83,131 +85,78 @@ func TestValidateIntegration(t *testing.T) {
 
 	_, err := s.TestUpdatedImageIntegration(textCtx, request)
 	assert.Error(t, err)
-	assert.EqualErrorf(t, err, "the request doesn't have a valid integration config type", "formatted")
+	assert.Equal(t, err, status.Error(codes.InvalidArgument, "the request doesn't have a valid integration config type"))
 
+	dockerConfig := &storage.DockerConfig{
+		Endpoint: "endpoint",
+		Username: "username",
+		Password: "password",
+	}
+	dockerConfigScrubbed := dockerConfig.Clone()
+	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigScrubbed, secrets.ScrubReplacementStr)
+	dockerImageIntegrationConfig := &storage.ImageIntegration{
+		Id:                  "id2",
+		Name:                "name2",
+		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		SkipTestIntegration: true,
+	}
+
+	dockerImageIntegrationConfigStored := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigStored.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfig.Clone()}
+
+	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(),
+		dockerImageIntegrationConfig.GetId()).Return(dockerImageIntegrationConfigStored, true, nil).AnyTimes()
+
+	dockerImageIntegrationConfigScrubbed := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigScrubbed.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigScrubbed}
 	requestWithADockerConfig := &v1.UpdateImageIntegrationRequest{
-		Config: &storage.ImageIntegration{
-			Id:         "id2",
-			Name:       "name2",
-			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-				Endpoint: "endpoint",
-				Username: "username",
-				Password: "",
-			}},
-			SkipTestIntegration: true,
-		},
+		Config:         dockerImageIntegrationConfigScrubbed,
 		UpdatePassword: false,
 	}
-	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
-		Id:         "id2",
-		Name:       "name2",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-			Endpoint: "endpoint",
-			Username: "username",
-			Password: secrets.ScrubReplacementStr,
-		}},
-		SkipTestIntegration: true,
-	}, true, nil).AnyTimes()
 
-	maskedIntegrationConfig := &storage.ImageIntegration{
-		Id:         "id2",
-		Name:       "name2",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-			Endpoint: "endpoint",
-			Username: "username",
-			Password: secrets.ScrubReplacementStr,
-		}},
-		SkipTestIntegration: true,
-	}
-	tempConfig := &storage.ImageIntegration{
-		Id:         "id2",
-		Name:       "name2",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-			Endpoint: "endpoint",
-			Username: "username",
-			Password: "password",
-		}},
-		SkipTestIntegration: true,
-	}
-	storedConfig, err := s.GetImageIntegration(textCtx, &v1.ResourceByID{
-		Id: requestWithADockerConfig.GetConfig().GetId(),
-	})
-	assert.Equal(t, storedConfig, maskedIntegrationConfig)
+	storedConfig, exists, err := s.datastore.GetImageIntegration(textCtx,
+		requestWithADockerConfig.GetConfig().GetId())
 	assert.NoError(t, err)
-	err = s.reconcileImageIntegrationUpdate(requestWithADockerConfig.GetConfig(), tempConfig)
+	assert.True(t, exists)
+
 	// Ensure successfully pulled credentials from storedConfig
-	assert.Equal(t, tempConfig.GetDocker(), requestWithADockerConfig.GetConfig().GetDocker())
+	assert.NotEqual(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
+	err = s.reconcileImageIntegrationWithExisting(requestWithADockerConfig.GetConfig(), storedConfig)
 	assert.NoError(t, err)
+	assert.Equal(t, dockerConfig, requestWithADockerConfig.GetConfig().GetDocker())
 
 	//Test case: config request with a different endpoint
+	dockerConfigDiffEndpoint := dockerConfig.Clone()
+	dockerConfigDiffEndpoint.Endpoint = "endpointDiff"
+	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffEndpoint, secrets.ScrubReplacementStr)
+	dockerImageIntegrationConfigDiffEndpoint := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigDiffEndpoint.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffEndpoint}
 	requestWithDifferentEndpoint := &v1.UpdateImageIntegrationRequest{
-		Config: &storage.ImageIntegration{
-			Id:         "id2",
-			Name:       "name2",
-			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-				Endpoint: "endpointDiff",
-				Username: "username",
-			}},
-			SkipTestIntegration: true,
-		},
+		Config:         dockerImageIntegrationConfigDiffEndpoint,
 		UpdatePassword: false,
 	}
-	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
-		Id:         "id2",
-		Name:       "name2",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-			Endpoint: "endpointDiff",
-			Username: "username",
-			Password: secrets.ScrubReplacementStr,
-		}},
-		SkipTestIntegration: true,
-	}, true, nil).AnyTimes()
 
-	storedConfig, err = s.GetImageIntegration(textCtx, &v1.ResourceByID{
-		Id: requestWithDifferentEndpoint.GetConfig().GetId(),
-	})
+	storedConfig, exists, err = s.datastore.GetImageIntegration(textCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
-	err = s.reconcileImageIntegrationUpdate(requestWithDifferentEndpoint.GetConfig(), storedConfig)
+	assert.True(t, exists)
+	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentEndpoint.GetConfig(), storedConfig)
 	assert.Error(t, err)
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Endpoint'")
 
 	//Test case: config request with a different username
+	dockerConfigDiffUsername := dockerConfig.Clone()
+	dockerConfigDiffUsername.Username = "usernameDiff"
+	secrets.ScrubSecretsFromStructWithReplacement(dockerConfigDiffUsername, secrets.ScrubReplacementStr)
+	dockerImageIntegrationConfigDiffUsername := dockerImageIntegrationConfig.Clone()
+	dockerImageIntegrationConfigDiffUsername.IntegrationConfig = &storage.ImageIntegration_Docker{Docker: dockerConfigDiffUsername}
 	requestWithDifferentUsername := &v1.UpdateImageIntegrationRequest{
-		Config: &storage.ImageIntegration{
-			Id:         "id2",
-			Name:       "name2",
-			Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-			IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-				Endpoint: "endpoint",
-				Username: "usernameDiff",
-			}},
-			SkipTestIntegration: true,
-		},
+		Config:         dockerImageIntegrationConfigDiffUsername,
 		UpdatePassword: false,
 	}
-	integrationDatastore.EXPECT().GetImageIntegration(gomock.Any(), "id2").Return(&storage.ImageIntegration{
-		Id:         "id2",
-		Name:       "name2",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{Docker: &storage.DockerConfig{
-			Endpoint: "endpoint",
-			Username: "usernameDiff",
-			Password: secrets.ScrubReplacementStr,
-		}},
-		SkipTestIntegration: true,
-	}, true, nil).AnyTimes()
-
-	storedConfig, err = s.GetImageIntegration(textCtx, &v1.ResourceByID{
-		Id: requestWithDifferentUsername.GetConfig().GetId(),
-	})
+	storedConfig, exists, err = s.datastore.GetImageIntegration(textCtx, requestWithDifferentEndpoint.GetConfig().GetId())
 	assert.NoError(t, err)
-	err = s.reconcileImageIntegrationUpdate(requestWithDifferentUsername.GetConfig(), storedConfig)
+	assert.True(t, exists)
+	err = s.reconcileImageIntegrationWithExisting(requestWithDifferentUsername.GetConfig(), storedConfig)
 	assert.Error(t, err)
 	assert.EqualError(t, err, "credentials required to update field 'ImageIntegration.ImageIntegration_Docker.DockerConfig.Username'")
 }

@@ -20,8 +20,9 @@ message GetImageIntegrationsResponse {
 }
 
 message UpdateImageIntegrationRequest {
-    storage.ImageIntegration config = 1;
-    bool updatePassword             = 2;
+    storage.ImageIntegration config       = 1;
+    // When false, use the stored credentials of an existing image integration given its ID.
+    bool updatePassword = 2;
 }
 
 // ImageIntegrationService APIs manage image registry and image scanner integration.
@@ -34,14 +35,14 @@ service ImageIntegrationService {
         };
     }
 
-    // GetImageIntegrations returns all image integrations.
+    // GetImageIntegrations returns all image integrations that match the request filters.
     rpc GetImageIntegrations (GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
         option (google.api.http) = {
             get: "/v1/imageintegrations"
         };
     }
 
-    // PostImageIntegration creates a image integraton.
+    // PostImageIntegration creates a image integration.
     rpc PostImageIntegration (storage.ImageIntegration) returns (storage.ImageIntegration) {
         option (google.api.http) = {
             post: "/v1/imageintegrations"
@@ -49,7 +50,7 @@ service ImageIntegrationService {
         };
     }
 
-    // PutImageIntegration modifies a given image integration.
+    // PutImageIntegration modifies a given image integration, without using stored credential reconciliation.
     rpc PutImageIntegration (storage.ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/imageintegrations/{id}"
@@ -57,7 +58,7 @@ service ImageIntegrationService {
         };
     }
 
-    // TestImageIntegration checks if the given image integration is correctly configured.
+    // TestImageIntegration checks if the given image integration is correctly configured, without using stored credential reconciliation.
     rpc TestImageIntegration (storage.ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/imageintegrations/test"
@@ -72,7 +73,7 @@ service ImageIntegrationService {
         };
     }
 
-    // UpdateImageIntegration updates an existing image integration with knowing whether to update credentials.
+    // UpdateImageIntegration modifies a given image integration, with optional stored credential reconciliation.
     rpc UpdateImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/imageintegrations/{config.id}"
@@ -80,12 +81,11 @@ service ImageIntegrationService {
         };
     }
 
-    // TestUpdatedImageIntegration perform integration test with given a image integration config
+    // TestUpdatedImageIntegration checks if the given image integration is correctly configured, with optional stored credential reconciliation.
     rpc TestUpdatedImageIntegration (UpdateImageIntegrationRequest) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/imageintegrations/test/updated"
             body: "*"
         };
     }
-
 }

@@ -12,6 +12,7 @@ import (
 // DataStore exposes the functions that exposed and modify auth plugin configs in the system.
 type DataStore interface {
 	ListAuthzPluginConfigs(ctx context.Context) ([]*storage.AuthzPluginConfig, error)
+	GetAuthzPluginConfig(ctx context.Context, id string) (*storage.AuthzPluginConfig, error)
 	UpsertAuthzPluginConfig(ctx context.Context, config *storage.AuthzPluginConfig) (*storage.AuthzPluginConfig, error)
 	DeleteAuthzPluginConfig(ctx context.Context, id string) error
 }

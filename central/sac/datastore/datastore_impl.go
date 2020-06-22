@@ -90,6 +90,19 @@ func (ds *datastoreImpl) ListAuthzPluginConfigs(ctx context.Context) ([]*storage
 	return ds.storage.ListAuthzPluginConfigs()
 }
 
+func (ds *datastoreImpl) GetAuthzPluginConfig(ctx context.Context, id string) (*storage.AuthzPluginConfig, error) {
+	if ok, err := authPluginSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, errors.New("permission denied")
+	}
+
+	ds.mutex.Lock()
+	defer ds.mutex.Unlock()
+
+	return ds.storage.GetAuthzPluginConfig(id)
+}
+
 func (ds *datastoreImpl) UpsertAuthzPluginConfig(ctx context.Context, config *storage.AuthzPluginConfig) (*storage.AuthzPluginConfig, error) {
 	if ok, err := authPluginSAC.WriteAllowed(ctx); err != nil {
 		return nil, err

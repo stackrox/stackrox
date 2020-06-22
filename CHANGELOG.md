@@ -2,6 +2,13 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+- Added the following REST APIs:
+  - PATCH `/v1/notifiers/{id}` modifies a given notifier, with optional stored credential reconciliation.
+  - POST `/v1/notifiers/test/updated` checks if the given notifier is correctly configured, with optional stored credential reconciliation.
+  - PATCH `/v1/scopedaccessctrl/config/{id}` modifies a given scoped access control plugin, with optional stored credential reconciliation.
+  - POST `/v1/scopedaccessctrl/test/updated` checks if the given scoped access control plugin is correctly configured, with optional stored credential reconciliation
+  - PATCH `/v1/externalbackups/{id}` modifies a given external backup, with optional stored credential reconciliation.
+  - POST `/v1/externalbackups/test/updated` checks if the given external backup is correctly configured, with optional stored credential reconciliation.
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.

@@ -29,6 +29,7 @@ message Notifier {
 }
 
 message CSCC {
+    // The service account for the integration. The server will mask the value of this credential in responses and logs.
     string service_account = 1 [(gogoproto.moretags) = "scrub:\"always\""];
     reserved                 2; // Formerly gcp_org_id
     reserved                 3; // Formerly gcp_project
@@ -36,8 +37,9 @@ message CSCC {
 }
 
 message Jira {
-    string url        = 1;
-    string username   = 2;
+    string url        = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username   = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password   = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string issue_type = 4;
     message PriorityMapping {
@@ -49,9 +51,10 @@ message Jira {
 }
 
 message Email {
-    string server    = 1;
+    string server    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
     string sender    = 2;
-    string username  = 3;
+    string username  = 3 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password  = 4 [(gogoproto.moretags) = "scrub:\"always\""];
     bool disableTLS  = 5;
     bool DEPRECATED_useStartTLS = 6; // useStartTLS has been deprecated for startTLSAuthMethod
@@ -65,22 +68,25 @@ message Email {
 }
 
 message Splunk {
+    // The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
     string http_token          = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-    string http_endpoint       = 2;
+    string http_endpoint       = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
     bool insecure              = 3;
     int64 truncate             = 4;
     bool audit_logging_enabled = 5;
 }
 
 message PagerDuty {
+    // The API key for the integration. The server will mask the value of this credential in responses and logs.
     string api_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 message Generic {
-    string endpoint                    = 1;
+    string endpoint                    = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
     bool   skipTLSVerify               = 2;
     string ca_cert                     = 3;
-    string username                    = 4;
+    string username                    = 4 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
     repeated KeyValuePair headers      = 6;
     repeated KeyValuePair extra_fields = 7;

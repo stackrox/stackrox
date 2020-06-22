@@ -51,6 +51,7 @@ message UpdateAuthProviderRequest {
 }
 
 message ExchangeTokenRequest {
+    // The external authentication token. The server will mask the value of this credential in responses and logs.
     string external_token = 1 [(gogoproto.moretags) = "scrub:\"always\""];
     string type           = 2;
     string state          = 3;

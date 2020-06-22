@@ -34,6 +34,8 @@ var (
 			"/v1.ExternalBackupService/TestExternalBackup",
 			"/v1.ExternalBackupService/DeleteExternalBackup",
 			"/v1.ExternalBackupService/TriggerExternalBackup",
+			"/v1.ExternalBackupService/UpdateExternalBackup",
+			"/v1.ExternalBackupService/TestUpdatedExternalBackup",
 		},
 	})
 )
@@ -62,7 +64,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetExternalBackup retrieves the external backup based on the id passed
 func (s *serviceImpl) GetExternalBackup(ctx context.Context, request *v1.ResourceByID) (*storage.ExternalBackup, error) {
 	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Id must be specified when requesting an external backup")
+		return nil, status.Error(codes.InvalidArgument, "id must be specified when requesting an external backup")
 	}
 	backup, err := s.dataStore.GetBackup(ctx, request.GetId())
 	if err != nil {
@@ -108,12 +110,20 @@ func (s *serviceImpl) testBackup(ctx context.Context, backup *storage.ExternalBa
 	return s.manager.Test(ctx, backup)
 }
 
-// TestExternalBackup tests that the current config is valid
-func (s *serviceImpl) TestExternalBackup(ctx context.Context, request *storage.ExternalBackup) (*v1.Empty, error) {
-	if err := validateBackup(request); err != nil {
+// TestExternalBackup tests that the current config is valid, without stored credential reconciliation
+func (s *serviceImpl) TestExternalBackup(ctx context.Context, externalBackup *storage.ExternalBackup) (*v1.Empty, error) {
+	return s.TestUpdatedExternalBackup(ctx, &v1.UpdateExternalBackupRequest{ExternalBackup: externalBackup, UpdatePassword: true})
+}
+
+// TestUpdatedExternalBackup tests that the provided config is valid
+func (s *serviceImpl) TestUpdatedExternalBackup(ctx context.Context, request *v1.UpdateExternalBackupRequest) (*v1.Empty, error) {
+	if err := validateBackup(request.GetExternalBackup()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	if err := s.testBackup(ctx, request); err != nil {
+	if err := s.reconcileUpdateExternalBackupRequest(ctx, request); err != nil {
+		return nil, err
+	}
+	if err := s.testBackup(ctx, request.GetExternalBackup()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
@@ -141,24 +151,32 @@ func (s *serviceImpl) upsertExternalBackup(ctx context.Context, request *storage
 	return nil
 }
 
-// PutExternalBackup inserts a new external backup into the system
-func (s *serviceImpl) PutExternalBackup(ctx context.Context, request *storage.ExternalBackup) (*storage.ExternalBackup, error) {
-	if request.GetId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Id field must be provided when updating an external backup")
+// PutExternalBackup inserts a new external backup into the system, without stored credential reconciliation
+func (s *serviceImpl) PutExternalBackup(ctx context.Context, externalBackup *storage.ExternalBackup) (*storage.ExternalBackup, error) {
+	return s.UpdateExternalBackup(ctx, &v1.UpdateExternalBackupRequest{ExternalBackup: externalBackup, UpdatePassword: true})
+}
+
+// UpdateExternalBackup inserts a new external backup into the system
+func (s *serviceImpl) UpdateExternalBackup(ctx context.Context, request *v1.UpdateExternalBackupRequest) (*storage.ExternalBackup, error) {
+	if request.GetExternalBackup().GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "id field must be provided when updating an external backup")
 	}
-	if err := validateBackup(request); err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
-	}
-	if err := s.upsertExternalBackup(ctx, request); err != nil {
+	if err := s.reconcileUpdateExternalBackupRequest(ctx, request); err != nil {
 		return nil, err
 	}
-	return request, nil
+	if err := validateBackup(request.GetExternalBackup()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	if err := s.upsertExternalBackup(ctx, request.GetExternalBackup()); err != nil {
+		return nil, err
+	}
+	return request.GetExternalBackup(), nil
 }
 
 // PostExternalBackup adds a new external backup to the system
 func (s *serviceImpl) PostExternalBackup(ctx context.Context, request *storage.ExternalBackup) (*storage.ExternalBackup, error) {
 	if request.GetId() != "" {
-		return nil, status.Error(codes.InvalidArgument, "Id field must be empty when posting a new external backup")
+		return nil, status.Error(codes.InvalidArgument, "id field must be empty when posting a new external backup")
 	}
 	if err := validateBackup(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -181,4 +199,31 @@ func (s *serviceImpl) DeleteExternalBackup(ctx context.Context, request *v1.Reso
 	s.manager.Remove(ctx, request.GetId())
 
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) reconcileUpdateExternalBackupRequest(ctx context.Context, updateRequest *v1.UpdateExternalBackupRequest) error {
+	if updateRequest.GetUpdatePassword() {
+		return nil
+	}
+	if updateRequest.GetExternalBackup() == nil {
+		return status.Error(codes.InvalidArgument, "request is missing external backup config")
+	}
+	if updateRequest.GetExternalBackup().GetId() == "" {
+		return status.Error(codes.InvalidArgument, "id required for stored credential reconciliation")
+	}
+	existingBackupConfig, err := s.dataStore.GetBackup(ctx, updateRequest.GetExternalBackup().GetId())
+	if err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	if existingBackupConfig == nil {
+		return status.Errorf(codes.NotFound, "backup config %s not found", updateRequest.GetExternalBackup().GetId())
+	}
+	if err := reconcileExternalBackupWithExisting(updateRequest.GetExternalBackup(), existingBackupConfig); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+	return nil
+}
+
+func reconcileExternalBackupWithExisting(update *storage.ExternalBackup, existing *storage.ExternalBackup) error {
+	return secrets.ReconcileScrubbedStructWithExisting(update, existing)
 }

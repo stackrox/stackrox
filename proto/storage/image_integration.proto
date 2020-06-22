@@ -37,12 +37,14 @@ message ImageIntegration {
 }
 
 message IBMRegistryConfig {
-    string endpoint = 1;
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The API key for the integration. The server will mask the value of this credential in responses and logs.
     string api_key  = 2 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 message QuayConfig {
-    string endpoint   = 1;
+    string endpoint   = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The OAuth token for the integration. The server will mask the value of this credential in responses and logs.
     string oauthToken = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     bool   insecure   = 3;
 }
@@ -59,40 +61,48 @@ message ClairifyConfig {
 message DockerConfig {
     string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
     string username = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     bool   insecure = 4;
 }
 
 message ECRConfig {
     string registry_id       = 1;
-    string access_key_id     = 2;
+    // The access key ID for the integration. The server will mask the value of this credential in responses and logs.
+    string access_key_id     = 2 [(gogoproto.moretags) = "scrub:\"always\""];
+    // The secret access key for the integration. The server will mask the value of this credential in responses and logs.
     string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 4;
     bool   use_iam           = 5;
-    string endpoint          = 6;
+    string endpoint          = 6 [(gogoproto.moretags) = "scrub:\"dependent\""];
 }
 
 message DTRConfig {
-    string username = 1;
+    string username = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 2 [(gogoproto.moretags) = "scrub:\"always\""];
-    string endpoint = 3;
+    string endpoint = 3 [(gogoproto.moretags) = "scrub:\"dependent\""];
     bool  insecure  = 4;
 }
 
 message GoogleConfig {
-    string endpoint        = 1;
+    string endpoint        = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The service account for the integration. The server will mask the value of this credential in responses and logs.
     string service_account = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     string project         = 3;
 }
 
 message TenableConfig {
+    // The API key for the integration. The server will mask the value of this credential in responses and logs.
     string access_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    // The secret key for the integration. The server will mask the value of this credential in responses and logs.
     string secret_key = 2 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 message AnchoreConfig {
-    string endpoint = 1;
-    string username = 2;
+    string endpoint = 1 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    string username = 2 [(gogoproto.moretags) = "scrub:\"dependent\""];
+    // The password for the integration. The server will mask the value of this credential in responses and logs.
     string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     bool   insecure = 4;
 }
