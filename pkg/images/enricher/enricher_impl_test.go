@@ -43,7 +43,17 @@ func (f *fakeRegistryScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 
 func (f *fakeRegistryScanner) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	f.requestedScan = true
-	return &storage.ImageScan{}, nil
+	return &storage.ImageScan{
+		Components: []*storage.EmbeddedImageScanComponent{
+			{
+				Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve: "CVE-2020-1234",
+					},
+				},
+			},
+		},
+	}, nil
 }
 
 func (f *fakeRegistryScanner) Match(image *storage.ImageName) bool {
@@ -60,6 +70,18 @@ func (f *fakeRegistryScanner) Type() string {
 
 func (f *fakeRegistryScanner) Name() string {
 	return "name"
+}
+
+type fakeCVESuppressor struct{}
+
+func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
+	for _, c := range image.GetScan().GetComponents() {
+		for _, v := range c.GetVulns() {
+			if v.Cve == "CVE-2020-1234" {
+				v.Suppressed = true
+			}
+		}
+	}
 }
 
 func TestEnricherFlow(t *testing.T) {
@@ -245,6 +267,7 @@ func TestEnricherFlow(t *testing.T) {
 			set.EXPECT().ScannerSet().Return(scannerSet)
 
 			enricherImpl := &enricherImpl{
+				cves:            &fakeCVESuppressor{},
 				integrations:    set,
 				metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
 				metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
@@ -265,6 +288,39 @@ func TestEnricherFlow(t *testing.T) {
 			assert.Equal(t, c.fsr, fsr)
 		})
 	}
+}
+
+func TestCVESuppression(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	fsr := &fakeRegistryScanner{}
+	registrySet := mocks2.NewMockSet(ctrl)
+	registrySet.EXPECT().GetAll().Return([]types.ImageRegistry{fsr})
+
+	scannerSet := mocks3.NewMockSet(ctrl)
+	scannerSet.EXPECT().GetAll().Return([]types2.ImageScanner{fsr})
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet)
+	set.EXPECT().ScannerSet().Return(scannerSet)
+
+	enricherImpl := &enricherImpl{
+		cves:            &fakeCVESuppressor{},
+		integrations:    set,
+		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),
+		metadataCache:   expiringcache.NewExpiringCache(1 * time.Minute),
+		scanCache:       expiringcache.NewExpiringCache(1 * time.Minute),
+		metrics:         newMetrics(pkgMetrics.CentralSubsystem),
+	}
+
+	img := &storage.Image{Id: "id"}
+	results, err := enricherImpl.EnrichImage(EnrichmentContext{}, img)
+	require.NoError(t, err)
+	assert.True(t, results.ImageUpdated)
+	assert.True(t, img.Scan.Components[0].Vulns[0].Suppressed)
 }
 
 func TestFillScanStats(t *testing.T) {

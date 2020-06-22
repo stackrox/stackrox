@@ -10,6 +10,7 @@ import (
 type SettingsManager interface {
 	UpdatePolicies(allPolicies []*storage.Policy)
 	UpdateConfig(config *storage.DynamicClusterConfig)
+	FlushCache()
 
 	SettingsStream() concurrency.ReadOnlyValueStream
 }

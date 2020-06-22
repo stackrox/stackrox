@@ -1,6 +1,7 @@
 import common.Constants
 import groups.BAT
 import io.fabric8.kubernetes.api.model.Pod
+import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -8,9 +9,11 @@ import objects.Deployment
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.CVEService
 import services.ClusterService
 import services.FeatureFlagService
 import services.ImageIntegrationService
+import services.PolicyService
 import spock.lang.Retry
 import spock.lang.Shared
 import spock.lang.Timeout
@@ -79,7 +82,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
-        gcrId = ImageIntegrationService.addGcrRegistry()
+        gcrId = ImageIntegrationService.addGcrRegistry(true)
         assert gcrId != null
     }
 
@@ -168,6 +171,106 @@ class AdmissionControllerTest extends BaseSpecification {
         3       | false | false      | BUSYBOX_BYPASS_DEPLOYMENT    | false    | "bypass annotation, non-bypassable"
         3       | false | true       | BUSYBOX_BYPASS_DEPLOYMENT    | true     | "bypass annotation, bypassable"
         30      | true  | false      | GCR_NGINX_DEPLOYMENT         | false    | "nginx w/ inline scan"
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify CVE snoozing applies to images scanned by admission controller #image"() {
+        given:
+        "Create policy looking for a specific CVE"
+        Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
+        Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_ADMISSION_CONTROL_SERVICE"))
+
+        // We don't want to block on CVSS
+        Services.updatePolicyEnforcement(
+                CVSS,
+                cvssEnforcements
+        )
+
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(true)
+                .setEnforceOnUpdates(false)
+                .setDisableBypass(false)
+                .setScanInline(true)
+                .setTimeoutSeconds(5)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        PolicyOuterClass.Policy policy = PolicyService.policyClient.postPolicy(
+                PolicyOuterClass.Policy.newBuilder()
+                        .setName("Matching CVE (CVE-2019-3462)")
+                        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                        .addCategories("Testing")
+                        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+                        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                        .setFields(
+                            PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
+                        )
+                .build()
+        )
+        // Maximum time to wait for propagation to sensor
+        sleep 5000
+
+        def deployment = new Deployment()
+                .setName("admission-suppress-cve")
+                .setImage(image)
+
+        def created = orchestrator.createDeploymentNoWait(deployment)
+        assert !created
+        // CVE needs to be saved into the DB
+        sleep 1000
+
+        when:
+        "Suppress CVE and check that the deployment can now launch"
+        CVEService.suppressCVE("CVE-2019-3462")
+        // Allow propagation of CVE suppression and invalidation of cache
+        sleep 3000
+
+        created = orchestrator.createDeploymentNoWait(deployment)
+        assert created
+
+        if (created) {
+            def timer = new Timer(30, 1)
+            def deleted = false
+            while (!deleted && timer.IsValid()) {
+                try {
+                    orchestrator.deleteDeployment(deployment)
+                    deleted = true
+                } catch (NullPointerException ignore) {
+                    println "Caught NPE while deleting deployment, retrying in 1s..."
+                }
+            }
+            if (!deleted) {
+                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
+            }
+        }
+
+        and:
+        "Unsuppress CVE"
+        CVEService.unsuppressCVE("CVE-2019-3462")
+        // Allow propagation of CVE suppression and invalidation of cache
+        sleep 3000
+
+        then:
+        "Verify unsuppressing lets the deployment be blocked again"
+        assert !orchestrator.createDeploymentNoWait(deployment)
+
+        cleanup:
+        "Delete policy"
+        PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policy.id).build())
+
+        // Add back enforcement
+        Services.updatePolicyEnforcement(
+                CVSS,
+                [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
+        )
+
+        where:
+        "Data inputs are: "
+
+        image | _
+        "us.gcr.io/stackrox-ci/nginx:1.10@sha256:1861018a760ab6571b1d7e472cbd30da7c597e60439cd417935beb87b01c7cd0" | _
+        "us.gcr.io/stackrox-ci/nginx:1.10" | _
     }
 
     @Unroll

@@ -3,6 +3,7 @@ package enrichment
 import (
 	"time"
 
+	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -27,7 +28,7 @@ var (
 )
 
 func initialize() {
-	ie = enricher.New(imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton())
+	ie = enricher.New(cveDataStore.Singleton(), imageintegration.Set(), metrics.CentralSubsystem, ImageMetadataCacheSingleton(), ImageScanCacheSingleton())
 	en = New(datastore.Singleton(), ie)
 }
 

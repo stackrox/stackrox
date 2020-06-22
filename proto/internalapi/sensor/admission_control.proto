@@ -12,4 +12,5 @@ message AdmissionControlSettings {
     storage.DynamicClusterConfig cluster_config      = 1;
     storage.PolicyList enforced_deploy_time_policies = 2;
     google.protobuf.Timestamp timestamp              = 3;
+    string cache_version                             = 4;
 }

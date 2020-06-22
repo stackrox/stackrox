@@ -219,8 +219,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		return nil, status.Error(codes.Internal, "scan could not be completed. Please check that an applicable registry and scanner is integrated")
 	}
 
-	s.cveDatastore.EnrichImageWithSuppressedCVEs(img)
-
 	// Save the image
 	img.Id = utils.GetImageID(img)
 	if img.GetId() != "" {

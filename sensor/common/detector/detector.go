@@ -176,6 +176,9 @@ func (d *detectorImpl) processPolicySync(sync *central.PolicySync) error {
 func (d *detectorImpl) processReassessPolicies(_ *central.ReassessPolicies) error {
 	// Clear the image caches and make all the deployments flow back through by clearing out the hash
 	d.enricher.imageCache.RemoveAll()
+	if d.admCtrlSettingsMgr != nil {
+		d.admCtrlSettingsMgr.FlushCache()
+	}
 	d.deduper.reset()
 	return nil
 }

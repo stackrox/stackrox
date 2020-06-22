@@ -16,6 +16,7 @@ import (
 )
 
 type enricherImpl struct {
+	cves         cveSuppressor
 	integrations integration.Set
 
 	metadataLimiter *rate.Limiter
@@ -36,6 +37,9 @@ func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) 
 
 	scanResult, err := e.enrichWithScan(ctx, image)
 	errorList.AddError(err)
+
+	e.cves.EnrichImageWithSuppressedCVEs(image)
+
 	return EnrichmentResult{
 		ImageUpdated: updatedMetadata || (scanResult != ScanNotDone),
 		ScanResult:   scanResult,

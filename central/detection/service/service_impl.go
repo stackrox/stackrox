@@ -112,8 +112,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 
-	// Must evaluate the suppressed CVEs before detection
-	s.cveDatastore.EnrichImageWithSuppressedCVEs(img)
 	alerts, err := s.buildTimeDetector.Detect(img)
 	if err != nil {
 		return nil, err
@@ -137,9 +135,6 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	images, updatedIndices, _, err := s.deploymentEnricher.EnrichDeployment(enrichmentContext, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
-	}
-	for _, image := range images {
-		s.cveDatastore.EnrichImageWithSuppressedCVEs(image)
 	}
 	for _, idx := range updatedIndices {
 		img := images[idx]

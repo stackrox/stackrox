@@ -108,10 +108,13 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 
+	cacheVersion := string(cm.Data[admissioncontrol.CacheVersionDataKey])
+
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,
 		EnforcedDeployTimePolicies: &policies,
 		Timestamp:                  tsProto,
+		CacheVersion:               cacheVersion,
 	}
 
 	return settings, nil

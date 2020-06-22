@@ -2,6 +2,7 @@ package settingswatch
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	configPath := filepath.Join(dir, admissioncontrol.ConfigGZDataKey)
 	policiesPath := filepath.Join(dir, admissioncontrol.PoliciesGZDataKey)
 	timestampPath := filepath.Join(dir, admissioncontrol.LastUpdateTimeDataKey)
+	cacheVersionPath := filepath.Join(dir, admissioncontrol.CacheVersionDataKey)
 
 	if noneExists, err := fileutils.NoneExists(configPath, policiesPath, timestampPath); err != nil {
 		return nil, errors.Wrapf(err, "error checking the existence of files in %s", dir)
@@ -91,10 +93,17 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 		return nil, errors.Wrapf(err, "timestamp in file %s is invalid", timestampPath)
 	}
 
+	cacheVersionBytes, err := ioutil.ReadFile(cacheVersionPath)
+	if err != nil && !os.IsNotExist(err) {
+		log.Errorf("Failed to read cache version from file %s: %v", cacheVersionPath, err)
+	}
+	cacheVersion := string(cacheVersionBytes)
+
 	return &sensor.AdmissionControlSettings{
 		ClusterConfig:              &clusterConfig,
 		EnforcedDeployTimePolicies: &policyList,
 		Timestamp:                  tsProto,
+		CacheVersion:               cacheVersion,
 	}, nil
 }
 

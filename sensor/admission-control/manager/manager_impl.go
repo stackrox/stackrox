@@ -61,6 +61,8 @@ type manager struct {
 	lastSettingsUpdate *types.Timestamp
 
 	statePtr unsafe.Pointer
+
+	cacheVersion string
 }
 
 func newManager(conn *grpc.ClientConn) *manager {
@@ -170,6 +172,11 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		bypassForUsers:           allowAlwaysUsers,
 		bypassForGroups:          allowAlwaysGroups,
 		enforcedOps:              enforcedOperations,
+	}
+
+	if newSettings.GetCacheVersion() != m.cacheVersion {
+		m.imageCache.Purge()
+		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
 	atomic.StorePointer(&m.statePtr, unsafe.Pointer(newSettingsAndDetector))

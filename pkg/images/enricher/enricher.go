@@ -81,10 +81,15 @@ type ImageEnricher interface {
 	EnrichImage(ctx EnrichmentContext, image *storage.Image) (EnrichmentResult, error)
 }
 
+type cveSuppressor interface {
+	EnrichImageWithSuppressedCVEs(image *storage.Image)
+}
+
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scanCache expiringcache.Cache) ImageEnricher {
+func New(cves cveSuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache, scanCache expiringcache.Cache) ImageEnricher {
 	return &enricherImpl{
+		cves:         cves,
 		integrations: is,
 
 		metadataLimiter: rate.NewLimiter(rate.Every(50*time.Millisecond), 1),

@@ -22,6 +22,7 @@ type Cache interface {
 	Remove(key interface{})
 	RemoveIf(key interface{}, valPred func(interface{}) bool)
 	Stats() (objects, size int64)
+	Purge()
 }
 
 type valueEntry struct {
@@ -79,6 +80,14 @@ func (c *sizeBoundedCache) Get(key interface{}) (interface{}, bool) {
 		return nil, false
 	}
 	return valueE.value, true
+}
+
+func (c *sizeBoundedCache) Purge() {
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+
+	c.cache.Purge()
+	atomic.StoreInt64(&c.currSize, 0)
 }
 
 // TestAndSet takes in a key, value and a predicate that must return true for the value to be inserted into the cache

@@ -15,4 +15,8 @@ const (
 	// This is stored as a data member instead of an annotation in order to allow accessing this also via a file
 	// mount.
 	LastUpdateTimeDataKey = `last-update-time`
+
+	// CacheVersionDataKey is the key in the config map under which the "cache version" is stored.
+	// A change of this value signals the admission controller to flush its internal caches.
+	CacheVersionDataKey = `cache-version`
 )
