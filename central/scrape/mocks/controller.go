@@ -51,16 +51,16 @@ func (mr *MockControllerMockRecorder) ProcessScrapeUpdate(update interface{}) *g
 }
 
 // RunScrape mocks base method
-func (m *MockController) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
+func (m *MockController) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunScrape", expectedHosts, kill)
+	ret := m.ctrl.Call(m, "RunScrape", expectedHosts, kill, standardIDs)
 	ret0, _ := ret[0].(map[string]*compliance.ComplianceReturn)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RunScrape indicates an expected call of RunScrape
-func (mr *MockControllerMockRecorder) RunScrape(expectedHosts, kill interface{}) *gomock.Call {
+func (mr *MockControllerMockRecorder) RunScrape(expectedHosts, kill, standardIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockController)(nil).RunScrape), expectedHosts, kill)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockController)(nil).RunScrape), expectedHosts, kill, standardIDs)
 }

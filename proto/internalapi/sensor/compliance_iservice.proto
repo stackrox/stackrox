@@ -25,7 +25,8 @@ message MsgToCompliance {
         storage.ContainerRuntime container_runtime = 1;
     }
     message TriggerRun {
-        string scrape_id = 1;
+        string          scrape_id    = 1;
+        repeated string standard_ids = 2;
     }
 
     oneof msg {

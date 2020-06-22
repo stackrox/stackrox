@@ -46,13 +46,13 @@ type scrapePromise struct {
 }
 
 // createAndRunScrape creates and returns a scrapePromise for the given domain. The returned promise will be running.
-func createAndRunScrape(ctx context.Context, scrapeFactory factory.ScrapeFactory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration) *scrapePromise {
+func createAndRunScrape(ctx context.Context, scrapeFactory factory.ScrapeFactory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration, standardIDs []string) *scrapePromise {
 	promise := &scrapePromise{
 		domain:          domain,
 		finishedSig:     concurrency.NewErrorSignal(),
 		dataRepoFactory: dataRepoFactory,
 	}
-	go promise.run(ctx, scrapeFactory, domain, timeout)
+	go promise.run(ctx, scrapeFactory, domain, timeout, standardIDs)
 	return promise
 }
 
@@ -85,10 +85,10 @@ func (p *scrapePromise) WaitForResult(cancel concurrency.Waitable) (framework.Co
 	return p.result, nil
 }
 
-func (p *scrapePromise) run(ctx context.Context, scrapeFactory factory.ScrapeFactory, domain framework.ComplianceDomain, timeout time.Duration) {
+func (p *scrapePromise) run(ctx context.Context, scrapeFactory factory.ScrapeFactory, domain framework.ComplianceDomain, timeout time.Duration, standardIDs []string) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	scrapeResults, err := scrapeFactory.RunScrape(domain, ctx)
+	scrapeResults, err := scrapeFactory.RunScrape(domain, ctx, standardIDs)
 	p.finish(ctx, scrapeResults, err)
 }

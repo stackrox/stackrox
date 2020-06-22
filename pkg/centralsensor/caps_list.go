@@ -9,4 +9,7 @@ const (
 
 	// SensorDetectionCap identifies the capability to run detection from sensor
 	SensorDetectionCap SensorCapability = "SensorDetection"
+
+	// ComplianceInNodesCap identifies the capability to run compliance in compliance pods
+	ComplianceInNodesCap SensorCapability = "ComplianceInNodes"
 )

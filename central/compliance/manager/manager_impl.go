@@ -644,7 +644,11 @@ func (m *manager) createAndLaunchRuns(ctx context.Context, clusterStandardPairs 
 			var dataPromise dataPromise
 			if standard.HasAnyDataDependency(scrapeDataDeps...) {
 				if scrapeBasedPromise == nil {
-					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout)
+					var standardIDs []string
+					for _, standard := range standardImpls {
+						standardIDs = append(standardIDs, standard.ID)
+					}
+					scrapeBasedPromise = createAndRunScrape(elevatedCtx, m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout, standardIDs)
 				}
 				dataPromise = scrapeBasedPromise
 			} else {

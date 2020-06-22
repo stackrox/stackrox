@@ -92,7 +92,7 @@ func (s *Standard) HasAnyDataDependency(deps ...string) bool {
 			return true
 		}
 	}
-	return true
+	return false
 }
 
 // AllDataDependencies returns all data dependencies of all checks in this standard in sorted order.

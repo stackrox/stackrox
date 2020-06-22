@@ -108,6 +108,8 @@ message ScrapeCommand {
 message StartScrape {
     // Dictates the hosts we expect results from.
     repeated string hostnames = 1;
+    // Dictates which standards the compliance pods should run.
+    repeated string standards = 2;
 }
 
 message KillScrape {}

@@ -23,6 +23,7 @@ type scrapeImpl struct {
 	scrapeID      string
 	expectedHosts set.StringSet
 	creationTime  time.Time
+	standardIDs   set.StringSet
 	////////////////////////////////////
 
 	lock    sync.RWMutex
@@ -41,6 +42,10 @@ func (s *scrapeImpl) GetExpectedHosts() []string {
 
 func (s *scrapeImpl) GetCreationTime() time.Time {
 	return s.creationTime
+}
+
+func (s *scrapeImpl) GetStandardIDs() []string {
+	return s.standardIDs.AsSlice()
 }
 
 func (s *scrapeImpl) Stopped() concurrency.ReadOnlyErrorSignal {

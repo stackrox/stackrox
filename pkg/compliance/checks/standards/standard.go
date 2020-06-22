@@ -6,7 +6,9 @@ import (
 )
 
 // Standards is the global map of standard names to checks
-var Standards = make(map[string]map[string]*CheckAndInterpretation)
+var (
+	Standards = make(map[string]map[string]*CheckAndInterpretation)
+)
 
 // CheckAndInterpretation is a pair matching a Check to an interpretation text
 type CheckAndInterpretation struct {

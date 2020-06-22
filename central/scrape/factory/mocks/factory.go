@@ -36,16 +36,16 @@ func (m *MockScrapeFactory) EXPECT() *MockScrapeFactoryMockRecorder {
 }
 
 // RunScrape mocks base method
-func (m *MockScrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
+func (m *MockScrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunScrape", domain, kill)
+	ret := m.ctrl.Call(m, "RunScrape", domain, kill, standardIDs)
 	ret0, _ := ret[0].(map[string]*compliance.ComplianceReturn)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RunScrape indicates an expected call of RunScrape
-func (mr *MockScrapeFactoryMockRecorder) RunScrape(domain, kill interface{}) *gomock.Call {
+func (mr *MockScrapeFactoryMockRecorder) RunScrape(domain, kill, standardIDs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockScrapeFactory)(nil).RunScrape), domain, kill)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunScrape", reflect.TypeOf((*MockScrapeFactory)(nil).RunScrape), domain, kill, standardIDs)
 }

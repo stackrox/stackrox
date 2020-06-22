@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -20,12 +22,15 @@ func newFactory(connManager connection.Manager) *scrapeFactory {
 	}
 }
 
-func (f *scrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
+func (f *scrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error) {
 	clusterID := domain.Cluster().ID()
 
 	conn := f.connManager.GetConnection(clusterID)
 	if conn == nil {
 		return nil, fmt.Errorf("could not perform host scrape for cluster %q: no active connection from sensor", clusterID)
+	}
+	if features.ComplianceInNodes.Enabled() && !conn.HasCapability(centralsensor.ComplianceInNodesCap) {
+		return nil, fmt.Errorf("could not perform per-node compliance checks for cluster %q: sensor does not support in-node checks", clusterID)
 	}
 
 	expectedHostNames := set.NewStringSet()
@@ -34,5 +39,5 @@ func (f *scrapeFactory) RunScrape(domain framework.ComplianceDomain, kill concur
 		expectedHostNames.Add(node.Node().GetName())
 	}
 
-	return conn.Scrapes().RunScrape(expectedHostNames, kill)
+	return conn.Scrapes().RunScrape(expectedHostNames, kill, standardIDs)
 }

@@ -8,7 +8,7 @@ import (
 
 // ScrapeFactory allows running scrapes, automatically inferring the cluster from the compliance domain.
 type ScrapeFactory interface {
-	RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error)
+	RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error)
 }
 
 //go:generate mockgen-wrapper

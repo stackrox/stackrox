@@ -86,7 +86,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 	if err == nil {
 		results := r.collectResults(run)
 		if storeErr := resultsStore.StoreRunResults(r.ctx, results); storeErr != nil {
-			err = errors.Wrap(err, "storing results")
+			err = errors.Wrap(storeErr, "storing results")
 		}
 	}
 	if err != nil {

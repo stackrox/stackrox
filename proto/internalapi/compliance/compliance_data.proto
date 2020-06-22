@@ -47,7 +47,11 @@ message ContainerRuntimeInfo {
     InsecureRegistriesConfig insecure_registries = 1;
 }
 
-// Next Available Tag: 7
+message ComplianceStandardResult {
+    map<string, storage.ComplianceControlResult> checkResults = 1;
+}
+
+// Next Available Tag: 11
 message ComplianceReturn {
     string node_name = 1;
     string scrape_id = 2;
@@ -60,4 +64,6 @@ message ComplianceReturn {
     ContainerRuntimeInfo     container_runtime_info = 9;
 
     google.protobuf.Timestamp time = 7;
+
+    GZIPDataChunk evidence = 10;
 }

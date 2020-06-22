@@ -28,6 +28,7 @@ func (s *controllerImpl) sendStartScrapeMsg(ctx concurrency.Waitable, scrape *sc
 				Command: &central.ScrapeCommand_StartScrape{
 					StartScrape: &central.StartScrape{
 						Hostnames: scrape.expectedHosts.AsSlice(),
+						Standards: scrape.GetStandardIDs(),
 					},
 				},
 			},
@@ -50,14 +51,14 @@ func (s *controllerImpl) sendKillScrapeMsg(ctx concurrency.Waitable, scrape *scr
 	return s.msgInjector.InjectMessage(ctx, msg)
 }
 
-func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
+func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error) {
 	// If no hosts need to be scraped, just bounce, otherwise we will be waiting for nothing.
 	if expectedHosts.Cardinality() == 0 {
 		return make(map[string]*compliance.ComplianceReturn), nil
 	}
 
 	// Create the scrape and register it so it can be updated.
-	scrape := newScrape(expectedHosts)
+	scrape := newScrape(expectedHosts, set.NewStringSet(standardIDs...))
 
 	concurrency.WithLock(&s.scrapesMutex, func() {
 		s.scrapes[scrape.scrapeID] = scrape

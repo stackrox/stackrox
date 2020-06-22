@@ -11,7 +11,7 @@ import (
 // Controller starts and stops scrapes.
 type Controller interface {
 	ProcessScrapeUpdate(update *central.ScrapeUpdate) error
-	RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error)
+	RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable, standardIDs []string) (map[string]*compliance.ComplianceReturn, error)
 }
 
 // NewController returns a new instance of a Controller.

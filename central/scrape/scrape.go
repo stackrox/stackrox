@@ -20,11 +20,12 @@ type Scrape interface {
 	GetResults() map[string]*compliance.ComplianceReturn
 }
 
-func newScrape(expectedHosts set.StringSet) *scrapeImpl {
+func newScrape(expectedHosts set.StringSet, standardIDs set.StringSet) *scrapeImpl {
 	return &scrapeImpl{
 		scrapeID:      uuid.NewV4().String(),
 		expectedHosts: expectedHosts,
 		creationTime:  time.Now(),
+		standardIDs:   standardIDs,
 
 		results: make(map[string]*compliance.ComplianceReturn),
 

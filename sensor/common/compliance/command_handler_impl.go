@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -28,6 +29,9 @@ type commandHandlerImpl struct {
 }
 
 func (c *commandHandlerImpl) Capabilities() []centralsensor.SensorCapability {
+	if features.ComplianceInNodes.Enabled() {
+		return []centralsensor.SensorCapability{centralsensor.ComplianceInNodesCap}
+	}
 	return nil
 }
 
@@ -97,7 +101,7 @@ func (c *commandHandlerImpl) run() {
 func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*central.ScrapeUpdate {
 	switch command.Command.(type) {
 	case *central.ScrapeCommand_StartScrape:
-		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames())
+		return c.startScrape(command.GetScrapeId(), command.GetStartScrape().GetHostnames(), command.GetStartScrape().GetStandards())
 	case *central.ScrapeCommand_KillScrape:
 		return []*central.ScrapeUpdate{c.killScrape(command.GetScrapeId())}
 	default:
@@ -106,7 +110,7 @@ func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) []*centr
 	return nil
 }
 
-func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string) []*central.ScrapeUpdate {
+func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string, standards []string) []*central.ScrapeUpdate {
 	// Check that the scrape is not already running.
 	if _, running := c.scrapeIDToState[scrapeID]; running {
 		return nil
@@ -115,7 +119,8 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 	numResults := c.service.RunScrape(&sensor.MsgToCompliance{
 		Msg: &sensor.MsgToCompliance_Trigger{
 			Trigger: &sensor.MsgToCompliance_TriggerRun{
-				ScrapeId: scrapeID,
+				ScrapeId:    scrapeID,
+				StandardIds: standards,
 			},
 		},
 	})
