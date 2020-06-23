@@ -15,8 +15,8 @@ RUN cd /tmp && \
     make install && \
     make install DESTDIR=/dist
 
-# This compiles RocksDB without using SSE4.2
-ENV PORTABLE=1
+# This compiles RocksDB without BMI and AVX2 instructions
+ENV PORTABLE=1 TRY_SSE_ETC=0 TRY_SSE42="-msse4.2" TRY_PCLMUL="-mpclmul"
 
 # Compile Rocksdb
 RUN cd /tmp && \

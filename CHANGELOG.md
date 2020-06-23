@@ -29,6 +29,9 @@ All notable changes to this project that require documentation updates will be d
 - Added the ability to make secret creation for sensor, collector and admission controller optional when deploying using Helm charts.
 - Added native Google Cloud Storage (GCS) external backup. This should now be the preferred way to backup to GCS as opposed to using the S3 integration because
   S3 upload to GCS is incompatible with large databases.
+- The Central and Migrator binaries are now compiled without AVX2 instructions, which fixes an Illegal Instruction issue
+  on older CPUs. SSE4.2 instructions are still used, which mean the lowest supported Intel processor is SandyBridge (2011) and the lowest
+  supported AMD processor is BullDozer (2011).
 
 ## [44.0]
 - Previously, a scan for an image that may have been retagged (e.g. using the latest tag) would return a stale scan if it had been previously scanned.
