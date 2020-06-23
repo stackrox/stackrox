@@ -11,7 +11,7 @@
   ],
   "fields": {
     "process_policy": {
-      "name": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak-cpu|.*xmr-stak-amd|.*xmr-stak-nvidia|.*xmrminer|.*cpuminer-multi"
+      "name": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak.*|.*xmrminer|.*cpuminer-multi"
     }
   },
   "rationale": "Cryptocurrency mining binaries are often evidence of malicious activity or a hijacked cluster.",
