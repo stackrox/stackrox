@@ -90,7 +90,7 @@ const WorkflowListPage = ({
             };
         });
 
-        const url = workflowState.setSort(workflowSort).toUrl();
+        const url = workflowState.setSort(workflowSort).setPage(0).toUrl();
         history.push(url);
     }
 

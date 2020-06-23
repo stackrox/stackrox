@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { withRouter } from 'react-router-dom';
@@ -31,6 +31,10 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
         debounce((newPage) => setPage(newPage), TYPING_DELAY),
         []
     );
+
+    useEffect(() => {
+        setLocalPage(page + 1);
+    }, [page]);
 
     function onChangePage(e) {
         const { value } = e.target;

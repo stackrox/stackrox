@@ -43,7 +43,7 @@ function RiskTablePanel({
         (newSortOption) => {
             const convertedSortOption = convertSortToGraphQLFormat(newSortOption);
 
-            const newUrl = workflowState.setSort(convertedSortOption).toUrl();
+            const newUrl = workflowState.setSort(convertedSortOption).setPage(0).toUrl();
 
             history.push(newUrl);
         },
