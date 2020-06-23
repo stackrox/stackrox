@@ -1,15 +1,7 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 
 describe('Entities single views', () => {
-    before(function beforeHook() {
-        // skip the whole suite if vuln mgmt isn't enabled
-        if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('related entities tile links should unset search params upon navigation', () => {

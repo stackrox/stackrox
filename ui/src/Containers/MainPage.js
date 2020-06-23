@@ -128,15 +128,7 @@ class MainPage extends Component {
                         )}
                     />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
-                    <ProtectedRoute
-                        path={vulnManagementPath}
-                        component={AsyncVulnMgmtPage}
-                        featureFlagEnabled={isBackendFeatureFlagEnabled(
-                            this.props.featureFlags,
-                            knownBackendFlags.ROX_VULN_MGMT_UI,
-                            false
-                        )}
-                    />
+                    <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute
                         path={configManagementPath}
                         component={AsyncConfigManagementPage}

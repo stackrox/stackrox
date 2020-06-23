@@ -1,6 +1,5 @@
 import * as Icon from 'react-feather';
 
-import { knownBackendFlags } from 'utils/featureFlags';
 import { configureLinks } from './NavigationPanel';
 
 export const navLinks = [
@@ -28,7 +27,6 @@ export const navLinks = [
         text: 'Vulnerability Management',
         to: '/main/vulnerability-management',
         Icon: Icon.Layers,
-        featureFlag: knownBackendFlags.ROX_VULN_MGMT_UI,
     },
     {
         text: 'Configuration Management',

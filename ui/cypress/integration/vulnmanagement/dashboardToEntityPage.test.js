@@ -1,6 +1,5 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 
 function validatePresenceOfTabsAndLinks(selector, relatedEntities) {
     cy.get(selector).each(($el, i) => {
@@ -101,13 +100,6 @@ function validateWithActualSelector(
 
 // @TODO: enable debugging test failures for sorting by priority
 describe.skip('Vuln Management Dashboard Page To Entity Page Navigation Validation', () => {
-    before(function beforeHook() {
-        // skip the whole suite if vuln mgmt isn't enabled
-        if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('validate data consistency for top riskiest images widget data row onwards', () => {

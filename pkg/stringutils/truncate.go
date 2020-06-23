@@ -52,11 +52,3 @@ func Truncate(s string, maxLen int, options ...TruncateOptions) string {
 	}
 	return s
 }
-
-// TruncateIf truncates the string if ifVal is true and necessary at maxlen.
-func TruncateIf(s string, maxLen int, ifVal bool, options ...TruncateOptions) string {
-	if ifVal {
-		return Truncate(s, maxLen, options...)
-	}
-	return s
-}

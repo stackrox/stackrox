@@ -5,13 +5,6 @@ import { selectors as policySelectors } from '../../constants/PoliciesPage';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
 
 describe('Policies list Page and its entity detail page , related entities sub list  validations ', () => {
-    before(function beforeHook() {
-        // skip the whole suite if vuln mgmt isn't enabled
-        if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('should display all the columns and links expected in clusters list page', () => {

@@ -170,10 +170,6 @@ func (e *managerImpl) calculateAndUpsertImageRisk(image *storage.Image) error {
 func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
 
-	if !features.VulnMgmtUI.Enabled() {
-		return nil
-	}
-
 	if err := e.calculateAndUpsertImageRisk(image); err != nil {
 		return errors.Wrapf(err, "calculating risk for image %s", image.GetName().GetFullName())
 	}
@@ -188,10 +184,6 @@ func (e *managerImpl) CalculateRiskAndUpsertImage(image *storage.Image) error {
 // Image Component ID is generated as <component_name>:<component_version>
 func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.EmbeddedImageScanComponent) {
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "ImageComponent")
-
-	if !features.VulnMgmtUI.Enabled() {
-		return
-	}
 
 	risk := e.imageComponentScorer.Score(allAccessCtx, imageComponent)
 	if risk == nil {

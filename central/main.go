@@ -362,11 +362,9 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		log.Panicf("Couldn't start sensor connection manager: %v", err)
 	}
 
-	if features.VulnMgmtUI.Enabled() {
-		m := fetcher.SingletonManager()
-		if env.OfflineModeEnv.Setting() != "true" {
-			go m.Fetch(false)
-		}
+	m := fetcher.SingletonManager()
+	if env.OfflineModeEnv.Setting() != "true" {
+		go m.Fetch(false)
 	}
 
 	if devbuild.IsEnabled() {

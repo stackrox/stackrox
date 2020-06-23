@@ -1,6 +1,5 @@
 import { url, selectors } from '../../constants/VulnManagementPage';
 import withAuth from '../../helpers/basicAuth';
-import checkFeatureFlag from '../../helpers/features';
 
 function validateTopRiskyEntities(entityName) {
     cy.visit(url.dashboard);
@@ -27,13 +26,6 @@ function validateTopRiskyEntities(entityName) {
 }
 
 describe('Vuln Management Dashboard Page', () => {
-    before(function beforeHook() {
-        // skip the whole suite if vuln mgmt isn't enabled
-        if (checkFeatureFlag('ROX_VULN_MGMT_UI', false)) {
-            this.skip();
-        }
-    });
-
     withAuth();
 
     it('should show same number of policies between the tile and the policies list', () => {
