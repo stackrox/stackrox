@@ -1557,24 +1557,29 @@ commands:
             mv qa-tests-backend/build/reports/tests/test/classes/ qa-tests-backend/gradle-results/<< parameters.target-dir >> || true
           when: always
 
-  compare-with-baseline-metrics:
+  compare-with-stored-metrics:
+    parameters:
+      cluster-flavor:
+        type: string
+      test:
+        type: string
     steps:
       - run:
-          name: Compare with baseline metrics
+          name: Compare with stored metrics
           command: |
+            GS_PATH=gs://stackrox-ci-metrics/<< parameters.test >>/<< parameters.cluster-flavor >>
+            COMPARE_WITH=$(gsutil ls "${GS_PATH}"/stackrox_debug\* | sort | tail -1)
+            echo "Using ${COMPARE_WITH} as metrics for comparison"
             mkdir /tmp/metrics
-            BASELINE=$(gsutil ls gs://stackrox-ci-metrics-baseline/stackrox_debug\* | sort | tail -1)
-            echo "Using ${BASELINE} as baseline metrics for comparison"
-            gsutil cp "${BASELINE}" /tmp/metrics
-            BASELINE=$(ls -1 /tmp/metrics | sort | tail -1)
+            gsutil cp "${COMPARE_WITH}" /tmp/metrics
+            COMPARE_WITH=$(ls -1 /tmp/metrics | sort | tail -1)
             THIS_RUN=$(echo ${PWD}/debug-dump/stackrox_debug*.zip)
             echo "Comparing with ${THIS_RUN}"
             COMPARE=${PWD}/scripts/ci/compare-debug-metrics.sh
-            # Ignore comparison failure until correct thresholds are determined.
             set +e
-            (cd /tmp/metrics && "${COMPARE}" "${BASELINE}" "${THIS_RUN}")
+            (cd /tmp/metrics && "${COMPARE}" "${COMPARE_WITH}" "${THIS_RUN}")
             if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
-              gsutil cp "${THIS_RUN}" gs://stackrox-ci-metrics-baseline/
+              gsutil cp "${THIS_RUN}" "${GS_PATH}"/
             fi
 
 jobs:
@@ -3319,7 +3324,9 @@ jobs:
       - teardown-gke
 
       - *getPrometheusMetricParser
-      - compare-with-baseline-metrics
+      - compare-with-stored-metrics:
+          cluster-flavor: gke
+          test: scale-test
 
   openshift-api-e2e-tests:
     executor: custom
