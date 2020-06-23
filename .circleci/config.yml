@@ -3053,7 +3053,9 @@ jobs:
           name: Deploy Central version right after 41.4
           command: |
             git checkout 309f7d8edc03e9767ddabefad670224e4bd1746f
-            cci-export MAIN_IMAGE_TAG "$(make --quiet tag)"
+            # We explicitly need to set CIRCLE_TAG to empty, as it will otherwise dictate
+            # the output of `make tag`.
+            cci-export MAIN_IMAGE_TAG "$(make --quiet tag CIRCLE_TAG=)"
             ./deploy/k8s/central.sh
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
