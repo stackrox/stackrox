@@ -6,17 +6,17 @@ import (
 )
 
 type tree struct {
-	children map[stepMapKey]*tree
+	children map[Step]*tree
 	values   map[string][]string
 }
 
 func newTree() *tree {
 	return &tree{
-		children: make(map[stepMapKey]*tree),
+		children: make(map[Step]*tree),
 	}
 }
 
-func (t *tree) addPath(steps []step, fieldName string, values []string) {
+func (t *tree) addPath(steps []Step, fieldName string, values []string) {
 	if len(steps) == 0 {
 		if t.values == nil {
 			t.values = make(map[string][]string)
@@ -25,11 +25,10 @@ func (t *tree) addPath(steps []step, fieldName string, values []string) {
 		return
 	}
 	firstStep, remainingSteps := steps[0], steps[1:]
-	key := firstStep.mapKey()
-	subTree := t.children[key]
+	subTree := t.children[firstStep]
 	if subTree == nil {
 		subTree = newTree()
-		t.children[key] = subTree
+		t.children[firstStep] = subTree
 	}
 	subTree.addPath(remainingSteps, fieldName, values)
 }
@@ -63,8 +62,8 @@ func (t *tree) merge(other *tree) {
 			child.merge(otherChild)
 			continue
 		}
-		// For integer values, which represent an array index, we must drop unless the value is in both.
-		if _, isInt := key.(int); isInt {
+		// For stesp that represent an array index, we must drop unless the value is in both.
+		if key.Index() >= 0 {
 			delete(t.children, key)
 		}
 	}
@@ -74,7 +73,7 @@ func (t *tree) merge(other *tree) {
 			continue
 		}
 		// Don't merge integer keys unless they're in both.
-		if _, isInt := key.(int); isInt {
+		if key.Index() >= 0 {
 			continue
 		}
 		// Copy over the child.
@@ -87,7 +86,7 @@ func (t *tree) gatherValuesIgnoringArrays(currentPath *map[string][]string) {
 		(*currentPath)[fieldName] = values
 	}
 	for key, child := range t.children {
-		if _, isInt := key.(int); isInt {
+		if key.Index() >= 0 {
 			continue
 		}
 		child.gatherValuesIgnoringArrays(currentPath)
@@ -142,13 +141,13 @@ func (t *tree) containsAtLeastOnePath(pathHolders []PathAndValueHolder) bool {
 	return false
 }
 
-func (t *tree) containsSteps(steps []step) bool {
+func (t *tree) containsSteps(steps []Step) bool {
 	// Base case
 	if len(steps) == 0 {
 		return true
 	}
 	firstStep := steps[0]
-	child := t.children[firstStep.mapKey()]
+	child := t.children[firstStep]
 	if child == nil {
 		return false
 	}

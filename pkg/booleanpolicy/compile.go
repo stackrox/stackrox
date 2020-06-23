@@ -11,18 +11,29 @@ func sectionToQuery(section *storage.PolicySection, stage storage.LifecycleStage
 	if len(section.GetPolicyGroups()) == 0 {
 		return nil, errors.New("no groups")
 	}
-	fieldQueries := make([]*query.FieldQuery, 0, len(section.GetPolicyGroups()))
-	for _, group := range section.GetPolicyGroups() {
-		fqs, err := policyGroupToFieldQueries(group)
-		if err != nil {
-			return nil, err
-		}
-		fieldQueries = append(fieldQueries, fqs...)
+	fieldQueries, err := sectionToFieldQueries(section, nil)
+	if err != nil {
+		return nil, err
 	}
 	contextQueries := constructRemainingContextQueries(stage, section, fieldQueries)
 	fieldQueries = append(fieldQueries, contextQueries...)
 
 	return &query.Query{FieldQueries: fieldQueries}, nil
+}
+
+func sectionToFieldQueries(section *storage.PolicySection, allowedGroups *set.FrozenStringSet) ([]*query.FieldQuery, error) {
+	fieldQueries := make([]*query.FieldQuery, 0, len(section.GetPolicyGroups()))
+	for _, group := range section.GetPolicyGroups() {
+		if allowedGroups != nil && !allowedGroups.Contains(group.GetFieldName()) {
+			continue
+		}
+		fqs, err := policyGroupToFieldQueries(group)
+		if err != nil {
+			return nil, errors.Wrapf(err, "constructing query for group %s", group.GetFieldName())
+		}
+		fieldQueries = append(fieldQueries, fqs...)
+	}
+	return fieldQueries, nil
 }
 
 func policyGroupToFieldQueries(group *storage.PolicyGroup) ([]*query.FieldQuery, error) {

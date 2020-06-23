@@ -7,11 +7,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
+	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
 var (
 	deploymentEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.DeploymentMeta)
+
+	processEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.ProcessMeta)
 
 	imageEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 )
@@ -24,12 +27,49 @@ type ImageMatcher interface {
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
 	MatchDeployment(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
+}
+
+// A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
+type DeploymentWithProcessMatcher interface {
 	MatchDeploymentWithProcess(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
 }
 
 type sectionAndEvaluator struct {
 	section   *storage.PolicySection
 	evaluator evaluator.Evaluator
+}
+
+func BuildDeploymentWithProcessMatcher(p *storage.Policy) (DeploymentWithProcessMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY)
+	if err != nil {
+		return nil, err
+	}
+
+	processOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+		fieldQueries, err := sectionToFieldQueries(section, &runtimeFields)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+		// This section has no process-related queries. This means that we cannot rule out this policy given a
+		// process alone, so we must return the always true evaluator.
+		// We can also discard evaluators for other sections, since they are irrelevant.
+		if len(fieldQueries) == 0 {
+			processOnlyEvaluators = []evaluator.Evaluator{evaluator.AlwaysTrue}
+			break
+		}
+
+		eval, err := processEvalFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating process evaluator for section %q", section.GetSectionName())
+		}
+		processOnlyEvaluators = append(processOnlyEvaluators, eval)
+	}
+
+	return &processMatcherImpl{matcherImpl: matcherImpl{stage: storage.LifecycleStage_DEPLOY, evaluators: sectionsAndEvals}, processOnlyEvaluators: processOnlyEvaluators}, nil
 }
 
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,

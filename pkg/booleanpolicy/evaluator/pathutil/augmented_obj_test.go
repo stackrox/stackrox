@@ -14,13 +14,9 @@ func TestAugmentedObj(t *testing.T) {
 	nestedStringObj := &objWithString{AugmentedVal: "NESTEDAUGMENT"}
 	o := NewAugmentedObj(topLevelObj)
 	augmentedIntObj := NewAugmentedObj(intObj)
-	require.NoError(t, augmentedIntObj.AddAugmentedObjAt(PathFromSteps(t, "StringObjWithinIntObj"), NewAugmentedObj(nestedStringObj)))
-	require.NoError(t, o.AddAugmentedObjAt(
-		PathFromSteps(t, "IntObj"), augmentedIntObj),
-	)
-	require.NoError(t, o.AddPlainObjAt(
-		PathFromSteps(t, "Nested", 1, "StringObj"), stringObj),
-	)
+	require.NoError(t, augmentedIntObj.AddAugmentedObjAt(NewAugmentedObj(nestedStringObj), FieldStep("StringObjWithinIntObj")))
+	require.NoError(t, o.AddAugmentedObjAt(augmentedIntObj, FieldStep("IntObj")))
+	require.NoError(t, o.AddPlainObjAt(stringObj, FieldStep("Nested"), IndexStep(1), FieldStep("StringObj")))
 
 	value := o.Value()
 	assert.Equal(t, topLevelObj, value.Underlying().Interface())
@@ -32,5 +28,5 @@ func TestAugmentedObj(t *testing.T) {
 	assert.False(t, found)
 
 	// Test the error case.
-	assert.Error(t, o.AddPlainObjAt(PathFromSteps(t, "IntObj"), stringObj))
+	assert.Error(t, o.AddPlainObjAt(stringObj, FieldStep("IntObj")))
 }

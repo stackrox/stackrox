@@ -35,7 +35,14 @@ func newCompiledPolicy(policy *storage.Policy, matcher searchbasedpolicies.Match
 	}
 
 	if features.BooleanPolicyLogic.Enabled() {
-		if policies.AppliesAtDeployTime(policy) || policies.AppliesAtRunTime(policy) {
+		if policies.AppliesAtRunTime(policy) {
+			deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policy)
+			if err != nil {
+				return nil, errors.Wrap(err, "building process matcher")
+			}
+			compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
+		}
+		if policies.AppliesAtDeployTime(policy) {
 			deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
 			if err != nil {
 				return nil, errors.Wrap(err, "building deployment matcher")
@@ -51,7 +58,7 @@ func newCompiledPolicy(policy *storage.Policy, matcher searchbasedpolicies.Match
 			compiled.imageMatcher = imageMatcher
 		}
 
-		if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil {
+		if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil && compiled.deploymentWithProcessMatcher == nil {
 			return nil, errors.Errorf("no known lifecycle stage in policy %s", policy.GetName())
 		}
 	}
@@ -93,16 +100,17 @@ type compiledPolicy struct {
 
 	legacySearchBasedMatcher searchbasedpolicies.Matcher
 
-	deploymentMatcher booleanpolicy.DeploymentMatcher
-	imageMatcher      booleanpolicy.ImageMatcher
+	deploymentWithProcessMatcher booleanpolicy.DeploymentWithProcessMatcher
+	deploymentMatcher            booleanpolicy.DeploymentMatcher
+	imageMatcher                 booleanpolicy.ImageMatcher
 }
 
 func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
 	if features.BooleanPolicyLogic.Enabled() {
-		if cp.deploymentMatcher == nil {
+		if cp.deploymentWithProcessMatcher == nil {
 			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against deployments and processes", cp.Policy().GetName())
 		}
-		return cp.deploymentMatcher.MatchDeploymentWithProcess(context.Background(), deployment, images, pi, processOutsideWhitelist)
+		return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(context.Background(), deployment, images, pi, processOutsideWhitelist)
 	}
 	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), deployment, images, pi)
 }

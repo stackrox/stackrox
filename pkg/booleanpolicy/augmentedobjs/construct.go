@@ -31,13 +31,9 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 	if err != nil {
 		return nil, err
 	}
-
-	augmentedProcess := pathutil.NewAugmentedObj(process)
-	err = augmentedProcess.AddPlainObjAt((&pathutil.Path{}).TraverseField(whitelistResultAugmentKey), &whitelistResult{
-		NotWhitelisted: processOutsideWhitelist,
-	})
+	augmentedProcess, err := ConstructProcess(process, processOutsideWhitelist)
 	if err != nil {
-		return nil, errors.Wrap(err, "adding whitelist result to process")
+		return nil, err
 	}
 
 	matchingContainerIdx, err := findMatchingContainerIdxForProcess(deployment, process)
@@ -45,13 +41,26 @@ func ConstructDeploymentWithProcess(deployment *storage.Deployment, images []*st
 		return nil, err
 	}
 	err = obj.AddAugmentedObjAt(
-		(&pathutil.Path{}).TraverseField("Containers").IndexSlice(matchingContainerIdx).TraverseField(processAugmentKey),
 		augmentedProcess,
+		pathutil.FieldStep("Containers"), pathutil.IndexStep(matchingContainerIdx), pathutil.FieldStep(processAugmentKey),
 	)
 	if err != nil {
 		return nil, utils.Should(err)
 	}
 	return obj, nil
+}
+
+// ConstructProcess constructs an augmented process.
+func ConstructProcess(process *storage.ProcessIndicator, processOutsideWhitelist bool) (*pathutil.AugmentedObj, error) {
+	augmentedProcess := pathutil.NewAugmentedObj(process)
+	err := augmentedProcess.AddPlainObjAt(
+		&whitelistResult{NotWhitelisted: processOutsideWhitelist},
+		pathutil.FieldStep(whitelistResultAugmentKey),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "adding whitelist result to process")
+	}
+	return augmentedProcess, nil
 }
 
 // ConstructDeployment constructs the augmented deployment object.
@@ -67,8 +76,9 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 			return nil, err
 		}
 		err = obj.AddAugmentedObjAt(
-			(&pathutil.Path{}).TraverseField("Containers").IndexSlice(i).TraverseField(imageAugmentKey),
-			augmentedImg)
+			augmentedImg,
+			pathutil.FieldStep("Containers"), pathutil.IndexStep(i), pathutil.FieldStep(imageAugmentKey),
+		)
 		if err != nil {
 			return nil, utils.Should(err)
 		}
@@ -78,8 +88,9 @@ func ConstructDeployment(deployment *storage.Deployment, images []*storage.Image
 		for i, env := range container.GetConfig().GetEnv() {
 			envVarObj := &envVar{EnvVar: fmt.Sprintf("%s%s%s%s%s", env.GetEnvVarSource(), CompositeFieldCharSep, env.GetKey(), CompositeFieldCharSep, env.GetValue())}
 			err := obj.AddPlainObjAt(
-				(&pathutil.Path{}).TraverseField("Containers").IndexSlice(idx).TraverseField("Config").TraverseField("Env").IndexSlice(i).TraverseField(envVarAugmentKey),
 				envVarObj,
+				pathutil.FieldStep("Containers"), pathutil.IndexStep(idx), pathutil.FieldStep("Config"),
+				pathutil.FieldStep("Env"), pathutil.IndexStep(i), pathutil.FieldStep(envVarAugmentKey),
 			)
 
 			if err != nil {
@@ -98,16 +109,12 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 	// Since policies query for Dockerfile Line as a single compound field, we simulate it by creating a "composite"
 	// dockerfile line under each layer.
 	for i, layer := range image.GetMetadata().GetV1().GetLayers() {
-
 		lineObj := &dockerfileLine{Line: fmt.Sprintf("%s%s%s", layer.GetInstruction(), CompositeFieldCharSep, layer.GetValue())}
 		err := obj.AddPlainObjAt(
-			(&pathutil.Path{}).
-				TraverseField("Metadata").
-				TraverseField("V1").
-				TraverseField("Layers").
-				IndexSlice(i).
-				TraverseField(dockerfileLineAugmentKey),
-			lineObj)
+			lineObj,
+			pathutil.FieldStep("Metadata"), pathutil.FieldStep("V1"), pathutil.FieldStep("Layers"),
+			pathutil.IndexStep(i), pathutil.FieldStep(dockerfileLineAugmentKey),
+		)
 		if err != nil {
 			return nil, utils.Should(err)
 		}
@@ -120,12 +127,10 @@ func ConstructImage(image *storage.Image) (*pathutil.AugmentedObj, error) {
 			ComponentAndVersion: fmt.Sprintf("%s%s%s", component.GetName(), CompositeFieldCharSep, component.GetVersion()),
 		}
 		err := obj.AddPlainObjAt(
-			(&pathutil.Path{}).
-				TraverseField("Scan").
-				TraverseField("Components").
-				IndexSlice(i).
-				TraverseField(componentAndVersionAugmentKey),
-			compAndVersionObj)
+			compAndVersionObj,
+			pathutil.FieldStep("Scan"), pathutil.FieldStep("Components"), pathutil.IndexStep(i),
+			pathutil.FieldStep(componentAndVersionAugmentKey),
+		)
 		if err != nil {
 			return nil, utils.Should(err)
 		}

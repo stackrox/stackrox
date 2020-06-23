@@ -95,7 +95,7 @@ func (f *Factory) generateInternalEvaluator(q *query.Query) (Evaluator, error) {
 
 	switch len(fieldEvaluators) {
 	case 0:
-		return alwaysTrue, nil
+		return AlwaysTrue, nil
 	default:
 		return evaluatorFunc(func(value pathutil.AugmentedValue) (*Result, bool) {
 			fieldsToPathsAndValues := make(map[string][]pathutil.PathAndValueHolder)

@@ -1021,6 +1021,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			require.NoError(t, err)
 
 			if c.expectedProcessViolations != nil {
+				processMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(p)
+				require.NoError(t, err)
 				for deploymentID, processes := range c.expectedProcessViolations {
 					expectedProcesses := set.NewStringSet(sliceutils.Map(processes, func(p *storage.ProcessIndicator) string {
 						return p.GetId()
@@ -1028,7 +1030,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					deployment := suite.deployments[deploymentID]
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
-						match, err := m.MatchDeploymentWithProcess(context.Background(), deployment, suite.getImagesForDeployment(deployment), process, false)
+						match, err := processMatcher.MatchDeploymentWithProcess(context.Background(), deployment, suite.getImagesForDeployment(deployment), process, false)
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
 							assert.NotNil(t, match.ProcessViolation, "process %+v should match", process)
@@ -1819,7 +1821,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 	} {
 		c := testCase
 		suite.T().Run(fmt.Sprintf("%+v", c.groups), func(t *testing.T) {
-			m, err := booleanpolicy.BuildDeploymentMatcher(policyWithGroups(c.groups...))
+			m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
 			require.NoError(t, err)
 
 			actualMatches := make(map[string][]string)
@@ -1845,6 +1847,165 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			for id, violations := range c.expectedViolations {
 				assert.Contains(t, actualViolations, id)
 				assert.ElementsMatch(t, violations, actualViolations[id])
+			}
+		})
+	}
+}
+
+func newIndicator(deployment *storage.Deployment, name, args, execFilePath string) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Id:            uuid.NewV4().String(),
+		ContainerName: deployment.GetContainers()[0].GetName(),
+		Signal: &storage.ProcessSignal{
+			Name:         name,
+			Args:         args,
+			ExecFilePath: execFilePath,
+		},
+	}
+}
+
+func BenchmarkProcessPolicies(b *testing.B) {
+	privilegedDep := fixtures.GetDeployment().Clone()
+	privilegedDep.Id = "PRIVILEGED"
+	images := []*storage.Image{fixtures.GetImage(), fixtures.GetImage()}
+
+	nonPrivilegedDep := fixtures.GetDeployment().Clone()
+	nonPrivilegedDep.Id = "NOTPRIVILEGED"
+	nonPrivilegedDep.Containers[0].SecurityContext.Privileged = false
+
+	const aptGetKey = "apt-get"
+	const aptGet2Key = "apt-get2"
+	const curlKey = "curl"
+	const bashKey = "bash"
+
+	indicators := make(map[string]map[string]*storage.ProcessIndicator)
+	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
+		indicators[dep.GetId()] = map[string]*storage.ProcessIndicator{
+			aptGetKey:  newIndicator(dep, "apt-get", "install nginx", "/bin/apt-get"),
+			aptGet2Key: newIndicator(dep, "apt-get", "update", "/bin/apt-get"),
+			curlKey:    newIndicator(dep, "curl", "https://stackrox.io", "/bin/curl"),
+			bashKey:    newIndicator(dep, "bash", "attach.sh", "/bin/bash"),
+		}
+	}
+	processesOutsideWhitelist := map[string]set.StringSet{
+		privilegedDep.GetId():    set.NewStringSet(aptGetKey, aptGet2Key, bashKey),
+		nonPrivilegedDep.GetId(): set.NewStringSet(aptGetKey, curlKey, bashKey),
+	}
+
+	// Plain groups
+	aptGetGroup := policyGroupWithSingleKeyValue(fieldnames.ProcessName, "apt-get", false)
+	privilegedGroup := policyGroupWithSingleKeyValue(fieldnames.PrivilegedContainer, "true", false)
+	whitelistGroup := policyGroupWithSingleKeyValue(fieldnames.WhitelistsEnabled, "true", false)
+
+	for _, testCase := range []struct {
+		groups []*storage.PolicyGroup
+
+		// Deployment ids to indicator keys
+		expectedMatches        map[string][]string
+		expectedProcessMatches map[string][]string
+		// Deployment ids to violations
+		expectedViolations map[string][]*storage.Alert_Violation
+	}{
+		{
+			groups: []*storage.PolicyGroup{aptGetGroup},
+			// only process violation, no alert violation
+			expectedMatches: map[string][]string{},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
+				nonPrivilegedDep.GetId(): {aptGetKey, aptGet2Key},
+			},
+		},
+		{
+			groups: []*storage.PolicyGroup{whitelistGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
+				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
+			},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key, bashKey},
+				nonPrivilegedDep.GetId(): {aptGetKey, curlKey, bashKey},
+			},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get", "bash"),
+				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get", "bash", "curl"),
+			},
+		},
+
+		{
+			groups: []*storage.PolicyGroup{privilegedGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key, curlKey, bashKey},
+			},
+			expectedProcessMatches: map[string][]string{},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get", "curl", "bash"),
+			},
+		},
+		{
+			groups: []*storage.PolicyGroup{aptGetGroup, whitelistGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
+				nonPrivilegedDep.GetId(): {aptGetKey},
+			},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId():    processWhitelistMessage(privilegedDep, true, false, "apt-get", "apt-get"),
+				nonPrivilegedDep.GetId(): processWhitelistMessage(nonPrivilegedDep, true, false, "apt-get"),
+			},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId():    {aptGetKey, aptGet2Key},
+				nonPrivilegedDep.GetId(): {aptGetKey},
+			},
+		},
+		{
+			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
+			},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, false, true, "apt-get", "apt-get"),
+			},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
+			},
+		},
+		{
+			groups: []*storage.PolicyGroup{privilegedGroup, whitelistGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
+			},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get", "bash"),
+			},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key, bashKey},
+			},
+		},
+		{
+			groups: []*storage.PolicyGroup{aptGetGroup, privilegedGroup, whitelistGroup},
+			expectedMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
+			},
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				privilegedDep.GetId(): processWhitelistMessage(privilegedDep, true, true, "apt-get", "apt-get"),
+			},
+			expectedProcessMatches: map[string][]string{
+				privilegedDep.GetId(): {aptGetKey, aptGet2Key},
+			},
+		},
+	} {
+		c := testCase
+		b.Run(fmt.Sprintf("%+v", c.groups), func(b *testing.B) {
+			m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(c.groups...))
+			require.NoError(b, err)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
+					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
+						_, err := m.MatchDeploymentWithProcess(context.Background(), dep, images, indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
+						require.NoError(b, err)
+					}
+				}
 			}
 		})
 	}

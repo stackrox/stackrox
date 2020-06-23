@@ -252,7 +252,6 @@ func TestFilterLinkedPathAndValues(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
-			t.Parallel()
 			output, matched, err := FilterMatchesToResults(c.input)
 			require.NoError(t, err)
 			if c.expected == nil {

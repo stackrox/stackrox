@@ -10,10 +10,10 @@ import (
 // augmented values that are added to the object by Path.
 type augmentTree struct {
 	value    *reflect.Value
-	children map[stepMapKey]*augmentTree
+	children map[Step]*augmentTree
 }
 
-func (t *augmentTree) takeStep(key stepMapKey) *augmentTree {
+func (t *augmentTree) takeStep(key Step) *augmentTree {
 	if t == nil {
 		return nil
 	}
@@ -31,13 +31,12 @@ func addAugmentedObjToTreeAtPath(rootTree *augmentTree, path *Path, subObj *Augm
 	currentTree := rootTree
 	for _, step := range path.steps {
 		if currentTree.children == nil {
-			currentTree.children = make(map[stepMapKey]*augmentTree)
+			currentTree.children = make(map[Step]*augmentTree)
 		}
-		key := step.mapKey()
-		subTree := currentTree.children[key]
+		subTree := currentTree.children[step]
 		if subTree == nil {
 			subTree = &augmentTree{}
-			currentTree.children[key] = subTree
+			currentTree.children[step] = subTree
 		}
 		currentTree = subTree
 	}
@@ -82,14 +81,14 @@ func NewAugmentedObj(actualObj interface{}) *AugmentedObj {
 }
 
 // AddAugmentedObjAt augments this object with the passed subObj, at the given path.
-func (o *AugmentedObj) AddAugmentedObjAt(path *Path, subObj *AugmentedObj) error {
-	return addAugmentedObjToTreeAtPath(&o.augmentTreeRoot, path, subObj)
+func (o *AugmentedObj) AddAugmentedObjAt(subObj *AugmentedObj, steps ...Step) error {
+	return addAugmentedObjToTreeAtPath(&o.augmentTreeRoot, NewPath(steps...), subObj)
 }
 
 // AddPlainObjAt is a convenience wrapper around AddAugmentedObjAt for sub-objects
 // that are not augmented.
-func (o *AugmentedObj) AddPlainObjAt(path *Path, subObj interface{}) error {
-	return o.AddAugmentedObjAt(path, NewAugmentedObj(subObj))
+func (o *AugmentedObj) AddPlainObjAt(subObj interface{}, steps ...Step) error {
+	return o.AddAugmentedObjAt(NewAugmentedObj(subObj), steps...)
 }
 
 // Value returns an AugmentedValue, which starts off at the "root" of the augmented object.
@@ -113,7 +112,7 @@ type AugmentedValue interface {
 
 type augmentedValue struct {
 	parent       *augmentedValue
-	edgeToParent stepMapKey
+	edgeToParent Step
 	depth        int
 
 	currentNode *augmentTree
@@ -125,22 +124,23 @@ func (v *augmentedValue) Elem() AugmentedValue {
 }
 
 func (v *augmentedValue) Index(i int) AugmentedValue {
-	key := stepMapKey(i)
-	return v.childValue(v.underlying.Index(i), v.currentNode.takeStep(key), key)
+	step := IndexStep(i)
+	return v.childValue(v.underlying.Index(i), v.currentNode.takeStep(step), step)
 }
 
 func (v *augmentedValue) Underlying() reflect.Value {
 	return v.underlying
 }
 
-func (v *augmentedValue) TakeStep(step MetaStep) (AugmentedValue, bool) {
+func (v *augmentedValue) TakeStep(metaStep MetaStep) (AugmentedValue, bool) {
 	var newUnderlying reflect.Value
 	var found bool
-	key := stepMapKey(step.FieldName)
-	nextNode := v.currentNode.takeStep(key)
-	if step.StructFieldIndex != nil {
+
+	step := FieldStep(metaStep.FieldName)
+	nextNode := v.currentNode.takeStep(step)
+	if metaStep.StructFieldIndex != nil {
 		// This is a "static" struct -- traverse it directly.
-		newUnderlying = v.underlying.FieldByIndex(step.StructFieldIndex)
+		newUnderlying = v.underlying.FieldByIndex(metaStep.StructFieldIndex)
 		found = true
 	} else {
 		// See if this is an augmented path.
@@ -151,7 +151,7 @@ func (v *augmentedValue) TakeStep(step MetaStep) (AugmentedValue, bool) {
 			// This specific case is hit when the field in the struct is an interface type,
 			// in which case StructFieldIndex will not be present.
 			if v.underlying.Kind() == reflect.Struct {
-				newUnderlying = v.underlying.FieldByName(step.FieldName)
+				newUnderlying = v.underlying.FieldByName(metaStep.FieldName)
 				if newUnderlying.IsValid() {
 					found = true
 				}
@@ -161,10 +161,10 @@ func (v *augmentedValue) TakeStep(step MetaStep) (AugmentedValue, bool) {
 	if !found {
 		return nil, false
 	}
-	return v.childValue(newUnderlying, nextNode, key), true
+	return v.childValue(newUnderlying, nextNode, step), true
 }
 
-func (v *augmentedValue) childValue(newUnderlying reflect.Value, nextNode *augmentTree, edge stepMapKey) *augmentedValue {
+func (v *augmentedValue) childValue(newUnderlying reflect.Value, nextNode *augmentTree, edge Step) *augmentedValue {
 	return &augmentedValue{
 		parent:       v,
 		edgeToParent: edge,
@@ -175,15 +175,15 @@ func (v *augmentedValue) childValue(newUnderlying reflect.Value, nextNode *augme
 }
 
 func (v *augmentedValue) PathFromRoot() *Path {
-	p := &Path{steps: make([]step, v.depth)}
+	p := &Path{steps: make([]Step, v.depth)}
 	v.populateIntoSteps(&p.steps)
 	return p
 }
 
-func (v *augmentedValue) populateIntoSteps(outSlice *[]step) {
+func (v *augmentedValue) populateIntoSteps(outSlice *[]Step) {
 	if v.depth == 0 {
 		return
 	}
-	(*outSlice)[v.depth-1] = stepFromMapKey(v.edgeToParent)
+	(*outSlice)[v.depth-1] = v.edgeToParent
 	v.parent.populateIntoSteps(outSlice)
 }

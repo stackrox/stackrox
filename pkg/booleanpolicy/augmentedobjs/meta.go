@@ -20,13 +20,13 @@ const (
 var (
 	DeploymentMeta = pathutil.NewAugmentedObjMeta((*storage.Deployment)(nil)).
 			AddAugmentedObjectAt([]string{"Containers", imageAugmentKey}, ImageMeta).
-			AddAugmentedObjectAt(
-			[]string{"Containers", processAugmentKey},
-			pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
-				AddPlainObjectAt([]string{whitelistResultAugmentKey}, (*whitelistResult)(nil)),
-		).AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil))
+			AddAugmentedObjectAt([]string{"Containers", processAugmentKey}, ProcessMeta).
+			AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil))
 
 	ImageMeta = pathutil.NewAugmentedObjMeta((*storage.Image)(nil)).
 			AddPlainObjectAt([]string{"Metadata", "V1", "Layers", dockerfileLineAugmentKey}, (*dockerfileLine)(nil)).
 			AddPlainObjectAt([]string{"Scan", "Components", componentAndVersionAugmentKey}, (*componentAndVersion)(nil))
+
+	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
+			AddPlainObjectAt([]string{whitelistResultAugmentKey}, (*whitelistResult)(nil))
 )

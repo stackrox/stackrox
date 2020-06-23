@@ -11,5 +11,6 @@ func (alwaysTrueType) Evaluate(pathutil.AugmentedValue) (*Result, bool) {
 }
 
 var (
-	alwaysTrue Evaluator = alwaysTrueType{}
+	// AlwaysTrue is an evaluator that always returns true.
+	AlwaysTrue Evaluator = alwaysTrueType{}
 )

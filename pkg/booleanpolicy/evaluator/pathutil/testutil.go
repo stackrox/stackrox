@@ -13,9 +13,9 @@ func PathFromSteps(t *testing.T, steps ...interface{}) *Path {
 	for _, step := range steps {
 		switch typedStep := step.(type) {
 		case int:
-			p = p.IndexSlice(typedStep)
+			p.steps = append(p.steps, IndexStep(typedStep))
 		case string:
-			p = p.TraverseField(typedStep)
+			p.steps = append(p.steps, FieldStep(typedStep))
 		default:
 			require.FailNow(t, "invalid type of component", step)
 		}

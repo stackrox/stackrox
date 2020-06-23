@@ -136,11 +136,11 @@ func runTestCases(t *testing.T, testCases []testCase) {
 
 				nestedAugmentedObj := pathutil.NewAugmentedObj(nestedBare)
 				for i, elem := range c.obj.NestedSlice {
-					require.NoError(t, nestedAugmentedObj.AddPlainObjAt(pathutil.PathFromSteps(t, i, "SecondNestedSlice"), elem.SecondNestedSlice))
+					require.NoError(t, nestedAugmentedObj.AddPlainObjAt(elem.SecondNestedSlice, pathutil.IndexStep(i), pathutil.FieldStep("SecondNestedSlice")))
 				}
 				topLevelAugmentedObj := pathutil.NewAugmentedObj(topLevelBare)
-				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(pathutil.PathFromSteps(t, "Base"), base))
-				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(pathutil.PathFromSteps(t, "NestedSlice"), nestedAugmentedObj))
+				require.NoError(t, topLevelAugmentedObj.AddPlainObjAt(base, pathutil.FieldStep("Base")))
+				require.NoError(t, topLevelAugmentedObj.AddAugmentedObjAt(nestedAugmentedObj, pathutil.FieldStep("NestedSlice")))
 				res, matched := evaluator.Evaluate(topLevelAugmentedObj.Value())
 				assertResultsAsExpected(t, c, res, matched)
 			})

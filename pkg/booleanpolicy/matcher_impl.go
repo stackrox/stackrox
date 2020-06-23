@@ -12,6 +12,39 @@ import (
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
+type processMatcherImpl struct {
+	processOnlyEvaluators []evaluator.Evaluator
+	matcherImpl           matcherImpl
+}
+
+func (p *processMatcherImpl) MatchDeploymentWithProcess(_ context.Context, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
+	augmentedProcess, err := augmentedobjs.ConstructProcess(indicator, processOutsideWhitelist)
+	if err != nil {
+		return searchbasedpolicies.Violations{}, err
+	}
+	var atLeastOneMatched bool
+	for _, eval := range p.processOnlyEvaluators {
+		_, matched := eval.Evaluate(augmentedProcess.Value())
+		if matched {
+			atLeastOneMatched = true
+			break
+		}
+	}
+	if !atLeastOneMatched {
+		return searchbasedpolicies.Violations{}, nil
+	}
+
+	obj, err := augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processOutsideWhitelist)
+	if err != nil {
+		return searchbasedpolicies.Violations{}, err
+	}
+	violations, err := p.matcherImpl.getViolations(obj, indicator)
+	if err != nil || violations == nil {
+		return searchbasedpolicies.Violations{}, err
+	}
+	return *violations, nil
+}
+
 type matcherImpl struct {
 	evaluators []sectionAndEvaluator
 	stage      storage.LifecycleStage
@@ -69,18 +102,6 @@ func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *stora
 		printer.UpdateRuntimeAlertViolationMessage(v.ProcessViolation)
 	}
 	return v, nil
-}
-
-func (m *matcherImpl) MatchDeploymentWithProcess(_ context.Context, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
-	obj, err := augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processOutsideWhitelist)
-	if err != nil {
-		return searchbasedpolicies.Violations{}, err
-	}
-	violations, err := m.getViolations(obj, indicator)
-	if err != nil || violations == nil {
-		return searchbasedpolicies.Violations{}, err
-	}
-	return *violations, nil
 }
 
 // MatchDeployment runs detection against the deployment and images.
