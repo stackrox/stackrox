@@ -24,7 +24,7 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
         case 'text':
             return (
                 <label className="flex flex-col flex-1">
-                    {field.label?.length > 0 && (
+                    {field.label?.length > 0 && !field.hideInnerLabel && (
                         <span className="font-600 pl-1 mb-1">{field.label}</span>
                     )}
                     <ReduxTextField
@@ -61,7 +61,7 @@ export default function Field({ field, name, readOnly, BPLenabled }) {
         case 'select':
             return (
                 <label className="flex flex-col flex-1">
-                    {field.label?.length > 0 && (
+                    {field.label?.length > 0 && !field.hideInnerLabel && (
                         <span className="font-600 pl-1 mb-1">{field.label}</span>
                     )}
                     <ReduxSelectField

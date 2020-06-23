@@ -146,6 +146,7 @@ const policyStatusDescriptor = [
 const policyDetailsFormDescriptor = [
     {
         label: 'Name',
+        hideInnerLabel: true,
         jsonpath: 'name',
         type: 'text',
         required: true,
@@ -153,6 +154,7 @@ const policyDetailsFormDescriptor = [
     },
     {
         label: 'Severity',
+        hideInnerLabel: true,
         jsonpath: 'severity',
         type: 'select',
         options: [
