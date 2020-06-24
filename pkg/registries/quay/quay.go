@@ -94,9 +94,9 @@ func (q *Quay) Test() error {
 	if err != nil {
 		return err
 	}
+	defer utils.IgnoreError(resp.Body.Close)
 	if !httputil.Is2xxOr3xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
-		defer utils.IgnoreError(resp.Body.Close)
 		if err != nil {
 			return errors.Errorf("Error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}

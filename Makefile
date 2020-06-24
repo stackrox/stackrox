@@ -40,6 +40,11 @@ all: deps style test image
 ###### Binaries we depend on (need to be defined on top) ############
 #####################################################################
 
+GOLANGCILINT_BIN := $(GOPATH)/bin/golangci-lint
+$(GOLANGCILINT_BIN): deps
+	@echo "+ $@"
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint
+
 EASYJSON_BIN := $(GOPATH)/bin/easyjson
 $(EASYJSON_BIN): deps
 	@echo "+ $@"
@@ -105,7 +110,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: fmt imports lint vet roxvet blanks validateimports golangci-lint no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 # staticcheck is useful, but extremely computationally intensive on some people's machines.
 # Therefore, to allow people to continue running `make style`, staticcheck is not run along with
@@ -120,6 +125,11 @@ endif
 ifdef RUN_STATIC_CHECK
 style: staticcheck
 endif
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCILINT_BIN)
+	@echo "+ $@"
+	golangci-lint run
 
 .PHONY: qa-tests-style
 qa-tests-style:

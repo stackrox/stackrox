@@ -66,7 +66,7 @@ func (c lazyCall) call() (vals []reflect.Value, err error) {
 
 	vals = fn.Call(argVals)
 	panicked = false
-	return
+	return vals, nil
 }
 
 func (c lazyCall) String() string {

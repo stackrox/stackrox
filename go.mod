@@ -39,6 +39,7 @@ require (
 	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.5
+	github.com/golangci/golangci-lint v1.27.1-0.20200616100528-38d298c2c859
 	github.com/google/certificate-transparency-go v1.0.21
 	github.com/googleapis/gnostic v0.2.0
 	github.com/gorilla/schema v1.1.0
@@ -52,7 +53,7 @@ require (
 	github.com/heroku/docker-registry-client v0.0.0
 	github.com/jstemmer/go-junit-report v0.9.1
 	github.com/machinebox/graphql v0.2.2
-	github.com/magiconair/properties v1.8.0
+	github.com/magiconair/properties v1.8.1
 	github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/goveralls v0.0.2
@@ -64,40 +65,40 @@ require (
 	github.com/openshift/api v3.9.1-0.20191201231411-9f834e337466+incompatible
 	github.com/openshift/client-go v3.9.0+incompatible
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v0.9.2
+	github.com/prometheus/client_golang v0.9.3
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4
 	github.com/prometheus/common v0.4.1
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/satori/go.uuid v1.2.0
-	github.com/spf13/cobra v0.0.5
-	github.com/spf13/pflag v1.0.3
+	github.com/spf13/cobra v1.0.0
+	github.com/spf13/pflag v1.0.5
 	github.com/stackrox/anchore-client v0.0.0-20190929180200-981e05834836
 	github.com/stackrox/default-authz-plugin v0.0.0-20190708153800-070801f52e6e
 	github.com/stackrox/k8s-istio-cve-pusher v0.0.0-20191029220117-2a73008e51a9
 	github.com/stackrox/scanner v0.0.0-20191202203519-a2a15f33f41a
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.11.1
 	go.uber.org/atomic v1.4.0
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20200116001909-b77594299b42
+	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20200306191617-51e69f71924f
+	golang.org/x/tools v0.0.0-20200519015757-0d0afa43d58a
 	golang.stackrox.io/grpc-http1 v0.1.0
-	google.golang.org/api v0.11.0
-	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03
+	google.golang.org/api v0.13.0
+	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a
 	google.golang.org/grpc v1.29.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gopkg.in/square/go-jose.v2 v2.3.1
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 	gotest.tools v2.2.0+incompatible
-	honnef.co/go/tools v0.0.1-2019.2.3
+	honnef.co/go/tools v0.0.1-2020.1.4
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apimachinery v0.0.0-20191028221656-72ed19daf4bb
 	k8s.io/apiserver v0.0.0-20191114103151-9ca1dc586682

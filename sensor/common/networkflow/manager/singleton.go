@@ -17,7 +17,7 @@ func newManager(clusterEntities *clusterentities.Store) Manager {
 	mgr := &networkFlowManager{
 		done:              concurrency.NewSignal(),
 		connectionsByHost: make(map[string]*hostConnections),
-		clusterEntities:   clusterentities.StoreInstance(),
+		clusterEntities:   clusterEntities,
 		flowUpdates:       make(chan *central.MsgFromSensor),
 		publicIPs:         newPublicIPsManager(),
 	}

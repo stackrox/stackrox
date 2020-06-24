@@ -100,7 +100,6 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			return stream.Context().Err()
 
 		case err := <-recvErrC:
-			recvErrC = nil
 			if err == io.EOF {
 				err = nil
 			}

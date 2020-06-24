@@ -216,9 +216,9 @@ type flagWrap struct {
 func addChild(child *pflag.Flag, flags []flagWrap, path []string) {
 	flagName, flagValue := parseKeyValueAnnotation(path[0])
 	var foundFlag *flagWrap
-	for _, flag := range flags {
+	for i, flag := range flags {
 		if flag.Name == flagName {
-			foundFlag = &flag
+			foundFlag = &flags[i]
 			break
 		}
 	}

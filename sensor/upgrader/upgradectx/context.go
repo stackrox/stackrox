@@ -325,8 +325,8 @@ func (c *UpgradeContext) unpackList(listObj runtime.Object) ([]k8sutil.Object, e
 	}
 
 	objs = make([]k8sutil.Object, 0, len(list.Items))
-	for _, item := range list.Items {
-		objs = append(objs, &item)
+	for i := range list.Items {
+		objs = append(objs, &list.Items[i])
 	}
 	return objs, nil
 }

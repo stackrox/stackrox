@@ -73,7 +73,7 @@ func TestLoggerGC(t *testing.T) {
 	numLoggers = gcLoggersAndCount(origNumLoggers + 1)
 	assert.Equal(t, origNumLoggers+1, numLoggers)
 	runtime.KeepAlive(*l)
-	l = nil
+	l = nil //nolint:ineffassign
 	numLoggers = gcLoggersAndCount(origNumLoggers)
 	assert.Equal(t, origNumLoggers, numLoggers)
 }

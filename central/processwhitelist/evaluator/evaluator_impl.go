@@ -132,5 +132,5 @@ func (e *evaluator) EvaluateWhitelistsAndPersistResult(deployment *storage.Deplo
 			return nil, errors.Wrap(err, "failed to persist whitelist results")
 		}
 	}
-	return
+	return violatingProcesses, nil
 }

@@ -343,9 +343,9 @@ func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRe
 
 func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorRequest_UpgraderPodState {
 	var upgraderContainerStatus *v1.ContainerStatus
-	for _, cs := range pod.Status.ContainerStatuses {
+	for i, cs := range pod.Status.ContainerStatuses {
 		if cs.Name == upgraderContainerName {
-			upgraderContainerStatus = &cs
+			upgraderContainerStatus = &pod.Status.ContainerStatuses[i]
 			break
 		}
 	}
