@@ -112,12 +112,6 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 		return err
 	}
 
-	// Remove the deployment from persistence.
-	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
-		return err
-	}
-
-	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
 	if reconciliation {
 		// Only remove the alerts during reconciliation as the sensor will naturally send an empty AlertResults
 		// struct which will properly clean up the existing deploy time alerts
@@ -125,6 +119,13 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deployment *storag
 			return err
 		}
 	}
+
+	// Remove the deployment from persistence.
+	if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
+		return err
+	}
+
+	s.graphEvaluator.IncrementEpoch(deployment.GetClusterId())
 	return nil
 }
 
