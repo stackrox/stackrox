@@ -7,7 +7,6 @@ describe('Global Search Modal', () => {
 
     beforeEach(() => {
         cy.server();
-        cy.route('GET', api.search.globalSearchWithNoResults, []).as('globalSearchResults');
         cy.fixture('search/globalSearchResults.json').as('globalSearchResultsJson');
         cy.route('GET', api.search.globalSearchWithResults, '@globalSearchResultsJson').as(
             'globalSearchResults'
@@ -26,6 +25,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.allTab).should('have.class', 'border-primary-400');
         cy.get(selectors.violationsTab).should('not.have.class', 'border-primary-400');
         cy.get(selectors.policiesTab).should('not.have.class', 'border-primary-400');
@@ -42,6 +42,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.globalSearchResults.header).should('not.have.text', '0 search results');
     });
 
@@ -53,6 +54,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.viewOnViolationsLabelChip).click();
         cy.location('pathname').should(
             'eq',
@@ -68,6 +70,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.viewOnRiskLabelChip).click();
         cy.location('pathname').should('eq', '/main/risk/ppqqu24i8x16j7annv2bjphyy');
     });
@@ -80,6 +83,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.viewOnPoliciesLabelChip).click();
         cy.location('pathname').should('eq', '/main/policies/0ea8d235-b02a-41ee-a61d-edcb2c1b0eac');
     });
@@ -92,6 +96,7 @@ describe('Global Search Modal', () => {
         cy.get(selectors.globalSearch.input).type('remote{enter}', {
             force: true,
         });
+        cy.wait('@globalSearchResults');
         cy.get(selectors.viewOnImagesLabelChip).click();
         cy.location('pathname').should(
             'eq',
