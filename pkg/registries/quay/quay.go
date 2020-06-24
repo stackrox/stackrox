@@ -22,8 +22,8 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "quay", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "quay", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
@@ -44,7 +44,7 @@ func validate(quay *storage.QuayConfig) error {
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
-func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration) (types.Registry, error) {
 	if err := validate(config); err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.Imag
 	}, nil
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
 	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, errors.New("Quay config must be specified")

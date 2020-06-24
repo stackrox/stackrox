@@ -14,9 +14,9 @@ import (
 )
 
 // Creator is the func stub that defines how to instantiate an image scanner.
-type Creator func(scanner *storage.ImageIntegration) (types.ImageScanner, error)
+type Creator func(scanner *storage.ImageIntegration) (types.Scanner, error)
 
-// Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
+// Factory provides a centralized location for creating Scanner from v1.ImageIntegrations.
 //go:generate mockgen-wrapper
 type Factory interface {
 	CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error)

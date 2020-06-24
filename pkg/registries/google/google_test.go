@@ -58,8 +58,8 @@ func TestGoogleMatch(t *testing.T) {
 	require.NoError(t, err)
 
 	gr := &googleRegistry{
-		ImageRegistry: reg,
-		project:       "ultra-current-825",
+		Registry: reg,
+		project:  "ultra-current-825",
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s/%s", c.name.GetRegistry(), c.name.GetRemote()), func(t *testing.T) {

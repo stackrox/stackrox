@@ -40,8 +40,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error) {
+func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.Scanner, error) {
 		return newScanner(integration, set)
 	}
 }

@@ -12,8 +12,8 @@ var (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "nexus", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "nexus", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := docker.NewRegistryWithoutManifestCall(integration)
 		return reg, err
 	}

@@ -389,6 +389,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: ContainerRuntime!",
 		"version: String!",
 	}))
+	utils.Must(builder.AddType("DataSource", []string{
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
 		"automountServiceAccountToken: Boolean!",
@@ -502,6 +506,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("ImageMetadata", []string{
+		"dataSource: DataSource",
 		"layerShas: [String!]!",
 		"v1: V1Metadata",
 		"v2: V2Metadata",
@@ -525,6 +530,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"username: String!",
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
+		"dataSource: DataSource",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Jira", []string{
@@ -4012,6 +4018,40 @@ func (resolver *containerRuntimeInfoResolver) Version(ctx context.Context) strin
 	return value
 }
 
+type dataSourceResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.DataSource
+}
+
+func (resolver *Resolver) wrapDataSource(value *storage.DataSource, ok bool, err error) (*dataSourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &dataSourceResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapDataSources(values []*storage.DataSource, err error) ([]*dataSourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*dataSourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &dataSourceResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *dataSourceResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *dataSourceResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
+	return value
+}
+
 type deploymentResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -4946,6 +4986,11 @@ func (resolver *Resolver) wrapImageMetadatas(values []*storage.ImageMetadata, er
 	return output, nil
 }
 
+func (resolver *imageMetadataResolver) DataSource(ctx context.Context) (*dataSourceResolver, error) {
+	value := resolver.data.GetDataSource()
+	return resolver.root.wrapDataSource(value, true, nil)
+}
+
 func (resolver *imageMetadataResolver) LayerShas(ctx context.Context) []string {
 	value := resolver.data.GetLayerShas()
 	return value
@@ -5129,6 +5174,11 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 		output[i] = &imageScanResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *imageScanResolver) DataSource(ctx context.Context) (*dataSourceResolver, error) {
+	value := resolver.data.GetDataSource()
+	return resolver.root.wrapDataSource(value, true, nil)
 }
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {

@@ -72,6 +72,13 @@ func (f *fakeRegistryScanner) Name() string {
 	return "name"
 }
 
+func (f *fakeRegistryScanner) DataSource() *storage.DataSource {
+	return &storage.DataSource{
+		Id:   "id",
+		Name: f.Name(),
+	}
+}
+
 type fakeCVESuppressor struct{}
 
 func (f *fakeCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {

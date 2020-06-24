@@ -32,8 +32,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Scanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.Scanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -44,7 +44,7 @@ type quay struct {
 
 	endpoint   string
 	oauthToken string
-	registry   registryTypes.ImageRegistry
+	registry   registryTypes.Registry
 
 	protoImageIntegration *storage.ImageIntegration
 	types.ScanSemaphore

@@ -36,7 +36,7 @@ type DTRSuite struct {
 	suite.Suite
 
 	server *httptest.Server
-	dtr    types.ImageScanner
+	dtr    types.Scanner
 }
 
 func handleAuth(r *http.Request) error {

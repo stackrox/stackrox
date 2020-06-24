@@ -18,14 +18,14 @@ import (
 )
 
 // Creator is the func stub that defines how to instantiate an image registry.
-type Creator func(scanner *storage.ImageIntegration) (types.ImageRegistry, error)
+type Creator func(scanner *storage.ImageIntegration) (types.Registry, error)
 
-// Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
+// Factory provides a centralized location for creating a Scanner from a v1.ImageIntegrations.
 type Factory interface {
 	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }
 
-type creatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error))
+type creatorWrapper func() (string, func(integration *storage.ImageIntegration) (types.Registry, error))
 
 // NewFactory creates a new scanner factory.
 func NewFactory() Factory {

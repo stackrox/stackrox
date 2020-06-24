@@ -100,6 +100,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	if err != nil {
 		return false, errors.Wrapf(err, "error getting metadata from registry: %q", registry.Name())
 	}
+	metadata.DataSource = registry.DataSource()
 	image.Metadata = metadata
 	e.metadataCache.Add(ref, metadata)
 	if image.GetId() == "" {
@@ -164,7 +165,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 
 	var scan *storage.ImageScan
 
-	if asyncScanner, ok := scanner.(scannerTypes.AsyncImageScanner); ok && ctx.UseNonBlockingCallsWherePossible {
+	if asyncScanner, ok := scanner.(scannerTypes.AsyncScanner); ok && ctx.UseNonBlockingCallsWherePossible {
 		_ = e.asyncRateLimiter.Wait(context.Background())
 
 		if e.populateFromCache(ctx, image) {
@@ -192,7 +193,6 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		scanStartTime := time.Now()
 		scan, err = scanner.GetScan(image)
 		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-
 		if err != nil {
 			return ScanNotDone, errors.Wrapf(err, "Error scanning %q with scanner %q", image.GetName().GetFullName(), scanner.Name())
 		}
@@ -201,6 +201,8 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 		}
 
 	}
+
+	scan.DataSource = scanner.DataSource()
 
 	// Assume:
 	//  scan != nil

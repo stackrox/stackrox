@@ -7,8 +7,8 @@ import (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "azure", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "azure", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := docker.NewDockerRegistry(integration)
 		return reg, err
 	}

@@ -7,7 +7,7 @@ import (
 )
 
 // Creator provides the type and registries.Creator to add to the registry of image registries.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
 	return "artifactory", newRegistry
 }
 
@@ -15,7 +15,7 @@ type registry struct {
 	*docker.Registry
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
 	dockerRegistry, err := docker.NewDockerRegistry(integration)
 	if err != nil {
 		return nil, err

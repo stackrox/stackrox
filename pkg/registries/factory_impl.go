@@ -11,6 +11,15 @@ type factoryImpl struct {
 	creators map[string]Creator
 }
 
+type registryWithDataSource struct {
+	types.Registry
+	datasource *storage.DataSource
+}
+
+func (r *registryWithDataSource) DataSource() *storage.DataSource {
+	return r.datasource
+}
+
 func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error) {
 	creator, exists := e.creators[source.GetType()]
 	if !exists {
@@ -20,5 +29,12 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.Im
 	if err != nil {
 		return nil, err
 	}
-	return integration, nil
+
+	return &registryWithDataSource{
+		Registry: integration,
+		datasource: &storage.DataSource{
+			Id:   source.GetId(),
+			Name: source.GetName(),
+		},
+	}, nil
 }

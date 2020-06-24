@@ -45,9 +45,16 @@ message Image {
     }
 }
 
+message DataSource {
+    string id   = 1;
+    string name = 2;
+}
+
 message ImageScan {
-    google.protobuf.Timestamp           scan_time  = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
-    repeated EmbeddedImageScanComponent components = 2;
+    google.protobuf.Timestamp           scan_time   = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
+    repeated EmbeddedImageScanComponent components  = 2;
+    // DataSource contains information about which integration was used to scan the image
+    DataSource                          data_source = 3;
 }
 
 // TODO: Remove when migration is in place
@@ -122,11 +129,13 @@ message ImageMetadata {
     // V1 image OR because the v2 manifest has a link to it in it's config.
     // See https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
     // The only time we will not get it is in the rare caseof a strictly V2 image schema
-    V1Metadata                v1         = 1;
+    V1Metadata                v1                    = 1;
     // We should always get V2 metadata unless the registry is old or the image is strictly V1
-    V2Metadata                v2         = 2;
+    V2Metadata                v2                    = 2;
     // We never need both sets of layers so consolidate them. They will be ordered by oldest->newest
-    repeated string           layer_shas = 3;
+    repeated string           layer_shas            = 3;
+    // DataSource contains information about which integration was used to pull the metadata
+    DataSource                data_source           = 4;
 }
 
 message V2Metadata {
@@ -150,7 +159,7 @@ message ImageLayer {
     string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
-    repeated EmbeddedImageScanComponent DEPRECATED_components = 5 [(gogoproto.moretags) = "search:\"-\""]; // replaced by layer index reference in Scan
+    reserved 5; // formerly embedded components
     bool empty                             = 6;
 }
 

@@ -4,8 +4,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// ImageScanner is the interface that all scanners must implement
-type ImageScanner interface {
+// Scanner is the interface that all scanners must implement
+type Scanner interface {
 	ScanSemaphore
 
 	// GetScan gets the scan for the given image.
@@ -18,9 +18,16 @@ type ImageScanner interface {
 	Name() string
 }
 
-// AsyncImageScanner is an image scanner that can be accessed asynchronously.
-type AsyncImageScanner interface {
-	ImageScanner
+// ImageScanner adds a DataSource function to Scanner that describes which
+// integration formed the interface
+type ImageScanner interface {
+	Scanner
+	DataSource() *storage.DataSource
+}
+
+// AsyncScanner is an image scanner that can be accessed asynchronously.
+type AsyncScanner interface {
+	Scanner
 	// GetOrTriggerScan does a non-blocking request to the scanner.
 	// It gets the scan for the given image if it exists;
 	// if not, implementations trigger a new one and instantly return.

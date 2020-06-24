@@ -47,6 +47,10 @@ func (f *fakeScanner) MaxConcurrentScanSemaphore() *semaphore.Weighted {
 	return semaphore.NewWeighted(10)
 }
 
+func (f *fakeScanner) DataSource() *storage.DataSource {
+	return nil
+}
+
 func TestSetOrdering(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := fmt.Fprint(w, "{}")

@@ -14,8 +14,8 @@ var (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "tenable", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "tenable", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
@@ -32,7 +32,7 @@ func validate(config *storage.TenableConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
 	tenableConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Tenable)
 	if !ok {
 		return nil, errors.New("tenable configuration required")

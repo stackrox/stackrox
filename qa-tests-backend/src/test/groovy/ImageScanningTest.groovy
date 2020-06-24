@@ -136,6 +136,10 @@ class ImageScanningTest extends BaseSpecification {
             ImageService.scanImage(deployment.image)
             imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
         }
+        assert imageDetail.metadata.dataSource.id != ""
+        assert imageDetail.metadata.dataSource.name != ""
+        assert imageDetail.scan.dataSource.id != ""
+        assert imageDetail.scan.dataSource.name != ""
         try {
             assert imageDetail.scan.componentsCount > 0
         } catch (Exception e) {
@@ -195,6 +199,10 @@ class ImageScanningTest extends BaseSpecification {
         and:
         "Scan Image and verify results"
         ImageOuterClass.Image img = Services.scanImage(image)
+        assert img.metadata.dataSource.id != ""
+        assert img.metadata.dataSource.name != ""
+        assert img.scan.dataSource.id != ""
+        assert img.scan.dataSource.name != ""
 
         then:
         ImageOuterClass.EmbeddedImageScanComponent foundComponent =

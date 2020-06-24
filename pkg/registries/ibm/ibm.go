@@ -17,8 +17,8 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "ibm", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "ibm", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		return newRegistry(integration)
 	}
 }

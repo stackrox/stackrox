@@ -16,22 +16,22 @@ const (
 )
 
 type googleRegistry struct {
-	types.ImageRegistry
+	types.Registry
 	project string
 }
 
-// Match overrides the underlying Match function in types.ImageRegistry because our google registries are scoped by
+// Match overrides the underlying Match function in types.Registry because our google registries are scoped by
 // GCP projects
 func (g *googleRegistry) Match(image *storage.ImageName) bool {
 	if stringutils.GetUpTo(image.GetRemote(), "/") != g.project {
 		return false
 	}
-	return g.ImageRegistry.Match(image)
+	return g.Registry.Match(image)
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	return "google", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.Registry, error)) {
+	return "google", func(integration *storage.ImageIntegration) (types.Registry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
@@ -48,7 +48,7 @@ func validate(google *storage.GoogleConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+func newRegistry(integration *storage.ImageIntegration) (types.Registry, error) {
 	config := integration.GetGoogle()
 	if config == nil {
 		return nil, errors.New("Google configuration required")
@@ -66,7 +66,7 @@ func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, er
 		return nil, err
 	}
 	return &googleRegistry{
-		ImageRegistry: reg,
-		project:       strings.ToLower(config.GetProject()),
+		Registry: reg,
+		project:  strings.ToLower(config.GetProject()),
 	}, nil
 }
