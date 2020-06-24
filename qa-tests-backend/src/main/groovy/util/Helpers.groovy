@@ -40,7 +40,7 @@ class Helpers {
 
         if (Env.IN_CI) {
             if (retryAttempt == 1) {
-                collectLogsForFailure()
+                collectDebugForFailure()
             } else {
                 println "Will not collect logs after retry runs."
             }
@@ -69,16 +69,20 @@ class Helpers {
         self.with(closure)
     }
 
-    private static void collectLogsForFailure() {
+    private static void collectDebugForFailure() {
         try {
-            def logDir = new File(Constants.FAILURE_LOG_DIR + "/k8s-service-logs")
-            if (logDir.exists() && logDir.listFiles().size() >= Constants.FAILURE_LOG_LIMIT) {
-                println "Log capture limit reached. Not collecting for this failure."
+            def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
+            if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
+                println "Debug capture limit reached. Not collecting for this failure."
                 return
             }
-            def collectionDir = logDir.getAbsolutePath() + "/" + UUID.randomUUID()
-            println "Will collect logs for this failure under ${collectionDir}"
-            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}".execute(null, new File("..")).text
+            def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
+            println "Will collect logs for this failure under ${collectionDir}/k8s-logs"
+            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/k8s-logs"
+                    .execute(null, new File("..")).text
+            println "Will collect central API debug for this failure under ${collectionDir}/central-data"
+            println "./scripts/grab-data-from-central.sh ${collectionDir}/central-data"
+                    .execute(null, new File("..")).text
         }
         catch (Exception e) {
             println "Could not collect logs: ${e}"
