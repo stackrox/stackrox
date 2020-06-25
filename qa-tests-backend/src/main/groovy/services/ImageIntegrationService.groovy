@@ -35,17 +35,40 @@ class ImageIntegrationService extends BaseService {
             return ""
         }
 
+        ImageIntegrationOuterClass.ImageIntegration createdIntegration
         Timer t = new Timer(15, 3)
         while (t.IsValid()) {
             try {
-                ImageIntegrationOuterClass.ImageIntegration createdIntegration =
+                createdIntegration =
                         getImageIntegrationClient().postImageIntegration(integration)
-                return createdIntegration.getId()
+                println "Integration created: ${createdIntegration.name}: ${createdIntegration.id}"
+                break
             } catch (Exception e) {
                 println "Unable to create image integration ${integration.name}: ${e.message}"
             }
         }
-        println "Unable to create image integration"
+
+        if (!createdIntegration || !createdIntegration.id) {
+            println "Unable to create image integration"
+            return ""
+        }
+
+        ImageIntegrationOuterClass.ImageIntegration foundIntegration
+        t = new Timer(15, 3)
+        while (t.IsValid()) {
+            try {
+                foundIntegration =
+                    getImageIntegrationClient().getImageIntegration(getResourceByID(createdIntegration.id))
+                if (foundIntegration) {
+                    println "Integration found after creation: ${foundIntegration.name}: ${foundIntegration.id}"
+                    return foundIntegration.id
+                }
+            } catch (Exception e) {
+                println "Unable to find the created image integration ${integration.name}: ${e.message}"
+            }
+        }
+
+        println "Unable to find the created image integration"
         return ""
     }
 
@@ -64,7 +87,10 @@ class ImageIntegrationService extends BaseService {
                 integration = getImageIntegrationClient().getImageIntegration(getResourceByID(integrationId))
             }
         } catch (StatusRuntimeException e) {
-            return e.status.code == Status.Code.NOT_FOUND
+            if (e.status.code == Status.Code.NOT_FOUND) {
+                println "Image integration deleted: ${integrationId}"
+                return true
+            }
         }
     }
 
