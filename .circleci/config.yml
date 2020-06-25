@@ -1567,6 +1567,7 @@ commands:
       - run:
           name: Compare with stored metrics
           command: |
+            set -x
             GS_PATH=gs://stackrox-ci-metrics/<< parameters.test >>/<< parameters.cluster-flavor >>
             COMPARE_WITH=$(gsutil ls "${GS_PATH}"/stackrox_debug\* | sort | tail -1)
             echo "Using ${COMPARE_WITH} as metrics for comparison"
@@ -1577,10 +1578,9 @@ commands:
             echo "Comparing with ${THIS_RUN}"
             COMPARE=${PWD}/scripts/ci/compare-debug-metrics.sh
             set +e
-            (cd /tmp/metrics && "${COMPARE}" "${COMPARE_WITH}" "${THIS_RUN}")
-            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
-              gsutil cp "${THIS_RUN}" "${GS_PATH}"/
-            fi
+            cd /tmp/metrics && "${COMPARE}" "${COMPARE_WITH}" "${THIS_RUN}"
+            # ignore failure exit from comparison
+            exit 0
 
 jobs:
   ###
@@ -3327,6 +3327,18 @@ jobs:
       - compare-with-stored-metrics:
           cluster-flavor: gke
           test: scale-test
+      - run:
+          name: Store metrics
+          command: |
+            if [[ "$CIRCLE_TAG" =~ .*-nightly-.* ]]; then
+              THIS_RUN=$(echo debug-dump/stackrox_debug*.zip)
+              GS_PATH=gs://stackrox-ci-metrics/scale-test/gke/
+              gsutil cp "${THIS_RUN}" "${GS_PATH}"
+              unzip -d debug-dump/stackrox_debug "${THIS_RUN}"
+              prometheus-metric-parser single --file=debug-dump/stackrox_debug/metrics-2 \
+                --format=gcp-monitoring --labels='Test=ci-scale-test,ClusterFlavor=gke' \
+                --project-id=stackrox-ci --timestamp=$(date -u +"%s")
+            fi
 
   openshift-api-e2e-tests:
     executor: custom
