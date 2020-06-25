@@ -17,11 +17,7 @@ const ConfigTelemetryDetailWidget = ({ config, editable }) => {
                             Online telemetry data collection allows StackRox to better utilize
                             anonymized information to enhance your user experience.
                         </p>
-                        <CollapsibleText
-                            expandText="Learn more..."
-                            collapseText="Show less"
-                            initiallyExpanded={false}
-                        >
+                        <CollapsibleText initiallyExpanded={false}>
                             <p className="py-2 text-base-600 font-600">
                                 By consenting to online data collection, you allow StackRox to store
                                 and perform analytics on data that arises from the usage and

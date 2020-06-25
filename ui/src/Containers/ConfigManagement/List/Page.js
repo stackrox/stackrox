@@ -5,7 +5,7 @@ import pluralize from 'pluralize';
 import URLService from 'utils/URLService';
 import startCase from 'lodash/startCase';
 
-import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
 
 import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
@@ -58,7 +58,7 @@ const ListPage = ({ match, location, history }) => {
                     query={query[searchParam]}
                 />
                 <searchContext.Provider value={searchParams.sidePanel}>
-                    <SidePanelAnimation condition={!!entityId1}>
+                    <SidePanelAnimatedDiv isOpen={!!entityId1}>
                         <SidePanel
                             className="w-full h-full bg-base-100 border-l border-base-400 shadow-sidepanel"
                             entityType1={pageEntityListType}
@@ -68,7 +68,7 @@ const ListPage = ({ match, location, history }) => {
                             entityId2={entityId2}
                             query={query}
                         />
-                    </SidePanelAnimation>
+                    </SidePanelAnimatedDiv>
                 </searchContext.Provider>
             </div>
         </>

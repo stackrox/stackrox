@@ -5,37 +5,29 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
 import { reduxForm, formValueSelector, propTypes as reduxFormPropTypes } from 'redux-form';
+import * as Icon from 'react-feather';
 
+import logoPlatform from 'images/logo-platform.svg';
+import { AUTH_STATUS } from 'reducers/auth';
+import { selectors } from 'reducers';
+import { ThemeContext } from 'Containers/ThemeProvider';
 import LoadingSection from 'Components/LoadingSection';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import UnreachableWarning from 'Containers/UnreachableWarning';
-
-import logoPlatform from 'images/logo-platform.svg';
-
-import { AUTH_STATUS } from 'reducers/auth';
-import { selectors } from 'reducers';
-import * as Icon from 'react-feather';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
-
-import { ThemeContext } from 'Containers/ThemeProvider';
-
 import Labeled from 'Components/Labeled';
-import posed from 'react-pose';
+import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 import AppWrapper from '../AppWrapper';
 import LoginNotice from './LoginNotice';
+
 import { loginWithBasicAuth } from '../../services/AuthService';
 
 const unknownErrorResponse = {
     error: 'Unknown error',
 };
-
-const CollapsibleContent = posed.div({
-    closed: { height: 0 },
-    open: { height: 'inherit' },
-});
 
 const authProvidersToSelectOptions = (authProviders) =>
     authProviders.map((authProvider) => ({
@@ -177,17 +169,14 @@ class LoginPage extends Component {
                         options={options}
                     />
                 </Labeled>
-                <CollapsibleContent
-                    className="overflow-hidden"
-                    pose={this.isBasicAuthProviderSelected() ? 'open' : 'closed'}
-                >
+                <CollapsibleAnimatedDiv isOpen={this.isBasicAuthProviderSelected()}>
                     <Labeled label="Username">
                         <ReduxTextField name="username" />
                     </Labeled>
                     <Labeled label="Password">
                         <ReduxPasswordField name="password" />
                     </Labeled>
-                </CollapsibleContent>
+                </CollapsibleAnimatedDiv>
             </div>
         );
     };

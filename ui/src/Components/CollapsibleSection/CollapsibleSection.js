@@ -1,28 +1,11 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import posed from 'react-pose';
-
-import Button from 'Components/Button';
 import { ChevronDown, ChevronRight } from 'react-feather';
 
-const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-5 w-5';
+import Button from 'Components/Button';
+import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 
-const Content = posed.div({
-    closed: {
-        height: '1px',
-        transition: {
-            duration: 0,
-        },
-        flip: true,
-    },
-    open: {
-        height: 'auto',
-        transition: {
-            duration: 100,
-        },
-        flip: true,
-    },
-});
+const iconClass = 'bg-base-100 border-2 border-base-400 rounded-full h-5 w-5';
 
 const CollapsibleSection = ({
     title,
@@ -58,13 +41,9 @@ const CollapsibleSection = ({
                 </div>
                 {headerComponents}
             </header>
-            <Content
-                className={open ? '' : 'overflow-hidden'}
-                pose={open ? 'open' : 'closed'}
-                data-testid="collapsible-content"
-            >
+            <CollapsibleAnimatedDiv defaultOpen isOpen={open} dataTestId="collapsible-content">
                 {children}
-            </Content>
+            </CollapsibleAnimatedDiv>
         </div>
     );
 };

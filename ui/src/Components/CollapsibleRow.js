@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import posed from 'react-pose';
-
 import { ChevronRight, ChevronDown } from 'react-feather';
 
-const Content = posed.div({
-    closed: { height: 0 },
-    open: { height: 'inherit' },
-});
+import CollapsibleAnimatedDiv from 'Components/animations/CollapsibleAnimatedDiv';
 
 const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, hasTitleBorder }) => {
     const [open, setOpen] = useState(isCollapsibleOpen);
@@ -50,9 +45,7 @@ const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, ha
                     {header}
                 </div>
             </button>
-            <Content className="overflow-hidden" pose={open ? 'open' : 'closed'}>
-                {open && children}
-            </Content>
+            <CollapsibleAnimatedDiv isOpen={open}>{children}</CollapsibleAnimatedDiv>
         </div>
     );
 };

@@ -6,7 +6,7 @@ import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
 import Panel from 'Components/Panel';
-import SidePanelAnimation from 'Components/animations/SidePanelAnimation';
+import SidePanelAnimatedDiv from 'Components/animations/SidePanelAnimatedDiv';
 import EntityBreadCrumbs from 'Containers/BreadCrumbs/EntityBreadCrumbs';
 
 const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
@@ -42,7 +42,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
 
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <SidePanelAnimation condition={isOpen}>
+            <SidePanelAnimatedDiv isOpen={isOpen}>
                 <div
                     className={`w-full h-full bg-base-100 rounded-tl-lg shadow-sidepanel ${
                         !isDarkMode ? '' : 'border-l border-base-400'
@@ -68,7 +68,7 @@ const WorkflowSidePanel = ({ history, location, children, isOpen }) => {
                         {children}
                     </Panel>
                 </div>
-            </SidePanelAnimation>
+            </SidePanelAnimatedDiv>
         </workflowStateContext.Provider>
     );
 };
