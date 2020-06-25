@@ -1,5 +1,6 @@
 import table from '../selectors/table';
 import toast from '../selectors/toast';
+import tooltip from '../selectors/tooltip';
 
 export const url = '/main/integrations';
 
@@ -12,6 +13,13 @@ export const selectors = {
     clairTile: 'div[role="button"]:contains("CoreOS Clair")',
     clairifyTile: 'div[role="button"]:contains("Clairify")',
     slackTile: 'div[role="button"]:contains("Slack")',
+    dockerTrustedRegistryTile: 'div[role="button"]:contains("Docker Trusted Registry")',
+    quayTile: 'div[role="button"]:contains("Quay.io")',
+    amazonECRTile: 'div[role="button"]:contains("Amazon ECR")',
+    tenableTile: 'div[role="button"]:contains("Tenable.io")',
+    googleCloudPlatformTile: 'div[role="button"]:contains("Google Cloud Platform")',
+    anchoreScannerTile: 'div[role="button"]:contains("Anchore Scanner")',
+    ibmCloudTile: 'div[role="button"]:contains("IBM Cloud")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
@@ -56,4 +64,5 @@ export const selectors = {
     checkboxes: 'input',
     table,
     toast,
+    tooltip,
 };

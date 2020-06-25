@@ -8,7 +8,7 @@ import TooltipOverlay from 'Components/TooltipOverlay';
 const HelpIcon = ({ description }) => {
     return (
         <Tooltip content={<TooltipOverlay>{description}</TooltipOverlay>}>
-            <HelpCircle className="h-4 w-4 text-tertiary-500" />
+            <HelpCircle className="h-4 w-4 text-tertiary-500" alt="help" />
         </Tooltip>
     );
 };

@@ -63,7 +63,7 @@ const integrationsList = {
             disabled: false,
         },
         {
-            label: 'Google Cloud',
+            label: 'Google Cloud Platform',
             type: 'google',
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',

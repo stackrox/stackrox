@@ -10,6 +10,15 @@ const skipTestIntegration = {
     placeholder: '',
 };
 
+const storedCredentialFields = {
+    checkStoredCredentials: true,
+    helpFunction: function storedCredentialsHelpFunction(initialValues) {
+        if (initialValues?.hasStoredCredentials)
+            return 'Leave this empty to use the currently stored credentials';
+        return '';
+    },
+};
+
 const formDescriptors = {
     authProviders: {
         oidc: [
@@ -501,13 +510,13 @@ const formDescriptors = {
                 label: 'Access Key',
                 jsonpath: 'tenable.accessKey',
                 type: 'text',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Secret Key',
                 jsonpath: 'tenable.secretKey',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             skipTestIntegration,
         ],
@@ -541,12 +550,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'docker.password',
                 type: 'password',
-                checkStoredCredentials: true,
-                helpFunction: (initialValues) => {
-                    if (initialValues?.hasStoredCredentials)
-                        return 'Leave this empty to use the currently stored credentials';
-                    return '';
-                },
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -589,7 +593,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'dtr.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -666,7 +670,7 @@ const formDescriptors = {
                 label: 'OAuth Token',
                 jsonpath: 'quay.oauthToken',
                 type: 'text',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -757,7 +761,7 @@ const formDescriptors = {
                 label: 'Service Account Key (JSON)',
                 jsonpath: 'google.serviceAccount',
                 type: 'text',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             skipTestIntegration,
         ],
@@ -803,13 +807,13 @@ const formDescriptors = {
                 label: 'Access Key ID (required if not using IAM)',
                 jsonpath: 'ecr.accessKeyId',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Secret Access Key (required if not using IAM)',
                 jsonpath: 'ecr.secretAccessKey',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             skipTestIntegration,
         ],
@@ -918,7 +922,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'anchore.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -951,7 +955,7 @@ const formDescriptors = {
                 label: 'API Key',
                 jsonpath: 'ibm.apiKey',
                 type: 'text',
-                placeholder: '',
+                ...storedCredentialFields,
             },
         ],
         rhel: [

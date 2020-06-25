@@ -121,3 +121,7 @@ export const vulnMgmt = {
         getPolicy: 'getPolicy',
     },
 };
+
+export const integrations = {
+    images: '/v1/imageintegrations',
+};

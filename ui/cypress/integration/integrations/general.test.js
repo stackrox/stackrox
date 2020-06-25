@@ -1,5 +1,5 @@
-import { selectors } from '../constants/IntegrationsPage';
-import withAuth from '../helpers/basicAuth';
+import { selectors } from '../../constants/IntegrationsPage';
+import withAuth from '../../helpers/basicAuth';
 
 describe('Integrations page', () => {
     withAuth();
