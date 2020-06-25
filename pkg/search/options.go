@@ -124,13 +124,12 @@ var (
 	PodName = newFieldLabel("Pod Name")
 
 	// ProcessIndicator Search fields
-	ProcessID         = newFieldLabel("Process ID")
-	ProcessExecPath   = newFieldLabel("Process Path")
-	ProcessName       = newFieldLabel("Process Name")
-	ProcessArguments  = newFieldLabel("Process Arguments")
-	ProcessAncestor   = newFieldLabel("Process Ancestor")
-	ProcessUID        = newFieldLabel("Process UID")
-	DeploymentStateTS = newFieldLabel("Deployment State TS") // internal use only
+	ProcessID        = newFieldLabel("Process ID")
+	ProcessExecPath  = newFieldLabel("Process Path")
+	ProcessName      = newFieldLabel("Process Name")
+	ProcessArguments = newFieldLabel("Process Arguments")
+	ProcessAncestor  = newFieldLabel("Process Ancestor")
+	ProcessUID       = newFieldLabel("Process UID")
 
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")

@@ -140,13 +140,6 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*sto
 		return nil
 	})
 	suite.NoError(err)
-
-	for _, ind := range indicators {
-		ind.DeploymentStateTs = 0
-	}
-	for _, ind := range foundIndicators {
-		ind.DeploymentStateTs = 0
-	}
 	suite.ElementsMatch(foundIndicators, indicators)
 }
 

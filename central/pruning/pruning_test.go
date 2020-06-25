@@ -548,11 +548,10 @@ func newListAlertWithDeployment(id string, age time.Duration, deploymentID strin
 
 func newIndicatorWithDeployment(id string, age time.Duration, deploymentID string) *storage.ProcessIndicator {
 	return &storage.ProcessIndicator{
-		Id:                id,
-		DeploymentId:      deploymentID,
-		DeploymentStateTs: 0,
-		ContainerName:     "",
-		PodId:             "",
+		Id:            id,
+		DeploymentId:  deploymentID,
+		ContainerName: "",
+		PodId:         "",
 		Signal: &storage.ProcessSignal{
 			Time: timestampNowMinus(age),
 		},

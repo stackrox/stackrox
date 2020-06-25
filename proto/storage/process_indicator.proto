@@ -15,7 +15,7 @@ message ProcessIndicator {
     string id = 1 [(gogoproto.moretags) = "search:\"Process ID,store,hidden\""];
 
     string deployment_id      = 2 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\" policy:\",prefer-parent\""];
-    int64 deployment_state_ts = 10 [(gogoproto.moretags) = "search:\"Deployment State TS,hidden\""];
+    reserved 10; // Previously deployment_state_ts
 
     string container_name = 3 [(gogoproto.moretags) = "search:\"Container Name,hidden\" policy:\",prefer-parent\""];
     // Pod name

@@ -42,7 +42,6 @@ func NewProcessPipeline(indicators chan *central.MsgFromSensor, clusterEntities 
 
 func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, cachedContainer clusterentities.ContainerMetadata) {
 	indicator.DeploymentId = cachedContainer.DeploymentID
-	indicator.DeploymentStateTs = cachedContainer.DeploymentTS
 	indicator.ContainerName = cachedContainer.ContainerName
 	indicator.PodId = cachedContainer.PodID
 	indicator.PodUid = cachedContainer.PodUID

@@ -816,7 +816,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"containerName: String!",
 		"containerStartTime: Time",
 		"deploymentId: String!",
-		"deploymentStateTs: Int!",
 		"id: ID!",
 		"namespace: String!",
 		"podId: String!",
@@ -7200,11 +7199,6 @@ func (resolver *processIndicatorResolver) ContainerStartTime(ctx context.Context
 func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
 	value := resolver.data.GetDeploymentId()
 	return value
-}
-
-func (resolver *processIndicatorResolver) DeploymentStateTs(ctx context.Context) int32 {
-	value := resolver.data.GetDeploymentStateTs()
-	return int32(value)
 }
 
 func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {
