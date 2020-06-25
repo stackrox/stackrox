@@ -69,13 +69,10 @@ func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*complianc
 	}
 	mockData := map[string]*compliance.ComplianceStandardResult{
 		standardID: {
-			CheckResults: map[string]*storage.ComplianceControlResult{
+			CheckResults: map[string]*storage.ComplianceResultValue{
 				checkNameOne: {
-					ControlId: checkNameOne,
-					Value: &storage.ComplianceResultValue{
-						Evidence:     evidenceOne,
-						OverallState: 0,
-					},
+					Evidence:     evidenceOne,
+					OverallState: 0,
 				},
 			},
 		},
@@ -101,12 +98,9 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 			Message: "def",
 		},
 	}
-	mockData[standardID].CheckResults[checkNameTwo] = &storage.ComplianceControlResult{
-		ControlId: checkNameTwo,
-		Value: &storage.ComplianceResultValue{
-			Evidence:     evidenceTwo,
-			OverallState: 0,
-		},
+	mockData[standardID].CheckResults[checkNameTwo] = &storage.ComplianceResultValue{
+		Evidence:     evidenceTwo,
+		OverallState: 0,
 	}
 	addCheckResultsToResponse(testResults, standardID, checkNameTwo, evidenceTwo)
 	s.Equal(mockData, testResults)
@@ -121,13 +115,10 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		},
 	}
 	mockData[standardIDTwo] = &compliance.ComplianceStandardResult{
-		CheckResults: map[string]*storage.ComplianceControlResult{
+		CheckResults: map[string]*storage.ComplianceResultValue{
 			checkNameThree: {
-				ControlId: checkNameThree,
-				Value: &storage.ComplianceResultValue{
-					Evidence:     evidenceThree,
-					OverallState: 0,
-				},
+				Evidence:     evidenceThree,
+				OverallState: 0,
 			},
 		},
 	}

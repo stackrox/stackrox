@@ -353,3 +353,17 @@ func (mr *MockComplianceDataRepositoryMockRecorder) HostScraped(node interface{}
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostScraped", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostScraped), node)
 }
+
+// NodeResults mocks base method
+func (m *MockComplianceDataRepository) NodeResults() map[string]map[string]*compliance.ComplianceStandardResult {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NodeResults")
+	ret0, _ := ret[0].(map[string]map[string]*compliance.ComplianceStandardResult)
+	return ret0
+}
+
+// NodeResults indicates an expected call of NodeResults
+func (mr *MockComplianceDataRepositoryMockRecorder) NodeResults() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NodeResults", reflect.TypeOf((*MockComplianceDataRepository)(nil).NodeResults))
+}

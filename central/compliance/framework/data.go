@@ -44,4 +44,5 @@ type ComplianceDataRepository interface {
 
 	// Per-host data
 	HostScraped(node *storage.Node) *compliance.ComplianceReturn
+	NodeResults() map[string]map[string]*compliance.ComplianceStandardResult
 }

@@ -7,10 +7,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/data"
 )
 
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {
 	complianceData := gatherData(scrapeConfig, run.GetScrapeId())
+	complianceData.Files = data.FlattenFileMap(complianceData.Files)
 	results := make(map[string]*compliance.ComplianceStandardResult)
 	for _, standardID := range run.GetStandardIds() {
 		standard, ok := standards.Standards[standardID]
@@ -35,7 +37,7 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 	standardResults, ok := results[standardID]
 	if !ok {
 		standardResults = &compliance.ComplianceStandardResult{
-			CheckResults: make(map[string]*storage.ComplianceControlResult),
+			CheckResults: make(map[string]*storage.ComplianceResultValue),
 		}
 		results[standardID] = standardResults
 	}
@@ -47,12 +49,9 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 		}
 	}
 
-	standardResults.CheckResults[checkName] = &storage.ComplianceControlResult{
-		ControlId: checkName,
-		Value: &storage.ComplianceResultValue{
-			Evidence:     evidence,
-			OverallState: overallState,
-		},
+	standardResults.CheckResults[checkName] = &storage.ComplianceResultValue{
+		Evidence:     evidence,
+		OverallState: overallState,
 	}
 }
 

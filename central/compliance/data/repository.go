@@ -1,16 +1,24 @@
 package data
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/json"
+	"io/ioutil"
 	"math"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/data"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -40,6 +48,8 @@ type repository struct {
 	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
 
 	hostScrape map[string]*compliance.ComplianceReturn
+
+	nodeResults map[string]map[string]*compliance.ComplianceStandardResult
 }
 
 func (r *repository) Cluster() *storage.Cluster {
@@ -104,6 +114,10 @@ func (r *repository) UnresolvedAlerts() []*storage.ListAlert {
 
 func (r *repository) HostScraped(node *storage.Node) *compliance.ComplianceReturn {
 	return r.hostScrape[node.GetName()]
+}
+
+func (r *repository) NodeResults() map[string]map[string]*compliance.ComplianceStandardResult {
+	return r.nodeResults
 }
 
 func (r *repository) CISDockerTriggered() bool {
@@ -178,18 +192,6 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 		}
 	}
 	return result
-}
-
-func expandFile(parent *compliance.File) map[string]*compliance.File {
-	expanded := make(map[string]*compliance.File)
-	for _, child := range parent.GetChildren() {
-		childExpanded := expandFile(child)
-		for k, v := range childExpanded {
-			expanded[k] = v
-		}
-	}
-	expanded[parent.GetPath()] = parent
-	return expanded
 }
 
 func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
@@ -280,18 +282,15 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	// Flatten the files so we can do direct lookups on the nested values
 	for _, n := range scrapeResults {
-		totalNodeFiles := make(map[string]*compliance.File)
-		for path, file := range n.GetFiles() {
-			expanded := expandFile(file)
-			for k, v := range expanded {
-				totalNodeFiles[k] = v
-			}
-			totalNodeFiles[path] = file
-		}
+		totalNodeFiles := data.FlattenFileMap(n.GetFiles())
 		n.Files = totalNodeFiles
 	}
 
 	r.hostScrape = scrapeResults
+
+	if features.ComplianceInNodes.Enabled() {
+		r.nodeResults = getNodeResults(scrapeResults)
+	}
 
 	// check for latest compliance results to determine
 	// if CIS benchmarks were ever run
@@ -316,4 +315,42 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 	}
 
 	return nil
+}
+
+func getNodeResults(scrapeResults map[string]*compliance.ComplianceReturn) map[string]map[string]*compliance.ComplianceStandardResult {
+	nodeResults := make(map[string]map[string]*compliance.ComplianceStandardResult, len(scrapeResults))
+	for nodeName, n := range scrapeResults {
+		if n.GetEvidence() == nil {
+			log.Errorf("no compliance results received from node: %s", nodeName)
+			continue
+		}
+
+		result, err := decompressNodeResults(n.GetEvidence())
+		if err != nil {
+			log.Error(errors.Wrapf(err, "unable to decompress compliance results from node %s", nodeName))
+			continue
+		}
+		nodeResults[nodeName] = result
+	}
+	return nodeResults
+}
+
+func decompressNodeResults(chunk *compliance.GZIPDataChunk) (map[string]*compliance.ComplianceStandardResult, error) {
+	reader := bytes.NewReader(chunk.GetGzip())
+	gzReader, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, err
+	}
+	defer utils.IgnoreError(gzReader.Close)
+
+	runResultBytes, err := ioutil.ReadAll(gzReader)
+	if err != nil {
+		return nil, err
+	}
+
+	var runResults map[string]*compliance.ComplianceStandardResult
+	if err := json.Unmarshal(runResultBytes, &runResults); err != nil {
+		return nil, err
+	}
+	return runResults, nil
 }

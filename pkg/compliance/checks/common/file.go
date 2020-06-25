@@ -208,21 +208,26 @@ func recursivePermissionCheckWithFileExtFunc(path, fileExtension string, permiss
 		} else if !ok {
 			return FailListf("File %q could not be found in scraped data", path)
 		}
-		return CheckRecursivePermissionWithFileExt(f, fileExtension, permissions)
+		results, _ := CheckRecursivePermissionWithFileExt(f, fileExtension, permissions)
+		return results
 	}
 }
 
 // CheckRecursivePermissionWithFileExt does the actual checking of the files
-func CheckRecursivePermissionWithFileExt(f *compliance.File, fileExtension string, permissions uint32) []*storage.ComplianceResultValue_Evidence {
+func CheckRecursivePermissionWithFileExt(f *compliance.File, fileExtension string, permissions uint32) ([]*storage.ComplianceResultValue_Evidence, bool) {
 	if filepath.Ext(f.GetPath()) == fileExtension {
-		result, _ := permissionCheck(f, permissions)
-		return []*storage.ComplianceResultValue_Evidence{result}
+		result, stopNow := permissionCheck(f, permissions)
+		return []*storage.ComplianceResultValue_Evidence{result}, stopNow
 	}
 	var results []*storage.ComplianceResultValue_Evidence
 	for _, child := range f.Children {
-		results = append(results, CheckRecursivePermissionWithFileExt(child, fileExtension, permissions)...)
+		childResults, failNow := CheckRecursivePermissionWithFileExt(child, fileExtension, permissions)
+		results = append(results, childResults...)
+		if failNow {
+			return results, true
+		}
 	}
-	return results
+	return results, false
 }
 
 func recursiveOwnershipCheckFunc(path, user, group string, optional bool) standards.Check {

@@ -48,7 +48,7 @@ message ContainerRuntimeInfo {
 }
 
 message ComplianceStandardResult {
-    map<string, storage.ComplianceControlResult> checkResults = 1;
+    map<string, storage.ComplianceResultValue> checkResults = 1;
 }
 
 // Next Available Tag: 11

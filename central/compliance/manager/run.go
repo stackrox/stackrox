@@ -10,7 +10,10 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -77,7 +80,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 		})
 	}
 
-	run, err := r.doRun(dataPromise)
+	run, nodeResults, err := r.doRun(dataPromise)
 	defer concurrency.WithLock(&r.mutex, func() {
 		r.finishTime = time.Now()
 		r.status = v1.ComplianceRun_FINISHED
@@ -85,6 +88,10 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 
 	if err == nil {
 		results := r.collectResults(run)
+
+		if features.ComplianceInNodes.Enabled() {
+			r.foldNodeResults(results, nodeResults)
+		}
 		if storeErr := resultsStore.StoreRunResults(r.ctx, results); storeErr != nil {
 			err = errors.Wrap(storeErr, "storing results")
 		}
@@ -101,7 +108,27 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 	}
 }
 
-func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, error) {
+func (r *runInstance) foldNodeResults(results *storage.ComplianceRunResults, nodeResults map[string]map[string]*compliance.ComplianceStandardResult) {
+	for _, node := range r.domain.Nodes() {
+		nodeID := node.ID()
+		nodeName := node.Node().GetName()
+		perStandardNodeResults, ok := nodeResults[nodeName]
+		if !ok {
+			log.Infof("no check results received for node %s with ID %s", node.Node().GetName(), nodeID)
+			continue
+		}
+		perCheckResults, ok := perStandardNodeResults[r.standard.ID]
+		if !ok {
+			log.Infof("no check results received from node %s for compliance standard %s", nodeName, r.standard.ID)
+			continue
+		}
+		results.NodeResults[nodeID] = &storage.ComplianceRunResults_EntityResults{
+			ControlResults: perCheckResults.GetCheckResults(),
+		}
+	}
+}
+
+func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, map[string]map[string]*compliance.ComplianceStandardResult, error) {
 	concurrency.WithLock(&r.mutex, func() {
 		r.startTime = time.Now()
 		r.status = v1.ComplianceRun_STARTED
@@ -112,12 +139,12 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, e
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
 	data, err := dataPromise.WaitForResult(r.ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "waiting for compliance data")
+		return nil, nil, errors.Wrap(err, "waiting for compliance data")
 	}
 
 	run, err := framework.NewComplianceRun(r.standard.AllChecks()...)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating compliance run")
+		return nil, nil, errors.Wrap(err, "creating compliance run")
 	}
 
 	log.Infof("Starting evaluating checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
@@ -125,10 +152,10 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, e
 
 	if err := run.Run(r.ctx, r.domain, data); err != nil {
 		log.Errorf("Error evaluating checks for run %s for cluster %q and standard %q: %v", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name, err)
-		return nil, err
+		return nil, nil, err
 	}
 	log.Infof("Successfully evaluated checks for run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
-	return run, nil
+	return run, data.NodeResults(), nil
 }
 
 func timeToProto(t time.Time) *types.Timestamp {
