@@ -171,10 +171,10 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Red Hat Package Manager Execution"                         | TRIGGER_MOST
         "Remote File Copy Binary Execution"                         | TRIGGER_MOST
         "Required Annotation: Email"                                | TRIGGER_MOST
-        "Required Annotation: Owner"                                | TRIGGER_MOST
+        "Required Annotation: Owner/Team"                                | TRIGGER_MOST
         "Required Image Label"                                      | TRIGGER_MOST
         "Required Label: Email"                                     | TRIGGER_MOST
-        "Required Label: Owner"                                     | TRIGGER_MOST
+        "Required Label: Owner/Team"                                     | TRIGGER_MOST
         "Secret Mounted as Environment Variable"                    | TRIGGER_MOST
         "Secure Shell (ssh) Port Exposed in Image"                  | TRIGGER_MOST
         "Secure Shell Server (sshd) Execution"                      | TRIGGER_MOST

@@ -824,16 +824,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Required annotation not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
 		},
 		{
-			policyName:                "Required Label: Owner",
-			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
-			sampleViolationForMatched: "Required label not found (key = 'owner', value = '.+')",
-		},
-		{
-			policyName:                "Required Annotation: Owner",
-			shouldNotMatch:            map[string]struct{}{depWithOwnerAnnotation.GetId(): {}},
-			sampleViolationForMatched: "Required annotation not found (key = 'owner', value = '.+')",
-		},
-		{
 			policyName: "CAP_SYS_ADMIN capability added",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				sysAdminDep.GetId(): {AlertViolations: []*storage.Alert_Violation{

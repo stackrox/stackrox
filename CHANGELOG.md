@@ -11,6 +11,7 @@ All notable changes to this project that require documentation updates will be d
   - POST `/v1/externalbackups/test/updated` checks if the given external backup is correctly configured, with optional stored credential reconciliation.
 - UI: Reset page to 1 when sort fields change (ROX-4267)
 - Add a tcp prefix to the spec.Ports.name for the scanner-db service. Istio uses this name for protocol detection.
+- Customer advisory: The default policy "Required Label: Email" will be deprecated starting release 48.0
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.

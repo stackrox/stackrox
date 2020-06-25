@@ -1,20 +1,20 @@
 {
-  "id": "1a498d97-0cc2-45f5-b32e-1f3cca6a3113",
-  "name": "Required Annotation: Owner",
+  "id": "550081a1-ad3a-4eab-a874-8eb68fab2bbd",
+  "name": "Required Label: Owner/Team",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": [
     "DEPLOY"
   ],
-  "description": "Alert on deployments missing the 'owner' annotation",
-  "rationale": "The 'owner' annotation should always be specified so that the deployment can quickly be associated with a specific user or team.",
-  "remediation": "Redeploy your service and set the 'owner' annotation to yourself or your team per organizational standards.",
+  "description": "Alert on deployments missing the 'owner' or 'team' label",
+  "rationale": "The 'owner' or 'team' label should always be specified so that the deployment can quickly be associated with a specific user or team.",
+  "remediation": "Redeploy your service and set the 'owner' or 'team' label to yourself or your team respectively per organizational standards.",
   "categories": [
     "DevOps Best Practices",
     "Security Best Practices"
   ],
   "fields": {
-    "requiredAnnotation": {
-      "key": "owner",
+    "requiredLabel": {
+      "key": "owner|team",
       "value": ".+"
     }
   },

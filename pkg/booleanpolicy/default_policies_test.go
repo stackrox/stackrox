@@ -498,6 +498,15 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(depWithOwnerAnnotation)
 
+	depWithOwnerLabel := &storage.Deployment{
+		Id: "OWNERLABELDEP",
+		Labels: map[string]string{
+			"owner": "IOWNTHIS",
+			"blah":  "Blah",
+		},
+	}
+	suite.addDepAndImages(depWithOwnerLabel)
+
 	depWitharbitraryAnnotations := &storage.Deployment{
 		Id: "ARBITRARYANNOTATIONDEPID",
 		Annotations: map[string]string{
@@ -787,6 +796,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				secretEnvSrcUnsetDep.GetId():                      {},
 				secretKeyRefDep.GetId():                           {},
 				depWithOwnerAnnotation.GetId():                    {},
+				depWithOwnerLabel.GetId():                         {},
 				depWithGoodEmailAnnotation.GetId():                {},
 				depWithBadEmailAnnotation.GetId():                 {},
 				depWitharbitraryAnnotations.GetId():               {},
@@ -798,24 +808,34 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image in container '%s' has not been scanned",
 		},
 		{
-			policyName:                "Required Label: Email",
-			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
+			policyName: "Required Label: Email",
+			shouldNotMatch: map[string]struct{}{
+				fixtureDep.GetId(): {},
+			},
 			sampleViolationForMatched: "Required label not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
 		},
 		{
-			policyName:                "Required Annotation: Email",
-			shouldNotMatch:            map[string]struct{}{depWithGoodEmailAnnotation.GetId(): {}},
+			policyName: "Required Annotation: Email",
+			shouldNotMatch: map[string]struct{}{
+				depWithGoodEmailAnnotation.GetId(): {},
+			},
 			sampleViolationForMatched: "Required annotation not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
 		},
 		{
-			policyName:                "Required Label: Owner",
-			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
-			sampleViolationForMatched: "Required label not found (key = 'owner', value = '.+')",
+			policyName: "Required Label: Owner/Team",
+			shouldNotMatch: map[string]struct{}{
+				depWithOwnerLabel.GetId(): {},
+				fixtureDep.GetId():        {},
+			},
+			sampleViolationForMatched: "Required label not found (key = 'owner|team', value = '.+')",
 		},
 		{
-			policyName:                "Required Annotation: Owner",
-			shouldNotMatch:            map[string]struct{}{depWithOwnerAnnotation.GetId(): {}},
-			sampleViolationForMatched: "Required annotation not found (key = 'owner', value = '.+')",
+			policyName: "Required Annotation: Owner/Team",
+			shouldNotMatch: map[string]struct{}{
+				depWithOwnerAnnotation.GetId(): {},
+				fixtureDep.GetId():             {},
+			},
+			sampleViolationForMatched: "Required annotation not found (key = 'owner|team', value = '.+')",
 		},
 		{
 			policyName: "CAP_SYS_ADMIN capability added",
@@ -1071,6 +1091,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				}
 				return
 			}
+
 			for id := range suite.deployments {
 				violations, expected := c.expectedViolations[id]
 				if expected {

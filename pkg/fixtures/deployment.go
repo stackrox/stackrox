@@ -59,6 +59,9 @@ func LightweightDeployment() *storage.Deployment {
 		ClusterId:   "prod cluster",
 		ClusterName: "prod cluster",
 		Namespace:   "stackrox",
+		Annotations: map[string]string{
+			"team": "stackrox",
+		},
 		Labels: map[string]string{
 			"com.docker.stack.namespace":    "prevent",
 			"com.docker.swarm.service.name": "prevent_sensor",
