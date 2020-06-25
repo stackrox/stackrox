@@ -148,22 +148,12 @@ const OidcFormFields = ({ disabled, configValues, change }) => {
                 <ul className="pl-4 mt-2 leading-loose">
                     {configValues.mode === 'fragment' && (
                         <li>
-                            <a
-                                className="text-tertiary-800 hover:text-tertiary-900"
-                                href={oidcFragmentCallbackURL}
-                            >
-                                {oidcFragmentCallbackURL}
-                            </a>
+                            <span className="text-tertiary-800">{oidcFragmentCallbackURL}</span>
                         </li>
                     )}
                     {configValues.mode === 'post' && (
                         <li>
-                            <a
-                                className="text-tertiary-800 hover:text-tertiary-900"
-                                href={oidcPostCallbackURL}
-                            >
-                                {oidcPostCallbackURL}
-                            </a>
+                            <span className="text-tertiary-800">{oidcPostCallbackURL}</span>
                         </li>
                     )}
                 </ul>
@@ -188,12 +178,7 @@ const Auth0FormFields = ({ disabled }) => (
         <Note header="if required by your IdP, use the following callback URL:">
             <ul className="pl-4 mt-2 leading-loose">
                 <li>
-                    <a
-                        className="text-tertiary-800 hover:text-tertiary-900"
-                        href={oidcFragmentCallbackURL}
-                    >
-                        {oidcFragmentCallbackURL}
-                    </a>
+                    <span className="text-tertiary-800">{oidcFragmentCallbackURL}</span>
                 </li>
             </ul>
         </Note>
@@ -276,9 +261,7 @@ const SamlFormFields = ({ disabled, configValues }) => (
         <Note header="if required by your IdP, use the following Assertion Consumer Service (ACS) URL:">
             <ul className="pl-4 mt-2 leading-loose">
                 <li>
-                    <a className="text-tertiary-800 hover:text-tertiary-900" href={samlACSURL}>
-                        {samlACSURL}
-                    </a>
+                    <span className="text-tertiary-800">{samlACSURL}</span>
                 </li>
             </ul>
         </Note>
