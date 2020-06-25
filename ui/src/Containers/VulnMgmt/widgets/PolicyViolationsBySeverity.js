@@ -32,16 +32,8 @@ const POLICIES_QUERY = gql`
                 id
                 name
                 categories
-                description
                 policyStatus(query: $query)
-                lastUpdated
-                latestViolation(query: $query)
                 severity
-                deploymentCount(query: $query)
-                lifecycleStages
-                enforcementActions
-                notifiers
-                lastUpdated
             }
         }
     }
