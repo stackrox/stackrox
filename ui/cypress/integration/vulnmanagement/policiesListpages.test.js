@@ -22,7 +22,10 @@ describe('Policies list Page and its entity detail page , related entities sub l
         ]);
         cy.get(selectors.tableBodyColumn).each(($el) => {
             const columnValue = $el.text().toLowerCase();
-            if (columnValue !== 'no deployments' && columnValue.includes('deployment'))
+            if (
+                columnValue !== 'no failing deployments' &&
+                columnValue.includes('failing deployments')
+            )
                 allChecksForEntities(url.list.policies, 'deployment');
         });
     });

@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
+import camelCase from 'lodash/camelCase';
 
 import TableCellLink from 'Components/TableCellLink';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -16,7 +17,14 @@ const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityType
     if (textOnly) return <span data-testid={`${type}CountText`}>{text}</span>;
 
     const url = workflowState.pushListItem(selectedRowId).pushList(entityType).toUrl();
-    return <TableCellLink pdf={textOnly} url={url} text={text} dataTestId={`${type}CountLink`} />;
+    return (
+        <TableCellLink
+            pdf={textOnly}
+            url={url}
+            text={text}
+            dataTestId={`${camelCase(type)}CountLink`}
+        />
+    );
 };
 
 TableCountLink.propTypes = {

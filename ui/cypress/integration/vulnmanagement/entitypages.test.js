@@ -41,7 +41,7 @@ describe('Entities single views', () => {
     it('related entities table header should not say "0 entities" or have "page 0 of 0" if there are rows in the table', () => {
         cy.visit(url.list.policies);
 
-        cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
+        cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click({ force: true });
 
         cy.get(selectors.sidePanelTableBodyRows, { timeout: 9000 }).then((value) => {
             const { length: numRows } = value;
@@ -100,7 +100,7 @@ describe('Entities single views', () => {
             .eq(0)
             .invoke('text')
             .then((selectedPolicyStatus) => {
-                cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
+                cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click({ force: true });
 
                 if (selectedPolicyStatus === 'pass') {
                     cy.get(`${selectors.sidePanel} ${selectors.statusChips}:contains('fail')`, {
@@ -117,7 +117,7 @@ describe('Entities single views', () => {
             .eq(0)
             .invoke('text')
             .then((selectedPolicyStatus) => {
-                cy.get(`${selectors.deploymentCountLink}:eq(0)`).click({ force: true });
+                cy.get(`${selectors.failingDeploymentCountLink}:eq(0)`).click({ force: true });
 
                 cy.get(selectors.sidePanelExpandButton, { timeout: 5000 }).click();
                 if (selectedPolicyStatus === 'pass') {

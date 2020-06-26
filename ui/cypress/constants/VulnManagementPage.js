@@ -43,6 +43,7 @@ export const listSelectors = {
     cveDescription: '[data-testid="cve-description"]',
     statusChips: '[data-testid="label-chip"]',
     deploymentCountLink: '[data-testid="deploymentCountLink"]',
+    failingDeploymentCountLink: '[data-testid="failingDeploymentsCountLink"]',
     policyCountLink: '[data-testid="policyCountLink"]',
     imageCountLink: '[data-testid="imageCountLink"]',
     componentCountLink: '[data-testid="componentCountLink"]',

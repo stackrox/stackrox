@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/policyutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -26,6 +27,7 @@ func init() {
 		schema.AddExtraResolver("Policy", `alertCount(query: String): Int!`),
 		schema.AddExtraResolver("Policy", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentCount(query: String): Int!`),
+		schema.AddExtraResolver("Policy", `failingDeploymentCount(query: String): Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
 		schema.AddExtraResolver("Policy", "latestViolation(query: String): Time"),
 
@@ -167,6 +169,27 @@ func (resolver *policyResolver) DeploymentCount(ctx context.Context, args RawQue
 	}
 
 	return int32(len(resolvers)), nil
+}
+
+// FailingDeploymentCount returns the count of deployments that this policy is failing on
+func (resolver *policyResolver) FailingDeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "DeploymentCount")
+	if err := readAlerts(ctx); err != nil {
+		return 0, err
+	}
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	q = search.NewConjunctionQuery(q, resolver.getPolicyQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	// This is because alert <-> policy <-> deployment is generally 1:1.
+	return int32(len(results)), nil
 }
 
 // PolicyStatus returns the policy statusof this policy

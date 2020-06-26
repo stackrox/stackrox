@@ -145,6 +145,7 @@ export function getPolicyTableColumns(workflowState) {
             Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.DEPLOYMENT}
+                    entityTypeText="failing deployments"
                     count={original.deploymentCount}
                     textOnly={inFindingsSection || pdf}
                     selectedRowId={original.id}
