@@ -87,9 +87,7 @@ func ToPath(untarTo string, fileReader io.Reader) error {
 	}
 	if err == io.EOF {
 		return nil
-	} else if err != nil {
-		return errors.Wrap(err, "unable to generate backup in scratch path")
 	}
-	// This should not happen.
-	return errors.New("tar was read, but data remained")
+
+	return errors.Wrap(err, "unable to generate backup in scratch path")
 }

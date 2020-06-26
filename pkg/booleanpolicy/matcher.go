@@ -39,6 +39,7 @@ type sectionAndEvaluator struct {
 	evaluator evaluator.Evaluator
 }
 
+// BuildDeploymentWithProcessMatcher builds a DeploymentWithProcessMatcher.
 func BuildDeploymentWithProcessMatcher(p *storage.Policy) (DeploymentWithProcessMatcher, error) {
 	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY)
 	if err != nil {

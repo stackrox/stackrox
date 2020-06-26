@@ -103,7 +103,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 				continue
 			}
 
-			if err == nil && len(deployments) > 0 {
+			if len(deployments) > 0 {
 				d := deployments[0]
 
 				if len(d.GetContainers()) > 0 && d.GetContainers()[0].GetImage().GetId() != "" {

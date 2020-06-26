@@ -16,8 +16,6 @@ import (
 	_ "github.com/mattn/goveralls"
 	_ "github.com/mauricelam/genny"
 	_ "github.com/nilslice/protolock"
-	_ "golang.org/x/lint/golint"
-	_ "golang.org/x/tools/cmd/goimports"
 	_ "golang.org/x/tools/cmd/stringer"
 	_ "honnef.co/go/tools/cmd/staticcheck"
 )

@@ -86,16 +86,6 @@ $(PACKR_BIN): deps
 	@echo "+ $@"
 	go install github.com/gobuffalo/packr/packr
 
-GOLINT_BIN := $(GOPATH)/bin/golint
-$(GOLINT_BIN): deps
-	@echo "+ $@"
-	go install golang.org/x/lint/golint
-
-GOIMPORTS_BIN := $(GOPATH)/bin/goimports
-$(GOIMPORTS_BIN): deps
-	@echo "+ $@"
-	go install golang.org/x/tools/cmd/goimports
-
 GO_JUNIT_REPORT_BIN := $(GOPATH)/bin/go-junit-report
 $(GO_JUNIT_REPORT_BIN): deps
 	@echo "+ $@"
@@ -110,7 +100,7 @@ $(PROTOLOCK_BIN): deps
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet roxvet blanks validateimports golangci-lint no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: golangci-lint roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 # staticcheck is useful, but extremely computationally intensive on some people's machines.
 # Therefore, to allow people to continue running `make style`, staticcheck is not run along with
@@ -127,9 +117,21 @@ style: staticcheck
 endif
 
 .PHONY: golangci-lint
-golangci-lint: $(GOLANGCILINT_BIN)
-	@echo "+ $@"
+golangci-lint: $(GOLANGCILINT_BIN) volatile-generated-srcs
+ifdef CI
+	@echo '+ $@'
+	@echo 'The environment indicates we are in CI; running linters in check mode.'
+	@echo 'If this fails, run `make style`.'
+	@echo "Running with no tags..."
 	golangci-lint run
+	@echo "Running with release tags..."
+	@# We use --tests=false because some unit tests don't compile with release tags,
+	@# since they use functions that we don't define in the release build. That's okay.
+	golangci-lint run --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+else
+	golangci-lint run --fix
+	golangci-lint run --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+endif
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -163,32 +165,6 @@ fast-central: deps
 .PHONY: fast
 fast: fast-central
 
-.PHONY: fmt
-fmt: blanks
-	@echo "+ $@"
-ifdef CI
-		@echo "The environment indicates we are in CI; checking gofmt."
-		@echo 'If this fails, run `make style`.'
-		@$(eval FMT=`echo $(FORMATTING_FILES) | xargs gofmt -s -l`)
-		@echo "gofmt problems in the following files, if any:"
-		@echo $(FMT)
-		@test -z "$(FMT)"
-endif
-	@echo $(FORMATTING_FILES) | xargs gofmt -s -l -w
-
-.PHONY: imports
-imports: deps volatile-generated-srcs $(GOIMPORTS_BIN)
-	@echo "+ $@"
-ifdef CI
-		@echo "The environment indicates we are in CI; checking goimports."
-		@echo 'If this fails, run `make style`.'
-		@$(eval IMPORTS=`echo $(FORMATTING_FILES) | xargs goimports -l`)
-		@echo "goimports problems in the following files, if any:"
-		@echo $(IMPORTS)
-		@test -z "$(IMPORTS)"
-endif
-	@echo $(FORMATTING_FILES) | xargs goimports -w
-
 .PHONY: validateimports
 validateimports:
 	@echo "+ $@"
@@ -208,23 +184,6 @@ keys:
 storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
 	@protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
-
-.PHONY: lint
-lint: $(GOLINT_BIN)
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/go-lint.sh $(FORMATTING_FILES)
-
-.PHONY: vet-active-tags
-vet-active-tags: deps volatile-generated-srcs
-	@echo "+ $@"
-	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
-
-.PHONY: vet
-vet: vet-active-tags
-ifdef CI
-	@echo "+ $@ ($(RELEASE_GOTAGS))"
-	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
-endif
 
 .PHONY: blanks
 blanks:

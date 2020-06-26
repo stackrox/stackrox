@@ -175,8 +175,7 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
 	var objects []k8sRuntime.Object
-	var err error
-	for err == nil {
+	for {
 		yamlBytes, err := reader.Read()
 		if err == io.EOF {
 			break

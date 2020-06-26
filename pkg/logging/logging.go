@@ -355,7 +355,7 @@ func (r *weakLoggerRef) get() *Logger {
 	// To see why this is safe, consider that all paths through the finalizer (see below) either re-enqueue the
 	// finalizer, or store a nil pointer in r.ptr upon return (and while holding the lock). Hence, no garbage collection
 	// can have succeeded if this yields a non-nil pointer.
-	l := (*Logger)(unsafe.Pointer(ptr)) // NOVET
+	l := (*Logger)(unsafe.Pointer(ptr)) //nolint:govet
 	// A finalizer call might have started just before the above line. While holding the spinlock, increment the numGets
 	// counter to make sure the weak reference doesn't get cleared.
 	atomic.AddUint64(&r.numGets, 1)
