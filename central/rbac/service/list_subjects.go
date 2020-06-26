@@ -1,6 +1,9 @@
 package service
 
 import (
+	"sort"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/service/mapping"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -63,6 +66,40 @@ func getFilteredSubjectsByRoleBinding(rawQuery *v1.RawQuery, bindings []*storage
 	return GetFilteredSubjects(parsed, subjectsToFilter)
 }
 
+type subjectSortAccessor func(s *storage.Subject) string
+
+var subjectSortAccessors = map[string]subjectSortAccessor{
+	search.SubjectKind.String(): func(s *storage.Subject) string { return s.GetKind().String() },
+	search.SubjectName.String(): func(s *storage.Subject) string { return s.GetName() },
+}
+
+func sortSubjects(query *v1.Query, subjects []*storage.Subject) error {
+	// Need to sort here based on the way that the subjects are derived
+	if sortOptions := query.GetPagination().GetSortOptions(); len(sortOptions) > 0 {
+		accessors := make([]subjectSortAccessor, 0, len(sortOptions))
+		for _, s := range sortOptions {
+			accessor, ok := subjectSortAccessors[s.Field]
+			if !ok {
+				return errors.Errorf("sorting subjects by field %v is not supported", s.Field)
+			}
+			accessors = append(accessors, accessor)
+		}
+		sort.SliceStable(subjects, func(i, j int) bool {
+			for idx, accessor := range accessors {
+				val1, val2 := accessor(subjects[i]), accessor(subjects[j])
+				if val1 != val2 {
+					if sortOptions[idx].Reversed {
+						return val1 > val2
+					}
+					return val1 < val2
+				}
+			}
+			return false
+		})
+	}
+	return nil
+}
+
 // GetFilteredSubjects filters subjects based on a proto query. This function modifies subjectsToFilter
 func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) ([]*storage.Subject, error) {
 	pred, err := subjectFactory.GeneratePredicate(query)
@@ -76,5 +113,9 @@ func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) (
 			filteredSubjects = append(filteredSubjects, subject)
 		}
 	}
+	if err := sortSubjects(query, filteredSubjects); err != nil {
+		return nil, err
+	}
+
 	return filteredSubjects, nil
 }

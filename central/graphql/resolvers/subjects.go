@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/service"
 	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -20,6 +21,7 @@ func init() {
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("subjects(query: String, pagination: Pagination): [Subject!]!"),
+		schema.AddQuery("subjectCount(query: String): Int!"),
 		schema.AddExtraResolver("Subject", `subjectWithClusterID: [SubjectWithClusterID!]!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
 		schema.AddExtraResolver("SubjectWithClusterID", `clusterName: String!`),
@@ -89,23 +91,13 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 // Subjects resolves list of subjects matching a query
 func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Subjects")
-	if err := readK8sSubjects(ctx); err != nil {
-		return nil, err
-	}
 
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	// Subject return only users and groups, there is a separate resolver for service accounts.
-	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
-
-	filteredSubjects, err := service.GetFilteredSubjects(query, subjects)
+	filteredSubjects, err := resolver.getFilteredSubjects(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +107,42 @@ func (resolver *Resolver) Subjects(ctx context.Context, args PaginatedQuery) ([]
 		subjectResolvers = append(subjectResolvers, &subjectResolver{root: resolver, data: subject})
 	}
 
-	return subjectResolvers, nil
+	resolvers, err := paginationWrapper{
+		pv: query.Pagination,
+	}.paginate(subjectResolvers, nil)
+
+	return resolvers.([]*subjectResolver), err
+}
+
+// SubjectCount returns count of all subjects across infrastructure
+func (resolver *Resolver) SubjectCount(ctx context.Context, args RawQuery) (int32, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SubjectCount")
+
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	filteredSubjects, err := resolver.getFilteredSubjects(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	return int32(len(filteredSubjects)), nil
+}
+
+func (resolver *Resolver) getFilteredSubjects(ctx context.Context, query *v1.Query) ([]*storage.Subject, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+
+	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	// Subject return only users and groups, there is a separate resolver for service accounts.
+	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
+	return service.GetFilteredSubjects(query, subjects)
 }
 
 func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string, error) {

@@ -233,7 +233,8 @@ func (resolver *k8SRoleResolver) getServiceAccounts(ctx context.Context, args Ra
 			continue
 		}
 		if sa == nil {
-			log.Warnf("service account: %s does not exist", subject.GetName())
+			// The service account is not required to exist
+			log.Debugf("service account: %s does not exist", subject.GetName())
 			continue
 		}
 		accounts = append(accounts, sa)
