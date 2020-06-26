@@ -18,11 +18,10 @@ import {
 } from 'constants/severityColors';
 
 const CVES_QUERY = gql`
-    query getCvesByCVSS($query: String, $scopeQuery: String) {
+    query getCvesByCVSS($query: String) {
         results: vulnerabilities(query: $query) {
             cve
             cvss
-            isFixable(query: $scopeQuery)
             severity
             summary
         }
@@ -33,7 +32,6 @@ const CvesByCvssScore = ({ entityContext }) => {
     const { loading, data = {} } = useQuery(CVES_QUERY, {
         variables: {
             query: queryService.entityContextToQueryString(entityContext),
-            scopeQuery: queryService.entityContextToQueryString(entityContext),
         },
     });
 
