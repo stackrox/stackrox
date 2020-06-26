@@ -46,7 +46,7 @@ func TestMapListAlertsToPolicyCounterResolver(t *testing.T) {
 		},
 	}
 
-	counterResolver := mapListAlertsToPolicyCount(alerts)
+	counterResolver := mapListAlertsToPolicySeverityCount(alerts)
 	assert.Equal(t, int32(3), counterResolver.total)
 	assert.Equal(t, int32(2), counterResolver.low)
 	assert.Equal(t, int32(0), counterResolver.medium)

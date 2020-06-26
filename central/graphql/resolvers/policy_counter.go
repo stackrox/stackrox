@@ -58,25 +58,36 @@ func (evr *PolicyCounterResolver) Critical(ctx context.Context) int32 {
 // Static helpers.
 //////////////////
 
-func mapListAlertsToPolicyCount(alerts []*storage.ListAlert) *PolicyCounterResolver {
+func mapListAlertsToPolicySeverityCount(alerts []*storage.ListAlert) *PolicyCounterResolver {
 	counter := &PolicyCounterResolver{}
-	policyIds := set.NewStringSet()
+	policyIDs := set.NewStringSet()
 	for _, alert := range alerts {
 		if alert.GetState() != storage.ViolationState_ACTIVE {
 			continue
 		}
 		policy := alert.GetPolicy()
-		if policyIds.Contains(policy.GetId()) {
+		if !policyIDs.Add(policy.GetId()) {
 			continue
 		}
-		policyIds.Add(policy.GetId())
-		counter.total++
+		incPolicyCounter(counter, policy.GetSeverity())
+	}
+	return counter
+}
+
+func mapListAlertPoliciesToPolicySeverityCount(policies []*storage.ListAlertPolicy) *PolicyCounterResolver {
+	counter := &PolicyCounterResolver{}
+	policyIDs := set.NewStringSet()
+	for _, policy := range policies {
+		if !policyIDs.Add(policy.GetId()) {
+			continue
+		}
 		incPolicyCounter(counter, policy.GetSeverity())
 	}
 	return counter
 }
 
 func incPolicyCounter(counter *PolicyCounterResolver, severity storage.Severity) {
+	counter.total++
 	switch severity {
 	case storage.Severity_LOW_SEVERITY:
 		counter.low++

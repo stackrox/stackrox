@@ -387,7 +387,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicyCount(alerts), nil
+	return mapListAlertsToPolicySeverityCount(alerts), nil
 }
 
 // PolicyStatus returns true if there is no policy violation for this cluster

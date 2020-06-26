@@ -186,7 +186,7 @@ func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args 
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicyCount(alerts), nil
+	return mapListAlertsToPolicySeverityCount(alerts), nil
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster

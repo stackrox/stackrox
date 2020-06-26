@@ -12,41 +12,29 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import entityTypes from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import queryService from 'utils/queryService';
-import { getPolicySeverityCounts, sortDeploymentsByPolicyViolations } from 'utils/policyUtils';
 
 const DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS = gql`
-    query deploymentsWithMostSeverePolicyViolations(
-        $query: String
-        $policyQuery: String
-        $pagination: Pagination
-    ) {
-        results: deployments(query: $query, pagination: $pagination) {
+    query deploymentsWithMostSeverePolicyViolations($query: String, $pagination: Pagination) {
+        results: deploymentsWithMostSevereViolations(query: $query, pagination: $pagination) {
             id
             name
             clusterName
             namespaceName: namespace
-            failingPolicies(query: $policyQuery) {
-                id
-                severity
+            failingPolicySeverityCounts {
+                critical
+                high
+                medium
+                low
             }
         }
     }
 `;
 
-const processData = (data, workflowState, limit) => {
-    const results = data.results.map((deployment) => {
-        const policySeverityCounts = getPolicySeverityCounts(deployment.failingPolicies);
-
-        return { ...deployment, policySeverityCounts };
-    });
-
-    // @TODO, remove the chained .slice() call after backend pagination is available
-    const sortedDeployments = sortDeploymentsByPolicyViolations(results).slice(0, limit);
-
-    return sortedDeployments.map(
-        ({ id, name, clusterName, namespaceName, policySeverityCounts }) => {
+const processData = (data, workflowState) => {
+    return data.results.map(
+        ({ id, name, clusterName, namespaceName, failingPolicySeverityCounts }) => {
             const text = name;
-            const { critical, high, medium, low } = policySeverityCounts;
+            const { critical, high, medium, low } = failingPolicySeverityCounts;
             const tooltipTitle = name;
             const tooltipSubtitle = `${clusterName} / ${namespaceName}`;
             const tooltipBody = (
@@ -103,12 +91,12 @@ const processData = (data, workflowState, limit) => {
 };
 
 const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => {
+    const entityContextObject = queryService.entityContextToQueryObject(entityContext);
+    const queryObject = { ...entityContextObject, ...{ Category: 'Vulnerability Management' } };
     const { loading, data = {}, error } = useQuery(DEPLOYMENTS_WITH_MOST_SEVERE_POLICY_VIOLATIONS, {
         variables: {
-            query: queryService.entityContextToQueryString(entityContext),
-            policyQuery: queryService.objectToWhereClause({
-                Category: 'Vulnerability Management',
-            }),
+            query: queryService.objectToWhereClause(queryObject),
+            pagination: queryService.getPagination({}, 0, limit),
         },
     });
 
@@ -125,7 +113,7 @@ const DeploymentsWithMostSeverePolicyViolations = ({ entityContext, limit }) => 
         .toUrl();
 
     if (!loading && !error) {
-        const processedData = processData(data, workflowState, limit);
+        const processedData = processData(data, workflowState);
 
         if (!processedData || processedData.length === 0) {
             content = (

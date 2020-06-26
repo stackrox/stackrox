@@ -281,7 +281,7 @@ func (resolver *deploymentResolver) FailingPolicies(ctx context.Context, args Pa
 		return nil, err
 	}
 
-	q, err = resolver.getFailingAlertsQuery(q)
+	q, err = resolver.getDeploymentActiveAlertsQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func (resolver *deploymentResolver) FailingPolicyCount(ctx context.Context, args
 	if err != nil {
 		return 0, err
 	}
-	query, err = resolver.getFailingAlertsQuery(query)
+	query, err = resolver.getDeploymentActiveAlertsQuery(query)
 	if err != nil {
 		return 0, err
 	}
@@ -353,7 +353,7 @@ func (resolver *deploymentResolver) FailingRuntimePolicyCount(ctx context.Contex
 	if err != nil {
 		return 0, err
 	}
-	query, err = resolver.getFailingAlertsQuery(query)
+	query, err = resolver.getDeploymentActiveAlertsQuery(query)
 	if err != nil {
 		return 0, err
 	}
@@ -386,7 +386,7 @@ func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, ar
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicyCount(alerts), nil
+	return mapListAlertsToPolicySeverityCount(alerts), nil
 }
 
 // Secrets returns the total number of secrets for this deployment
@@ -685,7 +685,7 @@ func (resolver *deploymentResolver) unresolvedAlertsExists(ctx context.Context, 
 		return false, err
 	}
 
-	q, err := resolver.getFailingAlertsQuery(q)
+	q, err := resolver.getDeploymentActiveAlertsQuery(q)
 	if err != nil {
 		return false, err
 	}
@@ -709,7 +709,7 @@ func (resolver *deploymentResolver) getConjunctionQuery(q *v1.Query) (*v1.Query,
 	return search.AddAsConjunction(q, resolver.getDeploymentQuery())
 }
 
-func (resolver *deploymentResolver) getFailingAlertsQuery(q *v1.Query) (*v1.Query, error) {
+func (resolver *deploymentResolver) getDeploymentActiveAlertsQuery(q *v1.Query) (*v1.Query, error) {
 	q, err := resolver.getConjunctionQuery(q)
 	if err != nil {
 		return nil, err
