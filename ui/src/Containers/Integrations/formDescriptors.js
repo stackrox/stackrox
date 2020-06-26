@@ -210,7 +210,7 @@ const formDescriptors = {
                 label: 'Password (optional)',
                 jsonpath: 'generic.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Headers',
@@ -242,7 +242,7 @@ const formDescriptors = {
                 label: 'Password or API Token',
                 jsonpath: 'jira.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Issue Type',
@@ -302,6 +302,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'email.password',
                 type: 'password',
+                ...storedCredentialFields,
             },
             {
                 label: 'From',
@@ -413,6 +414,7 @@ const formDescriptors = {
                 jsonpath: 'cscc.serviceAccount',
                 type: 'text',
                 placeholder: '{"type": "service_account", "project_id": ...}',
+                ...storedCredentialFields,
             },
         ],
         splunk: [
@@ -432,7 +434,7 @@ const formDescriptors = {
                 label: 'HTTP Event Collector Token',
                 jsonpath: 'splunk.httpToken',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'HEC Truncate Limit',
@@ -484,7 +486,7 @@ const formDescriptors = {
                 label: 'PagerDuty Integration Key',
                 jsonpath: 'pagerduty.apiKey',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
         ],
     },

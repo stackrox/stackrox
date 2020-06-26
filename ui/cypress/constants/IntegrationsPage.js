@@ -20,6 +20,12 @@ export const selectors = {
     googleCloudPlatformTile: 'div[role="button"]:contains("Google Cloud Platform")',
     anchoreScannerTile: 'div[role="button"]:contains("Anchore Scanner")',
     ibmCloudTile: 'div[role="button"]:contains("IBM Cloud")',
+    googleCloudSCCTile: 'div[role="button"]:contains("Google Cloud SCC")',
+    jiraTile: 'div[role="button"]:contains("Jira")',
+    emailTile: 'div[role="button"]:contains("Email")',
+    splunkTile: 'div[role="button"]:contains("Splunk")',
+    pagerDutyTile: 'div[role="button"]:contains("PagerDuty")',
+    genericWebhookTile: 'div[role="button"]:contains("Generic Webhook")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
