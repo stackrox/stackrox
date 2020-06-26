@@ -832,6 +832,9 @@ commands:
       num-nodes:
         type: integer
         default: 3
+      machine-type:
+        type: string
+        default: e2-standard-4
 
     steps:
       - setup-gcp
@@ -848,6 +851,10 @@ commands:
             NUM_NODES="<< parameters.num-nodes >>"
             cci-export NUM_NODES "$NUM_NODES"
             echo "Number of nodes for cluster is $NUM_NODES"
+
+            MACHINE_TYPE="<< parameters.machine-type >>"
+            cci-export MACHINE_TYPE "$MACHINE_TYPE"
+            echo "Machine type is set as to $MACHINE_TYPE"
 
             GKE_RELEASE_CHANNEL="stable"
             if .circleci/pr_has_label.sh ci-gke-release-channel-rapid; then
@@ -2205,6 +2212,7 @@ jobs:
           run-on-master: false
       - provision-gke-cluster:
           cluster-id: scale-test
+          machine-type: e2-standard-8
 
   provision-openshift-api-e2e-tests:
     machine: true
@@ -3264,6 +3272,7 @@ jobs:
       - SCANNER_SUPPORT: true
       - STORAGE: pvc
       - STORAGE_CLASS: faster
+      - STORAGE_SIZE: 100
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
       - ROX_ROCKSDB: true
