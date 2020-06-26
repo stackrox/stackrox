@@ -12,6 +12,8 @@ All notable changes to this project that require documentation updates will be d
 - UI: Reset page to 1 when sort fields change (ROX-4267)
 - Add a tcp prefix to the spec.Ports.name for the scanner-db service. Istio uses this name for protocol detection.
 - Customer advisory: The default policy "Required Label: Email" will be deprecated starting release 48.0
+- RocksDB is set as the default DB and completely replaces BadgerDB and replaces a majority of BoltDB. This should make Central significantly more performant.
+  Users may see slowness during startup on initial upgrade as the data is being migrated.
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.

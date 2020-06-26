@@ -9,7 +9,7 @@ if [ -d "/var/lib/stackrox/.restore" ]; then
 
 	# If RocksDB is true, then we need to make sure that if we are restoring a backup with RocksDB
 	# that we preserve the saved BadgerDB and the backed up BoltDB
-	if [ "${ROX_ROCKSDB}" == "true" ] && [ ! -d /var/lib/stackrox/.restore/badgerdb ]; then
+	if [ "${ROX_ROCKSDB}" != "false" ] && [ ! -d /var/lib/stackrox/.restore/badgerdb ]; then
 		if [ -d /var/lib/stackrox/.backup/badgerdb ]; then
 			echo "Preserving BadgerDB"
 			cp -R /var/lib/stackrox/.backup/badgerdb "/var/lib/stackrox/badgerdb"

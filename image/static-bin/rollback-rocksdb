@@ -4,7 +4,7 @@ dbpath="/var/lib/stackrox/stackrox.db"
 backup_boltdbpath="/var/lib/stackrox/stackrox.db.pre-rocksdb-snapshot"
 rm "${backup_boltdbpath}.tmp" 2> /dev/null || true
 
-if [ "${ROX_ROCKSDB}" == "true" ] || [ ! -f "$backup_boltdbpath" ]; then
+if [ "${ROX_ROCKSDB}" != "false" ] || [ ! -f "$backup_boltdbpath" ]; then
   exit 0
 fi
 
