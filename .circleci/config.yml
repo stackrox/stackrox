@@ -1151,11 +1151,10 @@ commands:
             echo "use-crio: '<< parameters.crio >>'" >> openshift/configuration.yaml
             cat openshift/configuration.yaml
 
-            docker run --rm -t \
-              -v "$PWD/openshift:/well-known" \
+            docker run --rm -t -v "$PWD/openshift:/well-known" \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
               "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
-              create
+              create 2>&1 | scripts/ci/monitor-output.sh 60
 
       - store_artifacts:
           path: openshift
