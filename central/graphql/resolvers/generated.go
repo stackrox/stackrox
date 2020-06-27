@@ -175,7 +175,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"tolerationsConfig: TolerationsConfig",
 		"type: ClusterType!",
 	}))
+	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
+		"sensorCertExpiry: Time",
+	}))
 	utils.Must(builder.AddType("ClusterStatus", []string{
+		"certExpiryStatus: ClusterCertExpiryStatus",
 		"lastContact: Time",
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
@@ -2369,6 +2373,35 @@ func (resolver *clusterResolver) Type(ctx context.Context) string {
 	return value.String()
 }
 
+type clusterCertExpiryStatusResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterCertExpiryStatus
+}
+
+func (resolver *Resolver) wrapClusterCertExpiryStatus(value *storage.ClusterCertExpiryStatus, ok bool, err error) (*clusterCertExpiryStatusResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterCertExpiryStatusResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterCertExpiryStatuses(values []*storage.ClusterCertExpiryStatus, err error) ([]*clusterCertExpiryStatusResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterCertExpiryStatusResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterCertExpiryStatusResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetSensorCertExpiry()
+	return timestamp(value)
+}
+
 type clusterStatusResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -2391,6 +2424,11 @@ func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, e
 		output[i] = &clusterStatusResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *clusterStatusResolver) CertExpiryStatus(ctx context.Context) (*clusterCertExpiryStatusResolver, error) {
+	value := resolver.data.GetCertExpiryStatus()
+	return resolver.root.wrapClusterCertExpiryStatus(value, true, nil)
 }
 
 func (resolver *clusterStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {

@@ -762,6 +762,12 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    Secret getSecret(String name, String namespace) {
+        return evaluateWithRetry(2, 3) {
+            return client.secrets().inNamespace(namespace).withName(name).get()
+        }
+    }
+
     /*
         Network Policy Methods
     */

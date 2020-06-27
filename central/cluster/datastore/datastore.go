@@ -47,11 +47,13 @@ type DataStore interface {
 	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
 	RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error
 	UpdateClusterContactTimes(ctx context.Context, t time.Time, ids ...string) error
-	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade status
-	// in this endpoint will be ignored. To insert that, callers MUST separately call
-	// UpdateClusterUpgradeStatus.
+	// UpdateClusterStatus updates the cluster status. Note that any cluster-upgrade or cluster-cert-expiry status
+	// passed to this endpoint will be ignored. To insert that, callers MUST separately call
+	// UpdateClusterUpgradeStatus or UpdateClusterCertExpiry status.
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
+	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
+
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)

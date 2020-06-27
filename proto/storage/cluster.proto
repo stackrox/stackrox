@@ -98,12 +98,17 @@ message Cluster {
     int64                     priority                         = 20;
 }
 
+message ClusterCertExpiryStatus {
+    google.protobuf.Timestamp sensor_cert_expiry = 1;
+}
+
 message ClusterStatus {
     string                    sensor_version        = 1;
     google.protobuf.Timestamp last_contact          = 2;
     ProviderMetadata          provider_metadata     = 3;
     OrchestratorMetadata      orchestrator_metadata = 4;
     ClusterUpgradeStatus      upgrade_status        = 5;
+    ClusterCertExpiryStatus   cert_expiry_status    = 6;
 }
 
 message ClusterUpgradeStatus {

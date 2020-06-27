@@ -203,6 +203,20 @@ func (mr *MockDataStoreMockRecorder) UpdateCluster(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCluster", reflect.TypeOf((*MockDataStore)(nil).UpdateCluster), arg0, arg1)
 }
 
+// UpdateClusterCertExpiryStatus mocks base method
+func (m *MockDataStore) UpdateClusterCertExpiryStatus(arg0 context.Context, arg1 string, arg2 *storage.ClusterCertExpiryStatus) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateClusterCertExpiryStatus", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterCertExpiryStatus indicates an expected call of UpdateClusterCertExpiryStatus
+func (mr *MockDataStoreMockRecorder) UpdateClusterCertExpiryStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterCertExpiryStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterCertExpiryStatus), arg0, arg1, arg2)
+}
+
 // UpdateClusterContactTimes mocks base method
 func (m *MockDataStore) UpdateClusterContactTimes(arg0 context.Context, arg1 time.Time, arg2 ...string) error {
 	m.ctrl.T.Helper()

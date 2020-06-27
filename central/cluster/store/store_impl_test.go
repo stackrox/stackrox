@@ -33,11 +33,13 @@ func (suite *ClusterStoreTestSuite) TearDownTest() {
 	testutils.TearDownDB(suite.db)
 }
 
-func (suite *ClusterStoreTestSuite) hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus, upgradeStatus *storage.ClusterUpgradeStatus) *storage.Cluster {
+func (suite *ClusterStoreTestSuite) hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus, upgradeStatus *storage.ClusterUpgradeStatus, certExpiryStatus *storage.ClusterCertExpiryStatus) *storage.Cluster {
 	clonedCluster := cluster.Clone()
 	suite.Nil(status.GetUpgradeStatus())
+	suite.Nil(status.GetCertExpiryStatus())
 	clonedStatus := status.Clone()
 	clonedStatus.UpgradeStatus = upgradeStatus
+	clonedStatus.CertExpiryStatus = certExpiryStatus
 	clonedCluster.Status = clonedStatus
 	return clonedCluster
 }
@@ -81,6 +83,12 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		},
 	}
 
+	expiry := ptypes.TimestampNow()
+	certExpiryStatuses := []*storage.ClusterCertExpiryStatus{
+		nil,
+		{SensorCertExpiry: expiry},
+	}
+
 	// Test Add
 	for _, b := range clusters {
 		id, err := suite.store.AddCluster(b)
@@ -102,13 +110,14 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		err = suite.store.UpdateClusterContactTimes(t, b.GetId())
 		suite.NoError(err)
 		suite.NoError(suite.store.UpdateClusterUpgradeStatus(b.GetId(), upgradeStatuses[i]))
+		suite.NoError(suite.store.UpdateClusterCertExpiryStatus(b.GetId(), certExpiryStatuses[i]))
 	}
 
 	for i, b := range clusters {
 		got, exists, err := suite.store.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i]))
+		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i], certExpiryStatuses[i]))
 	}
 
 	gotClusters, err := suite.store.GetClusters()
@@ -120,7 +129,7 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 				continue
 			}
 			found = true
-			suite.Equal(gotCluster, suite.hydratedCluster(actualCluster, statuses[i], upgradeStatuses[i]))
+			suite.Equal(gotCluster, suite.hydratedCluster(actualCluster, statuses[i], upgradeStatuses[i], certExpiryStatuses[i]))
 		}
 		suite.True(found)
 	}
@@ -135,19 +144,10 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 	}
 
 	for i, b := range clusters {
-		t, err := ptypes.TimestampFromProto(statuses[i].GetLastContact())
-		suite.NoError(err)
-		err = suite.store.UpdateClusterContactTimes(t, b.GetId())
-		suite.NoError(err)
-		suite.NoError(suite.store.UpdateClusterUpgradeStatus(b.GetId(), upgradeStatuses[i]))
-		suite.NoError(suite.store.UpdateClusterStatus(b.GetId(), statuses[i]))
-	}
-
-	for i, b := range clusters {
 		got, exists, err := suite.store.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i]))
+		suite.Equal(got, suite.hydratedCluster(b, statuses[i], upgradeStatuses[i], certExpiryStatuses[i]))
 	}
 
 	// Test Count
@@ -168,10 +168,11 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 }
 
 func (suite *ClusterStoreTestSuite) TestClusterStatusUpdatesNoRace() {
+	now := ptypes.TimestampNow()
 	id, err := suite.store.AddCluster(&storage.Cluster{Name: "blah"})
 	suite.NoError(err)
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 	go func() {
 		defer wg.Done()
 		suite.NoError(suite.store.UpdateClusterStatus(id, &storage.ClusterStatus{SensorVersion: "BLAH"}))
@@ -179,6 +180,10 @@ func (suite *ClusterStoreTestSuite) TestClusterStatusUpdatesNoRace() {
 	go func() {
 		defer wg.Done()
 		suite.NoError(suite.store.UpdateClusterUpgradeStatus(id, &storage.ClusterUpgradeStatus{Upgradability: storage.ClusterUpgradeStatus_UP_TO_DATE}))
+	}()
+	go func() {
+		defer wg.Done()
+		suite.NoError(suite.store.UpdateClusterCertExpiryStatus(id, &storage.ClusterCertExpiryStatus{SensorCertExpiry: now}))
 	}()
 	wg.Wait()
 
@@ -193,6 +198,7 @@ func (suite *ClusterStoreTestSuite) TestClusterStatusUpdatesNoRace() {
 			UpgradeStatus: &storage.ClusterUpgradeStatus{
 				Upgradability: storage.ClusterUpgradeStatus_UP_TO_DATE,
 			},
+			CertExpiryStatus: &storage.ClusterCertExpiryStatus{SensorCertExpiry: now},
 		},
 	}, got)
 }

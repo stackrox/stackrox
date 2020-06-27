@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sac"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,6 +22,10 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+)
+
+var (
+	clusterDSSAC = sac.WithAllAccess(context.Background())
 )
 
 type serviceImpl struct {
@@ -64,12 +70,23 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	// Fetch the cluster metadata, then process the stream.
 	clusterID := svc.GetId()
-	_, exists, err := s.clusters.GetCluster(server.Context(), clusterID)
+	_, exists, err := s.clusters.GetCluster(clusterDSSAC, clusterID)
 	if err != nil {
 		return status.Errorf(codes.Internal, "couldn't look-up cluster %q: %v", clusterID, err)
 	}
 	if !exists {
 		return status.Errorf(codes.NotFound, "cluster %q not found in DB; it was possibly deleted", clusterID)
+	}
+
+	if expiry := identity.Expiry(); !expiry.IsZero() {
+		converted, err := types.TimestampProto(expiry)
+		if err != nil {
+			log.Warnf("Failed to convert expiry of sensor cert (%v) from cluster %s to proto: %v", expiry, clusterID, err)
+		} else {
+			if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, clusterID, &storage.ClusterCertExpiryStatus{SensorCertExpiry: converted}); err != nil {
+				log.Warnf("Failed to update cluster expiry status for cluster %s: %v", clusterID, err)
+			}
+		}
 	}
 
 	// Generate a pipeline for the cluster to use.

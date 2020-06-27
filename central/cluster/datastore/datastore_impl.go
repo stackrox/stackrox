@@ -63,6 +63,13 @@ func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id stri
 	return ds.storage.UpdateClusterUpgradeStatus(id, upgradeStatus)
 }
 
+func (ds *datastoreImpl) UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error {
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+	return ds.storage.UpdateClusterCertExpiryStatus(id, clusterCertExpiryStatus)
+}
+
 func (ds *datastoreImpl) UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err

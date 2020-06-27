@@ -231,42 +231,40 @@ func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (clu
 }
 
 func (b *storeImpl) populateClusterStatus(tx *bolt.Tx, cluster *storage.Cluster) {
-	status, err := b.getClusterStatus(tx, cluster.GetId())
+	id := []byte(cluster.GetId())
+	status, err := b.getClusterStatus(tx, id)
 	if err != nil {
 		log.Warnf("Could not get cluster status for %q: %v", cluster.GetId(), err)
 		return
 	}
-	t, err := b.getClusterContactTime(tx, cluster.GetId())
-	if err != nil {
-		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
-		return
-	}
-	if t != nil {
+	if lastContact := getClusterContactTime(tx, id); lastContact != nil {
 		if status == nil {
 			status = &storage.ClusterStatus{}
 		}
-		status.LastContact = t
+		status.LastContact = lastContact
 	}
+
 	cluster.Status = status
 }
 
-func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*ptypes.Timestamp, error) {
+func getClusterContactTime(tx *bolt.Tx, id []byte) *ptypes.Timestamp {
 	bucket := tx.Bucket(clusterLastContactTimeBucket)
-	val := bucket.Get([]byte(id))
+	val := bucket.Get(id)
 	if val == nil {
-		return nil, nil
+		return nil
 	}
 	t := new(ptypes.Timestamp)
 	err := proto.Unmarshal(val, t)
 	if err != nil {
-		return nil, err
+		log.Warnf("Couldn't unmarshal last contact time for cluster id %s: %v", string(id), err)
+		return nil
 	}
-	return t, nil
+	return t
 }
 
-func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id string) (*storage.ClusterStatus, error) {
+func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id []byte) (*storage.ClusterStatus, error) {
 	bucket := tx.Bucket(clusterStatusBucket)
-	val := bucket.Get([]byte(id))
+	val := bucket.Get(id)
 	if val == nil {
 		return nil, nil
 	}
@@ -280,8 +278,9 @@ func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id string) (*storage.ClusterSt
 
 func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterStatus")
+	idBytes := []byte(id)
 	return b.Update(func(tx *bolt.Tx) error {
-		existingStatus, err := b.getClusterStatus(tx, id)
+		existingStatus, err := b.getClusterStatus(tx, idBytes)
 		if err != nil {
 			return err
 		}
@@ -290,6 +289,7 @@ func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus
 			shallowClonedStatus := *status
 			status = &shallowClonedStatus
 			status.UpgradeStatus = existingStatus.UpgradeStatus
+			status.CertExpiryStatus = existingStatus.CertExpiryStatus
 		}
 
 		bytes, err := proto.Marshal(status)
@@ -297,26 +297,40 @@ func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus
 			return errors.Wrap(err, "marshaling cluster status")
 		}
 		bucket := tx.Bucket(clusterStatusBucket)
-		return bucket.Put([]byte(id), bytes)
+		return bucket.Put(idBytes, bytes)
 	})
 }
 
 func (b *storeImpl) UpdateClusterUpgradeStatus(id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterUpgradeStatus")
+	return b.partialUpdateClusterStatus(id, func(status *storage.ClusterStatus) {
+		status.UpgradeStatus = upgradeStatus
+	}, "ClusterUpgradeStatus")
+}
+
+func (b *storeImpl) UpdateClusterCertExpiryStatus(id string, certExpiryStatus *storage.ClusterCertExpiryStatus) error {
+	return b.partialUpdateClusterStatus(id, func(status *storage.ClusterStatus) {
+		status.CertExpiryStatus = certExpiryStatus
+	}, "ClusterCertExpiryStatus")
+}
+
+func (b *storeImpl) partialUpdateClusterStatus(id string, partialUpdateFunc func(*storage.ClusterStatus), opType string) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, opType)
+	idBytes := []byte(id)
 	return b.Update(func(tx *bolt.Tx) error {
-		existingStatus, err := b.getClusterStatus(tx, id)
+		existingStatus, err := b.getClusterStatus(tx, idBytes)
 		if err != nil {
 			return err
 		}
 		if existingStatus == nil {
 			existingStatus = new(storage.ClusterStatus)
 		}
-		existingStatus.UpgradeStatus = upgradeStatus
+		partialUpdateFunc(existingStatus)
 		bytes, err := proto.Marshal(existingStatus)
 		if err != nil {
 			return errors.Wrap(err, "marshaling cluster status")
 		}
 		bucket := tx.Bucket(clusterStatusBucket)
-		return bucket.Put([]byte(id), bytes)
+		return bucket.Put(idBytes, bytes)
 	})
+
 }

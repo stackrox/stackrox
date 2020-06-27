@@ -74,6 +74,7 @@ interface OrchestratorMain {
     def createImagePullSecret(Secret secret)
     def deleteSecret(String name, String namespace)
     def getSecretCount(String ns)
+    io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
 
     //Namespaces
     String createNamespace(String ns)
