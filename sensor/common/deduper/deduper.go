@@ -7,6 +7,7 @@ import (
 
 	"github.com/mitchellh/hashstructure"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/messagestream"
@@ -38,10 +39,14 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messages
 	}
 }
 
+func isRuntimeAlert(msg *central.MsgFromSensor) bool {
+	return msg.GetEvent().GetAlertResults().GetStage() == storage.LifecycleStage_RUNTIME
+}
+
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok || eventMsg.Event.GetProcessIndicator() != nil {
-		// We only dedupe event messages (excluding process indicators which are always unique), other messages get forwarded directly.
+	if !ok || eventMsg.Event.GetProcessIndicator() != nil || isRuntimeAlert(msg) {
+		// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique), other messages get forwarded directly.
 		return d.stream.Send(msg)
 	}
 	event := eventMsg.Event
