@@ -26,6 +26,8 @@ export const selectors = {
     splunkTile: 'div[role="button"]:contains("Splunk")',
     pagerDutyTile: 'div[role="button"]:contains("PagerDuty")',
     genericWebhookTile: 'div[role="button"]:contains("Generic Webhook")',
+    amazonS3Tile: 'div[role="button"]:contains("Amazon S3")',
+    googleCloudStorageTile: 'div[role="button"]:contains("Google Cloud Storage")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',
