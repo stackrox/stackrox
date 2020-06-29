@@ -188,6 +188,26 @@ export function formatLastCheckIn(status) {
     return 'N/A';
 }
 
+export function getCredentialExpirationProps(certExpiryStatus) {
+    if (certExpiryStatus?.sensorCertExpiry) {
+        const { sensorCertExpiry } = certExpiryStatus;
+        const now = new Date();
+        const diffInWords = dateFns.distanceInWordsStrict(sensorCertExpiry, now);
+        const diffInDays = dateFns.differenceInDays(sensorCertExpiry, now);
+        const showExpiringSoon = diffInDays < 30;
+        let messageType;
+        if (diffInDays < 7) {
+            messageType = 'error';
+        } else if (diffInDays < 30) {
+            messageType = 'warn';
+        } else {
+            messageType = 'info';
+        }
+        return { messageType, showExpiringSoon, sensorCertExpiry, diffInWords };
+    }
+    return null;
+}
+
 export function formatSensorVersion(status) {
     return (status && status.sensorVersion) || 'Not Running';
 }
@@ -320,7 +340,6 @@ export default {
     formatCollectionMethod,
     formatConfiguredField,
     formatLastCheckIn,
-    formatUpgradeMessage,
     parseUpgradeStatus,
     wizardSteps,
 };

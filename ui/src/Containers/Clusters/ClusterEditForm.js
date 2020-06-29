@@ -403,7 +403,7 @@ ClusterEditForm.propTypes = {
         centralApiEndpoint: PropTypes.string,
         collectionMethod: PropTypes.string,
         collectorImage: PropTypes.string,
-        admissionController: PropTypes.string,
+        admissionController: PropTypes.bool,
         admissionControllerUpdates: PropTypes.bool,
         tolerationsConfig: PropTypes.shape({
             disabled: PropTypes.bool,

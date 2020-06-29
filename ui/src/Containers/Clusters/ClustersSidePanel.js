@@ -20,6 +20,7 @@ import {
     clusterDetailPollingInterval,
     clusterTypeOptions,
     formatUpgradeMessage,
+    getCredentialExpirationProps,
     getUpgradeStatusDetail,
     newClusterDefault,
     parseUpgradeStatus,
@@ -27,7 +28,13 @@ import {
 } from './cluster.helpers';
 import CollapsibleCard from '../../Components/CollapsibleCard';
 
-function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, upgradeStatus }) {
+function ClustersSidePanel({
+    metadata,
+    selectedClusterId,
+    setSelectedClusterId,
+    upgradeStatus,
+    certExpiryStatus,
+}) {
     const defaultCluster = cloneDeep(newClusterDefault);
     const envAwareClusterDefault = {
         ...defaultCluster,
@@ -212,6 +219,7 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
     const upgradeStatusDetail = upgradeStatus && getUpgradeStatusDetail(upgradeStatus);
     const upgradeMessage =
         upgradeStatus && formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
+    const credentialExpirationProps = getCredentialExpirationProps(certExpiryStatus);
 
     return (
         <Panel
@@ -224,6 +232,14 @@ function ClustersSidePanel({ metadata, selectedClusterId, setSelectedClusterId, 
             {!!messageState && (
                 <div className="m-4">
                     <Message type={messageState.type} message={messageState.message} />
+                </div>
+            )}
+            {!!credentialExpirationProps && credentialExpirationProps.showExpiringSoon && (
+                <div className="m-4">
+                    <Message
+                        type={credentialExpirationProps.messageType}
+                        message={`This cluster’s credentials expire in ${credentialExpirationProps.diffInWords}. Deploy a new bundle to refresh the credentials.`}
+                    />
                 </div>
             )}
             {!!upgradeMessage && (
@@ -287,11 +303,13 @@ ClustersSidePanel.propTypes = {
     setSelectedClusterId: PropTypes.func.isRequired,
     selectedClusterId: PropTypes.string,
     upgradeStatus: PropTypes.shape({}),
+    certExpiryStatus: PropTypes.shape({ sensorCertExpiry: PropTypes.string }),
 };
 
 ClustersSidePanel.defaultProps = {
     selectedClusterId: '',
     upgradeStatus: null,
+    certExpiryStatus: null,
 };
 
 const mapStateToProps = createStructuredSelector({

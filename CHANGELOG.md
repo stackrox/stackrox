@@ -14,6 +14,7 @@ All notable changes to this project that require documentation updates will be d
 - Customer advisory: The default policy "Required Label: Email" will be deprecated starting release 48.0
 - RocksDB is set as the default DB and completely replaces BadgerDB and replaces a majority of BoltDB. This should make Central significantly more performant.
   Users may see slowness during startup on initial upgrade as the data is being migrated.
+- Added UI to show cluster credential expiry in the cluster page (ROX-5034).
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.

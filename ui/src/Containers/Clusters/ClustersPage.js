@@ -53,7 +53,9 @@ import {
     formatSensorVersion,
     parseUpgradeStatus,
     getUpgradeableClusters,
+    getCredentialExpirationProps,
 } from './cluster.helpers';
+import CredentialExpiration from './CredentialExpiration';
 
 const ClustersPage = ({
     history,
@@ -326,44 +328,58 @@ const ClustersPage = ({
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'type',
             Header: 'Orchestrator',
             Cell: ({ original }) => formatClusterType(original.type),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'collectionMethod',
             Header: 'Runtime collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'admissionController',
             Header: 'Admission Controller created',
             Cell: ({ original }) => formatConfiguredField(original.admissionController),
-            headerClassName: `w-1/4 ${defaultHeaderClassName}`,
-            className: `w-1/4 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'status.lastContact',
             Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'status.upgradeStatus',
             Header: 'Upgrade status',
             Cell: ({ original }) => getUpgradeStatusField(original),
             headerClassName: `w-1/7 ${defaultHeaderClassName}`,
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            accessor: 'status.sensorVersion',
             Header: 'Current Sensor version',
             Cell: ({ original }) => formatSensorVersion(original.status),
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
+            sortMethod: sortVersion,
+        },
+        {
+            Header: 'Credential Expiration',
+            Cell: ({ original }) => {
+                const props = getCredentialExpirationProps(original.status?.certExpiryStatus);
+                if (!props) {
+                    return 'N/A';
+                }
+                return (
+                    <CredentialExpiration
+                        expiration={props.sensorCertExpiry}
+                        showExpiringSoon={props.showExpiringSoon}
+                        type={props.messageType}
+                        diffInWords={props.diffInWords}
+                    />
+                );
+            },
             headerClassName: `w-1/6 ${defaultHeaderClassName}`,
             className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
             sortMethod: sortVersion,
@@ -423,7 +439,11 @@ const ClustersPage = ({
         </div>
     ));
 
-    function getCurrentUpgradeStatusOrNull() {
+    // getValueFromSelectedClusterAtPath returns the value at the given path
+    // within the selected cluster, if there is a selected cluster.
+    // It returns null if there is no selected cluster, or if the selected cluster
+    // has no value at path.
+    function getValueFromSelectedClusterAtPath(path) {
         if (!currentClusters || !currentClusters.length) {
             return null;
         }
@@ -431,7 +451,15 @@ const ClustersPage = ({
         if (!selectedCluster) {
             return null;
         }
-        return get(selectedCluster, 'status.upgradeStatus', null);
+        return get(selectedCluster, path, null);
+    }
+
+    function getCurrentCertExpiryStatusOrNull() {
+        return getValueFromSelectedClusterAtPath('status.certExpiryStatus');
+    }
+
+    function getCurrentUpgradeStatusOrNull() {
+        return getValueFromSelectedClusterAtPath('status.upgradeStatus');
     }
 
     return (
@@ -471,6 +499,7 @@ const ClustersPage = ({
                         selectedClusterId={selectedClusterId}
                         setSelectedClusterId={setSelectedClusterId}
                         upgradeStatus={getCurrentUpgradeStatusOrNull()}
+                        certExpiryStatus={getCurrentCertExpiryStatusOrNull()}
                     />
                 </div>
             </div>

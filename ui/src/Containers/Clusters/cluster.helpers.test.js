@@ -9,6 +9,7 @@ import {
     formatSensorVersion,
     parseUpgradeStatus,
     getUpgradeableClusters,
+    getCredentialExpirationProps,
 } from './cluster.helpers';
 
 describe('cluster helpers', () => {
@@ -574,6 +575,41 @@ describe('cluster helpers', () => {
                 type: 'intervention',
             };
             expect(displayValue).toEqual(expected);
+        });
+    });
+
+    describe('get credential expiration props', () => {
+        function callWithExpiryAfterDays(days) {
+            // Add a minute to account for any time that will pass before we call the function.
+            const expiry = dateFns.addMinutes(dateFns.addDays(new Date(), days), 1);
+            const props = getCredentialExpirationProps({ sensorCertExpiry: expiry });
+            expect(props.sensorCertExpiry).toBe(expiry);
+            return props;
+        }
+
+        it('should return null if null status', () => {
+            expect(getCredentialExpirationProps(null)).toBe(null);
+        });
+        it('should return null if undefined expiry', () => {
+            expect(getCredentialExpirationProps({})).toBe(null);
+        });
+        it('should return info if expiry is more than 30 days away', () => {
+            const props = callWithExpiryAfterDays(31);
+            expect(props.showExpiringSoon).toBe(false);
+            expect(props.messageType).toBe('info');
+            expect(props.diffInWords).toBe('1 month');
+        });
+        it('should return warn if expiry is less than 30 days away, but more than 7 days away', () => {
+            const props = callWithExpiryAfterDays(9);
+            expect(props.showExpiringSoon).toBe(true);
+            expect(props.messageType).toBe('warn');
+            expect(props.diffInWords).toBe('9 days');
+        });
+        it('should return error if expiry is less than 7 days away', () => {
+            const props = callWithExpiryAfterDays(6);
+            expect(props.showExpiringSoon).toBe(true);
+            expect(props.messageType).toBe('error');
+            expect(props.diffInWords).toBe('6 days');
         });
     });
 });
