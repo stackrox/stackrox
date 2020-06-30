@@ -35,6 +35,7 @@ func init() {
 		schema.AddExtraResolver("Namespace", `k8sroles(query: String, pagination: Pagination): [K8SRole!]!`),
 		schema.AddExtraResolver("Namespace", `policyCount(query: String): Int!`),
 		schema.AddExtraResolver("Namespace", `policyStatus(query: String): PolicyStatus!`),
+		schema.AddExtraResolver("Namespace", `policyStatusOnly(query: String): String!`),
 		schema.AddExtraResolver("Namespace", `policies(query: String, pagination: Pagination): [Policy!]!`),
 		schema.AddExtraResolver("Namespace", `failingPolicyCounter(query: String): PolicyCounter`),
 		schema.AddExtraResolver("Namespace", `images(query: String, pagination: Pagination): [Image!]!`),
@@ -390,7 +391,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 	return mapListAlertsToPolicySeverityCount(alerts), nil
 }
 
-// PolicyStatus returns true if there is no policy violation for this cluster
+// PolicyStatus returns true if there is no policy violation for this namespace
 func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQuery) (*policyStatusResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatus")
 
@@ -423,6 +424,33 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQue
 	}
 
 	return &policyStatusResolver{scopedCtx, resolver.root, "fail", policyIDs.AsSlice()}, nil
+}
+
+// PolicyStatusOnly returns 'fail' if there are policy violations for this namespace
+func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args RawQuery) (string, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PolicyStatusOnly")
+	if err := readAlerts(ctx); err != nil {
+		return "", err
+	}
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return "", err
+	}
+
+	results, err := resolver.root.ViolationsDataStore.Search(ctx,
+		search.NewConjunctionQuery(q,
+			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
+				AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+	if err != nil {
+		return "", err
+	}
+
+	if len(results) > 0 {
+		return "fail", nil
+	}
+	return "pass", nil
 }
 
 func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {

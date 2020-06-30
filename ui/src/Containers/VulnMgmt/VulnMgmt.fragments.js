@@ -244,9 +244,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
         deploymentCount
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
-        policyStatus(query: $policyQuery) {
-            status
-        }
+        policyStatusOnly(query: $policyQuery)
         latestViolation(query: $policyQuery)
     }
 `;

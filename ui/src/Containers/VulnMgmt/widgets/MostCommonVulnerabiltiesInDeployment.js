@@ -33,19 +33,12 @@ const MOST_COMMON_VULNERABILITIES = gql`
             summary
             isFixable(query: $scopeQuery)
             envImpact
-            deployments {
-                id
-            }
         }
     }
 `;
 
-const processData = (data, workflowState, deploymentId) => {
-    const results = sortBy(data.results, ['cvss']).filter(
-        // test whether the given deployment appears in the list of vulnerabilities
-        (cve) =>
-            cve.deployments && cve.deployments.some((deployment) => deployment.id === deploymentId)
-    );
+const processData = (data, workflowState) => {
+    const results = sortBy(data.results, ['cvss']);
 
     // @TODO: remove JSX generation from processing data and into Numbered List function
     return getVulnerabilityChips(workflowState, results);
@@ -75,7 +68,7 @@ const MostCommonVulnerabiltiesInDeployment = ({ deploymentId, limit }) => {
 
     const workflowState = useContext(workflowStateContext);
     if (!loading) {
-        const processedData = processData(data, workflowState, deploymentId);
+        const processedData = processData(data, workflowState);
 
         if (!processedData || processedData.length === 0) {
             content = (

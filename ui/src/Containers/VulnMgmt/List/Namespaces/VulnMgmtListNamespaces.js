@@ -152,15 +152,13 @@ export function getNamespaceTableColumns(workflowState) {
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { policyStatus } = original;
-                const policyLabel = (
-                    <StatusChip status={policyStatus && policyStatus.status} asString={pdf} />
-                );
+                const { policyStatusOnly } = original;
+                const policyLabel = <StatusChip status={policyStatusOnly} asString={pdf} />;
 
                 return policyLabel;
             },
             id: namespaceSortFields.POLICY_STATUS,
-            accessor: 'policyStatus.status',
+            accessor: 'policyStatusOnly',
             sortField: namespaceSortFields.POLICY_STATUS,
             sortable: false,
         },
