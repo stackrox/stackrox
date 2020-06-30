@@ -33,8 +33,9 @@ ReduxNumericInput.propTypes = {
     disabled: PropTypes.bool.isRequired,
 };
 
-const ReduxNumericInputField = ({ name, min, max, placeholder, step, className, disabled }) => (
+const ReduxNumericInputField = ({ id, name, min, max, placeholder, step, className, disabled }) => (
     <Field
+        id={id}
         key={name}
         name={name}
         placeholder={placeholder}
@@ -49,6 +50,7 @@ const ReduxNumericInputField = ({ name, min, max, placeholder, step, className, 
 );
 
 ReduxNumericInputField.propTypes = {
+    id: PropTypes.string,
     name: PropTypes.string.isRequired,
     min: PropTypes.number,
     max: PropTypes.number,
@@ -59,6 +61,7 @@ ReduxNumericInputField.propTypes = {
 };
 
 ReduxNumericInputField.defaultProps = {
+    id: null,
     min: 1,
     max: Number.MAX_SAFE_INTEGER,
     step: 1,

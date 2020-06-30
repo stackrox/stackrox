@@ -52,6 +52,14 @@ const selectors = {
         },
         banner: '[data-testid="login-notice"]',
     },
+    dataRetention: {
+        allRuntimeViolationsBox: '[data-testid="number-box"]:contains("All Runtime Violations")',
+        deletedRuntimeViolationsBox:
+            '[data-testid="number-box"]:contains("Runtime Violations For Deleted Deployments")',
+        resolvedDeployViolationsBox:
+            '[data-testid="number-box"]:contains("Resolved Deploy-Phase Violations")',
+        imagesBox: '[data-testid="number-box"]:contains("Images No Longer Deployed")',
+    },
 };
 
 export const text = {

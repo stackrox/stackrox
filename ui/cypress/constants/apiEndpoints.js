@@ -128,3 +128,7 @@ export const integrations = {
     externalBackups: '/v1/externalbackups',
     authPlugins: '/v1/scopedaccessctrl/configs',
 };
+
+export const system = {
+    config: '/v1/config',
+};

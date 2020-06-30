@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
 const NumberBox = ({ label, value, suffix }) => (
-    <div className="min-h-32 w-full md:w-1/4 px-2 pb-4 md:pb-0">
-        <div className="border border-base-400 rounded bg-tertiary-200 flex flex-col min-h-32 items-center py-1 justify-between">
-            <div className="flex flex-col w-full border-b border-base-400 font-700 h-12 px-2 justify-center text-center capitalize leading-tight">
-                <span>{label}</span>
-            </div>
+    <div className="min-h-32 w-full md:w-1/4 px-2 pb-4 md:pb-0" data-testid="number-box">
+        <div className="border border-base-400 rounded bg-tertiary-200 flex flex-col min-h-32 items-center justify-between">
+            <header className="w-full">
+                <h1 className="flex flex-col w-full border-b border-base-400 font-700 h-12 px-2 justify-center text-center capitalize leading-tight">
+                    {label}
+                </h1>
+            </header>
             <div className="flex flex-col justify-center flex-grow font-600 text-primary-700 text-5xl">
                 {!value && `Never deleted`}
                 {value > 0 && `${value} ${pluralize(suffix, value)}`}
@@ -37,24 +39,24 @@ const DataRetentionDetailWidget = ({ config }) => {
             <div className="py-2 px-4 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between items-center h-10">
                 Data Retention Configuration{' '}
             </div>
-            <div className="flex sm:flex-col md:flex-row flex-wrap px-2 sm:pb-2 py-4 w-full">
+            <div className="flex sm:flex-col md:flex-row flex-wrap px-2 py-4 w-full">
                 <NumberBox
-                    label="All runtime violations"
+                    label="All Runtime Violations"
                     value={alertConfig.allRuntimeRetentionDurationDays}
                     suffix="Day"
                 />
                 <NumberBox
-                    label="Runtime violations for deleted&nbsp;deployments"
+                    label="Runtime Violations For Deleted Deployments"
                     value={alertConfig.deletedRuntimeRetentionDurationDays}
                     suffix="Day"
                 />
                 <NumberBox
-                    label="Resolved deploy-phase violations"
+                    label="Resolved Deploy-Phase Violations"
                     value={alertConfig.resolvedDeployRetentionDurationDays}
                     suffix="Day"
                 />
                 <NumberBox
-                    label="Images no longer deployed"
+                    label="Images No Longer Deployed"
                     value={privateConfig.imageRetentionDurationDays}
                     suffix="Day"
                 />
