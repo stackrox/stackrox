@@ -16,7 +16,7 @@
         "axios": "^0.18.1",
         "computed-style-to-inline-style": "^3.0.0",
         "core-js": "^3.6.5",
-        "cytoscape": "^3.5.0",
+        "cytoscape": "^3.15.1",
         "cytoscape-cose-bilkent": "^4.0.0",
         "cytoscape-node-html-label": "^1.2.0",
         "cytoscape-popper": "^1.0.7",
@@ -91,6 +91,9 @@
         "typeface-open-sans-condensed": "^0.0.72",
         "use-deep-compare-effect": "^1.3.1",
         "yup": "^0.28.3"
+    },
+    "resolutions": {
+        "react-cytoscapejs/cytoscape": "^3.15.1"
     },
     "scripts": {
         "start": "yarn tailwind && HTTPS=true react-scripts start",
