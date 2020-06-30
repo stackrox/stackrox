@@ -17,9 +17,11 @@ describe('Vuln Management Violation Tags', () => {
         cy.route('POST', api.graphql(api.alerts.graphqlOps.tagsAutocomplete)).as(
             'tagsAutocomplete'
         );
-        cy.visit(url.list.policies);
+
+        cy.visit(`${url.list.policies}?s[Policy]=Fixable CVSS >= 7`);
         cy.wait('@getPolicies');
-        cy.get(`${selectors.mainTable.cells}:contains("fail"):first`).click();
+
+        cy.get(`${selectors.mainTable.rows}:first`).click({ force: true });
         cy.wait('@getPolicy');
         cy.get(
             `${selectors.sidePanel1.policyFindingsSection.table.cells}:contains("fail"):first`
