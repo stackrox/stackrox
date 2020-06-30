@@ -168,45 +168,12 @@ func signingPolicy() *config.Signing {
 
 // IssueNewCertFromCA issues a certificate from the CA that is passed in
 func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, err error) {
-	returnErr := func(err error, prefix string) (*IssuedCert, error) {
-		return nil, errors.Wrapf(err, "%s", prefix)
-	}
-
 	s, err := signerFromCABytes(caCert, caKey)
 	if err != nil {
-		return returnErr(err, "signer creation")
+		return nil, errors.Wrap(err, "signer creation")
 	}
 
-	serial, err := RandomSerial()
-	if err != nil {
-		return returnErr(err, "serial generation")
-	}
-	csr := &cfcsr.CertificateRequest{
-		KeyRequest: cfcsr.NewBasicKeyRequest(),
-	}
-	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
-	if err != nil {
-		return returnErr(err, "request parsing")
-	}
-
-	req := cfsigner.SignRequest{
-		Hosts:   subj.AllHostnames(),
-		Request: string(csrBytes),
-		Subject: &cfsigner.Subject{
-			CN:           subj.CN(),
-			Names:        []cfcsr.Name{subj.Name()},
-			SerialNumber: serial.String(),
-		},
-	}
-	certBytes, err := s.Sign(req)
-	if err != nil {
-		return returnErr(err, "signing")
-	}
-
-	return &IssuedCert{
-		CertPEM: certBytes,
-		KeyPEM:  keyBytes,
-	}, nil
+	return issueNewCertFromSigner(subj, s)
 }
 
 func validateSubject(subj Subject) error {
@@ -220,32 +187,22 @@ func validateSubject(subj Subject) error {
 	return errorList.ToError()
 }
 
-// IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
-	returnErr := func(err error, prefix string) (*IssuedCert, error) {
-		return nil, errors.Wrapf(err, "%s", prefix)
-	}
-
+func issueNewCertFromSigner(subj Subject, signer cfsigner.Signer) (*IssuedCert, error) {
 	if err := validateSubject(subj); err != nil {
 		// Purposefully didn't use returnErr because errorList.ToError() returned from validateSubject is already prefixed
 		return nil, err
 	}
 
-	s, err := signer()
-	if err != nil {
-		return returnErr(err, "signer creation")
-	}
-
 	serial, err := RandomSerial()
 	if err != nil {
-		return returnErr(err, "serial generation")
+		return nil, errors.Wrap(err, "serial generation")
 	}
 	csr := &cfcsr.CertificateRequest{
 		KeyRequest: cfcsr.NewBasicKeyRequest(),
 	}
 	csrBytes, keyBytes, err := cfcsr.ParseRequest(csr)
 	if err != nil {
-		return returnErr(err, "request parsing")
+		return nil, errors.Wrap(err, "request parsing")
 	}
 
 	req := cfsigner.SignRequest{
@@ -257,9 +214,9 @@ func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 			SerialNumber: serial.String(),
 		},
 	}
-	certBytes, err := s.Sign(req)
+	certBytes, err := signer.Sign(req)
 	if err != nil {
-		return returnErr(err, "signing")
+		return nil, errors.Wrap(err, "signing")
 	}
 
 	id := generateIdentity(subj, serial)
@@ -269,6 +226,16 @@ func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
 		KeyPEM:  keyBytes,
 		ID:      id,
 	}, nil
+
+}
+
+// IssueNewCert generates a new key and certificate chain for a sensor.
+func IssueNewCert(subj Subject) (cert *IssuedCert, err error) {
+	s, err := signer()
+	if err != nil {
+		return nil, errors.Wrap(err, "signer creation")
+	}
+	return issueNewCertFromSigner(subj, s)
 }
 
 // RandomSerial returns a new integer that can be used as a certificate serial number (i.e., it is positive and contains
