@@ -28,6 +28,7 @@ export const selectors = {
     genericWebhookTile: 'div[role="button"]:contains("Generic Webhook")',
     amazonS3Tile: 'div[role="button"]:contains("Amazon S3")',
     googleCloudStorageTile: 'div[role="button"]:contains("Google Cloud Storage")',
+    scopedAccessPluginTile: 'div[role="button"]:contains("Scoped Access Plugin")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
         k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")',

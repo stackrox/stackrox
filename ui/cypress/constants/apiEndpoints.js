@@ -126,4 +126,5 @@ export const integrations = {
     images: '/v1/imageintegrations',
     notifiers: '/v1/notifiers',
     externalBackups: '/v1/externalbackups',
+    authPlugins: '/v1/scopedaccessctrl/configs',
 };

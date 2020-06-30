@@ -1138,7 +1138,7 @@ const formDescriptors = {
                 label: 'Password (optional)',
                 jsonpath: 'endpointConfig.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Headers',
@@ -1152,6 +1152,7 @@ const formDescriptors = {
                 type: 'textarea',
                 placeholder:
                     '-----BEGIN CERTIFICATE-----\nPEM-encoded client certificate\n-----END CERTIFICATE-----',
+                ...storedCredentialFields,
             },
             {
                 label: 'Client Key (optional)',
@@ -1159,6 +1160,7 @@ const formDescriptors = {
                 type: 'textarea',
                 placeholder:
                     '-----BEGIN RSA PRIVATE KEY-----\nPEM-encoded private key\n-----END RSA PRIVATE KEY-----',
+                ...storedCredentialFields,
             },
         ],
     },
