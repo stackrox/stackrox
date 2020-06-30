@@ -32,8 +32,8 @@ message Node {
     string container_runtime_version       = 10 [deprecated = true];  // Use container_runtime.version
     ContainerRuntimeInfo container_runtime = 14;
     string kernel_version                  = 11;
-    string os_image                        = 12;
+    string os_image                        = 12 [(gogoproto.moretags) = "search:\"Operating System,store\""];
     // When the cluster reported the node was added
-    google.protobuf.Timestamp joined_at    = 13;
+    google.protobuf.Timestamp joined_at    = 13 [(gogoproto.moretags) = "search:\"Node Join Time,store\""];
     string kubelet_version                 = 15;
 }

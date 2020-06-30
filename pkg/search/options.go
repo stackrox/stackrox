@@ -147,8 +147,11 @@ var (
 	Control   = newFieldLabel("Control")
 
 	// Node search fields
-	Node   = newFieldLabel("Node")
-	NodeID = newFieldLabel("Node ID")
+	Node             = newFieldLabel("Node")
+	NodeID           = newFieldLabel("Node ID")
+	OperatingSystem  = newFieldLabel("Operating System")
+	ContainerRuntime = newFieldLabel("Container Runtime")
+	NodeJoinTime     = newFieldLabel("Node Join Time")
 
 	// Namespace Search Fields
 	NamespaceID = newFieldLabel("Namespace ID")
