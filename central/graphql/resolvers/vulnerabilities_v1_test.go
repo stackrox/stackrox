@@ -11,32 +11,10 @@ import (
 	"github.com/stackrox/rox/central/cve/matcher"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestMapImagesToVulnerabilityResolvers(t *testing.T) {
-	fakeRoot := &Resolver{}
-	images := testImages()
-
-	query := &v1.Query{}
-	vulnerabilityResolvers, err := mapImagesToVulnerabilityResolvers(fakeRoot, images, query)
-	assert.NoError(t, err)
-	assert.Len(t, vulnerabilityResolvers, 5)
-
-	query = search.NewQueryBuilder().AddExactMatches(search.FixedBy, "1.1").ProtoQuery()
-	vulnerabilityResolvers, err = mapImagesToVulnerabilityResolvers(fakeRoot, images, query)
-	assert.NoError(t, err)
-	assert.Len(t, vulnerabilityResolvers, 1)
-
-	query = search.NewQueryBuilder().AddExactMatches(search.CVE, "cve-2019-1", "cve-2019-2", "cve-2019-3").ProtoQuery()
-	vulnerabilityResolvers, err = mapImagesToVulnerabilityResolvers(fakeRoot, images, query)
-	assert.NoError(t, err)
-	assert.Len(t, vulnerabilityResolvers, 2)
-}
 
 func TestK8sCVEEnvImpact(t *testing.T) {
 	expected := []float64{0.6, 0.4, 0.4}

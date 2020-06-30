@@ -13,7 +13,6 @@ import (
 	imageComponentEdgeIndexer "github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -25,10 +24,6 @@ var (
 )
 
 func initialize() {
-	if !features.Dackbox.Enabled() {
-		ad = nil
-		return
-	}
 	storage, err := dackbox.New(globaldb.GetGlobalDackBox(), globaldb.GetKeyFence())
 	utils.Must(err)
 

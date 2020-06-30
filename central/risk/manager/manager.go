@@ -18,7 +18,6 @@ import (
 	imageComponentScorer "github.com/stackrox/rox/central/risk/scorer/image_component"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -197,10 +196,6 @@ func (e *managerImpl) reprocessImageComponentRisk(imageComponent *storage.Embedd
 		}.ToString())
 	if err := e.riskStorage.UpsertRisk(riskReprocessorCtx, risk); err != nil {
 		log.Errorf("Error reprocessing risk for image component %s v%s: %v", imageComponent.GetName(), imageComponent.GetVersion(), err)
-	}
-
-	if !features.Dackbox.Enabled() {
-		return
 	}
 
 	if oldScore == risk.GetScore() {

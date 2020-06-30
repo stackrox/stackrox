@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -97,10 +96,7 @@ func (resolver *Resolver) Vulnerability(ctx context.Context, args idQuery) (Vuln
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	if features.Dackbox.Enabled() {
-		return resolver.vulnerabilityV2(ctx, args)
-	}
-	return resolver.vulnerabilityV1(ctx, args)
+	return resolver.vulnerabilityV2(ctx, args)
 }
 
 // Vulnerabilities resolves a set of vulnerabilities based on a query.
@@ -109,10 +105,7 @@ func (resolver *Resolver) Vulnerabilities(ctx context.Context, q PaginatedQuery)
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	if features.Dackbox.Enabled() {
-		return resolver.vulnerabilitiesV2(ctx, q)
-	}
-	return resolver.vulnerabilitiesV1(ctx, q)
+	return resolver.vulnerabilitiesV2(ctx, q)
 }
 
 // VulnerabilityCount returns count of all clusters across infrastructure
@@ -121,10 +114,7 @@ func (resolver *Resolver) VulnerabilityCount(ctx context.Context, args RawQuery)
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
-	if features.Dackbox.Enabled() {
-		return resolver.vulnerabilityCountV2(ctx, args)
-	}
-	return resolver.vulnerabilityCountV1(ctx, args)
+	return resolver.vulnerabilityCountV2(ctx, args)
 }
 
 // VulnCounter returns a VulnerabilityCounterResolver for the input query.s
@@ -133,10 +123,7 @@ func (resolver *Resolver) VulnCounter(ctx context.Context, args RawQuery) (*Vuln
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
-	if features.Dackbox.Enabled() {
-		return resolver.vulnCounterV2(ctx, args)
-	}
-	return resolver.vulnCounterV1(ctx, args)
+	return resolver.vulnCounterV2(ctx, args)
 }
 
 // Legacy K8s and Istio specific vuln resolvers.
@@ -150,10 +137,7 @@ func (resolver *Resolver) K8sVulnerability(ctx context.Context, args idQuery) (V
 		return nil, err
 	}
 
-	if features.Dackbox.Enabled() {
-		return resolver.k8sVulnerabilityV2(ctx, args)
-	}
-	return resolver.k8sVulnerabilityV1(ctx, args)
+	return resolver.k8sVulnerabilityV2(ctx, args)
 }
 
 // K8sVulnerabilities resolves a set of k8s vulnerabilities based on a query.
@@ -163,10 +147,7 @@ func (resolver *Resolver) K8sVulnerabilities(ctx context.Context, args Paginated
 		return nil, err
 	}
 
-	if features.Dackbox.Enabled() {
-		return resolver.k8sVulnerabilitiesV2(ctx, args)
-	}
-	return resolver.k8sVulnerabilitiesV1(ctx, args)
+	return resolver.k8sVulnerabilitiesV2(ctx, args)
 }
 
 // IstioVulnerability resolves a single istio vulnerability based on an id (the CVE value).
@@ -176,10 +157,7 @@ func (resolver *Resolver) IstioVulnerability(ctx context.Context, args idQuery) 
 		return nil, err
 	}
 
-	if features.Dackbox.Enabled() {
-		return resolver.istioVulnerabilityV2(ctx, args)
-	}
-	return resolver.istioVulnerabilityV1(ctx, args)
+	return resolver.istioVulnerabilityV2(ctx, args)
 }
 
 // IstioVulnerabilities resolves a set of istio vulnerabilities based on a query.
@@ -189,11 +167,7 @@ func (resolver *Resolver) IstioVulnerabilities(ctx context.Context, args Paginat
 		return nil, err
 	}
 
-	if features.Dackbox.Enabled() {
-		return resolver.istioVulnerabilitiesV2(ctx, args)
-	}
-
-	return resolver.istioVulnerabilitiesV1(ctx, args)
+	return resolver.istioVulnerabilitiesV2(ctx, args)
 }
 
 func tryUnsuppressedQuery(q *v1.Query) *v1.Query {

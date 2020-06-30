@@ -1,9 +1,6 @@
 package features
 
 var (
-	// Dackbox enables the id graph layer on top of badger.
-	Dackbox = registerFeature("Use DackBox layer for the embedded Badger DB", "ROX_DACKBOX", true)
-
 	// AnalystNotesUI enables the Analyst Notes UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", true)

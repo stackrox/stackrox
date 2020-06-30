@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -61,10 +60,6 @@ func GetKeyFence() concurrency.KeyFence {
 
 func initializeDackBox() {
 	dackBoxInit.Do(func() {
-		if !features.Dackbox.Enabled() {
-			return
-		}
-
 		globaldb.RegisterBucket(GraphBucket, "Graph Keys")
 		globaldb.RegisterBucket(DirtyBucket, "Dirty Keys")
 		globaldb.RegisterBucket(ReindexIfMissingBucket, "Bucket for reindexed state")

@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -99,10 +98,6 @@ func formatSearcher(unsafeSearcher blevesearch.UnsafeSearcher, graphProvider gra
 }
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
-	if !features.Dackbox.Enabled() {
-		return searcher
-	}
-
 	prioritySortedSearcher := sorted.Searcher(searcher, search.Priority, clusterRanker)
 
 	return derivedfields.CountSortedSearcher(prioritySortedSearcher, map[string]counter.DerivedFieldCounter{

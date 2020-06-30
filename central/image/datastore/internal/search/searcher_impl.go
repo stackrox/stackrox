@@ -13,14 +13,11 @@ import (
 	pkgImageSAC "github.com/stackrox/rox/central/image/sac"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/compound"
@@ -36,8 +33,6 @@ var (
 	defaultSortOption = &v1.QuerySortOption{
 		Field: search.LastUpdatedTime.String(),
 	}
-	imagesSACSearchHelper = sac.ForResource(resources.Image).MustCreateSearchHelper(imageMappings.OptionsMap)
-
 	componentOptionsMap = search.CombineOptionsMaps(componentMappings.OptionsMap).Remove(search.RiskScore)
 	imageOnlyOptionsMap = search.Difference(
 		imageMappings.OptionsMap,
@@ -137,24 +132,21 @@ func formatSearcher(graphProvider graph.Provider,
 	componentIndexer blevesearch.UnsafeSearcher,
 	imageComponentEdgeIndexer blevesearch.UnsafeSearcher,
 	imageIndexer blevesearch.UnsafeSearcher) search.Searcher {
-	var filteredSearcher search.Searcher
-	if features.Dackbox.Enabled() {
-		cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
-		componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
-		componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
-		imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
-		imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
 
-		compoundSearcher := getCompoundImageSearcher(
-			cveSearcher,
-			componentCVEEdgeSearcher,
-			componentSearcher,
-			imageComponentEdgeSearcher,
-			imageSearcher)
-		filteredSearcher = filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgImageSAC.GetSACFilter())
-	} else {
-		filteredSearcher = imagesSACSearchHelper.FilteredSearcher(imageIndexer) // Make the UnsafeSearcher safe.
-	}
+	cveSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(cveIndexer)
+	componentCVEEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentCVEEdgeIndexer)
+	componentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(componentIndexer)
+	imageComponentEdgeSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageComponentEdgeIndexer)
+	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
+
+	compoundSearcher := getCompoundImageSearcher(
+		cveSearcher,
+		componentCVEEdgeSearcher,
+		componentSearcher,
+		imageComponentEdgeSearcher,
+		imageSearcher)
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), pkgImageSAC.GetSACFilter())
+
 	transformedSortSearcher := sortfields.TransformSortFields(filteredSearcher)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortSearcher)
 	paginatedSearcher := paginated.Paginated(derivedFieldSortedSearcher)
@@ -203,9 +195,6 @@ func getCompoundImageSearcher(
 }
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher) search.Searcher {
-	if !features.Dackbox.Enabled() {
-		return searcher
-	}
 	return derivedfields.CountSortedSearcher(searcher, map[string]counter.DerivedFieldCounter{
 		search.DeploymentCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.ImageToDeploymentPath, pkgDeploymentSAC.GetSACFilter()),
 	})

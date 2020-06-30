@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
-	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
 	"github.com/stackrox/rox/central/deployment/store/cache"
 	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -29,7 +28,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -65,22 +63,17 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	var searcher search.Searcher
 	indexer := index.New(bleveIndex, processIndex)
 
 	storage = cache.NewCachedStore(storage)
-	if features.Dackbox.Enabled() {
-		searcher = search.New(storage,
-			graphProvider,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex),
-			indexer)
-	} else {
-		searcher = search.New(storage, nil, nil, nil, nil, nil, nil, indexer)
-	}
+	searcher := search.New(storage,
+		graphProvider,
+		cveIndexer.New(bleveIndex),
+		componentCVEEdgeIndexer.New(bleveIndex),
+		componentIndexer.New(bleveIndex),
+		imageComponentEdgeIndexer.New(bleveIndex),
+		imageIndexer.New(bleveIndex),
+		indexer)
 
 	ds, err := newDatastoreImpl(storage, processTagsStore, indexer, searcher, images, whitelists, networkFlows, risks,
 		deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
@@ -98,19 +91,9 @@ func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger
 	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {
-	var err error
-	var storage store.Store
-	if features.Dackbox.Enabled() {
-		storage, err = dackBoxStore.New(dacky, keyFence)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		storage, err = badgerStore.New(db)
-		if err != nil {
-			return nil, err
-		}
+	storage, err := dackBoxStore.New(dacky, keyFence)
+	if err != nil {
+		return nil, err
 	}
-
 	return newDataStore(storage, dacky, processTagsStore, bleveIndex, processIndex, images, whitelists, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker)
 }

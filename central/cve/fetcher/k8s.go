@@ -1,25 +1,14 @@
 package fetcher
 
 import (
-	"context"
-
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-)
-
-var (
-	vulnPredicateFactory = predicate.NewFactory("vulnerability", &storage.EmbeddedVulnerability{})
 )
 
 type k8sCVEManager struct {
@@ -47,13 +36,6 @@ func (m *k8sCVEManager) initialize() {
 	log.Infof("successfully fetched %d k8s CVEs", len(m.nvdCVEs))
 }
 
-func (m *k8sCVEManager) getCVEs(ctx context.Context, q *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	return m.filterCVEs(ctx, q)
-}
-
 func (m *k8sCVEManager) getNVDCVE(id string) *schema.NVDCVEFeedJSON10DefCVEItem {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -71,25 +53,10 @@ func (m *k8sCVEManager) setCVEs(cves []*storage.EmbeddedVulnerability, nvdCVEs [
 	m.embeddedCVEs = cves
 }
 
-func (m *k8sCVEManager) filterCVEs(ctx context.Context, query *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
-	clusterQuery, _ := search.FilterQueryWithMap(query, clusterMappings.OptionsMap)
-	clusters, err := m.clusterDataStore.SearchRawClusters(ctx, clusterQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	return filterCVEs(ctx, query, clusters, m.embeddedCVEs, m.nvdCVEs, m.cveMatcher.IsClusterAffectedByK8sCVE)
-}
-
 func (m *k8sCVEManager) updateCVEs(newCVEs []*schema.NVDCVEFeedJSON10DefCVEItem) error {
 	cves, err := converter.NvdCVEsToEmbeddedCVEs(newCVEs, converter.K8s)
 	if err != nil {
 		return err
-	}
-
-	if !features.Dackbox.Enabled() {
-		m.setCVEs(cves, newCVEs)
-		return nil
 	}
 
 	m.setCVEs([]*storage.EmbeddedVulnerability{}, newCVEs)

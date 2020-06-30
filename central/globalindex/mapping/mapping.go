@@ -28,7 +28,6 @@ import (
 	secretOptions "github.com/stackrox/rox/central/secret/mappings"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/mappings"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/options/deployments"
@@ -89,16 +88,13 @@ func singleTermAnalyzer() map[string]interface{} {
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// Images in dackbox support an expanded set of search options
-	imageSearchOptions := imageMapping.OptionsMap
-	if features.Dackbox.Enabled() {
-		imageSearchOptions = search.CombineOptionsMaps(
-			imageMapping.OptionsMap,
-			imageComponentEdgeMapping.OptionsMap,
-			imageComponentMapping.OptionsMap,
-			componentVulnEdgeMapping.OptionsMap,
-			cveMapping.OptionsMap,
-		)
-	}
+	imageSearchOptions := search.CombineOptionsMaps(
+		imageMapping.OptionsMap,
+		imageComponentEdgeMapping.OptionsMap,
+		imageComponentMapping.OptionsMap,
+		componentVulnEdgeMapping.OptionsMap,
+		cveMapping.OptionsMap,
+	)
 	componentSearchOptions := search.CombineOptionsMaps(
 		imageComponentMapping.OptionsMap,
 		imageComponentEdgeMapping.OptionsMap,

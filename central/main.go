@@ -118,7 +118,6 @@ import (
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -351,10 +350,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
-	}
-
-	if features.Dackbox.Enabled() {
-		servicesToRegister = append(servicesToRegister, cveService.Singleton())
+		cveService.Singleton(),
 	}
 
 	autoTriggerUpgrades := sensorUpgradeConfigStore.Singleton().AutoTriggerSetting()

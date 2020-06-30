@@ -21,12 +21,9 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
@@ -39,8 +36,6 @@ var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
 	indicatorSAC   = sac.ForResource(resources.Indicator)
 )
-
-const deploymentBatchSize = 500
 
 type datastoreImpl struct {
 	deploymentStore    deploymentStore.Store
@@ -84,9 +79,6 @@ func newDatastoreImpl(storage deploymentStore.Store, processTagsStore processtag
 		clusterRanker:    clusterRanker,
 		nsRanker:         nsRanker,
 		deploymentRanker: deploymentRanker,
-	}
-	if err := ds.buildIndex(); err != nil {
-		return nil, err
 	}
 	return ds, nil
 }
@@ -257,15 +249,6 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 			return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 		}
-		if !features.Dackbox.Enabled() {
-			if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
-				return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
-			}
-			if err := ds.deploymentStore.AckKeysIndexed(deployment.GetId()); err != nil {
-				return errors.Wrapf(err, "could not acknowledge indexing for %q", deployment.GetId())
-			}
-		}
-
 		return nil
 	})
 }
@@ -292,15 +275,6 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
 			return err
-		}
-
-		if !features.Dackbox.Enabled() {
-			if err := ds.deploymentIndexer.DeleteDeployment(id); err != nil {
-				return err
-			}
-			if err := ds.deploymentStore.AckKeysIndexed(id); err != nil {
-				return err
-			}
 		}
 		return nil
 	})
@@ -355,100 +329,6 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 		}
 	}
 	return images, nil
-}
-
-func (ds *datastoreImpl) fullReindex() error {
-	log.Info("[STARTUP] Reindexing all deployments")
-
-	deploymentIDs, err := ds.deploymentStore.GetDeploymentIDs()
-	if err != nil {
-		return err
-	}
-	log.Infof("[STARTUP] Found %d deployments to index", len(deploymentIDs))
-	deploymentBatcher := batcher.New(len(deploymentIDs), deploymentBatchSize)
-	for start, end, valid := deploymentBatcher.Next(); valid; start, end, valid = deploymentBatcher.Next() {
-		deployments, _, err := ds.deploymentStore.GetDeploymentsWithIDs(deploymentIDs[start:end]...)
-		if err != nil {
-			return err
-		}
-		if err := ds.deploymentIndexer.AddDeployments(deployments); err != nil {
-			return err
-		}
-		if end%(deploymentBatchSize*2) == 0 {
-			log.Infof("[STARTUP] Successfully indexed %d/%d deployments", end, len(deploymentIDs))
-		}
-	}
-	log.Infof("[STARTUP] Successfully indexed %d deployments", len(deploymentIDs))
-
-	// Clear the keys because we just re-indexed everything
-	keys, err := ds.deploymentStore.GetKeysToIndex()
-	if err != nil {
-		return err
-	}
-	if err := ds.deploymentStore.AckKeysIndexed(keys...); err != nil {
-		return err
-	}
-
-	// Write out that initial indexing is complete
-	if err := ds.deploymentIndexer.MarkInitialIndexingComplete(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ds *datastoreImpl) buildIndex() error {
-	if features.Dackbox.Enabled() {
-		return nil
-	}
-
-	defer debug.FreeOSMemory()
-
-	needsReindexing, err := ds.deploymentIndexer.NeedsInitialIndexing()
-	if err != nil {
-		return err
-	}
-	if needsReindexing {
-		return ds.fullReindex()
-	}
-
-	log.Info("[STARTUP] Determining if deployment db/indexer reconciliation is needed")
-
-	deploymentsToIndex, err := ds.deploymentStore.GetKeysToIndex()
-	if err != nil {
-		return errors.Wrap(err, "error retrieving keys to index")
-	}
-
-	log.Infof("[STARTUP] Found %d Deployments to index", len(deploymentsToIndex))
-
-	deploymentBatcher := batcher.New(len(deploymentsToIndex), deploymentBatchSize)
-	for start, end, valid := deploymentBatcher.Next(); valid; start, end, valid = deploymentBatcher.Next() {
-		deployments, missingIndices, err := ds.deploymentStore.GetDeploymentsWithIDs(deploymentsToIndex[start:end]...)
-		if err != nil {
-			return err
-		}
-		if err := ds.deploymentIndexer.AddDeployments(deployments); err != nil {
-			return err
-		}
-		if len(missingIndices) > 0 {
-			idsToRemove := make([]string, 0, len(missingIndices))
-			for _, missingIdx := range missingIndices {
-				idsToRemove = append(idsToRemove, deploymentsToIndex[start:end][missingIdx])
-			}
-			if err := ds.deploymentIndexer.DeleteDeployments(idsToRemove); err != nil {
-				return err
-			}
-		}
-
-		// Ack keys so that even if central restarts, we don't need to reindex them again
-		if err := ds.deploymentStore.AckKeysIndexed(deploymentsToIndex[start:end]...); err != nil {
-			return err
-		}
-		log.Infof("[STARTUP] Successfully indexed %d/%d deployments", end, len(deploymentsToIndex))
-	}
-
-	log.Info("[STARTUP] Successfully indexed all out of sync deployments")
-	return nil
 }
 
 func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {

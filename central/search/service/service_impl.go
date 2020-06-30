@@ -33,7 +33,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	protoSet "github.com/stackrox/rox/generated/set"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -81,11 +80,8 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts.SearchServiceAccounts,
 		v1.SearchCategory_ROLES:            s.roles.SearchRoles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
-	}
-
-	if features.Dackbox.Enabled() {
-		searchfuncs[v1.SearchCategory_IMAGE_COMPONENTS] = s.components.SearchImageComponents
-		searchfuncs[v1.SearchCategory_VULNERABILITIES] = s.cves.SearchCVEs
+		v1.SearchCategory_IMAGE_COMPONENTS: s.components.SearchImageComponents,
+		v1.SearchCategory_VULNERABILITIES:  s.cves.SearchCVEs,
 	}
 
 	return searchfuncs
@@ -106,11 +102,8 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SERVICE_ACCOUNTS: s.serviceaccounts,
 		v1.SearchCategory_ROLES:            s.roles,
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
-	}
-
-	if features.Dackbox.Enabled() {
-		searchers[v1.SearchCategory_IMAGE_COMPONENTS] = s.components
-		searchers[v1.SearchCategory_VULNERABILITIES] = s.cves
+		v1.SearchCategory_IMAGE_COMPONENTS: s.components,
+		v1.SearchCategory_VULNERABILITIES:  s.cves,
 	}
 
 	return searchers

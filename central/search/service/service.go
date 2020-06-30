@@ -19,7 +19,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -198,13 +197,9 @@ func NewService() Service {
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
 		WithAggregator(aggregation.Singleton()).
-		WithClusterDataStore(clusterDataStore.Singleton())
-
-	if features.Dackbox.Enabled() {
-		builder = builder.
-			WithCVEDataStore(cveDataStore.Singleton()).
-			WithComponentDataStore(componentDataStore.Singleton())
-	}
+		WithClusterDataStore(clusterDataStore.Singleton()).
+		WithCVEDataStore(cveDataStore.Singleton()).
+		WithComponentDataStore(componentDataStore.Singleton())
 
 	return builder.Build()
 }

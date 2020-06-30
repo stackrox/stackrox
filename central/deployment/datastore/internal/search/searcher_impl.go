@@ -15,13 +15,10 @@ import (
 	imageSAC "github.com/stackrox/rox/central/image/sac"
 	componentMappings "github.com/stackrox/rox/central/imagecomponent/mappings"
 	imageComponentEdgeMappings "github.com/stackrox/rox/central/imagecomponentedge/mappings"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/derivedfields/counter"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 	"github.com/stackrox/rox/pkg/search/compound"
@@ -35,8 +32,6 @@ import (
 )
 
 var (
-	deploymentsSearchHelper = sac.ForResource(resources.Deployment).MustCreateSearchHelper(deploymentMappings.OptionsMap)
-
 	defaultSortOption = &v1.QuerySortOption{
 		Field:    search.Priority.String(),
 		Reversed: false,
@@ -166,19 +161,14 @@ func formatSearcher(graphProvider graph.Provider,
 	imageSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(imageIndexer)
 	deploymentSearcher := blevesearch.WrapUnsafeSearcherAsSearcher(deploymentIndexer)
 
-	var filteredSearcher search.Searcher
-	if features.Dackbox.Enabled() {
-		compoundSearcher := getDeploymentCompoundSearcher(
-			cveSearcher,
-			componentCVEEdgeSearcher,
-			componentSearcher,
-			imageComponentEdgeSearcher,
-			imageSearcher,
-			deploymentSearcher)
-		filteredSearcher = filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
-	} else {
-		filteredSearcher = deploymentsSearchHelper.FilteredSearcher(deploymentIndexer) // Make the UnsafeSearcher safe.
-	}
+	compoundSearcher := getDeploymentCompoundSearcher(
+		cveSearcher,
+		componentCVEEdgeSearcher,
+		componentSearcher,
+		imageComponentEdgeSearcher,
+		imageSearcher,
+		deploymentSearcher)
+	filteredSearcher := filtered.Searcher(cveedge.HandleCVEEdgeSearchQuery(compoundSearcher), deploymentSAC.GetSACFilter()) // Make the UnsafeSearcher safe.
 
 	transformedSortFieldSearcher := sortfields.TransformSortFields(filteredSearcher)
 	derivedFieldSortedSearcher := wrapDerivedFieldSearcher(graphProvider, transformedSortFieldSearcher)
@@ -233,9 +223,6 @@ func getDeploymentCompoundSearcher(
 }
 
 func wrapDerivedFieldSearcher(graphProvider graph.Provider, searcher search.Searcher) search.Searcher {
-	if !features.Dackbox.Enabled() {
-		return searcher
-	}
 	return derivedfields.CountSortedSearcher(searcher, map[string]counter.DerivedFieldCounter{
 		search.ImageCount.String(): counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToImage, imageSAC.GetSACFilter()),
 		search.CVECount.String():   counter.NewGraphBasedDerivedFieldCounter(graphProvider, dackbox.DeploymentToCVE, cveSAC.GetSACFilters()...),

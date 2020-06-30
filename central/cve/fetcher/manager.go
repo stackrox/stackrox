@@ -1,14 +1,10 @@
 package fetcher
 
 import (
-	"context"
-
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 // K8sIstioCVEManager is the interface for k8s and istio CVEs
@@ -17,8 +13,6 @@ type K8sIstioCVEManager interface {
 	Update(zipPath string, forceUpdate bool)
 
 	GetNVDCVE(id string) *schema.NVDCVEFeedJSON10DefCVEItem
-	GetK8sCVEs(ctx context.Context, query *v1.Query) ([]*storage.EmbeddedVulnerability, error)
-	GetIstioCVEs(ctx context.Context, query *v1.Query) ([]*storage.EmbeddedVulnerability, error)
 }
 
 // k8sIstioCVEManagerImpl manages the state of k8s and istio CVEs

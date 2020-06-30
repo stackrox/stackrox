@@ -15,12 +15,9 @@ import (
 	"github.com/stackrox/k8s-istio-cve-pusher/nvd"
 	"github.com/stackrox/rox/central/cve/converter"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
-	imageMappings "github.com/stackrox/rox/central/image/mappings"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -97,22 +94,6 @@ func (m *k8sIstioCVEManagerImpl) GetNVDCVE(id string) *schema.NVDCVEFeedJSON10De
 		return m.istioCVEMgr.getNVDCVE(id)
 	}
 	return cve
-}
-
-// GetK8sCVEs returns the current k8s Embedded Vulns loaded in memory
-func (m *k8sIstioCVEManagerImpl) GetK8sCVEs(ctx context.Context, q *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
-	if features.Dackbox.Enabled() {
-		return nil, errors.New("query cannot be handled. Query CVE datastore to obtain k8s cves")
-	}
-	return m.k8sCVEMgr.getCVEs(ctx, q)
-}
-
-// GetIstioCVEs returns the current istio Embedded Vulns loaded in memory
-func (m *k8sIstioCVEManagerImpl) GetIstioCVEs(ctx context.Context, q *v1.Query) ([]*storage.EmbeddedVulnerability, error) {
-	if features.Dackbox.Enabled() {
-		return nil, errors.New("query cannot be handled. Query CVE datastore to obtain isito cves")
-	}
-	return m.istioCVEMgr.getCVEs(ctx, q)
 }
 
 func (m *k8sIstioCVEManagerImpl) updateCVEs(nvdCVEs []*schema.NVDCVEFeedJSON10DefCVEItem, ct converter.CVEType) error {
@@ -344,40 +325,6 @@ func unzip(src, dest string) error {
 	}
 
 	return nil
-}
-
-func filterCVEs(ctx context.Context, query *v1.Query, clusters []*storage.Cluster, cves []*storage.EmbeddedVulnerability,
-	nvdCVEs map[string]*schema.NVDCVEFeedJSON10DefCVEItem,
-	check func(context.Context, *storage.Cluster, *schema.NVDCVEFeedJSON10DefCVEItem) (bool, error)) ([]*storage.EmbeddedVulnerability, error) {
-	vulnQuery, _ := pkgSearch.FilterQueryWithMap(query, imageMappings.VulnerabilityOptionsMap)
-	vulnPred, err := vulnPredicateFactory.GeneratePredicate(vulnQuery)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*storage.EmbeddedVulnerability, 0, len(cves))
-	for _, cve := range cves {
-		if !vulnPred.Matches(cve) {
-			continue
-		}
-
-		for _, cluster := range clusters {
-			nvdCVE, ok := nvdCVEs[cve.GetCve()]
-			if !ok {
-				continue
-			}
-
-			if affected, err := check(ctx, cluster, nvdCVE); err != nil {
-				return nil, err
-			} else if !affected {
-				continue
-			}
-
-			ret = append(ret, cve)
-			break // No need to continue the clusterDataStore loop since the CVE was already added to the list.
-		}
-	}
-	return ret, nil
 }
 
 func reconcileCVEsInDB(cveDataStore cveDataStore.DataStore, cveType storage.CVE_CVEType, newCVEs set.StringSet) error {

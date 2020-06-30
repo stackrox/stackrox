@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -114,37 +113,7 @@ func (resolver *imageResolver) DeploymentCount(ctx context.Context, args RawQuer
 // TopVuln returns the first vulnerability with the top CVSS score.
 func (resolver *imageResolver) TopVuln(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "TopVulnerability")
-	if features.Dackbox.Enabled() {
-		return resolver.topVulnV2(ctx, args)
-	}
-
-	return resolver.topVulnV1(ctx, args)
-}
-
-func (resolver *imageResolver) topVulnV1(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
-	if err := resolver.ensureImage(ctx); err != nil {
-		return nil, err
-	}
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	resolvers, err := mapImagesToVulnerabilityResolvers(resolver.root, []*storage.Image{resolver.data}, query)
-	if err != nil {
-		return nil, err
-	}
-
-	// create a set of the CVEs to return.
-	var maxCvss *storage.EmbeddedVulnerability
-	for _, resolver := range resolvers {
-		if maxCvss == nil || resolver.data.GetCvss() > maxCvss.GetCvss() {
-			maxCvss = resolver.data
-		}
-	}
-	if maxCvss == nil {
-		return nil, nil
-	}
-	return resolver.root.wrapEmbeddedVulnerability(maxCvss, nil)
+	return resolver.topVulnV2(ctx, args)
 }
 
 func (resolver *imageResolver) topVulnV2(ctx context.Context, args RawQuery) (VulnerabilityResolver, error) {
@@ -244,23 +213,6 @@ func (resolver *imageResolver) ComponentCount(ctx context.Context, args RawQuery
 		Level: v1.SearchCategory_IMAGES,
 		ID:    resolver.data.GetId(),
 	}), RawQuery{Query: &query})
-}
-
-func (resolver *imageResolver) ensureImage(ctx context.Context) error {
-	if resolver.data != nil {
-		return nil
-	}
-
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil
-	}
-	image, err := imageLoader.FromID(ctx, resolver.list.GetId())
-	if err != nil {
-		return nil
-	}
-	resolver.data = image
-	return nil
 }
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {

@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/index"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
 	"github.com/stackrox/rox/central/imagecomponentedge/store/dackbox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -18,10 +17,6 @@ var (
 )
 
 func initialize() {
-	if !features.Dackbox.Enabled() {
-		ad = nil
-		return
-	}
 	storage, err := dackbox.New(globaldb.GetGlobalDackBox())
 	utils.Must(err)
 

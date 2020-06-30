@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
@@ -14,77 +13,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
-
-// Component returns an image scan component based on an input id (name:version)
-func (resolver *Resolver) componentV1(ctx context.Context, args idQuery) (*EmbeddedImageScanComponentResolver, error) {
-	cID, err := imagecomponent.FromString(string(*args.ID))
-	if err != nil {
-		return nil, err
-	}
-
-	query := search.NewQueryBuilder().
-		AddExactMatches(search.Component, cID.Name).
-		AddExactMatches(search.ComponentVersion, cID.Version).
-		ProtoQuery()
-	comps, err := components(ctx, resolver, query)
-	if err != nil {
-		return nil, err
-	} else if len(comps) == 0 {
-		return nil, nil
-	} else if len(comps) > 1 {
-		return nil, fmt.Errorf("multiple components matched: %s this should not happen", string(*args.ID))
-	}
-	return comps[0], nil
-}
-
-// Components returns the image scan components that match the input query.
-func (resolver *Resolver) componentsV1(ctx context.Context, q PaginatedQuery) ([]ComponentResolver, error) {
-	// Convert to query, but link the fields for the search.
-	query, err := q.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
-	resolvers, err := paginationWrapper{
-		pv: query.Pagination,
-	}.paginate(components(ctx, resolver, query))
-	compRes := resolvers.([]*EmbeddedImageScanComponentResolver)
-
-	ret := make([]ComponentResolver, 0, len(compRes))
-	for _, resolver := range compRes {
-		ret = append(ret, resolver)
-	}
-	return ret, err
-}
-
-// ComponentCount returns count of all clusters across infrastructure
-func (resolver *Resolver) componentCountV1(ctx context.Context, args RawQuery) (int32, error) {
-	query, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return 0, err
-	}
-	comps, err := components(ctx, resolver, query)
-	if err != nil {
-		return 0, err
-	}
-	return int32(len(comps)), nil
-}
-
-// Helper function that actually runs the queries and produces the resolvers from the images.
-func components(ctx context.Context, root *Resolver, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Run search on images.
-	images, err := imageLoader.FromQuery(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapImagesToComponentResolvers(root, images, query)
-}
 
 // Resolvers on Embedded Scan Object.
 /////////////////////////////////////

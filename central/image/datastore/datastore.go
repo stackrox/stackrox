@@ -9,7 +9,6 @@ import (
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
-	badgerStore "github.com/stackrox/rox/central/image/datastore/internal/store/badger"
 	dackBoxStore "github.com/stackrox/rox/central/image/datastore/internal/store/dackbox"
 	imageIndexer "github.com/stackrox/rox/central/image/index"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -21,7 +20,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/features"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -47,29 +45,21 @@ type DataStore interface {
 
 func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.Index, noUpdateTimestamps bool,
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
-	var searcher search.Searcher
 	indexer := imageIndexer.New(bleveIndex)
 
-	if features.Dackbox.Enabled() {
-		searcher = search.New(storage,
-			dacky,
-			cveIndexer.New(bleveIndex),
-			componentCVEEdgeIndexer.New(bleveIndex),
-			componentIndexer.New(bleveIndex),
-			imageComponentEdgeIndexer.New(bleveIndex),
-			imageIndexer.New(bleveIndex))
-	} else {
-		searcher = search.New(storage, nil, nil, nil, nil, nil, indexer)
-	}
-
+	searcher := search.New(storage,
+		dacky,
+		cveIndexer.New(bleveIndex),
+		componentCVEEdgeIndexer.New(bleveIndex),
+		componentIndexer.New(bleveIndex),
+		imageComponentEdgeIndexer.New(bleveIndex),
+		imageIndexer.New(bleveIndex))
 	ds, err := newDatastoreImpl(storage, indexer, searcher, imageComponents, risks, imageRanker, imageComponentRanker)
 	if err != nil {
 		return nil, err
 	}
 
-	if features.Dackbox.Enabled() {
-		ds.initializeRankers()
-	}
+	ds.initializeRankers()
 	return ds, nil
 }
 
@@ -78,15 +68,9 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 // This should be set to `false` except for some tests.
 func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool,
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
-	var storage store.Store
-	if features.Dackbox.Enabled() {
-		var err error
-		storage, err = dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		storage = badgerStore.New(db, noUpdateTimestamps)
+	storage, err := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
+	if err != nil {
+		return nil, err
 	}
 	return newDatastore(dacky, storage, bleveIndex, noUpdateTimestamps, imageComponents, risks, imageRanker, imageComponentRanker)
 }
