@@ -3239,7 +3239,7 @@ jobs:
             # This causes flakiness with the smoke tests.
             # To mitigate this, wait for the deployments to get deleted before running the tests.
             success=0
-            for i in $(seq 1 60); do
+            for i in $(seq 1 90); do
               numDeployments="$(curl -sSk -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/v1/summary/counts" | jq '.numDeployments' -r)"
               echo "Try number ${i}. Number of deployments in Central: ${numDeployments}"
               [[ -n "${numDeployments}" ]]
