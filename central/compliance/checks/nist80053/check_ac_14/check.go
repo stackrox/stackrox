@@ -2,6 +2,7 @@ package checkac14
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/checks/kubernetes"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -112,7 +113,7 @@ func init() {
 			DataDependencies:   []string{"K8sRoles", "K8sRoleBindings"},
 			InterpretationText: interpretationText,
 		}, func(ctx framework.ComplianceContext) {
-			common.IsRBACConfiguredCorrectly(ctx)
+			kubernetes.MasterAPIServerCommandLine("NIST_SP_800_53_Rev_4", "authorization-mode", "RBAC", "RBAC", common.Contains).Run(ctx)
 			checkNoExtraPrivilegesForUnauthenticated(ctx)
 		})
 }

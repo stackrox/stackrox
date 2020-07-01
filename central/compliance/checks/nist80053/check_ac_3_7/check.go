@@ -2,6 +2,7 @@ package checkac37
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/checks/kubernetes"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
@@ -15,11 +16,11 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
-			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Deployments"},
+			Scope:              framework.NodeKind,
+			DataDependencies:   []string{"Deployments", "HostScraped"},
 			InterpretationText: interpretationText,
 		},
 		func(ctx framework.ComplianceContext) {
-			common.IsRBACConfiguredCorrectly(ctx)
+			kubernetes.MasterAPIServerCommandLine("NIST_SP_800_53_Rev_4", "authorization-mode", "RBAC", "RBAC", common.Contains).Run(ctx)
 		})
 }

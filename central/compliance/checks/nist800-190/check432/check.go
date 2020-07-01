@@ -2,6 +2,7 @@ package check432
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/checks/kubernetes"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
@@ -22,7 +23,7 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsRBACConfiguredCorrectly(ctx)
+	kubernetes.MasterAPIServerCommandLine(standardID, "authorization-mode", "RBAC", "RBAC", common.Contains).Run(ctx)
 	common.LimitedUsersAndGroupsWithClusterAdmin(ctx)
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 }

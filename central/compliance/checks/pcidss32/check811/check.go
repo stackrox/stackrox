@@ -2,10 +2,14 @@ package check811
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
+	"github.com/stackrox/rox/central/compliance/checks/kubernetes"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
-const checkID = "PCI_DSS_3_2:8_1_1"
+const (
+	standardID = "PCI_DSS_3_2"
+	checkID    = standardID + ":8_1_1"
+)
 
 func init() {
 	framework.MustRegisterNewCheck(
@@ -20,7 +24,7 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsRBACConfiguredCorrectly(ctx)
+	kubernetes.MasterAPIServerCommandLine(standardID, "authorization-mode", "RBAC", "RBAC", common.Contains).Run(ctx)
 	common.AdministratorUsersPresent(ctx)
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 }
