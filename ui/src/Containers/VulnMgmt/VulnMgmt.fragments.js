@@ -241,7 +241,7 @@ export const NAMESPACE_LIST_FRAGMENT = gql`
                 total
             }
         }
-        deploymentCount
+        deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
         imageCount(query: $query)
         # policyCount(query: $policyQuery) # see https://stack-rox.atlassian.net/browse/ROX-4080
         policyStatusOnly(query: $policyQuery)
@@ -266,7 +266,7 @@ export const POLICY_LIST_FRAGMENT_CORE = gql`
 export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
     fragment unscopedPolicyFields on Policy {
         ...corePolicyFields
-        deploymentCount: failingDeploymentCount(query: $scopeQuery)
+        deploymentCount: failingDeploymentCount(query: $scopeQuery) # field changed to failingDeploymentCount to improve performance
         latestViolation
         policyStatus
     }
@@ -276,7 +276,7 @@ export const UNSCOPED_POLICY_LIST_FRAGMENT = gql`
 export const POLICY_LIST_FRAGMENT = gql`
     fragment policyFields on Policy {
         ...corePolicyFields
-        deploymentCount: failingDeploymentCount(query: $scopeQuery)
+        deploymentCount: failingDeploymentCount(query: $scopeQuery) # field changed to failingDeploymentCount to improve performance
         latestViolation
         policyStatus
     }

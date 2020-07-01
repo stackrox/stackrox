@@ -52,7 +52,7 @@ const VulnMgmtNamespace = ({
                         policyStatus
                         latestViolation
                         severity
-                        deploymentCount
+                        deploymentCount: failingDeploymentCount # field changed to failingDeploymentCount to improve performance
                         lifecycleStages
                         enforcementActions
                         notifiers
@@ -61,7 +61,7 @@ const VulnMgmtNamespace = ({
                 }
                 policyCount(query: $policyQuery)
                 vulnCount
-                deploymentCount
+                deploymentCount: numDeployments # numDeployments is pre-calculated in namespace resolver
                 imageCount
                 componentCount
             }

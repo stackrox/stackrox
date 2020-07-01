@@ -42,7 +42,7 @@ const VulmMgmtEntityCluster = ({
                         policyStatus
                         latestViolation
                         severity
-                        deploymentCount
+                        deploymentCount: failingDeploymentCount # field changed to failingDeploymentCount to improve performance
                         lifecycleStages
                         enforcementActions
                         notifiers
