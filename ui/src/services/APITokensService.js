@@ -14,7 +14,15 @@ export function fetchAPITokens() {
 }
 
 export function generateAPIToken(data) {
-    return axios.post(`${url}/generate`, data).then((response) => ({
+    const options = {
+        method: 'post',
+        url: `${url}/generate`,
+        data,
+        // extend timeout to one minute, for https://stack-rox.atlassian.net/browse/ROX-5183
+        timeout: 60000,
+    };
+
+    return axios(options).then((response) => ({
         response: response.data,
     }));
 }
