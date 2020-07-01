@@ -66,7 +66,7 @@ func init() {
 	registerFieldMetadata(fieldnames.DockerfileLine, querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2), violationmessages.ImageContextFields, dockerfileLineValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.DropCaps, querybuilders.ForDropCaps(), violationmessages.ContainerContextFields, capabilitiesValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.EnvironmentVariable, querybuilders.ForCompound(augmentedobjs.EnvironmentVarCustomTag, 3), violationmessages.EnvVarContextFields, environmentVariableWithSourceRegex, negationForbidden)
-	registerFieldMetadata(fieldnames.FixedBy, querybuilders.ForFieldLabelRegex(search.FixedBy), violationmessages.VulnContextFields, stringValueRegex)
+	registerFieldMetadata(fieldnames.FixedBy, querybuilders.ForFixedBy(), violationmessages.VulnContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.ImageAge, querybuilders.ForDays(search.ImageCreatedTime), violationmessages.ImageContextFields, integerValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.ImageComponent, querybuilders.ForCompound(augmentedobjs.ComponentAndVersionCustomTag, 2), violationmessages.ImageContextFields, keyValueValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.ImageRegistry, querybuilders.ForFieldLabelRegex(search.ImageRegistry), violationmessages.ImageContextFields, stringValueRegex)

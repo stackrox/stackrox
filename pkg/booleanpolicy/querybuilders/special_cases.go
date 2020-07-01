@@ -93,3 +93,16 @@ func ForWriteableHostMount() QueryBuilder {
 		}
 	})
 }
+
+func mapFixedByValue(s string) string {
+	if s == ".*" {
+		s = ".+"
+	}
+	return valueToStringRegex(s)
+}
+
+// ForFixedBy returns a query builder specific to the FixedBy field. It's a regular regex field,
+// except that for historic reasons, .* is special-cased and translated to .+.
+func ForFixedBy() QueryBuilder {
+	return &fieldLabelQueryBuilder{fieldLabel: search.FixedBy, valueMapFunc: mapFixedByValue}
+}

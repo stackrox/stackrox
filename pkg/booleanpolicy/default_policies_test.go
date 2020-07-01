@@ -121,6 +121,11 @@ func (suite *DefaultPoliciesTestSuite) addDepAndImages(deployment *storage.Deplo
 	}
 }
 
+func (suite *DefaultPoliciesTestSuite) addImage(img *storage.Image) *storage.Image {
+	suite.images[img.GetId()] = img
+	return img
+}
+
 func imageWithComponents(components []*storage.EmbeddedImageScanComponent) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
@@ -573,6 +578,21 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		},
 	}
 	suite.addDepAndImages(hostMountDep)
+
+	imgWithFixedByEmpty := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
+		}},
+	}))
+
+	imgWithFixedByEmptyOnlyForSome := suite.addImage(imageWithComponents([]*storage.EmbeddedImageScanComponent{
+		{Name: "EXplicitlyEmptyFixedBy", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-1234-5678", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{}},
+		}},
+		{Name: "Normal", Version: "2.3", Vulns: []*storage.EmbeddedVulnerability{
+			{Cve: "CVE-5612-1245", Cvss: 8, Link: "https://abcdefgh", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "actually_fixable"}},
+		}},
+	}))
 
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
@@ -1247,6 +1267,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				fixtureDep.GetContainers()[0].GetImage().GetId(): {},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {},
 				suite.imageIDFromDep(oldScannedDep):              {},
+				imgWithFixedByEmpty.GetId():                      {},
+				imgWithFixedByEmptyOnlyForSome.GetId():           {},
 			},
 			sampleViolationForMatched: "Image has not been scanned",
 			expectedViolations:        map[string][]*storage.Alert_Violation{},
@@ -1292,6 +1314,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(strutsDep): {
 					{
 						Message: "Fixable CVE-2017-5638 (CVSS 8) found in component 'struts' (version 1.2), resolved by version v1.3",
+					},
+				},
+				imgWithFixedByEmptyOnlyForSome.GetId(): {
+					{
+						Message: "Fixable CVE-5612-1245 (CVSS 8) found in component 'Normal' (version 2.3), resolved by version actually_fixable",
 					},
 				},
 			},
