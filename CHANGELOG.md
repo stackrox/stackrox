@@ -15,6 +15,8 @@ All notable changes to this project that require documentation updates will be d
 - RocksDB is set as the default DB and completely replaces BadgerDB and replaces a majority of BoltDB. This should make Central significantly more performant.
   Users may see slowness during startup on initial upgrade as the data is being migrated.
 - Added UI to show cluster credential expiry in the cluster page (ROX-5034).
+- UI: The deployment event timeline should now visibly group events that would otherwise overlap. The grouped events will show a number in the top right that
+  indicates how many events were grouped. Clicking on the icon will show an interactive tooltip that displays information for each event in a scrollable manner (ROX-5190).
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.
