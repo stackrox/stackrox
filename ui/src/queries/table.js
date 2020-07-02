@@ -19,6 +19,7 @@ export const CLUSTERS_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
             }
         }
     }
@@ -47,6 +48,7 @@ export const NAMESPACES_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
             }
         }
     }
@@ -72,6 +74,7 @@ export const NODES_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
                 unit
             }
         }
@@ -98,6 +101,7 @@ export const DEPLOYMENTS_QUERY = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
                 unit
             }
         }

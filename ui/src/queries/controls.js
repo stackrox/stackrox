@@ -14,6 +14,7 @@ export const AGGREGATED_RESULTS_ACROSS_ENTITY = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -27,6 +28,7 @@ export const AGGREGATED_RESULTS_ACROSS_ENTITY = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -51,6 +53,7 @@ export const AGGREGATED_RESULTS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -62,6 +65,7 @@ export const AGGREGATED_RESULTS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -104,6 +108,7 @@ export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -159,6 +164,7 @@ export const CONTROL_QUERY = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
             }
         }
     }

@@ -89,6 +89,7 @@ export const NODE_COMPLIANCE = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }

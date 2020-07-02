@@ -137,6 +137,9 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					"control7": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 					},
+					"control8": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
+					},
 				},
 			},
 			cluster + "deployment3": {
@@ -172,6 +175,7 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control7", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control8", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_NOTE),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control7", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
@@ -199,6 +203,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		unit          v1.ComplianceAggregation_Scope
 		passPerResult int32
 		failPerResult int32
+		skipPerResult int32
 		numResults    int
 		mask          [numScopes]*set.StringSet
 	}{
@@ -210,6 +215,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		{
 			unit:          v1.ComplianceAggregation_NAMESPACE,
 			failPerResult: 4,
+			skipPerResult: 2,
 			numResults:    1,
 		},
 		{
@@ -220,6 +226,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		{
 			unit:          v1.ComplianceAggregation_DEPLOYMENT,
 			failPerResult: 4,
+			skipPerResult: 2,
 			numResults:    1,
 		},
 		{
@@ -231,6 +238,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			unit:          v1.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
+			skipPerResult: 1,
 			numResults:    1,
 		},
 		{
@@ -243,6 +251,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
 			unit:          v1.ComplianceAggregation_NAMESPACE,
 			failPerResult: 2,
+			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
@@ -255,6 +264,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
 			unit:          v1.ComplianceAggregation_DEPLOYMENT,
 			failPerResult: 2,
+			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
@@ -268,6 +278,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			unit:          v1.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
+			skipPerResult: 1,
 			numResults:    2,
 		},
 		{
@@ -275,6 +286,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			unit:          v1.ComplianceAggregation_CONTROL,
 			failPerResult: 4,
 			passPerResult: 3,
+			skipPerResult: 1,
 			numResults:    4,
 		},
 		{
@@ -282,6 +294,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			unit:          v1.ComplianceAggregation_CHECK,
 			failPerResult: 12,
 			passPerResult: 14,
+			skipPerResult: 8,
 			numResults:    2,
 		},
 		{
@@ -312,6 +325,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			for _, r := range results {
 				assert.Equal(t, c.passPerResult, r.NumPassing)
 				assert.Equal(t, c.failPerResult, r.NumFailing)
+				assert.Equal(t, c.skipPerResult, r.NumSkipped)
 			}
 		})
 	}

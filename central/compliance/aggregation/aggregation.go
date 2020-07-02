@@ -32,6 +32,8 @@ var (
 		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: {pass: 1},
 		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: {fail: 1},
 		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   {fail: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_SKIP:    {skipped: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_NOTE:    {skipped: 1},
 	}
 )
 
@@ -94,14 +96,16 @@ func (a *aggregatorImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resu
 }
 
 type passFailCounts struct {
-	pass int
-	fail int
+	pass    int
+	fail    int
+	skipped int
 }
 
 func (c passFailCounts) Add(other passFailCounts) passFailCounts {
 	return passFailCounts{
-		pass: c.pass + other.pass,
-		fail: c.fail + other.fail,
+		pass:    c.pass + other.pass,
+		fail:    c.fail + other.fail,
+		skipped: c.skipped + other.skipped,
 	}
 }
 
@@ -111,6 +115,9 @@ func (c passFailCounts) Reduce() passFailCounts {
 	}
 	if c.pass > 0 {
 		return passFailCounts{pass: 1}
+	}
+	if c.skipped > 0 {
+		return passFailCounts{skipped: 1}
 	}
 	return passFailCounts{}
 }
@@ -419,6 +426,7 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 			Unit:            unit,
 			NumPassing:      int32(counts.pass),
 			NumFailing:      int32(counts.fail),
+			NumSkipped:      int32(counts.skipped),
 		}
 		domainMap[result] = domains[key]
 		results = append(results, result)

@@ -43,6 +43,7 @@ const QUERY = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 keys {
                     ... on ComplianceControlGroup {
                         id

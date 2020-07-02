@@ -32,6 +32,7 @@ export const SEARCH_WITH_CONTROLS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -48,6 +49,7 @@ export const SEARCH_WITH_CONTROLS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -64,6 +66,7 @@ export const SEARCH_WITH_CONTROLS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -75,6 +78,7 @@ export const SEARCH_WITH_CONTROLS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }

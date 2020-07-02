@@ -229,6 +229,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"aggregationKeys: [ComplianceAggregation_AggregationKey]!",
 		"numFailing: Int!",
 		"numPassing: Int!",
+		"numSkipped: Int!",
 		"unit: ComplianceAggregation_Scope!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceAggregation_Scope(0)))
@@ -2823,6 +2824,11 @@ func (resolver *complianceAggregation_ResultResolver) NumFailing(ctx context.Con
 
 func (resolver *complianceAggregation_ResultResolver) NumPassing(ctx context.Context) int32 {
 	value := resolver.data.GetNumPassing()
+	return value
+}
+
+func (resolver *complianceAggregation_ResultResolver) NumSkipped(ctx context.Context) int32 {
+	value := resolver.data.GetNumSkipped()
 	return value
 }
 

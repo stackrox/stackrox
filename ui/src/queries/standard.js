@@ -42,6 +42,7 @@ export const LIST_STANDARD = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
             }
         }
     }
@@ -84,6 +85,7 @@ export const LIST_STANDARD_NO_NODES = gql`
                 }
                 numPassing
                 numFailing
+                numSkipped
             }
         }
     }
@@ -116,6 +118,7 @@ export const COMPLIANCE_STANDARDS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }
@@ -127,6 +130,7 @@ export const COMPLIANCE_STANDARDS = gql`
                 }
                 numFailing
                 numPassing
+                numSkipped
                 unit
             }
         }

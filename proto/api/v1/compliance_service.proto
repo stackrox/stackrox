@@ -45,6 +45,7 @@ message ComplianceAggregation {
 
         int32 num_passing = 3;
         int32 num_failing = 4;
+        int32 num_skipped = 5;
     }
 
     // Next available tag: 5
