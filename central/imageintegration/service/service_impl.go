@@ -257,6 +257,9 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 }
 
 func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.ImageIntegration) error {
+	if request == nil {
+		return errors.New("empty integration")
+	}
 	errorList := errorhelpers.NewErrorList("Validation")
 	if len(request.GetCategories()) == 0 {
 		errorList.AddStrings("integrations require a category")

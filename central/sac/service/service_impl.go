@@ -94,7 +94,7 @@ func (s *serviceImpl) GetAuthzPluginConfigs(ctx context.Context, _ *v1.Empty) (*
 	if err != nil {
 		return nil, err
 	}
-	for config := range configs {
+	for _, config := range configs {
 		secrets.ScrubSecretsFromStructWithReplacement(config, secrets.ScrubReplacementStr)
 	}
 	return &v1.GetAuthzPluginConfigsResponse{

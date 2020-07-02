@@ -10,6 +10,7 @@ import (
 )
 
 // DataStore exposes the functions that exposed and modify auth plugin configs in the system.
+//go:generate mockgen-wrapper
 type DataStore interface {
 	ListAuthzPluginConfigs(ctx context.Context) ([]*storage.AuthzPluginConfig, error)
 	GetAuthzPluginConfig(ctx context.Context, id string) (*storage.AuthzPluginConfig, error)

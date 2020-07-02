@@ -95,6 +95,9 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiers
 }
 
 func validateNotifier(notifier *storage.Notifier) error {
+	if notifier == nil {
+		return errors.New("empty notifier")
+	}
 	errorList := errorhelpers.NewErrorList("Validation")
 	if notifier.GetName() == "" {
 		errorList.AddString("notifier name must be defined")
