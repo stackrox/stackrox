@@ -2,7 +2,6 @@ package check308a3iib
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
-	"github.com/stackrox/rox/central/compliance/checks/kubernetes"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
@@ -14,15 +13,15 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,
-			Scope:              framework.NodeKind,
+			Scope:              framework.ClusterKind,
 			AdditionalScopes:   []framework.TargetKind{framework.DeploymentKind},
-			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings", "HostScraped"},
+			DataDependencies:   []string{"Deployments", "K8sRoles", "K8sRoleBindings"},
 			InterpretationText: interpretationText,
 		},
 		clusterIsCompliant)
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	kubernetes.MasterAPIServerCommandLine(standardID, "authorization-mode", "RBAC", "RBAC", common.Contains).Run(ctx)
+	common.IsRBACConfiguredCorrectly(ctx)
 	common.CheckDeploymentsDoNotHaveClusterAccess(ctx, common.EffectiveAdmin)
 }

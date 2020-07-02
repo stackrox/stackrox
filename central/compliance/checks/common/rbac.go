@@ -21,6 +21,20 @@ var EffectiveAdmin = &storage.PolicyRule{
 const IsRBACConfiguredCorrectlyInterpretation = `StackRox assesses how the Kubernetes API server is configured in your clusters.
 For this control, StackRox checks that the legacy Application-Based Access Control (ABAC) authorizer is disabled and the more secure Role-Based Access Control (RBAC) authorizer is enabled.`
 
+// IsRBACConfiguredCorrectly returns if RBAC is correctly set up.
+func IsRBACConfiguredCorrectly(ctx framework.ComplianceContext) {
+	authorizationMode := getAPIServerAuthorizationMode(ctx.Data().Deployments())
+	if !isRBACEnabled(ctx.Data().Cluster(), authorizationMode) {
+		framework.Fail(ctx, "RBAC is not available or not enabled.")
+		return
+	}
+	if isABACEnabled(ctx.Data().Cluster(), authorizationMode) {
+		framework.Fail(ctx, "ABAC is enabled or available.")
+		return
+	}
+	framework.Pass(ctx, "RBAC is enabled and ABAC is disabled.")
+}
+
 // CheckVolumeAccessIsLimited checks that not all service accounts can manipulate volumes.
 func CheckVolumeAccessIsLimited(ctx framework.ComplianceContext) {
 	// Collect a list of all known service accounts with bound permissions.
