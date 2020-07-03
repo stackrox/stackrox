@@ -172,6 +172,28 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
+      # This script cannot be refactored out in our scripts/ directory because we checkout older commits
+      # as a part of tests and this function is widely used
+
+      echo "Waiting for central to start"
+      start_time="$(date '+%s')"
+      while true; do
+        central_json="$(kubectl -n stackrox get deploy/central -o json)"
+        if [[ "$(echo "${central_json}" | jq '.status.replicas')" == 1 && "$(echo "${central_json}" | jq '.status.readyReplicas')" == 1 ]]; then
+          break
+        fi
+        echo "$central_json"
+        if (( $(date '+%s') - start_time > 300 )); then
+          kubectl -n stackrox get pod -o wide
+          kubectl -n stackrox get deploy -o wide
+          echo >&2 "Timed out after 5m"
+          exit 1
+        fi
+        echo -n .
+        sleep 1
+      done
+      echo "central is running"
+
       export API_HOSTNAME=localhost
       export API_PORT=8000
       if [[ "${LOAD_BALANCER}" == "lb" ]]; then
