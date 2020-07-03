@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -204,19 +205,18 @@ func isGoFile(f os.FileInfo) bool {
 	return !f.IsDir() && !strings.HasPrefix(name, ".") && strings.HasSuffix(name, ".go")
 }
 
-// Returns the list of go files in this package (non recursively).
-func getGoFilesInPackage(goPath, packageName string) (fileNames []string) {
-	dir := path.Join(goPath, "src", packageName)
-	files, err := ioutil.ReadDir(dir)
+// Returns the list of go files in this directory (non recursively).
+func getGoFilesInDir(packageDir string) (fileNames []string) {
+	files, err := ioutil.ReadDir(packageDir)
 	if err != nil {
-		logAndExit("Couldn't read go files in package %s: %s", packageName, err)
+		logAndExit("Couldn't read go files in directory %s: %v", packageDir, err)
 	}
 
 	for _, file := range files {
 		if !isGoFile(file) {
 			continue
 		}
-		fileNames = append(fileNames, path.Join(dir, file.Name()))
+		fileNames = append(fileNames, path.Join(packageDir, file.Name()))
 	}
 	return
 }
@@ -228,9 +228,32 @@ func logAndExit(format string, args ...interface{}) {
 }
 
 func main() {
-	goPath, exists := os.LookupEnv("GOPATH")
-	if !exists {
-		logAndExit("GOPATH not found")
+	var (
+		goPath, goPathSet = os.LookupEnv("GOPATH")
+		dirForPackageName func(packageName string) string
+	)
+
+	if goPathSet {
+		p, err := filepath.Abs(goPath)
+		if err != nil {
+			logAndExit("failed to turn %s into an absolute path: %v", p, err)
+		}
+		goPath = p
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		logAndExit("failed to query current working directory: %v", err)
+	}
+
+	if !goPathSet || !strings.HasPrefix(cwd, goPath) {
+		dirForPackageName = func(packageName string) string {
+			return path.Join(cwd, strings.TrimPrefix(packageName, roxPrefix))
+		}
+	} else {
+		dirForPackageName = func(packageName string) string {
+			return path.Join(goPath, "src", packageName)
+		}
 	}
 
 	var failed bool
@@ -240,9 +263,8 @@ func main() {
 		if !mustProcess {
 			continue
 		}
-		goFiles := getGoFilesInPackage(goPath, packageName)
 
-		for _, goFile := range goFiles {
+		for _, goFile := range getGoFilesInDir(dirForPackageName(packageName)) {
 			errs := verifyImportsFromAllowedPackagesOnly(goFile, root, packageName)
 			if len(errs) > 0 {
 				failed = true

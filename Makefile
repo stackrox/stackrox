@@ -17,7 +17,8 @@ RHEL_BUILD_IMAGE := stackrox/main:rocksdb-builder-rhel-6.7.3-4
 
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 
-LOCAL_VOLUME_ARGS := -v$(CURDIR)/linux-gocache:/linux-gocache:delegated -v $(GOPATH):/go:delegated
+LOCAL_VOLUME_ARGS := -v$(CURDIR):/src:delegated -v$(CURDIR)/linux-gocache:/linux-gocache:delegated -v $(GOPATH):/go:delegated
+GOPATH_WD_OVERRIDES := -w /src -e GOPATH=/go
 
 RELEASE_GOTAGS := release
 ifdef CI
@@ -156,7 +157,7 @@ fast-central-build:
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
-	docker run $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
+	docker run $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make fast-central-build
 	@$(BASE_DIR)/scripts/k8s/kill-central.sh
 
 # fast is a dev mode options when using local dev
@@ -341,7 +342,7 @@ ifdef CI
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection
 else
-	docker run $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
+	docker run $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection roxctl
 endif
 
@@ -355,7 +356,7 @@ ifdef CI
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
 	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection
 else
-	docker run $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
+	docker $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
 	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection roxctl
 endif
 
