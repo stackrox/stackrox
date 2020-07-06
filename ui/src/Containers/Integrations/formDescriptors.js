@@ -635,7 +635,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'docker.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -849,7 +849,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'docker.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
@@ -889,7 +889,7 @@ const formDescriptors = {
                 label: 'Password or Service Principal Password',
                 jsonpath: 'docker.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             // No 'docker.insecure' toggle because always hosted externally.
             skipTestIntegration,
@@ -990,7 +990,7 @@ const formDescriptors = {
                 label: 'Password',
                 jsonpath: 'docker.password',
                 type: 'password',
-                placeholder: '',
+                ...storedCredentialFields,
             },
             // No 'docker.insecure' toggle because always hosted externally.
             skipTestIntegration,

@@ -87,4 +87,40 @@ describe('Image Integrations Test', () => {
             'Leave this empty to use the currently stored credentials'
         );
     });
+
+    it('should show a hint about stored credentials for Microsoft ACR', () => {
+        cy.get(selectors.microsoftACRTile).click();
+        cy.get(`${selectors.table.rows}:contains('Microsoft ACR Test')`).click();
+        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get(selectors.tooltip.overlay).contains(
+            'Leave this empty to use the currently stored credentials'
+        );
+    });
+
+    it('should show a hint about stored credentials for JFrog Artifactory', () => {
+        cy.get(selectors.jFrogArtifactoryTile).click();
+        cy.get(`${selectors.table.rows}:contains('JFrog Artifactory Test')`).click();
+        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get(selectors.tooltip.overlay).contains(
+            'Leave this empty to use the currently stored credentials'
+        );
+    });
+
+    it('should show a hint about stored credentials for Sonatype Nexus', () => {
+        cy.get(selectors.sonatypeNexusTile).click();
+        cy.get(`${selectors.table.rows}:contains('Sonatype Nexus Test')`).click();
+        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get(selectors.tooltip.overlay).contains(
+            'Leave this empty to use the currently stored credentials'
+        );
+    });
+
+    it('should show a hint about stored credentials for Red Hat', () => {
+        cy.get(selectors.redHatTile).click();
+        cy.get(`${selectors.table.rows}:contains('Red Hat Test')`).click();
+        cy.get('div:contains("Password"):last [alt="help"]').trigger('mouseenter');
+        cy.get(selectors.tooltip.overlay).contains(
+            'Leave this empty to use the currently stored credentials'
+        );
+    });
 });
