@@ -149,6 +149,10 @@ export function getPolicyTableColumns(workflowState) {
                     count={original.deploymentCount}
                     textOnly={inFindingsSection || pdf}
                     selectedRowId={original.id}
+                    // 'Policy Violated' is a fake search field to filter deployments that have violation. This is
+                    // handled/supported only by deployments sub-resolver of policy resolver. Note that
+                    // 'Policy Violated=false' is not yet supported. Refer to 'pkg/search/options.go' for details.
+                    search={{ 'Policy Violated': true }}
                 />
             ),
             id: policySortFields.DEPLOYMENTS,

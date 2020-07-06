@@ -196,7 +196,7 @@ const VulmMgmtEntityPolicy = ({
             result: policy(id: $id) {
                 id
                 ${defaultCountKeyMap[entityListType]}${queryVarParam}
-                ${listFieldName}(pagination: $pagination${queryVarConcat}) { ...${fragmentName} }
+                ${listFieldName}(query: $query, pagination: $pagination${queryVarConcat}) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
                 unusedVarSink(query: $query)

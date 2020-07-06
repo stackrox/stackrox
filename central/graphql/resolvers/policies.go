@@ -26,6 +26,7 @@ func init() {
 		schema.AddExtraResolver("Policy", `alerts(query: String, pagination: Pagination): [Alert!]!`),
 		schema.AddExtraResolver("Policy", `alertCount(query: String): Int!`),
 		schema.AddExtraResolver("Policy", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
+		schema.AddExtraResolver("Policy", `failingDeployments(query: String, pagination: Pagination): [Deployment!]!`),
 		schema.AddExtraResolver("Policy", `deploymentCount(query: String): Int!`),
 		schema.AddExtraResolver("Policy", `failingDeploymentCount(query: String): Int!`),
 		schema.AddExtraResolver("Policy", `policyStatus(query: String): String!`),
@@ -123,6 +124,13 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 		if deploymentFilterQuery, err = args.AsV1QueryOrEmpty(); err != nil {
 			return nil, err
 		}
+
+		// If the query contains 'Policy Violated' search field, it means this is a query to find deployments failing
+		// on given policy. Since this is a fake search field not belonging to search category, remove the base query
+		// that contains the 'Policy Violated' search field and return the rest of the query.
+		if filteredQuery, isFailingDeploymentsQuery := inverseFilterFailingDeploymentsQuery(deploymentFilterQuery); isFailingDeploymentsQuery {
+			return resolver.failingDeployments(ctx, filteredQuery)
+		}
 	}
 
 	pagination := deploymentFilterQuery.GetPagination()
@@ -136,6 +144,59 @@ func (resolver *policyResolver) Deployments(ctx context.Context, args PaginatedQ
 	deploymentQuery := search.NewConjunctionQuery(deploymentFilterQuery,
 		search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentIDs...).ProtoQuery())
 	deploymentQuery.Pagination = pagination
+
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deploymentResolvers, err := resolver.root.wrapDeployments(deploymentLoader.FromQuery(ctx, deploymentQuery))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, deploymentResolver := range deploymentResolvers {
+		deploymentResolver.ctx = scoped.Context(ctx, scoped.Scope{
+			Level: v1.SearchCategory_POLICIES,
+			ID:    resolver.data.GetId(),
+		})
+	}
+	return deploymentResolvers, nil
+}
+
+// FailingDeployments returns GraphQL resolvers for all deployments that this policy is failing on.
+func (resolver *policyResolver) FailingDeployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Policies, "FailingDeployments")
+	if err := readDeployments(ctx); err != nil {
+		return nil, err
+	}
+
+	if resolver.data.GetDisabled() {
+		return nil, nil
+	}
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
+	return resolver.failingDeployments(ctx, q)
+}
+
+func (resolver *policyResolver) failingDeployments(ctx context.Context, q *v1.Query) ([]*deploymentResolver, error) {
+	alertsQuery := search.NewConjunctionQuery(resolver.getPolicyQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+	listAlerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, alertsQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	deploymentIDs := make([]string, 0, len(listAlerts))
+	for _, alert := range listAlerts {
+		deploymentIDs = append(deploymentIDs, alert.GetDeployment().GetId())
+	}
+
+	deploymentQuery := search.NewConjunctionQuery(q, search.NewQueryBuilder().AddDocIDs(deploymentIDs...).ProtoQuery())
+	deploymentQuery.Pagination = q.GetPagination()
 
 	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
@@ -324,4 +385,21 @@ func (pf *policyFieldsResolver) ReadOnlyRootFs(ctx context.Context) *bool {
 	}
 	ret := pf.data.GetReadOnlyRootFs()
 	return &ret
+}
+
+func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
+	failingDeploymentsQuery := false
+	local := q.Clone()
+	filtered, _ := search.FilterQuery(local, func(bq *v1.BaseQuery) bool {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			if matchFieldQuery.MatchFieldQuery.GetField() == search.PolicyViolated.String() {
+				failingDeploymentsQuery = true
+				return false
+			}
+		}
+		return true
+	})
+
+	return filtered, failingDeploymentsQuery
 }

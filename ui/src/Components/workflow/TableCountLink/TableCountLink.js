@@ -7,7 +7,7 @@ import TableCellLink from 'Components/TableCellLink';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityLabels from 'messages/entity';
 
-const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityTypeText }) => {
+const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityTypeText, search }) => {
     const workflowState = useContext(workflowStateContext);
 
     const type = entityTypeText || entityLabels[entityType];
@@ -16,11 +16,13 @@ const TableCountLink = ({ selectedRowId, entityType, textOnly, count, entityType
     const text = `${count} ${pluralize(type, count)}`;
     if (textOnly) return <span data-testid={`${type}CountText`}>{text}</span>;
 
-    const url = workflowState.pushListItem(selectedRowId).pushList(entityType).toUrl();
+    const newState = workflowState.pushListItem(selectedRowId).pushList(entityType);
+    const urlWithSearch = newState.setSearch(search).toUrl();
+
     return (
         <TableCellLink
             pdf={textOnly}
-            url={url}
+            url={urlWithSearch}
             text={text}
             dataTestId={`${camelCase(type)}CountLink`}
         />
@@ -33,11 +35,13 @@ TableCountLink.propTypes = {
     textOnly: PropTypes.bool,
     count: PropTypes.number.isRequired,
     entityTypeText: PropTypes.string,
+    search: PropTypes.shape({}),
 };
 
 TableCountLink.defaultProps = {
     textOnly: false,
     entityTypeText: null,
+    search: {},
 };
 
 export default TableCountLink;
