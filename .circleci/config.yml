@@ -1030,6 +1030,10 @@ commands:
         type: string
         default: kubectl
 
+      use-websocket:
+        type: boolean
+        default: false
+
     steps:
       - checkout
       - check-backend-changes
@@ -1045,6 +1049,7 @@ commands:
       - setup-gcp
       - setup-dep-env:
           use-main-rhel: << parameters.use-main-rhel >>
+          use-websocket: << parameters.use-websocket >>
       - attach-gke-cluster:
           cluster-id: << parameters.cluster-id >>
       - remove-existing-stackrox-resources
@@ -2423,8 +2428,7 @@ jobs:
       - *setupRoxctl
       - setup_remote_docker
       - setup-gcp
-      - setup-dep-env:
-          use-websocket: true
+      - setup-dep-env
 
       - attach-gke-cluster:
           cluster-id: api-nongroovy-tests
@@ -2706,6 +2710,7 @@ jobs:
           determine-whether-to-run:
             - check-label-to-skip-tests:
                 label: ci-no-qa-tests
+          use-websocket: true
 
   openshift-rhel-api-e2e-tests:
     executor: custom
@@ -2764,6 +2769,7 @@ jobs:
                 run-on-master: false
                 run-on-tags: true
           use-main-rhel: true
+          use-websocket: true
 
   gke-kernelmodule-api-e2e-tests:
     executor: custom
@@ -3310,8 +3316,7 @@ jobs:
 
       - *setupRoxctl
       - setup-gcp
-      - setup-dep-env:
-          use-websocket: true
+      - setup-dep-env
       - attach-gke-cluster:
           cluster-id: scale-test
       - remove-existing-stackrox-resources
