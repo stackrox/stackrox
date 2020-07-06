@@ -5,7 +5,7 @@ backup_boltdbpath="/var/lib/stackrox/stackrox.db.pre-rocksdb-snapshot"
 rm "${backup_boltdbpath}.tmp" 2> /dev/null || true
 
 # If we want to move to RocksDB, we want to backup bolt in it's current state POST-migration
-if [ "${ROX_ROCKSDB}" != "false" ] && [ -f "${dbpath}" ] && [ ! -f "${backup_boltdbpath}" ]; then
+if [ "${ROX_ROCKSDB}" != "false" ] && [ -f "${dbpath}" ] && [ ! -f "${backup_boltdbpath}" ] && [ -d /var/lib/stackrox/badgerdb ]; then
   echo >&2 "Backing up BoltDB before migration to RocksDB"
   echo >&2 "Copying ${dbpath} to ${backup_boltdbpath}.tmp"
   cp "$dbpath" "${backup_boltdbpath}.tmp"
