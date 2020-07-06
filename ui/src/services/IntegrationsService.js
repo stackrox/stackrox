@@ -21,6 +21,17 @@ function getPath(type, action) {
     }
 }
 
+function getJsonFieldBySource(source) {
+    switch (source) {
+        case 'notifiers':
+            return 'notifier';
+        case 'backups':
+            return 'externalBackup';
+        default:
+            return 'config';
+    }
+}
+
 /**
  * Fetches list of registered integrations based on source.
  *
@@ -51,7 +62,7 @@ export function saveIntegration(source, data, options) {
     }
     // if it does, format the request data and use the new API
     const integration = {
-        config: data,
+        [getJsonFieldBySource(source)]: data,
         updatePassword,
     };
     return axios.patch(`${getPath(source, 'save')}/${data.id}`, integration);
@@ -83,7 +94,7 @@ export function testIntegration(source, data, options) {
     }
     // if it does, format the request data and use the new API
     const integration = {
-        config: data,
+        [getJsonFieldBySource(source)]: data,
         updatePassword,
     };
     return axios.post(`${getPath(source, 'test')}/test/updated`, integration);
