@@ -24,10 +24,6 @@ describe('Auth Plugins Test', () => {
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'
         );
-        cy.get('div:contains("Client Certificate"):last [alt="help"]').trigger('mouseenter');
-        cy.get(selectors.tooltip.overlay).contains(
-            'Leave this empty to use the currently stored credentials'
-        );
         cy.get('div:contains("Client Key"):last [alt="help"]').trigger('mouseenter');
         cy.get(selectors.tooltip.overlay).contains(
             'Leave this empty to use the currently stored credentials'

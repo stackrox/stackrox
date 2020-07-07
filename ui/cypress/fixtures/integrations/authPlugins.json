@@ -11,7 +11,7 @@
                 "username": "test",
                 "password": "******",
                 "headers": [],
-                "clientCertPem": "******",
+                "clientCertPem": "test",
                 "clientKeyPem": "******"
             }
         }

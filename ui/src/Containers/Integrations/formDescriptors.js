@@ -1152,7 +1152,6 @@ const formDescriptors = {
                 type: 'textarea',
                 placeholder:
                     '-----BEGIN CERTIFICATE-----\nPEM-encoded client certificate\n-----END CERTIFICATE-----',
-                ...storedCredentialFields,
             },
             {
                 label: 'Client Key (optional)',
