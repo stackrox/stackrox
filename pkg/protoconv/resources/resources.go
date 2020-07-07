@@ -289,7 +289,7 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 				case env.ValueFrom.ConfigMapKeyRef != nil:
 					envVarSrc = storage.ContainerConfig_EnvironmentConfig_CONFIG_MAP_KEY
 					ref := env.ValueFrom.ConfigMapKeyRef
-					value = fmt.Sprintf("Refers to config map %q with key %q", ref.Key, ref.Name)
+					value = fmt.Sprintf("Refers to config map %q with key %q", ref.Name, ref.Key)
 				case env.ValueFrom.FieldRef != nil:
 					envVarSrc = storage.ContainerConfig_EnvironmentConfig_FIELD
 					ref := env.ValueFrom.FieldRef
