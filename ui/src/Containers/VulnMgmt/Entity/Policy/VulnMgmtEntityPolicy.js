@@ -24,7 +24,6 @@ const VulmMgmtEntityPolicy = ({
     setRefreshTrigger,
 }) => {
     const queryVarParam = entityContext[entityTypes.POLICY] ? '' : '(query: $scopeQuery)';
-    const queryVarConcat = entityContext[entityTypes.POLICY] ? '' : ', query: $scopeQuery';
     const workflowState = useContext(workflowStateContext);
 
     const overviewQuery = gql`
@@ -195,8 +194,8 @@ const VulmMgmtEntityPolicy = ({
         query getPolicy${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
             result: policy(id: $id) {
                 id
-                ${defaultCountKeyMap[entityListType]}${queryVarParam}
-                ${listFieldName}(query: $query, pagination: $pagination${queryVarConcat}) { ...${fragmentName} }
+                ${defaultCountKeyMap[entityListType]}(query: $query)
+                ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
                 unusedVarSink(query: $policyQuery)
                 unusedVarSink(query: $scopeQuery)
                 unusedVarSink(query: $query)
@@ -210,7 +209,10 @@ const VulmMgmtEntityPolicy = ({
     const queryOptions = {
         variables: {
             id: entityId,
-            query: queryService.objectToWhereClause({ ...search }),
+            query: queryService.objectToWhereClause({
+                ...queryService.entityContextToQueryObject(fullEntityContext),
+                ...search,
+            }),
             ...vulMgmtPolicyQuery,
             scopeQuery: getScopeQuery(fullEntityContext),
         },

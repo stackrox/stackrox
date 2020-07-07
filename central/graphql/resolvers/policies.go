@@ -392,7 +392,7 @@ func inverseFilterFailingDeploymentsQuery(q *v1.Query) (*v1.Query, bool) {
 	local := q.Clone()
 	filtered, _ := search.FilterQuery(local, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if !ok {
+		if ok {
 			if matchFieldQuery.MatchFieldQuery.GetField() == search.PolicyViolated.String() {
 				failingDeploymentsQuery = true
 				return false
