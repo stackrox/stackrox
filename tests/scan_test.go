@@ -33,9 +33,9 @@ func verifySummariesExist(t *testing.T, image *storage.Image, shouldExist bool) 
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
 func TestScan(t *testing.T) {
-	deployment := "nginx-1-10"
-	imageID := "sha256:6202beb06ea61f44179e02ca965e8e13b961d12640101fca213efbfd145d7575"
-	image := fmt.Sprintf("docker.io/library/nginx:1.10@%s", imageID)
+	deployment := "nginx-1-18"
+	imageID := "sha256:cc54bf7fa755cebebbe98e11da2ff3626852fc5a9db3397bdbec74339da9ff72"
+	image := fmt.Sprintf("docker.io/library/nginx:1.18@%s", imageID)
 	setupDeployment(t, image, deployment)
 	defer teardownDeployment(t, deployment)
 
@@ -80,7 +80,7 @@ func TestScan(t *testing.T) {
 	verifySummariesExist(t, resp, true)
 
 	resp, err = imageService.ScanImage(ctx, &v1.ScanImageRequest{
-		ImageName: "docker.io/library/nginx:1.10",
+		ImageName: "docker.io/library/nginx:1.18",
 		Force:     true,
 	})
 	require.NoError(t, err)
