@@ -12,7 +12,7 @@ import Form from 'Containers/Integrations/Form';
 import Modal from 'Components/Modal';
 import IntegrationTable from 'Containers/Integrations/Table';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
-import { setStoredCredentialsField } from './integrationFormUtils';
+import { setStoredCredentialFields } from './integrationFormUtils';
 
 const SOURCE_LABELS = Object.freeze({
     authPlugins: 'auth plugins',
@@ -180,7 +180,7 @@ class IntegrationModal extends Component {
         // we want to add a new "hasStoredCredentials" field to determine whether this
         // integration can possibly use stored credentials if the password field is empty
         // on submission
-        const modifiedSelectedIntegration = setStoredCredentialsField(
+        const modifiedSelectedIntegration = setStoredCredentialFields(
             source,
             type,
             selectedIntegration

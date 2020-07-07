@@ -11,15 +11,15 @@ import formDescriptors from 'Containers/Integrations/formDescriptors';
  * @param {string} type - The type of the integration
  * @returns {Object}
  */
-export function getFieldWithPossibleStoredCredentials(source, type) {
+export function getFieldsWithPossibleStoredCredentials(source, type) {
     if (formDescriptors[source] && formDescriptors[source][type]) {
         const fields = formDescriptors[source][type];
-        const fieldWithStoredCredentials = fields.find(
+        const fieldsWithStoredCredentials = fields.filter(
             (field) => 'checkStoredCredentials' in field
         );
-        return fieldWithStoredCredentials;
+        return fieldsWithStoredCredentials;
     }
-    return null;
+    return [];
 }
 
 /**
@@ -32,10 +32,15 @@ export function getFieldWithPossibleStoredCredentials(source, type) {
  * @returns {boolean}
  */
 function shouldUpdateStoredCredentials(source, type, data) {
-    const fieldWithPossibleStoredCredentials = getFieldWithPossibleStoredCredentials(source, type);
-    if (!fieldWithPossibleStoredCredentials) return false;
-    const value = resolvePath(data, fieldWithPossibleStoredCredentials.jsonpath);
-    return !!value;
+    const fieldsWithPossibleStoredCredentials = getFieldsWithPossibleStoredCredentials(
+        source,
+        type
+    );
+    if (fieldsWithPossibleStoredCredentials.length === 0) return false;
+    const shouldUpdate = fieldsWithPossibleStoredCredentials.some((field) => {
+        return !!resolvePath(data, field.jsonpath);
+    });
+    return shouldUpdate;
 }
 
 /**
@@ -47,12 +52,17 @@ function shouldUpdateStoredCredentials(source, type, data) {
  * @param {Object} data - The form data
  * @returns {Object}
  */
-function findFieldWithStoredCredentials(source, type, data) {
-    const fieldWithPossibleStoredCredentials = getFieldWithPossibleStoredCredentials(source, type);
-    if (!fieldWithPossibleStoredCredentials) return null;
-    const value = resolvePath(data, fieldWithPossibleStoredCredentials.jsonpath);
-    if (value === '******') return fieldWithPossibleStoredCredentials;
-    return null;
+function findFieldsWithStoredCredentials(source, type, data) {
+    const fieldsWithPossibleStoredCredentials = getFieldsWithPossibleStoredCredentials(
+        source,
+        type
+    );
+    if (fieldsWithPossibleStoredCredentials.length === 0) return [];
+    const fieldsWithStoredCredentials = fieldsWithPossibleStoredCredentials.filter((field) => {
+        const value = resolvePath(data, field.jsonpath);
+        return value === '******';
+    });
+    return fieldsWithStoredCredentials;
 }
 
 /**
@@ -65,16 +75,19 @@ function findFieldWithStoredCredentials(source, type, data) {
  * @param {Object} data - The form data
  * @returns {Object}
  */
-export function setStoredCredentialsField(source, type, initialValues) {
-    const fieldWithStoredCredentials = findFieldWithStoredCredentials(source, type, initialValues);
+export function setStoredCredentialFields(source, type, initialValues) {
+    const fieldsWithStoredCredentials = findFieldsWithStoredCredentials(
+        source,
+        type,
+        initialValues
+    );
     // if there isn't a field that uses the stored credentials, leave the data untouched
-    if (!fieldWithStoredCredentials) return initialValues;
-    const hasStoredCredentials = fieldWithStoredCredentials !== null;
+    if (fieldsWithStoredCredentials.length === 0) return initialValues;
     const newInitialValues = { ...initialValues };
-    if (hasStoredCredentials) {
-        newInitialValues.hasStoredCredentials = hasStoredCredentials;
-        set(newInitialValues, fieldWithStoredCredentials.jsonpath, '');
-    }
+    newInitialValues.hasStoredCredentials = true;
+    fieldsWithStoredCredentials.forEach((field) => {
+        set(newInitialValues, field.jsonpath, '');
+    });
     return newInitialValues;
 }
 
@@ -89,9 +102,12 @@ export function setStoredCredentialsField(source, type, initialValues) {
  * @returns {Object}
  */
 export function setFormSubmissionOptions(source, type, data, metadata = {}) {
-    const fieldWithPossibleStoredCredentials = getFieldWithPossibleStoredCredentials(source, type);
+    const fieldsWithPossibleStoredCredentials = getFieldsWithPossibleStoredCredentials(
+        source,
+        type
+    );
     let options = null;
-    if (fieldWithPossibleStoredCredentials) {
+    if (fieldsWithPossibleStoredCredentials.length) {
         const { isNewIntegration } = metadata;
         // if we're creating a new integration for something that can store credentials, we should
         // automatically update

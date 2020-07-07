@@ -1,44 +1,48 @@
-import { setStoredCredentialsField, setFormSubmissionOptions } from './integrationFormUtils';
+import { setStoredCredentialFields, setFormSubmissionOptions } from './integrationFormUtils';
 
 describe('integrationFormUtils', () => {
-    describe('setStoredCredentialsField', () => {
-        it('should add the "hasStoredCredentials" field for an integration', () => {
+    describe('setStoredCredentialFields', () => {
+        it('should add the "hasStoredCredentials" field and clear the field for an integration', () => {
             const source = 'imageIntegrations';
-            const type = 'docker';
+            const type = 'ecr';
             const initialValues = {
-                docker: {
-                    password: '******',
+                ecr: {
+                    accessKeyId: '******',
+                    secretAccessKey: '******',
                 },
             };
 
-            expect(setStoredCredentialsField(source, type, initialValues)).toEqual({
+            expect(setStoredCredentialFields(source, type, initialValues)).toEqual({
                 hasStoredCredentials: true,
-                docker: {
-                    password: '',
+                ecr: {
+                    accessKeyId: '',
+                    secretAccessKey: '',
                 },
             });
         });
 
         it('should not add the "hasStoredCredentials" field for an integration', () => {
-            const source = 'notifiers';
-            const type = 'slack';
+            const source = 'imageIntegrations';
+            const type = 'ecr';
             const initialValues = {
-                docker: {
-                    password: '',
+                ecr: {
+                    accessKeyId: '',
+                    secretAccessKey: '',
                 },
             };
 
-            expect(setStoredCredentialsField(source, type, initialValues)).toEqual(initialValues);
+            expect(setStoredCredentialFields(source, type, initialValues)).toEqual(initialValues);
         });
     });
 
     describe('setFormSubmissionOptions', () => {
         it('should return options with the updatePassword set to true', () => {
             const source = 'imageIntegrations';
-            const type = 'docker';
+            const type = 'ecr';
             const data = {
-                docker: {
-                    password: 'NEW_PASSWORD',
+                ecr: {
+                    accessKeyId: 'NEW_CREDENTIALS',
+                    secretAccessKey: 'NEW_CREDENTIALS',
                 },
             };
 
@@ -54,10 +58,11 @@ describe('integrationFormUtils', () => {
 
         it('should return options with the updatePassword set to false', () => {
             const source = 'imageIntegrations';
-            const type = 'docker';
+            const type = 'ecr';
             const data = {
-                docker: {
-                    password: '',
+                ecr: {
+                    accessKeyId: '',
+                    secretAccessKey: '',
                 },
             };
 
@@ -73,10 +78,11 @@ describe('integrationFormUtils', () => {
 
         it('should return options with the updatePassword set to true for a new integration', () => {
             const source = 'imageIntegrations';
-            const type = 'docker';
+            const type = 'ecr';
             const data = {
-                docker: {
-                    password: '',
+                ecr: {
+                    accessKeyId: '',
+                    secretAccessKey: '',
                 },
             };
 
