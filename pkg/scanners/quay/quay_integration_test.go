@@ -59,16 +59,18 @@ func (suite *QuayIntegrationSuite) TestGetScan() {
 	}
 
 	var scan *storage.ImageScan
-	err := retry.WithRetry(func() error {
-		var err error
+	var err error
+	err = retry.WithRetry(func() error {
 		scan, err = suite.quay.GetScan(image)
-		return err
-	},
-		retry.Tries(10),
-		retry.BetweenAttempts(func(_ int) {
-			time.Sleep(2 * time.Second)
-		}),
-	)
+		if err != nil {
+			return retry.MakeRetryable(err)
+		}
+		return nil
+	}, retry.OnFailedAttempts(func(err error) {
+		log.Errorf("error scanning image: %v", err)
+		time.Sleep(5 * time.Second)
+	}), retry.Tries(10))
+
 	suite.NoError(err)
 	suite.NotEmpty(scan.GetComponents())
 }

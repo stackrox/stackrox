@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	requestTimeout = 10 * time.Second
+	requestTimeout = 20 * time.Second
 
 	typeString = "quay"
 )
