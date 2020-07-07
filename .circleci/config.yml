@@ -1566,6 +1566,12 @@ commands:
             <</ parameters.validate-autoupgrade-label >>
             exit 0
 
+      - run:
+          name: Monitor cluster & deployment
+          command: |
+            scripts/ci/deployment-minder.sh
+          background: true
+
   check-backend-changes:
     steps:
       - run:
