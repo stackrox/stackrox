@@ -17,6 +17,7 @@ All notable changes to this project that require documentation updates will be d
 - Added UI to show cluster credential expiry in the cluster page (ROX-5034).
 - UI: The deployment event timeline should now visibly group events that would otherwise overlap. The grouped events will show a number in the top right that
   indicates how many events were grouped. Clicking on the icon will show an interactive tooltip that displays information for each event in a scrollable manner (ROX-5190).
+- UI: Under Vulnerability Management, update "Deployment Count" column on policy entity list pages to show failing deployments count instead of all applicable deployments count (ROX-5176).
 
 ## [45.0]
 - Default policies that have been whitelisted for the kube-system namespace, have now been additionally whitelisted for the istio-system namespace.
