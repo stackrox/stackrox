@@ -58,7 +58,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify the results of the CVE GraphQL Query with single specific CVE match - #{cve}"() {
+    def "Verify the results of the CVE GraphQL Query with single specific CVE match - #cve"() {
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
@@ -98,7 +98,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify the results of the CVE GraphQL Query lots of parameters - #{query}"() {
+    def "Verify the results of the CVE GraphQL Query lots of parameters - #query"() {
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
