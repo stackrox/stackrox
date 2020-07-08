@@ -162,7 +162,9 @@ if [[ -n "$username" && -n "$password" ]]; then
 	exit $?
 fi
 
-if [[ -f ~/.docker/config.json || ! -x "$(command -v jq)" ]]; then
+if ! type jq >/dev/null 2>&1; then
+	echo "Warning: jq not found on your system; unable to parse docker credentials."  1>&2
+elif [[ -f ~/.docker/config.json ]]; then
 	dockercfg="$(< ~/.docker/config.json)"
 	if try_dockercfg_plain "$dockercfg"; then
 		exit 0

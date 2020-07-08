@@ -19,6 +19,10 @@
 set -eox pipefail
 
 # This is the entry point for the production deployment
+if ! type jq >/dev/null 2>&1; then
+	echo "Error: jq not found on your system. Please install jq and rerun this script." 1>&2
+	exit 1
+fi
 
 # If any command returns with non-zero exit code, set -e will cause the script
 # to exit. Prior to exit, set App assembly status to "Failed".

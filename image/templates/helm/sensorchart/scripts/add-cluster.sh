@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if ! type jq >/dev/null 2>&1; then
+	echo "Error: jq not found on your system. Please install jq and rerun this script." 1>&2
+	exit 1
+fi
+
 if [ "$#" -ne 1 ]; then
     echo "error: central endpoint not specified, use -e with ./setup.sh"
     exit 1
