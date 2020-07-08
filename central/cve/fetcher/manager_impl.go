@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/throttle"
 )
 
 var (
@@ -29,6 +30,8 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Cluster, resources.Image),
 		))
+
+	connectionDropThrottle = throttle.NewDropThrottle(10 * time.Minute)
 )
 
 type mode int
@@ -66,16 +69,30 @@ func (m *k8sIstioCVEManagerImpl) initialize() {
 }
 
 // Fetch (works only in online mode) fetches new CVEs and reconciles them
-func (m *k8sIstioCVEManagerImpl) Fetch(forceUpdate bool) {
+func (m *k8sIstioCVEManagerImpl) Start() {
 	if m.mgrMode != online {
 		log.Error("can't fetch in non-online mode")
 		return
 	}
 
+	ticker := time.NewTicker(fetchDelay)
+	defer ticker.Stop()
+
 	for {
-		m.reconcileAllCVEsInOnlineMode(forceUpdate)
-		time.Sleep(fetchDelay)
+		select {
+		case <-ticker.C:
+			m.reconcileAllCVEsInOnlineMode(true)
+		case <-m.updateSignal.Done():
+			m.updateSignal.Reset()
+			m.reconcileAllCVEsInOnlineMode(true)
+		}
 	}
+}
+
+func (m *k8sIstioCVEManagerImpl) HandleClusterConnection() {
+	connectionDropThrottle.Run(func() {
+		m.updateSignal.Signal()
+	})
 }
 
 // Update (works only in offline mode) updates new CVEs and reconciles them based on data from scanner bundle

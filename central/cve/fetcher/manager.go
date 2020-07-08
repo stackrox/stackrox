@@ -5,13 +5,14 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	cveDataStore "github.com/stackrox/rox/central/cve/datastore"
 	cveMatcher "github.com/stackrox/rox/central/cve/matcher"
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // K8sIstioCVEManager is the interface for k8s and istio CVEs
 type K8sIstioCVEManager interface {
-	Fetch(forceUpdate bool)
+	Start()
 	Update(zipPath string, forceUpdate bool)
-
+	HandleClusterConnection()
 	GetNVDCVE(id string) *schema.NVDCVEFeedJSON10DefCVEItem
 }
 
@@ -20,7 +21,8 @@ type k8sIstioCVEManagerImpl struct {
 	k8sCVEMgr   *k8sCVEManager
 	istioCVEMgr *istioCVEManager
 
-	mgrMode mode
+	updateSignal concurrency.Signal
+	mgrMode      mode
 }
 
 // Newk8sIstioCVEManagerImpl returns new instance of k8sIstioCVEManagerImpl
@@ -38,6 +40,7 @@ func Newk8sIstioCVEManagerImpl(clusterDataStore clusterDataStore.DataStore, cveD
 			cveDataStore:     cveDataStore,
 			cveMatcher:       cveMatcher,
 		},
+		updateSignal: concurrency.NewSignal(),
 	}
 
 	m.initialize()

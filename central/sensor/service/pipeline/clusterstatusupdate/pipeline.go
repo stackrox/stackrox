@@ -66,7 +66,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if offlineModeSetting == "true" {
 			s.cveFetcher.Update(handler.K8sIstioCveZipName, true)
 		} else {
-			go s.cveFetcher.Fetch(true)
+			go s.cveFetcher.HandleClusterConnection()
 		}
 		return nil
 	default:

@@ -360,7 +360,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 
 	m := fetcher.SingletonManager()
 	if env.OfflineModeEnv.Setting() != "true" {
-		go m.Fetch(false)
+		go m.Start()
 	}
 
 	if devbuild.IsEnabled() {
