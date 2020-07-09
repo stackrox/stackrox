@@ -2,6 +2,8 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [46.0]
 - Added the following REST APIs:
   - PATCH `/v1/notifiers/{id}` modifies a given notifier, with optional stored credential reconciliation.
   - POST `/v1/notifiers/test/updated` checks if the given notifier is correctly configured, with optional stored credential reconciliation.
