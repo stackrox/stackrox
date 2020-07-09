@@ -20,6 +20,7 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 		v1.SearchCategory_SERVICE_ACCOUNTS,
 		v1.SearchCategory_ROLES,
 		v1.SearchCategory_ROLEBINDINGS,
+		v1.SearchCategory_SUBJECTS,
 	)
 	return globalSearchCategories
 }

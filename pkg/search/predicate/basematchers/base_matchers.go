@@ -79,6 +79,16 @@ func ForInt(value string) (func(int64) bool, error) {
 	}, nil
 }
 
+func stringMatchEnums(value string, enumMap map[int32]string) (func(int64) bool, error) {
+	matcher, err := ForString(value)
+	if err != nil {
+		return nil, err
+	}
+	return func(v int64) bool {
+		return matcher(enumMap[int32(v)])
+	}, nil
+}
+
 // ForEnum returns a matcher for an enum.
 // The matcher takes a query against the string version of the enum,
 // and matches it against the int value which is what is actually stored.
@@ -90,6 +100,13 @@ func ForEnum(value string, enumRef protoreflect.ProtoEnum) (func(int64) bool, ma
 	}
 	nameToNumber, numberToName := MapEnumValues(enumDesc)
 
+	// "" and search.WildcardString imply matching all
+	if value == "" || value == search.WildcardString {
+		return func(int64) bool {
+			return true
+		}, numberToName, nil
+	}
+
 	// Get the comparator if needed.
 	cmpStr, value := parseNumericPrefix(value)
 
@@ -99,7 +116,11 @@ func ForEnum(value string, enumRef protoreflect.ProtoEnum) (func(int64) bool, ma
 	if hasIntValue {
 		int64Value = int64(int32Value)
 	} else {
-		return nil, nil, errors.Errorf("unrecognized enum value: %s in %+v", value, nameToNumber)
+		matcher, err := stringMatchEnums(value, numberToName)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "unrecognized enum value: %s in %+v", value, nameToNumber)
+		}
+		return matcher, numberToName, nil
 	}
 
 	// Generate the comparator for the integer values.

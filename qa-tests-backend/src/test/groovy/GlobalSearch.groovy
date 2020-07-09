@@ -101,6 +101,8 @@ class GlobalSearch extends BaseSpecification {
 
         "Image:docker.io/library/busybox:latest" | [] | "" |
                 [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS]
+
+        "Subject:system:auth" | [SearchServiceOuterClass.SearchCategory.SUBJECTS] | "system:authenticated" | []
     }
 
 }

@@ -24,6 +24,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/rbac/service"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	centralsearch "github.com/stackrox/rox/central/search"
@@ -82,6 +83,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings.SearchRoleBindings,
 		v1.SearchCategory_IMAGE_COMPONENTS: s.components.SearchImageComponents,
 		v1.SearchCategory_VULNERABILITIES:  s.cves.SearchCVEs,
+		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings).SearchSubjects,
 	}
 
 	return searchfuncs
@@ -104,6 +106,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_ROLEBINDINGS:     s.bindings,
 		v1.SearchCategory_IMAGE_COMPONENTS: s.components,
 		v1.SearchCategory_VULNERABILITIES:  s.cves,
+		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(s.bindings),
 	}
 
 	return searchers
@@ -145,6 +148,7 @@ func GetSearchCategoryToResourceMetadata() map[v1.SearchCategory]permissions.Res
 		v1.SearchCategory_ROLEBINDINGS:     resources.K8sRoleBinding,
 		v1.SearchCategory_IMAGE_COMPONENTS: resources.Image,
 		v1.SearchCategory_VULNERABILITIES:  resources.Image,
+		v1.SearchCategory_SUBJECTS:         resources.K8sSubject,
 	}
 
 	return searchCategoryToResource

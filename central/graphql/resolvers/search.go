@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/rbac/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -88,6 +89,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore,
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore,
 		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore,
+		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
 	}
 
 	return searchers
@@ -109,6 +111,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_ROLEBINDINGS:     resolver.K8sRoleBindingStore.SearchRoleBindings,
 		v1.SearchCategory_IMAGE_COMPONENTS: resolver.ImageComponentDataStore.SearchImageComponents,
 		v1.SearchCategory_VULNERABILITIES:  resolver.CVEDataStore.SearchCVEs,
+		v1.SearchCategory_SUBJECTS:         service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
 	}
 
 	return searchfuncs
