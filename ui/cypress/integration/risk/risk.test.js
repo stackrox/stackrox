@@ -179,8 +179,14 @@ describe('Risk page', () => {
             cy.route('GET', api.risks.riskyDeploymentsWithPagination).as(
                 'deploymentsWithProcessInfo'
             );
+            cy.route('GET', api.risks.deploymentsCount).as('deploymentsCount');
+
+            cy.route('GET', api.risks.riskyDeploymentsWithPagination).as(
+                'deploymentsWithProcessInfo'
+            );
 
             cy.wait('@deploymentsWithProcessInfo');
+            cy.wait('@deploymentsCount');
 
             // first, make sure the deployments API calls returned some number of rows
             cy.get(RiskPageSelectors.table.dataRows);
@@ -197,6 +203,7 @@ describe('Risk page', () => {
                     cy.visit(urlWithSearch);
 
                     cy.wait('@deploymentsWithProcessInfo');
+                    cy.wait('@deploymentsCount');
 
                     cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 0);
 

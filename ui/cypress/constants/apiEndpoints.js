@@ -51,6 +51,7 @@ export const risks = {
     riskyDeployments: 'v1/deploymentswithprocessinfo*',
     riskyDeploymentsWithPagination:
         'v1/deploymentswithprocessinfo?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Priority&pagination.sortOption.reversed=false',
+    deploymentsCount: 'v1/deploymentscount?query=',
     getDeployment: 'v1/deployments/*',
     getDeploymentWithRisk: 'v1/deploymentswithrisk/*',
     graphqlOps: {
