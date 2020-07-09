@@ -45,6 +45,13 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 	if !valid {
 		namespace = "default"
 	}
+	var serviceAccount string
+	potentialServiceAccounts := serviceAccountPool[namespace]
+	if len(potentialServiceAccounts) == 0 {
+		serviceAccount = "default"
+	} else {
+		serviceAccount = potentialServiceAccounts[rand.Intn(len(potentialServiceAccounts))]
+	}
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -111,6 +118,7 @@ func (w *WorkloadManager) getDeployment(workload deploymentWorkload) *deployment
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: pointers.Bool(true),
 					},
+					ServiceAccountName: serviceAccount,
 				},
 			},
 		},

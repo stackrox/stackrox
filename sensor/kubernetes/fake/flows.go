@@ -58,6 +58,16 @@ func (p *pool) randomElem() (string, bool) {
 	return val, val != ""
 }
 
+func (p *pool) mustGetRandomElem() string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	val := p.pool.GetArbitraryElem()
+	if val == "" {
+		panic("not expecting an empty pool")
+	}
+	return val
+}
+
 func generateIP() string {
 	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
 }

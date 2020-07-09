@@ -37,5 +37,10 @@ var (
 			FlowInterval: 24 * time.Hour,
 			BatchSize:    500,
 		},
+		RBACWorkload: rbacWorkload{
+			NumRoles:           5000,
+			NumBindings:        5000,
+			NumServiceAccounts: 5000,
+		},
 	}
 )

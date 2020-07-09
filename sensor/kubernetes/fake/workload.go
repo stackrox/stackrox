@@ -40,8 +40,15 @@ type nodeWorkload struct {
 	NumNodes int
 }
 
+type rbacWorkload struct {
+	NumRoles           int
+	NumBindings        int
+	NumServiceAccounts int
+}
+
 type workload struct {
 	DeploymentWorkload []deploymentWorkload
 	NodeWorkload       nodeWorkload
 	NetworkWorkload    networkWorkload
+	RBACWorkload       rbacWorkload
 }

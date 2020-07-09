@@ -94,6 +94,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		objects = append(objects, node)
 	}
 
+	objects = append(objects, getRBAC(w.workload.RBACWorkload)...)
 	var resources []*deploymentResourcesToBeManaged
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
