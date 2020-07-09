@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -117,17 +116,6 @@ var (
 		}
 		return result
 	}()
-
-	// Given an absolute Go path, extract the package name from it. We assume that the package name is everything
-	// starting from the last domain name-like path component (i.e., containing a dot), until (and excluding) the last
-	// '/'.
-	// Special case: go test, when run with coverage enabled, will change the location of the library fails to something
-	// like "pkg/logging/_test/_obj_test", and since Go was too good to have a preprocessor with #file/#line statements,
-	// there's no way around that. Rob Pike offers this solution in all seriousness: "If a test fails, run it again
-	// without coverage enabled. Problem solved.". Since *something* about this doesn't feel like a proper solution, we
-	// instead heuristically strip components starting with an underscore and ending in '_test' from the end of the path
-	// sequence.
-	fileToPackageRE = regexp.MustCompile(`^(?:.*/)?([^/]+\.[^/.]+(?:/[^/.]+)*?)/(?:(?:_[^/]*)?_test/)*[^/]+\.go$`)
 
 	//rootLogger is the convenience logger used when module specific loggers are not specified
 	rootLogger *Logger
@@ -415,19 +403,25 @@ func finalizeLogger(l *Logger) {
 // callerFileToPackage takes the path of the source file of the caller (<skip> frames up the call stack), and returns
 // the corresponding Go package. If no package could be determined, the empty string is returned.
 func callerFileToPackage(skip int) string {
-	_, callerFile, _, ok := runtime.Caller(1 + skip)
-	if !ok {
+	callers := [1]uintptr{}
+	if runtime.Callers(1+skip, callers[:]) != 1 {
 		return ""
 	}
-	if !strings.HasPrefix(callerFile, "/") {
-		// In bazel builds, callerFile will be relative to the project root.
-		callerFile = fmt.Sprintf("%s/%s", projectPrefix, callerFile)
+
+	name := runtime.FuncForPC(callers[0]).Name()
+	dotIdx := -1
+
+	// Find the leftmost '.' after the rightmost '/'.
+	for i := len(name) - 1; i >= 0 && name[i] != '/'; i-- {
+		if name[i] == '.' {
+			dotIdx = i
+		}
 	}
-	submatches := fileToPackageRE.FindStringSubmatch(callerFile)
-	if len(submatches) != 2 {
-		return ""
+	if dotIdx != -1 {
+		name = name[:dotIdx]
 	}
-	return submatches[1]
+
+	return name
 }
 
 // getCallingModule returns the short name of the module calling this function, skipping <skip> stack frames in the
