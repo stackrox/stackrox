@@ -26,10 +26,10 @@ func deserializerFunc(alloc AllocFunc) Deserializer {
 }
 
 // NewCRUD returns a new Crud instance for the given bucket reference.
-func NewCRUD(db *rocksdb.RocksDB, prefix []byte, keyFunc KeyFunc, alloc AllocFunc) db.Crud {
+func NewCRUD(db *rocksdb.RocksDB, prefix []byte, keyFunc KeyFunc, alloc AllocFunc, trackIndex bool) db.Crud {
 	return &crudImpl{
 		db:        db,
-		txnHelper: newTxnHelper(db, prefix),
+		txnHelper: newTxnHelper(db, prefix, trackIndex),
 		prefix:    prefix,
 
 		keyFunc:         keyFunc,

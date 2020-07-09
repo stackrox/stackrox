@@ -54,7 +54,7 @@ func keyFunc(msg proto.Message) []byte {
 
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "K8SRole")
-	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc)
+	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err

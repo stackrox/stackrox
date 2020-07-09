@@ -1,3 +1,3 @@
 package rocksdb
 
-//go:generate rocksdb-bindings-wrapper --type=Alert --bucket=alerts
+//go:generate rocksdb-bindings-wrapper --type=Alert --bucket=alerts --track-index

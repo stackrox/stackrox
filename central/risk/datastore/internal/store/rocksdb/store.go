@@ -55,7 +55,7 @@ func keyFunc(msg proto.Message) []byte {
 func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "Risk")
 	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, keyFunc, alloc),
+		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, false),
 	}
 }
 

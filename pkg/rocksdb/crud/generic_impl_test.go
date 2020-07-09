@@ -52,7 +52,7 @@ func (s *CRUDTestSuite) SetupTest() {
 
 	s.db, err = rocksdb.New(dir)
 	s.NoError(err)
-	s.crud = NewCRUD(s.db, []byte("bucket"), alertKeyFunc, alloc)
+	s.crud = NewCRUD(s.db, []byte("bucket"), alertKeyFunc, alloc, true)
 }
 
 func (s *CRUDTestSuite) TearDownTest() {
@@ -212,4 +212,55 @@ func (s *CRUDTestSuite) TestKeysToIndex() {
 
 	s.NoError(s.crud.DeleteMany([]string{alert1ID, alert2ID}))
 	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
+}
+
+func TestGenericCRUDWithoutIndexTracking(t *testing.T) {
+	suite.Run(t, new(CRUDTestSuiteWithoutIndexTracking))
+}
+
+type CRUDTestSuiteWithoutIndexTracking struct {
+	suite.Suite
+
+	dir string
+	db  *rocksdb.RocksDB
+
+	crud db.Crud
+}
+
+func (s *CRUDTestSuiteWithoutIndexTracking) SetupTest() {
+	dir, err := ioutil.TempDir("", "")
+	s.NoError(err)
+
+	s.dir = dir
+
+	s.db, err = rocksdb.New(dir)
+	s.NoError(err)
+	s.crud = NewCRUD(s.db, []byte("bucket"), alertKeyFunc, alloc, false)
+}
+
+func (s *CRUDTestSuiteWithoutIndexTracking) TearDownTest() {
+	s.db.Close()
+	_ = os.RemoveAll(s.dir)
+}
+
+func (s *CRUDTestSuiteWithoutIndexTracking) verifyNoKeysMarkedForIndexing() {
+	keys, err := s.crud.GetKeysToIndex()
+	s.NoError(err)
+	s.Empty(keys)
+}
+
+func (s *CRUDTestSuiteWithoutIndexTracking) TestKeysToIndex() {
+	s.verifyNoKeysMarkedForIndexing()
+
+	s.NoError(s.crud.Upsert(alert1))
+	s.verifyNoKeysMarkedForIndexing()
+
+	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
+	s.verifyNoKeysMarkedForIndexing()
+
+	s.NoError(s.crud.Delete(alert1ID))
+	s.verifyNoKeysMarkedForIndexing()
+
+	s.NoError(s.crud.DeleteMany([]string{alert1ID, alert2ID}))
+	s.verifyNoKeysMarkedForIndexing()
 }
