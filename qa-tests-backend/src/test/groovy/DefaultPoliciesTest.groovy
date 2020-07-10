@@ -239,9 +239,10 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "contains components useful for attackers:" +
                     " apt, bash, curl, wget" | null | []
 
-        "Number of Components in Image"   | 1.5f     |
+        // TODO: This really should be stable, but due to ROX-5269, we may get 168 or 169 components
+        "Number of Components in Image"   | 1.5f     | null |
                 "Image \"docker.io/stackrox/qa:struts-app\"" +
-                " contains 168 components" | null | []
+                " contains 16[89] components" | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 
