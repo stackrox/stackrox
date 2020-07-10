@@ -16,10 +16,20 @@ METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
 echo "StackRox METADATA_URL is set to ${METADATA_URL}"
 
 set -x
+
+kubectl config get-contexts
+context=$(kubectl config get-contexts | grep -E '^\*' | tr -s ' ' | cut -d ' ' -f 3)
+echo "Pulled context: ${context}"
+server=$(echo "${context}" | sed -En 's/(.*)\-(\w+)\-ci\-rox\-systems\-.*/\1.\2.ci.rox.systems/p')
+echo "Pulled server: ${server}"
+
 while true; do
   date
+  if [[ ! -z "${server}" ]]; then
+    host "${server}"
+  fi
   kubectl get nodes
-  ps axw | grep kube
+  ps axw | grep "port-forward"
   curl --silent --insecure --show-error "${METADATA_URL}" | jq
   sleep 60
 done
