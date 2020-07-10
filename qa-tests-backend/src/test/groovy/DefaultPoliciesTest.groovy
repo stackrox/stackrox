@@ -36,7 +36,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String NGINX_1_10 = "qadefpolnginx110"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
-    static final private String NGINX = "qadefpolnginx"
+    static final private String GCR_NGINX = "qadefpolnginx"
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
@@ -72,8 +72,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setImage("nginx:1.10")
             .addLabel("app", "test"),
         new Deployment()
-            .setName(NGINX)
-            .setImage("docker.io/library/nginx:1.11")
+            .setName(GCR_NGINX)
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
@@ -138,7 +138,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
 
-        "Fixable CVSS >= 7"                             | NGINX          | "C933"
+        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
         "Shellshock: Multiple CVEs"                     | SSL_TERMINATOR | "C948"
 
