@@ -3,7 +3,8 @@ gomod:
 
 yarn:
   lockfile: ui/yarn.lock
-  node-modules-dir: ui/node_modules
+  node-modules-dirs:
+    - ui/node_modules
 
 patterns:
   - "*AUTHOR*"
