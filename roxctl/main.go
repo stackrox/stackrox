@@ -18,6 +18,7 @@ func main() {
 
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)
+	flags.AddAPITokenFile(c)
 
 	if err := c.Execute(); err != nil {
 		os.Exit(1)

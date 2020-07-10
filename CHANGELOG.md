@@ -2,6 +2,7 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+- Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).
 
 ## [46.0]
 - Added the following REST APIs:

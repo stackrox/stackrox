@@ -2476,6 +2476,11 @@ jobs:
             sleep 1
 
       - run:
+          name: Test roxctl semantics of --token-file parameter
+          command: |
+            API_ENDPOINT="$API_ENDPOINT" ROX_PASSWORD="$ROX_PASSWORD" ./tests/roxctl/token-file.sh
+
+      - run:
           name: API tests
           command: |
             CA="${SERVICE_CA_FILE}" ./tests/yamls/roxctl_verification.sh
