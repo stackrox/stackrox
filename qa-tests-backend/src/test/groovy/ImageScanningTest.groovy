@@ -41,6 +41,8 @@ class ImageScanningTest extends BaseSpecification {
     static final private List<String> UPDATED_POLICIES = []
 
     def setupSpec() {
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+
         // Create necessary deployments
         for (Secret s : IMAGE_PULL_SECRETS.values()) {
             orchestrator.createImagePullSecret(s)
@@ -59,6 +61,8 @@ class ImageScanningTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
+        ImageIntegrationService.addStackroxScannerIntegration()
+
         for (Secret s : IMAGE_PULL_SECRETS.values()) {
             orchestrator.deleteSecret(s.name, s.namespace)
         }
@@ -79,8 +83,6 @@ class ImageScanningTest extends BaseSpecification {
     def "Verify Image Scanner Integrations: #integration"() {
         given:
         "Get deployment details used to test integration"
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
-
         Deployment deployment = null
         if (DEPLOYMENTS.containsKey(integration)) {
             deployment = DEPLOYMENTS.get(integration)
@@ -172,7 +174,6 @@ class ImageScanningTest extends BaseSpecification {
         if (integrationId) {
             ImageIntegrationService.deleteImageIntegration(integrationId)
         }
-        ImageIntegrationService.addStackroxScannerIntegration()
 
         where:
         "Data inputs:"
@@ -196,6 +197,10 @@ class ImageScanningTest extends BaseSpecification {
     @Category([BAT, Integration])
     def "Verify Image Scan Results - #image - #component:#version - #cve - #layerIdx"() {
         when:
+        "Add Stackrox scanner"
+        ImageIntegrationService.addStackroxScannerIntegration()
+
+        and:
         "Scan Image and verify results"
         ImageOuterClass.Image img = Services.scanImage(image)
         assert img.metadata.dataSource.id != ""
@@ -215,6 +220,10 @@ class ImageScanningTest extends BaseSpecification {
 
         vuln != null
 
+        cleanup:
+        "Remove stackrox scanner and clear"
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
+
         where:
         "Data inputs are: "
 
@@ -230,6 +239,10 @@ class ImageScanningTest extends BaseSpecification {
     @Unroll
     def "Image scanning test to check if scan time is not null #image from stackrox"() {
         when:
+        "Add Stackrox scanner"
+        ImageIntegrationService.addStackroxScannerIntegration()
+
+        and:
         "Image is scanned"
         def imageName = image
         Services.scanImage(imageName)
@@ -243,6 +256,10 @@ class ImageScanningTest extends BaseSpecification {
         "check scanned time is not null"
         assert img.scan.scanTime != null
         assert img.scan.hasScanTime() == true
+
+        cleanup:
+        "Remove stackrox scanner and clear"
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
 
         where:
         image                                    | registry
