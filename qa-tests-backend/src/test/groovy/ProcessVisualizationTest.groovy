@@ -24,7 +24,7 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+                .setImage ("stackrox/qa:struts-app")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)

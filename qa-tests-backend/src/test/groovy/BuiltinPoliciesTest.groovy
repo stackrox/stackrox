@@ -69,8 +69,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
             }
         }
 
-        ImageIntegrationService.addStackroxScannerIntegration()
-
         orchestrator.createImagePullSecret(new Secret(
                 name: GCR_SECRET_NAME,
                 server: "https://us.gcr.io",
@@ -116,8 +114,6 @@ class BuiltinPoliciesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS + NO_WAIT_DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
-
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
 
         orchestrator.deleteSecret(GCR_SECRET_NAME, Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.removeServiceAccountImagePullSecret(

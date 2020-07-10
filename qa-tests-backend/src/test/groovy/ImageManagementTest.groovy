@@ -28,7 +28,6 @@ class ImageManagementTest extends BaseSpecification {
             azureId = ImageIntegrationService.addAzureRegistry()
             assert azureId != null
         }
-        ImageIntegrationService.addStackroxScannerIntegration()
     }
 
     def cleanupSpec() {
@@ -36,7 +35,6 @@ class ImageManagementTest extends BaseSpecification {
         if (CHECK_AZURE) {
             assert ImageIntegrationService.deleteImageIntegration(azureId)
         }
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
     }
 
     @Unroll
@@ -61,18 +59,18 @@ class ImageManagementTest extends BaseSpecification {
         where:
         "Data inputs are: "
 
-        policy                            | imageRegistry            | imageRemote              | imageTag | note
-        "Latest tag"                      | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        policy                            | imageRegistry | imageRemote              | imageTag     | note
+        "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | ""
         //intentionally use the same policy twice to make sure alert count does not increment
-        "Latest tag"                      | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | "(repeat)"
-        "90-Day Image Age"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        "Latest tag"                      | "docker.io"   | "library/nginx"          | "latest"     | "(repeat)"
+        "90-Day Image Age"                | "docker.io"   | "stackrox/qa"            | "struts-app" | ""
         // verify Azure registry
         // "90-Day Image Age"                | "stackroxacr.azurecr.io" | "nginx"                  | "1.12"   | ""
-        "Ubuntu Package Manager in Image" | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
-        "Curl in Image"                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
-        "Fixable CVSS >= 7"               | "us.gcr.io"              | "stackrox-ci/nginx"      | "1.11"   | ""
-        "Wget in Image"                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
-        "Apache Struts: CVE-2017-5638"    | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest" | ""
+        "Ubuntu Package Manager in Image" | "docker.io"   | "stackrox/qa"            | "struts-app" | ""
+        "Curl in Image"                   | "docker.io"   | "stackrox/qa"            | "struts-app" | ""
+        "Fixable CVSS >= 7"               | "us.gcr.io"   | "stackrox-ci/nginx"      | "1.11"       | ""
+        "Wget in Image"                   | "docker.io"   | "stackrox/qa"            | "struts-app" | ""
+        "Apache Struts: CVE-2017-5638"    | "docker.io"   | "stackrox/qa"            | "struts-app" | ""
     }
 
     @Category(BAT)

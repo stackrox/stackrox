@@ -49,7 +49,7 @@ class NetworkFlowTest extends BaseSpecification {
             //Target deployments
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
@@ -57,7 +57,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["socat -d -d -v UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET)
@@ -95,7 +95,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -104,7 +104,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -113,7 +113,7 @@ class NetworkFlowTest extends BaseSpecification {
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +
@@ -133,7 +133,7 @@ class NetworkFlowTest extends BaseSpecification {
             new Deployment()
                     .setName("${TCPCONNECTIONSOURCE}-qa2")
                     .setNamespace("qa2")
-                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
+                    .setImage("stackrox/qa:socat")
                     .addLabel("app", "${TCPCONNECTIONSOURCE}-qa2")
                     .setCommand(["/bin/sh", "-c",])
                     .setArgs(["while sleep 5; " +

@@ -36,7 +36,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String NGINX_1_10 = "qadefpolnginx110"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
-    static final private String GCR_NGINX = "qagcrnginx"
+    static final private String NGINX = "qadefpolnginx"
 
     static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
             "Fixable CVSS >= 6 and Privileged",
@@ -50,7 +50,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
-            .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+            .setImage("stackrox/qa:struts-app")
             .addLabel("app", "test")
             .addPort(80)
 
@@ -64,7 +64,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         STRUTS_DEPLOYMENT,
         new Deployment()
             .setName(SSL_TERMINATOR)
-            .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
+            .setImage("stackrox/qa:ssl-terminator")
             .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
         new Deployment()
@@ -72,8 +72,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setImage("nginx:1.10")
             .addLabel("app", "test"),
         new Deployment()
-            .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
+            .setName(NGINX)
+            .setImage("docker.io/library/nginx:1.11")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]
@@ -111,7 +111,9 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         then:
         "Verify Violation for #policyName is triggered"
-        assert waitForViolation(deploymentName,  policyName, 30)
+        // Some of these policies require scans so extend the timeout as the scan will be done inline
+        // with our scanner
+        assert waitForViolation(deploymentName,  policyName, 60)
 
         where:
         "Data inputs are:"
@@ -132,11 +134,11 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "90-Day Image Age"                              | STRUTS         | "C810"
 
-        "Ubuntu Package Manager in Image"               | STRUTS         | "C931"
+        "Ubuntu Package Manager in Image"               | STRUTS           | "C931"
 
         //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
 
-        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
+        "Fixable CVSS >= 7"                             | NGINX          | "C933"
 
         "Shellshock: Multiple CVEs"                     | SSL_TERMINATOR | "C948"
 
@@ -225,7 +227,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least a 100 CVEs.
-                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\"" +
+                "Image \"docker.io/stackrox/qa:struts-app\"" +
                      " contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
                      "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?" | []
 
@@ -233,13 +235,13 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "No capabilities were dropped" | null | []
 
         "Components Useful for Attackers" | 1.5f     |
-                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" " +
+                "Image \"docker.io/stackrox/qa:struts-app\" " +
                 "contains components useful for attackers:" +
                     " apt, bash, curl, wget" | null | []
 
         "Number of Components in Image"   | 1.5f     |
-                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\"" +
-                " contains 206 components" | null | []
+                "Image \"docker.io/stackrox/qa:struts-app\"" +
+                " contains 168 components" | null | []
 
         "Image Freshness"                 | 1.5f     | null | null | []
 

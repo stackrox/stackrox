@@ -16,6 +16,7 @@ const (
 )
 
 func TestDTRIntegrationSuite(t *testing.T) {
+	t.Skip("Skipping DTR integration test until we can get a license")
 	suite.Run(t, new(DTRIntegrationSuite))
 }
 

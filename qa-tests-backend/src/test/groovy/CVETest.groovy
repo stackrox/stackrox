@@ -2,7 +2,6 @@ import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import services.GraphQLService
-import services.ImageIntegrationService
 import services.ImageService
 import spock.lang.Unroll
 
@@ -44,8 +43,6 @@ class CVETest extends BaseSpecification {
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageIntegrationService.addStackroxScannerIntegration()
-
         ImageService.scanImage("docker.io/library/nginx:1.9")
         ImageService.scanImage("docker.io/library/nginx:1.10")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
@@ -53,7 +50,6 @@ class CVETest extends BaseSpecification {
 
     def cleanupSpec() {
         orchestrator.deleteDeployment(CVE_DEPLOYMENT)
-        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
     }
 
     @Unroll
@@ -98,7 +94,7 @@ class CVETest extends BaseSpecification {
 
     @Unroll
     @Category(BAT)
-    def "Verify the results of the CVE GraphQL Query lots of parameters - #query"() {
+    def "Verify the results of the CVE GraphQL Query lots of parameters - #query #checkImageCount"() {
         when:
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
@@ -116,19 +112,19 @@ class CVETest extends BaseSpecification {
         assert foundCVE.envImpact > 0
         // Use ranges so any new image doesn't break it
         assert foundCVE.deploymentCount > 0 && foundCVE.deploymentCount < 10
-        assert foundCVE.imageCount > 0 && foundCVE.imageCount < 20
+        assert !checkImageCount || (foundCVE.imageCount > 0 && foundCVE.imageCount < 20)
         assert foundCVE.componentCount > 0 && foundCVE.componentCount < 10
         assert foundCVE.summary != ""
 
         where:
         "data inputs"
 
-        query                                                                  | cve
-        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.9+CVE:CVE-2005-2541"  | "CVE-2005-2541"
-        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          | "CVE-2005-2541"
-        "Image:nginx:1.9+CVE:CVE-2005-2541"                                    | "CVE-2005-2541"
-        "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541"
-        "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541"
-        "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541"
+        query                                                                  | cve             | checkImageCount
+        "Deployment:${CVE_DEPLOYMENT_NAME}+Image:nginx:1.9+CVE:CVE-2005-2541"  | "CVE-2005-2541" | true
+        "Label:name=cve-deployment+CVE:CVE-2005-2541"                          | "CVE-2005-2541" | true
+        "Image:nginx:1.9+CVE:CVE-2005-2541"                                    | "CVE-2005-2541" | true
+        "CVSS:10+CVE:CVE-2005-2541"                                            | "CVE-2005-2541" | false
+        "Component:tar+CVE:CVE-2005-2541"                                      | "CVE-2005-2541" | false
+        "CVE:CVE-2005-2541"                                                    | "CVE-2005-2541" | false
     }
 }

@@ -78,11 +78,11 @@ class PolicyConfigurationTest extends BaseSpecification {
                             mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
-                    .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+                    .setImage("docker.io/stackrox/qa:struts-app")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DNS)
-                    .setImage("apollo-dtr.rox.systems/legacy-apps/apache-dns:latest")
+                    .setImage("stackrox/qa:apache-dns")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DEPLOYMENTNGINX_LB)
@@ -271,20 +271,6 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setImageAgeDays(1)
                                 .build())
                         .build()                       | DEPLOYMENTNGINX
-
-        "Days since image was last scanned"   |
-                Policy.newBuilder()
-                        .setName("TestDaysImagescannedPolicy")
-                        .setDescription("TestDaysImagescanned")
-                        .setRationale("TestDaysImagescanned")
-                        .addLifecycleStages(LifecycleStage.DEPLOY)
-                        .addCategories("DevOps Best Practices")
-                        .setDisabled(false)
-                        .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                                .setScanAgeDays(1)
-                                .build())
-                        .build()                       | DNS
 
         "Dockerfile Line"                     |
                 Policy.newBuilder()

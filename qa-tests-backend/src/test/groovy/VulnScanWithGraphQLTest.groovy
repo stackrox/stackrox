@@ -11,7 +11,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     static final private String STRUTSDEPLOYMENT_VULN_SCAN = "qastruts"
     static final private Deployment STRUTS_DEP = new Deployment()
             .setName (STRUTSDEPLOYMENT_VULN_SCAN)
-            .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+            .setImage ("docker.io/stackrox/qa:struts-app")
             .addLabel ("app", "test" )
     static final private List<Deployment> DEPLOYMENTS = [
     STRUTS_DEP,
@@ -155,7 +155,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         CVEID | imageToBeVerified
-        "CVE-2016-0682" | STRUTS_DEP.getImage()
+        "CVE-2020-1745" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId , int retries = 30, int interval = 4) {

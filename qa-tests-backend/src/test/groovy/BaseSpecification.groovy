@@ -1,16 +1,17 @@
 import com.jayway.restassured.RestAssured
 import common.Constants
 import groovy.util.logging.Slf4j
+import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.storage.RoleOuterClass
+import objects.K8sServiceAccount
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
 import services.BaseService
-import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
 import services.SACService
@@ -61,6 +62,24 @@ class BaseSpecification extends Specification {
             println "Will perform strict integration testing (if any is required)"
             strictIntegrationTesting = true
         }
+
+        OrchestratorMain orchestrator = OrchestratorType.create(
+                Env.mustGetOrchestratorType(),
+                Constants.ORCHESTRATOR_NAMESPACE
+        )
+
+        orchestrator.createNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+
+        // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
+        // pull stackrox images from dockerhub
+        orchestrator.createImagePullSecret("stackrox", Env.mustGet("REGISTRY_USERNAME"),
+                Env.mustGet("REGISTRY_PASSWORD"), Constants.ORCHESTRATOR_NAMESPACE)
+        def sa = new K8sServiceAccount(
+                name: "default",
+                namespace: Constants.ORCHESTRATOR_NAMESPACE)
+
+        sa.imagePullSecrets = [new LocalObjectReference("stackrox")]
+        orchestrator.createServiceAccount(sa)
 
         RoleOuterClass.Role testRole = null
         ApiTokenService.GenerateTokenResponse tokenResp = null
@@ -132,12 +151,6 @@ class BaseSpecification extends Specification {
     private long testStartTimeMillis
 
     @Shared
-    private dtrId = ""
-
-    @Shared
-    private boolean stackroxScannerIntegrationDidPreExist
-
-    @Shared
     private String pluginConfigID
 
     def disableAuthzPlugin() {
@@ -154,9 +167,6 @@ class BaseSpecification extends Specification {
         globalSetup()
 
         try {
-            dtrId = ImageIntegrationService.addDockerTrustedRegistry()
-            stackroxScannerIntegrationDidPreExist =
-                    ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
             orchestrator.setup()
         } catch (Exception e) {
             e.printStackTrace()
@@ -201,10 +211,6 @@ class BaseSpecification extends Specification {
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
         try {
-            ImageIntegrationService.deleteImageIntegration(dtrId)
-            if (stackroxScannerIntegrationDidPreExist) {
-                ImageIntegrationService.addStackroxScannerIntegration()
-            }
             orchestrator.cleanup()
         } catch (Exception e) {
             println "Error to clean up orchestrator: ${e.message}"

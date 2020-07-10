@@ -18,7 +18,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             new Deployment()
                 .setName (APACHEDEPLOYMENT)
                 .setReplicas(REPLICACOUNT)
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/apache-server")
+                .setImage ("stackrox/qa:apache-server")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (MONGODEPLOYMENT)

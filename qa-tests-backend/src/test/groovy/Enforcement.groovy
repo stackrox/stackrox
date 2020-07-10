@@ -165,7 +165,7 @@ class Enforcement extends BaseSpecification {
                 .setSeverityValue(2)
                 .setFields(PolicyOuterClass.PolicyFields.newBuilder()
                         .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
-                                .setTag("testing")
+                                .setTag("enforcement")
                                 .build())
                         .build())
                 .build()
@@ -184,7 +184,7 @@ class Enforcement extends BaseSpecification {
         "Create Deployment to test scale-down enforcement"
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-build-deploy-image")
-                .setImage("apollo-dtr.rox.systems/qa/enforcement:testing")
+                .setImage("stackrox/qa:enforcement")
                 .addPort(22)
                 .addLabel("app", "scale-down-enforcement-build-deploy")
                 .setSkipReplicaWait(true)
@@ -366,8 +366,8 @@ class Enforcement extends BaseSpecification {
         when:
         "Request Image Scan"
         def scanResults = Services.requestBuildImageScan(
-                "apollo-dtr.rox.systems",
-                "legacy-apps/struts-app",
+                "docker.io",
+                "library/nginx",
                 "latest"
         )
 
@@ -406,8 +406,8 @@ class Enforcement extends BaseSpecification {
         when:
         "Request Image Scan"
         def scanResults = Services.requestBuildImageScan(
-                "apollo-dtr.rox.systems",
-                "legacy-apps/struts-app",
+                "docker.io",
+                "library/nginx",
                 "latest"
         )
 

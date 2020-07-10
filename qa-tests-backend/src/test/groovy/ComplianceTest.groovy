@@ -83,10 +83,8 @@ class ComplianceTest extends BaseSpecification {
         clusterId = ClusterService.getClusterId()
         assert clusterId
 
-        // Clear image cache and add gcr/remove dtr scanners
-        ImageIntegrationService.deleteImageIntegration(dtrId)
+        // Clear image cache and add gcr
         ImageService.clearImageCaches()
-        dtrId = ImageIntegrationService.addDockerTrustedRegistry(false)
         gcrId = ImageIntegrationService.addGcrRegistry()
 
         // Get compliance metadata
@@ -114,9 +112,7 @@ class ComplianceTest extends BaseSpecification {
         )
 
         ImageIntegrationService.deleteImageIntegration(gcrId)
-        ImageIntegrationService.deleteImageIntegration(dtrId)
         ImageService.clearImageCaches()
-        dtrId = ImageIntegrationService.addDockerTrustedRegistry()
 
         // Wait for compliance daemonset to be deleted
         Map<String, String> complianceLabels = new HashMap<>()
@@ -586,6 +582,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "remove image integrations"
         def gcrRemoved = ImageIntegrationService.deleteImageIntegration(gcrId)
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
 
         and:
         "add notifier integration"
@@ -632,6 +629,7 @@ class ComplianceTest extends BaseSpecification {
         }
         notifier.deleteNotifier()
         Services.updatePolicy(originalUbuntuPackageManagementPolicy)
+        ImageIntegrationService.addStackroxScannerIntegration()
     }
 
     @Category([BAT])
