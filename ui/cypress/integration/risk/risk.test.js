@@ -205,10 +205,14 @@ describe('Risk page', () => {
                     cy.wait('@deploymentsWithProcessInfo');
                     cy.wait('@deploymentsCount');
 
+                    cy.wait('@deploymentsWithProcessInfo');
+                    cy.wait('@deploymentsCount');
+
                     cy.get(RiskPageSelectors.search.searchLabels).should('have.length', 0);
 
                     // fourth, ensure that no search was performed by matching the same "n Deployments" in table header
                     cy.get(RiskPageSelectors.table.dataRows);
+
                     cy.get(RiskPageSelectors.table.header)
                         .invoke('text')
                         .then((newHeaderText) => {
