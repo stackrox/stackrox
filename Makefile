@@ -228,6 +228,8 @@ go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/container_easyjson.go
 	@easyjson -pkg pkg/docker/types/image.go
 	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/image_easyjson.go
+	@easyjson -pkg pkg/compliance/compress/compress.go
+    @echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types/compress_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:
@@ -371,7 +373,7 @@ main-build-nodeps:
 .PHONY: scale-build
 scale-build: build-prep
 	@echo "+ $@"
-	$(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/flightreplay scale/chaos
+	CGO_ENABLED=0 $(GOBUILD) scale/mocksensor scale/mockcollector scale/profiler scale/flightreplay scale/chaos
 
 .PHONY: webhookserver-build
 webhookserver-build: build-prep

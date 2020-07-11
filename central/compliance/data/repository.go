@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
-	"io/ioutil"
 	"math"
 
+	"github.com/mailru/easyjson"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/compliance/data"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -321,7 +321,6 @@ func getNodeResults(scrapeResults map[string]*compliance.ComplianceReturn) map[s
 	nodeResults := make(map[string]map[string]*compliance.ComplianceStandardResult, len(scrapeResults))
 	for nodeName, n := range scrapeResults {
 		if n.GetEvidence() == nil {
-			log.Errorf("no compliance results received from node: %s", nodeName)
 			continue
 		}
 
@@ -343,14 +342,9 @@ func decompressNodeResults(chunk *compliance.GZIPDataChunk) (map[string]*complia
 	}
 	defer utils.IgnoreError(gzReader.Close)
 
-	runResultBytes, err := ioutil.ReadAll(gzReader)
-	if err != nil {
+	var wrappedRunResults compress.ResultWrapper
+	if err := easyjson.UnmarshalFromReader(gzReader, &wrappedRunResults); err != nil {
 		return nil, err
 	}
-
-	var runResults map[string]*compliance.ComplianceStandardResult
-	if err := json.Unmarshal(runResultBytes, &runResults); err != nil {
-		return nil, err
-	}
-	return runResults, nil
+	return wrappedRunResults.ResultMap, nil
 }

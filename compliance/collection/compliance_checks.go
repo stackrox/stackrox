@@ -13,6 +13,12 @@ import (
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {
 	complianceData := gatherData(scrapeConfig, run.GetScrapeId())
 	complianceData.Files = data.FlattenFileMap(complianceData.Files)
+	results := getCheckResults(run, complianceData)
+
+	return sendResults(results, client, run.GetScrapeId())
+}
+
+func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
 	results := make(map[string]*compliance.ComplianceStandardResult)
 	for _, standardID := range run.GetStandardIds() {
 		standard, ok := standards.Standards[standardID]
@@ -29,8 +35,7 @@ func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *
 			addCheckResultsToResponse(results, standardID, checkName, evidence)
 		}
 	}
-
-	return sendResults(results, client, run.GetScrapeId())
+	return results
 }
 
 func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandardResult, standardID, checkName string, evidence []*storage.ComplianceResultValue_Evidence) {

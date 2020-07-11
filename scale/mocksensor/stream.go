@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -78,7 +79,12 @@ func (s *threadSafeStream) StartReceiving() {
 				scrapeID := commandMsg.ScrapeCommand.ScrapeId
 				logger.Infof("Requests to scrape %d hosts", len(scrape.StartScrape.Hostnames))
 				for _, hostname := range scrape.StartScrape.Hostnames {
-					complianceReturn := getComplianceReturn(commandMsg.ScrapeCommand.ScrapeId, hostname)
+					var complianceReturn *compliance.ComplianceReturn
+					if features.ComplianceInNodes.Enabled() {
+						complianceReturn = getCheckResults(commandMsg.ScrapeCommand.ScrapeId, hostname)
+					} else {
+						complianceReturn = getComplianceReturn(commandMsg.ScrapeCommand.ScrapeId, hostname)
+					}
 					if err := s.sendComplianceReturn(scrapeID, complianceReturn); err != nil {
 						logger.Error(err)
 					}

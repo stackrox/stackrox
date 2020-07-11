@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgCompress "github.com/stackrox/rox/pkg/compliance/compress"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -15,7 +16,10 @@ func compressDockerData(dockerData *internalTypes.Data) (*compliance.GZIPDataChu
 }
 
 func compressResults(results map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {
-	return compress(results)
+	wrappedResults := pkgCompress.ResultWrapper{
+		ResultMap: results,
+	}
+	return compress(wrappedResults)
 }
 
 func compress(compressable interface{}) (*compliance.GZIPDataChunk, error) {

@@ -13,8 +13,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -90,6 +92,10 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	if features.ComplianceInNodes.Enabled() {
+		capsSet := centralsensor.NewSensorCapabilitySet(centralsensor.ComplianceInNodesCap)
+		ctx = centralsensor.AppendCapsInfoToContext(ctx, capsSet)
+	}
 	communicateStream, err := client.Communicate(ctx)
 	if err != nil {
 		panic(err)
@@ -201,6 +207,9 @@ func nodeSensorEvent(name string) *central.SensorEvent {
 			Node: &storage.Node{
 				Id:   id,
 				Name: name,
+				ContainerRuntime: &storage.ContainerRuntimeInfo{
+					Type: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+				},
 			},
 		},
 	}

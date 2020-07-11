@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
@@ -22,7 +23,10 @@ type RepositoryTestSuite struct {
 	suite.Suite
 }
 
-func compress(compressable interface{}) (*compliance.GZIPDataChunk, error) {
+func compressTestData(toCompress map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {
+	compressable := &compress.ResultWrapper{
+		ResultMap: toCompress,
+	}
 	var buf bytes.Buffer
 	gz, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	if err != nil {
@@ -67,7 +71,7 @@ func (s *RepositoryTestSuite) TestGetNodeResults() {
 		},
 	}
 
-	compressedEvidence, err := compress(testEvidence)
+	compressedEvidence, err := compressTestData(testEvidence)
 	s.Require().NoError(err)
 
 	testScrapeResults := map[string]*compliance.ComplianceReturn{

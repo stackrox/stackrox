@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	complianceCompress "github.com/stackrox/rox/pkg/compliance/compress"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -39,7 +40,7 @@ type ComplianceResultsBuilderTestSuite struct {
 	suite.Suite
 }
 
-func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance.GZIPDataChunk) map[string]*compliance.ComplianceStandardResult {
+func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance.GZIPDataChunk) *complianceCompress.ResultWrapper {
 	gr, err := gzip.NewReader(bytes.NewBuffer(chunk.Gzip))
 	s.Require().NoError(err)
 	defer func() {
@@ -48,13 +49,13 @@ func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance
 	}()
 	decompresedBytes, err := ioutil.ReadAll(gr)
 	s.Require().NoError(err)
-	var result map[string]*compliance.ComplianceStandardResult
+	var result *complianceCompress.ResultWrapper
 	err = json.Unmarshal(decompresedBytes, &result)
 	s.Require().NoError(err)
 	return result
 }
 
-func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*compliance.ComplianceStandardResult, *mockClient, map[string]*compliance.ComplianceStandardResult) {
+func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*compliance.ComplianceStandardResult, *mockClient, *complianceCompress.ResultWrapper) {
 	client := &mockClient{
 		sendList: []*sensor.MsgFromCompliance{},
 	}
@@ -67,12 +68,14 @@ func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*complianc
 			Message: "abc",
 		},
 	}
-	mockData := map[string]*compliance.ComplianceStandardResult{
-		standardID: {
-			CheckResults: map[string]*storage.ComplianceResultValue{
-				checkNameOne: {
-					Evidence:     evidenceOne,
-					OverallState: 0,
+	mockData := &complianceCompress.ResultWrapper{
+		ResultMap: map[string]*compliance.ComplianceStandardResult{
+			standardID: {
+				CheckResults: map[string]*storage.ComplianceResultValue{
+					checkNameOne: {
+						Evidence:     evidenceOne,
+						OverallState: 0,
+					},
 				},
 			},
 		},
@@ -80,7 +83,7 @@ func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*complianc
 
 	testResults := map[string]*compliance.ComplianceStandardResult{}
 	addCheckResultsToResponse(testResults, standardID, checkNameOne, evidenceOne)
-	s.Equal(mockData, testResults)
+	s.Equal(mockData.ResultMap, testResults)
 
 	return testResults, client, mockData
 }
@@ -98,12 +101,12 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 			Message: "def",
 		},
 	}
-	mockData[standardID].CheckResults[checkNameTwo] = &storage.ComplianceResultValue{
+	mockData.ResultMap[standardID].CheckResults[checkNameTwo] = &storage.ComplianceResultValue{
 		Evidence:     evidenceTwo,
 		OverallState: 0,
 	}
 	addCheckResultsToResponse(testResults, standardID, checkNameTwo, evidenceTwo)
-	s.Equal(mockData, testResults)
+	s.Equal(mockData.ResultMap, testResults)
 
 	// Add a result from a different standard
 	standardIDTwo := "abababab"
@@ -114,7 +117,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 			Message: "ghi",
 		},
 	}
-	mockData[standardIDTwo] = &compliance.ComplianceStandardResult{
+	mockData.ResultMap[standardIDTwo] = &compliance.ComplianceStandardResult{
 		CheckResults: map[string]*storage.ComplianceResultValue{
 			checkNameThree: {
 				Evidence:     evidenceThree,
@@ -123,7 +126,7 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		},
 	}
 	addCheckResultsToResponse(testResults, standardIDTwo, checkNameThree, evidenceThree)
-	s.Equal(mockData, testResults)
+	s.Equal(mockData.ResultMap, testResults)
 }
 
 func (s *ComplianceResultsBuilderTestSuite) TestSend() {

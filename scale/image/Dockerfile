@@ -15,3 +15,4 @@ COPY ./image/bin/flightreplay /flightreplay
 COPY ./image/docker-entrypoint.sh /docker-entrypoint.sh
 
 COPY ./image/fixtures/scrape.json /files/scrape.json
+COPY ./image/fixtures/results.json /files/results.json

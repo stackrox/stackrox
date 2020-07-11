@@ -106,6 +106,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore complianceDS.Dat
 		}
 		log.Errorf("Compliance run %s for standard %s on cluster %s failed: %v", r.id, r.standard.Name, r.domain.Cluster().ID(), err)
 	}
+	log.Infof("Completed compliance run %s", r.id)
 }
 
 func (r *runInstance) foldNodeResults(results *storage.ComplianceRunResults, nodeResults map[string]map[string]*compliance.ComplianceStandardResult) {
@@ -114,7 +115,6 @@ func (r *runInstance) foldNodeResults(results *storage.ComplianceRunResults, nod
 		nodeName := node.Node().GetName()
 		perStandardNodeResults, ok := nodeResults[nodeName]
 		if !ok {
-			log.Infof("no check results received for node %s with ID %s", node.Node().GetName(), nodeID)
 			continue
 		}
 		perCheckResults, ok := perStandardNodeResults[r.standard.ID]
