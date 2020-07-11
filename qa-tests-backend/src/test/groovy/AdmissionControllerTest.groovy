@@ -82,6 +82,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 [PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
         )
 
+        ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
         gcrId = ImageIntegrationService.addGcrRegistry(true)
         assert gcrId != null
     }
@@ -121,6 +122,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 cvssEnforcements
         )
         assert ImageIntegrationService.deleteImageIntegration(gcrId)
+        ImageIntegrationService.addStackroxScannerIntegration()
     }
 
     @Unroll
