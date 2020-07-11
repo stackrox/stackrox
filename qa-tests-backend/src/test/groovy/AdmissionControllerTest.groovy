@@ -47,7 +47,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
     static final private Deployment GCR_NGINX_DEPLOYMENT = new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.10")
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.10.1")
             .addLabel("app", "test")
 
     static final private Deployment BUSYBOX_NO_BYPASS_DEPLOYMENT = new Deployment()
@@ -271,8 +271,8 @@ class AdmissionControllerTest extends BaseSpecification {
         "Data inputs are: "
 
         image | _
-        "us.gcr.io/stackrox-ci/nginx:1.10@sha256:1861018a760ab6571b1d7e472cbd30da7c597e60439cd417935beb87b01c7cd0" | _
-        "us.gcr.io/stackrox-ci/nginx:1.10" | _
+        "us.gcr.io/stackrox-ci/nginx:1.10.1@sha256:b53e7ca2f567bdb7f23dad7d183a3466532d32f7ddf82847783fad14f425e5d3" | _
+        "us.gcr.io/stackrox-ci/nginx:1.10.1" | _
     }
 
     @Unroll

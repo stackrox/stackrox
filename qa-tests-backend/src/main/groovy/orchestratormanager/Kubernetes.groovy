@@ -932,18 +932,20 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def addServiceAccountImagePullSecret(String accountName, String secretName, String namespace = this.namespace) {
-        ServiceAccount serviceAccount = client.serviceAccounts()
-                .inNamespace(namespace)
-                .withName(accountName)
-                .get()
+        withRetry(1, 2) {
+            ServiceAccount serviceAccount = client.serviceAccounts()
+                    .inNamespace(namespace)
+                    .withName(accountName)
+                    .get()
 
-        Set<LocalObjectReference> imagePullSecretsSet = new HashSet<>(serviceAccount.getImagePullSecrets())
-        imagePullSecretsSet.add(new LocalObjectReference(secretName))
-        List<LocalObjectReference> imagePullSecretsList = []
-        imagePullSecretsList.addAll(imagePullSecretsSet)
-        serviceAccount.setImagePullSecrets(imagePullSecretsList)
+            Set<LocalObjectReference> imagePullSecretsSet = new HashSet<>(serviceAccount.getImagePullSecrets())
+            imagePullSecretsSet.add(new LocalObjectReference(secretName))
+            List<LocalObjectReference> imagePullSecretsList = []
+            imagePullSecretsList.addAll(imagePullSecretsSet)
+            serviceAccount.setImagePullSecrets(imagePullSecretsList)
 
-        client.serviceAccounts().inNamespace(namespace).withName(accountName).createOrReplace(serviceAccount)
+            client.serviceAccounts().inNamespace(namespace).withName(accountName).createOrReplace(serviceAccount)
+        }
     }
 
     def removeServiceAccountImagePullSecret(String accountName, String secretName, String namespace = this.namespace) {

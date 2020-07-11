@@ -76,7 +76,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
 
         and:
         "Create deployment with a scannable image and inline scans disabled"
-        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.10")
+        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.12")
 
         when:
         "Enable inline scans"
@@ -91,7 +91,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
 
         then:
         "Create deployment with a scannable image and inline scans enabled (w/ long timeout)"
-        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.10")
+        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.12")
 
         and:
         "Create deployment with a non-scannable image and inline scans enabled (w/ long timeout)"
@@ -109,7 +109,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
 
         and:
         "Create deployment with a scannable image and inline scans disabled"
-        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.10")
+        assert launchDeploymentWithImage("us.gcr.io/stackrox-ci/nginx:1.12")
 
         cleanup:
         if (gcrId) {

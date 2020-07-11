@@ -69,11 +69,11 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
-            .setImage("nginx:1.10")
+            .setImage("docker.io/nginx:1.10")
             .addLabel("app", "test"),
         new Deployment()
             .setName(GCR_NGINX)
-            .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.11.1")
             .addLabel ( "app", "test" )
             .setCommand(["sleep", "600"]),
     ]

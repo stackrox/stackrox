@@ -249,7 +249,7 @@ class Enforcement extends BaseSpecification {
         "Create Deployment to test scale-down enforcement"
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-build-deploy-cvss")
-                .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
+                .setImage("us.gcr.io/stackrox-ci/nginx:1.9.1")
                 .addPort(22)
                 .addLabel("app", "scale-down-enforcement-build-deploy")
                 .setSkipReplicaWait(true)

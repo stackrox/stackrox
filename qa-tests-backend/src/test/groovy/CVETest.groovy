@@ -39,12 +39,12 @@ class CVETest extends BaseSpecification {
 
     static final private Deployment CVE_DEPLOYMENT = new Deployment()
             .setName(CVE_DEPLOYMENT_NAME)
-            .setImage("docker.io/library/nginx:1.9") // Use 1.9 to avoid naming conflict with us.gcr.io/nginx:1.11
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.9")
             .addLabel("app", "test")
 
     def setupSpec() {
-        ImageService.scanImage("docker.io/library/nginx:1.9")
-        ImageService.scanImage("docker.io/library/nginx:1.10")
+        ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.9")
+        ImageService.scanImage("us.gcr.io/stackrox-ci/nginx:1.10.2")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
     }
 
@@ -59,7 +59,7 @@ class CVETest extends BaseSpecification {
         "Fetch the CVEs using GraphQL"
         def gqlService = new GraphQLService()
         def resultRet = gqlService.Call(GET_CVES_QUERY,
-                [query: "Image:docker.io/library/nginx:1.10+CVE:${cve}", scopeQuery: ""])
+                [query: "Image:us.gcr.io/stackrox-ci/nginx:1.10.2+CVE:${cve}", scopeQuery: ""])
         assert resultRet.getCode() == 200
         println "return code " + resultRet.getCode()
 

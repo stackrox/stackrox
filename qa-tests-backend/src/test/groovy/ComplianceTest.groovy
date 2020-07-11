@@ -18,7 +18,6 @@ import objects.CsvRow
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
-import objects.Secret
 import objects.Service
 import objects.SlackNotifier
 import org.junit.Assume
@@ -32,7 +31,6 @@ import services.NetworkPolicyService
 import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
-import util.Env
 import util.Timer
 import v1.ComplianceServiceOuterClass.ComplianceControl
 import v1.ComplianceServiceOuterClass.ComplianceStandard
@@ -61,24 +59,8 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-    @Shared
-    private static final GCR_SECRET_NAME = "gcr-access-key"
 
     def setupSpec() {
-        // Get access to GCR for the Fixable CVE feature test
-        orchestrator.createImagePullSecret(new Secret(
-            name: GCR_SECRET_NAME,
-            server: "https://us.gcr.io",
-            username: "_json_key",
-            password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
-            namespace: Constants.ORCHESTRATOR_NAMESPACE
-        ))
-        orchestrator.addServiceAccountImagePullSecret(
-            "default",
-            GCR_SECRET_NAME,
-            Constants.ORCHESTRATOR_NAMESPACE
-        )
-
         // Get cluster ID
         clusterId = ClusterService.getClusterId()
         assert clusterId
@@ -104,13 +86,6 @@ class ComplianceTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        orchestrator.deleteSecret(GCR_SECRET_NAME, Constants.ORCHESTRATOR_NAMESPACE)
-        orchestrator.removeServiceAccountImagePullSecret(
-            "default",
-            GCR_SECRET_NAME,
-            Constants.ORCHESTRATOR_NAMESPACE
-        )
-
         ImageIntegrationService.deleteImageIntegration(gcrId)
         ImageService.clearImageCaches()
 
