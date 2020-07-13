@@ -9,6 +9,7 @@ import (
 
 var (
 	humanReadableToEnum = map[string]storage.CollectionMethod{
+		"auto":          storage.CollectionMethod_UNSET_COLLECTION,
 		"unset":         storage.CollectionMethod_UNSET_COLLECTION,
 		"none":          storage.CollectionMethod_NO_COLLECTION,
 		"kernel-module": storage.CollectionMethod_KERNEL_MODULE,

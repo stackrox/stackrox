@@ -20,6 +20,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	warningDeprecatedFlagMonitoringEndpointUsed = `WARNING: The flag --monitoring-endpoint has been deprecated and has no impact. The flag will
+be removed in a future version of roxctl. Remove it from your invocations of roxctl to avoid future breakages.
+`
+
+	warningDefaultForCreateUpgraderSaWillChange = `WARNING: The default for the --create-upgrader-sa flag will change to true in future
+versions of roxctl. If you want to preserve the old behavior, please change your
+invocations to explicitly specify --create-upgrader-sa=false.
+`
+
+	warningDefaultForCollectionMethodWillChange = `WARNING: The default for the --collection-method flag will change to "kernel-module" in future
+versions of roxctl. If you want to preserve the old behavior, please change your
+invocations to explicitly specify --collection-method=auto.
+`
+)
+
 var (
 	cluster = storage.Cluster{
 		TolerationsConfig: &storage.TolerationsConfig{
@@ -75,7 +91,7 @@ func fullClusterCreation(timeout time.Duration) error {
 	return nil
 }
 
-// Command defines the deploy command tree
+// Command defines the sensor generate command tree
 func Command() *cobra.Command {
 	var monitoringEndpointNoop string
 
@@ -85,8 +101,24 @@ func Command() *cobra.Command {
 			_ = c.Help()
 		},
 		PersistentPreRun: func(c *cobra.Command, _ []string) {
-			if monitoringEndpointNoop != "" {
-				fmt.Fprintln(os.Stderr, "--monitoring-endpoint has been deprecated and will have no impact")
+			// Print deprecatation warnings. Note that we print out an additional newline in order to seperate
+			// the warning from the rest of the program output.
+
+			// Can be removed in a future release.
+			if c.Flags().Lookup("monitoring-endpoint").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n", warningDeprecatedFlagMonitoringEndpointUsed)
+			}
+
+			// Migration process for changed default for "--create-upgrader-sa".
+			// Can be removed in a future release.
+			if !c.Flags().Lookup("create-upgrader-sa").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n", warningDefaultForCreateUpgraderSaWillChange)
+			}
+
+			// Migration process for changed default for "--collection-method".
+			// Can be removed in a future release.
+			if !c.Flags().Lookup("collection-method").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n", warningDefaultForCollectionMethodWillChange)
 			}
 		},
 	}
@@ -103,7 +135,7 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&cluster.RuntimeSupport, "runtime", true, "whether or not to have runtime support (DEPRECATED, use Collection Method instead)")
 
-	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, kernel-module, ebpf)")
+	c.PersistentFlags().Var(&collectionTypeWrapper{CollectionMethod: &cluster.CollectionMethod}, "collection-method", "which collection method to use for runtime support (none, auto, kernel-module, ebpf)")
 
 	c.PersistentFlags().BoolVar(&createUpgraderSA, "create-upgrader-sa", false, "whether to create the upgrader service account, with cluster-admin privileges, to facilitate automated sensor upgrades")
 
