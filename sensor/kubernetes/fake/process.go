@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -271,7 +270,6 @@ func getGoodProcess(containerID string) *storage.ProcessSignal {
 
 func getProcess(name string, containerID string) *storage.ProcessSignal {
 	return &storage.ProcessSignal{
-		Id:           uuid.NewV4().String(),
 		ContainerId:  containerID[:12],
 		Time:         types.TimestampNow(),
 		Name:         name,

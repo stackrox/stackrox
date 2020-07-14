@@ -439,13 +439,16 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 	ticker := time.NewTicker(podWorkload.ProcessWorkload.ProcessInterval)
 	defer ticker.Stop()
 
+	// Precompute these as multiple calls to getShortContainerID is expensive
+	containerIDs := make([]string, 0, len(pod.Status.ContainerStatuses))
+	for _, status := range pod.Status.ContainerStatuses {
+		containerIDs = append(containerIDs, getShortContainerID(status.ContainerID))
+	}
 	for {
 		select {
 		case <-ticker.C:
-			containerStatuses := pod.Status.ContainerStatuses
-			randomContainerStatus := containerStatuses[rand.Intn(len(containerStatuses))]
 			// If less than the rate, then it's a bad process
-			containerID := getShortContainerID(randomContainerStatus.ContainerID)
+			containerID := containerIDs[rand.Intn(len(containerIDs))]
 			if rand.Float32() < podWorkload.ProcessWorkload.AlertRate {
 				w.processes.Process(getBadProcess(containerID))
 			} else {
