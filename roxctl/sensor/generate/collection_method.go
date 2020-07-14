@@ -9,8 +9,7 @@ import (
 
 var (
 	humanReadableToEnum = map[string]storage.CollectionMethod{
-		"auto":          storage.CollectionMethod_UNSET_COLLECTION,
-		"unset":         storage.CollectionMethod_UNSET_COLLECTION,
+		"default":       storage.CollectionMethod_UNSET_COLLECTION,
 		"none":          storage.CollectionMethod_NO_COLLECTION,
 		"kernel-module": storage.CollectionMethod_KERNEL_MODULE,
 		"ebpf":          storage.CollectionMethod_EBPF,
@@ -34,7 +33,14 @@ func (f *collectionTypeWrapper) String() string {
 }
 
 func (f *collectionTypeWrapper) Set(input string) error {
-	pt, ok := humanReadableToEnum[strings.ToLower(input)]
+	// For backwards compatibility.
+	inputNormalized := strings.ToLower(input)
+	switch inputNormalized {
+	case "unset":
+		// For backwards compatibility.
+		inputNormalized = "default"
+	}
+	pt, ok := humanReadableToEnum[inputNormalized]
 	if !ok {
 		return fmt.Errorf("Invalid collection method: %s", input)
 	}

@@ -3,7 +3,8 @@ All notable changes to this project that require documentation updates will be d
 
 ## [NEXT RELEASE]
 - Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).
-- Emit warnings if defaults for `--create-updater-sa` or `--collection-method` are used for roxctl (ROX-5264).
+- Emit warning if the default value for flag `--create-updater-sa` is used in roxctl (ROX-5264).
+- New parameter `default` for flag `--collection-method`.
 - UI: Omit Cluster column from Deployments list when entity context includes Namespace (ROX-5207)
 
 ## [46.0]
