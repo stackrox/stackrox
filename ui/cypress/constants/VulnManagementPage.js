@@ -49,6 +49,12 @@ export const listSelectors = {
     componentCountLink: '[data-testid="componentCountLink"]',
     cveSuppressPanelButton: '[data-testid="panel-button-suppress-selected-cves"]',
     cveUnsuppressPanelButton: '[data-testid="panel-button-unsuppress-selected-cves"]',
+    cveAddToPolicyButton: '[data-testid="panel-button-add-cves-to-policy"]',
+    cveAddToPolicyShortForm: {
+        // TODO: fix the following selector for react-select, that evil component
+        select: '[data-testid="policy-short-form"] select',
+        selectValue: '[data-testid="policy-short-form"] .react-select__multi-value__label',
+    },
     suppressOneDayOption: '[data-testid="1 Day"]',
     suppressToggleViewPanelButton: '[data-testid="panel-button-toggle-suppressed-cves-view"]',
     cveUnsuppressRowButton: '[data-testid="row-action-unsuppress"]',

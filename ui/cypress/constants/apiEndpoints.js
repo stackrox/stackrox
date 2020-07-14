@@ -118,6 +118,7 @@ export const configMgmt = {
 
 export const vulnMgmt = {
     graphqlOps: {
+        getCves: 'getCves',
         getPolicies: 'getPolicies',
         getPolicy: 'getPolicy',
     },

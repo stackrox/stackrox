@@ -45,110 +45,13 @@ const VulmMgmtEntityPolicy = ({
                 policySections {
                     sectionName
                     policyGroups {
-                      booleanOperator
-                      fieldName
-                      negate
-                      values {
-                        value
-                      }
-                    }
-                  }
-                fields {
-                    addCapabilities
-                    args
-                    command
-                    component {
-                        name
-                        version
-                    }
-                    containerResourcePolicy {
-                        cpuResourceLimit {
-                            op
-                            value
-                        }
-                        cpuResourceRequest {
-                            op
-                            value
-                        }
-                        memoryResourceLimit {
-                            op
-                            value
-                        }
-                        memoryResourceRequest {
-                            op
+                        booleanOperator
+                        fieldName
+                        negate
+                        values {
                             value
                         }
                     }
-                    cve
-                    cvss {
-                        op
-                        value
-                    }
-                    directory
-                    disallowedAnnotation {
-                        envVarSource
-                        key
-                        value
-                    }
-                    dropCapabilities
-                    env {
-                        envVarSource
-                        key
-                        value
-                    }
-                    fixedBy
-                    #hostMountPolicy {
-                    # no fields defined in schema
-                    #}
-                    imageName {
-                        registry
-                        remote
-                        tag
-                    }
-                    lineRule {
-                        instruction
-                        value
-                    }
-                    permissionPolicy {
-                        permissionLevel
-                    }
-                    portExposurePolicy {
-                        exposureLevels
-                    }
-                    portPolicy {
-                        port
-                        protocol
-                    }
-                    privileged
-                    processPolicy {
-                        ancestor
-                        args
-                        name
-                        uid
-                    }
-                    requiredAnnotation {
-                        envVarSource
-                        key
-                        value
-                    }
-                    requiredLabel {
-                        envVarSource
-                        key
-                        value
-                    }
-                    #scanAgeDays
-                    user
-                    volumePolicy {
-                        destination
-                        name
-                        source
-                        type
-                    }
-                    imageAgeDays
-                    scanAgeDays
-                    noScanExists
-                    readOnlyRootFs
-                    whitelistEnabled
                 }
                 scope {
                     cluster

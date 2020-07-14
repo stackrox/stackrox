@@ -1,6 +1,7 @@
 import withAuth from '../../helpers/basicAuth';
 import { url, selectors } from '../../constants/VulnManagementPage';
 import { hasExpectedHeaderColumns, allChecksForEntities } from '../../helpers/vmWorkflowUtils';
+import * as api from '../../constants/apiEndpoints';
 
 describe('CVEs list Page and its entity detail page,sub list  validations ', () => {
     withAuth();
@@ -107,6 +108,54 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
                 // Verify that the unsuppressed CVE shows up in the table
                 cy.get(selectors.tableBodyRows, { timeout: 4500 }).contains(cve);
             });
+    });
+
+    describe('adding selected CVEs to policy', () => {
+        beforeEach(() => {
+            cy.server();
+            cy.route('POST', api.graphql(api.vulnMgmt.graphqlOps.getCves)).as('getCves');
+        });
+
+        it('should add CVEs to new policies', () => {
+            cy.visit(url.list.cves);
+            cy.wait('@getCves');
+
+            cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
+
+            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(selectors.cveAddToPolicyButton).click();
+
+            // TODO: finish testing with react-select, that evil component
+            // cy.get(selectors.cveAddToPolicyShortForm.select).click().type('cypress-test-policy');
+        });
+
+        it('should add CVEs to existing policies', () => {
+            cy.visit(url.list.cves);
+            cy.wait('@getCves');
+
+            cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
+
+            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(selectors.cveAddToPolicyButton).click();
+
+            // TODO: finish testing with react-select, that evil component
+            // cy.get(selectors.cveAddToPolicyShortForm.select).click();
+            // cy.get(selectors.cveAddToPolicyShortForm.selectValue).eq(1).click();
+        });
+
+        it('should add CVEs to existing policies with CVEs', () => {
+            cy.visit(url.list.cves);
+            cy.wait('@getCves');
+
+            cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
+
+            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(selectors.cveAddToPolicyButton).click();
+
+            // TODO: finish testing with react-select, that evil component
+            // cy.get(selectors.cveAddToPolicyShortForm.select).click();
+            // cy.get(selectors.cveAddToPolicyShortForm.selectValue).first().click();
+        });
     });
 
     // TODO to be fixed after back end sorting is fixed

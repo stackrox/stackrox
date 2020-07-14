@@ -17,6 +17,20 @@ import { splitCvesByType } from 'utils/vulnerabilityUtils';
 
 import CveToPolicyShortForm, { emptyPolicy } from './CveToPolicyShortForm';
 
+const findCVEField = (policySections) => {
+    let policySectionIdx = null;
+    let policyGroupIdx = null;
+    policySections.forEach((policySection, sectionIdx) => {
+        policySection.policyGroups.forEach(({ fieldName }, groupIdx) => {
+            if (fieldName === 'CVE') {
+                policySectionIdx = sectionIdx;
+                policyGroupIdx = groupIdx;
+            }
+        });
+    });
+    return { policySectionIdx, policyGroupIdx };
+};
+
 const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const [messageObj, setMessageObj] = useState(null);
     const dialogueRef = useRef(null);
@@ -58,7 +72,7 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     const { IMAGE_CVE: allowedCves, K8S_CVE: disallowedCves } = splitCvesByType(cveItems);
 
     // only the allowed CVEs are combined for use in the policy
-    const allowedCvesStr = allowedCves.map((cve) => cve.cve).join(',');
+    const allowedCvesValues = allowedCves.map((cve) => ({ value: cve.cve }));
 
     // use GraphQL to get existing vulnerability-related policies
     const POLICIES_QUERY = gql`
@@ -111,19 +125,31 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds }) => {
     function setSelectedPolicy(selectedPolicy) {
         // checking if the policy already exists or has already been added to the policy list
         const policyExists = policies && policies.find((pol) => pol.value === selectedPolicy.value);
-        let newPolicy = selectedPolicy;
+        const newPolicy = { ...selectedPolicy };
+        const newCveSection = {
+            sectionName: 'CVEs',
+            policyGroups: [{ fieldName: 'CVE', values: allowedCvesValues }],
+        };
 
         if (policyExists) {
+            // find policySection and policyGroup with CVEs
+            const { policySectionIdx, policyGroupIdx } = findCVEField(
+                selectedPolicy.policySections
+            );
             // it matches an existing policy's ID, so must have been selected from existing list
-            const newCveList = selectedPolicy.fields.cve
-                ? `${selectedPolicy.fields.cve},${allowedCvesStr}`
-                : allowedCvesStr;
-            const newFields = { ...selectedPolicy.fields, cve: newCveList };
-            newPolicy = { ...selectedPolicy, fields: newFields };
+            const newPolicySections = [...selectedPolicy.policySections];
+            if (policySectionIdx !== null) {
+                newPolicySections[policySectionIdx].policyGroups[policyGroupIdx].values.push(
+                    ...allowedCvesValues
+                );
+            } else {
+                newPolicySections.push(newCveSection);
+            }
+            newPolicy.policySections = newPolicySections;
         } else {
             // 1. not in existing list, so must be a typed name instead of an ID
             // 2. also use this opportunity to only add allowed CVEs to new policy
-            newPolicy = { ...selectedPolicy, fields: { cve: allowedCvesStr } };
+            newPolicy.policySections = [newCveSection];
         }
 
         // update the form

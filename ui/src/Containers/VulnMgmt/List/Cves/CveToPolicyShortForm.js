@@ -43,9 +43,7 @@ export const emptyPolicy = {
     description: '',
     disabled: false,
     categories: ['Vulnerability Management'],
-    fields: {
-        cve: '',
-    },
+    policySections: [],
     whitelists: [],
 };
 
