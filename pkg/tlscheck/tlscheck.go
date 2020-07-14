@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	timeout = 500 * time.Millisecond
+	timeout = 2 * time.Second
 )
 
 // CheckTLS checks if the address is using TLS
