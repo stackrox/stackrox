@@ -104,6 +104,7 @@
         "test-watch": "react-scripts test",
         "lint": "yarn tailwind && NODE_PATH=src eslint --ext .js,.ts,.tsx src cypress tailwind.config.js .prettierrc.js .eslintrc.js",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
+        "cypress-spec": "./scripts/cypress.sh run --spec",
         "cypress-demo-open": "./scripts/cypress.sh open --config integrationFolder=cypress/demo",
         "test-e2e-local": "./scripts/cypress.sh run",
         "test-e2e-local:coverage": "CYPRESS_COLLECT_COVERAGE=true yarn test-e2e-local",

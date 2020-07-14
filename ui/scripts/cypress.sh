@@ -17,4 +17,13 @@ if [[ -n "$ROX_PASSWORD" ]]; then
   done
 fi
 export CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh)
-cypress "$@"
+
+if [ $2 == "--spec" ]; then
+    if [ $# -ne 3 ]; then
+        echo "usage: yarn cypress-spec <spec-file>"
+        exit 1
+    fi
+    cypress run --spec "cypress/integration/$3"
+else 
+    cypress "$@"
+fi
