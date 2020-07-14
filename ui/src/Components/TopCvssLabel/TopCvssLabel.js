@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import LabelChip from 'Components/LabelChip';
+import LabelChipSubtext from 'Components/LabelChipSubtext';
 import { getSeverityChipType } from 'utils/vulnerabilityUtils';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
@@ -35,10 +36,7 @@ const TopCvssLabel = ({ cvss, version, expanded }) => {
     return (
         <div className="mx-auto flex flex-col">
             {labelElm}
-            <span className="pt-1 text-base-500 text-xs font-700 text-center">
-                {' '}
-                ({versionText})
-            </span>
+            <LabelChipSubtext>({versionText})</LabelChipSubtext>
         </div>
     );
 };
