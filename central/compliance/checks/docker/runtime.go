@@ -8,6 +8,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -21,7 +22,7 @@ func init() {
 		runningContainerCheck("CIS_Docker_v1_2_0:5_3", capabilities, "has extra capabilities enabled"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_4", privileged, "is not running in privileged mode"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_5", sensitiveHostMounts, "does not mount any sensitive host directories"),
-		runningContainerCheck("CIS_Docker_v1_2_0:5_6", ssh, "does not have ssh process running"),
+		sshCheck(),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_7", privilegedPorts, "does not bind to a privileged host port"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_8", necessaryPorts, "does not bind to any host ports"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_9", sharedNetwork, "does not use the 'host' network mode"),
@@ -359,22 +360,57 @@ func sharedNetwork(ctx framework.ComplianceContext, container types.ContainerJSO
 	}
 }
 
-func ssh(ctx framework.ComplianceContext, container types.ContainerJSON) {
+func sshCheck() framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Docker_v1_2_0:5_6",
+		Scope:              framework.DeploymentKind,
+		InterpretationText: "StackRox checks that every running container in each deployment does not have ssh process running",
+		DataDependencies:   []string{"ProcessIndicators"},
+	}
+	checkFunc := func(ctx framework.ComplianceContext) {
+		framework.ForEachDeployment(ctx, ssh)
+	}
+	return framework.NewCheckFromFunc(md, checkFunc)
+}
+
+func ssh(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 	var fail bool
-	for _, indicator := range ctx.Data().ProcessIndicators() {
-		if strings.HasPrefix(container.ID, indicator.GetSignal().GetContainerId()) {
-			process := indicator.GetSignal().GetExecFilePath()
-			if strings.Contains(process, "ssh") {
-				fail = true
-				processWithArgs := fmt.Sprintf("%s %s", process, indicator.GetSignal().GetArgs())
-				framework.Failf(ctx, "Container %q has ssh process running: %q", container.Name, processWithArgs)
+	runningContainerIDs := getRunningContainerIDs(deployment, ctx.Domain().Pods())
+	if len(runningContainerIDs) == 0 {
+		framework.Passf(ctx, "Deployment %s has no running containers", deployment.GetName())
+		return
+	}
+	for runningContainerID, containerName := range runningContainerIDs {
+		for _, indicator := range ctx.Data().ProcessIndicators() {
+			// indicator.GetSignal().GetContainerId() only returns the first 12 characters of the container ID.
+			if strings.HasPrefix(runningContainerID, indicator.GetSignal().GetContainerId()) {
+				process := indicator.GetSignal().GetExecFilePath()
+				if strings.Contains(process, "ssh") {
+					fail = true
+					processWithArgs := fmt.Sprintf("%s %s", process, indicator.GetSignal().GetArgs())
+					framework.Failf(ctx, "Container %q has ssh process running: %q", containerName, processWithArgs)
+				}
 			}
+		}
+
+		if !fail {
+			framework.Passf(ctx, "Container %q has no ssh process running", containerName)
+		}
+	}
+}
+
+func getRunningContainerIDs(deployment *storage.Deployment, pods []*storage.Pod) map[string]string {
+	runningContainerIDs := make(map[string]string)
+	for _, pod := range pods {
+		if pod.GetDeploymentId() != deployment.GetId() {
+			continue
+		}
+		for _, runningInstance := range pod.GetLiveInstances() {
+			runningContainerIDs[runningInstance.GetInstanceId().GetId()] = fmt.Sprintf("%s:%s", pod.GetName(), runningInstance.GetInstanceId().GetId())
 		}
 	}
 
-	if !fail {
-		framework.Passf(ctx, "Container %q has no ssh process running", container.Name)
-	}
+	return runningContainerIDs
 }
 
 func ulimit(ctx framework.ComplianceContext, container types.ContainerJSON) {

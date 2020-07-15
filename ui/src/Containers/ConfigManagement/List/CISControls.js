@@ -109,7 +109,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
     const queryText = queryService.objectToWhereClause(queryObject);
     const variables = {
         where: queryText,
-        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL, entityTypes.NODE],
+        groupBy: [entityTypes.STANDARD, entityTypes.CONTROL],
     };
 
     function createTableRowsFilteredByComplianceState(items) {

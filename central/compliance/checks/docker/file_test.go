@@ -55,7 +55,7 @@ func TestAuditCheck(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			domain := framework.NewComplianceDomain(testCluster, testNodes, nil)
+			domain := framework.NewComplianceDomain(testCluster, testNodes, nil, nil)
 			data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
 			allFiles := map[string]*compliance.File{

@@ -99,7 +99,7 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			domain := framework.NewComplianceDomain(testCluster, testNodes, nil)
+			domain := framework.NewComplianceDomain(testCluster, testNodes, nil, nil)
 			data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
 			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{

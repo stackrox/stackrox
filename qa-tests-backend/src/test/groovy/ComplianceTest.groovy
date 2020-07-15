@@ -52,6 +52,8 @@ class ComplianceTest extends BaseSpecification {
     @Shared
     private static final HIPAA_ID = "HIPAA_164"
     @Shared
+    private static final DOCKER_1_2_0_ID = "CIS_Docker_v1_2_0"
+    @Shared
     private static final Map<String, ComplianceRunResults> BASE_RESULTS = [:]
     @Shared
     private String clusterId
@@ -1025,5 +1027,63 @@ class ComplianceTest extends BaseSpecification {
         def start = System.currentTimeMillis()
         orchestrator.waitForSensor()
         println "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
+    }
+
+    @Category([BAT])
+    def "Verify Docker 5_6, no SSH processes"() {
+        def deployment = new Deployment()
+                        .setName ("triggerssh")
+                        .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+
+        given:
+        "create a deployment which forces the ssh check to fail"
+        orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
+
+        and:
+        "create an expected control result"
+        assert deployment.getPods().size() == 1
+        def pod = deployment.getPods()[0]
+        assert pod.getContainerIds().size() == 1
+        def expectedContainerID = pod.getContainerIds()[0].replace("docker://", "")
+        def control = new Control(
+                "CIS_Docker_v1_2_0:5_6",
+                ["Container \"" + pod.getName() + ":" + expectedContainerID + "\" has ssh process running: " +
+                         "\"/usr/local/bin/sshd --coreutils-prog-shebang=echo /usr/local/bin/sshd hello\"",],
+                ComplianceState.COMPLIANCE_STATE_FAILURE)
+
+        and:
+        "verify deployment fully detected"
+        Set<String> receivedProcessPaths = []
+        Timer t = new Timer(30, 2)
+        while (t.IsValid()) {
+            receivedProcessPaths = ProcessService.getUniqueProcessPaths(deployment.deploymentUid)
+            if (receivedProcessPaths.size() > 1) {
+                break
+            }
+            println "Didn't find all the expected processes, retrying..."
+        }
+        assert receivedProcessPaths.size() > 1
+
+        and:
+        "trigger compliance runs"
+        def dockerResults = ComplianceService.triggerComplianceRunAndWaitForResult(DOCKER_1_2_0_ID, clusterId)
+
+        expect:
+        "check the SSH control for a failed for state"
+
+        def results = dockerResults.getDeploymentResultsMap()
+        assert results
+        assert results.containsKey(deployment.getDeploymentUid())
+        def controlResultsMap = results[deployment.getDeploymentUid()].getControlResultsMap()
+        assert controlResultsMap
+        assert controlResultsMap.containsKey(control.id)
+        ComplianceResultValue value = controlResultsMap.get(control.id)
+        assert value.overallState == control.state
+        assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+
+        cleanup:
+        "remove the deployment we created"
+        orchestrator.deleteDeployment(deployment)
     }
 }

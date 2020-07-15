@@ -7,15 +7,17 @@ type ComplianceDomain interface {
 	Cluster() ComplianceTarget
 	Nodes() []ComplianceTarget
 	Deployments() []ComplianceTarget
+	Pods() []*storage.Pod
 }
 
 type complianceDomain struct {
 	cluster     clusterTarget
 	nodes       []nodeTarget
 	deployments []deploymentTarget
+	pods        []*storage.Pod
 }
 
-func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment) *complianceDomain {
+func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod) *complianceDomain {
 	clusterTarget := targetForCluster(cluster)
 	nodeTargets := make([]nodeTarget, len(nodes))
 	for i, node := range nodes {
@@ -29,6 +31,7 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 		cluster:     clusterTarget,
 		nodes:       nodeTargets,
 		deployments: deploymentTargets,
+		pods:        pods,
 	}
 }
 
@@ -52,7 +55,15 @@ func (d *complianceDomain) Deployments() []ComplianceTarget {
 	return result
 }
 
+func (d *complianceDomain) Pods() []*storage.Pod {
+	result := make([]*storage.Pod, len(d.pods))
+	for i, pod := range d.pods {
+		result[i] = pod
+	}
+	return result
+}
+
 // NewComplianceDomain creates a new compliance domain from the given cluster, list of nodes and list of deployments.
-func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment) ComplianceDomain {
-	return newComplianceDomain(cluster, nodes, deployments)
+func NewComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deployments []*storage.Deployment, pods []*storage.Pod) ComplianceDomain {
+	return newComplianceDomain(cluster, nodes, deployments, pods)
 }

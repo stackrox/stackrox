@@ -39,7 +39,7 @@ var (
 		},
 	}
 
-	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
+	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 
 	cvssPolicyEnabledAndEnforced = &storage.Policy{
 		Id:              uuid.NewV4().String(),

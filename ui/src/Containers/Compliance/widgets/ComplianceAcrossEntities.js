@@ -22,20 +22,14 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData(
-    match,
-    location,
-    entityType,
-    { results, controls, complianceStandards },
-    searchParam
-) {
+function processData(match, location, entityType, { controls, complianceStandards }, searchParam) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
-        filteredResults = results.results.filter((result) =>
+        filteredResults = controls.results.filter((result) =>
             result.aggregationKeys[0].id.includes(entityType)
         );
     } else {
-        filteredResults = results.results;
+        filteredResults = controls.results;
     }
     if (!filteredResults.length)
         return [

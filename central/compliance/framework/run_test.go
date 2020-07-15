@@ -37,7 +37,16 @@ var (
 		},
 	}
 
-	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments)
+	testPods = []*storage.Pod{
+		{
+			Id: uuid.NewV4().String(),
+		},
+		{
+			Id: uuid.NewV4().String(),
+		},
+	}
+
+	testDomain = newComplianceDomain(testCluster, testNodes, testDeployments, testPods)
 )
 
 func TestEmptyRun(t *testing.T) {

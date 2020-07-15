@@ -40,6 +40,7 @@ func (s *RunTestSuite) TestFold() {
 			},
 		},
 		nil,
+		nil,
 	)
 	testRun := createRun("testRun", testDomain, testStandard)
 

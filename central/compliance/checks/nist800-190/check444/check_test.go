@@ -75,7 +75,7 @@ func (s *suiteImpl) TestPass() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), domain, data)
 	s.NoError(err)
 
@@ -138,7 +138,7 @@ func (s *suiteImpl) TestFail() {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments, nil)
 	err = run.Run(context.Background(), domain, data)
 	s.NoError(err)
 

@@ -204,7 +204,7 @@ func (s *suiteImpl) checkTestCase(tc *testCase) {
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
 
-	domain := framework.NewComplianceDomain(tc.cluster, tc.nodes, tc.deployments)
+	domain := framework.NewComplianceDomain(tc.cluster, tc.nodes, tc.deployments, nil)
 	err = run.Run(context.Background(), domain, data)
 	s.NoError(err)
 

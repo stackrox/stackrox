@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/globaldatastore"
+	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/scrape/factory"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -57,6 +58,7 @@ type manager struct {
 	clusterStore    clusterDatastore.DataStore
 	nodeStore       nodeDatastore.GlobalDataStore
 	deploymentStore datastore.DataStore
+	podStore        podDatastore.DataStore
 
 	dataRepoFactory data.RepositoryFactory
 	scrapeFactory   factory.ScrapeFactory
@@ -64,7 +66,7 @@ type manager struct {
 	resultsStore complianceDS.DataStore
 }
 
-func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) (*manager, error) {
+func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeDatastore.GlobalDataStore, deploymentStore datastore.DataStore, podStore podDatastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceDS.DataStore) (*manager, error) {
 	mgr := &manager{
 		scheduleStore:     scheduleStore,
 		standardsRegistry: standardsRegistry,
@@ -77,6 +79,7 @@ func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleSto
 		clusterStore:    clusterStore,
 		nodeStore:       nodeStore,
 		deploymentStore: deploymentStore,
+		podStore:        podStore,
 
 		dataRepoFactory: dataRepoFactory,
 		scrapeFactory:   scrapeFactory,
@@ -150,7 +153,13 @@ func (m *manager) createDomain(ctx context.Context, clusterID string) (framework
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
 
-	return framework.NewComplianceDomain(cluster, nodes, deployments), nil
+	query = search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
+	pods, err := m.podStore.SearchRawPods(ctx, query)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not get pods for cluster %s", clusterID)
+	}
+
+	return framework.NewComplianceDomain(cluster, nodes, deployments, pods), nil
 }
 
 func (m *manager) createRun(domain framework.ComplianceDomain, standard *standards.Standard, schedule *scheduleInstance) *runInstance {
