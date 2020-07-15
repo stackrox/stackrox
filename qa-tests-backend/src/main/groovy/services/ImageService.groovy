@@ -37,4 +37,12 @@ class ImageService extends BaseService {
             return ""
         }
     }
+
+    static deleteImages(RawQuery query = RawQuery.newBuilder().build(), Boolean confirm = false) {
+        ImageServiceOuterClass.DeleteImagesResponse response = getImageClient()
+                .deleteImages(ImageServiceOuterClass.DeleteImagesRequest.newBuilder()
+                        .setQuery(query)
+                        .setConfirm(confirm).build())
+        println "Deleted ${response.numDeleted} images based on ${query.query}"
+    }
 }

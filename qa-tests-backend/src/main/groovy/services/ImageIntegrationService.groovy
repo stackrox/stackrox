@@ -203,15 +203,50 @@ class ImageIntegrationService extends BaseService {
         return createImageIntegration(integration)
     }
 
-    static String addQuayRegistry(boolean includeScanner = true) {
+    static String addDefaultQuayRegistry(
+            String name = "quay",
+            String endpoint = "quay.io",
+            boolean includeScanner = true,
+            boolean insecure = false) {
         ImageIntegrationOuterClass.ImageIntegration integration =
                 ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                        .setName("quay")
+                        .setName(name)
                         .setType("quay")
                         .addAllCategories(getIntegrationCategories(includeScanner))
                         .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
-                                .setEndpoint("quay.io")
-                                .setOauthToken(Env.mustGet("QUAY_BEARER_TOKEN")))
+                                .setEndpoint(endpoint)
+                                .setOauthToken(Env.mustGet("QUAY_BEARER_TOKEN"))
+                                .setInsecure(insecure))
+                        .build()
+
+        return createImageIntegration(integration)
+    }
+
+    static String addDuplicateQuayRegistry(boolean includeScanner = true, boolean insecure = false) {
+        ImageIntegrationOuterClass.ImageIntegration integration =
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        .setName("quay-duplicate")
+                        .setType("quay")
+                        .addAllCategories(getIntegrationCategories(includeScanner))
+                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
+                        .setEndpoint("quay.io")
+                        .setOauthToken(Env.mustGet("QUAY_BEARER_TOKEN"))
+                        .setInsecure(insecure))
+                        .build()
+
+        return createImageIntegration(integration)
+    }
+
+    static String addSecondaryQuayRegistry(boolean includeScanner = true, boolean insecure = false) {
+        ImageIntegrationOuterClass.ImageIntegration integration =
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        .setName("quay-secondary")
+                        .setType("quay")
+                        .addAllCategories(getIntegrationCategories(includeScanner))
+                        .setQuay(ImageIntegrationOuterClass.QuayConfig.newBuilder()
+                        .setEndpoint("quay.io")
+                        .setOauthToken(Env.mustGet("QUAY_SECONDARY_BEARER_TOKEN"))
+                        .setInsecure(insecure))
                         .build()
 
         return createImageIntegration(integration)
