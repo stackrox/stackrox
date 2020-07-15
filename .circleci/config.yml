@@ -2148,7 +2148,7 @@ jobs:
           crio: false
           suffix: -rhel
           flavor: lite
-          version: 0.6.2
+          version: 0.6.3
 
   provision-gke-rhel-api-e2e-tests:
     executor: custom
@@ -2253,7 +2253,7 @@ jobs:
           crio: false
           flavor: lite
           gate-label: ci-openshift-tests
-          version: 0.6.2
+          version: 0.6.3
 
   provision-openshift-crio-api-e2e-tests:
     machine: true
@@ -2263,7 +2263,7 @@ jobs:
           flavor: multi
           gate-label: ci-openshift-crio-tests
           suffix: -crio
-          version: 0.6.2
+          version: 0.6.3
 
   provision-eks-api-e2e-tests:
     executor: custom
@@ -2746,7 +2746,7 @@ jobs:
       - run-openshift-tests:
           suffix: -rhel
           flavor: lite
-          version: 0.6.2
+          version: 0.6.3
           use-main-rhel: true
           sensor-deploy-flavor: helm
 
@@ -3403,7 +3403,7 @@ jobs:
       - run-openshift-tests:
           gate-label: ci-openshift-tests
           flavor: lite
-          version: 0.6.2
+          version: 0.6.3
 
   openshift-crio-api-e2e-tests:
     executor: custom
@@ -3423,7 +3423,7 @@ jobs:
           suffix: "-crio"
           gate-label: ci-openshift-crio-tests
           flavor: multi
-          version: 0.6.2
+          version: 0.6.3
 
   eks-api-e2e-tests:
     executor: custom
