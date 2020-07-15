@@ -24,10 +24,7 @@ import (
 var (
 	imagesSAC = sac.ForResource(resources.Image)
 
-	getCVECtx = sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.AllowFixedScopes(
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-			sac.ResourceScopeKeys(resources.CVE)))
+	getCVECtx = sac.WithAllAccess(context.Background())
 
 	log = logging.LoggerForModule()
 )
