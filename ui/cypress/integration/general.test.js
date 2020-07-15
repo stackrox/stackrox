@@ -12,13 +12,22 @@ import withAuth from '../helpers/basicAuth';
 describe('General sanity checks', () => {
     withAuth();
 
+    beforeEach(() => {
+        cy.server();
+        cy.route('GET', api.alerts.countsByCluster).as('alertsByCluster');
+    });
+
     it('should have correct <title>', () => {
         cy.visit('/');
+        cy.wait('@alertsByCluster');
+
         cy.title().should('eq', 'StackRox');
     });
 
     it('should render navbar with Dashboard selected', () => {
         cy.visit('/');
+        cy.wait('@alertsByCluster');
+
         cy.get(selectors.navLinks.first).as('firstNavItem');
         cy.get(selectors.navLinks.others).as('otherNavItems');
 
