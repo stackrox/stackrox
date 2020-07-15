@@ -119,10 +119,22 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 				var isMostRecentUpdate bool
 				concurrency.WithRLock(&d.deploymentProcessingLock, func() {
 					value, exists := d.deploymentProcessingMap[alertResults.GetDeploymentId()]
-					isMostRecentUpdate = !exists || result.timestamp >= value
-					if isMostRecentUpdate {
-						d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
+					if !exists {
+						// CREATE and UPDATE actions write a 0 timestamp into the map to signify that it is being processed
+						// whereas a REMOVE deletes the deployment ID entry. Once we have processed a REMOVE, we cannot send
+						// more deploytime alerts that are active as those alerts will not be cleaned up
+						// instead, mark the states of all alerts as RESOLVED
+						for _, alert := range alertResults.GetAlerts() {
+							alert.State = storage.ViolationState_RESOLVED
+						}
+						isMostRecentUpdate = true
+					} else {
+						isMostRecentUpdate = result.timestamp >= value
+						if isMostRecentUpdate {
+							d.deploymentProcessingMap[alertResults.GetDeploymentId()] = result.timestamp
+						}
 					}
+
 				})
 				// If the deployment is not being marked as being processed, then it was already removed and don't push to the channel
 				// If the timestamp of the deployment is older than one that has already been processed then also ignore
