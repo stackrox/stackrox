@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.OptionalPermissionCheck("CIS_Kubernetes_v1_5:1_1_1", "/etc/kubernetes/manifests/kube-apiserver.yaml", 0644),
 		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_5:1_1_2", "/etc/kubernetes/manifests/kube-apiserver.yaml", "root", "root"),
 

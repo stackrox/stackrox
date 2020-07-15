@@ -30,6 +30,7 @@ type CheckMetadata struct {
 	AdditionalScopes   []TargetKind
 	DataDependencies   []string
 	InterpretationText string
+	RemoteCheck        bool
 }
 
 // CheckFunc is the function realizing a compliance check. While every `Check` has a `CheckFunc` (namely `chk.Run` for
@@ -76,5 +77,8 @@ func (c *checkFromFunc) DataDependencies() []string {
 }
 
 func (c *checkFromFunc) Run(ctx ComplianceContext) {
+	if c.metadata.RemoteCheck {
+		return
+	}
 	c.checkFn(ctx)
 }

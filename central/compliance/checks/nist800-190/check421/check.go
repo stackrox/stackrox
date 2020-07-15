@@ -10,7 +10,7 @@ const (
 )
 
 func init() {
-	framework.MustRegisterNewCheck(
+	framework.MustRegisterCheckIfFlagDisabled(
 		framework.CheckMetadata{
 			ID:                 checkID,
 			Scope:              framework.NodeKind,

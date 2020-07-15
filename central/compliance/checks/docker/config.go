@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.SystemdOwnershipCheck("CIS_Docker_v1_2_0:3_1", "docker.service", "root", "root"),
 		common.SystemdPermissionCheck("CIS_Docker_v1_2_0:3_2", "docker.service", 0644),
 

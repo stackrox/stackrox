@@ -8,4 +8,5 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist80053"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32"
+	_ "github.com/stackrox/rox/central/compliance/checks/remote"
 )

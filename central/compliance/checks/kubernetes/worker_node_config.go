@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.OptionalPermissionCheck("CIS_Kubernetes_v1_5:4_1_1", "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", 0644),
 		common.OptionalOwnershipCheck("CIS_Kubernetes_v1_5:4_1_2", "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", "root", "root"),
 

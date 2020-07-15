@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		multipleFlagsSetCheck("CIS_Kubernetes_v1_5:2_1", "etcd", nil, "cert-file", "key-file"),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_2", "client-cert-auth", "true", "false", common.Matches),
 		etcdCommandLineCheck("CIS_Kubernetes_v1_5:2_3", "auto-tls", "true", "false", common.NotMatches),

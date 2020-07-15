@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
 				ID:                 "CIS_Docker_v1_2_0:6_1",

@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_1", "anonymous-auth", "false", "true", common.Matches),
 		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_2", "authorization-mode", "AlwaysAllow", "AlwaysAllow", common.NotContains),
 		kubeletCommandLineCheck("CIS_Kubernetes_v1_5:4_2_3", "client-ca-file", "", "", common.Set),

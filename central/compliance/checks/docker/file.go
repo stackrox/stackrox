@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_1", "Ensure the container host has been Hardened"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_2", " Ensure that the version of Docker is up to date"),
 		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:1_2_1", Scope: framework.NodeKind}, containerPartition),

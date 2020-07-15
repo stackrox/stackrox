@@ -78,7 +78,7 @@ func TestDockerSecurityChecks(t *testing.T) {
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
-			standard := standards.Standards[standards.CISDocker]
+			standard := standards.NodeChecks[standards.CISDocker]
 			require.NotNil(t, standard)
 			check := standard[c.name]
 			require.NotNil(t, check)

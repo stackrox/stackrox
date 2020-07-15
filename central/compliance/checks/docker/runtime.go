@@ -16,13 +16,12 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		runningContainerCheck("CIS_Docker_v1_2_0:5_1", appArmor, "has an AppArmor profile configured"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_2", selinux, "has SELinux configured"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_3", capabilities, "has extra capabilities enabled"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_4", privileged, "is not running in privileged mode"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_5", sensitiveHostMounts, "does not mount any sensitive host directories"),
-		sshCheck(),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_7", privilegedPorts, "does not bind to a privileged host port"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_8", necessaryPorts, "does not bind to any host ports"),
 		runningContainerCheck("CIS_Docker_v1_2_0:5_9", sharedNetwork, "does not use the 'host' network mode"),
@@ -52,6 +51,10 @@ func init() {
 
 		// One off
 		runningContainerCheck("CIS_Docker_v1_2_0:4_1", usersInContainer, "is not running as the root user"),
+	)
+
+	framework.MustRegisterChecks(
+		sshCheck(),
 	)
 }
 

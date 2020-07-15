@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		// 4_1 is in runtime.go
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:4_2", "Verify that only trusted base images are used"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:4_3", "Check if the packages inside the image are necessary"),

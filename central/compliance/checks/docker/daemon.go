@@ -19,7 +19,7 @@ var (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		networkRestrictionCheck(),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_2", "log-level", "info", "info", common.Matches),
 		genericDockerCommandlineCheck("CIS_Docker_v1_2_0:2_3", "iptables", "false", "true", common.NotMatches),

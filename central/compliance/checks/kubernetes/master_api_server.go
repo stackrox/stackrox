@@ -31,7 +31,7 @@ const defaultTLSCiphers = "TLS_RSA_WITH_AES_256_GCM_SHA384;" +
 	"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA"
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_1", "anonymous-auth", "false", "true", common.Matches),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_2", "basic-auth-file", "", "", common.Unset),
 		masterAPIServerCommandLine("CIS_Kubernetes_v1_5:1_2_3", "token-auth-file", "", "", common.Unset),

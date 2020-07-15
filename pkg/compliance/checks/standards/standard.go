@@ -5,9 +5,9 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-// Standards is the global map of standard names to checks
+// NodeChecks is the global map of standard names to checks
 var (
-	Standards = make(map[string]map[string]*CheckAndInterpretation)
+	NodeChecks = make(map[string]map[string]*CheckAndInterpretation)
 )
 
 // CheckAndInterpretation is a pair matching a Check to an interpretation text
@@ -18,9 +18,9 @@ type CheckAndInterpretation struct {
 
 // RegisterChecksForStandard takes a standard name and some Checks and adds them to the golabl registry
 func RegisterChecksForStandard(standardName string, standardChecks map[string]*CheckAndInterpretation) {
-	standard, ok := Standards[standardName]
+	standard, ok := NodeChecks[standardName]
 	if !ok {
-		Standards[standardName] = standardChecks
+		NodeChecks[standardName] = standardChecks
 		return
 	}
 

@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_2_1", "Minimize the admission of privileged containers"),
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_2_2", "Minimize the admission of containers wishing to share the host process ID namespace"),
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_2_3", "Minimize the admission of containers wishing to share the host IPC namespace"),

@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_1_1", "Ensure that the cluster-admin role is only used where required"),
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_1_2", "Minimize access to secrets"),
 		common.PerNodeNoteCheck("CIS_Kubernetes_v1_5:5_1_3", "Minimize wildcard use in Roles and ClusterRoles"),

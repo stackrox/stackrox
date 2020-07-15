@@ -21,7 +21,7 @@ func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *
 func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, complianceData *standards.ComplianceData) map[string]*compliance.ComplianceStandardResult {
 	results := make(map[string]*compliance.ComplianceStandardResult)
 	for _, standardID := range run.GetStandardIds() {
-		standard, ok := standards.Standards[standardID]
+		standard, ok := standards.NodeChecks[standardID]
 		if !ok {
 			log.Infof("no checks found for standard %s during compliance run %s", standardID, run.GetScrapeId())
 			continue

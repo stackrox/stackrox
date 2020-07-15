@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	framework.MustRegisterChecks(
+	framework.MustRegisterChecksIfFlagDisabled(
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_5:1_3_1", "terminated-pod-gc-threshold", "", "12500", common.Set),
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_5:1_3_2", "profiling", "false", "true", common.Matches),
 		masterControllerManagerCommandLine("CIS_Kubernetes_v1_5:1_3_3", "use-service-account-credentials", "true", "true", common.Matches),
