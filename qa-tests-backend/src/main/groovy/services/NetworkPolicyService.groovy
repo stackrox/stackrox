@@ -120,12 +120,13 @@ class NetworkPolicyService extends BaseService {
 
     static generateNetworkPolicies(
             DeleteExistingPoliciesMode deleteMode = DeleteExistingPoliciesMode.NONE,
-            String clusterId = ClusterService.getClusterId()) {
+            String query = "", String clusterId = ClusterService.getClusterId()) {
         try {
             return getNetworkPolicyClient().generateNetworkPolicies(
                     GenerateNetworkPoliciesRequest.newBuilder()
                             .setClusterId(clusterId)
                             .setDeleteExisting(deleteMode)
+                            .setQuery(query ?: "")
                             .build()).modification
         } catch (Exception e) {
             println "Network Policy generator failed!: ${e.toString()}"

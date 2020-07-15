@@ -31,7 +31,7 @@ func generateIngressRule(node *node, namespacesByName map[string]*storage.Namesp
 	var peers []*storage.NetworkPolicyPeer
 
 	for srcNode := range node.incoming {
-		if srcNode.deployment == nil || isSystemDeployment(srcNode.deployment) {
+		if srcNode.deployment == nil || isProtectedDeployment(srcNode.deployment) {
 			continue
 		}
 		peer := &storage.NetworkPolicyPeer{

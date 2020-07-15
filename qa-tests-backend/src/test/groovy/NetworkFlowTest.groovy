@@ -545,14 +545,14 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "Get existing network policies from orchestrator"
-        def preExistingNetworkPolicies = orchestrator.getAllNetworkPoliciesNamesByNamespace(true)
+        def preExistingNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         println preExistingNetworkPolicies
 
         expect:
         "actual policies should exist in generated response depending on delete mode"
-        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode)
+        def modification = NetworkPolicyService.generateNetworkPolicies(deleteMode, "Namespace:r/qa.*")
         assert !(NetworkPolicyService.applyGeneratedNetworkPolicy(modification) instanceof StatusRuntimeException)
-        def appliedNetworkPolicies = orchestrator.getAllNetworkPoliciesNamesByNamespace(true)
+        def appliedNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         println appliedNetworkPolicies
 
         Yaml parser = new Yaml()
@@ -608,7 +608,7 @@ class NetworkFlowTest extends BaseSpecification {
                 NetworkPolicyService.applyGeneratedNetworkPolicy(undoRecord.undoModification)
                         instanceof StatusRuntimeException
         )
-        def undoNetworkPolicies = orchestrator.getAllNetworkPoliciesNamesByNamespace(true)
+        def undoNetworkPolicies = getQANetworkPoliciesNamesByNamespace(true)
         println undoNetworkPolicies
         assert undoNetworkPolicies == preExistingNetworkPolicies
 
@@ -705,5 +705,11 @@ class NetworkFlowTest extends BaseSpecification {
         }
         println "SR did not detect updated edge in Network Flow graph"
         return null
+    }
+
+    def getQANetworkPoliciesNamesByNamespace(boolean ignoreUndoneStackroxGenerated) {
+        return orchestrator.getAllNetworkPoliciesNamesByNamespace(ignoreUndoneStackroxGenerated).findAll {
+            it.key.startsWith("qa")
+        }
     }
 }

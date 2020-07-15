@@ -70,6 +70,32 @@ var testNetworkPolicies = []*storage.NetworkPolicy{
 			generatedNetworkPolicyLabel: "true",
 		},
 	},
+	{
+		Id:        "policy5",
+		Name:      "policy5",
+		Namespace: "kube-system",
+	},
+	{
+		Id:        "policy6",
+		Name:      "policy6",
+		Namespace: "kube-system",
+		Labels: map[string]string{
+			generatedNetworkPolicyLabel: "true",
+		},
+	},
+	{
+		Id:        "policy7",
+		Name:      "policy7",
+		Namespace: "stackrox",
+	},
+	{
+		Id:        "policy8",
+		Name:      "policy8",
+		Namespace: "stackrox",
+		Labels: map[string]string{
+			generatedNetworkPolicyLabel: "true",
+		},
+	},
 }
 
 func (s *generatorTestSuite) SetupTest() {

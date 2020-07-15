@@ -3,10 +3,15 @@ package generator
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/namespaces"
 )
 
-func isSystemDeployment(deployment *storage.Deployment) bool {
-	return kubernetes.SystemNamespaceSet.Contains(deployment.GetNamespace())
+func isProtectedNamespace(ns string) bool {
+	return ns == namespaces.StackRox || kubernetes.SystemNamespaceSet.Contains(ns)
+}
+
+func isProtectedDeployment(deployment *storage.Deployment) bool {
+	return isProtectedNamespace(deployment.GetNamespace())
 }
 
 func labelSelectorForDeployment(deployment *storage.Deployment) *storage.LabelSelector {

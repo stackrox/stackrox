@@ -2,6 +2,7 @@ import groups.BAT
 import io.grpc.Status
 import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.AuthproviderService
+import io.stackrox.proto.storage.NetworkPolicyOuterClass
 import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
@@ -19,6 +20,21 @@ import spock.lang.Unroll
 import util.Env
 
 class RbacAuthTest extends BaseSpecification {
+
+    private static final NETPOL_YAML = """
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: qa-rbac-test-apply
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: qa-rbac-test-apply
+  ingress:
+  - from: []
+"""
+
     // Create a map of resource name -> functions to execute in read or write scenarios
     // To add tests for a specific resource, simply add the resource name and functions to the map
     //
@@ -38,8 +54,11 @@ class RbacAuthTest extends BaseSpecification {
                                       ( { NetworkPolicyService.generateNetworkPolicies() }),
                               (RoleOuterClass.Access.READ_WRITE_ACCESS):
                                       ( {
-                                          NetworkPolicyService.applyGeneratedNetworkPolicy(
-                                                  NetworkPolicyService.generateNetworkPolicies())
+                                          def netPolMod =
+                                                  new NetworkPolicyOuterClass.NetworkPolicyModification.Builder()
+                                                      .setApplyYaml(NETPOL_YAML)
+                                                      .build()
+                                          NetworkPolicyService.applyGeneratedNetworkPolicy(netPolMod)
                                       })],
     ]
 

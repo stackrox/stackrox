@@ -50,6 +50,9 @@ func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*sto
 	var toDelete []*storage.NetworkPolicyReference
 
 	for _, policy := range policies {
+		if isProtectedNamespace(policy.GetNamespace()) {
+			continue
+		}
 		if isGeneratedPolicy(policy) {
 			toDelete = append(toDelete, &storage.NetworkPolicyReference{
 				Name:      policy.GetName(),
@@ -66,6 +69,9 @@ func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*sto
 func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.NetworkPolicyReference {
 	toDelete := make([]*storage.NetworkPolicyReference, 0, len(policies))
 	for _, policy := range policies {
+		if isProtectedNamespace(policy.GetNamespace()) {
+			continue
+		}
 		toDelete = append(toDelete, &storage.NetworkPolicyReference{
 			Name:      policy.GetName(),
 			Namespace: policy.GetNamespace(),
@@ -179,7 +185,7 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namesp
 		if !node.selected || node.deployment == nil {
 			continue
 		}
-		if isSystemDeployment(node.deployment) {
+		if isProtectedDeployment(node.deployment) {
 			continue
 		}
 
