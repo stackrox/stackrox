@@ -196,3 +196,65 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 	rule := generateIngressRule(tgtDeployment, nss)
 	assert.ElementsMatch(t, expectedPeers, rule.From)
 }
+
+func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
+	t.Parallel()
+
+	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
+
+	deployment0 := createDeploymentNode("deployment0", "deployment0", "kube-system", map[string]string{"app": "foo"})
+	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
+
+	tgtDeployment.incoming[deployment0] = struct{}{}
+	tgtDeployment.incoming[deployment1] = struct{}{}
+
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns1": {
+			Id:   "ns1",
+			Name: "ns1",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns1",
+			},
+		},
+		"ns2": {
+			Id:   "ns2",
+			Name: "ns2",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns2",
+			},
+		},
+		"kube-system": {
+			Id:   "kube-system",
+			Name: "kube-system",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "kube-system",
+			},
+		},
+	}
+
+	expectedPeers := []*storage.NetworkPolicyPeer{
+		{
+			NamespaceSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{
+					namespaces.NamespaceNameLabel: "kube-system",
+				},
+			},
+			PodSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{"app": "foo"},
+			},
+		},
+		{
+			NamespaceSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{
+					namespaces.NamespaceNameLabel: "ns2",
+				},
+			},
+			PodSelector: &storage.LabelSelector{
+				MatchLabels: map[string]string{"app": "bar"},
+			},
+		},
+	}
+
+	rule := generateIngressRule(tgtDeployment, nss)
+	assert.ElementsMatch(t, expectedPeers, rule.From)
+}
