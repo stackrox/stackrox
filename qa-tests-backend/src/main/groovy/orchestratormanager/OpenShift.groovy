@@ -1,13 +1,11 @@
 package orchestratormanager
 
-import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
 import io.fabric8.openshift.api.model.ProjectRequestBuilder
 import io.fabric8.openshift.api.model.Route
+import io.fabric8.openshift.api.model.RouteBuilder
 import io.fabric8.openshift.api.model.RouteList
-import io.fabric8.openshift.api.model.RouteSpec
-import io.fabric8.openshift.api.model.RouteTargetReference
 import io.fabric8.openshift.api.model.SecurityContextConstraints
 import io.fabric8.openshift.client.OpenShiftClient
 import objects.Deployment
@@ -81,13 +79,15 @@ class OpenShift extends Kubernetes {
     @Override
     String waitForLoadBalancer(String serviceName, String namespace) {
         def loadBalancerIP
-        Route route = new Route(
-                "v1",
-                "Route",
-                new ObjectMeta(name: serviceName),
-                new RouteSpec(to: new RouteTargetReference("Service", serviceName, null)),
-                null
-        )
+        def route = new RouteBuilder()
+            .withNewMetadata()
+                .withName(serviceName)
+                .endMetadata()
+            .withNewSpec()
+                .withNewTo("Service", serviceName, null)
+                .endSpec()
+            .build()
+
         oClient.routes().inNamespace(namespace).createOrReplace(route)
         println "Waiting for Route for " + serviceName
         int retries = maxWaitTimeSeconds / sleepDurationSeconds

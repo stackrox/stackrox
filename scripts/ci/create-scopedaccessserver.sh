@@ -4,7 +4,7 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-PLUGIN_VERSION="1.0"
+PLUGIN_VERSION="1.1"
 
 tmpdir="$(mktemp -d)"
 gsutil cat "gs://sr-authz-plugin-src/${PLUGIN_VERSION}/default-authz-plugin-${PLUGIN_VERSION}-src.tar.gz" \

@@ -42,9 +42,9 @@ import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
 import io.fabric8.kubernetes.api.model.apps.DoneableStatefulSet
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
-import io.fabric8.kubernetes.api.model.extensions.HostPortRange
-import io.fabric8.kubernetes.api.model.extensions.PodSecurityPolicy
-import io.fabric8.kubernetes.api.model.extensions.PodSecurityPolicyBuilder
+import io.fabric8.kubernetes.api.model.policy.HostPortRange
+import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicy
+import io.fabric8.kubernetes.api.model.policy.PodSecurityPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
@@ -109,6 +109,9 @@ class Kubernetes implements OrchestratorMain {
     Kubernetes(String ns) {
         this.namespace = ns
         this.client = new DefaultKubernetesClient()
+        // On OpenShift, the namespace config is typically non-null (set to the default project), which causes all
+        // "any namespace" requests to be scoped to the default project.
+        this.client.configuration.namespace = null
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
         this.deployments = this.client.apps().deployments()
         this.daemonsets = this.client.apps().daemonSets()
@@ -1203,7 +1206,7 @@ class Kubernetes implements OrchestratorMain {
 
     protected generatePspRole() {
         def rules = [new K8sPolicyRule(
-                apiGroups: ["extensions"],
+                apiGroups: ["policy"],
                 resources: ["podsecuritypolicies"],
                 resourceNames: ["allow-all-for-test"],
                 verbs: ["use"]
@@ -1249,7 +1252,7 @@ class Kubernetes implements OrchestratorMain {
                 .withNewFsGroup().withRule("RunAsAny").endFsGroup()
                 .endSpec()
                 .build()
-        client.extensions().podSecurityPolicies().createOrReplace(psp)
+        client.policy().podSecurityPolicies().createOrReplace(psp)
         createClusterRole(generatePspRole())
         createClusterRoleBinding(generatePspRoleBinding(namespace))
     }
