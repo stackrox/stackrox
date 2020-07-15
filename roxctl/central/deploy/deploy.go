@@ -258,7 +258,7 @@ func interactive() *cobra.Command {
 	}
 }
 
-// Command defines the deploy command tree
+// Command defines the generate command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
 		Use: "generate",

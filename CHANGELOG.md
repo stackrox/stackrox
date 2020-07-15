@@ -6,6 +6,7 @@ All notable changes to this project that require documentation updates will be d
 - Emit warning if the default value for flag `--create-updater-sa` is used in roxctl (ROX-5264).
 - New parameter `default` for flag `--collection-method`.
 - UI: Omit Cluster column from Deployments list when entity context includes Namespace (ROX-5207)
+- The help output of `roxctl` commands mentions implicit defaults for optional flags.
 
 ## [46.0]
 - Added the following REST APIs:

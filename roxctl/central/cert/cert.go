@@ -26,7 +26,7 @@ func Command() *cobra.Command {
 		}),
 	}
 
-	cmd.Flags().StringVar(&filename, "output", "-", "Filename to output PEM certificate to (default: - for stdout)")
+	cmd.Flags().StringVar(&filename, "output", "-", "Filename to output PEM certificate to; '-' for stdout")
 	return cmd
 }
 

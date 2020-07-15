@@ -18,7 +18,7 @@ var (
 
 const (
 	// LicenseUsage provides usage information for license flags defined by the struct in this package.
-	LicenseUsage = "license data or filename (default: none, - to read stdin)"
+	LicenseUsage = "license data or filename; '-' for stdin"
 	// LicenseUsageInteractive is the usage information that will be shown for the interactive prompt.
 	LicenseUsageInteractive = "license data or filename (`-` for multiline input)"
 

@@ -25,7 +25,7 @@ func Command() *cobra.Command {
 		Use:  "list",
 		RunE: listProviders,
 	}
-	c.Flags().BoolVarP(&json, "json", "j", false, "JSON output")
+	c.Flags().BoolVarP(&json, "json", "j", false, "Enable JSON output")
 	return c
 }
 
