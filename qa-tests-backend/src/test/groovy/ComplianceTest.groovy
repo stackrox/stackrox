@@ -18,6 +18,7 @@ import objects.CsvRow
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import objects.Pod
 import objects.Service
 import objects.SlackNotifier
 import org.junit.Assume
@@ -1033,7 +1034,7 @@ class ComplianceTest extends BaseSpecification {
     def "Verify Docker 5_6, no SSH processes"() {
         def deployment = new Deployment()
                         .setName ("triggerssh")
-                        .setImage("us.gcr.io/stackrox-ci/qa/trigger-policy-violations/most:0.19")
+                        .setImage("us.gcr.io/stackrox-ci/qa/fail-compliance/ssh:0.1")
 
         given:
         "create a deployment which forces the ssh check to fail"
@@ -1042,8 +1043,8 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "create an expected control result"
-        assert deployment.getPods().size() == 1
-        def pod = deployment.getPods()[0]
+        def pod = getSSHPod(deployment.getPods())
+        assert pod != null
         assert pod.getContainerIds().size() == 1
         def expectedContainerID = pod.getContainerIds()[0].replace("docker://", "")
         def control = new Control(
@@ -1085,5 +1086,14 @@ class ComplianceTest extends BaseSpecification {
         cleanup:
         "remove the deployment we created"
         orchestrator.deleteDeployment(deployment)
+    }
+
+    Pod getSSHPod(pods) {
+        for (Pod pod : pods) {
+            if (pod.name.startsWith("triggerssh-")) {
+                return pod
+            }
+        }
+        return null
     }
 }
