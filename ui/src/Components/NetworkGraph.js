@@ -5,7 +5,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
-import { uniq, throttle, flatMap } from 'lodash';
+import { throttle } from 'lodash';
 import popper from 'cytoscape-popper';
 /* Cannot use neither Tooltip nor HoverHint components as Cytoscape renders on
 canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
@@ -18,49 +18,22 @@ import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
-import { getLinks, nonIsolated, isNamespace } from 'utils/networkGraphUtils';
+import {
+    getLinks,
+    isNamespace,
+    getNodeData,
+    getEdges,
+    getNamespaceEdgeNodes,
+    getNamespaceList,
+    getDeploymentList,
+    getFilteredNodes,
+} from 'utils/networkGraphUtils';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
-import entityTypes from 'constants/entityTypes';
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
-
-function getClasses(map) {
-    return Object.entries(map)
-        .filter((entry) => entry[1])
-        .map((entry) => entry[0])
-        .join(' ');
-}
 
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
 Cytoscape.use(edgeGridLayout);
-
-function getNodesForFilterState(activeNodes, allowedNodes, filterState) {
-    if (filterState !== filterModes.active) {
-        return allowedNodes;
-    }
-
-    // return as is
-    if (!allowedNodes || !activeNodes) {
-        return activeNodes;
-    }
-
-    const activeNodesWithNetPol = activeNodes.map((activeNode) => {
-        const node = { ...activeNode };
-        const matchedNode = allowedNodes
-            .map((n) => n)
-            .find(
-                (allowedNode) =>
-                    allowedNode.entity && node.entity && allowedNode.entity.id === node.entity.id
-            );
-        if (!matchedNode) {
-            return node;
-        }
-        node.policyIds = flatMap(matchedNode.policyIds);
-        return node;
-    });
-
-    return activeNodesWithNetPol;
-}
 
 const NetworkGraph = ({
     activeNodes,
@@ -89,7 +62,7 @@ const NetworkGraph = ({
     const tippyRef = useRef();
     const namespacesWithDeployments = {};
 
-    const nodes = getNodesForFilterState(activeNodes, allowedNodes, filterState);
+    const nodes = getFilteredNodes(activeNodes, allowedNodes, filterState);
     const data = nodes.map((datum) => ({
         ...datum,
         isActive: filterState !== filterModes.active && datum.internetAccess,
@@ -105,12 +78,6 @@ const NetworkGraph = ({
         div.innerHTML = text;
         document.body.appendChild(div);
         return div;
-    }
-
-    function getSideMap(source, target) {
-        return nodeSideMap && nodeSideMap[source] && nodeSideMap[source][target]
-            ? nodeSideMap[source][target]
-            : null;
     }
 
     function createTippy(elm, text) {
@@ -131,280 +98,6 @@ const NetworkGraph = ({
         tippyRef.current.show();
     }
 
-    function getNSEdges(nodeId) {
-        const delimiter = '**__**';
-
-        const filteredLinks = links.filter(
-            ({ source, target, isActive, sourceNS, targetNS }) =>
-                (!nodeId ||
-                    source === nodeId ||
-                    target === nodeId ||
-                    sourceNS === nodeId ||
-                    targetNS === nodeId) &&
-                (filterState !== filterModes.active || isActive) &&
-                sourceNS &&
-                targetNS &&
-                sourceNS !== targetNS
-        );
-
-        const sourceTargetMap = {};
-        const disallowedLinkMap = {};
-        const activeLinkMap = filteredLinks.reduce((acc, curr) => {
-            const { sourceNS, targetNS, isActive, isDisallowed } = curr;
-            const key = [sourceNS, targetNS].sort().join(delimiter);
-            if (isActive) acc[key] = true;
-            if (isDisallowed) {
-                disallowedLinkMap[key] = true;
-            }
-            return acc;
-        }, {});
-
-        const counts = filteredLinks.reduce((acc, curr) => {
-            const sourceTargetKey = [curr.source, curr.target].sort().join(delimiter);
-            if (sourceTargetMap[sourceTargetKey]) {
-                return acc;
-            }
-
-            sourceTargetMap[sourceTargetKey] = true;
-            const key = [curr.sourceNS, curr.targetNS].sort().join(delimiter);
-            acc[key] = acc[key] ? acc[key] + 1 : 1;
-            return acc;
-        }, {});
-
-        return Object.keys(counts).map((key) => {
-            const [sourceId, targetId] = key.split(delimiter);
-            const count = counts[key];
-            const isActive = activeLinkMap[key];
-            const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
-            const disallowedClass =
-                filterState !== filterModes.allowed && isActive && disallowedLinkMap[key]
-                    ? 'disallowed'
-                    : '';
-            const { source, target } = getSideMap(sourceId, targetId) || {
-                sourceId,
-                targetId,
-            };
-
-            return {
-                data: {
-                    source,
-                    target,
-                    count,
-                },
-                classes: `namespace ${activeClass} ${disallowedClass}`,
-            };
-        });
-    }
-
-    function getEdgesFromNode(nodeId) {
-        const edgeMap = {};
-        const edges = [];
-        const inAllowedState = filterState === filterModes.allowed;
-        links.forEach((linkItem) => {
-            const { source, sourceNS, sourceName, target, targetNS, targetName } = linkItem;
-            const { isActive, isDisallowed, isBetweenNonIsolated } = linkItem;
-            const nodeIsSource = nodeId === source;
-            const nodeIsTarget = nodeId === target;
-            // destination node info needed for network flow tab
-            const destNodeId = nodeIsSource ? target : source;
-            const destNodeNS = nodeIsSource ? targetNS : sourceNS;
-            const destNodeName = nodeIsSource ? targetName : sourceName;
-            if (
-                (nodeIsSource || nodeIsTarget) &&
-                (filterState !== filterModes.active || isActive)
-            ) {
-                const activeClass = !inAllowedState && isActive ? 'active' : '';
-
-                // only hide edge when it's bw nonisolated and is not active
-                const nonIsolatedClass =
-                    isBetweenNonIsolated && (!isActive || inAllowedState) ? 'nonIsolated' : '';
-                // an edge is disallowed when it is active but is not allowed
-                const disallowedClass = !inAllowedState && isDisallowed ? 'disallowed' : '';
-                // if(isDisallowed) console.log(linkItem)
-                const classes = `${activeClass} ${nonIsolatedClass} ${disallowedClass}`;
-                const id = [source, target].sort().join('--');
-                if (!edgeMap[id]) {
-                    // If same namespace, draw line between the two nodes
-                    if (sourceNS === targetNS) {
-                        edges.push({
-                            data: {
-                                destNodeId,
-                                destNodeNS,
-                                destNodeName,
-                                ...linkItem,
-                            },
-                            classes: `edge ${classes}`,
-                        });
-                    } else {
-                        // make sure both nodes have edges drawn to the nearest side of their NS
-                        let sourceNSSide = sourceNS;
-                        let targetNSSide = targetNS;
-                        const sideMap = getSideMap(sourceNS, targetNS);
-                        if (sideMap) {
-                            sourceNSSide = sideMap.source;
-                            targetNSSide = sideMap.target;
-                        }
-
-                        // Edge from source to it's namespace
-                        edges.push({
-                            data: {
-                                source,
-                                target: sourceNSSide,
-                                isDisallowed,
-                            },
-                            classes: `edge inner ${classes}`,
-                        });
-
-                        // Edge from target to its namespace
-                        edges.push({
-                            data: {
-                                source: target,
-                                target: targetNSSide,
-                                destNodeId,
-                                destNodeName,
-                                destNodeNS,
-                                isActive,
-                                isDisallowed,
-                            },
-                            classes: `edge inner ${classes}`,
-                        });
-                    }
-                    edgeMap[id] = true;
-                }
-            }
-        });
-        return edges;
-    }
-
-    function getDeploymentsList() {
-        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
-        const deploymentList = filteredData.map((datum) => {
-            const { entity, ...datumProps } = datum;
-            const { deployment, ...entityProps } = entity;
-            const { namespace, ...deploymentProps } = deployment;
-
-            const edges = getEdgesFromNode(entityProps.id, true);
-
-            const isSelected = !!(selectedNode && selectedNode.id === entity.id);
-            const isHovered = !!(hoveredNode && hoveredNode.id === entity.id);
-            const isBackground =
-                !(selectedNode === undefined && hoveredNode === undefined) &&
-                !isHovered &&
-                !isSelected;
-            const isNonIsolated = nonIsolated(datum);
-            const isDisallowed =
-                filterState !== filterModes.allowed && edges.find((edge) => edge.data.isDisallowed);
-            const classes = getClasses({
-                active: datum.isActive,
-                selected: isSelected,
-                deployment: true,
-                disallowed: isDisallowed,
-                hovered: isHovered,
-                background: isBackground,
-                nonIsolated: isNonIsolated,
-            });
-
-            const deploymentNode = {
-                data: {
-                    ...datumProps,
-                    ...entityProps,
-                    ...deploymentProps,
-                    parent: namespace,
-                    edges,
-                    deploymentId: entityProps.id,
-                },
-                classes,
-            };
-            return deploymentNode;
-        });
-        return deploymentList;
-    }
-
-    function getNodes() {
-        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
-        const deploymentList = getDeploymentsList();
-        const activeNamespaces = filteredData.reduce((acc, curr) => {
-            const nsName = curr.entity.deployment.namespace;
-            if (
-                deploymentList.find(
-                    (element) => element.data.isActive && element.data.parent === nsName
-                )
-            ) {
-                acc.push(nsName);
-            }
-
-            return acc;
-        }, []);
-
-        const namespaceList = uniq(
-            filteredData.map((datum) => datum.entity.deployment.namespace)
-        ).map((namespace) => {
-            const active = activeNamespaces.includes(namespace);
-            const isHovered =
-                hoveredNode && (hoveredNode.id === namespace || hoveredNode.parent === namespace);
-            const isSelected =
-                selectedNode &&
-                (selectedNode.id === namespace || selectedNode.parent === namespace);
-            const isBackground =
-                !(selectedNode === undefined && hoveredNode === undefined) &&
-                !isHovered &&
-                !isSelected;
-            const classes = getClasses({
-                nsActive: active,
-                nsSelected: isSelected,
-                nsHovered: isHovered,
-                background: isBackground,
-            });
-
-            return {
-                data: {
-                    id: namespace,
-                    name: `${active ? '\ue901' : ''} ${namespace}`,
-                    active,
-                    type: entityTypes.NAMESPACE,
-                },
-                classes,
-            };
-        });
-
-        const namespaceEdgeNodes = namespaceList.reduce((acc, namespace) => {
-            const nsName = namespace.data.id;
-            const set = ['top', 'left', 'right', 'bottom'];
-
-            const newNodes = set.map((side) => ({
-                data: {
-                    id: `${nsName}_${side}`,
-                    parent: nsName,
-                    side,
-                },
-                classes: 'nsEdge',
-            }));
-            return acc.concat(newNodes);
-        }, []);
-
-        namespaceList.forEach((namespace) => {
-            deploymentList.forEach((deployment) => {
-                if (!namespacesWithDeployments[namespace.data.id]) {
-                    namespacesWithDeployments[namespace.data.id] = [];
-                }
-                if (deployment.data.parent === namespace.data.id) {
-                    namespacesWithDeployments[namespace.data.id].push(deployment);
-                }
-            });
-        });
-
-        return [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
-    }
-
-    function getEdges() {
-        const node = hoveredNode || selectedNode;
-        let allEdges = getNSEdges(node && node.id);
-        if (node) {
-            allEdges = allEdges.concat(getEdgesFromNode(node.id));
-        }
-        return allEdges;
-    }
-
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
         const { id, name, parent, side } = node;
@@ -421,10 +114,6 @@ const NetworkGraph = ({
 
     function nodeMouseOutHandler() {
         setHoveredNode();
-    }
-
-    function getNodeData(id) {
-        return getDeploymentsList().filter((node) => node.data.deploymentId === id);
     }
 
     function clickHandler(ev) {
@@ -508,8 +197,37 @@ const NetworkGraph = ({
         });
     }
 
+    function getConfigObj() {
+        return {
+            hoveredNode,
+            selectedNode,
+            links,
+            filterState,
+            nodeSideMap,
+        };
+    }
+
     function getElements() {
-        return { nodes: getNodes(), edges: getEdges() };
+        const configObj = getConfigObj();
+        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
+        const deploymentList = getDeploymentList(filteredData, configObj);
+        const namespaceList = getNamespaceList(filteredData, deploymentList, configObj);
+        const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
+
+        namespaceList.forEach((namespace) => {
+            deploymentList.forEach((deployment) => {
+                if (!namespacesWithDeployments[namespace.data.id]) {
+                    namespacesWithDeployments[namespace.data.id] = [];
+                }
+                if (deployment.data.parent === namespace.data.id) {
+                    namespacesWithDeployments[namespace.data.id].push(deployment);
+                }
+            });
+        });
+        return {
+            nodes: [...namespaceList, ...deploymentList, ...namespaceEdgeNodes],
+            edges: getEdges(configObj),
+        };
     }
 
     // Calculate which namespace box side combinations are shortest and store them
@@ -597,7 +315,8 @@ const NetworkGraph = ({
         if (ev && ev.target) changedNodeId = ev.target.data().id;
 
         calculateNodeSideMap(changedNodeId);
-        const newEdges = getEdges();
+        const configObj = getConfigObj();
+        const newEdges = getEdges(configObj);
 
         cyRef.current.remove('edge');
         cyRef.current.add(newEdges);
@@ -664,7 +383,10 @@ const NetworkGraph = ({
             }).run();
         });
         CY.fit(null, GRAPH_PADDING);
-        const node = getNodeData(match.params.deploymentId);
+        const configObj = getConfigObj();
+        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
+        const deploymentList = getDeploymentList(filteredData, configObj);
+        const node = getNodeData(match.params.deploymentId, deploymentList);
         if (setSelectedNodeInGraph && node.length) {
             setSelectedNodeInGraph(node[0].data);
             setSelectedNode(node[0].data);

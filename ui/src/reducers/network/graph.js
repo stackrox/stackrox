@@ -6,7 +6,7 @@ import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
 
 import { filterModes } from 'Containers/Network/Graph/filterModes';
-import { nonIsolated } from 'utils/networkGraphUtils';
+import { isNonIsolatedNode } from 'utils/networkGraphUtils';
 
 export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
@@ -145,7 +145,7 @@ const networkNodeMap = (state = {}, action) => {
                 return;
             }
             const { id } = node.entity;
-            if (nonIsolated(node)) {
+            if (isNonIsolatedNode(node)) {
                 if (!newState[id]) newState[id] = {};
                 newState[id].nonIsolated = true;
             }

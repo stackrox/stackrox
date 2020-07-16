@@ -1,7 +1,10 @@
+import { uniq, flatMap } from 'lodash';
+
 import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
+import { filterModes } from 'Containers/Network/Graph/filterModes';
 
-export const nonIsolated = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
+export const isNonIsolatedNode = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
 export const isDeployment = (node) => node && node.type === entityTypes.DEPLOYMENT;
 
@@ -101,4 +104,390 @@ export const getLinks = (nodes, networkEdgeMap, networkNodeMap) => {
     });
 
     return filteredLinks;
+};
+
+/**
+ * Checks against nodeSideMap to return the closest side of the NS that a deployment is positioned
+ *
+ * @param {!string} source source deployment
+ * @param {!string} target target deployment
+ * @param {!Object} nodeSideMap map of least distanced sides between source and target deployments
+ * @returns {!Object}
+ */
+export const getSideMap = (source, target, nodeSideMap) => {
+    return nodeSideMap?.[source]?.[target] ? nodeSideMap[source][target] : null;
+};
+
+/**
+ * Iterates through a list of links and returns bundled edges between namespaces
+ *
+ * @param {string} nodeId nodeId
+ * @param {!Object} configObj config object of the current network graph state
+ *                            that contains links, filterState, and nodeSideMap
+ * @returns {!Object[]} list of objects describing bundled edges between namespaces
+ */
+export const getNamespaceEdges = (nodeId, { links, filterState, nodeSideMap }) => {
+    const delimiter = '**__**';
+
+    const filteredLinks = links.filter(
+        ({ source, target, isActive, sourceNS, targetNS }) =>
+            (!nodeId ||
+                source === nodeId ||
+                target === nodeId ||
+                sourceNS === nodeId ||
+                targetNS === nodeId) &&
+            (filterState !== filterModes.active || isActive) &&
+            sourceNS &&
+            targetNS &&
+            sourceNS !== targetNS
+    );
+
+    const sourceTargetMap = {};
+    const disallowedLinkMap = {};
+    const activeLinkMap = {};
+    const edgeBundleCountMap = {};
+    filteredLinks.forEach(({ source, target, sourceNS, targetNS, isActive, isDisallowed }) => {
+        const NSLinkKey = [sourceNS, targetNS].sort().join(delimiter);
+        if (isActive) activeLinkMap[NSLinkKey] = true;
+        if (isDisallowed) disallowedLinkMap[NSLinkKey] = true;
+
+        const namespaceSourceTargetKey = [source, target].sort().join(delimiter);
+        if (!sourceTargetMap[namespaceSourceTargetKey]) {
+            sourceTargetMap[namespaceSourceTargetKey] = true;
+            edgeBundleCountMap[NSLinkKey] = edgeBundleCountMap[NSLinkKey]
+                ? edgeBundleCountMap[NSLinkKey] + 1
+                : 1;
+        }
+    });
+
+    return Object.keys(edgeBundleCountMap).map((key) => {
+        const [sourceNS, targetNS] = key.split(delimiter);
+        const count = edgeBundleCountMap[key];
+        const isActive = activeLinkMap[key];
+        const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
+        const disallowedClass =
+            filterState !== filterModes.allowed && isActive && disallowedLinkMap[key]
+                ? 'disallowed'
+                : '';
+        const { source, target } = getSideMap(sourceNS, targetNS, nodeSideMap) || {
+            source: sourceNS,
+            target: targetNS,
+        };
+
+        return {
+            data: {
+                source,
+                target,
+                count,
+            },
+            classes: `namespace ${activeClass} ${disallowedClass}`,
+        };
+    });
+};
+
+/**
+ * Iterates through a mapping of classes to boolean types to return a string of appended classes
+ *
+ * @param {!Object} map object containing className to boolean properties
+ * @returns {!string}
+ */
+export const getClasses = (map) => {
+    return Object.entries(map)
+        .filter((entry) => entry[1])
+        .map((entry) => entry[0])
+        .join(' ');
+};
+
+/**
+ * Iterates through links to return edges that are connected to a node
+ *
+ * @param {!string} nodeId node id
+ * @param {!Object} configObj config object of the current network graph state
+ *                            that contains links, filterState, and nodeSideMap
+ * @returns {!Object[]}
+ */
+export const getEdgesFromNode = (nodeId, { filterState, links, nodeSideMap }) => {
+    const edgeMap = {};
+    const edges = [];
+    const inAllowedState = filterState === filterModes.allowed;
+    links.forEach((linkItem) => {
+        const { source, sourceNS, sourceName, target, targetNS, targetName } = linkItem;
+        const { isActive, isDisallowed, isBetweenNonIsolated } = linkItem;
+        const isSourceNode = nodeId === source;
+        const isTargetNode = nodeId === target;
+        // destination node info needed for network flow tab
+        const destNodeId = isSourceNode ? target : source;
+        const destNodeNS = isSourceNode ? targetNS : sourceNS;
+        const destNodeName = isSourceNode ? targetName : sourceName;
+        if ((isSourceNode || isTargetNode) && (filterState !== filterModes.active || isActive)) {
+            const classes = getClasses({
+                active: !inAllowedState && isActive,
+                // only hide edge when it's bw nonisolated and is not active
+                nonIsolated: isBetweenNonIsolated && (!isActive || inAllowedState),
+                // an edge is disallowed when it is active but is not allowed
+                disallowed: !inAllowedState && isDisallowed,
+            });
+            const id = [source, target].sort().join('--');
+            if (!edgeMap[id]) {
+                // If same namespace, draw line between the two nodes
+                if (sourceNS === targetNS) {
+                    edges.push({
+                        data: {
+                            destNodeId,
+                            destNodeNS,
+                            destNodeName,
+                            ...linkItem,
+                        },
+                        classes: `edge ${classes}`,
+                    });
+                } else {
+                    // make sure both nodes have edges drawn to the nearest side of their NS
+                    let sourceNSSide = sourceNS;
+                    let targetNSSide = targetNS;
+                    const sideMap = getSideMap(sourceNS, targetNS, nodeSideMap);
+                    if (sideMap) {
+                        sourceNSSide = sideMap.source;
+                        targetNSSide = sideMap.target;
+                    }
+
+                    // Edge from source to it's namespace
+                    edges.push({
+                        data: {
+                            source,
+                            target: sourceNSSide,
+                            isDisallowed,
+                        },
+                        classes: `edge inner ${classes}`,
+                    });
+
+                    // Edge from target to its namespace
+                    edges.push({
+                        data: {
+                            source: target,
+                            target: targetNSSide,
+                            destNodeId,
+                            destNodeName,
+                            destNodeNS,
+                            isActive,
+                            isDisallowed,
+                        },
+                        classes: `edge inner ${classes}`,
+                    });
+                }
+                edgeMap[id] = true;
+            }
+        }
+    });
+    return edges;
+};
+
+/**
+ * Iterates through a list of nodes to return a list of deployments with proper styling classes for cytoscape
+ *
+ * @param {!Object[]} filteredData list of deployments
+ * @param {!Object} configObj config object of the current network graph state
+ *                            that contains links, filterState, and nodeSideMap,
+ *                            hoveredNode, and selectedNode
+ * @returns {!Object[]}
+ */
+export const getDeploymentList = (filteredData, configObj) => {
+    const { hoveredNode, selectedNode, filterState } = configObj;
+    const deploymentList = filteredData.map((datum) => {
+        const { entity, ...datumProps } = datum;
+        const { deployment, ...entityProps } = entity;
+        const { namespace, ...deploymentProps } = deployment;
+
+        const edges = getEdgesFromNode(entityProps.id, configObj);
+
+        const isSelected = !!(selectedNode && selectedNode.id === entity.id);
+        const isHovered = !!(hoveredNode && hoveredNode.id === entity.id);
+        const isBackground =
+            !(selectedNode === undefined && hoveredNode === undefined) && !isHovered && !isSelected;
+        const isNonIsolated = isNonIsolatedNode(datum);
+        const isDisallowed =
+            filterState !== filterModes.allowed && edges.some((edge) => edge.data.isDisallowed);
+        const classes = getClasses({
+            active: datum.isActive,
+            selected: isSelected,
+            deployment: true,
+            disallowed: isDisallowed,
+            hovered: isHovered,
+            background: isBackground,
+            nonIsolated: isNonIsolated,
+        });
+
+        const deploymentNode = {
+            data: {
+                ...datumProps,
+                ...entityProps,
+                ...deploymentProps,
+                parent: namespace,
+                edges,
+                deploymentId: entityProps.id,
+            },
+            classes,
+        };
+        return deploymentNode;
+    });
+    return deploymentList;
+};
+
+/**
+ * Iterates through the list of nodes to return the data of a single deployment
+ *
+ * @param {!string} id node id
+ * @param {!Object[]} deploymentList list of deployments
+ * @returns {!Object[]}
+ */
+export const getNodeData = (id, deploymentList) => {
+    return deploymentList.filter((node) => node.data.deploymentId === id);
+};
+
+/**
+ * Iterates through a list of links and returns all links for the currently interacted node
+ *
+ * @param {!Object} configObj config object of the current network graph state
+ *                            that contains links, filterState, and nodeSideMap,
+ *                            hoveredNode, and selectedNode
+ * @returns {!Object[]}
+ */
+export const getEdges = (configObj) => {
+    const { hoveredNode, selectedNode } = configObj;
+    const node = hoveredNode || selectedNode;
+    let allEdges = getNamespaceEdges(node && node.id, configObj);
+    if (node) {
+        allEdges = allEdges.concat(getEdgesFromNode(node.id, configObj));
+    }
+    return allEdges;
+};
+
+/**
+ * Iterates through the nodes to return a list of namespaces with active deployments
+ *
+ * @param {!Object} filteredData nodes that pertain to deployments
+ * @param {!Object[]} deploymentList list of deployments
+ * @returns {!Object[]}
+ */
+export const getActiveNamespaceList = (filteredData, deploymentList) => {
+    return uniq(
+        filteredData.reduce((acc, curr) => {
+            const nsName = curr.entity.deployment.namespace;
+            if (
+                deploymentList.some(
+                    (element) => element.data.isActive && element.data.parent === nsName
+                )
+            ) {
+                acc.push(nsName);
+            }
+
+            return acc;
+        }, [])
+    );
+};
+
+/**
+ * Iterates through a list of nodes to return a list of namespaces enriched by styling classes
+ *
+ * @param {!Object} filteredData nodes that pertain to deployments
+ * @param {!Object[]} deploymentList list of deployments
+ * @param {!Object} configObj config object of the current network graph state
+ *                            that contains hoveredNode, and selectedNode
+ * @returns {!Object[]}
+ */
+export const getNamespaceList = (filteredData, deploymentList, { hoveredNode, selectedNode }) => {
+    const activeNamespaceList = getActiveNamespaceList(filteredData, deploymentList);
+    return uniq(filteredData.map((datum) => datum.entity.deployment.namespace)).map((namespace) => {
+        const isActive = activeNamespaceList.includes(namespace);
+        const isHovered =
+            hoveredNode && (hoveredNode.id === namespace || hoveredNode.parent === namespace);
+        const isSelected =
+            selectedNode && (selectedNode.id === namespace || selectedNode.parent === namespace);
+        const isBackground =
+            !(selectedNode === undefined && hoveredNode === undefined) && !isHovered && !isSelected;
+        const classes = getClasses({
+            nsActive: isActive,
+            nsSelected: isSelected,
+            nsHovered: isHovered,
+            background: isBackground,
+        });
+
+        return {
+            data: {
+                id: namespace,
+                name: `${isActive ? '\ue901' : ''} ${namespace}`,
+                active: isActive,
+                type: entityTypes.NAMESPACE,
+            },
+            classes,
+        };
+    });
+};
+
+/**
+ * Returns a list of nodes that are hidden namespace cardinal direction edges
+ *
+ * @param {!Object[]} namespaceList list of namespaces
+ * @returns {!Object[]}
+ */
+const sides = ['top', 'left', 'right', 'bottom'];
+
+export const getNamespaceEdgeNodes = (namespaceList) => {
+    const nodes = [];
+    namespaceList.forEach((namespace) => {
+        const nsName = namespace.data.id;
+        sides.forEach((side) => {
+            nodes.push({
+                data: {
+                    id: `${nsName}_${side}`,
+                    parent: nsName,
+                    side,
+                },
+                classes: 'nsEdge',
+            });
+        });
+    });
+    return nodes;
+};
+
+/**
+ * Iterates through a list of active nodes and returns nodes with active network policies
+ *
+ * @param {!Object[]} activeNodes list of active nodes
+ * @param {!Object[]} allowedNodes list of allowed nodes
+ * @returns {!Object[]}
+ */
+const getActiveNetPolNodes = (activeNodes, allowedNodes) => {
+    return activeNodes.map((activeNode) => {
+        const node = { ...activeNode };
+        const matchedNode = allowedNodes.find(
+            (allowedNode) =>
+                allowedNode.entity && node.entity && allowedNode.entity.id === node.entity.id
+        );
+        if (!matchedNode) {
+            return node;
+        }
+        node.policyIds = flatMap(matchedNode.policyIds);
+        return node;
+    });
+};
+
+/**
+ * Iterates through a list of nodes and returns only links in the same namespace
+ *
+ * @param {!Object[]} activeNodes list of active nodes
+ * @param {!Object[]} allowedNodes list of allowed nodes
+ * @param {string} filterState current filter state of the network graph
+ * @returns {!Object[]}
+ */
+export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
+    if (filterState !== filterModes.active) {
+        return allowedNodes;
+    }
+
+    // return as is
+    if (!allowedNodes || !activeNodes) {
+        return activeNodes;
+    }
+
+    return getActiveNetPolNodes(activeNodes, allowedNodes);
 };

@@ -13,7 +13,7 @@ const NodesUpdateButton = ({ nodeUpdatesCount, networkNodesUpdate }) => {
     return (
         <button
             type="button"
-            className="btn-graph-refresh p-1 bg-primary-300 border-2 border-primary-400 hover:bg-primary-200 rounded-sm text-sm text-primary-700 mt-2 w-full font-700"
+            className="btn-graph-refresh p-1 bg-primary-300 border-2 border-primary-400 hover:bg-primary-200 rounded-sm text-sm text-primary-700 mt-2 w-full font-700 flex items-center"
             onClick={networkNodesUpdate}
         >
             <Icon.Circle className="h-2 w-2 text-primary-300 border-primary-300" />
