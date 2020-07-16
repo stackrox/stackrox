@@ -18,7 +18,6 @@ import objects.CsvRow
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
-import objects.Pod
 import objects.Service
 import objects.SlackNotifier
 import org.junit.Assume
@@ -1043,14 +1042,9 @@ class ComplianceTest extends BaseSpecification {
 
         and:
         "create an expected control result"
-        def pod = getSSHPod(deployment.getPods())
-        assert pod != null
-        assert pod.getContainerIds().size() == 1
-        def expectedContainerID = pod.getContainerIds()[0].replace("docker://", "")
         def control = new Control(
                 "CIS_Docker_v1_2_0:5_6",
-                ["Container \"" + pod.getName() + ":" + expectedContainerID + "\" has ssh process running: " +
-                         "\"/usr/local/bin/sshd --coreutils-prog-shebang=echo /usr/local/bin/sshd hello\"",],
+                [],
                 ComplianceState.COMPLIANCE_STATE_FAILURE)
 
         and:
@@ -1081,19 +1075,10 @@ class ComplianceTest extends BaseSpecification {
         assert controlResultsMap.containsKey(control.id)
         ComplianceResultValue value = controlResultsMap.get(control.id)
         assert value.overallState == control.state
-        assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+        assert value.evidenceList*.message.any { msg -> msg =~ /has ssh process running/ }
 
         cleanup:
         "remove the deployment we created"
         orchestrator.deleteDeployment(deployment)
-    }
-
-    Pod getSSHPod(pods) {
-        for (Pod pod : pods) {
-            if (pod.name.startsWith("triggerssh-")) {
-                return pod
-            }
-        }
-        return null
     }
 }
