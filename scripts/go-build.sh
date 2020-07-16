@@ -63,6 +63,10 @@ go_build() {
 	fi
 	mkdir -p "$(dirname "$output_file")"
 	echo >&2 "Compiling Go source in ${main_srcdir} to ${output_file}"
+	if [[ "${CGO_ENABLED}" != 0 ]]; then
+	  echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
+	  ldflags+=('-linkmode=external')
+	fi
 	if [[ "$RACE" == "true" ]]; then
 	  CGO_ENABLED=1 go build -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" -o "$output_file" "$main_srcdir"
 	else

@@ -342,10 +342,8 @@ ifdef CI
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection
 else
 	docker run $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection roxctl
 endif
 
 .PHONY: main-rhel-dockerized
@@ -356,19 +354,17 @@ ifdef CI
 	docker cp $(GOPATH) builder:/
 	docker start -i builder
 	docker cp builder:/go/src/github.com/stackrox/rox/bin/linux bin/
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection
 else
 	docker $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(RHEL_BUILD_IMAGE) make main-build-nodeps
-	CGO_ENABLED=0 $(GOBUILD) sensor/kubernetes sensor/upgrader sensor/admission-control compliance/collection roxctl
 endif
 
 .PHONY: main-build-nodeps
 main-build-nodeps:
-	@echo "+ $@"
-	@# PLEASE KEEP THE TWO LISTS BELOW IN SYNC.
-	@# The only exception is that `roxctl` should not be built in CI here, since it's built separately when in CI.
-	@# This isn't pretty, but it saves 30 seconds on every build, which seems worth it.
-	$(GOBUILD) central migrator
+	$(GOBUILD) central migrator sensor/kubernetes sensor/admission-control compliance/collection
+	CGO_ENABLED=0 $(GOBUILD) sensor/upgrader
+ifndef CI
+    CGO_ENABLED=0 $(GOBUILD) roxctl
+endif
 
 .PHONY: scale-build
 scale-build: build-prep
