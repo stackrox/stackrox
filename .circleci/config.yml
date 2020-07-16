@@ -111,7 +111,7 @@ setupHelm: &setupHelm
 refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
-    command: docker pull alpine:3.10
+    command: docker pull alpine:3.11
 
 
 setupRoxctl: &setupRoxctl
