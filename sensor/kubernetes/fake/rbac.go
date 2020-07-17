@@ -117,8 +117,9 @@ func getRBAC(workload rbacWorkload) []runtime.Object {
 		objects = append(objects, role)
 	}
 	for i := 0; i < workload.NumBindings; i++ {
-		binding := getRoleBinding()
-		objects = append(objects, binding)
+		if binding := getRoleBinding(); binding != nil {
+			objects = append(objects, binding)
+		}
 	}
 	return objects
 }
