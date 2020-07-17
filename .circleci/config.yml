@@ -611,6 +611,18 @@ commands:
           path: debug-dump
           destination: debug
 
+  pull-stackrox-api-data:
+    description: Pull data from the StackRox API.
+    steps:
+      - run:
+          name: Pull data from the StackRox API
+          command: |
+            ./scripts/grab-data-from-central.sh stackrox-api
+            ls -l stackrox-api
+      - store_artifacts:
+          path: stackrox-api
+          destination: stackrox-api
+
   check-stackrox-logs:
     parameters:
       collect:
@@ -1087,6 +1099,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *storeQATestResults
       - copy-gradle-files:
           target-dir: ${CIRCLE_JOB}-part1
@@ -1116,6 +1129,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs
@@ -1372,6 +1386,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
 
       - *storeQATestResults
       - copy-gradle-files:
@@ -1402,6 +1417,7 @@ commands:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - check-stackrox-logs
       - *storeK8sLogs
       - *storeQALogs
@@ -2596,6 +2612,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs
@@ -2682,6 +2699,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs
@@ -3298,6 +3316,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *storeK8sLogs
       - *storeQALogs
 
@@ -3364,6 +3383,7 @@ jobs:
       - *storeMonitoringMetrics
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - check-stackrox-logs
       - *storeK8sLogs
 
@@ -3900,6 +3920,7 @@ jobs:
 
       - *collectK8sLogs
       - get-and-store-debug-dump
+      - pull-stackrox-api-data
       - *backupDB
       - *storeDBBackupArtifact
       - check-stackrox-logs

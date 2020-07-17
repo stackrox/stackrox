@@ -77,8 +77,11 @@ class Helpers {
                 return
             }
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
-            println "Will collect logs for this failure under ${collectionDir}/k8s-logs"
-            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/k8s-logs"
+            println "Will collect stackrox logs for this failure under ${collectionDir}/stackrox-k8s-logs"
+            println "./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs"
+                    .execute(null, new File("..")).text
+            println "Will collect qa* logs for this failure under ${collectionDir}/qa-k8s-logs"
+            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs"
                     .execute(null, new File("..")).text
             println "Will collect central API debug for this failure under ${collectionDir}/central-data"
             println "./scripts/grab-data-from-central.sh ${collectionDir}/central-data"
