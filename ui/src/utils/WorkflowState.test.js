@@ -1,13 +1,14 @@
 import entityTypes from 'constants/entityTypes';
+import relationshipTypes from 'constants/relationshipTypes';
 import useCases from 'constants/useCaseTypes';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import { getEntityTypesByRelationship, useCaseEntityMap } from './entityRelationships';
 import WorkflowEntity from './WorkflowEntity';
 import { WorkflowState } from './WorkflowState';
 
 const entityId1 = '1234';
 const entityId2 = '5678';
 const entityId3 = '1111';
-const useCase = useCases.CONFIG_MANAGEMENT;
 
 const searchParamValues = {
     [searchParams.page]: {
@@ -38,7 +39,7 @@ function getEntityState(isSidePanelOpen) {
     }
 
     return new WorkflowState(
-        useCase,
+        useCases.CONFIG_MANAGEMENT,
         stateStack,
         searchParamValues,
         sortParamValues,
@@ -51,7 +52,7 @@ function getListState(isSidePanelOpen) {
     if (isSidePanelOpen) stateStack.push(new WorkflowEntity(entityTypes.CLUSTER, entityId1));
 
     return new WorkflowState(
-        useCase,
+        useCases.CONFIG_MANAGEMENT,
         stateStack,
         searchParamValues,
         sortParamValues,
@@ -65,6 +66,8 @@ describe('WorkflowState', () => {
     });
 
     it('resets current state based on given parameters', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         expect(
             getEntityState().reset(useCase, entityTypes.DEPLOYMENT, entityId2).stateStack
         ).toEqual([{ t: entityTypes.DEPLOYMENT, i: entityId2 }]);
@@ -122,6 +125,8 @@ describe('WorkflowState', () => {
     });
 
     describe('getSingleAncestorOfType', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         it('finds an ancestor entity type in the state stack when present', () => {
             // arrange
             const workflowState = new WorkflowState(useCase, [
@@ -167,7 +172,7 @@ describe('WorkflowState', () => {
 
     it('pushes a list onto the stack related to current workflow state', () => {
         // dashboard
-        const workflowState = new WorkflowState(useCase, []);
+        const workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, []);
         expect(workflowState.pushList(entityTypes.NAMESPACE).stateStack).toEqual([
             { t: entityTypes.NAMESPACE },
         ]);
@@ -212,7 +217,7 @@ describe('WorkflowState', () => {
 
         it('pushes a parent relationship onto the stack and overflows from list page', () => {
             // parent relationship + 1 (list page)
-            let workflowState = new WorkflowState(useCase, [
+            let workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, [
                 new WorkflowEntity(entityTypes.DEPLOYMENT),
                 new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
                 new WorkflowEntity(entityTypes.NAMESPACE),
@@ -226,7 +231,7 @@ describe('WorkflowState', () => {
             ]);
 
             // parent relationship + 1 (list page)
-            workflowState = new WorkflowState(useCase, [
+            workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, [
                 new WorkflowEntity(entityTypes.CLUSTER),
                 new WorkflowEntity(entityTypes.CLUSTER, entityId1),
                 new WorkflowEntity(entityTypes.IMAGE),
@@ -251,6 +256,8 @@ describe('WorkflowState', () => {
         });
 
         it('pushes a parent relationship onto the stack and overflows from entity page', () => {
+            const useCase = useCases.CONFIG_MANAGEMENT;
+
             // parent relationship + 1 (entity page)
             let workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
@@ -341,6 +348,8 @@ describe('WorkflowState', () => {
     });
 
     it('pushes a matches relationship onto the stack and overflows stack properly', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         // matches relationship + 1 (entity page)
         let workflowState = new WorkflowState(useCase, [
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
@@ -442,7 +451,7 @@ describe('WorkflowState', () => {
     });
 
     it('pushes an entity of a list by id onto the stack', () => {
-        const workflowState = new WorkflowState(useCase, [
+        const workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, [
             new WorkflowEntity(entityTypes.DEPLOYMENT),
         ]);
         expect(workflowState.pushListItem(entityId1).stateStack).toEqual([
@@ -452,7 +461,7 @@ describe('WorkflowState', () => {
     });
 
     it('replaces an entity of a list by pushing id onto the stack', () => {
-        const workflowState = new WorkflowState(useCase, [
+        const workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, [
             new WorkflowEntity(entityTypes.DEPLOYMENT, entityId1),
         ]);
         expect(workflowState.pushListItem(entityId2).stateStack).toEqual([
@@ -462,7 +471,7 @@ describe('WorkflowState', () => {
 
     it('pushes a related entity to the stack', () => {
         // dashboard
-        const workflowState = new WorkflowState(useCase, []);
+        const workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, []);
         expect(workflowState.pushRelatedEntity(entityTypes.CLUSTER, entityId2).stateStack).toEqual([
             { t: entityTypes.CLUSTER, i: entityId2 },
         ]);
@@ -478,6 +487,8 @@ describe('WorkflowState', () => {
 
     describe('WorkflowState pushRelatedEntity overflow logic', () => {
         it('overflows stack properly when pushing a related entity onto parent in stack', () => {
+            const useCase = useCases.CONFIG_MANAGEMENT;
+
             // parents relationship + 1 (entity page)
             let workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.IMAGE, entityId1),
@@ -502,6 +513,8 @@ describe('WorkflowState', () => {
         });
 
         it('overflows stack properly when pushing a related entity onto matches in stack', () => {
+            const useCase = useCases.CONFIG_MANAGEMENT;
+
             // matches relationship + 1 (entity page)
             let workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.NAMESPACE, entityId1),
@@ -636,7 +649,7 @@ describe('WorkflowState', () => {
         let workflowState = new WorkflowState();
         expect(workflowState.getEntityContext()).toEqual({});
 
-        workflowState = new WorkflowState(useCase, [
+        workflowState = new WorkflowState(useCases.CONFIG_MANAGEMENT, [
             new WorkflowEntity(entityTypes.CLUSTER),
             new WorkflowEntity(entityTypes.CLUSTER, entityId1),
             new WorkflowEntity(entityTypes.DEPLOYMENT),
@@ -650,6 +663,8 @@ describe('WorkflowState', () => {
     });
 
     it('skims stack properly when slimming side panel for external link generation', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         // skims to latest entity page
         let workflowState = new WorkflowState(useCase, [
             new WorkflowEntity(entityTypes.IMAGE),
@@ -691,6 +706,8 @@ describe('WorkflowState', () => {
     });
 
     describe('getCurrentEntityType', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         it('returns the type of the last (current) entity on the state stack', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.IMAGE),
@@ -718,6 +735,8 @@ describe('WorkflowState', () => {
     });
 
     describe('isBaseList', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         it('should return true when the top-level in the state stack is the entity list specified, with no child selected', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.COMPONENT),
@@ -738,6 +757,8 @@ describe('WorkflowState', () => {
     });
 
     describe('isPreceding', () => {
+        const useCase = useCases.CONFIG_MANAGEMENT;
+
         it('should return true when the preceding entity type of leaf state is the given entity', () => {
             const workflowState = new WorkflowState(useCase, [
                 new WorkflowEntity(entityTypes.CVE, 'abcd-ef09'),
@@ -769,6 +790,129 @@ describe('WorkflowState', () => {
             const actual = workflowState.isPreceding(entityTypes.CVE);
 
             expect(actual).toEqual(false);
+        });
+    });
+
+    /**
+     * Snapshots show the effect of changes to data or logic on workflow URLs.
+     *
+     * Each string corresponds to a possible workflow state stack in which:
+     * `${entityType}` represents a list
+     * `${entityType}-${entityId}` represents an entity with EVEN index AS IN workflow URL
+     *
+     * Examples of snapshot line, corresponding workflow URL, and steps in Web UI:
+     */
+
+    /*
+     * CLUSTER CLUSTER-0 COMPONENT
+     *
+     * main/vulnerability-management/clusters
+     * ?workflowState[0][t]=CLUSTER
+     * &workflowState[0][i]=00000000-0000-0000-0000-000000000000
+     * &workflowState[1][t]=COMPONENT
+     *
+     * 1. In Vulnerability Management Dashboard, click View All
+     *    at the right of Clusters with the most k8s & istio vulnerabilities
+     * 2. In Clusters Entity List, click a row
+     * 3. In Cluster side panel, click Components under Related entities
+     */
+
+    /*
+     * CLUSTER CLUSTER-0 COMPONENT COMPONENT-2 CVE
+     *
+     * main/vulnerability-management/clusters
+     * ?workflowState[0][t]=CLUSTER
+     * &workflowState[0][i]=00000000-0000-0000-0000-000000000000
+     * &workflowState[1][t]=COMPONENT
+     * &workflowState[2][t]=COMPONENT
+     * &workflowState[2][i]=22222222222222222222222222222
+     * &workflowState[3][t]=CVE
+     *
+     * 4. In Components Entity List, click a link in the CVEs column
+     */
+
+    /*
+     * COMPONENT-2 DEPLOYMENT
+     *
+     * main/vulnerability-management/component/2222222:2222222222222222222/deployments
+     *
+     * 4. In Components Entity List, click a link in the Deployments column
+     *
+     * A line that starts with an entity which has non-zero integer index id
+     * means isValidStack returned false to navigate away by calling skimStack.
+     *
+     * The preceding state stack is the nearest preceding line
+     * whose last entity has same type and next lesser even integer index
+     * for example, CLUSTER CLUSTER-0 COMPONENT
+     */
+
+    describe('nav list-item-list for', () => {
+        /**
+         * Given a workflow state (whose stack has odd length and a list as its last item)
+         * and entity types (sorted ascending) for a use case,
+         * push onto output array in depth-first traversal
+         * the state stacks extended by pairs of pushListItem and pushList calls.
+         *
+         * Stop each navigation path whenever state stack length decreases.
+         * Assume that pushList calls trimStack, which calls isValidStack,
+         * which eventually returns false, so skimStack returns a shorter slice.
+         */
+        const pushStacks = (workflowState1, entityTypesForUseCase, output) => {
+            const { stateStack: stateStack1, useCase: useCase1 } = workflowState1;
+            const length1 = stateStack1.length; // assume stack has odd length
+            const id = String(length1 - 1); // 0, 2, 4, and so on (see examples above)
+            const workflowState2 = workflowState1.pushListItem(id);
+
+            const { entityType: entityType0 } = stateStack1[length1 - 1];
+            const { CONTAINS, MATCHES, PARENTS } = relationshipTypes;
+            const contains = getEntityTypesByRelationship(entityType0, CONTAINS, useCase1);
+            const matches = getEntityTypesByRelationship(entityType0, MATCHES, useCase1);
+            const parents = getEntityTypesByRelationship(entityType0, PARENTS, useCase1);
+
+            entityTypesForUseCase.forEach((entityType2) => {
+                if (stateStack1.every(({ entityType }) => entityType !== entityType2)) {
+                    if (
+                        contains.includes(entityType2) ||
+                        matches.includes(entityType2) ||
+                        parents.includes(entityType2)
+                    ) {
+                        const workflowState3 = workflowState2.pushList(entityType2);
+                        const stateStack3 = workflowState3.stateStack;
+
+                        output.push(stateStack3);
+
+                        if (stateStack3.length === length1 + 2) {
+                            pushStacks(workflowState3, entityTypesForUseCase, output);
+                        }
+                    }
+                }
+            });
+        };
+
+        const workflowEntityMapper = ({ entityId, entityType }) =>
+            entityId ? `${entityType}-${entityId}` : entityType;
+
+        const stateStackMapper = (stateStack) => stateStack.map(workflowEntityMapper).join(' ');
+
+        // Add other use cases when they use workflow state.
+        [useCases.VULN_MANAGEMENT].forEach((useCase) => {
+            describe(useCase, () => {
+                const entityTypesForUseCase = [...useCaseEntityMap[useCase]].sort(); // copy before sort
+                const workflowState0 = new WorkflowState(useCase);
+
+                entityTypesForUseCase.forEach((entityType) => {
+                    describe(entityType, () => {
+                        it('has trimmed stacks', () => {
+                            const workflowState1 = workflowState0.pushList(entityType);
+                            const stateStacks = [];
+                            pushStacks(workflowState1, entityTypesForUseCase, stateStacks);
+                            const receivedStacks = stateStacks.map(stateStackMapper);
+
+                            expect(receivedStacks).toMatchSnapshot();
+                        });
+                    });
+                });
+            });
         });
     });
 });

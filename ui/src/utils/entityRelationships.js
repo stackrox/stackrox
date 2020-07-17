@@ -78,6 +78,7 @@ export const entityGroupMap = {
 //     }
 // };
 
+// If you change the data, then you will need to update a snapshot.
 const entityRelationshipMap = {
     [entityTypes.CLUSTER]: {
         children: [entityTypes.NODE, entityTypes.NAMESPACE, entityTypes.ROLE],
@@ -182,19 +183,16 @@ const getContains = (entityType) => {
     return uniq(relationships).filter((type) => type !== entityType);
 };
 
-const isChild = (parent, child) => !!getChildren(parent).find((c) => c === child);
-const isParent = (parent, child) => !!getParents(child).find((p) => p === parent);
-const isMatch = (entityType1, entityType2) =>
-    !!getMatches(entityType1).find((m) => m === entityType2);
-const isPureMatch = (entityType1, entityType2) =>
-    !!getPureMatches(entityType1).find((m) => m === entityType2);
+const isChild = (parent, child) => getChildren(parent).includes(child);
+const isParent = (parent, child) => getParents(child).includes(parent);
+const isMatch = (entityType1, entityType2) => getMatches(entityType1).includes(entityType2);
+const isPureMatch = (entityType1, entityType2) => getPureMatches(entityType1).includes(entityType2);
 const isExtendedMatch = (entityType1, entityType2) =>
-    !!getExtendedMatches(entityType1).find((m) => m === entityType2);
-const isContained = (entityType1, entityType2) =>
-    !!getContains(entityType1).find((c) => c === entityType2);
+    getExtendedMatches(entityType1).includes(entityType2);
+const isContained = (entityType1, entityType2) => getContains(entityType1).includes(entityType2);
 const isContainedInferred = (entityType1, entityType2) =>
     entityType1 !== entityType2 &&
-    !!isContained(entityType1, entityType2) &&
+    isContained(entityType1, entityType2) &&
     !isChild(entityType1, entityType2);
 
 // wrapper function returns a list of entities, given an entitytype, relationship, and useCase

@@ -13,29 +13,29 @@ export function isStackValid(stack) {
     // 1) entity -> (entity parent list) -> entity parent -> nav away
     // 2) entity -> (entity matches list) -> match entity -> nav away
     // 3) entity -> ... -> same entity (nav away)
-
-    let isParentState = false;
-    let isMatchState = false;
-    let isDuplicateState = false;
+    //
+    // If you change the logic, then you will need to update a snapshot.
 
     const entityTypeMap = {};
     let entityTypeCount = 0;
 
-    stack.forEach((entity, i) => {
-        const { entityType, entityId } = entity;
+    // if there is a duplicate element in the stack, it's always invalid
+    for (let i = 0; i < stack.length; i += 1) {
+        const { entityType, entityId } = stack[i];
 
         // checking if the entity type already exists in the map
         if (entityTypeMap[entityType]) {
-            if (entityId) {
-                // if there is an entityId for the current entity, it's a duplicate if an entity exists for that type
-                isDuplicateState = !!entityTypeMap[entityType].hasEntity;
-            } else {
-                // else if the current entity is a list, it's a duplicate if an entity or list for that type preexists.
-                // we're using !! to force a truthy value here since hasEntity and hasList can be undefined
-                isDuplicateState =
-                    !!entityTypeMap[entityType].hasEntity || !!entityTypeMap[entityType].hasList;
+            // it's a duplicate if an entity exists for that type
+            if (entityTypeMap[entityType].hasEntity) {
+                return false;
+            }
+
+            // it's a duplicate if the current entity is a list and a list exists for that type
+            if (!entityId && entityTypeMap[entityType].hasList) {
+                return false;
             }
         }
+
         if (!entityTypeMap[entityType]) {
             entityTypeCount += 1;
             entityTypeMap[entityType] = {};
@@ -45,39 +45,49 @@ export function isStackValid(stack) {
         } else {
             entityTypeMap[entityType].hasList = true;
         }
+    }
 
-        if (i > 0) {
-            const { entityType: prevType } = stack[i - 1];
-            if (prevType !== entityType) {
-                if (!isParentState) {
-                    // this checks if the current type on the stack is a parent of the previous type
-                    const isParent = entityRelationships.isContained(entityType, prevType);
-                    isParentState = i !== stack.length - 1 && isParent;
+    // if the stack is smaller or equal to two entity types,
+    // it is valid regardless of relationship type
+    if (entityTypeCount <= 2) {
+        return true;
+    }
+
+    for (let i = 1; i < stack.length; i += 1) {
+        const { entityType: prevType } = stack[i - 1];
+        const { entityType } = stack[i];
+
+        if (prevType !== entityType) {
+            // this checks if the current type on the stack is a parent of the previous type
+            if (i !== stack.length - 1) {
+                const isParent = entityRelationships.isContained(entityType, prevType);
+                if (isParent) {
+                    return false;
                 }
-                if (!isMatchState) {
-                    const isContained = entityRelationships.isContained(prevType, entityType);
-                    // if prev entity type contains current entity type, match state doesn't matter and stack is valid
-                    if (!isContained) {
-                        // extended matches navigate away
-                        const isExtendedMatch = entityRelationships.isExtendedMatch(
-                            prevType,
-                            entityType
-                        );
-                        const upMatch = entityRelationships.isPureMatch(prevType, entityType);
-                        const downMatch = entityRelationships.isPureMatch(entityType, prevType);
-                        // reflexive matches navigate away if it's not the last relationship on stack
-                        const isReflexiveMatchState =
-                            i !== stack.length - 1 && upMatch && downMatch;
-                        isMatchState = isReflexiveMatchState || isExtendedMatch;
+            }
+
+            // if prev entity type contains current entity type, match state doesn't matter and stack is valid
+            const isContained = entityRelationships.isContained(prevType, entityType);
+            if (!isContained) {
+                // extended matches navigate away
+                const isExtendedMatch = entityRelationships.isExtendedMatch(prevType, entityType);
+                if (isExtendedMatch) {
+                    return false;
+                }
+
+                // reflexive matches navigate away if it's not the last relationship on stack
+                if (i !== stack.length - 1) {
+                    const upMatch = entityRelationships.isPureMatch(prevType, entityType);
+                    const downMatch = entityRelationships.isPureMatch(entityType, prevType);
+                    if (upMatch && downMatch) {
+                        return false;
                     }
                 }
             }
         }
-        return false;
-    });
-    // if there is a duplicate element in the stack, it's always invalid
-    // else if the stack is smaller or equal to two entity types, it is valid regardless of relationship type
-    return !isDuplicateState && (entityTypeCount <= 2 || (!isParentState && !isMatchState));
+    }
+
+    return true;
 }
 
 // Resets the current state based on minimal parameters
