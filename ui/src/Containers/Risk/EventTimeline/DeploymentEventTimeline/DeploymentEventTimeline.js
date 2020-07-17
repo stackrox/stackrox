@@ -13,6 +13,7 @@ import ExportMenu from 'Containers/ExportMenu';
 import EventTypeSelect from '../EventTypeSelect';
 import getPodEvents from './getPodEvents';
 import getLargestDifferenceInMilliseconds from '../eventTimelineUtils/getLargestDifferenceInMilliseconds';
+import getTimelineQueryString from '../eventTimelineUtils/getTimelineQueryString';
 import { GET_DEPLOYMENT_EVENT_TIMELINE } from '../timelineQueries';
 
 const defaultPodsSort = {
@@ -64,6 +65,11 @@ const DeploymentEventTimeline = ({
         numEvents
     )} across ${numTotalPods} ${pluralize('pod', numTotalPods)}`;
 
+    const exportParams = {
+        'Deployment ID': deploymentId,
+    };
+    const csvQueryString = getTimelineQueryString(exportParams);
+
     const headerComponents = (
         <>
             <EventTypeSelect
@@ -78,9 +84,7 @@ const DeploymentEventTimeline = ({
                     fileName={`Event-Timeline-Report-${name}`}
                     pdfId="capture-timeline"
                     csvEndpoint="/api/risk/timeline/export/csv"
-                    csvEndpointParams={{
-                        'Deployment ID': deploymentId,
-                    }}
+                    csvQueryString={csvQueryString}
                 />
             </div>
         </>

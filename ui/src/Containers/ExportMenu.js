@@ -12,7 +12,7 @@ const ExportMenu = ({
     fileName,
     pdfId,
     csvEndpoint,
-    csvEndpointParams,
+    csvQueryString,
     startExportingPDF,
     finishExportingPDF,
 }) => {
@@ -33,7 +33,7 @@ const ExportMenu = ({
             icon: <List className="h-4 w-4 text-base-600" />,
             label: 'Download CSV',
             onClick: () => {
-                downloadCSV(fileName, csvEndpoint, csvEndpointParams);
+                downloadCSV(fileName, csvEndpoint, csvQueryString);
             },
         });
     }
@@ -54,7 +54,7 @@ ExportMenu.propTypes = {
     fileName: PropTypes.string.isRequired,
     pdfId: PropTypes.string,
     csvEndpoint: PropTypes.string,
-    csvEndpointParams: PropTypes.shape({}),
+    csvQueryString: PropTypes.string,
     startExportingPDF: PropTypes.func.isRequired,
     finishExportingPDF: PropTypes.func.isRequired,
 };
@@ -62,7 +62,7 @@ ExportMenu.propTypes = {
 ExportMenu.defaultProps = {
     pdfId: null,
     csvEndpoint: null,
-    csvEndpointParams: {},
+    csvQueryString: '',
 };
 
 const mapDispatchToProps = {

@@ -7,6 +7,7 @@ All notable changes to this project that require documentation updates will be d
 - New parameter `default` for flag `--collection-method`.
 - UI: Omit Cluster column from Deployments list when entity context includes Namespace (ROX-5207)
 - The help output of `roxctl` commands mentions implicit defaults for optional flags.
+- UI: Fix a regression, where CSVs for a Compliance standard, or for a Cluster viewed in Compliance, were not scoped to the particular filter (ROX-5179)
 
 ## [46.0]
 - Added the following REST APIs:

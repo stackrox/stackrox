@@ -13,8 +13,8 @@ import { addBrandedTimestampToString } from 'utils/dateUtils';
 const btnClassName =
     'btn border-primary-600 bg-primary-600 text-base-100 w-48 hover:bg-primary-700 hover:border-primary-700';
 const queryParamMap = {
-    CLUSTER: 'clusterId',
-    STANDARD: 'standardId',
+    [entityTypes.CLUSTER]: 'clusterId',
+    [entityTypes.STANDARD]: 'standardId',
     ALL: '',
 };
 
@@ -80,7 +80,7 @@ class ExportButton extends Component {
             });
         } else {
             // otherwise, use legacy compliance CSV export
-            let query = {};
+            let queryStr = '';
             let value = null;
 
             // Support for StandardId & ClusterId only
@@ -88,10 +88,10 @@ class ExportButton extends Component {
                 if (id) {
                     value = id;
                 }
-                query = { [queryParamMap[type]]: value };
+                queryStr = `${queryParamMap[type]}=${value}`;
             }
 
-            downloadCSV(csvName, complianceDownloadUrl, query);
+            downloadCSV(csvName, complianceDownloadUrl, queryStr);
         }
     };
 
