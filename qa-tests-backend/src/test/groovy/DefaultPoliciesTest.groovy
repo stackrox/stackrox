@@ -83,7 +83,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     def setupSpec() {
         gcrId = ImageIntegrationService.addGcrRegistry()
-        assert gcrId != null
+        assert gcrId != ""
 
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))

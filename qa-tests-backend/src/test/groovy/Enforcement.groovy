@@ -34,7 +34,7 @@ class Enforcement extends BaseSpecification {
 
     def setupSpec() {
         gcrId = ImageIntegrationService.addGcrRegistry()
-        assert gcrId != null
+        assert gcrId != ""
     }
 
     def cleanupSpec() {

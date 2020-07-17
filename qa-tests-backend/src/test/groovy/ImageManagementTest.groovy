@@ -14,24 +14,18 @@ import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
     @Shared
-    private String gcrId
-    @Shared
     private String azureId
     @Shared
     private static final boolean CHECK_AZURE = false
 
     def setupSpec() {
-        gcrId = ImageIntegrationService.addGcrRegistry()
-        assert gcrId != null
-
         if (CHECK_AZURE) {
             azureId = ImageIntegrationService.addAzureRegistry()
-            assert azureId != null
+            assert azureId != ""
         }
     }
 
     def cleanupSpec() {
-        assert ImageIntegrationService.deleteImageIntegration(gcrId)
         if (CHECK_AZURE) {
             assert ImageIntegrationService.deleteImageIntegration(azureId)
         }

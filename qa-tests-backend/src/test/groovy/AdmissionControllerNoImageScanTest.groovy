@@ -87,7 +87,7 @@ class AdmissionControllerNoImageScanTest extends BaseSpecification {
         and:
         "Enable registry integration"
         gcrId = ImageIntegrationService.addGcrRegistry()
-        assert gcrId != null
+        assert gcrId != ""
 
         then:
         "Create deployment with a scannable image and inline scans enabled (w/ long timeout)"

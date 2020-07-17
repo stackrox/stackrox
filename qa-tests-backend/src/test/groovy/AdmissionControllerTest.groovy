@@ -84,7 +84,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         ImageIntegrationService.deleteAutoRegisteredStackRoxScannerIntegrationIfExists()
         gcrId = ImageIntegrationService.addGcrRegistry(true)
-        assert gcrId != null
+        assert gcrId != ""
     }
 
     def setup() {

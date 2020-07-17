@@ -28,15 +28,26 @@ class ImageIntegrationService extends BaseService {
     }
 
     static createImageIntegration(ImageIntegrationOuterClass.ImageIntegration integration) {
-        try {
-            getImageIntegrationClient().testImageIntegration(integration)
-        } catch (Exception e) {
-            println "Integration test failed: ${integration.name}: ${e.message}"
+        Boolean tested = false
+        Timer t = new Timer(15, 3)
+        while (t.IsValid()) {
+            try {
+                getImageIntegrationClient().testImageIntegration(integration)
+                println "Integration tested: ${integration.name}"
+                tested = true
+                break
+            } catch (Exception e) {
+                println "Integration test failed: ${integration.name}: ${e.message}"
+            }
+        }
+
+        if (!tested) {
+            println "Integration test failed"
             return ""
         }
 
         ImageIntegrationOuterClass.ImageIntegration createdIntegration
-        Timer t = new Timer(15, 3)
+        t = new Timer(15, 3)
         while (t.IsValid()) {
             try {
                 createdIntegration =
