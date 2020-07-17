@@ -1,12 +1,11 @@
 package booleanpolicy
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
@@ -19,19 +18,32 @@ var (
 	imageEvalFactory = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 )
 
+// A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
+// the Match* functions can use to cache values between calls. Callers MUST ensure that they only pass the same CacheReceptable
+// object to subsequent calls when the other arguments being passed are the same across the calls.
+// The contents of the CacheReceptacle are intentionally opaque to callers.
+// Callers can pass a `nil` CacheReceptacle to disable caching.
+// The zero value is ready-to-use, and denotes an empty cache.
+type CacheReceptacle struct {
+	augmentedObj *pathutil.AugmentedObj
+
+	// Used only by MatchDeploymentWithProcess
+	augmentedProcess *pathutil.AugmentedObj
+}
+
 // An ImageMatcher matches images against a policy.
 type ImageMatcher interface {
-	MatchImage(ctx context.Context, image *storage.Image) (searchbasedpolicies.Violations, error)
+	MatchImage(cache *CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error)
 }
 
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
-	MatchDeployment(ctx context.Context, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
+	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
 }
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
 type DeploymentWithProcessMatcher interface {
-	MatchDeploymentWithProcess(ctx context.Context, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
+	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
 }
 
 type sectionAndEvaluator struct {

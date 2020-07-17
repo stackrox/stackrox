@@ -2,7 +2,6 @@
 package booleanpolicy_test
 
 import (
-	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -22,6 +21,7 @@ import (
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
+	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -209,6 +209,22 @@ func (suite *DefaultPoliciesTestSuite) getImagesForDeployment(deployment *storag
 	}
 	suite.Equal(len(deployment.GetContainers()), len(images))
 	return images
+}
+
+func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error)) searchbasedpolicies.Violations {
+	violations, err := matcher(nil)
+	require.NoError(t, err)
+
+	var cache booleanpolicy.CacheReceptacle
+	violationsWithEmptyCache, err := matcher(&cache)
+	require.NoError(t, err)
+	require.Equal(t, violations, violationsWithEmptyCache)
+
+	violationsWithNonEmptyCache, err := matcher(&cache)
+	require.NoError(t, err)
+	require.Equal(t, violations, violationsWithNonEmptyCache)
+
+	return violations
 }
 
 func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
@@ -1070,7 +1086,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					deployment := suite.deployments[deploymentID]
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
-						match, err := processMatcher.MatchDeploymentWithProcess(context.Background(), deployment, suite.getImagesForDeployment(deployment), process, false)
+						match := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
+						})
 						require.NoError(t, err)
 						if expectedProcesses.Contains(process.GetId()) {
 							assert.NotNil(t, match.ProcessViolation, "process %+v should match", process)
@@ -1084,8 +1102,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, deployment := range suite.deployments {
-				violationsForDep, err := m.MatchDeployment(context.Background(), deployment, suite.getImagesForDeployment(deployment))
-				require.NoError(t, err)
+				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+					return m.MatchDeployment(cache, deployment, suite.getImagesForDeployment(deployment))
+				})
 				assert.Nil(t, violationsForDep.ProcessViolation)
 				if alertViolations := violationsForDep.AlertViolations; len(alertViolations) > 0 {
 					actualViolations[id] = alertViolations
@@ -1362,8 +1381,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, image := range suite.images {
-				violationsForImg, err := m.MatchImage(context.Background(), image)
-				suite.Require().NoError(err)
+				violationsForImg := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+					return m.MatchImage(cache, image)
+				})
 				suite.Nil(violationsForImg.ProcessViolation)
 				if alertViolations := violationsForImg.AlertViolations; len(alertViolations) > 0 {
 					actualViolations[id] = alertViolations
@@ -1449,7 +1469,7 @@ func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
 	} {
 		c := testCase
 		suite.Run(c.dep.GetId(), func() {
-			matched, err := m.MatchDeployment(context.Background(), c.dep, nil)
+			matched, err := m.MatchDeployment(nil, c.dep, nil)
 			suite.NoError(err)
 			var expectedMessages []*storage.Alert_Violation
 			for _, v := range c.expectedViolations {
@@ -1593,7 +1613,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(context.Background(), dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -1653,7 +1673,7 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(context.Background(), dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					assertMessageMatches(t, depRef, violations.AlertViolations)
@@ -1725,7 +1745,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 			require.NoError(t, err)
 			matched := set.NewStringSet()
 			for depRef, dep := range deployments {
-				violations, err := matcher.MatchDeployment(context.Background(), dep, suite.getImagesForDeployment(dep))
+				violations, err := matcher.MatchDeployment(nil, dep, suite.getImagesForDeployment(dep))
 				require.NoError(t, err)
 				if len(violations.AlertViolations) > 0 {
 					matched.Add(depRef)
@@ -1877,7 +1897,7 @@ func (suite *DefaultPoliciesTestSuite) TestProcessWhitelist() {
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 				for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-					violations, err := m.MatchDeploymentWithProcess(context.Background(), dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
+					violations, err := m.MatchDeploymentWithProcess(nil, dep, suite.getImagesForDeployment(dep), indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
 					suite.Require().NoError(err)
 					if len(violations.AlertViolations) > 0 {
 						actualMatches[dep.GetId()] = append(actualMatches[dep.GetId()], key)
@@ -2050,11 +2070,42 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
-						_, err := m.MatchDeploymentWithProcess(context.Background(), dep, images, indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
+						_, err := m.MatchDeploymentWithProcess(nil, dep, images, indicators[dep.GetId()][key], processesOutsideWhitelist[dep.GetId()].Contains(key))
 						require.NoError(b, err)
 					}
 				}
 			}
 		})
 	}
+
+	m, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policyWithGroups(aptGetGroup, privilegedGroup, whitelistGroup))
+	require.NoError(b, err)
+	for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
+		for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
+			indicator := indicators[dep.GetId()][key]
+			outsideWhitelist := processesOutsideWhitelist[dep.GetId()].Contains(key)
+			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
+				var resNoCaching searchbasedpolicies.Violations
+				b.Run("no caching", func(b *testing.B) {
+					for i := 0; i < b.N; i++ {
+						var err error
+						resNoCaching, err = m.MatchDeploymentWithProcess(nil, privilegedDep, images, indicator, outsideWhitelist)
+						require.NoError(b, err)
+					}
+				})
+
+				var resWithCaching searchbasedpolicies.Violations
+				b.Run("with caching", func(b *testing.B) {
+					var cache booleanpolicy.CacheReceptacle
+					for i := 0; i < b.N; i++ {
+						var err error
+						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, privilegedDep, images, indicator, outsideWhitelist)
+						require.NoError(b, err)
+					}
+				})
+				assert.Equal(b, resNoCaching, resWithCaching)
+			})
+		}
+	}
+
 }

@@ -1,8 +1,6 @@
 package booleanpolicy
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
@@ -14,31 +12,43 @@ import (
 
 type processMatcherImpl struct {
 	processOnlyEvaluators []evaluator.Evaluator
-	matcherImpl           matcherImpl
+	matcherImpl
 }
 
-func (p *processMatcherImpl) MatchDeploymentWithProcess(_ context.Context, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
-	augmentedProcess, err := augmentedobjs.ConstructProcess(indicator, processOutsideWhitelist)
-	if err != nil {
-		return searchbasedpolicies.Violations{}, err
+func (p *processMatcherImpl) checkWhetherProcessMatches(cache *CacheReceptacle, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (bool, error) {
+	var augmentedProcess *pathutil.AugmentedObj
+	if cache != nil && cache.augmentedProcess != nil {
+		augmentedProcess = cache.augmentedProcess
+	} else {
+		var err error
+		augmentedProcess, err = augmentedobjs.ConstructProcess(indicator, processOutsideWhitelist)
+		if err != nil {
+			return false, err
+		}
+		if cache != nil {
+			cache.augmentedProcess = augmentedProcess
+		}
 	}
-	var atLeastOneMatched bool
 	for _, eval := range p.processOnlyEvaluators {
 		_, matched := eval.Evaluate(augmentedProcess.Value())
 		if matched {
-			atLeastOneMatched = true
-			break
+			return true, nil
 		}
 	}
-	if !atLeastOneMatched {
-		return searchbasedpolicies.Violations{}, nil
+	return false, nil
+}
+
+func (p *processMatcherImpl) MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, indicator *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
+	if cache == nil || cache.augmentedObj == nil {
+		processMatched, err := p.checkWhetherProcessMatches(cache, indicator, processOutsideWhitelist)
+		if err != nil || !processMatched {
+			return searchbasedpolicies.Violations{}, err
+		}
 	}
 
-	obj, err := augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processOutsideWhitelist)
-	if err != nil {
-		return searchbasedpolicies.Violations{}, err
-	}
-	violations, err := p.matcherImpl.getViolations(obj, indicator)
+	violations, err := p.matcherImpl.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructDeploymentWithProcess(deployment, images, indicator, processOutsideWhitelist)
+	}, indicator)
 	if err != nil || violations == nil {
 		return searchbasedpolicies.Violations{}, err
 	}
@@ -58,19 +68,38 @@ func matchWithEvaluator(sectionAndEval sectionAndEvaluator, obj *pathutil.Augmen
 	return finalResult, nil
 }
 
-func (m *matcherImpl) MatchImage(_ context.Context, image *storage.Image) (searchbasedpolicies.Violations, error) {
-	obj, err := augmentedobjs.ConstructImage(image)
-	if err != nil {
-		return searchbasedpolicies.Violations{}, err
-	}
-	violations, err := m.getViolations(obj, nil)
+func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error) {
+	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructImage(image)
+	}, nil)
 	if err != nil || violations == nil {
 		return searchbasedpolicies.Violations{}, err
 	}
 	return *violations, nil
 }
 
-func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *storage.ProcessIndicator) (*searchbasedpolicies.Violations, error) {
+// getOrConstructAugmentedObj either retrieves the augmented obj from the cache, or constructs it and adds to the cache.
+// If the cache is `nil`, then the cache is ignored.
+func getOrConstructAugmentedObj(cache *CacheReceptacle, constructor func() (*pathutil.AugmentedObj, error)) (*pathutil.AugmentedObj, error) {
+	if cache == nil {
+		return constructor()
+	}
+	if cache.augmentedObj != nil {
+		return cache.augmentedObj, nil
+	}
+	obj, err := constructor()
+	if err != nil {
+		return nil, err
+	}
+	cache.augmentedObj = obj
+	return obj, nil
+}
+
+func (m *matcherImpl) getViolations(cache *CacheReceptacle, constructor func() (*pathutil.AugmentedObj, error), indicator *storage.ProcessIndicator) (*searchbasedpolicies.Violations, error) {
+	obj, err := getOrConstructAugmentedObj(cache, constructor)
+	if err != nil {
+		return nil, err
+	}
 	v := &searchbasedpolicies.Violations{}
 	var atLeastOneMatched bool
 	var processIndicatorMatched bool
@@ -105,12 +134,10 @@ func (m *matcherImpl) getViolations(obj *pathutil.AugmentedObj, indicator *stora
 }
 
 // MatchDeployment runs detection against the deployment and images.
-func (m *matcherImpl) MatchDeployment(_ context.Context, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error) {
-	obj, err := augmentedobjs.ConstructDeployment(deployment, images)
-	if err != nil {
-		return searchbasedpolicies.Violations{}, err
-	}
-	violations, err := m.getViolations(obj, nil)
+func (m *matcherImpl) MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error) {
+	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructDeployment(deployment, images)
+	}, nil)
 	if err != nil || violations == nil {
 		return searchbasedpolicies.Violations{}, err
 	}

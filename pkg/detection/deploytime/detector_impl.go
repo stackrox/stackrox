@@ -3,6 +3,7 @@ package deploytime
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -23,6 +24,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 // Detect runs detection on an deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment, images []*storage.Image) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
@@ -39,7 +41,7 @@ func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployme
 		}
 
 		// Generate violations.
-		violations, err := compiled.MatchAgainstDeployment(deployment, images)
+		violations, err := compiled.MatchAgainstDeployment(&cacheReceptacle, deployment, images)
 		if err != nil {
 			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", compiled.Policy().GetName(), deployment.GetNamespace(), deployment.GetName())
 		}

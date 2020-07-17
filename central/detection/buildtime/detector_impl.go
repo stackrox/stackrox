@@ -4,6 +4,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -19,6 +20,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	}
 
 	var alerts []*storage.Alert
+	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
@@ -26,7 +28,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.MatchAgainstImage(image)
+		violations, err := compiled.MatchAgainstImage(&cacheReceptacle, image)
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}

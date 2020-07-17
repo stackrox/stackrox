@@ -20,9 +20,9 @@ type CompiledPolicy interface {
 	// Note that the Match* functions DO NOT care about whitelists/the policy being disabled.
 	// Callers are responsible for doing those checks separately.
 	// For MatchAgainstDeployment* functions, images _must_ correspond one-to-one with the container specs in the deployment.
-	MatchAgainstDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
-	MatchAgainstDeployment(deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
-	MatchAgainstImage(image *storage.Image) (searchbasedpolicies.Violations, error)
+	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
+	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
+	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error)
 
 	Predicate
 }
@@ -105,32 +105,32 @@ type compiledPolicy struct {
 	imageMatcher                 booleanpolicy.ImageMatcher
 }
 
-func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
+func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
 	if features.BooleanPolicyLogic.Enabled() {
 		if cp.deploymentWithProcessMatcher == nil {
 			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against deployments and processes", cp.Policy().GetName())
 		}
-		return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(context.Background(), deployment, images, pi, processOutsideWhitelist)
+		return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processOutsideWhitelist)
 	}
 	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), deployment, images, pi)
 }
 
-func (cp *compiledPolicy) MatchAgainstDeployment(deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error) {
+func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error) {
 	if features.BooleanPolicyLogic.Enabled() {
 		if cp.deploymentMatcher == nil {
 			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against deployments", cp.Policy().GetName())
 		}
-		return cp.deploymentMatcher.MatchDeployment(context.Background(), deployment, images)
+		return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
 	}
 	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), deployment, images, nil)
 }
 
-func (cp *compiledPolicy) MatchAgainstImage(image *storage.Image) (searchbasedpolicies.Violations, error) {
+func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error) {
 	if features.BooleanPolicyLogic.Enabled() {
 		if cp.imageMatcher == nil {
 			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against images", cp.Policy().GetName())
 		}
-		return cp.imageMatcher.MatchImage(context.Background(), image)
+		return cp.imageMatcher.MatchImage(cache, image)
 	}
 
 	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), nil, []*storage.Image{image}, nil)
