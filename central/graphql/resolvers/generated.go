@@ -536,6 +536,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ImageScan", []string{
 		"dataSource: DataSource",
+		"operatingSystem: String!",
 		"scanTime: Time",
 	}))
 	utils.Must(builder.AddType("Jira", []string{
@@ -5222,6 +5223,11 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 func (resolver *imageScanResolver) DataSource(ctx context.Context) (*dataSourceResolver, error) {
 	value := resolver.data.GetDataSource()
 	return resolver.root.wrapDataSource(value, true, nil)
+}
+
+func (resolver *imageScanResolver) OperatingSystem(ctx context.Context) string {
+	value := resolver.data.GetOperatingSystem()
+	return value
 }
 
 func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {

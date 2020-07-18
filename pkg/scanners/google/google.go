@@ -246,8 +246,9 @@ func (c *googleScanner) GetScan(image *storage.Image) (*storage.ImageScan, error
 	}
 	// Google can't give the data via layers at this time
 	return &storage.ImageScan{
-		ScanTime:   gogoTypes.TimestampNow(),
-		Components: components,
+		ScanTime:        gogoTypes.TimestampNow(),
+		Components:      components,
+		OperatingSystem: "unknown",
 	}, nil
 }
 

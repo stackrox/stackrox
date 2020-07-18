@@ -82,7 +82,7 @@ func (suite *QuaySuite) SetupSuite() {
 
 	masterServer := httptest.NewServer(masterRouter)
 
-	// Set the global variable of the Tenable endpoint
+	// Set the global variable of the Quay endpoint
 	suite.server = masterServer
 
 	protoImageIntegration := &storage.ImageIntegration{
@@ -126,7 +126,10 @@ func (suite *QuaySuite) TestGetScan() {
 	expectedQuayScan, err := getImageScan()
 	suite.NoError(err)
 
-	// convert scans here. It relies on converting the scan but is not the conversion test
+	// convert scans here. It relies on converting the scan but is not the conversion test.
+	// skipping scan time check.
 	expectedImageScan := convertScanToImageScan(image, expectedQuayScan)
-	suite.Equal(expectedImageScan, scan)
+	suite.Equal(expectedImageScan.Components, scan.Components)
+	suite.Equal(expectedImageScan.OperatingSystem, scan.OperatingSystem)
+	suite.Equal(expectedImageScan.DataSource, scan.DataSource)
 }

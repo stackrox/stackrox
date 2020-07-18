@@ -129,8 +129,9 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 	}
 	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
 	expectedScan := &storage.ImageScan{
-		Components: expectedComponents,
-		ScanTime:   protoTime,
+		Components:      expectedComponents,
+		ScanTime:        protoTime,
+		OperatingSystem: "unknown",
 	}
 
 	actualScans := convertTagScanSummaryToImageScan(nil, tagScanSummary)

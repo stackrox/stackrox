@@ -156,13 +156,13 @@ func (d *tenable) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	if err != nil {
 		return nil, err
 	} else if status != http.StatusOK {
-		return nil, fmt.Errorf("Unexpected status code %v when retrieving image scan: %v", status, string(body))
+		return nil, fmt.Errorf("unexpected status code %v when retrieving image scan: %v", status, string(body))
 	}
 	scan, err := parseImageScan(body)
 	if err != nil {
 		return nil, err
 	}
-	return convertScanToImageScan(image, scan), nil
+	return convertScanToImageScan(scan), nil
 }
 
 // Match decides if the image is contained within this registry

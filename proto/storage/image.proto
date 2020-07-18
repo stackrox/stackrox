@@ -51,10 +51,11 @@ message DataSource {
 }
 
 message ImageScan {
-    google.protobuf.Timestamp           scan_time   = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
-    repeated EmbeddedImageScanComponent components  = 2;
+    google.protobuf.Timestamp           scan_time        = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
+    repeated EmbeddedImageScanComponent components       = 2;
     // DataSource contains information about which integration was used to scan the image
-    DataSource                          data_source = 3;
+    DataSource                          data_source      = 3;
+    string                              operating_system = 4 [(gogoproto.moretags) = "search:\"Image OS,store\""];
 }
 
 // TODO: Remove when migration is in place

@@ -207,22 +207,15 @@ func TestConvertScanToImageScan(t *testing.T) {
 		Findings:          findings,
 	}
 
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: "",
-			Remote:   "srox/nginx",
-			Tag:      "1.10",
-		},
-	}
-
 	scanTime, err := ptypes.TimestampProto(updated)
 	assert.NoError(t, err)
 	expectedScan := &storage.ImageScan{
-		Components: components,
-		ScanTime:   scanTime,
+		Components:      components,
+		OperatingSystem: "debian:8.7",
+		ScanTime:        scanTime,
 	}
 
-	convertedScan := convertScanToImageScan(image, scan)
+	convertedScan := convertScanToImageScan(scan)
 	sortComponents(convertedScan.Components)
 	sortComponents(expectedScan.Components)
 	assert.Equal(t, expectedScan, convertedScan)

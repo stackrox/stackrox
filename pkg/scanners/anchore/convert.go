@@ -32,8 +32,9 @@ func convertImageScan(i *anchoreClient.AnchoreImage, packages []anchoreClient.Co
 	}
 	protoTS := protoconv.ConvertTimeToTimestamp(t)
 	return &storage.ImageScan{
-		ScanTime:   protoTS,
-		Components: stitchPackagesAndVulns(packages, vulns),
+		ScanTime:        protoTS,
+		Components:      stitchPackagesAndVulns(packages, vulns),
+		OperatingSystem: "unknown",
 	}
 }
 

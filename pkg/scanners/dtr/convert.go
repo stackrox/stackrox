@@ -102,7 +102,8 @@ func convertTagScanSummaryToImageScan(image *storage.Image, tagScanSummary *tagS
 
 	if len(convertedLayers) == 0 {
 		return &storage.ImageScan{
-			ScanTime: completedAt,
+			ScanTime:        completedAt,
+			OperatingSystem: "unknown",
 		}
 	}
 
@@ -116,7 +117,8 @@ func convertTagScanSummaryToImageScan(image *storage.Image, tagScanSummary *tagS
 	}
 
 	return &storage.ImageScan{
-		ScanTime:   completedAt,
-		Components: uniqueLayers,
+		ScanTime:        completedAt,
+		Components:      uniqueLayers,
+		OperatingSystem: "unknown",
 	}
 }

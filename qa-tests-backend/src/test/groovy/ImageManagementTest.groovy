@@ -84,6 +84,28 @@ class ImageManagementTest extends BaseSpecification {
     }
 
     @Unroll
+    @Category(BAT)
+    def "Verify image scan finds correct base OS - #imageName"() {
+        when:
+        def img = Services.scanImage(imageRegistry + "/" + imageRemote + ":" + imageTag)
+        then:
+        assert img.scan.operatingSystem == expected
+        where:
+        "Data inputs are: "
+
+        imageName               | imageRegistry | imageRemote       | imageTag         | expected
+        "ubuntu:14.04"          | "docker.io"   | "library/ubuntu"  | "14.04"          | "ubuntu:14.04"
+        "busybox:1.32.0"        | "docker.io"   | "library/busybox" | "1.32.0"         | "unknown"
+        "alpine:3.10.1"         | "docker.io"   | "library/alpine"  | "3.10.0"         | "alpine:v3.10"
+        "nginx:1.10"            | "docker.io"   | "library/nginx"   | "1.10"           | "debian:8"
+        "nginx:1.19"            | "docker.io"   | "library/nginx"   | "1.19"           | "debian:10"
+        "centos:centos8.2.2004" | "docker.io"   | "library/centos"  | "centos8.2.2004" | "centos:8"
+        // This is due to weird Scanner functionality. Making this a test, in case we decide to come back to Scanner
+        // and change this. Best to know what our expectations are.
+        "fedora:33"             | "docker.io"   | "library/fedora"  | "33"             | "unknown"
+    }
+
+    @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint Whitelists - #policy - #whitelists"() {
         when:

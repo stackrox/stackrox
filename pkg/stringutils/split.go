@@ -13,6 +13,17 @@ func Split2(str string, sep string) (string, string) {
 	return str[:splitIdx], str[splitIdx+len(sep):]
 }
 
+// Split2Last splits the given string at the last instance of the given separator,
+// returning the part before and after the separator as two separate return values.
+// If the string does not contain `sep`, the entire string is returned as the first return value.
+func Split2Last(str string, sep string) (string, string) {
+	splitIdx := strings.LastIndex(str, sep)
+	if splitIdx == -1 {
+		return str, ""
+	}
+	return str[:splitIdx], str[splitIdx+len(sep):]
+}
+
 // SplitNPadded acts like `strings.SplitN`, but will *always* return a slice of length n (padded with empty strings
 // if necessary).
 func SplitNPadded(str string, sep string, n int) []string {
@@ -27,4 +38,23 @@ func SplitNPadded(str string, sep string, n int) []string {
 func GetUpTo(str, sep string) string {
 	part1, _ := Split2(str, sep)
 	return part1
+}
+
+// GetAfter gets the substring after the separator or returns the input string if the separator does not exist
+func GetAfter(str, sep string) string {
+	p1, p2 := Split2(str, sep)
+	if len(p1) == len(str) {
+		return p1
+	}
+	return p2
+}
+
+// GetAfterLast gets the substring after the last instance of the given separator
+// or returns the input string if the separator does not exist
+func GetAfterLast(str, sep string) string {
+	p1, p2 := Split2Last(str, sep)
+	if len(p1) == len(str) && sep != "" {
+		return p1
+	}
+	return p2
 }

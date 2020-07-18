@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	clairV1 "github.com/stackrox/scanner/api/v1"
 	"github.com/stackrox/scanner/pkg/clairify/client"
@@ -111,8 +112,9 @@ func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerE
 	}
 
 	return &storage.ImageScan{
-		ScanTime:   gogoProto.TimestampNow(),
-		Components: clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
+		OperatingSystem: stringutils.OrDefault(layerEnvelope.Layer.NamespaceName, "unknown"),
+		ScanTime:        gogoProto.TimestampNow(),
+		Components:      clairConv.ConvertFeatures(image, layerEnvelope.Layer.Features),
 	}
 }
 

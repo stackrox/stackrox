@@ -1,12 +1,14 @@
 package tenable
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scans"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []pkg) (components []*storage.EmbeddedImageScanComponent) {
@@ -44,15 +46,22 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 	return components
 }
 
-func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageScan {
+func convertScanToImageScan(s *scanResult) *storage.ImageScan {
 	completedAt, err := ptypes.TimestampProto(s.UpdatedAt)
 	if err != nil {
 		log.Error(err)
 	}
 	components := convertNVDFindingsAndPackagesToComponents(s.Findings, s.InstalledPackages)
+	os := stringutils.GetAfterLast(s.OS, "_")
+	if os == "" {
+		os = "unknown"
+	} else {
+		os = fmt.Sprintf("%s:%s", strings.ToLower(os), s.OSVersion)
+	}
 	return &storage.ImageScan{
-		ScanTime:   completedAt,
-		Components: components,
+		OperatingSystem: os,
+		ScanTime:        completedAt,
+		Components:      components,
 	}
 }
 

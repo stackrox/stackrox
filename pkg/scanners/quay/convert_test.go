@@ -27,6 +27,7 @@ func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
 			},
 		},
 	}
+	// Leaving OperatingSystem blank, so we can make sure it says 'unknown'
 	protoScan := &storage.ImageScan{
 		Components: protoComponents,
 	}
@@ -35,5 +36,9 @@ func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
 
 func TestConvertScanToImageScan(t *testing.T) {
 	quayScan, protoScan, image := getTestScan()
-	assert.Equal(t, protoScan, convertScanToImageScan(image, quayScan))
+	actualScan := convertScanToImageScan(image, quayScan)
+	// Ignore Scan time in the test, as it is defined as the time we retrieve the scan.
+	assert.Equal(t, protoScan.DataSource, actualScan.DataSource)
+	assert.Equal(t, "unknown", actualScan.OperatingSystem)
+	assert.Equal(t, protoScan.Components, actualScan.Components)
 }

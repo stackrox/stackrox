@@ -17,10 +17,31 @@ func TestSplit2(t *testing.T) {
 		{"Hello", "l", []string{"He", "lo"}},
 		{"Hello", "ll", []string{"He", "o"}},
 		{"", "a", []string{"", ""}},
+		{"a", "", []string{"", "a"}},
 	} {
 		c := testCase
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
 			first, second := Split2(c.s, c.sep)
+			assert.Equal(t, c.expected, []string{first, second})
+		})
+	}
+}
+
+func TestSplit2Last(t *testing.T) {
+	for _, testCase := range []struct {
+		s        string
+		sep      string
+		expected []string
+	}{
+		{"Helo", "l", []string{"He", "o"}},
+		{"Hello", "l", []string{"Hel", "o"}},
+		{"Hello", "ll", []string{"He", "o"}},
+		{"", "a", []string{"", ""}},
+		{"a", "", []string{"a", ""}},
+	} {
+		c := testCase
+		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			first, second := Split2Last(c.s, c.sep)
 			assert.Equal(t, c.expected, []string{first, second})
 		})
 	}
@@ -67,6 +88,50 @@ func TestGetUpTo(t *testing.T) {
 		c := testCase
 		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
 			assert.Equal(t, c.expected, GetUpTo(c.s, c.sep))
+		})
+	}
+}
+
+func TestGetAfter(t *testing.T) {
+	for _, testCase := range []struct {
+		s        string
+		sep      string
+		expected string
+	}{
+		{"Hello", "", "Hello"},
+		{"Hello", "l", "lo"},
+		{"Hello", "/", "Hello"},
+		{"", "", ""},
+		{"hi/hello", "/", "hello"},
+		{"/hello", "/", "hello"},
+		{"hi/", "/", ""},
+		{"h___e___l___l___o", "___", "e___l___l___o"},
+	} {
+		c := testCase
+		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			assert.Equal(t, c.expected, GetAfter(c.s, c.sep))
+		})
+	}
+}
+
+func TestGetAfterLast(t *testing.T) {
+	for _, testCase := range []struct {
+		s        string
+		sep      string
+		expected string
+	}{
+		{"Hello", "", ""},
+		{"Hello", "l", "o"},
+		{"Hello", "/", "Hello"},
+		{"", "", ""},
+		{"hi/hello", "/", "hello"},
+		{"/hello", "/", "hello"},
+		{"hi/", "/", ""},
+		{"h___e___l___l___o", "___", "o"},
+	} {
+		c := testCase
+		t.Run(fmt.Sprintf("%+v", c), func(t *testing.T) {
+			assert.Equal(t, c.expected, GetAfterLast(c.s, c.sep))
 		})
 	}
 }
