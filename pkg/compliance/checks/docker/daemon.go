@@ -17,7 +17,7 @@ import (
 func init() {
 	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
 		standards.CISDockerCheckName("2_1"): {
-			CheckFunc:          networkRestrictionCheck,
+			CheckFunc:          common.CheckWithDockerData(networkRestrictionCheck),
 			InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
 		},
 		standards.CISDockerCheckName("2_2"): genericDockerCommandlineCheck("log-level", "info", "info", common.Matches),
@@ -46,8 +46,8 @@ func init() {
 	})
 }
 
-func networkRestrictionCheck(data *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-	if data.DockerData.BridgeNetwork.Options["com.docker.network.bridge.enable_icc"] == "true" {
+func networkRestrictionCheck(data *internalTypes.Data) []*storage.ComplianceResultValue_Evidence {
+	if data.BridgeNetwork.Options["com.docker.network.bridge.enable_icc"] == "true" {
 		return common.FailListf("Enable icc is true on bridge network")
 	}
 

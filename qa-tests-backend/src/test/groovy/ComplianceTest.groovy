@@ -1081,4 +1081,43 @@ class ComplianceTest extends BaseSpecification {
         "remove the deployment we created"
         orchestrator.deleteDeployment(deployment)
     }
+
+    @Category([BAT])
+    def "Verify a subset of the checks in nodes were run in each node"() {
+        expect:
+        "check a subset of the checks run in the compliance pods are present in the results"
+        def dockerResults = BASE_RESULTS.get("CIS_Docker_v1_2_0")
+        for (ComplianceRunResults.EntityResults nodeResults : dockerResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:1_1_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:2_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:3_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:4_2")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:5_1")
+            assert controlResults.containsKey("CIS_Docker_v1_2_0:6_1")
+        }
+
+        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
+        for (ComplianceRunResults.EntityResults nodeResults : kubernetesResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:3_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_2_5")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:1_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_5_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_6_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_3_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_2_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_1_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:5_4_1")
+            assert controlResults.containsKey("CIS_Kubernetes_v1_5:4_1_1")
+        }
+
+        def nistResults = BASE_RESULTS.get("NIST_800_190")
+        for (ComplianceRunResults.EntityResults nodeResults : nistResults.getNodeResultsMap().values()) {
+            def controlResults = nodeResults.getControlResultsMap()
+            assert controlResults.containsKey("NIST_800_190:4_2_1")
+        }
+    }
 }

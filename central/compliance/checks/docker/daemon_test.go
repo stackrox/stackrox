@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -123,6 +124,9 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 	for _, cIt := range cases {
 		c := cIt
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
+			if features.ComplianceInNodes.Enabled() {
+				return
+			}
 			t.Parallel()
 
 			registry := framework.RegistrySingleton()

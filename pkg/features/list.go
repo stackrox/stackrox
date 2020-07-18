@@ -34,5 +34,5 @@ var (
 	CurrentUserInfo = registerFeature("Enable Current User Info UI", "ROX_CURRENT_USER_INFO", true)
 
 	// ComplianceInNodes enables running of node-related Compliance checks in the compliance pods
-	ComplianceInNodes = registerFeature("Enable compliance checks in nodes", "ROX_COMPLIANCE_IN_NODES", false)
+	ComplianceInNodes = registerFeature("Enable compliance checks in nodes", "ROX_COMPLIANCE_IN_NODES", true)
 )

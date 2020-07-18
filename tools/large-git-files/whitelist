@@ -16,3 +16,4 @@ pkg/sliceutils/gen-builtins-generic.go
 qa-tests-backend/test-images/registry-image/tomcat-files/web.xml
 pkg/fixtures/image.go
 pkg/booleanpolicy/default_policies_test.go
+qa-tests-backend/src/test/groovy/ComplianceTest.groovy

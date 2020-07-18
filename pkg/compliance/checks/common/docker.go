@@ -9,9 +9,8 @@ import (
 // CheckWithDockerData returns a check that runs on each node with access to docker data.
 func CheckWithDockerData(f func(data *types.Data) []*storage.ComplianceResultValue_Evidence) standards.Check {
 	return func(data *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
-		// TODO: Figure out how to abort the compliance run
 		if data.DockerData == nil {
-			return nil
+			return SkipList("Node does not use Docker container runtime")
 		}
 		return f(data.DockerData)
 	}

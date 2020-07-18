@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,6 +43,9 @@ func TestAuditCheck(t *testing.T) {
 	for _, cIt := range cases {
 		c := cIt
 		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
+			if features.ComplianceInNodes.Enabled() {
+				return
+			}
 			t.Parallel()
 			registry := framework.RegistrySingleton()
 			check := registry.Lookup(c.name)

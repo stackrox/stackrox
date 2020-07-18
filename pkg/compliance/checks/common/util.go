@@ -66,6 +66,11 @@ func NoteList(msg string) []*storage.ComplianceResultValue_Evidence {
 	return []*storage.ComplianceResultValue_Evidence{Note(msg)}
 }
 
+// SkipList returns a single-element list of "skip" evidence from the given template as a convenience
+func SkipList(msg string) []*storage.ComplianceResultValue_Evidence {
+	return []*storage.ComplianceResultValue_Evidence{result(storage.ComplianceState_COMPLIANCE_STATE_SKIP, msg)}
+}
+
 func result(status storage.ComplianceState, msg string) *storage.ComplianceResultValue_Evidence {
 	return &storage.ComplianceResultValue_Evidence{
 		State:   status,
