@@ -94,16 +94,19 @@ class ImageScanningTest extends BaseSpecification {
 
         and:
         "validate registry based image metadata"
-        def imageDigest = ImageService.getImages().find { it.name == deployment.image }
+        def imageDigest
         try {
-            assert imageDigest?.id
+            withRetry(15, 2) {
+                imageDigest = ImageService.getImages().find { it.name == deployment.image }
+                assert imageDigest?.id
+            }
         } catch (Exception e) {
             if (strictIntegrationTesting) {
                 throw (e)
             }
             Assume.assumeNoException("Failed to pull the image using ${integration}. Skipping test!", e)
         }
-        ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest.id)
+        ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
         assert imageDetail.metadata?.layerShasCount >= 1
 
