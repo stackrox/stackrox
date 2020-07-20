@@ -187,27 +187,27 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 	return resp, nil
 }
 
-func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy) error {
+func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if features.BooleanPolicyLogic.Enabled() {
 		if err := booleanpolicy.EnsureConverted(p); err != nil {
 			return status.Errorf(codes.InvalidArgument, "Could not ensure policy format: %v", err.Error())
 		}
 	}
 
-	if err := s.validator.validate(ctx, p); err != nil {
+	if err := s.validator.validate(ctx, p, options...); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	return nil
 }
 
-func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, extraValidateFunc func(*storage.Policy) error, updateFunc func(context.Context, *storage.Policy) error) (*storage.Policy, error) {
+func (s *serviceImpl) addOrUpdatePolicy(ctx context.Context, request *storage.Policy, extraValidateFunc func(*storage.Policy) error, updateFunc func(context.Context, *storage.Policy) error, options ...booleanpolicy.ValidateOption) (*storage.Policy, error) {
 	if extraValidateFunc != nil {
 		if err := extraValidateFunc(request); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := s.convertAndValidate(ctx, request); err != nil {
+	if err := s.convertAndValidate(ctx, request, options...); err != nil {
 		return nil, err
 	}
 
@@ -244,8 +244,14 @@ func (s *serviceImpl) addPolicyToStoreAndSetID(ctx context.Context, p *storage.P
 }
 
 // PostPolicy inserts a new policy into the system.
-func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error) {
-	return s.addOrUpdatePolicy(ctx, request, ensureIDEmpty, s.addPolicyToStoreAndSetID)
+func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.PostPolicyRequest) (*storage.Policy, error) {
+	options := []booleanpolicy.ValidateOption{}
+
+	if request.GetEnableStrictValidation() {
+		options = append(options, booleanpolicy.ValidateEnvVarSourceRestrictions())
+	}
+
+	return s.addOrUpdatePolicy(ctx, request.GetPolicy(), ensureIDEmpty, s.addPolicyToStoreAndSetID, options...)
 }
 
 // PutPolicy updates a current policy in the system.

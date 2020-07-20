@@ -56,6 +56,11 @@ message ListPoliciesResponse {
     repeated storage.ListPolicy policies = 1;
 }
 
+message PostPolicyRequest {
+    storage.Policy policy         = 1;
+    bool enable_strict_validation = 2;
+}
+
 message PatchPolicyRequest {
     string id         = 1;
     oneof set_disabled {
@@ -137,10 +142,10 @@ service PolicyService {
     }
 
     // PostPolicy creates a new policy.
-    rpc PostPolicy (storage.Policy) returns (storage.Policy) {
+    rpc PostPolicy (PostPolicyRequest) returns (storage.Policy) {
         option (google.api.http) = {
             post: "/v1/policies"
-            body: "*"
+            body: "policy"
         };
     }
 

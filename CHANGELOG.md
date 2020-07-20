@@ -3,6 +3,7 @@ All notable changes to this project that require documentation updates will be d
 
 ## [NEXT RELEASE]
 - Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).
+- Added strict validation for env var policies such that policies with non-raw sources must not specify expected values (ROX-5208). This change introduces a breaking adjustment to the `/v1.PolicyService/PostPolicy` RPC, with existing REST clients remaining unaffected.
 - Emit warning if the default value for flag `--create-updater-sa` is used in roxctl (ROX-5264).
 - New parameter `default` for flag `--collection-method`.
 - UI: Omit Cluster column from Deployments list when entity context includes Namespace (ROX-5207)

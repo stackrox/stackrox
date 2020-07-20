@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
@@ -13,7 +14,8 @@ import (
 )
 
 var (
-	fieldsToQB = make(map[string]*metadataAndQB)
+	fieldsToQB     = make(map[string]func(*validateConfiguration) *metadataAndQB)
+	errNoSuchField = errors.New("no such field")
 )
 
 type option int
@@ -31,11 +33,15 @@ type metadataAndQB struct {
 	contextFields      violationmessages.ContextQueryFields
 }
 
-func registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields, valueRegex *regexp.Regexp, options ...option) {
-	if fieldsToQB[fieldName] != nil {
-		panic(fmt.Sprintf("found duplicate metadata for field %s", fieldName))
+func findFieldMetadata(fieldName string, config *validateConfiguration) (*metadataAndQB, error) {
+	f := fieldsToQB[fieldName]
+	if f == nil {
+		return nil, errNoSuchField
 	}
+	return f(config), nil
+}
 
+func newFieldMetadata(qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields, valueRegex *regexp.Regexp, options ...option) *metadataAndQB {
 	m := &metadataAndQB{
 		qb:            qb,
 		contextFields: contextFields,
@@ -50,7 +56,32 @@ func registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder, cont
 		}
 	}
 
-	fieldsToQB[fieldName] = m
+	return m
+}
+
+func ensureFieldIsUnique(fieldName string) {
+	if fieldsToQB[fieldName] != nil {
+		panic(fmt.Sprintf("found duplicate metadata for field %s", fieldName))
+	}
+}
+
+func registerFieldMetadata(fieldName string, qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields, valueRegex *regexp.Regexp, options ...option) {
+	ensureFieldIsUnique(fieldName)
+
+	m := newFieldMetadata(qb, contextFields, valueRegex, options...)
+	fieldsToQB[fieldName] = func(*validateConfiguration) *metadataAndQB {
+		return m
+	}
+}
+
+func registerFieldMetadataConditionally(
+	fieldName string,
+	qb querybuilders.QueryBuilder, contextFields violationmessages.ContextQueryFields, conditionalRegexp func(*validateConfiguration) *regexp.Regexp, options ...option,
+) {
+	ensureFieldIsUnique(fieldName)
+	fieldsToQB[fieldName] = func(configuration *validateConfiguration) *metadataAndQB {
+		return newFieldMetadata(qb, contextFields, conditionalRegexp(configuration), options...)
+	}
 }
 
 func init() {
@@ -65,7 +96,16 @@ func init() {
 	registerFieldMetadata(fieldnames.DisallowedImageLabel, querybuilders.ForFieldLabelMap(search.ImageLabel, query.MapShouldContain), violationmessages.ImageContextFields, keyValueValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.DockerfileLine, querybuilders.ForCompound(augmentedobjs.DockerfileLineCustomTag, 2), violationmessages.ImageContextFields, dockerfileLineValueRegex, negationForbidden)
 	registerFieldMetadata(fieldnames.DropCaps, querybuilders.ForDropCaps(), violationmessages.ContainerContextFields, capabilitiesValueRegex, negationForbidden)
-	registerFieldMetadata(fieldnames.EnvironmentVariable, querybuilders.ForCompound(augmentedobjs.EnvironmentVarCustomTag, 3), violationmessages.EnvVarContextFields, environmentVariableWithSourceRegex, negationForbidden)
+	registerFieldMetadataConditionally(
+		fieldnames.EnvironmentVariable,
+		querybuilders.ForCompound(augmentedobjs.EnvironmentVarCustomTag, 3), violationmessages.EnvVarContextFields, func(c *validateConfiguration) *regexp.Regexp {
+			if c != nil && c.validateEnvVarSourceRestrictions {
+				return environmentVariableWithSourceStrictRegex
+			}
+
+			return environmentVariableWithSourceRegex
+		}, negationForbidden,
+	)
 	registerFieldMetadata(fieldnames.FixedBy, querybuilders.ForFixedBy(), violationmessages.VulnContextFields, stringValueRegex)
 	registerFieldMetadata(fieldnames.ImageAge, querybuilders.ForDays(search.ImageCreatedTime), violationmessages.ImageContextFields, integerValueRegex, negationForbidden, operatorsForbidden)
 	registerFieldMetadata(fieldnames.ImageComponent, querybuilders.ForCompound(augmentedobjs.ComponentAndVersionCustomTag, 2), violationmessages.ImageContextFields, keyValueValueRegex, negationForbidden)

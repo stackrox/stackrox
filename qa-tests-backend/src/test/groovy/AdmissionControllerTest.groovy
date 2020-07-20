@@ -2,6 +2,7 @@ import common.Constants
 import groups.BAT
 import io.fabric8.kubernetes.api.model.Pod
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -198,17 +199,20 @@ class AdmissionControllerTest extends BaseSpecification {
                 .build()
 
         assert ClusterService.updateAdmissionController(ac)
-        PolicyOuterClass.Policy policy = PolicyService.policyClient.postPolicy(
-                PolicyOuterClass.Policy.newBuilder()
-                        .setName("Matching CVE (CVE-2019-3462)")
-                        .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
-                        .addCategories("Testing")
-                        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                        .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                        .setFields(
-                            PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
-                        )
+        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+                .setName("Matching CVE (CVE-2019-3462)")
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .addCategories("Testing")
+                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                .setFields(
+                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-3462").build()
+                )
                 .build()
+        policy = PolicyService.policyClient.postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
+                        .setPolicy(policy)
+                        .build()
         )
         // Maximum time to wait for propagation to sensor
         sleep 5000

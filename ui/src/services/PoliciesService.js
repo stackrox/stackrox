@@ -202,7 +202,7 @@ export function savePolicy(policy) {
 export function createPolicy(policy) {
     const transformedPolicy = transformPolicyCriteriaValuesToStrings(policy);
 
-    return axios.post(`${baseUrl}`, transformedPolicy);
+    return axios.post(`${baseUrl}?enableStrictValidation=true`, transformedPolicy);
 }
 
 /**

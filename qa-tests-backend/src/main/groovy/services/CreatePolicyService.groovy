@@ -4,6 +4,7 @@ import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PostPolicyRequest
 
 class CreatePolicyService extends BaseService {
 
@@ -15,7 +16,8 @@ class CreatePolicyService extends BaseService {
         String policyID = ""
 
         try {
-            policyID = getPolicyClient().postPolicy(policy).getId()
+            policyID = getPolicyClient().postPolicy(
+                PostPolicyRequest.newBuilder().setPolicy(policy).setEnableStrictValidation(true).build()).getId()
         } catch (Exception e) {
             println e.toString()
         }

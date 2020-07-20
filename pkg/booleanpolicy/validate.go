@@ -8,8 +8,32 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+type validateConfiguration struct {
+	// If set to true, env var policies are strictly validated such that
+	// policies with a non-raw source checking for a value are marked as invalid.
+	//
+	// See ROX-5208 for details.
+	validateEnvVarSourceRestrictions bool
+}
+
+// ValidateOption models an option for validation.
+type ValidateOption func(*validateConfiguration)
+
+// ValidateEnvVarSourceRestrictions enables validation of env-var source
+// restrictions as described/requested in ROX-5208.
+func ValidateEnvVarSourceRestrictions() ValidateOption {
+	return func(c *validateConfiguration) {
+		c.validateEnvVarSourceRestrictions = true
+	}
+}
+
 // Validate validates the policy, to make sure it's a well-formed Boolean policy.
-func Validate(p *storage.Policy) error {
+func Validate(p *storage.Policy, options ...ValidateOption) error {
+	configuration := &validateConfiguration{}
+	for _, option := range options {
+		option(configuration)
+	}
+
 	errorList := errorhelpers.NewErrorList("policy validation")
 	if p.GetPolicyVersion() != Version {
 		errorList.AddStringf("invalid version for boolean policy (got %q)", p.GetPolicyVersion())
@@ -18,22 +42,29 @@ func Validate(p *storage.Policy) error {
 		errorList.AddString("no name specified")
 	}
 	for _, section := range p.GetPolicySections() {
-		errorList.AddError(validatePolicySection(section))
+		errorList.AddError(validatePolicySection(section, configuration))
 	}
 	return errorList.ToError()
 }
 
 // validatePolicySection validates the format of a policy section
-func validatePolicySection(s *storage.PolicySection) error {
+func validatePolicySection(s *storage.PolicySection, configuration *validateConfiguration) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
 
 	seenFields := set.NewStringSet()
 	for _, g := range s.GetPolicyGroups() {
-		m, ok := fieldsToQB[g.GetFieldName()]
-		if !ok {
+		m, err := findFieldMetadata(g.GetFieldName(), configuration)
+		switch err {
+		case nil:
+			// All good, proceed
+		case errNoSuchField:
 			errorList.AddStringf("policy criteria name %q is invalid", g.GetFieldName())
 			continue
+		default:
+			errorList.AddWrapf(err, "failed to resolve metadata for field %q", g.GetFieldName())
+			continue
 		}
+
 		if len(g.GetValues()) == 0 {
 			errorList.AddStringf("no values for field %q", g.GetFieldName())
 		}

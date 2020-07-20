@@ -1,6 +1,7 @@
 import groups.BAT
 import groups.Integration
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Deployment
 import org.junit.experimental.categories.Category
@@ -158,15 +159,18 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify CVE snoozing applies to build time detection"() {
         given:
         "Create policy looking for a specific CVE applying to build time"
-        PolicyOuterClass.Policy policy = PolicyService.policyClient.postPolicy(
-                PolicyOuterClass.Policy.newBuilder()
-                        .setName("Matching CVE (CVE-2019-14697)")
-                        .addLifecycleStages(LifecycleStage.BUILD)
-                        .addCategories("Testing")
-                        .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
-                        .setFields(
-                            PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-14697").build()
+        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+                .setName("Matching CVE (CVE-2019-14697)")
+                .addLifecycleStages(LifecycleStage.BUILD)
+                .addCategories("Testing")
+                .setSeverity(PolicyOuterClass.Severity.HIGH_SEVERITY)
+                .setFields(
+                        PolicyOuterClass.PolicyFields.newBuilder().setCve("CVE-2019-14697").build()
                 ).build()
+        policy = PolicyService.policyClient.postPolicy(
+                PolicyServiceOuterClass.PostPolicyRequest.newBuilder()
+                    .setPolicy(policy)
+                    .build()
         )
         def scanResults = Services.requestBuildImageScan("docker.io", "docker/kube-compose-controller", "v0.4.23")
         assert scanResults.alertsList.find { x -> x.policy.id == policy.id } != null

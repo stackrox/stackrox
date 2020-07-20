@@ -551,6 +551,35 @@ class PolicyConfigurationTest extends BaseSpecification {
     }
 
     @Unroll
+    @Category([BAT, SMOKE])
+    def "Verify env var policy configuration for source #envVarSource fails validation"() {
+        expect:
+        assert !CreatePolicyService.createNewPolicy(Policy.newBuilder()
+                        .setName("TestEnvironmentPolicy")
+                        .setDescription("TestEnvironment")
+                        .setRationale("TestEnvironment")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setEnv(KeyValuePolicy.newBuilder()
+                                        .setKey("KEY")
+                                        .setValue("VALUE")
+                                        .setEnvVarSource(envVarSource)
+                                        .build()))
+                        .build())
+
+        where:
+        "Data inputs are :"
+        envVarSource | _
+        DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.SECRET_KEY | _
+        DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.CONFIG_MAP_KEY | _
+        DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.FIELD | _
+        DeploymentOuterClass.ContainerConfig.EnvironmentConfig.EnvVarSource.RESOURCE_FIELD | _
+    }
+
+    @Unroll
     @Category(BAT)
     def "Verify policy scopes are triggered appropriately: #policyName"() {
         when:

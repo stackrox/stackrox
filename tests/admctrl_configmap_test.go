@@ -64,7 +64,9 @@ func TestAdmissionControllerConfigMap(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	newPolicy, err = policyServiceClient.PostPolicy(ctx, newPolicy)
+	newPolicy, err = policyServiceClient.PostPolicy(ctx, &v1.PostPolicyRequest{
+		Policy: newPolicy,
+	})
 	require.NoError(t, err, "failed to create new policy")
 
 	defer func() {

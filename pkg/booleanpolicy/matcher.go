@@ -52,8 +52,8 @@ type sectionAndEvaluator struct {
 }
 
 // BuildDeploymentWithProcessMatcher builds a DeploymentWithProcessMatcher.
-func BuildDeploymentWithProcessMatcher(p *storage.Policy) (DeploymentWithProcessMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY)
+func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentWithProcessMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +87,8 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy) (DeploymentWithProcess
 
 // BuildDeploymentMatcher builds a matcher for deployments against the given policy,
 // which must be a boolean policy.
-func BuildDeploymentMatcher(p *storage.Policy) (DeploymentMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY)
+func BuildDeploymentMatcher(p *storage.Policy, options ...ValidateOption) (DeploymentMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +101,8 @@ func BuildDeploymentMatcher(p *storage.Policy) (DeploymentMatcher, error) {
 
 // BuildImageMatcher builds a matcher for images against the given policy,
 // which must be a boolean policy.
-func BuildImageMatcher(p *storage.Policy) (ImageMatcher, error) {
-	sectionsAndEvals, err := getSectionsAndEvals(&imageEvalFactory, p, storage.LifecycleStage_BUILD)
+func BuildImageMatcher(p *storage.Policy, options ...ValidateOption) (ImageMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&imageEvalFactory, p, storage.LifecycleStage_BUILD, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ func BuildImageMatcher(p *storage.Policy) (ImageMatcher, error) {
 	}, nil
 }
 
-func getSectionsAndEvals(factory *evaluator.Factory, p *storage.Policy, stage storage.LifecycleStage) ([]sectionAndEvaluator, error) {
-	if err := Validate(p); err != nil {
+func getSectionsAndEvals(factory *evaluator.Factory, p *storage.Policy, stage storage.LifecycleStage, options ...ValidateOption) ([]sectionAndEvaluator, error) {
+	if err := Validate(p, options...); err != nil {
 		return nil, err
 	}
 

@@ -40,7 +40,7 @@ type policyValidator struct {
 	imageMatcherBuilder      matcher.Builder
 }
 
-func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy) error {
+func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	s.removeEnforcementsForMissingLifecycles(policy)
 
 	additionalValidators := []validationFunc{
@@ -48,7 +48,7 @@ func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy) 
 			return s.validateNotifiers(ctx, policy)
 		},
 	}
-	return s.internalValidate(policy, additionalValidators)
+	return s.internalValidate(policy, additionalValidators, options...)
 }
 
 // validateImport does not validate notifiers.  Invalid notifiers will be stripped out.
@@ -56,14 +56,18 @@ func (s *policyValidator) validateImport(policy *storage.Policy) error {
 	return s.internalValidate(policy, nil)
 }
 
-func (s *policyValidator) internalValidate(policy *storage.Policy, additionalValidators []validationFunc) error {
+// internalValidate validates policy.
+//
+// additionalValidators should be used for 'shallow' extra validations, e.g., checking if a name satisfies a certain pattern.
+// options are propagated to the booleanpolicy validation engine.
+func (s *policyValidator) internalValidate(policy *storage.Policy, additionalValidators []validationFunc, options ...booleanpolicy.ValidateOption) error {
 	s.removeEnforcementsForMissingLifecycles(policy)
 
 	errorList := errorhelpers.NewErrorList("policy invalid")
 	errorList.AddError(s.validateVersion(policy))
 	errorList.AddError(s.validateName(policy))
 	errorList.AddError(s.validateDescription(policy))
-	errorList.AddError(s.validateCompilableForLifecycle(policy))
+	errorList.AddError(s.validateCompilableForLifecycle(policy, options...))
 	errorList.AddError(s.validateSeverity(policy))
 	errorList.AddError(s.validateCategories(policy))
 	errorList.AddError(s.validateScopes(policy))
@@ -99,20 +103,20 @@ func (s *policyValidator) validateDescription(policy *storage.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy) error {
+func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if len(policy.GetLifecycleStages()) == 0 {
 		return errors.New("a policy must apply to at least one lifecycle stage")
 	}
 
 	errorList := errorhelpers.NewErrorList("error validating lifecycle stage")
 	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(s.compilesForBuildTime(policy))
+		errorList.AddError(s.compilesForBuildTime(policy, options...))
 	}
 	if policies.AppliesAtDeployTime(policy) {
-		errorList.AddError(s.compilesForDeployTime(policy))
+		errorList.AddError(s.compilesForDeployTime(policy, options...))
 	}
 	if policies.AppliesAtRunTime(policy) {
-		errorList.AddError(s.compilesForRunTime(policy))
+		errorList.AddError(s.compilesForRunTime(policy, options...))
 	}
 	return errorList.ToError()
 }
@@ -245,9 +249,9 @@ func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	return nil
 }
 
-func (s *policyValidator) compilesForBuildTime(policy *storage.Policy) error {
+func (s *policyValidator) compilesForBuildTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if features.BooleanPolicyLogic.Enabled() {
-		_, err := booleanpolicy.BuildImageMatcher(policy)
+		_, err := booleanpolicy.BuildImageMatcher(policy, options...)
 		if err != nil {
 			return errors.Wrap(err, "policy configuration is invalid for build time")
 		}
@@ -263,9 +267,9 @@ func (s *policyValidator) compilesForBuildTime(policy *storage.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) compilesForDeployTime(policy *storage.Policy) error {
+func (s *policyValidator) compilesForDeployTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if features.BooleanPolicyLogic.Enabled() {
-		_, err := booleanpolicy.BuildDeploymentMatcher(policy)
+		_, err := booleanpolicy.BuildDeploymentMatcher(policy, options...)
 		if err != nil {
 			return errors.Wrap(err, "policy configuration is invalid for deploy time")
 		}
@@ -288,9 +292,9 @@ func (s *policyValidator) compilesForDeployTime(policy *storage.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) compilesForRunTime(policy *storage.Policy) error {
+func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...booleanpolicy.ValidateOption) error {
 	if features.BooleanPolicyLogic.Enabled() {
-		_, err := booleanpolicy.BuildDeploymentMatcher(policy)
+		_, err := booleanpolicy.BuildDeploymentMatcher(policy, options...)
 		if err != nil {
 			return errors.Wrap(err, "policy configuration is invalid for runtime")
 		}

@@ -1,6 +1,7 @@
 package booleanpolicy
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -57,9 +58,9 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "Environment Variable",
-			valid:   []string{"CONFIG_MAP_KEY=ENV=a", "SECRET_KEY=a=1", "UNSET=ENV=a", "SECRET_KEY=e0=.", "SECRET_KEY=a==", "SECRET_KEY==", "=ENV=a", "==", "==="},
-			invalid: []string{"", "a=", "a=b", "=", "=1", "SECRET_KEY", "a=ENV=a", "a=="},
-			r:       environmentVariableWithSourceRegex,
+			valid:   []string{"UNKNOWN=ENV=a", "UNSET=ENV=a", "RAW=ENV=a", "CONFIG_MAP_KEY=key=", "FIELD=key=", "RESOURCE_FIELD=key=", "SECRET_KEY==", "=ENV=a", "==", "==="},
+			invalid: []string{"", "a=", "a=b", "=", "=1", "SECRET_KEY", "a=ENV=a", "a==", "CONFIG_MAP_KEY=ENV=a", "SECRET_KEY=a=1", "FIELD=ENV=a", "RESOURCE_FIELD=ENV=a", "SECRET_KEY=e0=.", "SECRET_KEY=a=="},
+			r:       environmentVariableWithSourceStrictRegex,
 		},
 		{
 			name:    "String",
@@ -108,6 +109,123 @@ func (s *PolicyValueValidator) TestRegex() {
 				assert.Equal(t, false, c.r.MatchString(invalid), invalid)
 			}
 		})
+	}
+}
+
+func TestEnvKeyValuePolicyValidation(t *testing.T) {
+	for _, p := range []storage.ContainerConfig_EnvironmentConfig_EnvVarSource{
+		storage.ContainerConfig_EnvironmentConfig_UNSET,
+		storage.ContainerConfig_EnvironmentConfig_UNKNOWN,
+		storage.ContainerConfig_EnvironmentConfig_RAW,
+	} {
+		assert.NoError(t, Validate(&storage.Policy{
+			Name:          "some-policy",
+			PolicyVersion: Version,
+			Fields: &storage.PolicyFields{
+				Env: &storage.KeyValuePolicy{
+					Key:          "key",
+					Value:        "value",
+					EnvVarSource: p,
+				},
+			},
+			PolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.EnvironmentVariable,
+							Values: []*storage.PolicyValue{
+								{
+									Value: fmt.Sprintf("%s=key=value", p),
+								},
+							},
+						},
+					},
+				},
+			},
+		}, ValidateEnvVarSourceRestrictions()))
+
+		assert.NoError(t, Validate(&storage.Policy{
+			Name:          "some-policy",
+			PolicyVersion: Version,
+			Fields: &storage.PolicyFields{
+				Env: &storage.KeyValuePolicy{
+					Key:          "key",
+					EnvVarSource: p,
+				},
+			},
+			PolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.EnvironmentVariable,
+							Values: []*storage.PolicyValue{
+								{
+									Value: fmt.Sprintf("%s=key=", p),
+								},
+							},
+						},
+					},
+				},
+			},
+		}, ValidateEnvVarSourceRestrictions()))
+	}
+
+	for _, p := range []storage.ContainerConfig_EnvironmentConfig_EnvVarSource{
+		storage.ContainerConfig_EnvironmentConfig_SECRET_KEY,
+		storage.ContainerConfig_EnvironmentConfig_CONFIG_MAP_KEY,
+		storage.ContainerConfig_EnvironmentConfig_FIELD,
+		storage.ContainerConfig_EnvironmentConfig_RESOURCE_FIELD,
+	} {
+		assert.Error(t, Validate(&storage.Policy{
+			Name:          "some-policy",
+			PolicyVersion: Version,
+			Fields: &storage.PolicyFields{
+				Env: &storage.KeyValuePolicy{
+					Key:          "key",
+					Value:        "value",
+					EnvVarSource: p,
+				},
+			},
+			PolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.EnvironmentVariable,
+							Values: []*storage.PolicyValue{
+								{
+									Value: fmt.Sprintf("%s=key=value", p),
+								},
+							},
+						},
+					},
+				},
+			},
+		}, ValidateEnvVarSourceRestrictions()))
+
+		assert.NoError(t, Validate(&storage.Policy{
+			Name:          "some-policy",
+			PolicyVersion: Version,
+			Fields: &storage.PolicyFields{
+				Env: &storage.KeyValuePolicy{
+					Key:          "key",
+					EnvVarSource: p,
+				},
+			},
+			PolicySections: []*storage.PolicySection{
+				{
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.EnvironmentVariable,
+							Values: []*storage.PolicyValue{
+								{
+									Value: fmt.Sprintf("%s=key=", p),
+								},
+							},
+						},
+					},
+				},
+			},
+		}, ValidateEnvVarSourceRestrictions()))
 	}
 }
 
