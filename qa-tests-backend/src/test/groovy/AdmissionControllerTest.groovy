@@ -20,6 +20,7 @@ import spock.lang.Shared
 import spock.lang.Timeout
 import spock.lang.Unroll
 import util.Env
+import util.Helpers
 import util.Timer
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -141,7 +142,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        sleep 5000
+        Helpers.sleepWithRetryBackoff(5000)
 
         then:
         "Run deployment request"
@@ -215,7 +216,7 @@ class AdmissionControllerTest extends BaseSpecification {
                         .build()
         )
         // Maximum time to wait for propagation to sensor
-        sleep 5000
+        Helpers.sleepWithRetryBackoff(5000)
 
         def deployment = new Deployment()
                 .setName("admission-suppress-cve")
@@ -224,13 +225,13 @@ class AdmissionControllerTest extends BaseSpecification {
         def created = orchestrator.createDeploymentNoWait(deployment)
         assert !created
         // CVE needs to be saved into the DB
-        sleep 1000
+        Helpers.sleepWithRetryBackoff(1000)
 
         when:
         "Suppress CVE and check that the deployment can now launch"
         CVEService.suppressCVE("CVE-2019-3462")
         // Allow propagation of CVE suppression and invalidation of cache
-        sleep 3000
+        Helpers.sleepWithRetryBackoff(3000)
 
         created = orchestrator.createDeploymentNoWait(deployment)
         assert created
@@ -255,7 +256,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Unsuppress CVE"
         CVEService.unsuppressCVE("CVE-2019-3462")
         // Allow propagation of CVE suppression and invalidation of cache
-        sleep 3000
+        Helpers.sleepWithRetryBackoff(3000)
 
         then:
         "Verify unsuppressing lets the deployment be blocked again"
@@ -297,7 +298,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        sleep 5000
+        Helpers.sleepWithRetryBackoff(5000)
 
         and:
         "Create the deployment with a harmless image"
@@ -367,7 +368,7 @@ class AdmissionControllerTest extends BaseSpecification {
         Services.updatePolicy(scopedLatestTagPolicy)
 
         // Maximum time to wait for propagation to sensor
-        sleep 5000
+        Helpers.sleepWithRetryBackoff(5000)
 
         then:
         "Create a deployment with a latest tag"
@@ -433,7 +434,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         assert ClusterService.updateAdmissionController(ac)
         // Maximum time to wait for propagation to sensor
-        sleep 5000
+        Helpers.sleepWithRetryBackoff(5000)
 
         and:
         "Start a chaos monkey thread that kills _all_ ready admission control replicas with a short grace period"
@@ -448,7 +449,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Verify deployment can be modified reliably"
         for (int i = 0; i < 45; i++) {
-            sleep 1000
+            Helpers.sleepWithRetryBackoff(1000)
             deployment.addAnnotation("qa.stackrox.io/iteration", "${i}")
             assert orchestrator.updateDeploymentNoWait(deployment)
         }
@@ -515,7 +516,7 @@ class AdmissionControllerTest extends BaseSpecification {
                             orchestrator.deletePod(it.metadata.namespace, it.metadata.name, gracePeriod)
                         }
                     }
-                    sleep 1000
+                    Helpers.sleepWithRetryBackoff(1000)
                 }
             }
         }
@@ -534,7 +535,7 @@ class AdmissionControllerTest extends BaseSpecification {
         void waitForReady() {
             def allReady = false
             while (!allReady) {
-                sleep 1000
+                Helpers.sleepWithRetryBackoff(1000)
 
                 def admCtrlPods = orchestrator.getPods(Constants.STACKROX_NAMESPACE, ADMISSION_CONTROLLER_APP_NAME)
                 if (admCtrlPods.size() < 3) {

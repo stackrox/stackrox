@@ -56,6 +56,14 @@ class Helpers {
         retryAttempt = 0
     }
 
+    static int getAttemptCount() {
+        return retryAttempt + 1
+    }
+
+    static void sleepWithRetryBackoff(int milliseconds) {
+        sleep milliseconds * getAttemptCount()
+    }
+
     static boolean containsNoWhitespace(Object ignored, String baseString, String subString) {
         return baseString.replaceAll("\\s", "").contains(subString.replaceAll("\\s", ""))
     }
