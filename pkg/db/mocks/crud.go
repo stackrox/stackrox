@@ -152,6 +152,34 @@ func (mr *MockCrudMockRecorder) UpsertMany(msgs interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockCrud)(nil).UpsertMany), msgs)
 }
 
+// UpsertWithID mocks base method
+func (m *MockCrud) UpsertWithID(id string, msg proto.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertWithID", id, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertWithID indicates an expected call of UpsertWithID
+func (mr *MockCrudMockRecorder) UpsertWithID(id, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertWithID", reflect.TypeOf((*MockCrud)(nil).UpsertWithID), id, msg)
+}
+
+// UpsertManyWithIDs mocks base method
+func (m *MockCrud) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertManyWithIDs", ids, msgs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertManyWithIDs indicates an expected call of UpsertManyWithIDs
+func (mr *MockCrudMockRecorder) UpsertManyWithIDs(ids, msgs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertManyWithIDs", reflect.TypeOf((*MockCrud)(nil).UpsertManyWithIDs), ids, msgs)
+}
+
 // Delete mocks base method
 func (m *MockCrud) Delete(id string) error {
 	m.ctrl.T.Helper()

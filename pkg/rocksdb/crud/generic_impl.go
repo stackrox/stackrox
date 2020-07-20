@@ -119,8 +119,12 @@ func (c *crudImpl) addToWriteBatch(batch *gorocksdb.WriteBatch, msg proto.Messag
 		return errors.Wrap(err, "marshaling message")
 	}
 	nonPrefixedID := c.keyFunc(msg)
-	c.addKeysToIndex(batch, nonPrefixedID)
-	batch.Put(c.getPrefixedKeyBytes(nonPrefixedID), data)
+	return c.addKVToWriteBatch(batch, nonPrefixedID, data)
+}
+
+func (c *crudImpl) addKVToWriteBatch(batch *gorocksdb.WriteBatch, id []byte, data []byte) error {
+	c.addKeysToIndex(batch, id)
+	batch.Put(c.getPrefixedKeyBytes(id), data)
 	return nil
 }
 
@@ -154,6 +158,60 @@ func (c *crudImpl) UpsertMany(msgs []proto.Message) error {
 
 	for _, msg := range msgs {
 		if err := c.addToWriteBatch(batch, msg); err != nil {
+			return errors.Wrap(err, "adding to write batch")
+		}
+	}
+
+	if err := c.db.Write(defaultWriteOptions, batch); err != nil {
+		return errors.Wrap(err, "writing batch")
+	}
+	return nil
+}
+
+func (c *crudImpl) UpsertWithID(id string, msg proto.Message) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
+	batch := gorocksdb.NewWriteBatch()
+	defer batch.Destroy()
+
+	data, err := proto.Marshal(msg)
+	if err != nil {
+		return errors.Wrap(err, "marshaling message")
+	}
+
+	if err := c.addKVToWriteBatch(batch, []byte(id), data); err != nil {
+		return errors.Wrap(err, "adding to write batch")
+	}
+
+	if err := c.db.Write(defaultWriteOptions, batch); err != nil {
+		return errors.Wrap(err, "writing to DB")
+	}
+	return nil
+}
+
+func (c *crudImpl) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
+	if len(ids) != len(msgs) {
+		return errors.Errorf("%s: length(ids) %d does not match len(msgs) %d", c.prefix, len(ids), len(msgs))
+	}
+
+	batch := gorocksdb.NewWriteBatch()
+	defer batch.Destroy()
+
+	for i, msg := range msgs {
+		data, err := proto.Marshal(msg)
+		if err != nil {
+			return errors.Wrap(err, "marshaling message")
+		}
+
+		if err := c.addKVToWriteBatch(batch, []byte(ids[i]), data); err != nil {
 			return errors.Wrap(err, "adding to write batch")
 		}
 	}

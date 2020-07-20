@@ -115,6 +115,14 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	s.Equal([]int{0}, missingIndices)
 	s.Equal([]proto.Message{alert2}, msgs)
 
+	s.underlyingDB.EXPECT().UpsertWithID(alert1ID, alert1)
+	s.NoError(s.cache.UpsertWithID(alert1ID, alert1))
+
+	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
+	s.NoError(err)
+	s.Nil(missingIndices)
+	s.Equal([]proto.Message{alert1, alert2}, msgs)
+
 	s.underlyingDB.EXPECT().UpsertMany([]proto.Message{alert1, alert2})
 	s.NoError(s.cache.UpsertMany([]proto.Message{alert1, alert2}))
 
@@ -122,4 +130,15 @@ func (s *CacheTestSuite) TestBulkOperations() {
 	s.NoError(err)
 	s.Nil(missingIndices)
 	s.Equal([]proto.Message{alert1, alert2}, msgs)
+
+	cloned1 := alert1.Clone()
+	cloned1.Tags = []string{"new tags"}
+
+	s.underlyingDB.EXPECT().UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2})
+	s.NoError(s.cache.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{cloned1, alert2}))
+
+	msgs, missingIndices, err = s.cache.GetMany([]string{alert1ID, alert2ID})
+	s.NoError(err)
+	s.Nil(missingIndices)
+	s.Equal([]proto.Message{cloned1, alert2}, msgs)
 }

@@ -2,6 +2,7 @@ package mapcache
 
 import (
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -133,6 +134,34 @@ func (c *cacheImpl) UpsertMany(msgs []proto.Message) error {
 
 	for _, msg := range msgs {
 		c.addNoLock(msg)
+	}
+	return nil
+}
+
+func (c *cacheImpl) UpsertWithID(id string, msg proto.Message) error {
+	if err := c.db.UpsertWithID(id, msg); err != nil {
+		return err
+	}
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.cache[id] = proto.Clone(msg)
+	return nil
+}
+
+func (c *cacheImpl) UpsertManyWithIDs(ids []string, msgs []proto.Message) error {
+	if len(ids) != len(msgs) {
+		return errors.Errorf("length(ids) %d does not match len(msgs) %d", len(ids), len(msgs))
+	}
+
+	if err := c.db.UpsertManyWithIDs(ids, msgs); err != nil {
+		return err
+	}
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	for i, id := range ids {
+		c.cache[id] = proto.Clone(msgs[i])
 	}
 	return nil
 }

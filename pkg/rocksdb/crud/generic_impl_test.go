@@ -20,6 +20,9 @@ var (
 	alert2   = fixtures.GetAlertWithID("2")
 	alert2ID = alert2.GetId()
 
+	alert3   = fixtures.GetAlertWithID("3")
+	alert3ID = alert2.GetId()
+
 	alerts = []*storage.Alert{alert1, alert2}
 )
 
@@ -143,6 +146,33 @@ func (s *CRUDTestSuite) TestUpsertMany() {
 	s.NoError(s.crud.UpsertMany([]proto.Message{localAlert1, localAlert2}))
 }
 
+func (s *CRUDTestSuite) TestUpsertWithID() {
+	s.NoError(s.crud.UpsertWithID(alert1ID, alert1))
+
+	localAlert := alert1.Clone()
+	localAlert.State = storage.ViolationState_RESOLVED
+
+	s.NoError(s.crud.UpsertWithID(alert1ID, localAlert))
+
+	msg, exists, err := s.crud.Get(alert1ID)
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(localAlert, msg)
+}
+
+func (s *CRUDTestSuite) TestUpsertManyWithIDs() {
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID}, []proto.Message{alert1}))
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{alert1, alert2}))
+
+	localAlert1 := alert1.Clone()
+	localAlert1.State = storage.ViolationState_RESOLVED
+
+	localAlert2 := alert2.Clone()
+	localAlert2.State = storage.ViolationState_RESOLVED
+
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{localAlert1, localAlert2}))
+}
+
 func (s *CRUDTestSuite) TestDelete() {
 	s.NoError(s.crud.Upsert(alert1))
 	s.NoError(s.crud.Delete(alert1ID))
@@ -206,6 +236,12 @@ func (s *CRUDTestSuite) TestKeysToIndex() {
 
 	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2}))
 	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
+
+	s.NoError(s.crud.UpsertManyWithIDs([]string{alert1ID, alert2ID}, []proto.Message{alert1, alert2}))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID, alert2ID)
+
+	s.NoError(s.crud.UpsertWithID(alert3ID, alert3))
+	s.verifyKeyWasMarkedForIndexingAndReset(alert3ID)
 
 	s.NoError(s.crud.Delete(alert1ID))
 	s.verifyKeyWasMarkedForIndexingAndReset(alert1ID)

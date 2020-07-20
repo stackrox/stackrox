@@ -16,6 +16,8 @@ type Crud interface {
 	// Modifying functions
 	Upsert(kv proto.Message) error
 	UpsertMany(msgs []proto.Message) error
+	UpsertWithID(id string, msg proto.Message) error
+	UpsertManyWithIDs(ids []string, msgs []proto.Message) error
 
 	Delete(id string) error
 	DeleteMany(ids []string) error
