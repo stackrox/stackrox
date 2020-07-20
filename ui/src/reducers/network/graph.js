@@ -1,5 +1,7 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
+import set from 'lodash/set';
+import get from 'lodash/get';
 import { LOCATION_CHANGE } from 'react-router-redux';
 
 import { types as backendTypes } from 'reducers/network/backend';
@@ -7,6 +9,7 @@ import { types as searchTypes } from 'reducers/network/search';
 
 import { filterModes } from 'Containers/Network/Graph/filterModes';
 import { isNonIsolatedNode } from 'utils/networkGraphUtils';
+import entityTypes from 'constants/entityTypes';
 
 export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,
@@ -14,6 +17,56 @@ export const networkGraphClusters = {
 };
 
 let networkFlowGraphEnabled = false;
+
+const setEdgeMapState = (graph, state, property) => {
+    const newState = { ...state };
+    graph.nodes.forEach((node) => {
+        if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
+            return;
+        }
+        const { id: srcDeploymentId } = node.entity;
+        Object.keys(node.outEdges).forEach((tgtIndex) => {
+            const tgtNode = graph.nodes[tgtIndex];
+            if (tgtNode?.entity?.type !== entityTypes.DEPLOYMENT) {
+                return;
+            }
+            const { id: tgtDeploymentId } = tgtNode.entity;
+            const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
+            if (!newState[mapKey]) newState[mapKey] = {};
+            if (!newState[mapKey][property]) newState[mapKey][property] = [];
+            newState[mapKey][property].push({ source: srcDeploymentId, target: tgtDeploymentId });
+        });
+    });
+    return newState;
+};
+
+const setNodeMapState = (graph, state, propertyConfig) => {
+    const newState = { ...state };
+    const { ingressKey, egressKey } = propertyConfig;
+    graph.nodes.forEach((node) => {
+        if (node?.entity?.type !== entityTypes.DEPLOYMENT) {
+            return;
+        }
+        const { id } = node.entity;
+        if (!newState[id]) newState[id] = {};
+        if (isNonIsolatedNode(node)) newState[id].nonIsolated = true;
+        newState[id][egressKey] = [];
+        Object.keys(node.outEdges).forEach((tgtIndex) => {
+            const tgtNode = graph.nodes[tgtIndex];
+            if (tgtNode?.entity?.type !== entityTypes.DEPLOYMENT) {
+                return;
+            }
+            const { id: tgtDeploymentId } = tgtNode.entity;
+            newState[id][egressKey].push(tgtDeploymentId);
+            if (get(newState, [tgtDeploymentId, ingressKey])) {
+                newState[tgtDeploymentId][ingressKey].push(id);
+            } else {
+                set(newState, [tgtDeploymentId, ingressKey], [id]);
+            }
+        });
+    });
+    return newState;
+};
 
 // Action types
 
@@ -47,8 +100,9 @@ export const actions = {
         flowGraph,
         policyGraph,
     }),
-    setNetworkNodeMap: (policyGraph) => ({
+    setNetworkNodeMap: (flowGraph, policyGraph) => ({
         type: types.SET_NETWORK_NODE_MAP,
+        flowGraph,
         policyGraph,
     }),
     setSelectedNode: (node) => ({ type: types.SET_SELECTED_NODE, node }),
@@ -97,58 +151,25 @@ const networkEdgeMap = (state = null, action) => {
         if (mappingEquals) {
             return state;
         }
-        const newState = {};
-        flowGraph.nodes.forEach((node) => {
-            if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
-                return;
-            }
-            const { id: srcDeploymentId } = node.entity;
-            Object.keys(node.outEdges).forEach((tgtIndex) => {
-                const tgtNode = flowGraph.nodes[tgtIndex];
-                if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
-                    return;
-                }
-                const { id: tgtDeploymentId } = tgtNode.entity;
-                const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
-                if (!newState[mapKey]) newState[mapKey] = {};
-                newState[mapKey].active = true;
-            });
-        });
-        policyGraph.nodes.forEach((node) => {
-            if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
-                return;
-            }
-            const { id: srcDeploymentId } = node.entity;
-            Object.keys(node.outEdges).forEach((tgtIndex) => {
-                const tgtNode = policyGraph.nodes[tgtIndex];
-                if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
-                    return;
-                }
-                const { id: tgtDeploymentId } = tgtNode.entity;
-                const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
-                if (!newState[mapKey]) newState[mapKey] = {};
-                newState[mapKey].allowed = true;
-            });
-        });
+        let newState = {};
+        newState = setEdgeMapState(flowGraph, newState, 'active');
+        newState = setEdgeMapState(policyGraph, newState, 'allowed');
         return newState;
     }
     return state;
 };
 
-// to determine whether nodes are nonisolated
 const networkNodeMap = (state = {}, action) => {
     if (action.type === types.SET_NETWORK_NODE_MAP) {
-        const { policyGraph } = action;
-        const newState = {};
-        policyGraph.nodes.forEach((node) => {
-            if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
-                return;
-            }
-            const { id } = node.entity;
-            if (isNonIsolatedNode(node)) {
-                if (!newState[id]) newState[id] = {};
-                newState[id].nonIsolated = true;
-            }
+        const { flowGraph, policyGraph } = action;
+        let newState = {};
+        newState = setNodeMapState(flowGraph, newState, {
+            ingressKey: 'ingressActive',
+            egressKey: 'egressActive',
+        });
+        newState = setNodeMapState(policyGraph, newState, {
+            ingressKey: 'ingressAllowed',
+            egressKey: 'egressAllowed',
         });
         return newState;
     }

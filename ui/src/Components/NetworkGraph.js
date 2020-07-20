@@ -204,6 +204,7 @@ const NetworkGraph = ({
             links,
             filterState,
             nodeSideMap,
+            networkNodeMap,
         };
     }
 

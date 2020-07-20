@@ -206,7 +206,10 @@ export const getClasses = (map) => {
  *                            that contains links, filterState, and nodeSideMap
  * @returns {!Object[]}
  */
-export const getEdgesFromNode = (nodeId, { filterState, links, nodeSideMap }) => {
+export const getEdgesFromNode = (
+    nodeId,
+    { filterState, links, nodeSideMap, hoveredNode, selectedNode }
+) => {
     const edgeMap = {};
     const edges = [];
     const inAllowedState = filterState === filterModes.allowed;
@@ -226,6 +229,10 @@ export const getEdgesFromNode = (nodeId, { filterState, links, nodeSideMap }) =>
                 nonIsolated: isBetweenNonIsolated && (!isActive || inAllowedState),
                 // an edge is disallowed when it is active but is not allowed
                 disallowed: !inAllowedState && isDisallowed,
+                // if the currently hovered node is a target for this link (ingress)
+                ingress: hoveredNode?.id === target || selectedNode?.id === target,
+                // if the currently hovered node is a source for this link (egress)
+                egress: hoveredNode?.id === source || selectedNode?.id === source,
             });
             const id = [source, target].sort().join('--');
             if (!edgeMap[id]) {
@@ -287,11 +294,11 @@ export const getEdgesFromNode = (nodeId, { filterState, links, nodeSideMap }) =>
  * @param {!Object[]} filteredData list of deployments
  * @param {!Object} configObj config object of the current network graph state
  *                            that contains links, filterState, and nodeSideMap,
- *                            hoveredNode, and selectedNode
+ *                            networkNodeMap, hoveredNode, and selectedNode
  * @returns {!Object[]}
  */
 export const getDeploymentList = (filteredData, configObj) => {
-    const { hoveredNode, selectedNode, filterState } = configObj;
+    const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
     const deploymentList = filteredData.map((datum) => {
         const { entity, ...datumProps } = datum;
         const { deployment, ...entityProps } = entity;
@@ -316,6 +323,27 @@ export const getDeploymentList = (filteredData, configObj) => {
             nonIsolated: isNonIsolated,
         });
 
+        let ingressCount = 0;
+        let egressCount = 0;
+        const entityData = networkNodeMap[entity.id];
+        if (entityData) {
+            const { ingressAllowed, ingressActive, egressAllowed, egressActive } = entityData;
+            const ingressAllowedCount = ingressAllowed ? ingressAllowed.length : 0;
+            const ingressActiveCount = ingressActive ? ingressActive.length : 0;
+            const egressAllowedCount = egressAllowed ? egressAllowed.length : 0;
+            const egressActiveCount = egressActive ? egressActive.length : 0;
+            if (filterState === filterModes.allowed) {
+                ingressCount = ingressAllowedCount;
+                egressCount = egressAllowedCount;
+            } else if (filterState === filterModes.active) {
+                ingressCount = ingressActiveCount;
+                egressCount = egressActiveCount;
+            } else {
+                egressCount = egressAllowedCount + egressActiveCount;
+                ingressCount = ingressAllowedCount + ingressActiveCount;
+            }
+        }
+
         const deploymentNode = {
             data: {
                 ...datumProps,
@@ -324,6 +352,8 @@ export const getDeploymentList = (filteredData, configObj) => {
                 parent: namespace,
                 edges,
                 deploymentId: entityProps.id,
+                ingressCount,
+                egressCount,
             },
             classes,
         };
