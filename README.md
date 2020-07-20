@@ -212,8 +212,28 @@ export RELEASE_COMMIT="$(git rev-parse HEAD)"
 echo -e "Preparing to release:\n$(git log -n 1 ${RELEASE_COMMIT})"
 ```
 
-### Create a Tag
+### Create a Release Candidate
+
+In order to test the release branch in CI you will need to apply a `-rc.x` tag
+on the release branch. For example, for `-rc.1`:
+
 ```bash
+export RC_VERSION=1
+git checkout release/${RELEASE_BRANCH}
+git tag -a -m "v${RELEASE_VERSION}-rc.${RC_VERSION}" "${RELEASE_VERSION}-rc.${RC_VERSION}"
+git tag -ln "${RELEASE_VERSION}-rc.${RC_VERSION}"
+git push origin "${RELEASE_VERSION}-rc.${RC_VERSION}"
+git push origin release/${RELEASE_BRANCH}
+```
+
+When you push the tag to GitHub, CircleCI will start a build and will push
+the image to docker.io as `stackrox/main:[your-rc-tag]`,
+for example `stackrox/main:2.4.22.0-rc.1`.
+
+### Create a Release
+
+```bash
+git checkout release/${RELEASE_BRANCH}
 git tag -a -m "v${RELEASE_VERSION}" "${RELEASE_VERSION}"
 git tag -ln "${RELEASE_VERSION}"
 git push origin "${RELEASE_VERSION}"
@@ -222,7 +242,7 @@ git push origin release/${RELEASE_BRANCH}
 
 When you push the tag to GitHub, CircleCI will start a build and will push
 the image as `stackrox/main:[your-release-tag]`,
-for example `stackrox/main:1.0` and `stackrox.io/main:1.0`.
+for example `stackrox/main:2.4.22.0` and `stackrox.io/main:2.4.22.0`.
 
 ### Update JIRA release
 *Note: Jira [doesn't have](https://community.atlassian.com/t5/Jira-questions/How-do-I-assign-the-permission-to-create-Versions-to-a/qaq-p/677499)
