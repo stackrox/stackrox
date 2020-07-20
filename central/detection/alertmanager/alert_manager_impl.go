@@ -104,69 +104,6 @@ func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 	return processes[len(processes)-1].GetSignal().GetTime()
 }
 
-// This depends on the fact that we sort process indicators in increasing order of timestamp.
-func getMostRecentProcessTimestampInAlerts(alerts ...*storage.Alert) (ts *ptypes.Timestamp) {
-	for _, alert := range alerts {
-		processes := alert.GetProcessViolation().GetProcesses()
-		if len(processes) == 0 {
-			continue
-		}
-		lastTimeStampInViolation := lastTimestamp(processes)
-		if ts.Compare(lastTimeStampInViolation) < 0 {
-			ts = lastTimeStampInViolation
-		}
-	}
-	return
-}
-
-// If a user has resolved some process indicators from a particular alert, we don't want to display them
-// if an alert was violated by a new indicator. This function trims old resolved processes from an alert.
-// It returns a bool indicating whether the alert contained only resolved processes -- in which case
-// we don't want to generate an alert at all.
-func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(ctx context.Context, alert *storage.Alert) (isFullyResolved bool) {
-	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
-		return false
-	}
-
-	q := search.NewQueryBuilder().
-		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
-		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
-		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
-		ProtoQuery()
-
-	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(ctx, q)
-	// If there's an error, just log it, and assume there was no previously resolved alert.
-	if err != nil {
-		log.Errorf("Failed to retrieve resolved runtime alerts corresponding to %+v: %s", alert, err)
-		return false
-	}
-	if len(oldRunTimeAlerts) == 0 {
-		return false
-	}
-
-	mostRecentResolvedTimestamp := getMostRecentProcessTimestampInAlerts(oldRunTimeAlerts...)
-
-	var newProcessFound bool
-	processes := alert.GetProcessViolation().GetProcesses()
-	if len(processes) > 0 {
-		filtered := processes[:0]
-		for _, process := range processes {
-			if process.GetSignal().GetTime().Compare(mostRecentResolvedTimestamp) > 0 {
-				newProcessFound = true
-				filtered = append(filtered, process)
-			}
-		}
-		alert.ProcessViolation.Processes = filtered
-		if features.BooleanPolicyLogic.Enabled() {
-			printer.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
-		} else {
-			builders.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
-		}
-	}
-	isFullyResolved = !newProcessFound
-	return
-}
-
 // Some processes in the old alert might have been deleted from the process store because of our pruning,
 // which means they only exist in the old alert, and will not be in the new generated alert.
 // We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
@@ -253,11 +190,6 @@ func (d *alertManagerImpl) mergeManyAlerts(ctx context.Context, presentAlerts []
 
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range presentAlerts {
-		// Don't generate a new alert if it was a resolved runtime alerts.
-		isFullyResolvedRuntimeAlert := d.trimResolvedProcessesFromRuntimeAlert(ctx, alert)
-		if isFullyResolvedRuntimeAlert {
-			continue
-		}
 		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
 			mergedAlert := mergeAlerts(matchingOld, alert)
 			if mergedAlert != matchingOld && !proto.Equal(mergedAlert, matchingOld) {

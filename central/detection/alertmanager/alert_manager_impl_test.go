@@ -167,57 +167,6 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	suite.NoError(err, "update should succeed")
 }
 
-func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*storage.Alert) {
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
-		testutils.PredMatcher("query for violation state, deployment, policy", queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
-		Return(alerts, nil)
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getAlerts()[0]))
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
-	suite.makeAlertsMockReturn()
-	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := alert.Clone()
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
-	suite.Equal(clonedAlert, alert)
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() {
-	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(nowProcess)))
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
-	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
-	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := alert.Clone()
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
-	suite.Equal(clonedAlert, alert)
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithOldAndResolved() {
-	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(nowProcess)))
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert() {
-	suite.makeAlertsMockReturn(getFakeRuntimeAlert(nowProcess), getFakeRuntimeAlert(twoDaysAgoProcess, nowProcess))
-	suite.True(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, getFakeRuntimeAlert(yesterdayProcess)))
-}
-
-func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
-	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
-	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
-	clonedAlert := alert.Clone()
-	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(suite.ctx, alert))
-	suite.NotEqual(clonedAlert, alert)
-	suite.Len(alert.GetProcessViolation().GetProcesses(), 1)
-	suite.Equal(alert.GetProcessViolation().GetProcesses()[0], nowProcess)
-}
-
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 	envIsolator := testutils.NewEnvIsolator(t)
 	defer envIsolator.RestoreAll()
