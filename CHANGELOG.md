@@ -8,6 +8,12 @@ All notable changes to this project that require documentation updates will be d
 - UI: Omit Cluster column from Deployments list when entity context includes Namespace (ROX-5207)
 - The help output of `roxctl` commands mentions implicit defaults for optional flags.
 - UI: Fix a regression, where CSVs for a Compliance standard, or for a Cluster viewed in Compliance, were not scoped to the particular filter (ROX-5179)
+- The following command line flags of `roxctl` have been deprecated:
+  - Flag `--image` for `roxctl sensor generate`. Use `--main-image-repository` instead.
+  - Flag `--collector-image` for `roxctl sensor generate`. Use `--collector-image-repository` instead.
+  - Flag `--admission-controller` for `roxctl sensor generate k8s`. Use `--create-admission-controller` instead.
+
+  The old flags are currently still supported but they are scheduled for removal in a future version of `roxctl`.
 
 ## [46.0]
 - Added the following REST APIs:

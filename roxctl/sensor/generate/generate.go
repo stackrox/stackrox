@@ -21,14 +21,22 @@ import (
 )
 
 const (
-	warningDeprecatedFlagMonitoringEndpointUsed = `WARNING: The flag --monitoring-endpoint has been deprecated and has no impact. The flag will
-be removed in a future version of roxctl. Remove it from your invocations of roxctl to avoid future breakages.
-`
+	warningDeprecatedImageFlagSet = `WARNING: The --image flag has been renamed to --main-image-repository and will be removed in future versions of roxctl.
+Please use --main-image-repository to suppress this warning text and avoid breakages in the future.`
 
-	warningDefaultForCreateUpgraderSaWillChange = `WARNING: The default for the --create-upgrader-sa flag will change to true in future
-versions of roxctl. If you want to preserve the old behavior, please change your
-invocations to explicitly specify --create-upgrader-sa=false.
-`
+	errorDeprecatedAndNewImageFlagSet = `It is illegal to specify both the --image and --main-image-repository flags.
+Please use --main-image-repository exclusively in all invocations.`
+
+	warningDeprecatedCollectorImageFlagSet = `WARNING: The --collector-image flag has been renamed to --collector-image-repository and will be removed in future versions of roxctl.
+Please use --collector-image-repository to suppress this warning text and avoid breakages in the future.`
+	errorDeprecatedAndNewCollectorImageFlagSet = `It is illegal to specify both the --collector-image and --collector-image-repository flags.
+Please use --collector-image-repository exclusively in all invocations.`
+
+	warningDeprecatedFlagMonitoringEndpointUsed = `WARNING: The flag --monitoring-endpoint has been deprecated and has no impact. It will be removed in a future version of roxctl.
+Remove it from your invocations of roxctl to avoid future breakages.`
+
+	warningDefaultForCreateUpgraderSaWillChange = `WARNING: The default for the --create-upgrader-sa flag will change to true in future versions of roxctl.
+If you want to preserve the old behavior, please change your invocations to explicitly specify --create-upgrader-sa=false.`
 )
 
 var (
@@ -95,20 +103,42 @@ func Command() *cobra.Command {
 		Run: func(c *cobra.Command, _ []string) {
 			_ = c.Help()
 		},
-		PersistentPreRun: func(c *cobra.Command, _ []string) {
-			// Print deprecatation warnings. Note that we print out an additional newline in order to seperate
+		PersistentPreRunE: func(c *cobra.Command, _ []string) error {
+			// Print deprecation warnings. Note that we print out an additional newline in order to seperate
 			// the warning from the rest of the program output.
 
 			// Can be removed in a future release.
 			if c.Flags().Lookup("monitoring-endpoint").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n", warningDeprecatedFlagMonitoringEndpointUsed)
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedFlagMonitoringEndpointUsed)
 			}
 
 			// Migration process for changed default for "--create-upgrader-sa".
 			// Can be removed in a future release.
 			if !c.Flags().Lookup("create-upgrader-sa").Changed {
-				fmt.Fprintf(os.Stderr, "%s\n", warningDefaultForCreateUpgraderSaWillChange)
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDefaultForCreateUpgraderSaWillChange)
 			}
+
+			// Migration process for renaming "--image" parameter to "--main-image-repository".
+			// Can be removed in a future release.
+			if c.PersistentFlags().Lookup("image").Changed && c.PersistentFlags().Lookup("main-image-repository").Changed {
+				fmt.Fprintln(os.Stderr, errorDeprecatedAndNewImageFlagSet)
+				return errors.New("Specified deprecated flag --image and new flag --main-image-repository at the same time")
+			}
+			if c.PersistentFlags().Lookup("image").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedImageFlagSet)
+			}
+
+			// Migration process for renaming "--collector-image" parameter to "--collector-image-repository".
+			// Can be removed in a future release.
+			if c.PersistentFlags().Lookup("collector-image").Changed && c.PersistentFlags().Lookup("collector-image-repository").Changed {
+				fmt.Fprintln(os.Stderr, errorDeprecatedAndNewCollectorImageFlagSet)
+				return errors.New("Specified deprecated flag --collector-image and new flag --collector-image-repository at the same time")
+			}
+			if c.PersistentFlags().Lookup("collector-image").Changed {
+				fmt.Fprintf(os.Stderr, "%s\n\n", warningDeprecatedCollectorImageFlagSet)
+			}
+
+			return nil
 		},
 	}
 
@@ -117,7 +147,11 @@ func Command() *cobra.Command {
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
 	c.PersistentFlags().StringVar(&cluster.MainImage, "image", defaults.MainImageRepo(), "image repo sensor should be deployed with")
+	utils.Must(c.PersistentFlags().MarkHidden("image"))
+	c.PersistentFlags().StringVar(&cluster.MainImage, "main-image-repository", defaults.MainImageRepo(), "image repository sensor should be deployed with")
 	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image", "", "image repo collector should be deployed with (leave blank to use default)")
+	utils.Must(c.PersistentFlags().MarkHidden("collector-image"))
+	c.PersistentFlags().StringVar(&cluster.CollectorImage, "collector-image-repository", "", "image repository collector should be deployed with (leave blank to use default)")
 
 	c.PersistentFlags().StringVar(&monitoringEndpointNoop, "monitoring-endpoint", "", "endpoint for monitoring (DEPRECATED)")
 	utils.Must(c.PersistentFlags().MarkHidden("monitoring-endpoint"))

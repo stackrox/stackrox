@@ -33,6 +33,8 @@ func main() {
 	// we simply add the usage information "(default false)" to our affected boolean flags.
 	AddMissingDefaultsToFlagUsage(c)
 
+	PatchPersistentPreRunHooks(c)
+
 	if err := c.Execute(); err != nil {
 		os.Exit(1)
 	}
