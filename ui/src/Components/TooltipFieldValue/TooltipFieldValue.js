@@ -7,7 +7,7 @@ const TooltipFieldValue = ({ dataTestId, field, value, type }) => {
     if (value === null) return null;
     const textColor = types.includes(type) ? `text-${type}-600` : '';
     return (
-        <div className={textColor} data-testid={dataTestId}>
+        <div className={`leading-normal ${textColor}`} data-testid={dataTestId}>
             <span className="font-700">{field}: </span>
             <span>{value}</span>
         </div>

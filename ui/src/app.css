@@ -1287,7 +1287,7 @@ h6 {
 @import '~tippy.js/dist/tippy.css';
 
 .rox-tooltip-overlay {
-    @apply p-2 text-sm text-center text-base-600 z-10 bg-tertiary-200 rounded border border-tertiary-400;
+    @apply text-sm text-center text-base-600 z-10 bg-tertiary-200 rounded border border-tertiary-400;
 }
 
 .tippy-tooltip {

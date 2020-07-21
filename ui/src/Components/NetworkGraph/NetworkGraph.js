@@ -12,6 +12,7 @@ canvas (no DOM elements). Instead using 'cytoscape-popper' and  special
 configuration of 'tippy.js' instance to position the tooltip. */
 // eslint-disable-next-line no-restricted-imports
 import tippy from 'tippy.js';
+import ReactDOM from 'react-dom';
 
 import { actions as graphActions } from 'reducers/network/graph';
 import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
@@ -30,6 +31,7 @@ import {
 } from 'utils/networkGraphUtils';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
+import TooltipOverlay from 'Components/TooltipOverlay';
 
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
@@ -72,11 +74,7 @@ const NetworkGraph = ({
 
     function makePopperDiv(text) {
         const div = document.createElement('div');
-        // theoretically we can use `TooltipOverlay` component with ReactDOM.createPortal,
-        // yet not clear how to hook React lifecycle into Cytoscape one
-        div.classList.add('rox-tooltip-overlay');
-        div.innerHTML = text;
-        document.body.appendChild(div);
+        ReactDOM.render(<TooltipOverlay>{text}</TooltipOverlay>, div);
         return div;
     }
 
