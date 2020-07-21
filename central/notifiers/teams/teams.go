@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -14,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
@@ -110,15 +107,7 @@ func (t *teams) getPolicySection(alert *storage.Alert) (section, error) {
 
 	section := section{Title: "Policy Details", Facts: facts}
 
-	var criteriaFacts []fact
-	if features.BooleanPolicyLogic.Enabled() {
-		criteriaFacts = t.getSectionFacts(policy.GetPolicySections())
-	} else {
-		if policy.GetFields() != nil {
-			criteriaFacts = t.getPolicyFieldsFacts(reflect.ValueOf(policy.GetFields()).Elem())
-		}
-	}
-
+	criteriaFacts := t.getSectionFacts(policy.GetPolicySections())
 	section.Facts = append(section.Facts, criteriaFacts...)
 
 	return section, nil
@@ -182,23 +171,6 @@ func (t *teams) getViolationSection(alert *storage.Alert) (section, error) {
 	return section{Title: "Violation Details", Facts: facts}, nil
 }
 
-func (t *teams) getPolicyFieldsFacts(policyFields reflect.Value) []fact {
-	var facts []fact
-	for i := 0; i < policyFields.NumField(); i++ {
-		fieldName := policyFields.Type().Field(i).Name
-		if strings.HasPrefix(fieldName, "XXX_") {
-			continue
-		}
-		text := translateRecursive(0, policyFields.Field(i))
-
-		if len(text) == 0 {
-			continue
-		}
-		facts = append(facts, fact{Name: fieldName, Value: text})
-	}
-	return facts
-}
-
 func (t *teams) getSectionFacts(policySections []*storage.PolicySection) []fact {
 	var facts []fact
 	for _, section := range policySections {
@@ -242,111 +214,6 @@ func valueListToString(values []*storage.PolicyValue, opString string) string {
 	}
 	joinWithWhitespace := fmt.Sprintf(" %s ", opString)
 	return strings.Join(valueList, joinWithWhitespace)
-}
-
-func translateSlice(level int, original reflect.Value) string {
-	var slices []string
-	switch original.Interface().(type) {
-	case []string:
-		for i := 0; i < original.Len(); i++ {
-			ret := original.Index(i).Interface().(string)
-			slices = append(slices, ret)
-		}
-	case []int:
-		for i := 0; i < original.Len(); i++ {
-			ret := strconv.Itoa(original.Index(i).Interface().(int))
-			slices = append(slices, ret)
-		}
-	default:
-		for i := 0; i < original.Len(); i++ {
-			ret := translateRecursive(level, original.Field(i))
-			if len(ret) > 0 {
-				slices = append(slices, ret)
-			}
-		}
-	}
-	if len(slices) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("[ %s ]", strings.Join(slices, ", "))
-}
-
-func getSpacedString(count int) string {
-	var builder strings.Builder
-	for i := 0; i < 2*count; i++ {
-		builder.WriteString(" ")
-	}
-	return builder.String()
-}
-
-func translateRecursive(level int, original reflect.Value) string {
-	ret := ""
-	spacedString := getSpacedString(level)
-	switch original.Kind() {
-	case reflect.Ptr:
-		original = original.Elem()
-		if !original.IsValid() {
-			return ""
-		}
-		return translateRecursive(level, original)
-	case reflect.Slice:
-		return translateSlice(level, original)
-	case reflect.Interface:
-		original = original.Elem()
-		return translateRecursive(level, original)
-	case reflect.Struct:
-		for i := 0; i < original.NumField(); i++ {
-			fieldName := original.Type().Field(i).Name
-			if strings.HasPrefix(fieldName, "XXX_") {
-				continue
-			}
-			val := translateRecursive(level+1, original.Field(i))
-			if len(val) > 0 {
-				ret = fmt.Sprintf("%s%s - %s: %s\n", ret, spacedString, fieldName, val)
-			}
-		}
-		if len(ret) > 0 {
-			ret = fmt.Sprintf("<pre>%s</pre>", ret)
-		}
-	case reflect.String:
-		ret = original.Interface().(string)
-	case reflect.Bool:
-		ret = fmt.Sprint(original.Interface().(bool))
-	case reflect.Int:
-		ret = strconv.Itoa(original.Interface().(int))
-	case reflect.Int8:
-		ret = strconv.Itoa(int(original.Interface().(int8)))
-	case reflect.Int16:
-		ret = strconv.Itoa(int(original.Interface().(int16)))
-	case reflect.Int32:
-		switch original.Interface().(type) {
-		case int32:
-			ret = strconv.Itoa(int(original.Interface().(int32)))
-		case storage.Comparator:
-			ret = storage.Comparator_name[int32(original.Interface().(storage.Comparator))]
-		default:
-			return ""
-		}
-	case reflect.Int64:
-		ret = strconv.Itoa(int(original.Interface().(int64)))
-	case reflect.Uint:
-		ret = strconv.FormatUint(uint64(original.Interface().(uint)), 10)
-	case reflect.Uint8:
-		ret = strconv.FormatUint(uint64(original.Interface().(uint8)), 10)
-	case reflect.Uint16:
-		ret = strconv.FormatUint(uint64(original.Interface().(uint16)), 10)
-	case reflect.Uint32:
-		ret = strconv.FormatUint(uint64(original.Interface().(uint32)), 10)
-	case reflect.Uint64:
-		ret = strconv.FormatUint(original.Interface().(uint64), 10)
-	case reflect.Float32:
-		ret = fmt.Sprint(original.Interface().(float32))
-	case reflect.Float64:
-		ret = fmt.Sprint(original.Interface().(float64))
-	default:
-		break
-	}
-	return ret
 }
 
 // AlertNotify takes in an alert and generates the Teams message

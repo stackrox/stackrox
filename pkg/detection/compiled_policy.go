@@ -1,15 +1,11 @@
 package detection
 
 import (
-	"context"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/scopecomp"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
 // CompiledPolicy is a compiled policy, which means it can match a policy, as well as check whether a policy is applicable.
@@ -20,47 +16,44 @@ type CompiledPolicy interface {
 	// Note that the Match* functions DO NOT care about whitelists/the policy being disabled.
 	// Callers are responsible for doing those checks separately.
 	// For MatchAgainstDeployment* functions, images _must_ correspond one-to-one with the container specs in the deployment.
-	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
-	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
-	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error)
+	MatchAgainstDeploymentAndProcess(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (booleanpolicy.Violations, error)
+	MatchAgainstDeployment(cacheReceptacle *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error)
+	MatchAgainstImage(cacheReceptacle *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error)
 
 	Predicate
 }
 
 // newCompiledPolicy creates and returns a compiled policy from the policy and legacySearchBasedMatcher.
-func newCompiledPolicy(policy *storage.Policy, matcher searchbasedpolicies.Matcher) (CompiledPolicy, error) {
+func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
-		policy:                   policy,
-		legacySearchBasedMatcher: matcher,
+		policy: policy,
 	}
 
-	if features.BooleanPolicyLogic.Enabled() {
-		if policies.AppliesAtRunTime(policy) {
-			deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policy)
-			if err != nil {
-				return nil, errors.Wrap(err, "building process matcher")
-			}
-			compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
+	if policies.AppliesAtRunTime(policy) {
+		deploymentWithProcessMatcher, err := booleanpolicy.BuildDeploymentWithProcessMatcher(policy)
+		if err != nil {
+			return nil, errors.Wrap(err, "building process matcher")
 		}
-		if policies.AppliesAtDeployTime(policy) {
-			deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
-			if err != nil {
-				return nil, errors.Wrap(err, "building deployment matcher")
-			}
-			compiled.deploymentMatcher = deploymentMatcher
+		compiled.deploymentWithProcessMatcher = deploymentWithProcessMatcher
+	}
+	if policies.AppliesAtDeployTime(policy) {
+		deploymentMatcher, err := booleanpolicy.BuildDeploymentMatcher(policy)
+		if err != nil {
+			return nil, errors.Wrap(err, "building deployment matcher")
 		}
+		compiled.deploymentMatcher = deploymentMatcher
+	}
 
-		if policies.AppliesAtBuildTime(policy) {
-			imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
-			if err != nil {
-				return nil, errors.Wrap(err, "building image matcher")
-			}
-			compiled.imageMatcher = imageMatcher
+	if policies.AppliesAtBuildTime(policy) {
+		imageMatcher, err := booleanpolicy.BuildImageMatcher(policy)
+		if err != nil {
+			return nil, errors.Wrap(err, "building image matcher")
 		}
+		compiled.imageMatcher = imageMatcher
+	}
 
-		if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil && compiled.deploymentWithProcessMatcher == nil {
-			return nil, errors.Errorf("no known lifecycle stage in policy %s", policy.GetName())
-		}
+	if compiled.deploymentMatcher == nil && compiled.imageMatcher == nil && compiled.deploymentWithProcessMatcher == nil {
+		return nil, errors.Errorf("no known lifecycle stage in policy %s", policy.GetName())
 	}
 
 	whitelists := make([]*compiledWhitelist, 0, len(policy.GetWhitelists()))
@@ -98,42 +91,30 @@ type compiledPolicy struct {
 	policy     *storage.Policy
 	predicates []Predicate
 
-	legacySearchBasedMatcher searchbasedpolicies.Matcher
-
 	deploymentWithProcessMatcher booleanpolicy.DeploymentWithProcessMatcher
 	deploymentMatcher            booleanpolicy.DeploymentMatcher
 	imageMatcher                 booleanpolicy.ImageMatcher
 }
 
-func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error) {
-	if features.BooleanPolicyLogic.Enabled() {
-		if cp.deploymentWithProcessMatcher == nil {
-			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against deployments and processes", cp.Policy().GetName())
-		}
-		return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processOutsideWhitelist)
+func (cp *compiledPolicy) MatchAgainstDeploymentAndProcess(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (booleanpolicy.Violations, error) {
+	if cp.deploymentWithProcessMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against deployments and processes", cp.Policy().GetName())
 	}
-	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), deployment, images, pi)
+	return cp.deploymentWithProcessMatcher.MatchDeploymentWithProcess(cache, deployment, images, pi, processOutsideWhitelist)
 }
 
-func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error) {
-	if features.BooleanPolicyLogic.Enabled() {
-		if cp.deploymentMatcher == nil {
-			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against deployments", cp.Policy().GetName())
-		}
-		return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
+func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (booleanpolicy.Violations, error) {
+	if cp.deploymentMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against deployments", cp.Policy().GetName())
 	}
-	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), deployment, images, nil)
+	return cp.deploymentMatcher.MatchDeployment(cache, deployment, images)
 }
 
-func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error) {
-	if features.BooleanPolicyLogic.Enabled() {
-		if cp.imageMatcher == nil {
-			return searchbasedpolicies.Violations{}, errors.Errorf("couldn't match policy %s against images", cp.Policy().GetName())
-		}
-		return cp.imageMatcher.MatchImage(cache, image)
+func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error) {
+	if cp.imageMatcher == nil {
+		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %s against images", cp.Policy().GetName())
 	}
-
-	return cp.legacySearchBasedMatcher.MatchOne(context.Background(), nil, []*storage.Image{image}, nil)
+	return cp.imageMatcher.MatchImage(cache, image)
 }
 
 // Policy returns the policy that was compiled.
@@ -207,11 +188,6 @@ func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
 	deployment, isDeployment := input.(*storage.Deployment)
 	if !isDeployment {
 		return false
-	}
-
-	// In the pre-BPL world, scopes are handled by constructing a conjunction query in the matcher.
-	if !features.BooleanPolicyLogic.Enabled() {
-		return !deploymentMatchesWhitelists(deployment, cp.whitelists)
 	}
 
 	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesWhitelists(deployment, cp.whitelists)

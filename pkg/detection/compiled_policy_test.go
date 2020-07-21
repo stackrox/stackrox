@@ -6,10 +6,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,10 +30,6 @@ func newDeployment(id string) *storage.Deployment {
 }
 
 func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
-	envIsolator := testutils.NewEnvIsolator(t)
-	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-
 	stackRoxNSScope := &storage.Scope{Namespace: "stackr.*"}
 	defaultNSScope := &storage.Scope{Namespace: "default"}
 	appStackRoxScope := &storage.Scope{Label: &storage.Scope_Label{Key: "app", Value: "stackrox"}}
@@ -84,7 +78,7 @@ func TestCompiledPolicyScopesAndWhitelists(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
-			compiled, err := NewPolicyCompiler().CompilePolicy(constructPolicy(c.scopes, c.whitelists))
+			compiled, err := CompilePolicy(constructPolicy(c.scopes, c.whitelists))
 			require.NoError(t, err)
 			for _, dep := range c.shouldApplyTo {
 				assert.True(t, compiled.AppliesTo(dep), "Failed expectation for %s", dep.GetId())

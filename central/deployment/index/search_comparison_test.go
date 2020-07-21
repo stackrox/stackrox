@@ -1,10 +1,9 @@
-package searchbasedpolicies
+package index
 
 import (
 	"sort"
 	"testing"
 
-	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -97,7 +96,7 @@ func TestDeploymentSearchResults(t *testing.T) {
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
 
-	index := deploymentIndex.New(idx, idx)
+	index := New(idx, idx)
 
 	factory := predicate.NewFactory("deployment", (*storage.Deployment)(nil))
 	for _, c := range cases {

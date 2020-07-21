@@ -9,8 +9,6 @@ import (
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -102,9 +100,7 @@ var (
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {
 	m := make(map[string]*storage.Policy, len(policies))
 	for _, p := range policies {
-		if features.BooleanPolicyLogic.Enabled() {
-			require.NoError(t, booleanpolicy.EnsureConverted(p))
-		}
+		require.NoError(t, booleanpolicy.EnsureConverted(p))
 		m[p.GetName()] = p
 
 	}
@@ -112,67 +108,63 @@ func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.
 }
 
 func TestNIST411_Success(t *testing.T) {
-	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
-		registry := framework.RegistrySingleton()
-		check := registry.Lookup(standardID)
-		require.NotNil(t, check)
+	registry := framework.RegistrySingleton()
+	check := registry.Lookup(standardID)
+	require.NotNil(t, check)
 
-		policies := getPolicies(t, cvssPolicyEnabledAndEnforced, buildPolicyEnforced)
+	policies := getPolicies(t, cvssPolicyEnabledAndEnforced, buildPolicyEnforced)
 
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-		data.EXPECT().Policies().AnyTimes().Return(policies)
-		data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{&imageIntegration})
+	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{&imageIntegration})
 
-		run, err := framework.NewComplianceRun(check)
-		require.NoError(t, err)
-		err = run.Run(context.Background(), domain, data)
-		require.NoError(t, err)
+	run, err := framework.NewComplianceRun(check)
+	require.NoError(t, err)
+	err = run.Run(context.Background(), domain, data)
+	require.NoError(t, err)
 
-		results := run.GetAllResults()
-		checkResults := results[standardID]
-		require.NotNil(t, checkResults)
+	results := run.GetAllResults()
+	checkResults := results[standardID]
+	require.NotNil(t, checkResults)
 
-		require.Len(t, checkResults.Evidence(), 4)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-	})
+	require.Len(t, checkResults.Evidence(), 4)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
 }
 
 func TestNIST411_Fail(t *testing.T) {
-	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
-		registry := framework.RegistrySingleton()
-		check := registry.Lookup(standardID)
-		require.NotNil(t, check)
+	registry := framework.RegistrySingleton()
+	check := registry.Lookup(standardID)
+	require.NotNil(t, check)
 
-		policies := getPolicies(t, cvssPolicyDisabled, buildPolicyDisabled)
+	policies := getPolicies(t, cvssPolicyDisabled, buildPolicyDisabled)
 
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-		data.EXPECT().Policies().AnyTimes().Return(policies)
-		data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{})
+	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{})
 
-		run, err := framework.NewComplianceRun(check)
-		require.NoError(t, err)
-		err = run.Run(context.Background(), domain, data)
-		require.NoError(t, err)
+	run, err := framework.NewComplianceRun(check)
+	require.NoError(t, err)
+	err = run.Run(context.Background(), domain, data)
+	require.NoError(t, err)
 
-		results := run.GetAllResults()
-		checkResults := results[standardID]
-		require.NotNil(t, checkResults)
+	results := run.GetAllResults()
+	checkResults := results[standardID]
+	require.NotNil(t, checkResults)
 
-		require.Len(t, checkResults.Evidence(), 4)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[2].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[3].Status)
-	})
+	require.Len(t, checkResults.Evidence(), 4)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[3].Status)
 }

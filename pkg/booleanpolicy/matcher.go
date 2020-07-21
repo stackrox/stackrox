@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator"
 	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/pathutil"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 )
 
 var (
@@ -31,19 +30,25 @@ type CacheReceptacle struct {
 	augmentedProcess *pathutil.AugmentedObj
 }
 
+// Violations represents a list of violation sub-objects.
+type Violations struct {
+	ProcessViolation *storage.Alert_ProcessViolation
+	AlertViolations  []*storage.Alert_Violation
+}
+
 // An ImageMatcher matches images against a policy.
 type ImageMatcher interface {
-	MatchImage(cache *CacheReceptacle, image *storage.Image) (searchbasedpolicies.Violations, error)
+	MatchImage(cache *CacheReceptacle, image *storage.Image) (Violations, error)
 }
 
 // A DeploymentMatcher matches deployments against a policy.
 type DeploymentMatcher interface {
-	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (searchbasedpolicies.Violations, error)
+	MatchDeployment(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image) (Violations, error)
 }
 
 // A DeploymentWithProcessMatcher matches deployments, and a process, against a policy.
 type DeploymentWithProcessMatcher interface {
-	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (searchbasedpolicies.Violations, error)
+	MatchDeploymentWithProcess(cache *CacheReceptacle, deployment *storage.Deployment, images []*storage.Image, pi *storage.ProcessIndicator, processOutsideWhitelist bool) (Violations, error)
 }
 
 type sectionAndEvaluator struct {

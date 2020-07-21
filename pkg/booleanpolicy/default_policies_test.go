@@ -15,13 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/defaults"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -211,7 +209,7 @@ func (suite *DefaultPoliciesTestSuite) getImagesForDeployment(deployment *storag
 	return images
 }
 
-func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error)) searchbasedpolicies.Violations {
+func getViolationsWithAndWithoutCaching(t *testing.T, matcher func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error)) booleanpolicy.Violations {
 	violations, err := matcher(nil)
 	require.NoError(t, err)
 
@@ -1086,7 +1084,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					deployment := suite.deployments[deploymentID]
 
 					for _, process := range suite.deploymentsToIndicators[deploymentID] {
-						match := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+						match := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
 							return processMatcher.MatchDeploymentWithProcess(nil, deployment, suite.getImagesForDeployment(deployment), process, false)
 						})
 						require.NoError(t, err)
@@ -1102,7 +1100,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, deployment := range suite.deployments {
-				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+				violationsForDep := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
 					return m.MatchDeployment(cache, deployment, suite.getImagesForDeployment(deployment))
 				})
 				assert.Nil(t, violationsForDep.ProcessViolation)
@@ -1381,7 +1379,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 			actualViolations := make(map[string][]*storage.Alert_Violation)
 			for id, image := range suite.images {
-				violationsForImg := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (searchbasedpolicies.Violations, error) {
+				violationsForImg := getViolationsWithAndWithoutCaching(t, func(cache *booleanpolicy.CacheReceptacle) (booleanpolicy.Violations, error) {
 					return m.MatchImage(cache, image)
 				})
 				suite.Nil(violationsForImg.ProcessViolation)
@@ -1420,9 +1418,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestMapPolicyMatchOne() {
-	suite.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer suite.envIsolator.RestoreAll()
-
 	noAnnotation := &storage.Deployment{
 		Id: "noAnnotation",
 	}
@@ -2085,7 +2080,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			indicator := indicators[dep.GetId()][key]
 			outsideWhitelist := processesOutsideWhitelist[dep.GetId()].Contains(key)
 			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
-				var resNoCaching searchbasedpolicies.Violations
+				var resNoCaching booleanpolicy.Violations
 				b.Run("no caching", func(b *testing.B) {
 					for i := 0; i < b.N; i++ {
 						var err error
@@ -2094,7 +2089,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 					}
 				})
 
-				var resWithCaching searchbasedpolicies.Violations
+				var resWithCaching booleanpolicy.Violations
 				b.Run("with caching", func(b *testing.B) {
 					var cache booleanpolicy.CacheReceptacle
 					for i := 0; i < b.N; i++ {

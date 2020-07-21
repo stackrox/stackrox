@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -105,8 +104,6 @@ func createSlicePredicate(fullPath string, fieldType reflect.Type, value string)
 }
 
 func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (internalPredicate, error) {
-	value, isRequired := stringutils.MaybeTrimPrefix(value, builders.RequiredKeyValuePrefix)
-
 	key, value := stringutils.Split2(value, "=")
 
 	keyPred, err := createBasePredicate(fullPath, fieldType.Key(), key)
@@ -118,30 +115,7 @@ func createMapPredicate(fullPath string, fieldType reflect.Type, value string) (
 		return nil, err
 	}
 
-	if isRequired {
-		return createMapRequiredPredicate(keyPred, valPred), nil
-	}
-
 	return createMatchAnyMapPredicate(keyPred, valPred), nil
-}
-
-func createMapRequiredPredicate(keyPred, valPred internalPredicate) internalPredicate {
-	// We will match _unless_ there is at least one element for which
-	// both key and value match.
-	return internalPredicateFunc(func(instance reflect.Value) (*search.Result, bool) {
-		// The expectation is that we only support searching on map[string]string for now
-		iter := instance.MapRange()
-		for iter.Next() {
-			key := iter.Key()
-			val := iter.Value()
-			_, keyMatch := keyPred.Evaluate(key)
-			_, valueMatch := valPred.Evaluate(val)
-			if keyMatch && valueMatch {
-				return nil, false
-			}
-		}
-		return &search.Result{}, true
-	})
 }
 
 func createMatchAnyMapPredicate(keyPred, valPred internalPredicate) internalPredicate {

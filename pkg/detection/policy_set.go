@@ -21,9 +21,8 @@ type PolicySet interface {
 }
 
 // NewPolicySet returns a new instance of a PolicySet.
-func NewPolicySet(compiler PolicyCompiler) PolicySet {
+func NewPolicySet() PolicySet {
 	return &setImpl{
 		policyIDToCompiled: NewStringCompiledPolicyFastRMap(),
-		compiler:           compiler,
 	}
 }

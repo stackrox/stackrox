@@ -9,9 +9,7 @@ import (
 	complianceMocks "github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -173,9 +171,7 @@ var (
 func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.Policy {
 	m := make(map[string]*storage.Policy, len(policies))
 	for _, p := range policies {
-		if features.BooleanPolicyLogic.Enabled() {
-			require.NoError(t, booleanpolicy.EnsureConverted(p))
-		}
+		require.NoError(t, booleanpolicy.EnsureConverted(p))
 		m[p.GetName()] = p
 
 	}
@@ -183,105 +179,101 @@ func getPolicies(t *testing.T, policies ...*storage.Policy) map[string]*storage.
 }
 
 func TestNIST412_Success(t *testing.T) {
-	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
-		registry := framework.RegistrySingleton()
-		check := registry.Lookup(standardID)
-		require.NotNil(t, check)
+	registry := framework.RegistrySingleton()
+	check := registry.Lookup(standardID)
+	require.NotNil(t, check)
 
-		policies := getPolicies(t, cvssPolicyEnabledAndEnforced, sshPolicy, buildPolicy)
+	policies := getPolicies(t, cvssPolicyEnabledAndEnforced, sshPolicy, buildPolicy)
 
-		categoryPolicies := make(map[string]set.StringSet)
-		policySet := set.NewStringSet()
-		policySet.Add(cvssPolicyEnabledAndEnforced.Name)
-		categoryPolicies["Vulnerability Management"] = policySet
+	categoryPolicies := make(map[string]set.StringSet)
+	policySet := set.NewStringSet()
+	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	categoryPolicies["Vulnerability Management"] = policySet
 
-		privSet := set.NewStringSet()
-		privSet.Add(cvssPolicyEnabledAndEnforced.Name)
-		categoryPolicies["Privileges"] = privSet
+	privSet := set.NewStringSet()
+	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	categoryPolicies["Privileges"] = privSet
 
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-		data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-		data.EXPECT().Policies().AnyTimes().Return(policies)
-		data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
-		data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
-		data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithoutSSH)
+	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
+	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
+	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithoutSSH)
 
-		run, err := framework.NewComplianceRun(check)
-		require.NoError(t, err)
-		err = run.Run(context.Background(), domain, data)
-		require.NoError(t, err)
+	run, err := framework.NewComplianceRun(check)
+	require.NoError(t, err)
+	err = run.Run(context.Background(), domain, data)
+	require.NoError(t, err)
 
-		results := run.GetAllResults()
-		checkResults := results[standardID]
-		require.NotNil(t, checkResults)
-		require.Len(t, checkResults.Evidence(), 4)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-		assert.Equal(t, framework.PassStatus, checkResults.Evidence()[3].Status)
+	results := run.GetAllResults()
+	checkResults := results[standardID]
+	require.NotNil(t, checkResults)
+	require.Len(t, checkResults.Evidence(), 4)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[3].Status)
 
-		for _, deployment := range domain.Deployments() {
-			deploymentResults := checkResults.ForChild(deployment)
-			assert.NoError(t, deploymentResults.Error())
-			assert.Len(t, deploymentResults.Evidence(), 1)
-			assert.Equal(t, framework.PassStatus, deploymentResults.Evidence()[0].Status)
-		}
-	})
+	for _, deployment := range domain.Deployments() {
+		deploymentResults := checkResults.ForChild(deployment)
+		assert.NoError(t, deploymentResults.Error())
+		assert.Len(t, deploymentResults.Evidence(), 1)
+		assert.Equal(t, framework.PassStatus, deploymentResults.Evidence()[0].Status)
+	}
 }
 
 func TestNIST412_FAIL(t *testing.T) {
-	testutils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), "", func(t *testing.T) {
-		registry := framework.RegistrySingleton()
-		check := registry.Lookup(standardID)
-		require.NotNil(t, check)
+	registry := framework.RegistrySingleton()
+	check := registry.Lookup(standardID)
+	require.NotNil(t, check)
 
-		policies := getPolicies(t, privPolicyDisabled, sshPolicyWithNoEnforcement)
+	policies := getPolicies(t, privPolicyDisabled, sshPolicyWithNoEnforcement)
 
-		categoryPolicies := make(map[string]set.StringSet)
-		policySet := set.NewStringSet()
-		policySet.Add(cvssPolicyEnabledAndEnforced.Name)
-		categoryPolicies["Vulnerability Management"] = policySet
+	categoryPolicies := make(map[string]set.StringSet)
+	policySet := set.NewStringSet()
+	policySet.Add(cvssPolicyEnabledAndEnforced.Name)
+	categoryPolicies["Vulnerability Management"] = policySet
 
-		privSet := set.NewStringSet()
-		privSet.Add(cvssPolicyEnabledAndEnforced.Name)
-		categoryPolicies["Privileges"] = privSet
+	privSet := set.NewStringSet()
+	privSet.Add(cvssPolicyEnabledAndEnforced.Name)
+	categoryPolicies["Privileges"] = privSet
 
-		mockCtrl := gomock.NewController(t)
-		defer mockCtrl.Finish()
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
 
-		data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
-		data.EXPECT().Cluster().AnyTimes().Return(testCluster)
-		data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-		data.EXPECT().Policies().AnyTimes().Return(policies)
-		data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
-		data.EXPECT().ImageIntegrations().AnyTimes().Return(nil)
-		data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
+	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
+	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().PolicyCategories().AnyTimes().Return(categoryPolicies)
+	data.EXPECT().ImageIntegrations().AnyTimes().Return(nil)
+	data.EXPECT().ProcessIndicators().AnyTimes().Return(indicatorsWithSSH)
 
-		run, err := framework.NewComplianceRun(check)
-		require.NoError(t, err)
-		err = run.Run(context.Background(), domain, data)
-		require.NoError(t, err)
+	run, err := framework.NewComplianceRun(check)
+	require.NoError(t, err)
+	err = run.Run(context.Background(), domain, data)
+	require.NoError(t, err)
 
-		results := run.GetAllResults()
-		checkResults := results[standardID]
-		require.NotNil(t, checkResults)
-		require.Len(t, checkResults.Evidence(), 4)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[2].Status)
-		assert.Equal(t, framework.FailStatus, checkResults.Evidence()[3].Status)
+	results := run.GetAllResults()
+	checkResults := results[standardID]
+	require.NotNil(t, checkResults)
+	require.Len(t, checkResults.Evidence(), 4)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[3].Status)
 
-		for _, deployment := range domain.Deployments() {
-			deploymentResults := checkResults.ForChild(deployment)
-			assert.NoError(t, deploymentResults.Error())
-			assert.Len(t, deploymentResults.Evidence(), 1)
-			assert.Equal(t, framework.FailStatus, deploymentResults.Evidence()[0].Status)
-		}
-	})
+	for _, deployment := range domain.Deployments() {
+		deploymentResults := checkResults.ForChild(deployment)
+		assert.NoError(t, deploymentResults.Error())
+		assert.Len(t, deploymentResults.Evidence(), 1)
+		assert.Equal(t, framework.FailStatus, deploymentResults.Evidence()[0].Status)
+	}
 }
 
 func toMap(in []*storage.Deployment) map[string]*storage.Deployment {

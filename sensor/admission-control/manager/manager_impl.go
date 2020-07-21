@@ -142,7 +142,7 @@ func (m *manager) processNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	policySet := detection.NewPolicySet(detection.NewLegacyPolicyCompiler(builder))
+	policySet := detection.NewPolicySet()
 	for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 		if policyfields.ContainsUnscannedImageField(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warnf("Policy %q (%s) depends on the existence of image scans, but this is only enforceable if the 'Contact image scanners' option is enabled (which it currently isn't)", policy.GetName(), policy.GetId())

@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -16,9 +15,6 @@ var (
 		StartingSeqNum: 37,
 		VersionAfter:   storage.Version{SeqNum: 38},
 		Run: func(databases *types.Databases) error {
-			if !features.BooleanPolicyLogic.Enabled() {
-				return nil
-			}
 			err := migrateLegacyPoliciesToBPL(databases.BoltDB)
 			if err != nil {
 				return errors.Wrap(err, "upgrading legacy policies to boolean policies")

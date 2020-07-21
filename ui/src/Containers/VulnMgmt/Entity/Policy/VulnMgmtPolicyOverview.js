@@ -19,8 +19,6 @@ import { getDeploymentTableColumns } from 'Containers/VulnMgmt/List/Deployments/
 import { updatePolicyDisabledState } from 'services/PoliciesService';
 import { entityGridContainerBaseClassName } from 'Containers/Workflow/WorkflowEntityPage';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 import { pluralizeHas } from 'utils/textUtils';
 import { preFormatPolicyFields } from 'Containers/Policies/Wizard/Form/utils';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -285,28 +283,18 @@ const VulnMgmtPolicyOverview = ({ data, entityContext, setRefreshTrigger }) => {
                             </Widget>
                         </div>
                         {!!policySections.length && (
-                            <FeatureEnabled
-                                featureFlag={knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC}
-                            >
-                                {({ featureEnabled }) => {
-                                    return (
-                                        featureEnabled && (
-                                            <div className="sy-2">
-                                                <Widget
-                                                    header="Policy Criteria"
-                                                    className="pdf-page pdf-stretch h-full"
-                                                >
-                                                    <BooleanPolicySection
-                                                        readOnly
-                                                        hasHeader={false}
-                                                        initialValues={initialValues}
-                                                    />
-                                                </Widget>
-                                            </div>
-                                        )
-                                    );
-                                }}
-                            </FeatureEnabled>
+                            <div className="sy-2">
+                                <Widget
+                                    header="Policy Criteria"
+                                    className="pdf-page pdf-stretch h-full"
+                                >
+                                    <BooleanPolicySection
+                                        readOnly
+                                        hasHeader={false}
+                                        initialValues={initialValues}
+                                    />
+                                </Widget>
+                            </div>
                         )}
                         <div className="sx-1">
                             <Metadata

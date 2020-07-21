@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -44,10 +43,8 @@ func (l *LightPolicy) convert() *storage.Policy {
 	if l.Enforced {
 		p.EnforcementActions = append(p.EnforcementActions, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)
 	}
-	if features.BooleanPolicyLogic.Enabled() {
-		if err := booleanpolicy.EnsureConverted(p); err != nil {
-			panic(err)
-		}
+	if err := booleanpolicy.EnsureConverted(p); err != nil {
+		panic(err)
 	}
 	return p
 }

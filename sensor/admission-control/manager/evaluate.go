@@ -15,8 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
-	"github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/templates"
 	admission "k8s.io/api/admission/v1beta1"
@@ -26,13 +24,6 @@ var (
 	detectionCtx = deploytime.DetectionContext{
 		EnforcementOnly: true,
 	}
-
-	builder = matcher.NewBuilder(
-		matcher.NewRegistry(
-			nil,
-		),
-		deployments.OptionsMap,
-	)
 )
 
 const (

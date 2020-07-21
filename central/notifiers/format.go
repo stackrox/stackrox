@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
@@ -58,73 +57,6 @@ const bplPolicyFormat = `
 	{{end}}
 `
 
-const policyFormat = `
-{{stringify "Alert ID:" .Id | line}}
-{{stringify "Alert URL:" .AlertLink | line}}
-{{stringify "Time (UTC):" .Time | line}}
-{{stringify "Severity:" .Severity | line}}
-{{header "Violations:"}}
-	{{range .Violations}}{{list .Message}}{{end}}
-{{header "Policy Definition:"}}
-	{{"Description:" | subheader}}
-	{{.Policy.Description | list}}
-	{{"Rationale:" | subheader}}
-	{{.Policy.Rationale | list}}
-	{{"Remediation:" | subheader}}
-	{{.Policy.Remediation | list}}
-
-	{{ subheader "Policy Fields:"}}
-	{{if .Policy.Fields.ImageName}}{{list "Image Name"}}
-		{{if .Policy.Fields.ImageName.Registry}}{{stringify "Registry:" .Policy.Fields.ImageName.Registry | nestedList}}{{end}}
-		{{if .Policy.Fields.ImageName.Remote}}{{stringify "Remote:" .Policy.Fields.ImageName.Remote | nestedList}}{{end}}
-		{{if .Policy.Fields.ImageName.Tag}}{{stringify "Tag:" .Policy.Fields.ImageName.Tag | nestedList}}{{end}}
-	{{end}}
-	{{if .Policy.Fields.LineRule}}{{list "Dockerfile Line"}}
-		{{if .Policy.Fields.LineRule.Instruction}}{{stringify "Instruction:" .Policy.Fields.LineRule.Instruction | nestedList}}{{end}}
-		{{if .Policy.Fields.LineRule.Value}}{{stringify "Value:" .Policy.Fields.LineRule.Value | nestedList}}{{end}}
-	{{end}}
-	{{if .Policy.Fields.SetImageAgeDays}}{{stringify "Image Age >" .Policy.Fields.GetImageAgeDays "days" | list}}{{end}}
-	{{if .Policy.Fields.Cvss}}{{stringify .CVSS | list}}{{end}}
-	{{if .Policy.Fields.Cve}}{{stringify "CVE:" .Policy.Fields.Cve | list}}{{end}}
-	{{if .Policy.Fields.Component}}{{list "Component"}}
-		{{if .Policy.Fields.Component.Name}}{{stringify "Name:" .Policy.Fields.Component.Name | nestedList}}{{end}}
-		{{if .Policy.Fields.Component.Version}}{{stringify "Version:" .Policy.Fields.Component.Version | nestedList}}{{end}}
-	{{end}}
-	{{if .Policy.Fields.SetScanAgeDays}}{{stringify "Scan Age >" .Policy.Fields.GetScanAgeDays "days" | list}}{{end}}
-	{{if .Policy.Fields.AddCapabilities}}{{list "Disallowed Add-Capabilities"}}
-		{{range .Policy.Fields.AddCapabilities}}{{nestedList .}}
-		{{end}}
-	{{end}}
-	{{if .Policy.Fields.DropCapabilities}}{{list "Required Drop-Capabilities"}}
-		{{range .Policy.Fields.DropCapabilities}}{{nestedList .}}
-		{{end}}
-	{{end}}
-	{{if .Policy.Fields.SetPrivileged}}{{stringify "Privileged:" .Policy.Fields.GetPrivileged | list}}{{end}}
-	{{if .Policy.Fields.Directory}}{{stringify "Directory:" .Policy.Fields.Directory | list}}{{end}}
-	{{if .Policy.Fields.Args}}{{stringify "Args:" .Policy.Fields.Args | list}}{{end}}
-	{{if .Policy.Fields.Command}}{{stringify "Command:" .Policy.Fields.Command | list}}{{end}}
-	{{if .Policy.Fields.Env}}{{list "Disallowed Environment Variable"}}
-		{{if .Policy.Fields.Env.Key}}{{stringify "Key:" .Policy.Fields.Env.Key | nestedList}}{{end}}
-		{{if .Policy.Fields.Env.Value}}{{stringify "Value:" .Policy.Fields.Env.Value | nestedList}}{{end}}
-	{{end}}
-	{{if .Policy.Fields.PortPolicy}}{{stringify "Port:" .Port | list}}{{end}}
-	{{if .Policy.Fields.User}}{{stringify "User:" .Policy.Fields.User | list}}{{end}}
-	{{if .Policy.Fields.VolumePolicy}}{{list "Volume"}}
-		{{if .Policy.Fields.VolumePolicy.Name}}{{stringify "Name:" .Policy.Fields.VolumePolicy.Name | nestedList}}{{end}}
-		{{if .Policy.Fields.VolumePolicy.Type}}{{stringify "Type:" .Policy.Fields.VolumePolicy.Type | nestedList}}{{end}}
-		{{if .Policy.Fields.VolumePolicy.Source}}{{stringify "Source:" .Policy.Fields.VolumePolicy.Source | nestedList}}{{end}}
-		{{if .Policy.Fields.VolumePolicy.Destination}}{{stringify "Destination:" .Policy.Fields.VolumePolicy.Destination | nestedList}}{{end}}
-		{{if .Policy.Fields.VolumePolicy.SetReadOnly}}{{stringify "ReadOnly:" .Policy.Fields.VolumePolicy.GetReadOnly | nestedList}}{{end}}
-	{{end}}
-	{{if .Deployment}}{{subheader "Deployment:"}}
-		{{stringify "ID:" .Deployment.Id | list}}
-		{{stringify "Name:" .Deployment.Name | list}}
-		{{stringify "ClusterId:" .Deployment.ClusterId | list}}
-		{{if .Deployment.Namespace }}{{stringify "Namespace:" .Deployment.Namespace | list}}{{end}}
-		{{stringify "Images:"  .Images | list}}
-	{{end}}
-`
-
 var requiredFunctions = set.NewFrozenStringSet(
 	"header",
 	"subheader",
@@ -161,10 +93,7 @@ func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncM
 		Time:      readable.ProtoTime(alert.Time),
 	}
 	// Remove all the formatting
-	format := policyFormat
-	if features.BooleanPolicyLogic.Enabled() {
-		format = bplPolicyFormat
-	}
+	format := bplPolicyFormat
 	f := strings.Replace(format, "\t", "", -1)
 	f = strings.Replace(f, "\n", "", -1)
 

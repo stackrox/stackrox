@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
-	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +26,7 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), detectionPkg.NewPolicyCompiler())
+	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller))
 	detector := NewDetector(policySet)
 
 	defaults.PoliciesPath = policies.Directory()

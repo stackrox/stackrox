@@ -29,7 +29,7 @@ func (suite *PolicyTestSuite) TearDownTest() {
 }
 
 func (suite *PolicyTestSuite) TestAddsCompilable() {
-	policySet := NewPolicySet(NewPolicyCompiler())
+	policySet := NewPolicySet()
 
 	err := policySet.UpsertPolicy(goodPolicy)
 	suite.NoError(err, "insertion should succeed")
@@ -45,7 +45,7 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 }
 
 func (suite *PolicyTestSuite) TestForOneSucceeds() {
-	policySet := NewPolicySet(NewPolicyCompiler())
+	policySet := NewPolicySet()
 
 	err := policySet.UpsertPolicy(goodPolicy)
 	suite.NoError(err, "insertion should succeed")
@@ -60,7 +60,7 @@ func (suite *PolicyTestSuite) TestForOneSucceeds() {
 }
 
 func (suite *PolicyTestSuite) TestForOneFails() {
-	policySet := NewPolicySet(NewPolicyCompiler())
+	policySet := NewPolicySet()
 
 	err := policySet.ForOne("1", func(compiled CompiledPolicy) error {
 		return nil
@@ -69,7 +69,7 @@ func (suite *PolicyTestSuite) TestForOneFails() {
 }
 
 func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
-	policySet := NewPolicySet(NewPolicyCompiler())
+	policySet := NewPolicySet()
 
 	err := policySet.UpsertPolicy(badPolicy)
 	suite.Error(err, "insertion should not succeed since the compile is set to fail")

@@ -44,13 +44,7 @@ function Panel({
             return <EnforcementPanel header={header} onClose={onClose} />;
         case wizardStages.details:
         default:
-            return (
-                <PolicyDetailsPanel
-                    header={header}
-                    onClose={onClose}
-                    initialValues={initialValues}
-                />
-            );
+            return <PolicyDetailsPanel header={header} onClose={onClose} policy={initialValues} />;
     }
 }
 

@@ -572,70 +572,7 @@ describe('Policies page', () => {
         });
     });
 
-    describe('pre-Boolean Policy Logic tests (deprecated)', () => {
-        before(function beforeHook() {
-            // skip the whole suite if BPL is enabled
-            if (checkFeatureFlag('ROX_BOOLEAN_POLICY_LOGIC', true)) {
-                this.skip();
-            }
-        });
-
-        it('should allow floats for numeric configuration fields, like CVSS', () => {
-            cy.get(selectors.tableFirstRow).click({ force: true });
-
-            editPolicy();
-            cy.get(selectors.configurationField.selectArrow).first().click();
-            cy.get(selectors.configurationField.options).contains('CVSS').click();
-            cy.get(selectors.configurationField.numericInput).last().type(2.2);
-
-            savePolicy();
-        });
-
-        it('should allow updating image fields in a policy', () => {
-            cy.get(selectors.policies.scanImage).click({ force: true });
-            editPolicy();
-            // cy.get(selectors.form.select).select('Image Registry');
-
-            cy.get(selectors.configurationField.selectArrow).first().click();
-            cy.get(selectors.configurationField.options).contains('Image Registry').click();
-
-            cy.get(selectors.imageRegistry.input).type('docker.io');
-            savePolicy();
-            cy.get(selectors.imageRegistry.value).should(
-                'have.text',
-                'Alert on any image using any tag from registry docker.io'
-            );
-            editPolicy();
-            cy.get(selectors.imageRegistry.deleteButton).click();
-            savePolicy();
-        });
-
-        it('should allow updating days since image scanned in a policy', () => {
-            cy.get(selectors.policies.scanImage).click({ force: true });
-            editPolicy();
-            cy.get(selectors.configurationField.selectArrow).first().click();
-            cy.get(selectors.configurationField.options)
-                .contains('Days since image was last scanned')
-                .click();
-
-            cy.get(selectors.scanAgeDays.input).type('50');
-            savePolicy();
-            cy.get(selectors.scanAgeDays.value).should('have.text', '50 Days ago');
-            editPolicy();
-            cy.get(selectors.scanAgeDays.deleteButton).click();
-            savePolicy();
-            cy.get(selectors.scanAgeDays.value).should('not.exist');
-        });
-    });
-
     describe('Boolean Policy Logic Section', () => {
-        before(function beforeHook() {
-            // skip the whole suite if BPL isn't enabled
-            if (checkFeatureFlag('ROX_BOOLEAN_POLICY_LOGIC', false)) {
-                this.skip();
-            }
-        });
-
         const dataTransfer = new DndSimulatorDataTransfer();
 
         const dragFieldIntoSection = (fieldSelector) => {

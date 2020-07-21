@@ -14,10 +14,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/backgroundtasks"
-	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 )
 
 // Service provides the interface to the microservice that serves policy data.
@@ -36,8 +34,6 @@ func New(policies datastore.DataStore,
 	notifiers notifierDataStore.DataStore,
 	reprocessor reprocessor.Loop,
 	buildTimePolicies detection.PolicySet,
-	deploymentMatcherBuilder matcher.Builder,
-	imageMatcherBuilder matcher.Builder,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
 	metadataCache expiringcache.Cache,
@@ -52,7 +48,6 @@ func New(policies datastore.DataStore,
 		reprocessor:       reprocessor,
 		notifiers:         notifiers,
 		buildTimePolicies: buildTimePolicies,
-		policyCompiler:    detectionPkg.NewLegacyPolicyCompiler(deploymentMatcherBuilder),
 		lifecycleManager:  manager,
 		connectionManager: connectionManager,
 
@@ -61,7 +56,7 @@ func New(policies datastore.DataStore,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
 
-		validator:              newPolicyValidator(notifiers, deploymentMatcherBuilder, imageMatcherBuilder),
+		validator:              newPolicyValidator(notifiers),
 		dryRunPolicyJobManager: backgroundTaskManager,
 	}
 }

@@ -53,7 +53,6 @@ func TestImportExportPolicies(t *testing.T) {
 }
 
 func TestPolicyFromSearch(t *testing.T) {
-	assumeFeatureFlagHasValue(t, features.BooleanPolicyLogic, true)
 	verifyConvertSearchToPolicy(t)
 	verifyConvertInvalidSearchToPolicyFails(t)
 }

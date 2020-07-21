@@ -5,9 +5,11 @@ import (
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/detection/runtime"
-	"github.com/stackrox/rox/pkg/features"
-	options "github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Detector is a thin layer atop the other detectors that provides a unified interface.
@@ -19,25 +21,8 @@ type Detector interface {
 
 // NewDetector returns a new detector.
 func NewDetector() Detector {
-	if !features.BooleanPolicyLogic.Enabled() {
-		return newLegacyDetector()
-	}
 	return &detectorImpl{
-		deploytimeDetector: deploytime.NewDetector(detection.NewPolicySet(detection.NewPolicyCompiler())),
-		runtimeDetector:    runtime.NewDetector(detection.NewPolicySet(detection.NewPolicyCompiler())),
-	}
-}
-
-func newLegacyDetector() Detector {
-	builder := matcher.NewBuilder(
-		matcher.NewRegistry(
-			nil,
-		),
-		options.OptionsMap,
-	)
-	return &legacyDetectorImpl{
-		deploytimeDetector:       deploytime.NewDetector(detection.NewPolicySet(detection.NewLegacyPolicyCompiler(builder))),
-		runtimeDetector:          runtime.NewDetector(detection.NewPolicySet(detection.NewLegacyPolicyCompiler(builder))),
-		runtimeWhitelistDetector: runtime.NewDetector(detection.NewPolicySet(detection.NewLegacyPolicyCompiler(builder))),
+		deploytimeDetector: deploytime.NewDetector(detection.NewPolicySet()),
+		runtimeDetector:    runtime.NewDetector(detection.NewPolicySet()),
 	}
 }

@@ -5,8 +5,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/checks/testutils"
-	"github.com/stackrox/rox/pkg/features"
-	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 )
 
 func TestCheckSecretsInEnv(t *testing.T) {
@@ -58,7 +56,7 @@ func TestCheckSecretsInEnv(t *testing.T) {
 		},
 	} {
 		c := testCase
-		pkgTestUtils.RunWithAndWithoutFeatureFlag(t, features.BooleanPolicyLogic.EnvVar(), c.desc, func(t *testing.T) {
+		t.Run(c.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockCtx, mockData, records := testutils.SetupMockCtxAndMockData(ctrl)

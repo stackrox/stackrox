@@ -19,8 +19,6 @@ import (
 	detectionMocks "github.com/stackrox/rox/pkg/detection/mocks"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/search"
-	matcherMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/matcher/mocks"
-	sbpMocks "github.com/stackrox/rox/pkg/searchbasedpolicies/mocks"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -50,14 +48,12 @@ func (t *testDeploymentMatcher) RemoveNotifier(_ string) error {
 
 type PolicyServiceTestSuite struct {
 	suite.Suite
-	policies                     *mocks.MockDataStore
-	clusters                     *clusterMocks.MockDataStore
-	imageMatcherBuilder          *matcherMocks.MockBuilder
-	mockDeploymentMatcherBuilder *matcherMocks.MockBuilder
-	mockBuildTimePolicies        *detectionMocks.MockPolicySet
-	mockLifecycleManager         *lifecycleMocks.MockManager
-	mockConnectionManager        *connectionMocks.MockManager
-	tested                       Service
+	policies              *mocks.MockDataStore
+	clusters              *clusterMocks.MockDataStore
+	mockBuildTimePolicies *detectionMocks.MockPolicySet
+	mockLifecycleManager  *lifecycleMocks.MockManager
+	mockConnectionManager *connectionMocks.MockManager
+	tested                Service
 
 	envIsolator *testutils.EnvIsolator
 
@@ -73,9 +69,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 
 	s.clusters = clusterMocks.NewMockDataStore(s.mockCtrl)
 
-	s.imageMatcherBuilder = matcherMocks.NewMockBuilder(s.mockCtrl)
-
-	s.mockDeploymentMatcherBuilder = matcherMocks.NewMockBuilder(s.mockCtrl)
 	s.mockBuildTimePolicies = detectionMocks.NewMockPolicySet(s.mockCtrl)
 	s.mockLifecycleManager = lifecycleMocks.NewMockManager(s.mockCtrl)
 	s.mockConnectionManager = connectionMocks.NewMockManager(s.mockCtrl)
@@ -87,8 +80,6 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 		nil,
 		nil,
 		&testDeploymentMatcher{s.mockBuildTimePolicies},
-		s.mockDeploymentMatcherBuilder,
-		s.imageMatcherBuilder,
 		s.mockLifecycleManager,
 		nil,
 		nil,
@@ -98,6 +89,7 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 }
 
 func (s *PolicyServiceTestSuite) TearDownTest() {
+	s.envIsolator.RestoreAll()
 	s.mockCtrl.Finish()
 }
 
@@ -126,7 +118,6 @@ func makeError(errorID, errorString string) *v1.ExportPolicyError {
 
 func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
 	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 
 	ctx := context.Background()
 	mockErrors := []*v1.ExportPolicyError{
@@ -141,7 +132,6 @@ func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
 
 func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
@@ -157,7 +147,6 @@ func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 
 func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
@@ -175,7 +164,6 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 
 func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 
 	ctx := context.Background()
 	errString := "test"
@@ -193,7 +181,6 @@ func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 
 func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 
 	ctx := context.Background()
 	mockPolicy := &storage.Policy{
@@ -248,10 +235,7 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 }
 
 func (s *PolicyServiceTestSuite) TestImportPolicy() {
-	envIsolator := testutils.NewEnvIsolator(s.T())
-	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "false")
-	envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
-	defer envIsolator.RestoreAll()
+	s.envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
 
 	mockID := "1"
 	mockName := "legacy policy"
@@ -283,7 +267,6 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 		},
 	}
 
-	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(importedPolicy).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).Times(1)
 	s.policies.EXPECT().ImportPolicies(ctx, []*storage.Policy{importedPolicy}, false).Return(mockImportResp, true, nil)
 	s.mockBuildTimePolicies.EXPECT().RemovePolicy(importedPolicy.GetId()).Return(nil)
 	s.mockLifecycleManager.EXPECT().UpsertPolicy(importedPolicy).Return(nil)
@@ -303,7 +286,6 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 
 func (s *PolicyServiceTestSuite) TestImportAndUpgradePolicy() {
 	envIsolator := testutils.NewEnvIsolator(s.T())
-	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
 	envIsolator.Setenv(features.PolicyImportExport.EnvVar(), "true")
 	defer envIsolator.RestoreAll()
 
@@ -390,8 +372,6 @@ func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storag
 		SearchParams: query,
 	}
 	s.clusters.EXPECT().GetClusters(ctx).Return(mockClusters, nil).AnyTimes()
-	s.imageMatcherBuilder.EXPECT().ForPolicy(gomock.Any()).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).AnyTimes()
-	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(gomock.Any()).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).AnyTimes()
 	response, err := s.tested.PolicyFromSearch(ctx, request)
 	s.NoError(err)
 	s.Empty(response.GetAlteredSearchTerms())
@@ -405,7 +385,6 @@ func (s *PolicyServiceTestSuite) testMalformedScope(query string) {
 	request := &v1.PolicyFromSearchRequest{
 		SearchParams: query,
 	}
-	s.mockDeploymentMatcherBuilder.EXPECT().ForPolicy(gomock.Any()).Return(sbpMocks.NewMockMatcher(s.mockCtrl), nil).AnyTimes()
 	_, err := s.tested.PolicyFromSearch(ctx, request)
 	s.Error(err)
 }
@@ -442,9 +421,6 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 }
 
 func (s *PolicyServiceTestSuite) TestMalformedScopes() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	queryString := "Label:"
 	s.testMalformedScope(queryString)
 
@@ -456,9 +432,6 @@ func (s *PolicyServiceTestSuite) TestMalformedScopes() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Namespace: "blah",
 	}
@@ -467,9 +440,6 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedLabel() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeWithMalformedNamespace() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Label: &storage.Scope_Label{
 			Key:   "blah",
@@ -481,9 +451,6 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedNamespace() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Label: &storage.Scope_Label{
 			Key:   "blah",
@@ -495,8 +462,6 @@ func (s *PolicyServiceTestSuite) TestScopeWithMalformedCluster() {
 }
 
 func (s *PolicyServiceTestSuite) TestScope() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 	expectedScope := &storage.Scope{
 		Cluster:   "remoteID",
 		Namespace: "stackrox",
@@ -516,9 +481,6 @@ func (s *PolicyServiceTestSuite) TestScope() {
 }
 
 func (s *PolicyServiceTestSuite) TestManyScopes() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScopes := []*storage.Scope{
 		{
 			Cluster:   "remoteID",
@@ -600,9 +562,6 @@ func (s *PolicyServiceTestSuite) TestManyScopes() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeOnlyCluster() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Cluster: "remoteID",
 	}
@@ -617,9 +576,6 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyCluster() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeOnlyNamespace() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Namespace: "Joseph Rules",
 	}
@@ -628,9 +584,6 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyNamespace() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeOnlyLabel() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Label: &storage.Scope_Label{
 			Key:   "Joseph",
@@ -642,9 +595,6 @@ func (s *PolicyServiceTestSuite) TestScopeOnlyLabel() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScopes := []*storage.Scope{
 		{
 			Label: &storage.Scope_Label{
@@ -663,9 +613,6 @@ func (s *PolicyServiceTestSuite) TestScopeOddLabelFormats() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeClusterNamespace() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Cluster:   "remoteID",
 		Namespace: "stackrox",
@@ -681,9 +628,6 @@ func (s *PolicyServiceTestSuite) TestScopeClusterNamespace() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Cluster: "remoteID",
 		Label: &storage.Scope_Label{
@@ -702,9 +646,6 @@ func (s *PolicyServiceTestSuite) TestScopeClusterLabel() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScope := &storage.Scope{
 		Namespace: "stackrox",
 		Label: &storage.Scope_Label{
@@ -717,9 +658,6 @@ func (s *PolicyServiceTestSuite) TestScopeNamespaceLabel() {
 }
 
 func (s *PolicyServiceTestSuite) TestScopeClusterRegex() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedScopes := []*storage.Scope{
 		{
 			Cluster: "remoteID",
@@ -747,22 +685,14 @@ func (s *PolicyServiceTestSuite) TestScopeClusterRegex() {
 }
 
 func (s *PolicyServiceTestSuite) TestRuntimeLifecycle() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
 	s.testLifecycles("CVE:abcd+Process Name:123", storage.LifecycleStage_RUNTIME)
 }
 
 func (s *PolicyServiceTestSuite) TestBuildAndDeployLifecycles() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	s.testLifecycles("CVE:abcd", storage.LifecycleStage_DEPLOY, storage.LifecycleStage_BUILD)
 }
 
 func (s *PolicyServiceTestSuite) TestOnePolicyField() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedPolicyGroup := &storage.PolicyGroup{
 		FieldName:       fieldnames.CVE,
 		BooleanOperator: storage.BooleanOperator_OR,
@@ -777,9 +707,6 @@ func (s *PolicyServiceTestSuite) TestOnePolicyField() {
 }
 
 func (s *PolicyServiceTestSuite) TestMultiplePolicyFields() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedPolicyGroups := []*storage.PolicyGroup{
 		{
 			FieldName:       fieldnames.CVE,
@@ -805,9 +732,6 @@ func (s *PolicyServiceTestSuite) TestMultiplePolicyFields() {
 }
 
 func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedPolicyGroup := []*storage.PolicyGroup{
 		{
 			FieldName:       fieldnames.CVE,
@@ -836,9 +760,6 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 }
 
 func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	ctx := context.Background()
 	request := &v1.PolicyFromSearchRequest{
 		SearchParams: "Deployment:abcd+CVE Snoozed:hrkrj+Label:+NotASearchTerm:jkjksdr",
@@ -849,9 +770,6 @@ func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
 }
 
 func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedPolicyGroups := []*storage.PolicyGroup{
 		{
 			FieldName: fieldnames.EnvironmentVariable,
@@ -896,9 +814,6 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 }
 
 func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
-	s.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-	defer s.envIsolator.RestoreAll()
-
 	expectedPolicyGroup := []*storage.PolicyGroup{
 		{
 			FieldName: fieldnames.EnvironmentVariable,

@@ -8,7 +8,6 @@ import (
 )
 
 type setImpl struct {
-	compiler           PolicyCompiler
 	policyIDToCompiled StringCompiledPolicyFastRMap
 }
 
@@ -34,7 +33,7 @@ func (p *setImpl) ForOne(pID string, f func(CompiledPolicy) error) error {
 
 // UpsertPolicy adds or updates a policy in the set.
 func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
-	compiled, err := p.compiler.CompilePolicy(policy)
+	compiled, err := CompilePolicy(policy)
 	if err != nil {
 		log.Errorf("unable to compile policy: %s", err)
 		return err

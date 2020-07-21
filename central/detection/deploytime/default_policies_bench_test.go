@@ -6,25 +6,16 @@ import (
 	"github.com/stackrox/rox/central/detection"
 	imagePolicies "github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
-	detectionPkg "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
-	"github.com/stackrox/rox/pkg/search/options/deployments"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/matcher"
 	"github.com/stretchr/testify/require"
 )
 
 func BenchmarkDefaultPolicies(b *testing.B) {
 	b.StopTimer()
 
-	builder := matcher.NewBuilder(
-		matcher.NewRegistry(
-			nil,
-		),
-		deployments.OptionsMap,
-	)
-	policySet = detection.NewPolicySet(nil, detectionPkg.NewLegacyPolicyCompiler(builder))
+	policySet = detection.NewPolicySet(nil)
 
 	defaults.PoliciesPath = imagePolicies.Directory()
 	policies, err := defaults.Policies()

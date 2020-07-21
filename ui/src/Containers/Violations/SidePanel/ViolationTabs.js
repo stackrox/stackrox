@@ -41,7 +41,7 @@ function ViolationTabs({ alert }) {
             </TabContent>
             <TabContent extraClasses="bg-base-0">
                 <div className="flex flex-1 flex-col">
-                    <PolicyDetails initialValues={initialValuesForPolicy} />
+                    <PolicyDetails policy={initialValuesForPolicy} />
                 </div>
             </TabContent>
         </Tabs>

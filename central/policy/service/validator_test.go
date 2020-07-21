@@ -37,7 +37,7 @@ func (suite *PolicyValidatorTestSuite) SetupTest() {
 	suite.nStorage = notifierMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.validator = newPolicyValidator(suite.nStorage, nil, nil)
+	suite.validator = newPolicyValidator(suite.nStorage)
 }
 
 func (suite *PolicyValidatorTestSuite) TearDownTest() {

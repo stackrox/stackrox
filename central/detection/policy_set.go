@@ -18,9 +18,9 @@ type PolicySet interface {
 }
 
 // NewPolicySet returns a new instance of a PolicySet.
-func NewPolicySet(store policyDatastore.DataStore, compiler detection.PolicyCompiler) PolicySet {
+func NewPolicySet(store policyDatastore.DataStore) PolicySet {
 	return &setImpl{
-		PolicySet:   detection.NewPolicySet(compiler),
+		PolicySet:   detection.NewPolicySet(),
 		policyStore: store,
 	}
 }

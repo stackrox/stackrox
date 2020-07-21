@@ -1,43 +1,33 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { selectors } from 'reducers';
-import { createStructuredSelector } from 'reselect';
 
 import Fields from 'Containers/Policies/Wizard/Details/Fields';
 import ConfigurationFields from 'Containers/Policies/Wizard/Details/ConfigurationFields';
 import BooleanPolicySection from 'Containers/Policies/Wizard/Form/BooleanPolicySection';
-import { knownBackendFlags, isBackendFeatureFlagEnabled } from 'utils/featureFlags';
 
-function PolicyDetails({ initialValues, featureFlags }) {
-    if (!initialValues) return null;
+function PolicyDetails({ policy }) {
+    if (!policy) return null;
 
-    const BPLenabled = isBackendFeatureFlagEnabled(
-        featureFlags,
-        knownBackendFlags.ROX_BOOLEAN_POLICY_LOGIC,
-        false
-    );
+    // If the policy version is not set, that means this is a legacy policy.
+    // Legacy policies are only displayed when we display old alerts.
+    const isLegacyPolicy = !policy.policyVersion;
 
     return (
         <div className="w-full h-full">
             <div className="flex flex-col w-full overflow-auto pb-5">
-                <Fields policy={initialValues} />
-                {BPLenabled && <BooleanPolicySection readOnly initialValues={initialValues} />}
-                {!BPLenabled && <ConfigurationFields policy={initialValues} />}
+                <Fields policy={policy} />
+                {!isLegacyPolicy && <BooleanPolicySection readOnly initialValues={policy} />}
+                {isLegacyPolicy && <ConfigurationFields policy={policy} />}
             </div>
         </div>
     );
 }
 
 PolicyDetails.propTypes = {
-    initialValues: PropTypes.shape({
+    policy: PropTypes.shape({
         name: PropTypes.string,
+        policyVersion: PropTypes.string,
     }).isRequired,
-    featureFlags: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
-const mapStateToProps = createStructuredSelector({
-    featureFlags: selectors.getFeatureFlags,
-});
-
-export default connect(mapStateToProps, null)(PolicyDetails);
+export default PolicyDetails;

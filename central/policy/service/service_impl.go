@@ -102,7 +102,6 @@ type serviceImpl struct {
 	connectionManager connection.Manager
 
 	buildTimePolicies detection.PolicySet
-	policyCompiler    detection.PolicyCompiler
 	lifecycleManager  lifecycle.Manager
 	processor         notifierProcessor.Processor
 	metadataCache     expiringcache.Cache
@@ -188,10 +187,8 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 }
 
 func (s *serviceImpl) convertAndValidate(ctx context.Context, p *storage.Policy, options ...booleanpolicy.ValidateOption) error {
-	if features.BooleanPolicyLogic.Enabled() {
-		if err := booleanpolicy.EnsureConverted(p); err != nil {
-			return status.Errorf(codes.InvalidArgument, "Could not ensure policy format: %v", err.Error())
-		}
+	if err := booleanpolicy.EnsureConverted(p); err != nil {
+		return status.Errorf(codes.InvalidArgument, "Could not ensure policy format: %v", err.Error())
 	}
 
 	if err := s.validator.validate(ctx, p, options...); err != nil {
@@ -387,7 +384,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		return &resp, nil
 	}
 
-	compiledPolicy, err := s.policyCompiler.CompilePolicy(request)
+	compiledPolicy, err := detection.CompilePolicy(request)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "invalid policy: %v", err)
 	}
@@ -740,10 +737,8 @@ func removeInternal(policy *storage.Policy) {
 }
 
 func (s *serviceImpl) convertAndValidateForImport(p *storage.Policy) error {
-	if features.BooleanPolicyLogic.Enabled() {
-		if err := booleanpolicy.EnsureConverted(p); err != nil {
-			return err
-		}
+	if err := booleanpolicy.EnsureConverted(p); err != nil {
+		return err
 	}
 	if err := s.validator.validateImport(p); err != nil {
 		return err
@@ -821,9 +816,6 @@ func makeValidationError(policy *storage.Policy, err error) *v1.ImportPolicyResp
 }
 
 func (s *serviceImpl) PolicyFromSearch(ctx context.Context, request *v1.PolicyFromSearchRequest) (*v1.PolicyFromSearchResponse, error) {
-	if !features.BooleanPolicyLogic.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
 	policy, unconvertableCriteria, hasNestedFields, err := s.parsePolicy(ctx, request.GetSearchParams())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error creating policy from search string: %v", err)

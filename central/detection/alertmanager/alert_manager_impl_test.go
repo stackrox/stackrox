@@ -12,7 +12,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -70,7 +69,6 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock, nil)
 	suite.envIsolator = testutils.NewEnvIsolator(suite.T())
-	suite.envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
 }
 
 func (suite *AlertManagerTestSuite) TearDownTest() {
@@ -168,10 +166,6 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
-	envIsolator := testutils.NewEnvIsolator(t)
-	defer envIsolator.RestoreAll()
-	envIsolator.Setenv(features.BooleanPolicyLogic.EnvVar(), "true")
-
 	for _, c := range []struct {
 		desc           string
 		old            *storage.Alert

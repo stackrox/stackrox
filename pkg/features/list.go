@@ -18,12 +18,6 @@ var (
 	// AdmissionControlEnforceOnUpdate enables support for having the admission controller enforce on updates.
 	AdmissionControlEnforceOnUpdate = registerFeature("Allow admission controller to enforce on update", "ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE", true)
 
-	// DryRunPolicyJobMechanism enables submitting dry run of a policy as a job, and querying the status using job id.
-	DryRunPolicyJobMechanism = registerFeature("Dry run policy job mechanism", "ROX_DRY_RUN_JOB", true)
-
-	// BooleanPolicyLogic enables support for an extended policy logic
-	BooleanPolicyLogic = registerFeature("Enable Boolean Policy Logic", "ROX_BOOLEAN_POLICY_LOGIC", true)
-
 	// PolicyImportExport feature flag enables policy import and export
 	PolicyImportExport = registerFeature("Enable Import/Export for Analyst Workflow", "ROX_POLICY_IMPORT_EXPORT", true)
 

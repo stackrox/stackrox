@@ -12,11 +12,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -143,11 +141,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 		newProcessesSlice = newProcessesSlice[:maxProcessViolationsPerAlert]
 	}
 	newAlert.ProcessViolation.Processes = newProcessesSlice
-	if features.BooleanPolicyLogic.Enabled() {
-		printer.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
-	} else {
-		builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
-	}
+	printer.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
 	return
 }
 
