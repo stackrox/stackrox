@@ -145,6 +145,7 @@ export const IMAGE_LIST_FRAGMENT = gql`
         componentCount(query: $query)
         scan {
             scanTime
+            operatingSystem
         }
         vulnCounter {
             all {

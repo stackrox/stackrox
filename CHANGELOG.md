@@ -15,6 +15,7 @@ All notable changes to this project that require documentation updates will be d
   - Flag `--admission-controller` for `roxctl sensor generate k8s`. Use `--create-admission-controller` instead.
 
   The old flags are currently still supported but they are scheduled for removal in a future version of `roxctl`.
+- UI: Added `Image OS` to the image list and image single page in Vuln Mgmt (ROX-4083).
 
 ## [46.0]
 - Added the following REST APIs:

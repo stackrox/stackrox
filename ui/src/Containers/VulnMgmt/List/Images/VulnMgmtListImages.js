@@ -117,6 +117,19 @@ export function getImageTableColumns(workflowState) {
             sortField: imageSortFields.SCAN_TIME,
         },
         {
+            Header: `Image OS`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original }) => {
+                const { scan } = original;
+                if (!scan?.operatingSystem) return '–';
+                return <span>{scan.operatingSystem}</span>;
+            },
+            id: imageSortFields.IMAGE_OS,
+            accessor: 'scan.operatingSystem',
+            sortField: imageSortFields.IMAGE_OS,
+        },
+        {
             Header: 'Image Status',
             headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,

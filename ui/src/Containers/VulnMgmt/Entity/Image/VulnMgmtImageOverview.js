@@ -74,11 +74,15 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                 (metadata && metadata.v1 && (
                     <DateTimeField date={metadata.v1.created} asString />
                 )) ||
-                'N/A',
+                '-',
         },
         {
             key: 'Scan time',
-            value: (scan && <DateTimeField date={scan.scanTime} asString />) || 'N/A',
+            value: (scan && <DateTimeField date={scan.scanTime} asString />) || '-',
+        },
+        {
+            key: 'Image OS',
+            value: (scan && <span>{scan.operatingSystem}</span>) || '-',
         },
     ];
 
@@ -113,7 +117,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                     <div className={entityGridContainerClassName}>
                         <div className="s-1">
                             <Metadata
-                                className="h-full min-w-48 bg-base-100 pdf-page"
+                                className="h-full sm:min-h-64 min-w-48 bg-base-100 pdf-page"
                                 keyValuePairs={metadataKeyValuePairs}
                                 statTiles={imageStats}
                                 title="Details & Metadata"

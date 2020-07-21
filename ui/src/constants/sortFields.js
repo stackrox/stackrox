@@ -18,6 +18,7 @@ export const imageSortFields = {
     CREATED_TIME: 'Image Created Time',
     ENTRYPOINT: 'Image Entrypoint',
     IMAGE_STATUS: 'Image Status',
+    IMAGE_OS: 'Image OS',
     PRIORITY: 'Priority',
     REGISTRY: 'Image Registry',
     REMOTE: 'Image Remote',
