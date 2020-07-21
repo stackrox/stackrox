@@ -320,48 +320,50 @@ const ClustersPage = ({
         <TableHeader length={currentClusters.length} type="Cluster" isViewFiltered={false} />
     );
 
+    // Because of fixed checkbox width, total of column ratios must be less than 100%
+    // 1 * 1/9 + 7 * 1/8 = 98.6%
     const clusterColumns = [
         {
             accessor: 'name',
             Header: 'Name',
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Orchestrator',
             Cell: ({ original }) => formatClusterType(original.type),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/9 ${defaultHeaderClassName}`,
+            className: `w-1/9 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Runtime collection',
             Cell: ({ original }) => formatCollectionMethod(original.collectionMethod),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
-            Header: 'Admission Controller created',
+            Header: 'Admission Controller',
             Cell: ({ original }) => formatConfiguredField(original.admissionController),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Last check-in',
             Cell: ({ original }) => formatLastCheckIn(original.status),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Upgrade status',
             Cell: ({ original }) => getUpgradeStatusField(original),
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName}`,
         },
         {
             Header: 'Current Sensor version',
             Cell: ({ original }) => formatSensorVersion(original.status),
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
             sortMethod: sortVersion,
         },
         {
@@ -380,8 +382,8 @@ const ClustersPage = ({
                     />
                 );
             },
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${wrapClassName} ${defaultColumnClassName} word-break`,
+            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            className: `w-1/8 ${wrapClassName} ${defaultColumnClassName} word-break`,
             sortMethod: sortVersion,
         },
         {

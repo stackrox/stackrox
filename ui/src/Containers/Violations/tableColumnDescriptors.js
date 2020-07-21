@@ -151,46 +151,48 @@ function getActionButtonsColumn(setSelectedAlertId) {
 }
 
 // Combine all of the above into a column array.
-// /////////////////////////////////////////////
+
+// Because of fixed checkbox width, total of column ratios must be less than 100%
+// 2 * 1/7 + 7 * 1/10 = 98.6%
 export default function getColumns(setSelectedAlertId) {
     return [
         {
             Header: 'Deployment',
             accessor: 'deployment.name',
             searchField: 'Deployment',
-            headerClassName: `w-1/6 left-checkbox-offset ${defaultHeaderClassName}`,
-            className: `w-1/6 left-checkbox-offset ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 left-checkbox-offset ${defaultHeaderClassName}`,
+            className: `w-1/7 left-checkbox-offset ${defaultColumnClassName}`,
             Cell: DeploymentColumn,
         },
         {
             Header: 'Cluster',
             accessor: 'deployment.clusterName',
             searchField: 'Cluster',
-            headerClassName: `w-1/7  ${defaultHeaderClassName}`,
-            className: `w-1/7 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: StringValueColumn,
         },
         {
             Header: 'Namespace',
             accessor: 'deployment.namespace',
             searchField: 'Namespace',
-            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
-            className: `w-1/7 ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: StringValueColumn,
         },
         {
             Header: 'Policy',
             accessor: 'policy.name',
             searchField: 'Policy',
-            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
-            className: `w-1/6 ${defaultColumnClassName}`,
+            headerClassName: `w-1/7 ${defaultHeaderClassName}`,
+            className: `w-1/7 ${defaultColumnClassName}`,
             Cell: PolicyColumn,
         },
         {
             Header: 'Enforced',
             accessor: 'Enforcement Count',
             searchField: 'Policy',
-            headerClassName: `w-1/10  ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: EnforcementColumn,
         },
@@ -198,11 +200,10 @@ export default function getColumns(setSelectedAlertId) {
             Header: 'Severity',
             accessor: 'policy.severity',
             searchField: 'Severity',
-            headerClassName: `text-center ${defaultHeaderClassName}`,
-            className: `text-center ${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: SeverityColumn,
             sortMethod: sortSeverity,
-            width: 90,
         },
         {
             Header: 'Categories',
@@ -216,8 +217,8 @@ export default function getColumns(setSelectedAlertId) {
             Header: 'Lifecycle',
             accessor: 'lifecycleStage',
             searchField: 'Lifecycle Stage',
-            headerClassName: `${defaultHeaderClassName}`,
-            className: `${defaultColumnClassName}`,
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ value }) => lifecycleStageLabels[value],
         },
         {
