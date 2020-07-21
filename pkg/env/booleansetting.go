@@ -31,7 +31,8 @@ func (d *BooleanSetting) BooleanSetting() bool {
 	return v && err == nil
 }
 
-func registerBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting {
+// RegisterBooleanSetting globally registers and returns a new boolean setting.
+func RegisterBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting {
 	s := &BooleanSetting{
 		envVar:         envVar,
 		defaultBoolean: defaultBoolean,

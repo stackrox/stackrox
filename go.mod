@@ -81,7 +81,8 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
 	github.com/tkuchiki/go-timezone v0.1.3
 	github.com/vbauerster/mpb/v4 v4.11.1
-	go.uber.org/atomic v1.4.0
+	go.uber.org/atomic v1.6.0
+	go.uber.org/zap v1.15.1-0.20200717220000-53a387079b46
 	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
@@ -124,6 +125,7 @@ replace (
 	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.0-rc9
 	github.com/openshift/client-go => github.com/openshift/client-go v0.0.0-20190923092832-6afefc9bb372
 	github.com/tecbot/gorocksdb => github.com/DataDog/gorocksdb v0.0.0-20200107201226-9722c3a2e063
+	go.uber.org/zap => github.com/stackrox/zap v1.15.1-0.20200720133746-810fd602fd0f
 	golang.org/x/oauth2 => github.com/misberner/oauth2 v0.0.0-20200208204620-d153c71f6b8d
 	golang.stackrox.io/grpc-http1 => github.com/stackrox/go-grpc-http1-websocket v0.0.0-20200616234304-48e6480d35e6
 	honnef.co/go/tools => honnef.co/go/tools v0.0.0-20200207073116-104ba5a2aac5

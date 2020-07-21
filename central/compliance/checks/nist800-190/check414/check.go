@@ -11,7 +11,7 @@ const (
 )
 
 var (
-	log = logging.New(standardID)
+	log = logging.ModuleForName(standardID).Logger()
 )
 
 func init() {

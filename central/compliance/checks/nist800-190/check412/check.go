@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	log = logging.New("NIST_800_190:4_1_2")
+	log = logging.ModuleForName("NIST_800_190:4_1_2").Logger()
 )
 
 func init() {

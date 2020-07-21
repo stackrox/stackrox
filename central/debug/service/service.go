@@ -111,27 +111,39 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetLogLevel returns a v1.LogLevelResponse object.
 func (s *serviceImpl) GetLogLevel(ctx context.Context, req *v1.GetLogLevelRequest) (*v1.LogLevelResponse, error) {
 	resp := &v1.LogLevelResponse{}
+	var unknownModules []string
+	var forEachModule func(name string, m *logging.Module)
 
 	// If the request is global, then return all modules who have a log level that does not match the global level
 	if len(req.GetModules()) == 0 {
 		level := logging.GetGlobalLogLevel()
 		resp.Level = logging.LabelForLevelOrInvalid(level)
-		logging.ForEachLogger(func(l *logging.Logger) {
-			moduleLevel := l.LogLevel()
+		forEachModule = func(name string, m *logging.Module) {
+			moduleLevel := m.GetLogLevel()
 			if moduleLevel != level {
-				resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{Module: l.GetModule(), Level: l.GetLogLevel()})
+				resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{
+					Module: name, Level: logging.LabelForLevelOrInvalid(moduleLevel),
+				})
 			}
-		})
-		return resp, nil
+		}
+	} else {
+		forEachModule = func(name string, m *logging.Module) {
+			if m == nil {
+				unknownModules = append(unknownModules, name)
+			} else {
+				resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{
+					Module: name, Level: logging.LabelForLevelOrInvalid(m.GetLogLevel()),
+				})
+			}
+		}
 	}
 
-	loggers, unknownModules := logging.GetLoggersByModule(req.GetModules())
+	logging.ForEachModule(forEachModule, req.GetModules())
+
 	if len(unknownModules) > 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
-	for _, l := range loggers {
-		resp.ModuleLevels = append(resp.ModuleLevels, &v1.ModuleLevel{Module: l.GetModule(), Level: l.GetLogLevel()})
-	}
+
 	return resp, nil
 }
 
@@ -149,14 +161,19 @@ func (s *serviceImpl) SetLogLevel(ctx context.Context, req *v1.LogLevelRequest) 
 		return &types.Empty{}, nil
 	}
 
-	loggers, unknownModules := logging.GetLoggersByModule(req.GetModules())
+	var unknownModules []string
+	logging.ForEachModule(func(name string, m *logging.Module) {
+		if m == nil {
+			unknownModules = append(unknownModules, name)
+		} else {
+			m.SetLogLevel(levelInt)
+		}
+	}, req.GetModules())
+
 	if len(unknownModules) > 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Unknown module(s): %s", strings.Join(unknownModules, ", "))
 	}
 
-	for _, logger := range loggers {
-		logger.SetLogLevel(levelInt)
-	}
 	return &types.Empty{}, nil
 }
 

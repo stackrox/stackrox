@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
+	grpc_logging "github.com/stackrox/rox/pkg/grpc/logging"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
@@ -41,12 +42,14 @@ const (
 
 func init() {
 	grpc_prometheus.EnableHandlingTimeHistogram()
+	grpc_logging.ReplaceGrpcLogger(log)
 }
 
 var (
 	log = logging.LoggerForModule()
 
 	maxResponseMsgSizeSetting = env.RegisterSetting("ROX_GRPC_MAX_RESPONSE_SIZE")
+	enableRequestTracing      = env.RegisterBooleanSetting("ROX_GRPC_ENABLE_REQUEST_TRACING", false)
 )
 
 func maxResponseMsgSize() int {
@@ -164,6 +167,10 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u = append(u, a.unaryRecovery())
 	if a.config.GRPCMetrics != nil {
 		u = append(u, a.config.GRPCMetrics.UnaryMonitoringInterceptor)
+	}
+
+	if enableRequestTracing.BooleanSetting() {
+		u = append(u, grpc_logging.UnaryServerInterceptor(log))
 	}
 	return u
 }
