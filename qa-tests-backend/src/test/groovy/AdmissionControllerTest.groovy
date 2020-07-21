@@ -152,19 +152,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Revert Cluster"
         if (created) {
-            def timer = new Timer(30, 1)
-            def deleted = false
-            while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    println "Caught NPE while deleting deployment, retrying in 1s..."
-                }
-            }
-            if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-            }
+            deleteDeploymentWithCaution(deployment)
         }
 
         where:
@@ -224,6 +212,7 @@ class AdmissionControllerTest extends BaseSpecification {
 
         def created = orchestrator.createDeploymentNoWait(deployment)
         assert !created
+
         // CVE needs to be saved into the DB
         Helpers.sleepWithRetryBackoff(1000)
 
@@ -236,21 +225,7 @@ class AdmissionControllerTest extends BaseSpecification {
         created = orchestrator.createDeploymentNoWait(deployment)
         assert created
 
-        if (created) {
-            def timer = new Timer(30, 1)
-            def deleted = false
-            while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    println "Caught NPE while deleting deployment, retrying in 1s..."
-                }
-            }
-            if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-            }
-        }
+        deleteDeploymentWithCaution(deployment)
 
         and:
         "Unsuppress CVE"
@@ -265,6 +240,10 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Delete policy"
         PolicyService.policyClient.deletePolicy(Common.ResourceByID.newBuilder().setId(policy.id).build())
+
+        if (created) {
+            deleteDeploymentWithCaution(deployment)
+        }
 
         // Add back enforcement
         Services.updatePolicyEnforcement(
@@ -315,19 +294,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Revert Cluster"
         if (created) {
-            def timer = new Timer(30, 1)
-            def deleted = false
-            while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    println "Caught NPE while deleting deployment, retrying in 1s..."
-                }
-            }
-            if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-            }
+            deleteDeploymentWithCaution(deployment)
         }
 
         where:
@@ -385,19 +352,7 @@ class AdmissionControllerTest extends BaseSpecification {
         cleanup:
         "Revert Cluster"
         if (created) {
-            def timer = new Timer(30, 1)
-            def deleted = false
-            while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    println "Caught NPE while deleting deployment, retrying in 1s..."
-                }
-            }
-            if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-            }
+            deleteDeploymentWithCaution(deployment)
         }
         Services.updatePolicy(latestTagPolicy)
 
@@ -465,19 +420,23 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Delete deployment"
         if (created) {
-            def timer = new Timer(30, 1)
-            def deleted = false
-            while (!deleted && timer.IsValid()) {
-                try {
-                    orchestrator.deleteDeployment(deployment)
-                    deleted = true
-                } catch (NullPointerException ignore) {
-                    println "Caught NPE while deleting deployment, retrying in 1s..."
-                }
+            deleteDeploymentWithCaution(deployment)
+        }
+    }
+
+    def deleteDeploymentWithCaution(Deployment deployment) {
+        def timer = new Timer(30, 1)
+        def deleted = false
+        while (!deleted && timer.IsValid()) {
+            try {
+                orchestrator.deleteDeployment(deployment)
+                deleted = true
+            } catch (NullPointerException ignore) {
+                println "Caught NPE while deleting deployment, retrying in 1s..."
             }
-            if (!deleted) {
-                println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
-            }
+        }
+        if (!deleted) {
+            println "Warning: failed to delete deployment. Subsequent tests may be affected ..."
         }
     }
 
