@@ -204,18 +204,24 @@ waitForAPI: &waitForAPI
       export METADATA_URL="https://${API_ENDPOINT}/v1/metadata"
       echo "METADATA_URL is set to ${METADATA_URL}"
       set +e
-      SUCCESS=0
+      NUM_SUCCESSES_IN_A_ROW=0
+      SUCCESSES_NEEDED_IN_A_ROW=3
       for i in $(seq 1 25); do
         metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
         if [[ $? -eq 0 && "$(jq '.licenseStatus' -r \<<<"$metadata")" != "RESTARTING" ]]; then
-          SUCCESS=1
-          break
+          NUM_SUCCESSES_IN_A_ROW=$(( NUM_SUCCESSES_IN_A_ROW + 1 ))
+          if [[ "${NUM_SUCCESSES_IN_A_ROW}" == "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
+            break
+          fi
+          sleep 2
+          continue
         fi
+        NUM_SUCCESSES_IN_A_ROW=0
         sleep 5
       done
-      if [[ "${SUCCESS}" == 0 ]]; then
+      if [[ "${NUM_SUCCESSES_IN_A_ROW}" != "${SUCCESSES_NEEDED_IN_A_ROW}" ]]; then
         kubectl -n stackrox get pod
-        echo "Failed to connect to Central"
+        echo "Failed to connect to Central. Failed with ${NUM_SUCCESSES_IN_A_ROW} successes in a row"
         exit 1
       fi
       cci-export API_HOSTNAME "$API_HOSTNAME"
