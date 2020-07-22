@@ -13,7 +13,7 @@ import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
 import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import getSubListFromEntity from 'utils/getSubListFromEntity';

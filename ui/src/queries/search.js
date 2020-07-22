@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const SEARCH_OPTIONS_QUERY = gql`
     query searchOptions($categories: [SearchCategory!]) {

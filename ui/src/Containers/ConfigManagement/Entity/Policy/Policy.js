@@ -14,7 +14,7 @@ import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';

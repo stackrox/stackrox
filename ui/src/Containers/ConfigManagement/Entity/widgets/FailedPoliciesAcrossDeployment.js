@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import { sortSeverity } from 'sorters/sorters';
 import { format } from 'date-fns';

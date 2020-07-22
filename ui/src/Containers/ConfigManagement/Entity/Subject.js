@@ -9,7 +9,7 @@ import Metadata from 'Components/Metadata';
 import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
 import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import useCases from 'constants/useCaseTypes';
 import queryService from 'utils/queryService';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';

@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 const SEARCH_AUTOCOMPLETE_QUERY = gql`
     query autocomplete($query: String!, $categories: [SearchCategory!]) {

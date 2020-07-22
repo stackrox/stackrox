@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 import useCases from 'constants/useCaseTypes';
 import { workflowEntityPropTypes, workflowEntityDefaultProps } from 'constants/entityPageProps';

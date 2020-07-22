@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const SERVICE_ACCOUNT_FRAGMENT = gql`
     fragment serviceAccountFields on ServiceAccount {

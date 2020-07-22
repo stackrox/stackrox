@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useQuery } from 'react-apollo';
-import gql from 'graphql-tag';
+import { gql, useQuery } from '@apollo/client';
 import { HelpCircle, AlertCircle } from 'react-feather';
 import sortBy from 'lodash/sortBy';
 

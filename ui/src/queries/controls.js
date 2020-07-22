@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const AGGREGATED_RESULTS_ACROSS_ENTITY = gql`
     query getAggregatedResults(

@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
 import entityTypes from 'constants/entityTypes';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 import Raven from 'raven-js';
 import queryService from 'utils/queryService';
 import { entityAcrossControlsColumns } from 'constants/listColumns';

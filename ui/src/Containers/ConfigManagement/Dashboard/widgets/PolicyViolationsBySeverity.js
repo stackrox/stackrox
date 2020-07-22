@@ -7,7 +7,7 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import { Link, withRouter } from 'react-router-dom';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import max from 'lodash/max';
 import { severityValues, severities } from 'constants/severities';
 import {

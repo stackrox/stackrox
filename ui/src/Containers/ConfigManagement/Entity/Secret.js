@@ -15,7 +15,7 @@ import Metadata from 'Components/Metadata';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
 import queryService from 'utils/queryService';

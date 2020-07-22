@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
-import { useQuery } from 'react-apollo';
-import gql from 'graphql-tag';
+import { gql, useQuery } from '@apollo/client';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import EntityTileLink from 'Components/EntityTileLink';

@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const IMAGE_FRAGMENT = gql`
     fragment imageFields on Image {

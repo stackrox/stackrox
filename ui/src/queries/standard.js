@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const LIST_STANDARD = gql`
     query controls($groupBy: [ComplianceAggregation_Scope!], $where: String) {

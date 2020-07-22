@@ -1,7 +1,7 @@
 import { entityNameQueryMap } from 'utils/queryMap';
 import getEntityName from 'utils/getEntityName';
 import isGQLLoading from 'utils/gqlLoading';
-import { useQuery } from 'react-apollo';
+import { useQuery } from '@apollo/client';
 
 function useEntityName(entityType, entityId, skip) {
     // Header query

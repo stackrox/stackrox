@@ -1,5 +1,5 @@
 import React from 'react';
-import { MockedProvider } from '@apollo/react-testing';
+import { MockedProvider } from '@apollo/client/testing';
 import { waitForElement } from '@testing-library/react';
 import { CLUSTER_VERSION_QUERY } from 'queries/cluster';
 import renderWithRouter from 'test-utils/renderWithRouter';

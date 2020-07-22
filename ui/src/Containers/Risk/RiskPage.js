@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { useQuery } from 'react-apollo';
+import { useQuery } from '@apollo/client';
 
 import entityTypes, { searchCategories } from 'constants/entityTypes';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';

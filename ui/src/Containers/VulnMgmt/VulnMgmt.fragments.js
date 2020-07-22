@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const CLUSTER_LIST_FRAGMENT = gql`
     fragment clusterFields on Cluster {

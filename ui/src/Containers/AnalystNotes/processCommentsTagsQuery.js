@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 const GET_PROCESS_COMMENTS_TAGS_COUNT = gql`
     query processCommentsAndTagsCount($key: ProcessNoteKey!) {

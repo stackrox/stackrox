@@ -1,5 +1,5 @@
 import React from 'react';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import TopCvssLabel from 'Components/TopCvssLabel';

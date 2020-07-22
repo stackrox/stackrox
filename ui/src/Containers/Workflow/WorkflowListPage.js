@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useQuery } from 'react-apollo';
+import { useQuery } from '@apollo/client';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';

@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 const COMPONENT_NAME = gql`
     query getComponentName($id: ID!) {

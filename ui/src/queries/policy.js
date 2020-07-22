@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const POLICY_FRAGMENT = gql`
     fragment policyFields on Policy {

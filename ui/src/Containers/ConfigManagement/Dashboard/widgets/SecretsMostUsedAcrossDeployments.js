@@ -4,7 +4,7 @@ import { Link, withRouter } from 'react-router-dom';
 import Tooltip from 'Components/Tooltip';
 import TooltipOverlay from 'Components/TooltipOverlay';
 import URLService from 'utils/URLService';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';

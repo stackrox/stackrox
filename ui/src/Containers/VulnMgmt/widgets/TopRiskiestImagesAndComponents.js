@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useQuery } from 'react-apollo';
-import gql from 'graphql-tag';
+import { gql, useQuery } from '@apollo/client';
 import { format } from 'date-fns';
 
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -102,6 +101,7 @@ const getTextByEntityType = (entityType, data) => {
 
 const processData = (data, entityType, workflowState) => {
     const results = data.results
+        .slice()
         .sort((a, b) => {
             const d = a.priority - b.priority;
             if (d === 0) {

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import gql from 'graphql-tag';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 
 import Loader from 'Components/Loader';
 import Message from 'Components/Message';

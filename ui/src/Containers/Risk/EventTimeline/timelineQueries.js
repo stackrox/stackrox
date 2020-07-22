@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const DEPLOYMENT_OVERVIEW_FRAGMENT = gql`
     fragment deploymentOverviewFields on Deployment {

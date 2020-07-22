@@ -1,16 +1,10 @@
-import { ApolloClient } from 'apollo-client';
-import { createHttpLink } from 'apollo-link-http';
-import {
-    InMemoryCache,
-    IntrospectionFragmentMatcher,
-    defaultDataIdFromObject,
-} from 'apollo-cache-inmemory';
+import { ApolloClient, HttpLink, InMemoryCache, defaultDataIdFromObject } from '@apollo/client';
 import { buildAxiosFetch } from '@lifeomic/axios-fetch';
 
 import axios from 'services/instance';
-import introspectionQueryResultData from './fragmentTypes.json';
+import possibleTypes from './possibleTypes.json'; // see `scripts/generate-graphql-possible-types.js` file
 
-const httpLink = createHttpLink({
+const httpLink = new HttpLink({
     uri: '/api/graphql',
     // redirect requests through already configured Axios instance for:
     //  - consistency: auth logic (token header, redirects, retries with token refresh) works for GraphQL requests
@@ -32,10 +26,6 @@ const httpLink = createHttpLink({
     }),
 });
 
-const fragmentMatcher = new IntrospectionFragmentMatcher({
-    introspectionQueryResultData,
-});
-
 const defaultOptions = {
     watchQuery: {
         fetchPolicy: 'cache-and-network',
@@ -47,7 +37,7 @@ export default function () {
         link: httpLink,
         defaultOptions,
         cache: new InMemoryCache({
-            fragmentMatcher,
+            possibleTypes,
             dataIdFromObject: (object) => {
                 if (object.id && object.clusterID) return `${object.clusterID}/${object.id}`;
                 return defaultDataIdFromObject(object);

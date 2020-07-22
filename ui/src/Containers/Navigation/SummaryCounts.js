@@ -1,6 +1,6 @@
 import React from 'react';
-import gql from 'graphql-tag';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
+
 import Raven from 'raven-js';
 
 import SummaryTileCount from 'Components/SummaryTileCount';

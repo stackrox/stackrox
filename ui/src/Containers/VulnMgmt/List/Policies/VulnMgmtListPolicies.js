@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Power, Bell, BellOff, Trash2 } from 'react-feather';
 import { connect } from 'react-redux';

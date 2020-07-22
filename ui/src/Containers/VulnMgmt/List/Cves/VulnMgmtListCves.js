@@ -1,7 +1,7 @@
 /* eslint-disable react/jsx-no-bind */
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
@@ -284,9 +284,11 @@ const VulnMgmtCves = ({
     const tableSort = sort || defaultCveSort;
     const queryOptions = {
         variables: {
-            query: queryService.objectToWhereClause(search),
+            query: queryService.objectToWhereClause({
+                ...search,
+                cachebuster: refreshTrigger,
+            }),
             scopeQuery: '',
-            cachebuster: refreshTrigger,
             pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
         },
     };

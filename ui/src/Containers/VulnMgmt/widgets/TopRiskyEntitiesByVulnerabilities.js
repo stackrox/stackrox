@@ -1,8 +1,7 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
 import pluralize from 'pluralize';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 
 import queryService from 'utils/queryService';
 import workflowStateContext from 'Containers/workflowStateContext';

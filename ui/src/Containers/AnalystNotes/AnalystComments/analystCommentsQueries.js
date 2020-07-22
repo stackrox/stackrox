@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 import logError from 'utils/logError';
 import ANALYST_NOTES_TYPES from 'constants/analystnotes';

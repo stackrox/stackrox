@@ -12,7 +12,7 @@ import Metadata from 'Components/Metadata';
 import Rules from 'Containers/ConfigManagement/Entity/widgets/Rules';
 import RulePermissions from 'Containers/ConfigManagement/Entity/widgets/RulePermissions';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';

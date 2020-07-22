@@ -6,7 +6,7 @@ import { entityToColumns } from 'constants/listColumns';
 import cloneDeep from 'lodash/cloneDeep';
 import { format } from 'date-fns';
 import isGQLLoading from 'utils/gqlLoading';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Loader from 'Components/Loader';

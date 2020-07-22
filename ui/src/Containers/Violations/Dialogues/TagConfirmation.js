@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
-import { useMutation } from 'react-apollo';
+import { gql, useMutation } from '@apollo/client';
 import pluralize from 'pluralize';
 import { toast } from 'react-toastify';
 

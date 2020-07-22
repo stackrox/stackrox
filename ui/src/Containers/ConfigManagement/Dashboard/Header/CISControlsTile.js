@@ -1,10 +1,9 @@
 import React from 'react';
-import gql from 'graphql-tag';
 import URLService from 'utils/URLService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import entityTypes from 'constants/entityTypes';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 import logError from 'utils/logError';
 
 import EntityTileLink from 'Components/EntityTileLink';

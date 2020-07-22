@@ -1,5 +1,5 @@
 import React from 'react';
-import { MockedProvider } from '@apollo/react-testing';
+import { MockedProvider } from '@apollo/client/testing';
 import { waitForElement } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -15,7 +15,13 @@ const mocks = [
         request: {
             query: RECENTLY_DETECTED_VULNERABILITIES,
             variables: {
-                query: '',
+                query: 'CVE Type:IMAGE_CVE',
+                scopeQuery: '',
+                pagination: {
+                    offset: 0,
+                    limit: 5,
+                    sortOption: { field: 'CVE Created Time', reversed: true },
+                },
             },
         },
         result: {

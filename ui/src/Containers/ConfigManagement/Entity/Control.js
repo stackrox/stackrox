@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 import entityTypes from 'constants/entityTypes';
 import queryService from 'utils/queryService';
 import Query from 'Components/ThrowingQuery';

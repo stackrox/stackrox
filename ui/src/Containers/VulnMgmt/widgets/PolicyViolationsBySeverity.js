@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 import max from 'lodash/max';
 
 import queryService from 'utils/queryService';

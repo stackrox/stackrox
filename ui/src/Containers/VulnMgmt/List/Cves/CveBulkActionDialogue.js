@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import gql from 'graphql-tag';
-import { useQuery } from 'react-apollo';
+import { gql, useQuery } from '@apollo/client';
 import get from 'lodash/get';
 import set from 'lodash/set';
 

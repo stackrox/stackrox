@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { Mutation } from 'react-apollo';
+import { Mutation } from '@apollo/client/react/components';
 import { actions as notificationActions } from 'reducers/notifications';
 import { TRIGGER_SCAN, RUN_STATUSES } from 'queries/standard';
 
@@ -65,6 +65,7 @@ class ScanButton extends React.Component {
                         <Query
                             query={RUN_STATUSES}
                             variables={variables}
+                            notifyOnNetworkStatusChange // w/o it onCompleted won't be called: https://github.com/apollographql/apollo-client/issues/5531
                             onCompleted={this.queryCompleted(client)}
                         >
                             {({ startPolling, stopPolling }) => {

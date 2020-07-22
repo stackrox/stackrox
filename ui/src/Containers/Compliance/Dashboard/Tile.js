@@ -6,7 +6,7 @@ import { withRouter } from 'react-router-dom';
 import Query from 'Components/CacheFirstQuery';
 import EntityTileLink from 'Components/EntityTileLink';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 const CLUSTERS_COUNT = gql`
     query clustersCount {

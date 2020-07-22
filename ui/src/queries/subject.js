@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import { gql } from '@apollo/client';
 
 export const SUBJECT_WITH_CLUSTER_FRAGMENT = gql`
     fragment subjectWithClusterFields on SubjectWithClusterID {
