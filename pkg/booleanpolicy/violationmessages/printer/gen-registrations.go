@@ -12,6 +12,7 @@ const (
 	EnvKey                  = "env"
 	ImageAgeKey             = "imageAge"
 	ImageDetailsKey         = "imageDetails"
+	ImageOSKey              = "imageOS"
 	ImageScanKey            = "imageScan"
 	ImageScanAgeKey         = "imageScanAge"
 	LineKey                 = "line"
@@ -38,6 +39,7 @@ func init() {
 	registerFunc(EnvKey, envPrinter)
 	registerFunc(ImageAgeKey, imageAgePrinter)
 	registerFunc(ImageDetailsKey, imageDetailsPrinter)
+	registerFunc(ImageOSKey, imageOSPrinter)
 	registerFunc(ImageScanKey, imageScanPrinter)
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
 	registerFunc(LineKey, linePrinter)

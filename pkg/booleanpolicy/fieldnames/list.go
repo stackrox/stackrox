@@ -22,6 +22,7 @@ var (
 	FixedBy                = newFieldName("Fixed By")
 	ImageAge               = newFieldName("Image Age")
 	ImageComponent         = newFieldName("Image Component")
+	ImageOS                = newFieldName("Image OS")
 	ImageRegistry          = newFieldName("Image Registry")
 	ImageRemote            = newFieldName("Image Remote")
 	ImageScanAge           = newFieldName("Image Scan Age")

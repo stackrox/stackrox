@@ -146,6 +146,16 @@ func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
 	}
 }
 
+func imageWithOS(os string) *storage.Image {
+	return &storage.Image{
+		Id:   uuid.NewV4().String(),
+		Name: &storage.ImageName{FullName: "docker.io/ASFASF", Remote: "ASFASF"},
+		Scan: &storage.ImageScan{
+			OperatingSystem: os,
+		},
+	}
+}
+
 func deploymentWithImageAnyID(img *storage.Image) *storage.Deployment {
 	return deploymentWithImage(uuid.NewV4().String(), img)
 }
@@ -1676,6 +1686,84 @@ func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 				}
 			}
 			assert.ElementsMatch(t, matched.AsSlice(), c.expectedMatches, "Got %v, expected: %v", matched.AsSlice(), c.expectedMatches)
+		})
+	}
+}
+
+func (suite *DefaultPoliciesTestSuite) TestImageOS() {
+	depToImg := make(map[*storage.Deployment]*storage.Image)
+	for _, imgName := range []string{
+		"unknown",
+		"alpine:v3.4",
+		"alpine:v3.11",
+		"ubuntu:20.04",
+		"debian:8",
+		"debian:10",
+	} {
+		img := imageWithOS(imgName)
+		dep := fixtures.GetDeployment().Clone()
+		dep.Containers = []*storage.Container{
+			{
+				Name:  imgName,
+				Image: types.ToContainerImage(img),
+			},
+		}
+		depToImg[dep] = img
+	}
+
+	for _, testCase := range []struct {
+		value           string
+		expectedMatches []string
+	}{
+		{
+			value:           "unknown",
+			expectedMatches: []string{"unknown"},
+		},
+		{
+			value:           "alpine",
+			expectedMatches: []string{"alpine:v3.4", "alpine:v3.11"},
+		},
+		{
+			value:           "debian:8",
+			expectedMatches: []string{"debian:8"},
+		},
+		{
+			value:           "centos",
+			expectedMatches: nil,
+		},
+	} {
+		c := testCase
+
+		suite.T().Run(fmt.Sprintf("DeploymentMatcher %+v", c), func(t *testing.T) {
+			depMatcher, err := booleanpolicy.BuildDeploymentMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
+			require.NoError(t, err)
+			depMatched := set.NewStringSet()
+			for dep, img := range depToImg {
+				violations, err := depMatcher.MatchDeployment(nil, dep, []*storage.Image{img})
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					depMatched.Add(img.Scan.OperatingSystem)
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Container '%s' has image with base OS '%s'", dep.Containers[0].Name, img.Scan.OperatingSystem), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, depMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", depMatched.AsSlice(), c.value, c.expectedMatches)
+		})
+
+		suite.T().Run(fmt.Sprintf("ImageMatcher %+v", c), func(t *testing.T) {
+			imgMatcher, err := booleanpolicy.BuildImageMatcher(policyWithSingleKeyValue(fieldnames.ImageOS, c.value, false))
+			require.NoError(t, err)
+			imgMatched := set.NewStringSet()
+			for _, img := range depToImg {
+				violations, err := imgMatcher.MatchImage(nil, img)
+				require.NoError(t, err)
+				if len(violations.AlertViolations) > 0 {
+					imgMatched.Add(img.Scan.OperatingSystem)
+					require.Len(t, violations.AlertViolations, 1)
+					assert.Equal(t, fmt.Sprintf("Image has base OS '%s'", img.Scan.OperatingSystem), violations.AlertViolations[0].GetMessage())
+				}
+			}
+			assert.ElementsMatch(t, imgMatched.AsSlice(), c.expectedMatches, "Got %v for policy %v; expected: %v", imgMatched.AsSlice(), c.value, c.expectedMatches)
 		})
 	}
 }

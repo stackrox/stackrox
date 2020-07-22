@@ -453,6 +453,18 @@ const policyConfigurationDescriptor = [
         canBooleanLogic: true,
     },
     {
+        label: 'Image OS',
+        name: 'Image OS',
+        longName: 'Image Operating System',
+        negatedName: `Image Operating System doesn't match`,
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'text',
+        placeholder: 'ubuntu:19.04',
+        required: false,
+        default: false,
+        canBooleanLogic: true,
+    },
+    {
         label: 'Environment Variable',
         name: 'Environment Variable',
         jsonpath: 'fields.env',

@@ -69,6 +69,24 @@ func imageScanAgePrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
+	imageOSTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} base OS '{{.ImageOS}}'`
+)
+
+func imageOSPrinter(fieldMap map[string][]string) ([]string, error) {
+	type resultFields struct {
+		ContainerName string
+		ImageOS       string
+	}
+	r := resultFields{}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	var err error
+	if r.ImageOS, err = getSingleValueFromFieldMap(search.ImageOS.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	return executeTemplate(imageOSTemplate, r)
+}
+
+const (
 	imageDetailsTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
 )
 
