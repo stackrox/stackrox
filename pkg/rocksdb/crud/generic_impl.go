@@ -39,6 +39,7 @@ func (c *crudImpl) Count() (int, error) {
 		return 0, err
 	}
 	defer c.db.DecRocksDBInProgressOps()
+
 	var count int
 	err := ForEachOverKeySet(c.db, defaultIteratorOptions, c.prefix, false, func(k []byte) error {
 		count++
@@ -52,8 +53,8 @@ func (c *crudImpl) Get(id string) (proto.Message, bool, error) {
 		return nil, false, err
 	}
 	defer c.db.DecRocksDBInProgressOps()
-	key := c.getPrefixedKey(id)
 
+	key := c.getPrefixedKey(id)
 	slice, err := c.db.Get(defaultReadOptions, key)
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "getting key %s", key)
@@ -74,6 +75,7 @@ func (c *crudImpl) Exists(id string) (exists bool, err error) {
 		return false, err
 	}
 	defer c.db.DecRocksDBInProgressOps()
+
 	slice, err := c.db.Get(defaultReadOptions, c.getPrefixedKey(id))
 	if err != nil {
 		return false, errors.Wrapf(err, "getting id %s", id)
@@ -280,12 +282,31 @@ func (c *crudImpl) Walk(fn func(msg proto.Message) error) error {
 		return err
 	}
 	defer c.db.DecRocksDBInProgressOps()
+
 	return BucketForEach(c.db, defaultIteratorOptions, c.prefix, false, func(k, v []byte) error {
 		msg, err := c.deserializeFunc(v)
 		if err != nil {
 			return errors.Wrap(err, "deserializing object")
 		}
 		if err := fn(msg); err != nil {
+			return errors.Wrap(err, "applying closure")
+		}
+		return nil
+	})
+}
+
+func (c *crudImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) error {
+	if err := c.db.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer c.db.DecRocksDBInProgressOps()
+
+	return BucketForEach(c.db, defaultIteratorOptions, c.prefix, true, func(k, v []byte) error {
+		msg, err := c.deserializeFunc(v)
+		if err != nil {
+			return errors.Wrap(err, "deserializing object")
+		}
+		if err := fn(k, msg); err != nil {
 			return errors.Wrap(err, "applying closure")
 		}
 		return nil

@@ -12,6 +12,7 @@ type Crud interface {
 	Get(id string) (proto.Message, bool, error)
 	GetMany(ids []string) (msgs []proto.Message, indices []int, err error)
 	Walk(func(msg proto.Message) error) error
+	WalkAllWithID(func(id []byte, msg proto.Message) error) error
 
 	// Modifying functions
 	Upsert(kv proto.Message) error

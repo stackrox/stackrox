@@ -114,6 +114,18 @@ func (c *cacheImpl) Walk(fn func(msg proto.Message) error) error {
 	return nil
 }
 
+func (c *cacheImpl) WalkAllWithID(fn func(id []byte, msg proto.Message) error) error {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+
+	for id, msg := range c.cache {
+		if err := fn([]byte(id), msg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *cacheImpl) Upsert(msg proto.Message) error {
 	if err := c.db.Upsert(msg); err != nil {
 		return err

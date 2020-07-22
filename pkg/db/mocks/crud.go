@@ -124,6 +124,20 @@ func (mr *MockCrudMockRecorder) Walk(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockCrud)(nil).Walk), arg0)
 }
 
+// WalkAllWithID mocks base method
+func (m *MockCrud) WalkAllWithID(arg0 func([]byte, proto.Message) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkAllWithID", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkAllWithID indicates an expected call of WalkAllWithID
+func (mr *MockCrudMockRecorder) WalkAllWithID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkAllWithID", reflect.TypeOf((*MockCrud)(nil).WalkAllWithID), arg0)
+}
+
 // Upsert mocks base method
 func (m *MockCrud) Upsert(kv proto.Message) error {
 	m.ctrl.T.Helper()

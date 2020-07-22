@@ -1,6 +1,7 @@
 package generic
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -21,7 +22,7 @@ var (
 	alert2ID = alert2.GetId()
 
 	alert3   = fixtures.GetAlertWithID("3")
-	alert3ID = alert2.GetId()
+	alert3ID = alert3.GetId()
 
 	alerts = []*storage.Alert{alert1, alert2}
 )
@@ -61,6 +62,26 @@ func (s *CRUDTestSuite) SetupTest() {
 func (s *CRUDTestSuite) TearDownTest() {
 	s.db.Close()
 	_ = os.RemoveAll(s.dir)
+}
+
+func (s *CRUDTestSuite) TestWalkAllWithID() {
+	var ids []string
+	var alerts []*storage.Alert
+	do := func(id []byte, msg proto.Message) error {
+		if bytes.Equal(id, []byte(alert3ID)) {
+			return nil
+		}
+		ids = append(ids, string(id))
+		alerts = append(alerts, msg.(*storage.Alert))
+		return nil
+	}
+
+	s.NoError(s.crud.UpsertMany([]proto.Message{alert1, alert2, alert3}))
+
+	err := s.crud.WalkAllWithID(do)
+	s.NoError(err)
+	s.ElementsMatch([]string{alert1ID, alert2ID}, ids)
+	s.ElementsMatch([]*storage.Alert{alert1, alert2}, alerts)
 }
 
 func (s *CRUDTestSuite) CountTest() {
