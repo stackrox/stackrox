@@ -18,6 +18,8 @@ All notable changes to this project that require documentation updates will be d
 
 - UI: Added `Image OS` to the image list and image single page in Vuln Mgmt (ROX-4083).
 - Added the ability to make policies based on `Image OS` (ROX-4083).
+- roxctl image scan and /v1/image/<image id> no longer return snoozed CVEs as a part of their output. The `include-snoozed` command line parameter
+  and the `includeSnoozed` query parameter respectively can be used to include all CVEs.
 
 ## [46.0]
 - Added the following REST APIs:

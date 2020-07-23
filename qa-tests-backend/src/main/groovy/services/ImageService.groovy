@@ -1,6 +1,5 @@
 package services
 
-import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.ImageServiceGrpc
 import io.stackrox.proto.api.v1.ImageServiceOuterClass
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
@@ -15,22 +14,28 @@ class ImageService extends BaseService {
         return getImageClient().listImages(request).imagesList
     }
 
-    static getImage(String digest) {
+    static getImage(String digest, Boolean includeSnoozed = true) {
         if (digest == null) {
             ImageOuterClass.Image nullImage
             return nullImage
         }
-        return getImageClient().getImage(Common.ResourceByID.newBuilder().setId(digest).build())
+        return getImageClient().getImage(
+                ImageServiceOuterClass.GetImageRequest.newBuilder()
+                        .setId(digest)
+                        .setIncludeSnoozed(includeSnoozed)
+                        .build()
+        )
     }
 
     static clearImageCaches() {
         getImageClient().invalidateScanAndRegistryCaches()
     }
 
-    static scanImage(String image) {
+    static scanImage(String image, Boolean includeSnoozed = true) {
         try {
             return getImageClient().scanImage(ImageServiceOuterClass.ScanImageRequest.newBuilder()
                     .setImageName(image)
+                    .setIncludeSnoozed(includeSnoozed)
                     .build())
         } catch (Exception e) {
             println "Image failed to scan: ${image} - ${e.toString()}"

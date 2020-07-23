@@ -237,4 +237,51 @@ class ImageManagementTest extends BaseSpecification {
         orchestrator.deleteDeployment(deployment)
     }
 
+    def hasOpenSSLVuln(image) {
+        return image?.getScan()?.getComponentsList().
+                find { it.name == "openssl" }?.
+                getVulnsList().find { it.cve == "CVE-2010-0928" } != null
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify image scan results when CVEs are suppressed: "() {
+        given:
+        "Scan image"
+        def image = ImageService.scanImage("library/nginx:1.10", true)
+        assert hasOpenSSLVuln(image)
+
+        image = ImageService.getImage(image.id, true)
+        assert hasOpenSSLVuln(image)
+
+        CVEService.suppressCVE("CVE-2010-0928")
+
+        when:
+        def scanIncludeSnoozed = ImageService.scanImage("library/nginx:1.10", true)
+        assert hasOpenSSLVuln(scanIncludeSnoozed)
+
+        def scanExcludedSnoozed = ImageService.scanImage("library/nginx:1.10", false)
+        assert !hasOpenSSLVuln(scanExcludedSnoozed)
+
+        def getIncludeSnoozed  = ImageService.getImage(image.id, true)
+        assert hasOpenSSLVuln(getIncludeSnoozed)
+
+        def getExcludeSnoozed  = ImageService.getImage(image.id, false)
+        assert !hasOpenSSLVuln(getExcludeSnoozed)
+
+        CVEService.unsuppressCVE("CVE-2010-0928")
+
+        def unsuppressedScan = ImageService.scanImage("library/nginx:1.10", false)
+        def unsuppressedGet  = ImageService.getImage(image.id, false)
+
+        then:
+
+        assert hasOpenSSLVuln(unsuppressedScan)
+        assert hasOpenSSLVuln(unsuppressedGet)
+
+        cleanup:
+        // Should be able to call this multiple times safely in case of any failures previously
+        CVEService.unsuppressCVE("CVE-2010-0928")
+    }
+
 }

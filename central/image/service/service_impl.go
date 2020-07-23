@@ -80,7 +80,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetImage returns an image with given sha if it exists.
-func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*storage.Image, error) {
+func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest) (*storage.Image, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be specified")
 	}
@@ -94,6 +94,10 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 		return nil, status.Errorf(codes.NotFound, "image with id %q does not exist", request.GetId())
 	}
 
+	if !request.GetIncludeSnoozed() {
+		// This modifies the image object
+		utils.FilterSuppressedCVEsNoClone(image)
+	}
 	return image, nil
 }
 
@@ -141,8 +145,6 @@ func (s *serviceImpl) InvalidateScanAndRegistryCaches(context.Context, *v1.Empty
 }
 
 func (s *serviceImpl) saveImage(ctx context.Context, img *storage.Image) {
-	// CalculateRiskAndUpsertImage modifies the image, so clone it first
-	img = img.Clone()
 	// Save the image if we received an ID from sensor
 	// Otherwise, our inferred ID may not match
 	if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
@@ -161,6 +163,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 		}
 		// If the scan exists and it is less than the reprocessing interval then return the scan. Otherwise, fetch it from the DB
 		if exists {
+			utils.FilterSuppressedCVEsNoClone(img)
 			return &v1.ScanImageInternalResponse{
 				Image: utils.StripCVEDescriptions(img),
 			}, nil
@@ -184,9 +187,11 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 
 	// asynchronously upsert images as this rpc should be performant
 	if img.GetId() != "" {
-		go s.saveImage(ctx, img)
+		go s.saveImage(ctx, img.Clone())
 	}
 
+	// This modifies the image object
+	utils.FilterSuppressedCVEsNoClone(img)
 	return &v1.ScanImageInternalResponse{
 		Image: utils.StripCVEDescriptions(img),
 	}, nil
@@ -225,6 +230,9 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		if err := s.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
 			return nil, err
 		}
+	}
+	if !request.GetIncludeSnoozed() {
+		utils.FilterSuppressedCVEsNoClone(img)
 	}
 	return img, nil
 }

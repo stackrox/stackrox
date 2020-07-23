@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -200,6 +201,26 @@ func StripCVEDescriptionsNoClone(img *storage.Image) {
 	for _, component := range img.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.Summary = ""
+		}
+	}
+}
+
+// FilterSuppressedCVEsNoClone removes the vulns from the image that are currently suppressed
+func FilterSuppressedCVEsNoClone(img *storage.Image) {
+	cveSet := set.NewStringSet()
+	for _, c := range img.GetScan().GetComponents() {
+		filteredVulns := make([]*storage.EmbeddedVulnerability, 0, len(c.GetVulns()))
+		for _, vuln := range c.GetVulns() {
+			if !vuln.GetSuppressed() {
+				cveSet.Add(vuln.GetCve())
+				filteredVulns = append(filteredVulns, vuln)
+			}
+		}
+		c.Vulns = filteredVulns
+	}
+	if img.GetSetCves() != nil {
+		img.SetCves = &storage.Image_Cves{
+			Cves: int32(len(cveSet)),
 		}
 	}
 }

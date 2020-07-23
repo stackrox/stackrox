@@ -112,6 +112,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, err
 	}
 
+	utils.FilterSuppressedCVEsNoClone(img)
 	alerts, err := s.buildTimeDetector.Detect(img)
 	if err != nil {
 		return nil, err
@@ -142,6 +143,9 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		if err := s.riskManager.CalculateRiskAndUpsertImage(images[idx]); err != nil {
 			return nil, err
 		}
+	}
+	for _, img := range images {
+		utils.FilterSuppressedCVEsNoClone(img)
 	}
 
 	detectionCtx := deploytimePkg.DetectionContext{

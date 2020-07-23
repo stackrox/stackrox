@@ -48,7 +48,7 @@ func TestScan(t *testing.T) {
 	var resp *storage.Image
 	var err error
 	err = retry.WithRetry(func() error {
-		resp, err = imageService.GetImage(ctx, &v1.ResourceByID{
+		resp, err = imageService.GetImage(ctx, &v1.GetImageRequest{
 			Id: imageID,
 		})
 		if err != nil {
@@ -61,7 +61,7 @@ func TestScan(t *testing.T) {
 	}), retry.Tries(20))
 	require.NoError(t, err)
 
-	resp, err = imageService.GetImage(ctx, &v1.ResourceByID{
+	resp, err = imageService.GetImage(ctx, &v1.GetImageRequest{
 		Id: imageID,
 	})
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestScan(t *testing.T) {
 	require.NoError(t, err)
 	verifySummariesExist(t, resp, true)
 
-	resp, err = imageService.GetImage(ctx, &v1.ResourceByID{
+	resp, err = imageService.GetImage(ctx, &v1.GetImageRequest{
 		Id: resp.GetId(),
 	})
 	require.NoError(t, err)
@@ -86,7 +86,7 @@ func TestScan(t *testing.T) {
 	require.NoError(t, err)
 	verifySummariesExist(t, resp, true)
 
-	resp, err = imageService.GetImage(ctx, &v1.ResourceByID{
+	resp, err = imageService.GetImage(ctx, &v1.GetImageRequest{
 		Id: resp.GetId(),
 	})
 	require.NoError(t, err)

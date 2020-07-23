@@ -17,8 +17,9 @@ import (
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
 	var (
-		image string
-		force bool
+		image          string
+		force          bool
+		includeSnoozed bool
 	)
 	c := &cobra.Command{
 		Use: "scan",
@@ -26,16 +27,17 @@ func Command() *cobra.Command {
 			if image == "" {
 				return errors.New("--image must be set")
 			}
-			return scanImage(image, force, flags.Timeout(c))
+			return scanImage(image, force, includeSnoozed, flags.Timeout(c))
 		}),
 	}
 
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVarP(&force, "force", "f", false, "the --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
+	c.Flags().BoolVarP(&includeSnoozed, "include-snoozed", "a", true, "the --include-snoozed flag returns both snoozed and unsnoozed CVEs if set to false")
 	return c
 }
 
-func scanImage(image string, force bool, timeout time.Duration) error {
+func scanImage(image string, force, includeSnoozed bool, timeout time.Duration) error {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -51,8 +53,9 @@ func scanImage(image string, force bool, timeout time.Duration) error {
 	defer cancel()
 
 	imageResult, err := service.ScanImage(ctx, &v1.ScanImageRequest{
-		ImageName: image,
-		Force:     force,
+		ImageName:      image,
+		Force:          force,
+		IncludeSnoozed: includeSnoozed,
 	})
 	if err != nil {
 		return err
