@@ -22,11 +22,18 @@ class Deployment {
     Integer replicas = 1
     Map<String, String> env = [:]
     List<String> envFromSecrets = []
+    List<String> envFromConfigMaps = []
     Map<String, SecretKeyRef> envValueFromSecretKeyRef = [:]
+    Map<String, ConfigMapKeyRef> envValueFromConfigMapKeyRef = [:]
+    Map<String, String> envValueFromFieldRef = [:]
+    Map<String, String> envValueFromResourceFieldRef = [:]
     Boolean isPrivileged = false
+    Boolean readOnlyRootFilesystem = false
     Map<String , String> limits = [:]
     Map<String , String> request = [:]
     Boolean hostNetwork = false
+    List<String> addCapabilities = []
+    List<String> dropCapabilities = []
 
     // Misc
     String loadBalancerIP = null
@@ -70,23 +77,23 @@ class Deployment {
         return this
     }
 
-    Deployment addVolume( String name, String path, boolean enableHostPath = false) {
-        this.volumes.add(new Volume ( name: name,
+    Deployment addVolume(String name, String path, boolean enableHostPath = false, boolean readOnly = false) {
+        this.volumes.add(new Volume(name: name,
                 hostPath: enableHostPath,
                 mountPath: path))
         this.volumeMounts.add(new VolumeMount(name: name,
-                mountPath:path,
-                readOnly : false
+                mountPath: path,
+                readOnly: readOnly
         ))
         return this
     }
 
-    Deployment addVolume( Volume v) {
+    Deployment addVolume(Volume v, boolean readOnly = false) {
         this.volumes.add(v)
         this.volumeMounts.add(new VolumeMount(
                 mountPath: v.mountPath,
                 name: v.name,
-                readOnly: false
+                readOnly: readOnly
         ))
         return this
     }
@@ -131,13 +138,38 @@ class Deployment {
         return this
     }
 
+    Deployment setEnvFromConfigMaps(List<String> envFromConfigMaps) {
+        this.envFromConfigMaps = envFromConfigMaps
+        return this
+    }
+
     Deployment addEnvValueFromSecretKeyRef(String envName, SecretKeyRef secretKeyRef) {
         this.envValueFromSecretKeyRef.put(envName, secretKeyRef)
         return this
     }
 
+    Deployment addEnvValueFromConfigMapKeyRef(String envName, ConfigMapKeyRef configMapKeyRef) {
+        this.envValueFromConfigMapKeyRef.put(envName, configMapKeyRef)
+        return this
+    }
+
+    Deployment addEnvValueFromFieldRef(String envName, String fieldPath) {
+        this.envValueFromFieldRef.put(envName, fieldPath)
+        return this
+    }
+
+    Deployment addEnvValueFromResourceFieldRef(String envName, String resource) {
+        this.envValueFromResourceFieldRef.put(envName, resource)
+        return this
+    }
+
     Deployment setPrivilegedFlag(boolean val) {
         this.isPrivileged = val
+        return this
+    }
+
+    Deployment setReadOnlyRootFilesystem(boolean val) {
+        this.readOnlyRootFilesystem = val
         return this
     }
 
@@ -191,6 +223,12 @@ class Deployment {
 
     Deployment setServiceName(String name) {
         this.serviceName = name
+        return this
+    }
+
+    Deployment setCapabilities(List<String> add, List<String> drop) {
+        this.addCapabilities = add
+        this.dropCapabilities = drop
         return this
     }
 

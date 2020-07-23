@@ -444,6 +444,20 @@ class PolicyConfigurationTest extends BaseSpecification {
                                         .setProtocol("TCP").build()))
                         .build()                       | DEPLOYMENTNGINX
 
+        "Protocol (case-insensitive)"                            |
+                Policy.newBuilder()
+                        .setName("TestProtocolPolicy")
+                        .setDescription("TestProtocol")
+                        .setRationale("TestProtocol")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setPortPolicy(PortPolicy.newBuilder()
+                                        .setProtocol("tcp").build()))
+                        .build()                       | DEPLOYMENTNGINX
+
         "Limits"                              |
                 Policy.newBuilder()
                         .setName("TestLimitsPolicy")

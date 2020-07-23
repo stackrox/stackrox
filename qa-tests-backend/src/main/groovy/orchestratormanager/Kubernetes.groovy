@@ -1,6 +1,10 @@
 package orchestratormanager
 
 import common.YamlGenerator
+import io.fabric8.kubernetes.api.model.Capabilities
+import io.fabric8.kubernetes.api.model.ConfigMap
+import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.ContainerStatus
@@ -14,11 +18,13 @@ import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
 import io.fabric8.kubernetes.api.model.Quantity
+import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretEnvSource
@@ -68,6 +74,7 @@ import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
 import io.fabric8.kubernetes.client.utils.BlockingInputStreamPumper
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
+import objects.ConfigMapKeyRef
 import objects.DaemonSet
 import objects.Deployment
 import objects.K8sPolicyRule
@@ -1268,6 +1275,36 @@ class Kubernetes implements OrchestratorMain {
     }
 
     /*
+        ConfigMaps
+    */
+
+    def createConfigMap(String name, Map<String,String> data, String namespace = this.namespace) {
+        ConfigMap configMap = new ConfigMap(
+                apiVersion: "v1",
+                kind: "ConfigMap",
+                data: data,
+                metadata: new ObjectMeta(
+                        name: name
+                )
+        )
+
+        try {
+            client.configMaps().inNamespace(namespace).createOrReplace(configMap)
+            Timer t = new Timer(20, 3)
+            while (t.IsValid()) {
+                ConfigMap foundAfterCreate = client.configMaps().inNamespace(namespace).withName(name).get()
+                if (foundAfterCreate != null) {
+                    println name + ": config map created."
+                    return foundAfterCreate
+                }
+            }
+            throw new RuntimeException("Config map not found after create")
+        } catch (Exception e) {
+            println("Error creating configMap: " + e.toString())
+        }
+    }
+
+    /*
         Misc/Helper Methods
     */
 
@@ -1556,9 +1593,42 @@ class Kubernetes implements OrchestratorMain {
                     .build())
         }
 
-        List<EnvFromSource> envFromSecrets = new LinkedList<>()
+        deployment.envValueFromConfigMapKeyRef.forEach {
+            String k, ConfigMapKeyRef v -> envVars.add(new EnvVarBuilder()
+                    .withName(k)
+                    .withValueFrom(new EnvVarSourceBuilder()
+                            .withConfigMapKeyRef(
+                                    new ConfigMapKeySelectorBuilder().withKey(v.key).withName(v.name).build())
+                            .build())
+                    .build())
+        }
+
+        deployment.envValueFromFieldRef.forEach {
+            String k, String fieldPath -> envVars.add(new EnvVarBuilder()
+                    .withName(k)
+                    .withValueFrom(new EnvVarSourceBuilder()
+                            .withFieldRef(
+                                    new ObjectFieldSelectorBuilder().withFieldPath(fieldPath).build())
+                            .build())
+                    .build())
+        }
+
+        deployment.envValueFromResourceFieldRef.forEach {
+            String k, String resource -> envVars.add(new EnvVarBuilder()
+                    .withName(k)
+                    .withValueFrom(new EnvVarSourceBuilder()
+                            .withResourceFieldRef(
+                                    new ResourceFieldSelectorBuilder().withResource(resource).build())
+                            .build())
+                    .build())
+        }
+
+        List<EnvFromSource> envFrom = new LinkedList<>()
         for (String secret : deployment.getEnvFromSecrets()) {
-            envFromSecrets.add(new EnvFromSource(null, null, new SecretEnvSource(secret, false)))
+            envFrom.add(new EnvFromSource(null, null, new SecretEnvSource(secret, false)))
+        }
+        for (String configMapName : deployment.getEnvFromConfigMaps()) {
+            envFrom.add(new EnvFromSource(new ConfigMapEnvSource(configMapName, false), null, null))
         }
 
         List<Volume> volumes = []
@@ -1606,9 +1676,12 @@ class Kubernetes implements OrchestratorMain {
                 ports: depPorts,
                 volumeMounts: volMounts,
                 env: envVars,
-                envFrom: envFromSecrets,
+                envFrom: envFrom,
                 resources: new ResourceRequirements(limits, requests),
-                securityContext: new SecurityContext(privileged: deployment.isPrivileged)
+                securityContext: new SecurityContext(privileged: deployment.isPrivileged,
+                                                     readOnlyRootFilesystem: deployment.readOnlyRootFilesystem,
+                                                     capabilities: new Capabilities(add: deployment.addCapabilities,
+                                                                                    drop: deployment.dropCapabilities))
         )
 
         PodSpec podSpec = new PodSpec(

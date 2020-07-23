@@ -123,6 +123,9 @@ interface OrchestratorMain {
     //Jobs
     def getJobCount()
 
+    //ConfigMaps
+    def createConfigMap(String name, Map<String,String> data, String namespace)
+
     //Misc
     def execInContainer(Deployment deployment, String cmd)
     String generateYaml(Object orchestratorObject)

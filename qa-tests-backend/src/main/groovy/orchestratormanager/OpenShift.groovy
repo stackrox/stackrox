@@ -51,11 +51,16 @@ class OpenShift extends Kubernetes {
                             !anyuid.allowHostPorts
                     )) {
                 println "Adding system:serviceaccount:" + ns + ":default to anyuid user list"
-                anyuid.users.addAll(["system:serviceaccount:" + ns + ":default"])
-                anyuid.setAllowHostNetwork(true)
-                anyuid.setAllowHostDirVolumePlugin(true)
-                anyuid.setAllowHostPorts(true)
-                anyuid.setAllowPrivilegedContainer(true)
+                anyuid.with {
+                    users.addAll(["system:serviceaccount:" + ns + ":default"])
+                    setAllowHostNetwork(true)
+                    setAllowHostDirVolumePlugin(true)
+                    setAllowHostPorts(true)
+                    setAllowPrivilegedContainer(true)
+                    setRequiredDropCapabilities([])
+                    setAllowedCapabilities(["*"])
+                    setAllowedUnsafeSysctls(["*"])
+                }
                 oClient.securityContextConstraints().createOrReplace(anyuid)
             }
         } catch (Exception e) {
