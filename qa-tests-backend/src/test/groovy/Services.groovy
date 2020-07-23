@@ -73,7 +73,7 @@ class Services extends BaseService {
     }
 
     static ImageOuterClass.Image getImageById(String id) {
-        return getImageClient().getImage(getResourceByID(id))
+        return getImageClient().getImage(ImageServiceOuterClass.GetImageRequest.newBuilder().setId(id).build())
     }
 
     static Policy getPolicy(String id) {
