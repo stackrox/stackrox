@@ -3,8 +3,8 @@ package gatherers
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"golang.org/x/sys/unix"
@@ -42,7 +42,7 @@ func (d *databaseGatherer) Gather() *data.StorageInfo {
 		Errors: errList.ErrorStrings(),
 	}
 
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
 	} else {
 		storageInfo.Databases = append(storageInfo.Databases, d.badger.Gather())

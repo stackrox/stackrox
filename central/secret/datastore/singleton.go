@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/secret/internal/store/bolt"
 	"github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/secret/search"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -23,7 +23,7 @@ var (
 
 func initialize() {
 	var storage store.Store
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		storage = rocksdb.New(globaldb.GetRocksDB())
 	} else {
 		storage = bolt.New(globaldb.GetGlobalDB())

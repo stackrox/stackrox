@@ -26,4 +26,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_37_to_m_38_boolean_policy_logic"
 	_ "github.com/stackrox/rox/migrator/migrations/m_38_to_m_39_update_mining_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_39_to_m_40_update_owner_policies"
+	_ "github.com/stackrox/rox/migrator/migrations/m_40_to_m_41_rocksdb_migration"
 )

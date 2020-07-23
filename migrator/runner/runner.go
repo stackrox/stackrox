@@ -3,42 +3,12 @@ package runner
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
-	"github.com/stackrox/rox/migrator/migrations/rocksdbmigration"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/env"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 )
-
-func runRocksDBMigrationIfNecessary(databases *types.Databases) error {
-	// If we are not using RocksDB or BadgerDB is nil, which means a migration already occurred
-	// then return
-	if !env.RocksDB.BooleanSetting() || databases.BadgerDB == nil {
-		return nil
-	}
-
-	// Migrate BadgerDB -> RocksDB
-	// If Badger was opened, then the migration still needs to be done
-	if err := rocksdbmigration.Migrate(databases); err != nil {
-		return errors.Wrap(err, "migrating to RocksDB")
-	}
-	// Update RocksDB version to mark successful migration
-	migration, ok := migrations.Get(pkgMigrations.CurrentDBVersionSeqNum - 1)
-	if !ok {
-		return errors.Errorf("migration at current db version %d - 1 must exist", pkgMigrations.CurrentDBVersionSeqNum)
-	}
-	versionBytes, err := proto.Marshal(&migration.VersionAfter)
-	if err != nil {
-		return errors.Wrap(err, "marshalling version")
-	}
-	if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
-		return err
-	}
-	return nil
-}
 
 // Run runs the migrator.
 func Run(databases *types.Databases) error {
@@ -60,7 +30,7 @@ func Run(databases *types.Databases) error {
 		log.WriteToStderr("DB is up to date. Nothing to do here.")
 	}
 
-	return runRocksDBMigrationIfNecessary(databases)
+	return nil
 }
 
 func runMigrations(databases *types.Databases, startingSeqNum int) error {

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -83,6 +83,7 @@ func GetCurrentSeqNumRocksDB(db *gorocksdb.DB) (int, error) {
 	if err != nil || !slice.Exists() {
 		return 0, err
 	}
+	defer slice.Free()
 	if err := proto.Unmarshal(slice.Data(), &version); err != nil {
 		return 0, err
 	}
@@ -97,7 +98,7 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 
 	var writeHeavySeqNum int
 	var writeHeavyDBName string
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		writeHeavySeqNum, err = GetCurrentSeqNumRocksDB(databases.RocksDB)
 		if err != nil {
 			return 0, errors.Wrap(err, "getting current rocksdb sequence number")
@@ -145,13 +146,14 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	// If BadgerDB != nil, then we're going to migrate to it at the end of this function so we should update the version
-	// number until the migration
-	if env.RocksDB.BooleanSetting() && databases.BadgerDB == nil {
+	// The migrator now has the RocksDB migration embedded, which will be migrated to from 40->41, so we should only update RocksDB
+	// after this migration has occurred
+	if features.RocksDB.Enabled() && newVersion.SeqNum >= 41 {
 		if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
 			return err
 		}
-	} else {
+	}
+	if databases.BadgerDB != nil {
 		err = databases.BadgerDB.Update(func(txn *badger.Txn) error {
 			return txn.Set(versionBucketName, versionBytes)
 		})

@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
@@ -91,7 +91,7 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 
 	var writeHeavyVersion *storage.Version
 	var writeHeavyDBName string
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		writeHeavyVersion, err = s.getRocksDBVersion()
 		if err != nil {
 			return nil, err
@@ -131,7 +131,7 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		if err := s.rocksDB.IncRocksDBInProgressOps(); err != nil {
 			return err
 		}

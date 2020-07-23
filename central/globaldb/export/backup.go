@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators"
 	"github.com/stackrox/rox/central/globaldb/v2backuprestore/backup/generators/dbs"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,7 +24,7 @@ func Backup(ctx context.Context, boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *
 		return errors.Wrap(err, "backing up bolt")
 	}
 
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		if err := generators.PutTarInZip(generators.PutDirectoryInTar(dbs.NewRocksBackup(rocksDB)), rocksFileName).WriteTo(ctx, zipWriter); err != nil {
 			return errors.Wrap(err, "backing up badger")
 		}

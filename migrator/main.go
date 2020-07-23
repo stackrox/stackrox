@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/tecbot/gorocksdb"
 )
@@ -67,7 +67,7 @@ func run() error {
 
 	var rocksdb *gorocksdb.DB
 	var rocksDBSeqNum int
-	if env.RocksDB.BooleanSetting() {
+	if features.RocksDB.Enabled() {
 		rocksdb, err = rockshelper.New()
 		if err != nil {
 			return errors.Wrap(err, "failed to open rocksdb")

@@ -17,6 +17,8 @@ func Migrate(databases *types.Databases) error {
 		return errors.Wrap(err, "migrating badger -> rocksdb")
 	}
 	log.WriteToStderr("Successfully migrated BadgerDB to RocksDB")
+
+	log.WriteToStderr("Starting to migrate from BoltDB to RocksDB")
 	if err := migrateBolt(databases); err != nil {
 		return errors.Wrap(err, "migrating bolt -> rocksdb")
 	}
