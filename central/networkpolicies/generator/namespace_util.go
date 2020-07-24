@@ -28,10 +28,6 @@ func labelSelectorForNamespace(ns *storage.NamespaceMetadata) *storage.LabelSele
 		matchLabels = map[string]string{
 			namespaces.NamespaceNameLabel: ns.GetName(),
 		}
-	} else if nsLabels[namespaces.NamespaceIDLabel] == ns.GetId() {
-		matchLabels = map[string]string{
-			namespaces.NamespaceIDLabel: ns.GetId(),
-		}
 	} else {
 		matchLabels = nsLabels
 	}

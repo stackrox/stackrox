@@ -54,7 +54,6 @@ func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
 	}
 
 	desiredLabels := map[string]string{
-		namespaces.NamespaceIDLabel:   string(ns.GetUID()),
 		namespaces.NamespaceNameLabel: ns.GetName(),
 	}
 
@@ -63,7 +62,7 @@ func (h *namespacePatchHandler) checkAndPatchNamespace(obj interface{}) {
 	}
 
 	if err := h.patchNamespaceLabels(ns, desiredLabels); err != nil {
-		// No need to retry because of concurrenct updates - in this case, we'll process another event for this object
+		// No need to retry because of concurrent updates - in this case, we'll process another event for this object
 		// anyway.
 		log.Errorf("patching namespace %s: %v", ns.GetName(), err)
 	}

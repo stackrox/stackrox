@@ -119,6 +119,7 @@ func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args 
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
+
 	return resolver.wrapNamespace(namespace.ResolveByClusterIDAndName(ctx, string(args.ClusterID), args.Name, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
 }
 
