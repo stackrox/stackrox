@@ -17,42 +17,60 @@ var allowAllPodsAllNS = &storage.NetworkPolicyIngressRule{
 	},
 }
 
-func generateIngressRule(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicyIngressRule {
-	if node.hasInternetIngress() {
-		return allowAllIngress
+func generateIngressRules(node *node, namespacesByName map[string]*storage.NamespaceMetadata) []*storage.NetworkPolicyIngressRule {
+	var rules []*storage.NetworkPolicyIngressRule
+
+	for port := range node.incoming {
+		rules = append(rules, generateIngressRule(node, port, namespacesByName))
+	}
+
+	return rules
+}
+
+func generateIngressRule(node *node, port portDesc, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicyIngressRule {
+	rule := &storage.NetworkPolicyIngressRule{
+		Ports: port.toNetPolPorts(),
+	}
+
+	srcs := node.incoming[port]
+
+	if srcs.exposed || srcs.hasInternetPeer() {
+		// Generate an "allow all" rule if the node either exposes a port externally, or has incoming
+		// traffic from the internet.
+		rule.From = allowAllIngress.GetFrom()
+		return rule
 	}
 
 	// If any peer deployment is not visible, generate 'allow all pods in all namespaces' selector
-	if node.hasMaskedPeer() {
-		log.Infof("insufficient permissions to peer deployment(s) of node %s; generating allow all pods and allow all namespaces selector", node.entity.ID)
-		return allowAllPodsAllNS
+	if srcs.hasMaskedPeer() {
+		log.Debugf("insufficient permissions to peer deployment(s) of node %s; generating allow all pods and allow all namespaces selector", node.entity.ID)
+		rule.From = allowAllPodsAllNS.GetFrom()
+		return rule
 	}
 
-	var peers []*storage.NetworkPolicyPeer
+	var netPolPeers []*storage.NetworkPolicyPeer
 
-	for srcNode := range node.incoming {
+	for srcNode := range srcs.peers {
 		if srcNode.deployment == nil {
 			continue
 		}
-		peer := &storage.NetworkPolicyPeer{
+		netPolPeer := &storage.NetworkPolicyPeer{
 			PodSelector: labelSelectorForDeployment(srcNode.deployment),
 		}
-		// If peer namespace is not visible, this will generate 'allow all namespaces' selector
+		// If netPolPeer namespace is not visible, this will generate 'allow all namespaces' selector
 		if node.deployment.Namespace != srcNode.deployment.Namespace {
-			if _, visible := namespacesByName[srcNode.deployment.Namespace]; !visible {
-				log.Infof("insufficient permissions to peer namespace(s) of node %s; generating allow all namespaces selector", node.entity.ID)
+			nsInfo, nsVisible := namespacesByName[srcNode.deployment.Namespace]
+			if !nsVisible {
+				log.Infof("insufficient permissions to netPolPeer namespace(s) of node %s; generating allow all namespaces selector", node.entity.ID)
+				// Note that we intentionally continue - nsInfo is nil in this case, which in alignment with the
+				// emitted log message results in an "all namespaces" selector being generated.
 			}
-			peer.NamespaceSelector = labelSelectorForNamespace(namespacesByName[srcNode.deployment.Namespace])
+			netPolPeer.NamespaceSelector = labelSelectorForNamespace(nsInfo)
 		}
 
-		peers = append(peers, peer)
+		netPolPeers = append(netPolPeers, netPolPeer)
 	}
 
-	if len(peers) == 0 {
-		return nil
-	}
-
-	return &storage.NetworkPolicyIngressRule{
-		From: peers,
-	}
+	rule.From = netPolPeers
+	return rule
 }

@@ -110,6 +110,8 @@ message GenerateNetworkPoliciesRequest {
     DeleteExistingPoliciesMode delete_existing = 3;
 
     google.protobuf.Timestamp network_data_since = 4;
+
+    bool include_ports = 5;
 }
 
 // Next available tag: 2

@@ -99,7 +99,7 @@ func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v
 	}
 }
 
-func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, query *v1.Query, since *types.Timestamp, includePorts bool) (map[networkgraph.Entity]*node, error) {
 	// Temporarily elevate permissions to obtain all network flows in cluster.
 	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
@@ -146,7 +146,7 @@ func (g *generator) generateGraph(ctx context.Context, clusterID string, query *
 
 	okFlows, missingInfoFlows := networkflow.UpdateFlowsWithDeployments(flows, objects.ListDeploymentsMapByIDFromDeployments(relevantDeployments))
 
-	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows)
+	return g.buildGraph(ctx, clusterID, relevantDeployments, okFlows, missingInfoFlows, includePorts)
 }
 
 func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
@@ -168,11 +168,8 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 		},
 	}
 
-	ingressRule := generateIngressRule(node, namespacesByName)
-	if ingressRule != nil {
-		policy.Spec.Ingress = append(policy.Spec.Ingress, ingressRule)
-	}
-	policy.Spec.PolicyTypes = append(policy.Spec.PolicyTypes, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
+	policy.Spec.Ingress = generateIngressRules(node, namespacesByName)
+	policy.Spec.PolicyTypes = []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE}
 
 	return policy
 }
@@ -204,7 +201,7 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 		return nil, nil, errors.Wrap(err, "could not parse query")
 	}
 
-	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, req.GetNetworkDataSince())
+	graph, err := g.generateGraph(ctx, req.GetClusterId(), parsedQuery, req.GetNetworkDataSince(), req.GetIncludePorts())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
