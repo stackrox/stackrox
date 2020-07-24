@@ -125,6 +125,19 @@ var (
 		DebugLevel:    zapcore.DebugLevel,
 	}
 
+	// We manually specify this LUT and do *not* populate
+	// it by iterating over levelToZapLevel as both InternalLevel
+	// and InfoLevel map to zapcore.InfoLevel. Due to golang's
+	// random iteration order, the reverse lookup would become non-deterministic.
+	zapLevelToLevel = map[zapcore.Level]int32{
+		zapcore.PanicLevel: PanicLevel,
+		zapcore.FatalLevel: FatalLevel,
+		zapcore.ErrorLevel: ErrorLevel,
+		zapcore.WarnLevel:  WarnLevel,
+		zapcore.InfoLevel:  InfoLevel,
+		zapcore.DebugLevel: DebugLevel,
+	}
+
 	zapLevelPrefix = map[zapcore.Level]string{
 		zapcore.PanicLevel: "Panic",
 		zapcore.FatalLevel: "Fatal",
@@ -133,14 +146,6 @@ var (
 		zapcore.InfoLevel:  "Info",
 		zapcore.DebugLevel: "Debug",
 	}
-
-	zapLevelToLevel = func() map[zapcore.Level]int32 {
-		result := map[zapcore.Level]int32{}
-		for k, v := range levelToZapLevel {
-			result[v] = k
-		}
-		return result
-	}()
 
 	// validLabels maps (lowercase) strings to their respective log level/severity. It should only be used for lookups,
 	// as the keys do not refer to the label names as they should be printed.
