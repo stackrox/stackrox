@@ -2,6 +2,7 @@
 package logging
 
 import (
+	"fmt"
 	"math"
 	"os"
 	"runtime"
@@ -47,24 +48,44 @@ const (
 )
 
 var (
+	console = struct {
+		encoding   string
+		encodeTime zapcore.TimeEncoder
+		separator  string
+		fieldOrder string
+	}{
+		encoding:   "console",
+		encodeTime: zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05.000000"),
+		separator:  " ",
+		fieldOrder: "N:TC:L:",
+	}
+
+	json = struct {
+		encoding   string
+		encodeTime zapcore.TimeEncoder
+	}{
+		encoding:   "json",
+		encodeTime: zapcore.RFC3339NanoTimeEncoder,
+	}
+
 	// config is the default logging config used for the root logger
-	// and all subsequent logger instances.
+	// and all subsequent logger instances. The log encoding defaults to console.
 	config = zap.Config{
 		OutputPaths:      []string{defaultDestination},
 		ErrorOutputPaths: []string{defaultDestination},
-		Encoding:         "console",
+		Encoding:         console.encoding,
 		EncoderConfig: zapcore.EncoderConfig{
 			// Keys can be anything except the empty string.
-			TimeKey:    "T",
-			LevelKey:   "L",
-			NameKey:    "N",
-			CallerKey:  "C",
-			MessageKey: "M",
+			TimeKey:    "time",
+			LevelKey:   "level",
+			NameKey:    "name",
+			CallerKey:  "caller",
+			MessageKey: "msg",
 			LineEnding: zapcore.DefaultLineEnding,
 			EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
 				enc.AppendString(zapLevelPrefix[l])
 			},
-			EncodeTime:     zapcore.TimeEncoderOfLayout("2006/01/02 15:04:05.000000"),
+			EncodeTime:     console.encodeTime,
 			EncodeDuration: zapcore.StringDurationEncoder,
 			EncodeCaller: func(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 				fn := caller.File
@@ -73,8 +94,8 @@ var (
 				}
 				enc.AppendString(fn + ":" + strconv.Itoa(caller.Line))
 			},
-			ConsoleSeparator:  " ",
-			ConsoleFieldOrder: "N:TC:L:",
+			ConsoleSeparator:  console.separator,
+			ConsoleFieldOrder: console.fieldOrder,
 		},
 	}
 
@@ -159,7 +180,17 @@ func init() {
 
 	zapLevel := levelToZapLevelOrDefault(value, zapcore.InfoLevel)
 
-	// Fine-tune the config to our needs.
+	switch le := os.Getenv("LOGENCODING"); le {
+	case "", console.encoding:
+		config.Encoding = console.encoding
+		config.EncoderConfig.EncodeTime = console.encodeTime
+	case json.encoding:
+		config.Encoding = json.encoding
+		config.EncoderConfig.EncodeTime = json.encodeTime
+	default:
+		panic(fmt.Sprintf("unknown log encoding %s", le))
+	}
+
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
 
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
