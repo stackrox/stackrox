@@ -13,6 +13,7 @@ All notable changes to this project that require documentation updates will be d
   - Flag `--image` for `roxctl sensor generate`. Use `--main-image-repository` instead.
   - Flag `--collector-image` for `roxctl sensor generate`. Use `--collector-image-repository` instead.
   - Flag `--admission-controller` for `roxctl sensor generate k8s`. Use `--create-admission-controller` instead.
+- UI: Added arrows to indicate directionality (ingress/egress) for Network Graph connections between deployments.
 
   The old flags are currently still supported but they are scheduled for removal in a future version of `roxctl`.
 

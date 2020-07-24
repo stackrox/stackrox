@@ -307,7 +307,7 @@ export const configObj = {
 
 export const namespaceEdges = [
     {
-        classes: 'namespace active ',
+        classes: 'namespace active',
         data: {
             count: 2,
             source: 'kube-system_right',

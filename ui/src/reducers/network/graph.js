@@ -33,8 +33,13 @@ const setEdgeMapState = (graph, state, property) => {
             const { id: tgtDeploymentId } = tgtNode.entity;
             const mapKey = [srcDeploymentId, tgtDeploymentId].sort().join('--');
             if (!newState[mapKey]) newState[mapKey] = {};
-            if (!newState[mapKey][property]) newState[mapKey][property] = [];
-            newState[mapKey][property].push({ source: srcDeploymentId, target: tgtDeploymentId });
+            if (!newState[mapKey][property]) {
+                newState[mapKey][property] = [];
+            }
+            newState[mapKey][property].push({
+                source: srcDeploymentId,
+                target: tgtDeploymentId,
+            });
         });
     });
     return newState;

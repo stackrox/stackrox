@@ -241,6 +241,34 @@ const styles = [
         },
     },
     {
+        selector: 'edge.unidirectional',
+        style: {
+            'mid-target-arrow-shape': 'triangle',
+            'mid-target-arrow-fill': 'filled',
+            'mid-target-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
+            'arrow-scale': 0.5,
+        },
+    },
+    {
+        selector: 'edge.bidirectional',
+        style: {
+            'mid-source-arrow-shape': 'triangle',
+            'mid-source-arrow-fill': 'filled',
+            'mid-source-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
+            'mid-target-arrow-shape': 'triangle',
+            'mid-target-arrow-fill': 'filled',
+            'mid-target-arrow-color': 'hsla(231, 74%, 82%, 1.00)',
+            'arrow-scale': 0.5,
+        },
+    },
+    {
+        selector: 'edge.inner.withinNS',
+        style: {
+            'mid-target-arrow-shape': 'none',
+            'mid-source-arrow-shape': 'none',
+        },
+    },
+    {
         selector: ':active',
         style: {
             'overlay-padding': '3px',
