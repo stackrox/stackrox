@@ -27,4 +27,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_38_to_m_39_update_mining_policy"
 	_ "github.com/stackrox/rox/migrator/migrations/m_39_to_m_40_update_owner_policies"
 	_ "github.com/stackrox/rox/migrator/migrations/m_40_to_m_41_rocksdb_migration"
+	_ "github.com/stackrox/rox/migrator/migrations/m_41_to_m_42_remove_rocksdb_txn_keys"
 )
