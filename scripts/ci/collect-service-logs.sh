@@ -34,17 +34,27 @@ main() {
         log_dir="/tmp/k8s-service-logs"
     fi
     log_dir="${log_dir}/${namespace}"
-    mkdir -p "$log_dir"
+    mkdir -p "${log_dir}"
 
 	set +e
-    for pod in $(kubectl -n "${namespace}" get po | tail +2 | awk '{print $1}'); do
-        kubectl describe po "${pod}" -n "${namespace}" > "${log_dir}/${pod}_describe.log"
-        for ctr in $(kubectl -n "${namespace}" get po $pod -o jsonpath='{.status.containerStatuses[*].name}'); do
-            kubectl -n "${namespace}" logs "po/${pod}" -c "$ctr" > "${log_dir}/${pod}-${ctr}.log"
-            kubectl -n "${namespace}" logs "po/${pod}" -p -c "$ctr" > "${log_dir}/${pod}-${ctr}-previous.log"
+
+    for object in deployments services pods secrets serviceaccounts; do
+        # A feel good command before pulling logs
+        echo ">>> ${object} <<<"
+        kubectl -n "${namespace}" get "${object}" -o wide
+
+        mkdir -p "${log_dir}/${object}"
+
+        for item in $(kubectl -n "${namespace}" get "${object}" | tail -n +2 | awk '{print $1}'); do
+            kubectl describe "${object}" "${item}" -n "${namespace}" > "${log_dir}/${object}/${item}_describe.log"
+            for ctr in $(kubectl -n "${namespace}" get "${object}" "${item}" -o jsonpath='{.status.containerStatuses[*].name}'); do
+                kubectl -n "${namespace}" logs "${object}/${item}" -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}.log"
+                kubectl -n "${namespace}" logs "${object}/${item}" -p -c "${ctr}" > "${log_dir}/${object}/${item}-${ctr}-previous.log"
+            done
         done
     done
-    kubectl -n "$namespace" get events -o wide >"${log_dir}/events.txt"
+
+    kubectl -n "${namespace}" get events -o wide >"${log_dir}/events.txt"
     find "${log_dir}" -type f -size 0 -delete
 }
 

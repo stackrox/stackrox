@@ -336,6 +336,7 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh kube-system
       ./scripts/ci/collect-service-logs.sh proxies
       ./scripts/ci/collect-service-logs.sh squid
+      ./scripts/ci/collect-qa-service-logs.sh
       ./scripts/ci/collect-infrastructure-logs.sh
     when: always
 
