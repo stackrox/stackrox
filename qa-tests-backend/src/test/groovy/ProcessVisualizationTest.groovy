@@ -16,6 +16,7 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String ELASTICDEPLOYMENT = "elasticdeployment"
     static final private String REDISDEPLOYMENT = "redisdeployment"
     static final private String MONGODEPLOYMENT = "mongodeployment"
+    static final private String ROX4751DEPLOYMENT = "rox4751deployment"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
@@ -47,6 +48,10 @@ class ProcessVisualizationTest extends BaseSpecification {
             new Deployment()
                 .setName (MONGODEPLOYMENT)
                 .setImage ("mongo@sha256:dec7f10108a87ff660a0d56cb71b0c5ae1f33cba796a33c88b50280fc0707116")
+                .addLabel ("app", "test" ),
+            new Deployment()
+                .setName (ROX4751DEPLOYMENT)
+                .setImage ("stackrox/qa:ROX4751")
                 .addLabel ("app", "test" ),
      ]
 
@@ -119,5 +124,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         ["/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
          "/bin/rm", "/usr/bin/id", "/usr/bin/find",
          "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
+
+        ["/test/bin/exec.sh", "/usr/bin/date", "/usr/bin/sleep"] as Set | ROX4751DEPLOYMENT
    }
 }
