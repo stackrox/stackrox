@@ -54,6 +54,7 @@ class PolicyFieldsTest extends BaseSpecification {
                         )
                 )
 
+    static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
     static final private WITHOUT_CVE_2019_14866 = DEP_A
     static final private WITH_CVSS_LT_8 = DEP_A
@@ -112,6 +113,7 @@ class PolicyFieldsTest extends BaseSpecification {
                         true
                 )
 
+    static final private BASED_ON_CENTOS_8 = DEP_B
     static final private WITH_ADD_CAPS_NET_ADMIN = DEP_B
     static final private WITH_CVE_2019_14866 = DEP_B
     static final private WITH_CVSS_GT_8 = DEP_B
@@ -128,7 +130,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_DIFFERENT_ENV_FROM_SECRET_KEY = DEP_B
     static final private WITH_DIFFERENT_ENV_FROM_FIELD = DEP_B
     static final private WITH_DIFFERENT_ENV_FROM_RESOURCE_FIELD = DEP_B
-    static final private OLDER_THEN_1_DAY = DEP_B
+    static final private OLDER_THAN_1_DAY = DEP_B
     static final private WITH_IMAGE_REMOTE_TO_NOT_MATCH = DEP_B
     static final private WITH_IMAGE_TAG_TO_MATCH = DEP_B
     static final private WITHOUT_PORTS_EXPOSED = DEP_B
@@ -153,6 +155,7 @@ class PolicyFieldsTest extends BaseSpecification {
                     .addLabel("another-key", "and_a_value")
                     .setReadOnlyRootFilesystem(true)
 
+    static final private BASED_ON_ALPINE = DEP_C
     static final private WITHOUT_ADD_CAPS = DEP_C
     static final private WITHOUT_CPU_LIMIT = DEP_C
     static final private WITHOUT_CPU_REQUEST = DEP_C
@@ -162,7 +165,7 @@ class PolicyFieldsTest extends BaseSpecification {
     static final private WITH_MISMATCHED_LABELS = DEP_C
     static final private WITHOUT_DROP_CAPS = DEP_C
     static final private WITHOUT_ENV = DEP_C
-    static final private YOUNGER_THEN_TEN_YEARS = DEP_C
+    static final private YOUNGER_THAN_TEN_YEARS = DEP_C
     static final private WITHOUT_COMPONENT_CPIO = DEP_C
     static final private WITHOUT_BASH_PARENT = DEP_C
     static final private WITHOUT_BASH_EXEC = DEP_C
@@ -430,14 +433,14 @@ class PolicyFieldsTest extends BaseSpecification {
 
     // "Image Age"
 
-    static final private IS_GREATER_THEN_1_DAY = setPolicyFieldANDValues(
-            BASE_POLICY.clone().setName("AAA_IS_GREATER_THEN_1_DAY"),
+    static final private IS_GREATER_THAN_1_DAY = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_IS_GREATER_THAN_1_DAY"),
             "Image Age",
             ["1"]
     )
 
-    static final private IS_GREATER_THEN_10_YEARS = setPolicyFieldANDValues(
-            BASE_POLICY.clone().setName("AAA_IS_GREATER_THEN_10_YEARS"),
+    static final private IS_GREATER_THAN_10_YEARS = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_IS_GREATER_THAN_10_YEARS"),
             "Image Age",
             ["3650"]
     )
@@ -460,6 +463,26 @@ class PolicyFieldsTest extends BaseSpecification {
             BASE_POLICY.clone().setName("AAA_HAS_COMPONENT_CPIO_WITH_OTHER_VERSION"),
             "Image Component",
             ["cpio=2.12\\+dfsg\\-1ubuntu1.2"]
+    )
+
+    // "Image OS"
+
+    static final private IS_BASED_ON_DEBIAN_7 = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_BASED_ON_DEBIAN_7"),
+            "Image OS",
+            ["debian:7"]
+    )
+
+    static final private IS_BASED_ON_CENTOS_8 = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_BASED_ON_CENTOS_8"),
+            "Image OS",
+            ["centos:8"]
+    )
+
+    static final private IS_BASED_ON_ALPINE = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_BASED_ON_ALPINE"),
+            "Image OS",
+            ["alpine"]
     )
 
     // "Image Registry"
@@ -708,11 +731,14 @@ class PolicyFieldsTest extends BaseSpecification {
             HAS_ENV_FROM_SECRET_KEY,
             HAS_ENV_FROM_FIELD,
             HAS_ENV_FROM_RESOURCE_FIELD,
-            IS_GREATER_THEN_1_DAY,
-            IS_GREATER_THEN_10_YEARS,
+            IS_GREATER_THAN_1_DAY,
+            IS_GREATER_THAN_10_YEARS,
             HAS_COMPONENT_CPIO,
             HAS_COMPONENT_CPIO_WITH_VERSION,
             HAS_COMPONENT_CPIO_WITH_OTHER_VERSION,
+            IS_BASED_ON_DEBIAN_7,
+            IS_BASED_ON_CENTOS_8,
+            IS_BASED_ON_ALPINE,
             NO_IMAGE_REGISTRY_USCGR,
             NO_IMAGE_REMOTE,
             NO_IMAGE_TAG,
@@ -815,9 +841,12 @@ class PolicyFieldsTest extends BaseSpecification {
         "Environment Variable"      | HAS_ENV_FROM_SECRET_KEY              | WITH_ENV_FROM_SECRET_KEY               | "match secret key"
         "Environment Variable"      | HAS_ENV_FROM_FIELD                   | WITH_ENV_FROM_FIELD                    | "match field"
         "Environment Variable"      | HAS_ENV_FROM_RESOURCE_FIELD          | WITH_ENV_FROM_RESOURCE_FIELD           | "match resource field"
-        "Image Age"                 | IS_GREATER_THEN_1_DAY                | OLDER_THEN_1_DAY                       | "match"
+        "Image Age"                 | IS_GREATER_THAN_1_DAY                | OLDER_THAN_1_DAY                       | "match"
         "Image Component"           | HAS_COMPONENT_CPIO                   | WITH_COMPONENT_CPIO                    | "match name"
         "Image Component"           | HAS_COMPONENT_CPIO_WITH_VERSION      | WITH_COMPONENT_CPIO                    | "match name & version"
+        "Image OS"                  | IS_BASED_ON_DEBIAN_7                 | BASED_ON_DEBIAN_7                      | "match"
+        "Image OS"                  | IS_BASED_ON_CENTOS_8                 | BASED_ON_CENTOS_8                      | "match"
+        "Image OS"                  | IS_BASED_ON_ALPINE                   | BASED_ON_ALPINE                        | "match"
         "Image Registry"            | NO_IMAGE_REGISTRY_USCGR              | USES_USGCR                             | "match"
         "Image Remote"              | NO_IMAGE_REMOTE                      | WITH_IMAGE_REMOTE_TO_MATCH             | "match"
         "Image Tag"                 | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                | "match"
@@ -898,9 +927,10 @@ class PolicyFieldsTest extends BaseSpecification {
         "Environment Variable"      | HAS_ENV_FROM_FIELD                    | WITHOUT_ENV                            | "no env to match V"
         "Environment Variable"      | HAS_ENV_FROM_RESOURCE_FIELD           | WITH_DIFFERENT_ENV_FROM_RESOURCE_FIELD | "no match resource field"
         "Environment Variable"      | HAS_ENV_FROM_RESOURCE_FIELD           | WITHOUT_ENV                            | "no env to match VI"
-        "Image Age"                 | IS_GREATER_THEN_10_YEARS              | YOUNGER_THEN_TEN_YEARS                 | "no match"
+        "Image Age"                 | IS_GREATER_THAN_10_YEARS              | YOUNGER_THAN_TEN_YEARS                 | "no match"
         "Image Component"           | HAS_COMPONENT_CPIO                    | WITHOUT_COMPONENT_CPIO                 | "no match"
         "Image Component"           | HAS_COMPONENT_CPIO_WITH_OTHER_VERSION | WITH_COMPONENT_CPIO                    | "no match on version"
+        "Image OS"                  | IS_BASED_ON_ALPINE                    | BASED_ON_CENTOS_8                      | "no match"
         "Image Registry"            | NO_IMAGE_REGISTRY_USCGR               | USES_DOCKER                            | "no match"
         "Image Remote"              | NO_IMAGE_REMOTE                       | WITH_IMAGE_REMOTE_TO_NOT_MATCH         | "no match"
         "Image Tag"                 | NO_IMAGE_TAG                          | WITH_IMAGE_TAG_TO_NOT_MATCH            | "no match"
