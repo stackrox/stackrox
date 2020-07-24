@@ -16,11 +16,13 @@ main() {
         exit 1
     fi
 
+    set +e
+
     dest="$1"
 
     api_hostname=localhost
     api_port=8000
-    lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    lb_ip=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}' || true)
     if [[ ! -z "${lb_ip}" ]]; then
         api_hostname="${lb_ip}"
         api_port=443
@@ -29,9 +31,9 @@ main() {
 
     mkdir -p ${dest}
 
-    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://localhost:8000/v1/images | jq > ${dest}/images.json
-    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://localhost:8000/v1/imageintegrations | jq > ${dest}/imageintegrations.json
-    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://localhost:8000/v1/deployments | jq > ${dest}/deployments.json
+    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/images | jq > ${dest}/images.json
+    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
+    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/deployments | jq > ${dest}/deployments.json
 
     for objects in "images" "deployments"; do
         jq_tweezer=".${objects}[].id"
@@ -40,7 +42,7 @@ main() {
         mkdir -p ${dest}/${objects}
         for id in ${object_list}; do
             id=$(echo ${id} | sed s/\"//g)
-            curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://localhost:8000/v1/${objects}/${id} | jq > ${dest}/${objects}/${id}.json
+            curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/${objects}/${id} | jq > ${dest}/${objects}/${id}.json
         done
     done
 }

@@ -86,17 +86,24 @@ class Helpers {
             }
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
             println "Will collect stackrox logs for this failure under ${collectionDir}/stackrox-k8s-logs"
-            println "./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs"
-                    .execute(null, new File("..")).text
+            shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
             println "Will collect qa* logs for this failure under ${collectionDir}/qa-k8s-logs"
-            println "./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs"
-                    .execute(null, new File("..")).text
+            shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
             println "Will collect central API debug for this failure under ${collectionDir}/central-data"
-            println "./scripts/grab-data-from-central.sh ${collectionDir}/central-data"
-                    .execute(null, new File("..")).text
+            shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
         catch (Exception e) {
             println "Could not collect logs: ${e}"
         }
+    }
+
+    static void shellCmd(String cmd, Integer timeout = 60000) {
+        def sout = new StringBuilder(), serr = new StringBuilder()
+        def proc = cmd.execute(null, new File(".."))
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitForOrKill(timeout)
+        println "Ran: ${cmd}"
+        println "Stdout: $sout"
+        println "Stderr: $serr"
     }
 }
