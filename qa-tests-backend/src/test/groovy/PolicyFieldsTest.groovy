@@ -56,7 +56,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     static final private BASED_ON_DEBIAN_7 = DEP_A
     static final private WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG = DEP_A
-    static final private WITHOUT_CVE_2019_14866 = DEP_A
+    static final private WITHOUT_CVE_2019_5436 = DEP_A
     static final private WITH_CVSS_LT_8 = DEP_A
     static final private WITH_CPU_LIMIT_HALF = DEP_A
     static final private WITH_CPU_REQUEST_QUARTER = DEP_A
@@ -115,7 +115,7 @@ class PolicyFieldsTest extends BaseSpecification {
 
     static final private BASED_ON_CENTOS_8 = DEP_B
     static final private WITH_ADD_CAPS_NET_ADMIN = DEP_B
-    static final private WITH_CVE_2019_14866 = DEP_B
+    static final private WITH_CVE_2019_5436 = DEP_B
     static final private WITH_CVSS_GT_8 = DEP_B
     static final private WITH_CPU_LIMIT_ONE = DEP_B
     static final private WITH_CPU_REQUEST_HALF = DEP_B
@@ -256,10 +256,10 @@ class PolicyFieldsTest extends BaseSpecification {
 
     // "CVE"
 
-    static final private EXCLUDE_CVE_2019_14866 = setPolicyFieldANDValues(
-            BASE_POLICY.clone().setName("AAA_EXCLUDE_CVE_2019_14866"),
+    static final private EXCLUDE_CVE_2019_5436 = setPolicyFieldANDValues(
+            BASE_POLICY.clone().setName("AAA_EXCLUDE_CVE_2019_5436"),
             "CVE",
-            ["CVE-2019-14866"]
+            ["CVE-2019-5436"]
     )
 
     // "CVSS"
@@ -705,7 +705,7 @@ class PolicyFieldsTest extends BaseSpecification {
             NO_ADD_CAPS_NET_ADMIN_AND_SYSLOG,
             NO_ADD_CAPS_LEASE,
             NO_ADD_CAPS_NET_ADMIN_AND_LEASE,
-            EXCLUDE_CVE_2019_14866,
+            EXCLUDE_CVE_2019_5436,
             EXCLUDE_CVSS_GT_8,
             CPU_LIMIT_GT_0PT7,
             CPU_LIMIT_GE_1,
@@ -816,7 +816,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Add Capabilities"          | NO_ADD_CAPS_SYSLOG                   | WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | "match last"
         "Add Capabilities"          | NO_ADD_CAPS_NET_ADMIN                | WITH_ADD_CAPS_NET_ADMIN                | "match single"
         "Add Capabilities"          | NO_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | "match set"
-        "CVE"                       | EXCLUDE_CVE_2019_14866               | WITH_CVE_2019_14866                    | "match"
+        "CVE"                       | EXCLUDE_CVE_2019_5436                | WITH_CVE_2019_5436                     | "match"
         "CVSS"                      | EXCLUDE_CVSS_GT_8                    | WITH_CVSS_GT_8                         | "match"
         "Container CPU Limit"       | CPU_LIMIT_GT_0PT7                    | WITH_CPU_LIMIT_ONE                     | "GT"
         "Container CPU Limit"       | CPU_LIMIT_GE_1                       | WITH_CPU_LIMIT_ONE                     | "GE"
@@ -894,7 +894,7 @@ class PolicyFieldsTest extends BaseSpecification {
         "Add Capabilities"          | NO_ADD_CAPS_NET_ADMIN_AND_LEASE       | WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | "incomplete"
         "Add Capabilities"          | NO_ADD_CAPS_NET_ADMIN_AND_LEASE       | WITH_ADD_CAPS_NET_ADMIN                | "incomplete II"
         "Add Capabilities"          | NO_ADD_CAPS_SYSLOG                    | WITHOUT_ADD_CAPS                       | "missing"
-        "CVE"                       | EXCLUDE_CVE_2019_14866                | WITHOUT_CVE_2019_14866                 | "no match"
+        "CVE"                       | EXCLUDE_CVE_2019_5436                 | WITHOUT_CVE_2019_5436                  | "no match"
         "CVSS"                      | EXCLUDE_CVSS_GT_8                     | WITH_CVSS_LT_8                         | "no match"
         "Container CPU Limit"       | CPU_LIMIT_GT_0PT7                     | WITH_CPU_LIMIT_HALF                    | "not GT"
         "Container CPU Limit"       | CPU_LIMIT_GE_1                        | WITH_CPU_LIMIT_HALF                    | "not GE"
