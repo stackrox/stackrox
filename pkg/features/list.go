@@ -1,5 +1,7 @@
 package features
 
+//lint:file-ignore U1000 we want to introduce this feature flag unused.
+
 var (
 	// AnalystNotesUI enables the Analyst Notes UI.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
@@ -32,4 +34,7 @@ var (
 
 	// RocksDB enables running of RocksDB
 	RocksDB = registerFeature("Runs RocksDB instead of BadgerDB", "ROX_ROCKSDB", true)
+
+	// csvExport enables CSV export of search results.
+	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
 )
