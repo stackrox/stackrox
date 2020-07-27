@@ -42,7 +42,7 @@ class PolicyFieldsTest extends BaseSpecification {
                         new SecretKeyRef(key: "password", name: SECRET_NAME))
                 .addEnvValueFromFieldRef("ENV_FROM_FIELD", "metadata.name")
                 .addEnvValueFromResourceFieldRef("ENV_FROM_RESOURCE_FIELD", "limits.cpu")
-                .addPort(25, "UDP")
+                .addPort(25, "TCP")
                 .setCreateLoadBalancer(true)
                 .setExposeAsService(true)
                 .setPrivilegedFlag(true)
