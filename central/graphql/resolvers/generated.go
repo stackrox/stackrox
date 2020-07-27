@@ -166,6 +166,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"collectionMethod: CollectionMethod!",
 		"collectorImage: String!",
 		"dynamicConfig: DynamicClusterConfig",
+		"healthStatus: ClusterHealthStatus",
 		"id: ID!",
 		"mainImage: String!",
 		"name: String!",
@@ -178,6 +179,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ClusterCertExpiryStatus", []string{
 		"sensorCertExpiry: Time",
 	}))
+	utils.Must(builder.AddType("ClusterHealthStatus", []string{
+		"collectorHealthInfo: CollectorHealthInfo",
+		"collectorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
+		"collectorLastUpdated: Time",
+		"healthInfoComplete: Boolean!",
+		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
+		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterHealthStatus_HealthStatusLabel(0)))
 	utils.Must(builder.AddType("ClusterStatus", []string{
 		"certExpiryStatus: ClusterCertExpiryStatus",
 		"lastContact: Time",
@@ -202,6 +212,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"upgraderImage: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
+	utils.Must(builder.AddType("CollectorHealthInfo", []string{
+		"totalDesiredPods: Int!",
+		"totalReadyPods: Int!",
+		"totalRegisteredNodes: Int!",
+		"version: String!",
+	}))
 	utils.Must(builder.AddType("Comment", []string{
 		"commentId: String!",
 		"commentMessage: String!",
@@ -2335,6 +2351,11 @@ func (resolver *clusterResolver) DynamicConfig(ctx context.Context) (*dynamicClu
 	return resolver.root.wrapDynamicClusterConfig(value, true, nil)
 }
 
+func (resolver *clusterResolver) HealthStatus(ctx context.Context) (*clusterHealthStatusResolver, error) {
+	value := resolver.data.GetHealthStatus()
+	return resolver.root.wrapClusterHealthStatus(value, true, nil)
+}
+
 func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -2402,6 +2423,78 @@ func (resolver *Resolver) wrapClusterCertExpiryStatuses(values []*storage.Cluste
 func (resolver *clusterCertExpiryStatusResolver) SensorCertExpiry(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetSensorCertExpiry()
 	return timestamp(value)
+}
+
+type clusterHealthStatusResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.ClusterHealthStatus
+}
+
+func (resolver *Resolver) wrapClusterHealthStatus(value *storage.ClusterHealthStatus, ok bool, err error) (*clusterHealthStatusResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterHealthStatusResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapClusterHealthStatuses(values []*storage.ClusterHealthStatus, err error) ([]*clusterHealthStatusResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterHealthStatusResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterHealthStatusResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterHealthStatusResolver) CollectorHealthInfo(ctx context.Context) (*collectorHealthInfoResolver, error) {
+	value := resolver.data.GetCollectorHealthInfo()
+	return resolver.root.wrapCollectorHealthInfo(value, true, nil)
+}
+
+func (resolver *clusterHealthStatusResolver) CollectorHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetCollectorHealthStatus()
+	return value.String()
+}
+
+func (resolver *clusterHealthStatusResolver) CollectorLastUpdated(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetCollectorLastUpdated()
+	return timestamp(value)
+}
+
+func (resolver *clusterHealthStatusResolver) HealthInfoComplete(ctx context.Context) bool {
+	value := resolver.data.GetHealthInfoComplete()
+	return value
+}
+
+func (resolver *clusterHealthStatusResolver) OverallHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetOverallHealthStatus()
+	return value.String()
+}
+
+func (resolver *clusterHealthStatusResolver) SensorHealthStatus(ctx context.Context) string {
+	value := resolver.data.GetSensorHealthStatus()
+	return value.String()
+}
+
+func toClusterHealthStatus_HealthStatusLabel(value *string) storage.ClusterHealthStatus_HealthStatusLabel {
+	if value != nil {
+		return storage.ClusterHealthStatus_HealthStatusLabel(storage.ClusterHealthStatus_HealthStatusLabel_value[*value])
+	}
+	return storage.ClusterHealthStatus_HealthStatusLabel(0)
+}
+
+func toClusterHealthStatus_HealthStatusLabels(values *[]string) []storage.ClusterHealthStatus_HealthStatusLabel {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ClusterHealthStatus_HealthStatusLabel, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterHealthStatus_HealthStatusLabel(&v)
+	}
+	return output
 }
 
 type clusterStatusResolver struct {
@@ -2603,6 +2696,50 @@ func toCollectionMethods(values *[]string) []storage.CollectionMethod {
 		output[i] = toCollectionMethod(&v)
 	}
 	return output
+}
+
+type collectorHealthInfoResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CollectorHealthInfo
+}
+
+func (resolver *Resolver) wrapCollectorHealthInfo(value *storage.CollectorHealthInfo, ok bool, err error) (*collectorHealthInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &collectorHealthInfoResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCollectorHealthInfos(values []*storage.CollectorHealthInfo, err error) ([]*collectorHealthInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*collectorHealthInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &collectorHealthInfoResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *collectorHealthInfoResolver) TotalDesiredPods(ctx context.Context) int32 {
+	value := resolver.data.GetTotalDesiredPods()
+	return value
+}
+
+func (resolver *collectorHealthInfoResolver) TotalReadyPods(ctx context.Context) int32 {
+	value := resolver.data.GetTotalReadyPods()
+	return value
+}
+
+func (resolver *collectorHealthInfoResolver) TotalRegisteredNodes(ctx context.Context) int32 {
+	value := resolver.data.GetTotalRegisteredNodes()
+	return value
+}
+
+func (resolver *collectorHealthInfoResolver) Version(ctx context.Context) string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type commentResolver struct {

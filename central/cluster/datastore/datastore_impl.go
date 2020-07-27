@@ -129,6 +129,7 @@ func (ds *datastoreImpl) GetClusters(ctx context.Context) ([]*storage.Cluster, e
 		if err != nil {
 			return nil, err
 		}
+
 		ds.updateClusterPriority(clusters...)
 		return clusters, nil
 	}

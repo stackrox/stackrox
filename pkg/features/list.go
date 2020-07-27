@@ -37,4 +37,7 @@ var (
 
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
+
+	// ClusterHealthMonitoring enables monitoring of sensor and collector health
+	ClusterHealthMonitoring = registerFeature("Enable cluster health monitoring", "ROX_CLUSTER_HEALTH_MONITORING", false)
 )
