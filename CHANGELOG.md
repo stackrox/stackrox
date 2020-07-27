@@ -13,16 +13,16 @@ All notable changes to this project that require documentation updates will be d
   - Flag `--image` for `roxctl sensor generate`. Use `--main-image-repository` instead.
   - Flag `--collector-image` for `roxctl sensor generate`. Use `--collector-image-repository` instead.
   - Flag `--admission-controller` for `roxctl sensor generate k8s`. Use `--create-admission-controller` instead.
-- UI: Added arrows to indicate directionality (ingress/egress) for Network Graph connections between deployments.
 
   The old flags are currently still supported but they are scheduled for removal in a future version of `roxctl`.
 
+- UI: Added arrows to indicate directionality (ingress/egress) for Network Graph connections between deployments (ROX-5211).
 - UI: Added `Image OS` to the image list and image single page in Vuln Mgmt (ROX-4083).
 - Added the ability to make policies based on `Image OS` (ROX-4083).
 - roxctl image scan and /v1/image/<image id> no longer return snoozed CVEs as a part of their output. The `include-snoozed` command line parameter
   and the `includeSnoozed` query parameter respectively can be used to include all CVEs.
 - The 'namespace.metadata.stackrox.io/id' label is now removed in order to better support Terraform cluster management.
-- UI: Hovering over a deployment in the Network Graph will show the ports and protocols for it's ingress/egress network flows
+- UI: Hovering over a deployment in the Network Graph will show the ports and protocols for it's ingress/egress network flows (ROX-5226).
 
 ## [46.0]
 - Added the following REST APIs:
