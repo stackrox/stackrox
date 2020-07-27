@@ -6,6 +6,8 @@ import {
     getNodeData,
     getNamespaceEdgeNodes,
     getActiveNamespaceList,
+    getIngressPortsAndProtocols,
+    getEgressPortsAndProtocols,
 } from './networkGraphUtils';
 import {
     filteredData,
@@ -77,6 +79,63 @@ describe('networkGraphUtils', () => {
         it('should return edge nodes for namespace boxes', () => {
             const testNSEdgeNodes = getNamespaceEdgeNodes(namespaceList);
             expect(testNSEdgeNodes).toEqual(namespaceEdgeNodes);
+        });
+    });
+
+    describe('getIngressPortsAndProtocols', () => {
+        it('should return the edges going to a target node', () => {
+            const node = {
+                id: '5',
+                ingress: ['3', '4'],
+                egress: ['1'],
+                outEdges: { 0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] } },
+            };
+            const nodes = [
+                {
+                    id: '1',
+                    outEdges: {
+                        1: { properties: [{ port: '4000', protocol: 'L4_PROTOCOL_TCP' }] },
+                    },
+                },
+                {
+                    id: '2',
+                    outEdges: { 3: { properties: [{ port: '9', protocol: 'L4_PROTOCOL_UDP' }] } },
+                },
+                {
+                    id: '3',
+                    outEdges: { 4: { properties: [{ port: '443', protocol: 'L4_PROTOCOL_TCP' }] } },
+                },
+                {
+                    id: '4',
+                    outEdges: { 4: { properties: [{ port: '53', protocol: 'L4_PROTOCOL_UDP' }] } },
+                },
+                {
+                    id: '5',
+                    outEdges: {
+                        0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] },
+                    },
+                },
+            ];
+            const ingressPortsAndProtocols = getIngressPortsAndProtocols(nodes, node);
+            expect(ingressPortsAndProtocols).toEqual([
+                { port: '443', protocol: 'L4_PROTOCOL_TCP' },
+                { port: '53', protocol: 'L4_PROTOCOL_UDP' },
+            ]);
+        });
+    });
+
+    describe('getEgressPortsAndProtocols', () => {
+        it('should return the edges going out of a source node', () => {
+            const node = {
+                id: '5',
+                ingress: ['3', '4'],
+                egress: ['1'],
+                outEdges: { 0: { properties: [{ port: '8443', protocol: 'L4_PROTOCOL_TCP' }] } },
+            };
+            const egressPortsAndProtocols = getEgressPortsAndProtocols(node.outEdges);
+            expect(egressPortsAndProtocols).toEqual([
+                { port: '8443', protocol: 'L4_PROTOCOL_TCP' },
+            ]);
         });
     });
 });

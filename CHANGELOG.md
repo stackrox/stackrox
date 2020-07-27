@@ -22,6 +22,7 @@ All notable changes to this project that require documentation updates will be d
 - roxctl image scan and /v1/image/<image id> no longer return snoozed CVEs as a part of their output. The `include-snoozed` command line parameter
   and the `includeSnoozed` query parameter respectively can be used to include all CVEs.
 - The 'namespace.metadata.stackrox.io/id' label is now removed in order to better support Terraform cluster management.
+- UI: Hovering over a deployment in the Network Graph will show the ports and protocols for it's ingress/egress network flows
 
 ## [46.0]
 - Added the following REST APIs:

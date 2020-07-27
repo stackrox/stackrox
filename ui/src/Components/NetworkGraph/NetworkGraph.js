@@ -22,16 +22,19 @@ import style from 'Containers/Network/Graph/networkGraphStyles';
 import {
     getLinks,
     isNamespace,
+    isDeployment,
     getNodeData,
     getEdges,
     getNamespaceEdgeNodes,
     getNamespaceList,
     getDeploymentList,
     getFilteredNodes,
+    getIngressPortsAndProtocols,
+    getEgressPortsAndProtocols,
 } from 'utils/networkGraphUtils';
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
-import TooltipOverlay from 'Components/TooltipOverlay';
+import NodeTooltipOverlay from './NodeTooltipOverlay';
 
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
@@ -72,19 +75,26 @@ const NetworkGraph = ({
 
     const links = getLinks(data, networkEdgeMap, networkNodeMap);
 
-    function makePopperDiv(text) {
+    function makePopperDiv(node, ingressPortsAndProtocols, egressPortsAndProtocols) {
         const div = document.createElement('div');
-        ReactDOM.render(<TooltipOverlay>{text}</TooltipOverlay>, div);
+        ReactDOM.render(
+            <NodeTooltipOverlay
+                node={node}
+                ingressPortsAndProtocols={ingressPortsAndProtocols}
+                egressPortsAndProtocols={egressPortsAndProtocols}
+            />,
+            div
+        );
         return div;
     }
 
-    function createTippy(elm, text) {
+    function createTippy(elm, node, ingressPortsAndProtocols, egressPortsAndProtocols) {
         if (!elm) return;
         const popperRef = elm.popperRef();
         if (tippyRef.current) tippyRef.current.destroy();
 
         tippyRef.current = tippy(document.createElement('div'), {
-            content: makePopperDiv(text),
+            content: makePopperDiv(node, ingressPortsAndProtocols, egressPortsAndProtocols),
             ...defaultTippyTooltipProps,
             lazy: false,
             onCreate(instance) {
@@ -98,14 +108,23 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
-        const { id, name, parent, side } = node;
+        const { id, parent, side, outEdges } = node;
         const isChild = !!parent;
         if (!cyRef || !isChild || side) return;
 
         setHoveredNode(node);
         const nodeElm = cyRef.current.getElementById(id);
         const parentElm = cyRef.current.getElementById(parent);
-        createTippy(nodeElm, name);
+
+        const sourceNodes = cyRef.current
+            .nodes()
+            .map((n) => n.data())
+            .filter(isDeployment);
+
+        const ingressPortsAndProtocols = getIngressPortsAndProtocols(sourceNodes, node);
+        const egressPortsAndProtocols = getEgressPortsAndProtocols(outEdges);
+
+        createTippy(nodeElm, node, ingressPortsAndProtocols, egressPortsAndProtocols);
         const children = parentElm.descendants();
         children.removeClass('background');
     }
@@ -411,7 +430,14 @@ const NetworkGraph = ({
 
     useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
-    useEffect(runLayout, [activeNodes, allowedNodes, networkEdgeMap, filterState, simulatorOn]);
+    useEffect(runLayout, [
+        activeNodes,
+        allowedNodes,
+        networkNodeMap,
+        networkEdgeMap,
+        filterState,
+        simulatorOn,
+    ]);
     useEffect(grabifyNamespaces);
     useEffect(calculateNodeSideMap);
 

@@ -1,4 +1,6 @@
-import { uniq, flatMap } from 'lodash';
+import uniq from 'lodash/uniq';
+import flatMap from 'lodash/flatMap';
+import findIndex from 'lodash/findIndex';
 
 import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
@@ -383,24 +385,25 @@ export const getDeploymentList = (filteredData, configObj) => {
             nonIsolated: isNonIsolated,
         });
 
-        let ingressCount = 0;
-        let egressCount = 0;
+        let ingress = [];
+        let egress = [];
         const entityData = networkNodeMap[entity.id];
         if (entityData) {
-            const { ingressAllowed, ingressActive, egressAllowed, egressActive } = entityData;
-            const ingressAllowedCount = ingressAllowed ? ingressAllowed.length : 0;
-            const ingressActiveCount = ingressActive ? ingressActive.length : 0;
-            const egressAllowedCount = egressAllowed ? egressAllowed.length : 0;
-            const egressActiveCount = egressActive ? egressActive.length : 0;
+            const {
+                ingressAllowed = [],
+                ingressActive = [],
+                egressAllowed = [],
+                egressActive = [],
+            } = entityData;
             if (filterState === filterModes.allowed) {
-                ingressCount = ingressAllowedCount;
-                egressCount = egressAllowedCount;
+                ingress = ingressAllowed;
+                egress = egressAllowed;
             } else if (filterState === filterModes.active) {
-                ingressCount = ingressActiveCount;
-                egressCount = egressActiveCount;
+                ingress = ingressActive;
+                egress = egressActive;
             } else {
-                egressCount = egressAllowedCount + egressActiveCount;
-                ingressCount = ingressAllowedCount + ingressActiveCount;
+                ingress = [...ingressActive, ...ingressAllowed];
+                egress = [...egressActive, ...egressAllowed];
             }
         }
 
@@ -412,8 +415,8 @@ export const getDeploymentList = (filteredData, configObj) => {
                 parent: namespace,
                 edges,
                 deploymentId: entityProps.id,
-                ingressCount,
-                egressCount,
+                ingress,
+                egress,
             },
             classes,
         };
@@ -578,4 +581,47 @@ export const getFilteredNodes = (activeNodes, allowedNodes, filterState) => {
     }
 
     return getActiveNetPolNodes(activeNodes, allowedNodes);
+};
+
+/**
+ * Iterates through a list of nodes and returns only ports and protocols for have edges that go
+ * to a specific node
+ *
+ * @param {!Object[]} nodes list of nodes
+ * @param {Object} node the target node
+ * @returns {!Object[]}
+ */
+export const getIngressPortsAndProtocols = (nodes, node = {}) => {
+    const { id, ingress } = node;
+
+    if (!id || !ingress || ingress.length === 0) return [];
+
+    const targetNodeIndex = findIndex(nodes, (n) => {
+        return n.id === id;
+    });
+
+    const ingressNodes = nodes.filter((n) => ingress.indexOf(n.id) !== -1);
+
+    const ingressPortsAndProtocols = ingressNodes.reduce((acc, curr) => {
+        if (curr?.outEdges[targetNodeIndex]) {
+            return [...acc, ...curr.outEdges[targetNodeIndex].properties];
+        }
+        return acc;
+    }, []);
+
+    return ingressPortsAndProtocols;
+};
+
+/**
+ * Iterates through a list of nodes and returns only ports and protocols for edges that go
+ * out of a specific node
+ *
+ * @param {!Object[]} outEdges node's outedges
+ * @returns {!Object[]}
+ */
+export const getEgressPortsAndProtocols = (outEdges) => {
+    if (!outEdges || outEdges.length === 0) return [];
+    return Object.values(outEdges).reduce((acc, curr) => {
+        return [...acc, ...curr.properties];
+    }, []);
 };

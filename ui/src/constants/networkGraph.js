@@ -30,3 +30,8 @@ export const COLORS = {
     hovered: 'hsla(229, 24%, 70%, 1)',
     selected: 'hsla(229, 24%, 60%, 1)',
 };
+
+export const PROTOCOLS = {
+    L4_PROTOCOL_TCP: 'L4_PROTOCOL_TCP',
+    L4_PROTOCOL_UDP: 'L4_PROTOCOL_UDP',
+};
