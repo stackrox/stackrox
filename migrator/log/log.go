@@ -1,17 +1,19 @@
 package log
 
 import (
-	"fmt"
-	"os"
-	"time"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	logger = logging.ModuleForName("Migrator").Logger()
 )
 
 // WriteToStderr is a helper function to write to stderr.
 func WriteToStderr(s string) {
-	_, _ = fmt.Fprintf(os.Stderr, "Migrator: %s: %s\n", time.Now().Format("2006/01/02 15:04:05"), s)
+	logger.Info(s)
 }
 
 // WriteToStderrf writes to stderr with a format string.
 func WriteToStderrf(format string, args ...interface{}) {
-	WriteToStderr(fmt.Sprintf(format, args...))
+	logger.Infof(format, args...)
 }
