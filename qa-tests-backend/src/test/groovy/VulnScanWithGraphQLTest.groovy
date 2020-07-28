@@ -155,7 +155,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         where:
         "Data inputs are :"
         CVEID | imageToBeVerified
-        "CVE-2020-1745" | STRUTS_DEP.getImage()
+        "CVE-2017-18190" | STRUTS_DEP.getImage()
     }
 
     private GraphQLService.Response waitForImagesTobeFetched(String cveId , int retries = 30, int interval = 4) {
