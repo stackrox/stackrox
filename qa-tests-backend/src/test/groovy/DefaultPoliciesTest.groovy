@@ -255,10 +255,24 @@ class DefaultPoliciesTest extends BaseSpecification {
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
-        AlertService.getViolations(
+        List<ListAlert> kubeSystemViolations = AlertService.getViolations(
           ListAlertsRequest.newBuilder()
             .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
-        ).stream().filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }.collect().size() == 0
+        )
+        List<ListAlert> nonWhitelistedKubeSystemViolations = kubeSystemViolations.stream()
+                .filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }.collect()
+
+        if (nonWhitelistedKubeSystemViolations.size() != 0) {
+            nonWhitelistedKubeSystemViolations.forEach {
+                violation ->
+                println "An unexpected kube-system violation:"
+                println violation
+                println "The policy details:"
+                println Services.getPolicy(violation.policy.id)
+            }
+        }
+
+        nonWhitelistedKubeSystemViolations.size() == 0
     }
 
     def queryForDeployments() {
