@@ -22,7 +22,9 @@ var (
 	separator = []byte("\x00")
 )
 
-func migrateBoltBucket(boltDB *bbolt.DB, rocksDB *gorocksdb.DB, prefix []byte) (int, error) {
+// MigrateBoltBucket migrates a bolt bucket to RocksDB. Note: the bolt bucket must be flat and cannot
+// have nested buckets
+func MigrateBoltBucket(boltDB *bbolt.DB, rocksDB *gorocksdb.DB, prefix []byte) (int, error) {
 	rocksWriteBatch := gorocksdb.NewWriteBatch()
 	defer rocksWriteBatch.Destroy()
 
@@ -58,7 +60,7 @@ func migrateBoltBucket(boltDB *bbolt.DB, rocksDB *gorocksdb.DB, prefix []byte) (
 
 func migrateBolt(databases *types.Databases) error {
 	for _, bucket := range boltBucketsToMigrate {
-		count, err := migrateBoltBucket(databases.BoltDB, databases.RocksDB, []byte(bucket))
+		count, err := MigrateBoltBucket(databases.BoltDB, databases.RocksDB, []byte(bucket))
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -34,61 +33,46 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// GetTokenOrNil mocks base method
-func (m *MockStore) GetTokenOrNil(id string) (*storage.TokenMetadata, error) {
+// Get mocks base method
+func (m *MockStore) Get(id string) (*storage.TokenMetadata, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTokenOrNil", id)
+	ret := m.ctrl.Call(m, "Get", id)
 	ret0, _ := ret[0].(*storage.TokenMetadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetTokenOrNil indicates an expected call of GetTokenOrNil
-func (mr *MockStoreMockRecorder) GetTokenOrNil(id interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockStoreMockRecorder) Get(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenOrNil", reflect.TypeOf((*MockStore)(nil).GetTokenOrNil), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), id)
 }
 
-// GetTokens mocks base method
-func (m *MockStore) GetTokens(arg0 *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error) {
+// Walk mocks base method
+func (m *MockStore) Walk(arg0 func(*storage.TokenMetadata) error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTokens", arg0)
-	ret0, _ := ret[0].([]*storage.TokenMetadata)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetTokens indicates an expected call of GetTokens
-func (mr *MockStoreMockRecorder) GetTokens(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokens", reflect.TypeOf((*MockStore)(nil).GetTokens), arg0)
-}
-
-// AddToken mocks base method
-func (m *MockStore) AddToken(arg0 *storage.TokenMetadata) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddToken", arg0)
+	ret := m.ctrl.Call(m, "Walk", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddToken indicates an expected call of AddToken
-func (mr *MockStoreMockRecorder) AddToken(arg0 interface{}) *gomock.Call {
+// Walk indicates an expected call of Walk
+func (mr *MockStoreMockRecorder) Walk(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddToken", reflect.TypeOf((*MockStore)(nil).AddToken), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0)
 }
 
-// RevokeToken mocks base method
-func (m *MockStore) RevokeToken(id string) (bool, error) {
+// Upsert mocks base method
+func (m *MockStore) Upsert(arg0 *storage.TokenMetadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RevokeToken", id)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Upsert", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// RevokeToken indicates an expected call of RevokeToken
-func (mr *MockStoreMockRecorder) RevokeToken(id interface{}) *gomock.Call {
+// Upsert indicates an expected call of Upsert
+func (mr *MockStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RevokeToken", reflect.TypeOf((*MockStore)(nil).RevokeToken), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), arg0)
 }

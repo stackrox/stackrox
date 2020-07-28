@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"time"
@@ -6,17 +6,28 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/apitoken/datastore/internal/store"
 	"github.com/stackrox/rox/central/metrics"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
+)
+
+var (
+	apiTokensBucket = []byte("apiTokens")
 )
 
 type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) AddToken(token *storage.TokenMetadata) error {
+// MustNew returns a ready-to-use store.
+func MustNew(db *bolt.DB) store.Store {
+	bolthelper.RegisterBucketOrPanic(db, apiTokensBucket)
+	return &storeImpl{DB: db}
+}
+
+func (b *storeImpl) Upsert(token *storage.TokenMetadata) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "APIToken")
 
 	if token.GetId() == "" {
@@ -35,10 +46,11 @@ func (b *storeImpl) AddToken(token *storage.TokenMetadata) error {
 	})
 }
 
-func (b *storeImpl) GetTokenOrNil(id string) (token *storage.TokenMetadata, err error) {
+func (b *storeImpl) Get(id string) (*storage.TokenMetadata, bool, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "APIToken")
 
-	err = b.View(func(tx *bolt.Tx) error {
+	var token *storage.TokenMetadata
+	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(apiTokensBucket)
 		tokenBytes := bucket.Get([]byte(id))
 		if tokenBytes == nil {
@@ -51,13 +63,19 @@ func (b *storeImpl) GetTokenOrNil(id string) (token *storage.TokenMetadata, err 
 		}
 		return nil
 	})
-	return
+	if err != nil {
+		return nil, false, err
+	}
+	if token == nil {
+		return nil, false, nil
+	}
+	return token, true, nil
 }
 
-func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*storage.TokenMetadata, err error) {
+func (b *storeImpl) Walk(fn func(*storage.TokenMetadata) error) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "APIToken")
 
-	err = b.View(func(tx *bolt.Tx) error {
+	return b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(apiTokensBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var token storage.TokenMetadata
@@ -65,35 +83,7 @@ func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*storage.To
 			if err != nil {
 				return errors.Wrap(err, "proto unmarshaling")
 			}
-			// If the request specifies a value for revoked, make sure the value matches.
-			if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
-				return nil
-			}
-			tokens = append(tokens, &token)
-			return nil
+			return fn(&token)
 		})
 	})
-
-	return
-}
-
-func (b *storeImpl) RevokeToken(id string) (exists bool, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "RevokedTokenID")
-
-	token, err := b.GetTokenOrNil(id)
-	if token == nil {
-		return
-	}
-	exists = true
-	token.Revoked = true
-	bytes, err := proto.Marshal(token)
-	if err != nil {
-		return
-	}
-
-	err = b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(apiTokensBucket)
-		return bucket.Put([]byte(id), bytes)
-	})
-	return
 }

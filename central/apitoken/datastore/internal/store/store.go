@@ -1,14 +1,7 @@
 package store
 
 import (
-	bolt "github.com/etcd-io/bbolt"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
-)
-
-var (
-	apiTokensBucket = []byte("apiTokens")
 )
 
 // Store is the (bolt-backed) store for API tokens.
@@ -16,15 +9,7 @@ var (
 // Importantly, the Store persists token revocations.
 //go:generate mockgen-wrapper
 type Store interface {
-	GetTokenOrNil(id string) (token *storage.TokenMetadata, err error)
-	GetTokens(*v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
-
-	AddToken(*storage.TokenMetadata) error
-	RevokeToken(id string) (exists bool, err error)
-}
-
-// New returns a ready-to-use store.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, apiTokensBucket)
-	return &storeImpl{DB: db}
+	Get(id string) (*storage.TokenMetadata, bool, error)
+	Walk(func(*storage.TokenMetadata) error) error
+	Upsert(*storage.TokenMetadata) error
 }

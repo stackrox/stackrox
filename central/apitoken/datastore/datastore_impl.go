@@ -9,6 +9,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -17,6 +18,8 @@ var (
 
 type datastoreImpl struct {
 	storage store.Store
+
+	sync.Mutex
 }
 
 func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetadata) error {
@@ -26,7 +29,10 @@ func (b *datastoreImpl) AddToken(ctx context.Context, token *storage.TokenMetada
 		return errors.New("permission denied")
 	}
 
-	return b.storage.AddToken(token)
+	b.Lock()
+	defer b.Unlock()
+
+	return b.storage.Upsert(token)
 }
 
 func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *storage.TokenMetadata, err error) {
@@ -36,25 +42,64 @@ func (b *datastoreImpl) GetTokenOrNil(ctx context.Context, id string) (token *st
 		return nil, nil
 	}
 
-	return b.storage.GetTokenOrNil(id)
+	b.Lock()
+	defer b.Unlock()
+
+	token, exists, err := b.storage.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	return token, nil
 }
 
-func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) (tokens []*storage.TokenMetadata, err error) {
+func (b *datastoreImpl) GetTokens(ctx context.Context, req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error) {
 	if ok, err := apiTokenSAC.ReadAllowed(ctx); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, nil
 	}
 
-	return b.storage.GetTokens(req)
+	b.Lock()
+	defer b.Unlock()
+
+	var tokens []*storage.TokenMetadata
+	err := b.storage.Walk(func(token *storage.TokenMetadata) error {
+		if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {
+			return nil
+		}
+		tokens = append(tokens, token)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return tokens, nil
 }
 
-func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (exists bool, err error) {
+func (b *datastoreImpl) RevokeToken(ctx context.Context, id string) (bool, error) {
 	if ok, err := apiTokenSAC.WriteAllowed(ctx); err != nil {
 		return false, err
 	} else if !ok {
 		return false, errors.New("permission denied")
 	}
 
-	return b.storage.RevokeToken(id)
+	b.Lock()
+	defer b.Unlock()
+
+	token, exists, err := b.storage.Get(id)
+	if err != nil {
+		return false, err
+	}
+	if !exists {
+		return false, nil
+	}
+	token.Revoked = true
+
+	if err := b.storage.Upsert(token); err != nil {
+		return false, err
+	}
+	return true, nil
 }

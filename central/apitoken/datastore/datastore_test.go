@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/apitoken/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/central/role/resources"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -51,79 +50,41 @@ func (s *apiTokenDataStoreTestSuite) TeardownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *apiTokenDataStoreTestSuite) TestEnforcesGet() {
-	s.storage.EXPECT().GetTokenOrNil(gomock.Any()).Times(0)
+func (s *apiTokenDataStoreTestSuite) TestAddToken() {
+	token := &storage.TokenMetadata{Id: "id"}
+	s.storage.EXPECT().Upsert(token).Return(nil)
 
-	apitoken, err := s.dataStore.GetTokenOrNil(s.hasNoneCtx, "apitoken")
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(apitoken, "expected return value to be nil")
+	s.NoError(s.dataStore.AddToken(s.hasWriteCtx, token))
 }
 
-func (s *apiTokenDataStoreTestSuite) TestAllowsGet() {
-	s.storage.EXPECT().GetTokenOrNil(gomock.Any()).Return(nil, nil)
+func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
+	expectedToken := &storage.TokenMetadata{Id: "id"}
+	s.storage.EXPECT().Get("id").Return(nil, false, nil)
 
-	_, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "apitoken")
-	s.NoError(err, "expected no error trying to read with permissions")
+	token, err := s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
+	s.NoError(err)
+	s.Nil(token)
 
-	s.storage.EXPECT().GetTokenOrNil(gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().Get("id").Return(expectedToken, true, nil)
 
-	_, err = s.dataStore.GetTokenOrNil(s.hasWriteCtx, "apitoken")
-	s.NoError(err, "expected no error trying to read with permissions")
+	token, err = s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
+	s.NoError(err)
+	s.Equal(expectedToken, token)
 }
 
-func (s *apiTokenDataStoreTestSuite) TestEnforcesGetMany() {
-	s.storage.EXPECT().GetTokens(gomock.Any()).Times(0)
+func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {
+	expectedToken := &storage.TokenMetadata{Id: "id"}
+	s.storage.EXPECT().Get("id").Return(nil, false, nil)
 
-	apitokens, err := s.dataStore.GetTokens(s.hasNoneCtx, &v1.GetAPITokensRequest{})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(apitokens, "expected return value to be nil")
-}
+	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "id")
+	s.NoError(err)
+	s.False(exists)
 
-func (s *apiTokenDataStoreTestSuite) TestAllowsGetMany() {
-	s.storage.EXPECT().GetTokens(gomock.Any()).Return(nil, nil)
+	s.storage.EXPECT().Get("id").Return(expectedToken, true, nil)
+	expectedToken.Revoked = true
+	s.storage.EXPECT().Upsert(expectedToken).Return(nil)
 
-	_, err := s.dataStore.GetTokens(s.hasReadCtx, &v1.GetAPITokensRequest{})
-	s.NoError(err, "expected no error trying to read with permissions")
-
-	s.storage.EXPECT().GetTokens(gomock.Any()).Return(nil, nil)
-
-	_, err = s.dataStore.GetTokens(s.hasWriteCtx, &v1.GetAPITokensRequest{})
-	s.NoError(err, "expected no error trying to read with permissions")
-}
-
-func (s *apiTokenDataStoreTestSuite) TestEnforcesAdd() {
-	s.storage.EXPECT().AddToken(gomock.Any()).Times(0)
-
-	err := s.dataStore.AddToken(s.hasNoneCtx, &storage.TokenMetadata{})
-	s.Error(err, "expected an error trying to write without permissions")
-
-	err = s.dataStore.AddToken(s.hasReadCtx, &storage.TokenMetadata{})
-	s.Error(err, "expected an error trying to write without permissions")
-}
-
-func (s *apiTokenDataStoreTestSuite) TestAllowsAdd() {
-	s.storage.EXPECT().AddToken(gomock.Any()).Return(nil)
-
-	err := s.dataStore.AddToken(s.hasWriteCtx, &storage.TokenMetadata{})
-	s.NoError(err, "expected no error trying to write with permissions")
-}
-
-func (s *apiTokenDataStoreTestSuite) TestEnforcesRevoke() {
-	s.storage.EXPECT().RevokeToken(gomock.Any()).Times(0)
-
-	exists, err := s.dataStore.RevokeToken(s.hasNoneCtx, "apitoken")
-	s.Error(err, "expected an error trying to write without permissions")
-	s.False(exists, "should return false when unable to reach storage.")
-
-	exists, err = s.dataStore.RevokeToken(s.hasReadCtx, "apitoken")
-	s.Error(err, "expected an error trying to write without permissions")
-	s.False(exists, "should return false when unable to reach storage.")
-}
-
-func (s *apiTokenDataStoreTestSuite) TestAllowsRevoke() {
-	s.storage.EXPECT().RevokeToken(gomock.Any()).Return(true, nil)
-
-	exists, err := s.dataStore.RevokeToken(s.hasWriteCtx, "apitoken")
-	s.NoError(err, "expected no error trying to write with permissions")
-	s.True(exists, "should return true when able to reach storage.")
+	exists, err = s.dataStore.RevokeToken(s.hasWriteCtx, "id")
+	s.NoError(err)
+	s.True(exists)
 }
