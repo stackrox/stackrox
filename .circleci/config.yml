@@ -1577,8 +1577,8 @@ commands:
               cat /tmp/k8s-new-resources-post-sensor
               cat /tmp/k8s-sensor-labeled-resources
               cat /tmp/k8s-sensor-labeled-resources
-              cat scripts/ci/sensorbundle-label/whitelist 2>/dev/null
-              cat scripts/ci/sensorbundle-label/whitelist 2>/dev/null
+              cat scripts/ci/sensorbundle-label/ignorelist 2>/dev/null
+              cat scripts/ci/sensorbundle-label/ignorelist 2>/dev/null
             } | sort | uniq -u >/tmp/k8s-new-resources-unlabeled
 
             if [[ -s /tmp/k8s-new-resources-unlabeled ]]; then

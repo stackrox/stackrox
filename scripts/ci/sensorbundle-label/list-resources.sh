@@ -15,7 +15,7 @@ for label_filter in "$@"; do
 	fi
 done
 
-kubectl api-resources -o name | egrep -v '^(events(\.events\.k8s\.io)?|componentstatuses|podmetrics|.*\.metrics\.k8s\.io)$' \
+kubectl api-resources -o name | egrep -v '^(events(\.events\.k8s\.io)?|componentstatuses|podmetrics|.*\.(metrics|migration)\.k8s\.io)$' \
 	| paste -sd, - | xargs kubectl -n stackrox get -o json 2>/dev/null \
 	| jq -r '.items[] | select(
 		  (.apiVersion == "v1" and .kind == "Secret" and (.type == "kubernetes.io/service-account-token" or .type == "kubernetes.io/dockerconfigjson" or .type == "kubernetes.io/dockercfg") | not) and
