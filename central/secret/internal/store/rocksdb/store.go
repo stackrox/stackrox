@@ -51,7 +51,6 @@ func keyFunc(msg proto.Message) []byte {
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
-
 func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "Secret")
 	return &storeImpl{

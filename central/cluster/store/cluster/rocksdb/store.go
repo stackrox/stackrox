@@ -20,20 +20,20 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	bucket = []byte("service_accounts")
+	bucket = []byte("clusters")
 )
 
 type Store interface {
 	Count() (int, error)
 	Exists(id string) (bool, error)
 	GetIDs() ([]string, error)
-	Get(id string) (*storage.ServiceAccount, bool, error)
-	GetMany(ids []string) ([]*storage.ServiceAccount, []int, error)
-	Upsert(obj *storage.ServiceAccount) error
-	UpsertMany(objs []*storage.ServiceAccount) error
+	Get(id string) (*storage.Cluster, bool, error)
+	GetMany(ids []string) ([]*storage.Cluster, []int, error)
+	Upsert(obj *storage.Cluster) error
+	UpsertMany(objs []*storage.Cluster) error
 	Delete(id string) error
 	DeleteMany(ids []string) error
-	Walk(fn func(obj *storage.ServiceAccount) error) error
+	Walk(fn func(obj *storage.Cluster) error) error
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 }
@@ -43,17 +43,20 @@ type storeImpl struct {
 }
 
 func alloc() proto.Message {
-	return &storage.ServiceAccount{}
+	return &storage.Cluster{}
 }
 
 func keyFunc(msg proto.Message) []byte {
-	return []byte(msg.(*storage.ServiceAccount).GetId())
+	return []byte(msg.(*storage.Cluster).GetId())
+}
+func uniqKeyFunc(msg proto.Message) []byte {
+	return []byte(msg.(*storage.Cluster).GetName())
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
 func New(db *rocksdb.RocksDB) (Store, error) {
-	globaldb.RegisterBucket(bucket, "ServiceAccount")
-	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
+	globaldb.RegisterBucket(bucket, "Cluster")
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, false)
 	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
 	if err != nil {
 		return nil, err
@@ -66,61 +69,61 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 
 // Count returns the number of objects in the store
 func (b *storeImpl) Count() (int, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "ServiceAccount")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "Cluster")
 
 	return b.crud.Count()
 }
 
 // Exists returns if the id exists in the store
 func (b *storeImpl) Exists(id string) (bool, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "ServiceAccount")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Exists, "Cluster")
 
 	return b.crud.Exists(id)
 }
 
 // GetIDs returns all the IDs for the store
 func (b *storeImpl) GetIDs() ([]string, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "ServiceAccountIDs")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetAll, "ClusterIDs")
 
 	return b.crud.GetKeys()
 }
 
 // Get returns the object, if it exists from the store
-func (b *storeImpl) Get(id string) (*storage.ServiceAccount, bool, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "ServiceAccount")
+func (b *storeImpl) Get(id string) (*storage.Cluster, bool, error) {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Get, "Cluster")
 
 	msg, exists, err := b.crud.Get(id)
 	if err != nil || !exists {
 		return nil, false, err
 	}
-	return msg.(*storage.ServiceAccount), true, nil
+	return msg.(*storage.Cluster), true, nil
 }
 
 // GetMany returns the objects specified by the IDs or the index in the missing indices slice 
-func (b *storeImpl) GetMany(ids []string) ([]*storage.ServiceAccount, []int, error) {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "ServiceAccount")
+func (b *storeImpl) GetMany(ids []string) ([]*storage.Cluster, []int, error) {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
 
 	msgs, missingIndices, err := b.crud.GetMany(ids)
 	if err != nil {
 		return nil, nil, err
 	}
-	objs := make([]*storage.ServiceAccount, 0, len(msgs))
+	objs := make([]*storage.Cluster, 0, len(msgs))
 	for _, m := range msgs {
-		objs = append(objs, m.(*storage.ServiceAccount))
+		objs = append(objs, m.(*storage.Cluster))
 	}
 	return objs, missingIndices, nil
 }
 
 // Upsert inserts the object into the DB
-func (b *storeImpl) Upsert(obj *storage.ServiceAccount) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "ServiceAccount")
+func (b *storeImpl) Upsert(obj *storage.Cluster) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "Cluster")
 
 	return b.crud.Upsert(obj)
 }
 
 // UpsertMany batches objects into the DB
-func (b *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "ServiceAccount")
+func (b *storeImpl) UpsertMany(objs []*storage.Cluster) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "Cluster")
 
 	msgs := make([]proto.Message, 0, len(objs))
 	for _, o := range objs {
@@ -132,22 +135,22 @@ func (b *storeImpl) UpsertMany(objs []*storage.ServiceAccount) error {
 
 // Delete removes the specified ID from the store
 func (b *storeImpl) Delete(id string) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "ServiceAccount")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 
 	return b.crud.Delete(id)
 }
 
 // Delete removes the specified IDs from the store
 func (b *storeImpl) DeleteMany(ids []string) error {
-	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "ServiceAccount")
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.RemoveMany, "Cluster")
 
 	return b.crud.DeleteMany(ids)
 }
 
 // Walk iterates over all of the objects in the store and applies the closure
-func (b *storeImpl) Walk(fn func(obj *storage.ServiceAccount) error) error {
+func (b *storeImpl) Walk(fn func(obj *storage.Cluster) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
-		return fn(msg.(*storage.ServiceAccount))
+		return fn(msg.(*storage.Cluster))
 	})
 }
 

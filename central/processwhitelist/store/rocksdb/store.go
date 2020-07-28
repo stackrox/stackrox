@@ -51,7 +51,6 @@ func keyFunc(msg proto.Message) []byte {
 }
 
 // New returns a new Store instance using the provided rocksdb instance.
-
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "ProcessWhitelist")
 	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, false)
