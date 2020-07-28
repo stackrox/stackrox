@@ -70,16 +70,23 @@ class K8sRbacTest extends BaseSpecification {
         for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
             def sa = s.serviceAccount
 
-            assert orchestratorSAs.find {
-                it.name == sa.name &&
-                    it.namespace == sa.namespace &&
-                    it.labels == null ?: it.labels == sa.labelsMap &&
-                    it.annotations == null ?: it.annotations == sa.annotationsMap &&
-                    it.automountToken == null ? sa.automountToken :
-                        it.automountToken == sa.automountToken &&
-                    it.secrets == sa.secretsList &&
-                    it.imagePullSecrets == sa.imagePullSecretsList
+            K8sServiceAccount k8sMatch = orchestratorSAs.find {
+                ServiceAccountService.matchServiceAccounts(it, sa)
             }
+
+            if (!k8sMatch) {
+                println "SR serviceaccount ${sa.name} has no k8s match"
+                println "SR serviceaccount: " + sa
+                K8sServiceAccount nameOnlyMatch = orchestratorSAs.find {
+                    it.name == sa.name &&
+                    it.namespace == sa.namespace
+                }
+                if (nameOnlyMatch) {
+                    println "K8S serviceaccount: " + nameOnlyMatch.dump()
+                }
+            }
+
+            assert k8sMatch
             assert ServiceAccountService.getServiceAccountDetails(sa.id).getServiceAccount() == sa
         }
     }

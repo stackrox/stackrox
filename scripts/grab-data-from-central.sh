@@ -34,8 +34,9 @@ main() {
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/images | jq > ${dest}/images.json
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/imageintegrations | jq > ${dest}/imageintegrations.json
     curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/deployments | jq > ${dest}/deployments.json
+    curl -s --insecure -u ${ROX_USERNAME}:${ROX_PASSWORD} https://${api_endpoint}/v1/serviceaccounts | jq > ${dest}/serviceaccounts.json
 
-    for objects in "images" "deployments"; do
+    for objects in "images" "deployments" "serviceaccounts"; do
         jq_tweezer=".${objects}[].id"
         object_list=$(cat ${dest}/${objects}.json | jq "${jq_tweezer}")
 

@@ -906,13 +906,20 @@ class Kubernetes implements OrchestratorMain {
         return evaluateWithRetry(1, 2) {
             def serviceAccounts = []
             client.serviceAccounts().inAnyNamespace().list().items.each {
+                // Ingest the K8s service account to a K8sServiceAccount() in a manner similar to the SR product.
+                def annotations = it.metadata.annotations
+                if (annotations) {
+                    annotations.remove("kubectl.kubernetes.io/last-applied-configuration")
+                }
                 serviceAccounts.add(new K8sServiceAccount(
                         name: it.metadata.name,
                         namespace: it.metadata.namespace,
                         labels: it.metadata.labels ? it.metadata.labels : [:],
-                        annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                        annotations: annotations ?: [:],
                         secrets: it.secrets*.name,
-                        imagePullSecrets: it.imagePullSecrets*.name
+                        imagePullSecrets: it.imagePullSecrets*.name,
+                        automountToken: it.automountServiceAccountToken == null
+                                ? true : it.automountServiceAccountToken,
                 ))
             }
             return serviceAccounts
