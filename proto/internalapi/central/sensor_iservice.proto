@@ -23,6 +23,7 @@ message MsgFromSensor {
         NetworkPoliciesResponse      network_policies_response       = 4;
         ClusterStatusUpdate          cluster_status_update           = 5;
         PullTelemetryDataResponse    telemetry_data_response         = 6;
+        RawClusterHealthInfo         cluster_health_info             = 9;
     }
 }
 

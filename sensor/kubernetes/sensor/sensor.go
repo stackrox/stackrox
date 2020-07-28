@@ -21,6 +21,7 @@ import (
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
@@ -68,6 +69,10 @@ func CreateSensor(client client.Interface, workloadHandler *fake.WorkloadManager
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(client.Kubernetes(), admCtrlSettingsMgr))
+	}
+
+	if features.ClusterHealthMonitoring.Enabled() {
+		components = append(components, clusterhealth.NewUpdater(client.Kubernetes()))
 	}
 
 	s := sensor.NewSensor(

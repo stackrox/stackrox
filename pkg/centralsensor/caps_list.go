@@ -12,4 +12,7 @@ const (
 
 	// ComplianceInNodesCap identifies the capability to run compliance in compliance pods
 	ComplianceInNodesCap SensorCapability = "ComplianceInNodes"
+
+	// HealthMonitoringCap identifies the capability to send health information
+	HealthMonitoringCap SensorCapability = "HealthMonitoring"
 )

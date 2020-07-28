@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/alerts"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterhealthupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -51,6 +53,10 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		rolebindings.GetPipeline(),
 		reprocessing.GetPipeline(),
 		alerts.GetPipeline(),
+	}
+
+	if features.ClusterHealthMonitoring.Enabled() {
+		pipelines = append(pipelines, clusterhealthupdate.GetPipeline())
 	}
 
 	return NewClusterPipeline(clusterID, pipelines...), nil
