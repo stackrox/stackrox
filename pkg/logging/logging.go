@@ -1,4 +1,25 @@
 // Package logging provides the logger used in StackRox Go programs.
+//
+// This package supports runtime configuration via the following
+// environment variables:
+//   * LOGLEVEL supporting the following values (case insensitive), order is indicative of importance:
+//     * fatal
+//     * panic
+//     * error
+//     * warn
+//     * internal (deprecated, mapped to info)
+//     * info
+//     * debug
+//     * initretry (deprecated, mapped to debug)
+//     * trace (deprecated, mapped to debug)
+//   * LOGENCODING supporting the following values:
+//     * json
+//     * console
+//   * MODULE_LOGLEVELS supporting ,-separated module=level pairs, e.g.: grpc=debug,kubernetes=warn
+//   * MAX_LOG_LINE_QUOTA in the format max/duration_in_seconds, e.g.: 100/10
+//
+// LOGLEVEL semantics follow common conventions, i.e., any log message with a level less than the
+// currently set log level will be discarded.
 package logging
 
 import (
