@@ -23,6 +23,7 @@ import spock.lang.Shared
 import spock.lang.Specification
 import util.Env
 import util.Helpers
+import util.OnFailure
 import util.Timer
 
 import java.security.SecureRandom
@@ -31,6 +32,7 @@ import java.text.SimpleDateFormat
 
 @Slf4j
 @Retry(condition = { Helpers.determineRetry(failure) })
+@OnFailure(handler = { Helpers.collectDebugForFailure(delegate as Throwable) })
 class BaseSpecification extends Specification {
 
     static final String RUN_ID

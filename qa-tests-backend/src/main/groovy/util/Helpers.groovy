@@ -38,14 +38,6 @@ class Helpers {
             println "An exception occurred which will cause a retry: " + failure
         }
 
-        if (Env.IN_CI) {
-            if (retryAttempt == 1) {
-                collectDebugForFailure()
-            } else {
-                println "Will not collect logs after retry runs."
-            }
-        }
-
         if (willRetry) {
             println "Test Failed... Attempting Retry #${retryAttempt}"
         }
@@ -77,19 +69,33 @@ class Helpers {
         self.with(closure)
     }
 
-    private static void collectDebugForFailure() {
+    static void collectDebugForFailure(Throwable exception) {
+        if (!Env.IN_CI) {
+            return
+        }
+
+        if (exception && exception instanceof AssumptionViolatedException) {
+            println "Won't collect logs for: ${exception.getMessage()}"
+            return
+        }
+
+        if (exception) {
+            println "An exception occurred in test: ${exception.getMessage()}"
+        }
+
         try {
             def debugDir = new File(Constants.FAILURE_DEBUG_DIR)
             if (debugDir.exists() && debugDir.listFiles().size() >= Constants.FAILURE_DEBUG_LIMIT) {
                 println "Debug capture limit reached. Not collecting for this failure."
                 return
             }
+
             def collectionDir = debugDir.getAbsolutePath() + "/" + UUID.randomUUID()
-            println "Will collect stackrox logs for this failure under ${collectionDir}/stackrox-k8s-logs"
+
+            println "Will collect various stackrox logs for this failure under ${collectionDir}/"
+
             shellCmd("./scripts/ci/collect-service-logs.sh stackrox ${collectionDir}/stackrox-k8s-logs")
-            println "Will collect qa* logs for this failure under ${collectionDir}/qa-k8s-logs"
             shellCmd("./scripts/ci/collect-qa-service-logs.sh ${collectionDir}/qa-k8s-logs")
-            println "Will collect central API debug for this failure under ${collectionDir}/central-data"
             shellCmd("./scripts/grab-data-from-central.sh ${collectionDir}/central-data")
         }
         catch (Exception e) {
