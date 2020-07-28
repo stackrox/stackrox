@@ -308,6 +308,14 @@ func LoggerForModule() *Logger {
 
 //convenience methods log apply to root logger
 
+// Log implements logging.Logger interface.
+func Log(level int32, args ...interface{}) { rootLogger.Log(level, args...) }
+
+// Logf implements logging.Logger interface.
+func Logf(level int32, template string, args ...interface{}) {
+	rootLogger.Logf(level, template, args...)
+}
+
 // Debug implements logging.Logger interface.
 func Debug(args ...interface{}) { rootLogger.Debug(args...) }
 
