@@ -3,6 +3,7 @@ package checkra5
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -36,7 +37,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
-			Scope:              framework.ClusterKind,
+			Scope:              pkgFramework.ClusterKind,
 			DataDependencies:   []string{"UnresolvedAlerts", "Deployments", "Policies"},
 			InterpretationText: interpretationText,
 		},

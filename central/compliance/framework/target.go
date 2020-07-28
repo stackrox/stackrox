@@ -4,11 +4,12 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 // ComplianceTarget is the target for a check (cluster, node, or deployment).
 type ComplianceTarget interface {
-	Kind() TargetKind
+	Kind() framework.TargetKind
 
 	// ID returns the ID of this target. For a given compliance domain, the combination of kind and ID uniquely
 	// identifies an object.
@@ -24,7 +25,7 @@ type ComplianceTarget interface {
 
 // TargetRef is an identifier for a compliance target that can be used as a map key and compared for equality.
 type TargetRef struct {
-	Kind TargetKind
+	Kind framework.TargetKind
 	ID   string
 }
 
@@ -39,44 +40,19 @@ func GetTargetRef(target ComplianceTarget) TargetRef {
 // TargetObject obtains the underlying object for a target.
 func TargetObject(tgt ComplianceTarget) interface{} {
 	switch tgt.Kind() {
-	case ClusterKind:
+	case framework.ClusterKind:
 		return tgt.Cluster()
-	case NodeKind:
+	case framework.NodeKind:
 		return tgt.Node()
-	case DeploymentKind:
+	case framework.DeploymentKind:
 		return tgt.Deployment()
 	default:
 		panic(fmt.Errorf("unknown target kind %v", tgt.Kind()))
 	}
 }
 
-// TargetKind indicates the kind of a compliance check target (cluster, node, deployment).
-type TargetKind int
-
-const (
-	// ClusterKind indicates that a compliance check target is of type Cluster.
-	ClusterKind TargetKind = iota
-	// NodeKind indicates that a compliance check target is of type Node.
-	NodeKind
-	// DeploymentKind indicates that a compliance check target is of type Deployment.
-	DeploymentKind
-)
-
-func (k TargetKind) String() string {
-	switch k {
-	case ClusterKind:
-		return "cluster"
-	case NodeKind:
-		return "node"
-	case DeploymentKind:
-		return "deployment"
-	default:
-		return fmt.Sprintf("TargetKind(%d)", int(k))
-	}
-}
-
 type baseTarget struct {
-	kind TargetKind
+	kind framework.TargetKind
 }
 
 func (t baseTarget) Cluster() *storage.Cluster {
@@ -91,7 +67,7 @@ func (t baseTarget) Deployment() *storage.Deployment {
 	panic(fmt.Errorf("requested deployment target, but target kind of active scope is %v", t.kind))
 }
 
-func (t baseTarget) Kind() TargetKind {
+func (t baseTarget) Kind() framework.TargetKind {
 	return t.kind
 }
 
@@ -134,7 +110,7 @@ func (t deploymentTarget) Deployment() *storage.Deployment {
 func targetForCluster(cluster *storage.Cluster) clusterTarget {
 	return clusterTarget{
 		baseTarget: baseTarget{
-			kind: ClusterKind,
+			kind: framework.ClusterKind,
 		},
 		cluster: cluster,
 	}
@@ -143,7 +119,7 @@ func targetForCluster(cluster *storage.Cluster) clusterTarget {
 func targetForNode(node *storage.Node) nodeTarget {
 	return nodeTarget{
 		baseTarget: baseTarget{
-			kind: NodeKind,
+			kind: framework.NodeKind,
 		},
 		node: node,
 	}
@@ -152,7 +128,7 @@ func targetForNode(node *storage.Node) nodeTarget {
 func targetForDeployment(deployment *storage.Deployment) deploymentTarget {
 	return deploymentTarget{
 		baseTarget: baseTarget{
-			kind: DeploymentKind,
+			kind: framework.DeploymentKind,
 		},
 		deployment: deployment,
 	}

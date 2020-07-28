@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 )
@@ -29,7 +30,7 @@ func init() {
 func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap types.ImageWrap), desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that each image on every node %s", desc),
 		DataDependencies:   []string{"HostScraped"},
 	}

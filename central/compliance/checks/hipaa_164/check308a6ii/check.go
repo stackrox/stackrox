@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const checkID = "HIPAA_164:308_a_6_ii"
@@ -12,8 +13,8 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,
-			Scope:              framework.ClusterKind,
-			AdditionalScopes:   []framework.TargetKind{framework.DeploymentKind},
+			Scope:              pkgFramework.ClusterKind,
+			AdditionalScopes:   []pkgFramework.TargetKind{pkgFramework.DeploymentKind},
 			DataDependencies:   []string{"Notifiers", "Images", "ImageIntegrations", "Policies", "NetworkGraph", "NetworkPolicies"},
 			InterpretationText: interpretationText,
 		},

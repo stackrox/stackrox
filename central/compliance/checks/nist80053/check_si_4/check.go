@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const (
@@ -41,7 +42,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
-			Scope:              framework.ClusterKind,
+			Scope:              pkgFramework.ClusterKind,
 			DataDependencies:   []string{"Cluster"},
 			InterpretationText: interpretationText,
 		},

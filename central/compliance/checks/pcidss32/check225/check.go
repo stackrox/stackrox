@@ -3,6 +3,7 @@ package check225
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -12,7 +13,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,
-			Scope:              framework.DeploymentKind,
+			Scope:              pkgFramework.DeploymentKind,
 			DataDependencies:   []string{"NetworkFlows"},
 			InterpretationText: interpretationText,
 		},

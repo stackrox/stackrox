@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 // HasPermissions checks the permissions on a file
@@ -27,7 +28,7 @@ func HasOwnershipGroup(f *compliance.File, group string) bool {
 func OptionalSystemdOwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -38,7 +39,7 @@ func OptionalSystemdOwnershipCheck(name, file, user, group string) framework.Che
 func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -49,7 +50,7 @@ func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
 func OwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node is owned by user %q and group %q", file, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -60,7 +61,7 @@ func OwnershipCheck(name, file, user, group string) framework.Check {
 func OptionalOwnershipCheck(name, file, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node (if existing) is owned by user %q and group %q", file, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -71,7 +72,7 @@ func OptionalOwnershipCheck(name, file, user, group string) framework.Check {
 func RecursiveOwnershipCheck(name, dir, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -82,7 +83,7 @@ func RecursiveOwnershipCheck(name, dir, user, group string) framework.Check {
 func RecursiveOwnershipCheckIfDirExists(name, dir, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -154,7 +155,7 @@ func ownershipCheck(ctx framework.ComplianceContext, f *compliance.File, user, g
 func PermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -165,7 +166,7 @@ func PermissionCheck(name, file string, permissions uint32) framework.Check {
 func OptionalPermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node (if existing) are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -176,7 +177,7 @@ func OptionalPermissionCheck(name, file string, permissions uint32) framework.Ch
 func OptionalSystemdPermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -187,7 +188,7 @@ func OptionalSystemdPermissionCheck(name, file string, permissions uint32) frame
 func SystemdPermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -198,7 +199,7 @@ func SystemdPermissionCheck(name, file string, permissions uint32) framework.Che
 func RecursivePermissionCheck(name, file string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions of all files under the path %s on each node are set to '%#o'", file, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -261,7 +262,7 @@ func recursivePermissionCheckFunc(path string, permissions uint32) framework.Che
 func RecursivePermissionCheckWithFileExtIfDirExists(name, dir, ext string, permissions uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions of files with extension %s under the path %s on each node are set to '%#o'", ext, dir, permissions),
 		DataDependencies:   []string{"HostScraped"},
 	}

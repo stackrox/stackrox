@@ -3,6 +3,7 @@ package check414
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -18,7 +19,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,
-			Scope:              framework.ClusterKind,
+			Scope:              pkgFramework.ClusterKind,
 			DataDependencies:   []string{"Deployments", "Policies"},
 			InterpretationText: interpretationText,
 		},

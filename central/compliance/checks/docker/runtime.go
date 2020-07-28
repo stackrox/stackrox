@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -61,7 +62,7 @@ func init() {
 func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, container types.ContainerJSON), desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that every running container on each node %s", desc),
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -366,7 +367,7 @@ func sharedNetwork(ctx framework.ComplianceContext, container types.ContainerJSO
 func sshCheck() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Docker_v1_2_0:5_6",
-		Scope:              framework.DeploymentKind,
+		Scope:              pkgFramework.DeploymentKind,
 		InterpretationText: "StackRox checks that every running container in each deployment does not have ssh process running",
 		DataDependencies:   []string{"ProcessIndicators"},
 	}

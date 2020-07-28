@@ -1,5 +1,7 @@
 package framework
 
+import pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+
 // A Check is a single piece of logic executed as part of a compliance run. It usually corresponds to one or multiple
 // controls in a compliance standard.
 type Check interface {
@@ -9,7 +11,7 @@ type Check interface {
 	// AppliesToScope checks if the check applies to the given scope. This has no effect as to how the check is executed
 	// by the framework (see `Run` below), but informs how results are collected and, in particular, how missing results
 	// are detected.
-	AppliesToScope(scope TargetKind) bool
+	AppliesToScope(scope pkgFramework.TargetKind) bool
 
 	// DataDependencies is a list of IDs for data required by a check.
 	DataDependencies() []string
@@ -26,8 +28,8 @@ type Check interface {
 // CheckMetadata stores metadata associated with a check.
 type CheckMetadata struct {
 	ID                 string
-	Scope              TargetKind
-	AdditionalScopes   []TargetKind
+	Scope              pkgFramework.TargetKind
+	AdditionalScopes   []pkgFramework.TargetKind
 	DataDependencies   []string
 	InterpretationText string
 	RemoteCheck        bool
@@ -60,7 +62,7 @@ func (c *checkFromFunc) InterpretationText() string {
 	return c.metadata.InterpretationText
 }
 
-func (c *checkFromFunc) AppliesToScope(scope TargetKind) bool {
+func (c *checkFromFunc) AppliesToScope(scope pkgFramework.TargetKind) bool {
 	if c.metadata.Scope == scope {
 		return true
 	}

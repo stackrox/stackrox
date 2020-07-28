@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apiserver/pkg/apis/config/v1"
@@ -77,7 +78,7 @@ func masterAPIServerCommandLine(name string, key, target, defaultVal string, eva
 func encryptionProvider() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_2_34",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the Kubernetes API server uses the `aescbc, kms or secretbox` encryption provider",
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -123,7 +124,7 @@ func encryptionProvider() framework.Check {
 func securityContextDenyChecker() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_2_13",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the admission control plugin SecurityContextDeny is set if PodSecurityPolicy is not used",
 		DataDependencies:   []string{"HostScraped"},
 	}

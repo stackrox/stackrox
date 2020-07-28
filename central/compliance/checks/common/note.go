@@ -5,13 +5,14 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 // PerNodeNoteCheck marks every node with a NoteStatus with the evidence being the description
 func PerNodeNoteCheck(id, desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 id,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("The following property cannot be checked automatically by StackRox, and thus must be ensured manually: %s", desc),
 	}
 	return framework.NewCheckFromFunc(md, func(ctx framework.ComplianceContext) {
@@ -25,7 +26,7 @@ func PerNodeNoteCheck(id, desc string) framework.Check {
 func PerNodeDeprecatedCheck(id, desc string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 id,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("The check has been retired because: %s", desc),
 	}
 	return framework.NewCheckFromFunc(md, func(ctx framework.ComplianceContext) {

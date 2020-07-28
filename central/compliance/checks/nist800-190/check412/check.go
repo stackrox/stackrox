@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -23,7 +24,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,
-			Scope:              framework.ClusterKind,
+			Scope:              pkgFramework.ClusterKind,
 			DataDependencies:   []string{"Policies", "ImageIntegrations", "ProcessIndicators", "Deployments"},
 			InterpretationText: interpretationText,
 		},

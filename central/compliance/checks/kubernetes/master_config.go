@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 func init() {
@@ -67,7 +68,7 @@ func getDirectoryFileFromCommandLine(ctx framework.ComplianceContext, ret *compl
 func cniFilePermissions() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_1_9",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -85,7 +86,7 @@ func cniFilePermissions() framework.Check {
 func cniFileOwnership() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_1_10",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the owner and group of files in the CNI configuration and binary directories is root:root",
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
@@ -102,7 +103,7 @@ func cniFileOwnership() framework.Check {
 func etcdDataPermissions() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_1_11",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the permissions of the etcd data directory are set to '0700'",
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
@@ -116,7 +117,7 @@ func etcdDataPermissions() framework.Check {
 func etcdDataOwnership() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Kubernetes_v1_5:1_1_12",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that the owner and group of the etcd data directory are set to etcd:etcd",
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(

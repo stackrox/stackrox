@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 var (
@@ -100,7 +101,7 @@ func collectEntityResults(entity framework.ComplianceTarget, checks []framework.
 		if results != nil && results.Error() != nil {
 			errs = append(errs, results.Error())
 		}
-		if results != nil && entity.Kind() != framework.ClusterKind {
+		if results != nil && entity.Kind() != pkgFramework.ClusterKind {
 			results = results.ForChild(entity)
 			if results != nil && results.Error() != nil {
 				errs = append(errs, results.Error())

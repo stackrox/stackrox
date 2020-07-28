@@ -3,6 +3,7 @@ package remote
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/features"
 
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
@@ -22,7 +23,7 @@ func makeChecksFromRemoteFuncs() []framework.Check {
 			checks = append(checks, framework.NewCheckFromFunc(
 				framework.CheckMetadata{
 					ID:                 checkName,
-					Scope:              framework.NodeKind,
+					Scope:              pkgFramework.NodeKind,
 					DataDependencies:   []string{"HostScraped"},
 					InterpretationText: funcAndInterpretation.InterpretationText,
 					RemoteCheck:        true,

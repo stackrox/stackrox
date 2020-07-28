@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,7 +27,7 @@ func init() {
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
 				ID:                 "CIS_Docker_v1_2_0:2_4",
-				Scope:              framework.NodeKind,
+				Scope:              pkgFramework.NodeKind,
 				DataDependencies:   []string{"HostScraped"},
 				InterpretationText: `StackRox checks that no insecure Docker Registries are configured on any host, except for those with an IP in a private subnet (such as 127.0.0.0/8 or 10.0.0.0/8)`,
 			},
@@ -52,7 +53,7 @@ func init() {
 func networkRestrictionCheck() framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 "CIS_Docker_v1_2_0:2_1",
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -73,7 +74,7 @@ func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info t
 	}
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: interpretationText,
 		DataDependencies:   []string{"HostScraped"},
 	}
@@ -162,7 +163,7 @@ func getDockerdProcess(ret *compliance.ComplianceReturn) (*compliance.CommandLin
 func genericDockerCommandlineCheck(name string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
-		Scope:            framework.NodeKind,
+		Scope:            pkgFramework.NodeKind,
 		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
@@ -179,7 +180,7 @@ func genericDockerCommandlineCheck(name string, key, target, defaultVal string, 
 func tlsVerifyCheck(name string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
-		Scope:            framework.NodeKind,
+		Scope:            pkgFramework.NodeKind,
 		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(

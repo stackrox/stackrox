@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,18 +80,18 @@ func TestOKRun(t *testing.T) {
 	expectedClusterIDs := set.NewStringSet(testCluster.Id)
 
 	nodeCheck := NewCheckFromFunc(
-		CheckMetadata{ID: "node-check", Scope: NodeKind},
+		CheckMetadata{ID: "node-check", Scope: framework.NodeKind},
 		func(ctx ComplianceContext) {
 			ForEachNode(ctx, nodeCheckFn)
 		})
 	deploymentCheck := NewCheckFromFunc(
-		CheckMetadata{ID: "deployment-check", Scope: DeploymentKind},
+		CheckMetadata{ID: "deployment-check", Scope: framework.DeploymentKind},
 		func(ctx ComplianceContext) {
 			ForEachDeployment(ctx, deploymentCheckFn)
 		})
 
 	clusterCheck := NewCheckFromFunc(
-		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		CheckMetadata{ID: "cluster-check", Scope: framework.ClusterKind},
 		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck, nodeCheck, deploymentCheck)
@@ -110,7 +111,7 @@ func TestRunWithContextError(t *testing.T) {
 		syncSig.Wait()
 	}
 	clusterCheck := NewCheckFromFunc(
-		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		CheckMetadata{ID: "cluster-check", Scope: framework.ClusterKind},
 		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck)
@@ -136,7 +137,7 @@ func TestRunWithTerminate(t *testing.T) {
 		syncSig.Wait()
 	}
 	clusterCheck := NewCheckFromFunc(
-		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		CheckMetadata{ID: "cluster-check", Scope: framework.ClusterKind},
 		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck)

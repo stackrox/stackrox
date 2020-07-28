@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const (
@@ -15,7 +16,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,
-			Scope:              framework.DeploymentKind,
+			Scope:              pkgFramework.DeploymentKind,
 			DataDependencies:   []string{"Deployments", "Policies"},
 			InterpretationText: interpretationText,
 		},

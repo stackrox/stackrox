@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
@@ -27,7 +28,7 @@ func PerNodeCheck(f func(ctx framework.ComplianceContext, ret *compliance.Compli
 func CommandLineFileOwnership(name string, processName, flag, user, group string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
-		Scope:            framework.NodeKind,
+		Scope:            pkgFramework.NodeKind,
 		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, PerNodeCheck(
@@ -50,7 +51,7 @@ func CommandLineFileOwnership(name string, processName, flag, user, group string
 func CommandLineFilePermissions(name string, processName, flag string, perms uint32) framework.Check {
 	md := framework.CheckMetadata{
 		ID:               name,
-		Scope:            framework.NodeKind,
+		Scope:            pkgFramework.NodeKind,
 		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, PerNodeCheck(

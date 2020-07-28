@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
@@ -20,7 +21,7 @@ func init() {
 	framework.MustRegisterChecksIfFlagDisabled(
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_1", "Ensure the container host has been Hardened"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_1_2", " Ensure that the version of Docker is up to date"),
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:1_2_1", Scope: framework.NodeKind}, containerPartition),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:1_2_1", Scope: pkgFramework.NodeKind}, containerPartition),
 		common.PerNodeNoteCheck("CIS_Docker_v1_2_0:1_2_2", "Ensure only trusted users are allowed to control Docker daemon"),
 		auditCheck("CIS_Docker_v1_2_0:1_2_3", "/usr/bin/dockerd", "/usr/bin/dockerd-current"),
 		auditCheck("CIS_Docker_v1_2_0:1_2_4", "/var/lib/docker"),
@@ -33,8 +34,8 @@ func init() {
 		auditCheck("CIS_Docker_v1_2_0:1_2_11", "/usr/bin/containerd", "/usr/bin/docker-containerd"),
 		auditCheck("CIS_Docker_v1_2_0:1_2_12", "/usr/sbin/runc", "/usr/bin/runc"),
 
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_22", Scope: framework.NodeKind}, privilegedDockerExec),
-		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_23", Scope: framework.NodeKind}, userDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_22", Scope: pkgFramework.NodeKind}, privilegedDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_2_0:5_23", Scope: pkgFramework.NodeKind}, userDockerExec),
 	)
 }
 
@@ -43,7 +44,7 @@ const auditFile = "/etc/audit/audit.rules"
 func auditCheck(name string, files ...string) framework.Check {
 	md := framework.CheckMetadata{
 		ID:                 name,
-		Scope:              framework.NodeKind,
+		Scope:              pkgFramework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that auditd rules exist for files %s (if present)", msgfmt.FormatStrings(files...)),
 	}
 	return framework.NewCheckFromFunc(md, auditCheckFunc(files...))

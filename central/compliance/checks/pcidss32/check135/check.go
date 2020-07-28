@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const checkID = "PCI_DSS_3_2:1_3_5"
@@ -13,7 +14,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 checkID,
-			Scope:              framework.DeploymentKind,
+			Scope:              pkgFramework.DeploymentKind,
 			InterpretationText: interpretationText,
 		},
 		clusterIsCompliant)

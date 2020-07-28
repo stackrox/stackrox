@@ -3,6 +3,7 @@ package docker
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -12,14 +13,14 @@ func init() {
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
 				ID:                 "CIS_Docker_v1_2_0:6_1",
-				Scope:              framework.NodeKind,
+				Scope:              pkgFramework.NodeKind,
 				InterpretationText: "StackRox checks how many of the images present on each node are actually in use",
 				DataDependencies:   []string{"HostScraped"},
 			}, imageSprawl),
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
 				ID:                 "CIS_Docker_v1_2_0:6_2",
-				Scope:              framework.NodeKind,
+				Scope:              pkgFramework.NodeKind,
 				InterpretationText: "StackRox checks how many of the containers present on each node are actually running",
 				DataDependencies:   []string{"HostScraped"},
 			}, containerSprawl),

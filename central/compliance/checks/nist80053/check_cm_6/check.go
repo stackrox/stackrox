@@ -3,6 +3,7 @@ package checkcm6
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 const (
@@ -19,7 +20,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 controlID,
-			Scope:              framework.ClusterKind,
+			Scope:              pkgFramework.ClusterKind,
 			DataDependencies:   []string{"Policies", "UnresolvedAlerts"},
 			InterpretationText: interpretationText,
 		},
