@@ -200,10 +200,6 @@ var (
 func init() {
 	initLevel := os.Getenv("LOGLEVEL")
 	value, ok := LevelForLabel(initLevel)
-	if ok {
-		SetGlobalLogLevel(value)
-	}
-
 	zapLevel := levelToZapLevelOrDefault(value, zapcore.InfoLevel)
 
 	switch le := os.Getenv("LOGENCODING"); le {
@@ -218,6 +214,9 @@ func init() {
 	}
 
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
+	if ok {
+		SetGlobalLogLevel(value)
+	}
 
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach

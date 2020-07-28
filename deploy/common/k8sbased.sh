@@ -199,6 +199,14 @@ function launch_central {
       ${ORCH_CMD} -n stackrox set env deploy/central GODEBUG=cgocheck=2 MUTEX_WATCHDOG_TIMEOUT_SECS=15
     fi
 
+    # set logging options
+    if [[ -n $LOGLEVEL ]]; then
+      ${ORCH_CMD} -n stackrox set env deploy/central LOGLEVEL="${LOGLEVEL}"
+    fi
+    if [[ -n $MODULE_LOGLEVELS ]]; then
+      ${ORCH_CMD} -n stackrox set env deploy/central MODULE_LOGLEVELS="${MODULE_LOGLEVELS}"
+    fi
+
     if [[ "$SCANNER_SUPPORT" == "true" ]]; then
         echo "Deploying Scanning..."
         $unzip_dir/scanner/scripts/setup.sh
