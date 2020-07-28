@@ -3105,7 +3105,7 @@ jobs:
             fi
 
       - deploy-sensor-via-upgrader-for-upgrade-tests:
-          upgrade-process-id: 789c9262-5dd3-4d58-a824-c2a099892bd6
+          upgrade-process-id: 060a9fa6-0ed6-49ac-b70c-9ca692614707
           desc: after manually patching webhook
 
       - run:
