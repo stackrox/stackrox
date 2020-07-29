@@ -2,12 +2,33 @@ package kocache
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/ioutils"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
+
+var (
+	log = logging.LoggerForModule()
+)
+
+const (
+	probeAccessCheckResource = "/meta.json"
+)
+
+// Currently we only require that the resource `probeAccessCheckResource`
+// can be decoded as a JSON object.
+// For future use cases we might need to populate this metadata struct
+// with actual fields.
+type resourceMeta struct {
+}
 
 func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser, int64, error) {
 	if c.upstreamBaseURL == "" {
@@ -48,4 +69,44 @@ func (c *koCache) LoadProbe(ctx context.Context, filePath string) (io.ReadCloser
 	})
 	releaseRef = false // prevent releasing reference upon return
 	return dataReaderWithCloser, size, nil
+}
+
+func (c *koCache) checkProbeDownloadSite(ctx context.Context) error {
+	url := fmt.Sprintf("%s%s", strings.TrimRight(c.upstreamBaseURL, "/"), probeAccessCheckResource)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to create HTTP request for accessing resource %s", url)
+	}
+	resp, err := c.upstreamClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+	if resp.StatusCode != http.StatusOK {
+		return errors.Errorf("Failed to access resource %s: Unexpected HTTP response status: %s", url, resp.Status)
+	}
+
+	var meta resourceMeta
+	err = json.NewDecoder(resp.Body).Decode(&meta)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to access resource %s: Decoding error", url)
+	}
+
+	return nil
+}
+
+func (c *koCache) verifyProbeDownloadSiteReachable(ctx context.Context) (bool, error) {
+	err := c.checkProbeDownloadSite(ctx)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (c *koCache) IsAvailable(ctx context.Context) (bool, error) {
+	isAvailable, err := c.verifyProbeDownloadSiteReachable(ctx)
+	if err != nil {
+		return false, err
+	}
+	return isAvailable, nil
 }

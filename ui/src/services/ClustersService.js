@@ -7,6 +7,7 @@ import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';
+const clustersEnvUrl = '/v1/clusters-env';
 const upgradesUrl = '/v1/sensorupgrades';
 const autoUpgradeConfigUrl = `${upgradesUrl}/config`;
 const manualUpgradeUrl = `${upgradesUrl}/cluster`;
@@ -149,5 +150,16 @@ export function downloadClusterYaml(clusterId, createUpgraderSA = false) {
         method: 'post',
         url: '/api/extensions/clusters/zip',
         data: { id: clusterId, createUpgraderSA },
+    });
+}
+
+/**
+ * Fetches the KernelSupportAvailable property.
+ *
+ * @returns {Promise<boolean, Error>} fulfilled with normalized cluster data
+ */
+export function fetchKernelSupportAvailable() {
+    return axios.get(`${clustersEnvUrl}/kernel-support-available`).then((response) => {
+        return Boolean(response?.data?.kernelSupportAvailable);
     });
 }

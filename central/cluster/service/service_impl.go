@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/cluster/store"
+	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -34,6 +35,7 @@ var (
 		user.With(permissions.View(resources.Cluster)): {
 			"/v1.ClustersService/GetClusters",
 			"/v1.ClustersService/GetCluster",
+			"/v1.ClustersService/GetKernelSupportAvailable",
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
 			"/v1.ClustersService/PostCluster",
@@ -45,8 +47,9 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	datastore   datastore.DataStore
-	riskManager manager.Manager
+	datastore    datastore.DataStore
+	riskManager  manager.Manager
+	probeSources probesources.ProbeSources
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -199,4 +202,15 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+func (s *serviceImpl) GetKernelSupportAvailable(ctx context.Context, _ *v1.Empty) (*v1.KernelSupportAvailableResponse, error) {
+	anyAvailable, err := s.probeSources.AnyAvailable(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := &v1.KernelSupportAvailableResponse{
+		KernelSupportAvailable: anyAvailable,
+	}
+	return result, nil
 }

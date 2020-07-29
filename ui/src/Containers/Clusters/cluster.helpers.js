@@ -67,6 +67,7 @@ export const newClusterDefault = {
             disableBypass: false,
         },
     },
+    slimCollectorMode: false,
 };
 
 // @TODO: add optional button text and func

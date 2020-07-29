@@ -333,3 +333,11 @@ func (m *manager) LoadProbe(ctx context.Context, file string) (io.ReadCloser, in
 
 	return dataFile, st.Size(), nil
 }
+
+func (m *manager) IsAvailable(ctx context.Context) (bool, error) {
+	entries, err := ioutil.ReadDir(m.rootDir)
+	if err != nil {
+		return false, err
+	}
+	return len(entries) > 0, nil
+}

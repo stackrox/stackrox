@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import CollapsibleCard from 'Components/CollapsibleCard';
+import Loader from 'Components/Loader';
 import Select from 'Components/Select';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
@@ -26,7 +27,7 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-function ClusterEditForm({ selectedCluster, handleChange }) {
+function ClusterEditForm({ selectedCluster, handleChange, isLoading }) {
     // curry the change handlers for the select inputs
     const onCollectionMethodChange = getSelectComparison(
         runtimeOptions,
@@ -40,6 +41,8 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
         selectedCluster,
         handleChange
     );
+
+    if (isLoading) return <Loader />;
 
     return (
         <form className="px-4 w-full mb-8" data-testid="cluster-form">
@@ -254,6 +257,34 @@ function ClusterEditForm({ selectedCluster, handleChange }) {
                             Tolerate all taints to run on all nodes of this cluster
                         </div>
                     </div>
+                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_SUPPORT_SLIM_COLLECTOR_MODE}>
+                        {({ featureEnabled }) => {
+                            return (
+                                featureEnabled && (
+                                    <div className="mb-4 flex flex-col bg-base-100 border-2 rounded px-2 py-1 border-base-300 w-full font-600 text-base-600 hover:border-base-400 leading-normal min-h-10 border-base-300 justify-between">
+                                        <div className="flex items-center justify-between">
+                                            <label
+                                                htmlFor="slimCollectorMode"
+                                                className="block py-2 text-base-600 font-700"
+                                            >
+                                                Enable Slim Collector Mode
+                                            </label>
+                                            <ToggleSwitch
+                                                id="slimCollectorMode"
+                                                name="slimCollectorMode"
+                                                toggleHandler={handleChange}
+                                                enabled={selectedCluster.slimCollectorMode}
+                                                disabled
+                                            />
+                                        </div>
+                                        <div className="flex py-1 italic">
+                                            New cluster will be set up using a slim collector image
+                                        </div>
+                                    </div>
+                                )
+                            );
+                        }}
+                    </FeatureEnabled>
                 </div>
             </CollapsibleCard>
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
@@ -418,8 +449,10 @@ ClusterEditForm.propTypes = {
                 disableBypass: PropTypes.bool,
             }),
         }),
+        slimCollectorMode: PropTypes.bool,
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
+    isLoading: PropTypes.func.isRequired,
 };
 
 export default ClusterEditForm;

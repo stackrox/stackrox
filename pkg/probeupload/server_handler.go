@@ -20,6 +20,8 @@ type ProbeSource interface {
 	// If the size cannot be determined in advance, -1 should be returned as the second value.
 	// A "not found" should be indicated via a `nil, 0, nil` return value.
 	LoadProbe(ctx context.Context, fileName string) (io.ReadCloser, int64, error)
+
+	IsAvailable(ctx context.Context) (bool, error)
 }
 
 type handler struct {

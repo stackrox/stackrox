@@ -34,6 +34,10 @@ message GetClustersRequest {
     string query = 1;
 }
 
+message KernelSupportAvailableResponse {
+    bool kernel_support_available = 1;
+}
+
 service ClustersService {
 
     rpc GetClusters (GetClustersRequest) returns (ClustersList) {
@@ -65,6 +69,14 @@ service ClustersService {
     rpc DeleteCluster (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/clusters/{id}"
+        };
+    }
+
+    // Semantically this is related to cluster creation, but technically this could be rightfully moved
+    // into some kind of 'Central Environment' service.
+    rpc GetKernelSupportAvailable(Empty) returns (KernelSupportAvailableResponse) {
+        option (google.api.http) = {
+            get: "/v1/clusters-env/kernel-support-available"
         };
     }
 }

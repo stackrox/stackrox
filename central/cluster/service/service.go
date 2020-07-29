@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/risk/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -24,9 +25,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore, riskManager manager.Manager) Service {
+func New(datastore datastore.DataStore, riskManager manager.Manager, probeSources probesources.ProbeSources) Service {
 	return &serviceImpl{
-		datastore:   datastore,
-		riskManager: riskManager,
+		datastore:    datastore,
+		riskManager:  riskManager,
+		probeSources: probeSources,
 	}
 }

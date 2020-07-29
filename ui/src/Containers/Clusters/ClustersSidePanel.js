@@ -12,13 +12,17 @@ import Message from 'Components/Message';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import useInterval from 'hooks/useInterval';
-import { getClusterById, saveCluster, downloadClusterYaml } from 'services/ClustersService';
+import {
+    getClusterById,
+    saveCluster,
+    downloadClusterYaml,
+    fetchKernelSupportAvailable,
+} from 'services/ClustersService';
 
 import ClusterEditForm from './ClusterEditForm';
 import ClusterDeployment from './ClusterDeployment';
 import {
     clusterDetailPollingInterval,
-    clusterTypeOptions,
     formatUpgradeMessage,
     getCredentialExpirationProps,
     getUpgradeStatusDetail,
@@ -48,6 +52,7 @@ function ClustersSidePanel({
 
     const [selectedCluster, setSelectedCluster] = useState(envAwareClusterDefault);
     const [wizardStep, setWizardStep] = useState(wizardSteps.FORM);
+    const [isLoading, setIsLoading] = useState(false);
     const [messageState, setMessageState] = useState(null);
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
@@ -71,6 +76,7 @@ function ClustersSidePanel({
             const clusterIdToRetrieve = selectedClusterId;
             if (clusterIdToRetrieve && clusterIdToRetrieve !== 'new') {
                 setMessageState(null);
+                setIsLoading(true);
                 // don't want to cache or memoize, because we always want the latest real-time data
                 getClusterById(clusterIdToRetrieve)
                     .then((cluster) => {
@@ -92,7 +98,26 @@ function ClustersSidePanel({
                             type: 'error',
                             message: 'There was an error downloading the configuration files.',
                         });
+                    })
+                    .finally(() => {
+                        setIsLoading(false);
                     });
+            } else if (clusterIdToRetrieve) {
+                setIsLoading(true);
+                fetchKernelSupportAvailable()
+                    .then((kernelSupportAvailable) => {
+                        const updatedCluster = {
+                            ...selectedCluster,
+                            slimCollectorMode: kernelSupportAvailable,
+                        };
+                        setSelectedCluster(updatedCluster);
+                    })
+                    .finally(() => {
+                        setIsLoading(false);
+                    });
+                // TODO: When rolling out this feature the user should be informed somehow
+                // in case this property could not be retrieved.
+                // The default slimCollectorMode (false) is sufficient for now.
             }
         },
         // lint rule "exhaustive-deps" wants to add selectedCluster to change-detection
@@ -120,17 +145,6 @@ function ClustersSidePanel({
             const newValue =
                 event.target.type === 'checkbox' ? event.target.checked : event.target.value;
             set(newClusterSettings, event.target.name, newValue);
-            setSelectedCluster(newClusterSettings);
-        }
-    }
-
-    function onClusterTypeChange(newClusterType) {
-        if (
-            clusterTypeOptions.find((value) => value === newClusterType) !== undefined &&
-            selectedCluster.type !== newClusterType
-        ) {
-            const newClusterSettings = { ...selectedCluster, type: newClusterType.value };
-
             setSelectedCluster(newClusterSettings);
         }
     }
@@ -326,7 +340,7 @@ function ClustersSidePanel({
                 <ClusterEditForm
                     selectedCluster={selectedCluster}
                     handleChange={onChange}
-                    onClusterTypeChange={onClusterTypeChange}
+                    isLoading={isLoading}
                 />
             )}
             {showDeploymentStyles && (

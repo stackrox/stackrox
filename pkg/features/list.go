@@ -40,4 +40,7 @@ var (
 
 	// ClusterHealthMonitoring enables monitoring of sensor and collector health
 	ClusterHealthMonitoring = registerFeature("Enable cluster health monitoring", "ROX_CLUSTER_HEALTH_MONITORING", false)
+
+	// SupportSlimCollectorMode enables support for retrieving slim Collector bundles from central.
+	SupportSlimCollectorMode = registerFeature("Support slim Collector mode", "ROX_SUPPORT_SLIM_COLLECTOR_MODE", false)
 )

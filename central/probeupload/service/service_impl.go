@@ -9,21 +9,17 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/clusters"
-	licenseManager "github.com/stackrox/rox/central/license/manager"
+	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/probeupload/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"google.golang.org/grpc"
@@ -46,27 +42,8 @@ type service struct {
 	probeServerHandler http.Handler
 }
 
-func newService(mgr manager.Manager, licenseMgr licenseManager.LicenseManager) *service {
-	var probeSources []probeupload.ProbeSource
-	probeSources = append(probeSources, mgr)
-	if env.OfflineModeEnv.Setting() != "true" {
-		opts := kocache.Options{}
-		if licenseMgr != nil {
-			opts.ModifyRequest = func(req *http.Request) {
-				q := req.URL.Query()
-				q.Set("cid", licenseMgr.GetActiveLicense().GetMetadata().GetLicensedForId())
-				req.URL.RawQuery = q.Encode()
-			}
-		}
-
-		if baseURL := clusters.CollectorModuleDownloadBaseURL.Setting(); baseURL != "" {
-			httpClient := &http.Client{
-				Transport: proxy.RoundTripper(),
-			}
-			probeSources = append(probeSources, kocache.New(context.Background(), httpClient, baseURL, opts))
-		}
-	}
-
+func newService(mgr manager.Manager) *service {
+	probeSources := probesources.Singleton().CopyAsSlice()
 	return &service{
 		mgr:                mgr,
 		probeServerHandler: probeupload.NewProbeServerHandler(probeupload.LogCallback(log), probeSources...),
