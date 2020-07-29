@@ -49,6 +49,7 @@ func alloc() proto.Message {
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.Cluster).GetId())
 }
+
 func uniqKeyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.Cluster).GetName())
 }
@@ -65,7 +66,6 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 		crud: cacheCRUD,
 	}, nil
 }
-
 
 // Count returns the number of objects in the store
 func (b *storeImpl) Count() (int, error) {

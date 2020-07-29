@@ -42,11 +42,20 @@ type Store interface {
 	GetIDs() ([]string, error)
 	Get(id string) (*storage.{{.Type}}, bool, error)
 	GetMany(ids []string) ([]*storage.{{.Type}}, []int, error)
+	{{- if .NoKeyField}}
+	UpsertWithID(id string, obj *storage.{{.Type}}) error
+	UpsertManyWithIDs(ids []string, objs []*storage.{{.Type}}) error
+	{{- else }}
 	Upsert(obj *storage.{{.Type}}) error
 	UpsertMany(objs []*storage.{{.Type}}) error
+	{{- end}}
 	Delete(id string) error
 	DeleteMany(ids []string) error
+	{{- if .NoKeyField}}
+	WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) error) error
+	{{- else }}
 	Walk(fn func(obj *storage.{{.Type}}) error) error
+	{{- end}}
 	AckKeysIndexed(keys ...string) error
 	GetKeysToIndex() ([]string, error)
 }
@@ -59,11 +68,15 @@ func alloc() proto.Message {
 	return &storage.{{.Type}}{}
 }
 
+{{- if not .NoKeyField}}
+
 func keyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.{{.Type}}).{{.KeyFunc}})
 }
+{{- end}}
 
 {{- if .UniqKeyFunc}}
+
 func uniqKeyFunc(msg proto.Message) []byte {
 	return []byte(msg.(*storage.{{.Type}}).{{.UniqKeyFunc}})
 }
@@ -73,12 +86,12 @@ func uniqKeyFunc(msg proto.Message) []byte {
 {{- if .Cache}}
 func New(db *rocksdb.RocksDB) (Store, error) {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
-{{- if .UniqKeyFunc}}
-	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, keyFunc, alloc, uniqKeyFunc, {{.TrackIndex}})
-{{- else}}
-	baseCRUD := generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}})
-{{- end}}
-	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, keyFunc)
+	{{- if .UniqKeyFunc}}
+	baseCRUD := generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, uniqKeyFunc, {{.TrackIndex}})
+	{{- else}}
+	baseCRUD := generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}})
+	{{- end}}
+	cacheCRUD, err := mapcache.NewMapCache(baseCRUD, {{if .NoKeyField}}nil{{else}}keyFunc{{end}})
 	if err != nil {
 		return nil, err
 	}
@@ -86,20 +99,20 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 		crud: cacheCRUD,
 	}, nil
 }
-{{else}}
+{{- else}}
 func New(db *rocksdb.RocksDB) Store {
 	globaldb.RegisterBucket(bucket, "{{.Type}}")
-{{- if .UniqKeyFunc}}
+	{{- if .UniqKeyFunc}}
 	return &storeImpl{
-		crud: generic.NewUniqueKeyCRUD(db, bucket, keyFunc, allocCluster, uniqKeyFunc, {{.TrackIndex}}),
+		crud: generic.NewUniqueKeyCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, allocCluster, uniqKeyFunc, {{.TrackIndex}}),
 	}
-{{- else}}
+	{{- else}}
 	return &storeImpl{
-		crud: generic.NewCRUD(db, bucket, keyFunc, alloc, {{.TrackIndex}}),
+		crud: generic.NewCRUD(db, bucket, {{if .NoKeyField}}nil{{else}}keyFunc{{end}}, alloc, {{.TrackIndex}}),
 	}
-{{- end}}
+	{{- end}}
 }
-{{end}}
+{{- end}}
 
 // Count returns the number of objects in the store
 func (b *storeImpl) Count() (int, error) {
@@ -148,6 +161,27 @@ func (b *storeImpl) GetMany(ids []string) ([]*storage.{{.Type}}, []int, error) {
 	return objs, missingIndices, nil
 }
 
+{{- if .NoKeyField}}
+// UpsertWithID inserts the object into the DB
+func (b *storeImpl) UpsertWithID(id string, obj *storage.{{.Type}}) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
+
+	return b.crud.UpsertWithID(id, obj)
+}
+
+// UpsertManyWithIDs batches objects into the DB
+func (b *storeImpl) UpsertManyWithIDs(ids []string, objs []*storage.{{.Type}}) error {
+	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.AddMany, "{{.Type}}")
+
+	msgs := make([]proto.Message, 0, len(objs))
+	for _, o := range objs {
+		msgs = append(msgs, o)
+    }
+
+	return b.crud.UpsertManyWithIDs(ids, msgs)
+}
+{{- else}}
+
 // Upsert inserts the object into the DB
 func (b *storeImpl) Upsert(obj *storage.{{.Type}}) error {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Add, "{{.Type}}")
@@ -166,6 +200,7 @@ func (b *storeImpl) UpsertMany(objs []*storage.{{.Type}}) error {
 
 	return b.crud.UpsertMany(msgs)
 }
+{{- end}}
 
 // Delete removes the specified ID from the store
 func (b *storeImpl) Delete(id string) error {
@@ -181,12 +216,22 @@ func (b *storeImpl) DeleteMany(ids []string) error {
 	return b.crud.DeleteMany(ids)
 }
 
+{{- if .NoKeyField}}
+// WalkAllWithID iterates over all of the objects in the store and applies the closure
+func (b *storeImpl) WalkAllWithID(fn func(id string, obj *storage.{{.Type}}) error) error {
+	return b.crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
+		return fn(string(id), msg.(*storage.{{.Type}}))
+	})
+}
+{{- else}}
+
 // Walk iterates over all of the objects in the store and applies the closure
 func (b *storeImpl) Walk(fn func(obj *storage.{{.Type}}) error) error {
 	return b.crud.Walk(func(msg proto.Message) error {
 		return fn(msg.(*storage.{{.Type}}))
 	})
 }
+{{- end}}
 
 // AckKeysIndexed acknowledges the passed keys were indexed
 func (b *storeImpl) AckKeysIndexed(keys ...string) error {
@@ -202,6 +247,7 @@ func (b *storeImpl) GetKeysToIndex() ([]string, error) {
 type properties struct {
 	Type        string
 	Bucket      string
+	NoKeyField  bool
 	KeyFunc     string
 	UniqKeyFunc string
 	Cache       bool
@@ -220,15 +266,17 @@ func main() {
 	c.Flags().StringVar(&props.Bucket, "bucket", "", "the logical bucket of the objects")
 	utils.Must(c.MarkFlagRequired("bucket"))
 
+	c.Flags().BoolVar(&props.NoKeyField, "no-key-field", false, "whether or not object contains key field. If no, then to key function is not applied on object")
 	c.Flags().StringVar(&props.KeyFunc, "key-func", "GetId()", "the function on the object to retrieve the key")
 	c.Flags().StringVar(&props.UniqKeyFunc, "uniq-key-func", "", "when set, unique key constraint is added on the object field retrieved by the function")
-	c.Flags().BoolVar(&props.Cache, "cache", false, "where or not to add a fully inmem cache")
+	c.Flags().BoolVar(&props.Cache, "cache", false, "whether or not to add a fully inmem cache")
 	c.Flags().BoolVar(&props.TrackIndex, "track-index", false, "whether or not to track the index updates and wait for them to be acknowledged")
 
 	c.RunE = func(*cobra.Command, []string) error {
 		templateMap := map[string]interface{}{
 			"Type":        props.Type,
 			"Bucket":      props.Bucket,
+			"NoKeyField":  props.NoKeyField,
 			"KeyFunc":     props.KeyFunc,
 			"UniqKeyFunc": props.UniqKeyFunc,
 			"Cache":       props.Cache,

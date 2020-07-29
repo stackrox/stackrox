@@ -63,7 +63,6 @@ func New(db *rocksdb.RocksDB) (Store, error) {
 	}, nil
 }
 
-
 // Count returns the number of objects in the store
 func (b *storeImpl) Count() (int, error) {
 	defer metrics.SetRocksDBOperationDurationTime(time.Now(), ops.Count, "ProcessWhitelist")
