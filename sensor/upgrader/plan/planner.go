@@ -52,6 +52,14 @@ func (p *planner) GenerateExecutionPlan(desired []k8sutil.Object) (*ExecutionPla
 			currObjResourceVersion := currObj.GetResourceVersion()
 			lastModifiedByThisProcessID := currObj.GetAnnotations()[common.LastUpgradeIDAnnotationKey] == p.ctx.ProcessID()
 
+			if !p.rollback {
+				newObj, err := applyPreservedProperties(p.ctx.Scheme(), desiredObj, currObj)
+				if err != nil {
+					log.Errorf("Failed to preserve properties for object %v: %v", ref, err)
+				} else {
+					desiredObj = newObj
+				}
+			}
 			objectsAreEqual := p.objectsAreEqual(currObj, desiredObj)
 
 			// We don't update if the objects are equal.

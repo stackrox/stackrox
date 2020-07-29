@@ -22,4 +22,8 @@ const (
 	// The upgrader sets this on created or updated objects just before making a live change to the state of the
 	// Kubernetes cluster, it is not part of any "have/want" state computation for the above reasons.
 	LastUpgradeIDAnnotationKey = `sensor-upgrader.stackrox.io/last-upgrade-id`
+
+	// PreserveResourcesAnnotationKey is an annotation key that when mapped to a "true" value instructs
+	// the upgrader to preserve existing resource specifications.
+	PreserveResourcesAnnotationKey = `auto-upgrade.stackrox.io/preserve-resources`
 )
