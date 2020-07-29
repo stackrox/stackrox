@@ -6,9 +6,7 @@ import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
 import services.ClusterService
 import services.DirectHTTPService
-
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
+import util.Cert
 
 @Category(BAT)
 class CertRotationTest extends BaseSpecification {
@@ -25,9 +23,7 @@ class CertRotationTest extends BaseSpecification {
     }
 
     def verifyCertProperties(String certBase64, String principalShouldContain, Long timestampBeforeGeneration) {
-        def cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(
-            new ByteArrayInputStream(certBase64.decodeBase64())
-        )
+        def cert = Cert.loadBase64EncodedCert(certBase64)
         assert cert.subjectX500Principal.getName().contains(principalShouldContain)
         // Subtract one day to allow for DST/leap years etc.
         def oneYearAfterStart = new Date(timestampBeforeGeneration).toInstant().plusSeconds(364 * 24 * 60 * 60)

@@ -27,6 +27,7 @@ import (
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	configService "github.com/stackrox/rox/central/config/service"
+	credentialExpiryService "github.com/stackrox/rox/central/credentialexpiry/service"
 	"github.com/stackrox/rox/central/cve/csv"
 	"github.com/stackrox/rox/central/cve/fetcher"
 	cveService "github.com/stackrox/rox/central/cve/service"
@@ -319,6 +320,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),
 		configService.Singleton(),
+		credentialExpiryService.Singleton(),
 		debugService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),

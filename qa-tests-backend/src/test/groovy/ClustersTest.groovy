@@ -2,9 +2,7 @@ import groups.BAT
 import org.junit.experimental.categories.Category
 import services.ClusterService
 import spock.lang.Stepwise
-
-import java.security.cert.CertificateFactory
-import java.security.cert.X509Certificate
+import util.Cert
 
 @Category(BAT)
 @Stepwise
@@ -23,9 +21,7 @@ class ClustersTest extends BaseSpecification {
             cluster.getStatus().getCertExpiryStatus().getSensorCertExpiry().getSeconds() * 1000
         )
         assert expiryFromCluster
-        def sensorCert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(
-            new ByteArrayInputStream(sensorTLSSecret.data["sensor-cert.pem"].decodeBase64())
-        )
+        def sensorCert = Cert.loadBase64EncodedCert(sensorTLSSecret.data["sensor-cert.pem"])
         def expiryFromCert = sensorCert.notAfter
         assert expiryFromCert
         assert expiryFromCert == expiryFromCluster
