@@ -9,11 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/config"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -237,6 +237,11 @@ func (c *UpgradeContext) Scheme() *runtime.Scheme {
 	return c.scheme
 }
 
+// InCertRotationMode returns whether this is a cert rotation upgrade.
+func (c *UpgradeContext) InCertRotationMode() bool {
+	return c.config.InCertRotationMode
+}
+
 // Codecs returns the Kubernetes resource codec factory we are using.
 func (c *UpgradeContext) Codecs() *serializer.CodecFactory {
 	return &c.codecs
@@ -370,5 +375,12 @@ func (c *UpgradeContext) ListCurrentObjects() ([]k8sutil.Object, error) {
 		LabelSelector: fmt.Sprintf("%s=%s", common.UpgradeResourceLabelKey, common.UpgradeResourceLabelValue),
 	}
 
-	return c.List(resources.BundleResource, &listOpts)
+	objects, err := c.List(resources.BundleResource, &listOpts)
+	if err != nil {
+		return nil, err
+	}
+	if c.InCertRotationMode() {
+		objects = common.FilterToOnlyCertObjects(objects)
+	}
+	return objects, nil
 }

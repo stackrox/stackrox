@@ -2,6 +2,7 @@ package image
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -15,6 +16,36 @@ func TestNoChartPanic(t *testing.T) {
 	GetCentralChart(nil)
 	GetMonitoringChart()
 	GetScannerChart()
+}
+
+var (
+	nameRegexp = regexp.MustCompile(`name: (.*)`)
+)
+
+func TestSensorTLSGVKs(t *testing.T) {
+	var actualNames []string
+	for _, fileName := range K8sBox.List() {
+		if !strings.HasPrefix(fileName, sensorChartPrefix) {
+			continue
+		}
+		base := filepath.Base(fileName)
+		if !SensorMTLSFiles.Contains(base) {
+			continue
+		}
+		contents, err := K8sBox.Find(fileName)
+		require.NoError(t, err)
+
+		match := nameRegexp.FindSubmatch(contents)
+		if len(match) < 2 {
+			t.Fatalf("Contents %s didn't match name regexp", string(contents))
+		}
+		actualNames = append(actualNames, string(match[1]))
+	}
+	namesFromConst := make([]string, 0, len(SensorCertObjectRefs))
+	for ref := range SensorCertObjectRefs {
+		namesFromConst = append(namesFromConst, ref.Name)
+	}
+	assert.ElementsMatch(t, actualNames, namesFromConst)
 }
 
 func TestTLSSecretFiles(t *testing.T) {

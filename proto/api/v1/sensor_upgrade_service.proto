@@ -38,4 +38,10 @@ service SensorUpgradeService {
             post: "/v1/sensorupgrades/cluster/{id}"
         };
     }
+
+    rpc TriggerSensorCertRotation(ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/sensorupgrades/rotateclustercerts/{id}"
+        };
+    }
 }

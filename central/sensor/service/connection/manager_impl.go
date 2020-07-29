@@ -211,9 +211,9 @@ func (m *manager) ProcessUpgradeCheckInFromSensor(ctx context.Context, clusterID
 	return upgradeCtrl.ProcessCheckInFromSensor(req)
 }
 
-func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
+func (m *manager) checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx context.Context, clusterID string) (upgradecontroller.UpgradeController, error) {
 	if err := checkClusterWriteAccess(ctx, clusterID); err != nil {
-		return err
+		return nil, err
 	}
 
 	var upgradeCtrl upgradecontroller.UpgradeController
@@ -221,9 +221,25 @@ func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
 		upgradeCtrl = m.connectionsByClusterID[clusterID].upgradeCtrl
 	})
 	if upgradeCtrl == nil {
-		return errors.Errorf("no upgrade controller found for cluster ID %s; either the sensor has not checked in or the clusterID is invalid. Cannot trigger upgrade", clusterID)
+		return nil, errors.Errorf("no upgrade controller found for cluster ID %s; either the sensor has not checked in or the clusterID is invalid. Cannot trigger upgrade", clusterID)
+	}
+	return upgradeCtrl, nil
+}
+
+func (m *manager) TriggerUpgrade(ctx context.Context, clusterID string) error {
+	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
+	if err != nil {
+		return err
 	}
 	return upgradeCtrl.Trigger(ctx)
+}
+
+func (m *manager) TriggerCertRotation(ctx context.Context, clusterID string) error {
+	upgradeCtrl, err := m.checkClusterWriteAccessAndRetrieveUpgradeCtrl(ctx, clusterID)
+	if err != nil {
+		return err
+	}
+	return upgradeCtrl.TriggerCertRotation(ctx)
 }
 
 func (m *manager) GetActiveConnections() []SensorConnection {

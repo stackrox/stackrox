@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"

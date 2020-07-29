@@ -7,6 +7,7 @@ import (
 )
 
 type stateAndUpgraderReq struct {
+	upgradeType         storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType
 	currentState        storage.UpgradeProgress_UpgradeState
 	workflow            string
 	stage               sensorupgrader.Stage
@@ -24,6 +25,7 @@ type transitioner struct {
 	stageMatch        *sensorupgrader.StageSet
 	currentStateMatch *set.StorageUpgradeProgress_UpgradeStateSet
 	errOccurredMatch  *bool
+	upgradeTypeMatch  *storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType
 
 	workflowToExecute string
 	// noStateChange indicates that the final state is the same as the current state.
@@ -56,6 +58,11 @@ func (e *transitioner) GetNextState(req stateAndUpgraderReq) *nextStateAndRespon
 	}
 	if e.errOccurredMatch != nil {
 		if req.upgraderErrOccurred != *e.errOccurredMatch {
+			return nil
+		}
+	}
+	if e.upgradeTypeMatch != nil {
+		if req.upgradeType != *e.upgradeTypeMatch {
 			return nil
 		}
 	}

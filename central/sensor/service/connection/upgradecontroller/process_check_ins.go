@@ -12,6 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 )
 
+var (
+	// ErrNoUpgradeInProgress represents the error that no upgrade is in progress.
+	ErrNoUpgradeInProgress = errors.New("no upgrade is currently in progress")
+)
+
 func constructUpgradeDetail(req *central.UpgradeCheckInFromUpgraderRequest) string {
 	if req.GetLastExecutedStageError() != "" {
 		return fmt.Sprintf("Upgrader failed to execute %s of the %s workflow: %s", req.GetLastExecutedStage(), req.GetCurrentWorkflow(), req.GetLastExecutedStageError())
@@ -47,8 +52,8 @@ func (u *upgradeController) doProcessCheckInFromUpgrader(req *central.UpgradeChe
 
 	stage := sensorupgrader.GetStage(req.GetLastExecutedStage())
 
-	currentState := processStatus.GetProgress().GetUpgradeState()
-	nextState, workflowToExecute, updateDetail := stateutils.DetermineNextStateAndWorkflowForUpgrader(currentState, req.GetCurrentWorkflow(), stage, req.GetLastExecutedStageError())
+	nextState, workflowToExecute, updateDetail := stateutils.DetermineNextStateAndWorkflowForUpgrader(
+		processStatus.GetType(), processStatus.GetProgress().GetUpgradeState(), req.GetCurrentWorkflow(), stage, req.GetLastExecutedStageError())
 
 	var detail string
 	if updateDetail {
@@ -105,7 +110,7 @@ func analyzeUpgraderPodStates(states []*central.UpgradeCheckInFromSensorRequest_
 
 func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error {
 	if u.active == nil {
-		return errors.New("no upgrade is currently in progress")
+		return ErrNoUpgradeInProgress
 	}
 
 	processStatus := u.active.status

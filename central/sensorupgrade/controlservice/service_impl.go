@@ -5,12 +5,15 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,6 +59,12 @@ func (s *service) UpgradeCheckInFromSensor(ctx context.Context, req *central.Upg
 		return nil, err
 	}
 	if err := s.connectionManager.ProcessUpgradeCheckInFromSensor(ctx, clusterID, req); err != nil {
+		if errors.Is(err, upgradecontroller.ErrNoUpgradeInProgress) {
+			s, err := status.New(codes.Internal, err.Error()).WithDetails(&central.UpgradeCheckInResponseDetails_NoUpgradeInProgress{})
+			if utils.Should(err) == nil {
+				return nil, s.Err()
+			}
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &types.Empty{}, nil

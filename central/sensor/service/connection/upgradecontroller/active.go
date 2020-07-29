@@ -63,6 +63,11 @@ func (u *upgradeController) maybeReconcileStateWithActiveConnInfo(processID stri
 	if u.activeSensorConn == nil || u.activeSensorConn.sensorVersion == "" {
 		return false, nil
 	}
+
+	// If it's a cert rotation, then we don't need to do any state reconciliation.
+	if u.active.status.Type == storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION {
+		return false, nil
+	}
 	// We check relative to the target version, not central's current version, because we might have upgraded central since
 	// the upgrade was initiated. If the versions are incomparable, we assume the upgrade is not complete, otherwise
 	// we erroneously mark upgrades as complete when testing with dev builds.

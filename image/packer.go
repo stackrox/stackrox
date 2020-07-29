@@ -13,11 +13,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
+	"github.com/stackrox/rox/pkg/namespaces"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -115,10 +118,21 @@ func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.C
 	return mustGetSensorChart(K8sBox, values, certs)
 }
 
+var (
+	secretGVK = schema.GroupVersionKind{Version: "v1", Kind: "Secret"}
+	// SensorCertObjectRefs are the objects in the sensor bundle that represents tls certs.
+	SensorCertObjectRefs = map[k8sobjects.ObjectRef]struct{}{
+		{GVK: secretGVK, Name: "sensor-tls", Namespace: namespaces.StackRox}:            {},
+		{GVK: secretGVK, Name: "collector-tls", Namespace: namespaces.StackRox}:         {},
+		{GVK: secretGVK, Name: "admission-control-tls", Namespace: namespaces.StackRox}: {},
+	}
+)
+
 // This block enumerates the files in the various charts that have TLS secrets relevant for mTLS.
 // A unit test ensures that it is in sync with the contents of the YAML files.
 var (
-	SensorMTLSFiles  = set.NewFrozenStringSet("admission-controller-secret.yaml", "collector-secret.yaml", "sensor-secret.yaml")
+	SensorMTLSFiles = set.NewFrozenStringSet("admission-controller-secret.yaml", "collector-secret.yaml", "sensor-secret.yaml")
+
 	CentralMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
 	ScannerMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
 )

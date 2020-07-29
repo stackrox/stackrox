@@ -48,6 +48,13 @@ message UpgradeCheckInFromSensorRequest {
     }
 }
 
+// UpgradeCheckInResponseDetails contains proto messages that are added to details
+// when returning errors from these endpoints.
+message UpgradeCheckInResponseDetails {
+    message NoUpgradeInProgress {
+    }
+}
+
 service SensorUpgradeControlService {
     rpc UpgradeCheckInFromUpgrader(UpgradeCheckInFromUpgraderRequest) returns (UpgradeCheckInFromUpgraderResponse);
     rpc UpgradeCheckInFromSensor(UpgradeCheckInFromSensorRequest) returns (google.protobuf.Empty);

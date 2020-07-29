@@ -209,8 +209,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"initiatedAt: Time",
 		"progress: UpgradeProgress",
 		"targetVersion: String!",
+		"type: ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType!",
 		"upgraderImage: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	utils.Must(builder.AddType("CollectorHealthInfo", []string{
 		"totalDesiredPods: Int!",
@@ -2675,9 +2677,32 @@ func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) TargetVersion
 	return value
 }
 
+func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
 func (resolver *clusterUpgradeStatus_UpgradeProcessStatusResolver) UpgraderImage(ctx context.Context) string {
 	value := resolver.data.GetUpgraderImage()
 	return value
+}
+
+func toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(value *string) storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
+	if value != nil {
+		return storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType_value[*value])
+	}
+	return storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)
+}
+
+func toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessTypes(values *[]string) []storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(&v)
+	}
+	return output
 }
 
 func toCollectionMethod(value *string) storage.CollectionMethod {

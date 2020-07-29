@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,6 +29,9 @@ import (
 const (
 	preferredServiceAccountName = `sensor-upgrader`
 	fallbackServiceAccountName  = `sensor`
+
+	sensorDeploymentName = `sensor`
+	sensorContainerName  = `sensor`
 
 	upgraderContainerName  = `upgrader`
 	upgraderDeploymentName = `sensor-upgrader`
@@ -104,6 +108,14 @@ func (p *process) handleCentralCheckIns() {
 		reqRetry = nil
 
 		if err := p.sendCheckInRequestSingle(req); err != nil {
+			// This will not panic as .Details() gracefully handles a `nil` receiver.
+			for _, detail := range status.Convert(err).Details() {
+				if _, isNoUpgradeInProgress := detail.(*central.UpgradeCheckInResponseDetails_NoUpgradeInProgress); isNoUpgradeInProgress {
+					log.Info("Central says there is no upgrade in progress. Exiting loop...")
+					p.doneSig.Signal()
+					return
+				}
+			}
 			log.Errorf("Error: Could not check in with central on upgrade progress: %v", err)
 			retryTimer = time.NewTimer(checkInRetryInterval)
 			reqRetry = req
@@ -140,23 +152,23 @@ func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorReques
 }
 
 func (p *process) doRun() {
-	if p.trigger.GetImage() != "" {
-		log.Infof("Launching upgrade process %s with upgrader image %s", p.trigger.GetUpgradeProcessId(), p.trigger.GetImage())
-		err := p.createUpgraderDeploymentIfNecessary()
-
-		var launchErrMsg string
-		if err != nil {
-			launchErrMsg = err.Error()
-		}
-
-		p.checkInWithCentral(&central.UpgradeCheckInFromSensorRequest{
-			State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
-				LaunchError: launchErrMsg,
-			},
-		})
-	} else { // watch only
-		log.Infof("Only watching upgrade process %s...", p.trigger.GetUpgradeProcessId())
+	imageToLog := p.trigger.GetImage()
+	if imageToLog == "" {
+		imageToLog = "same as sensor image"
 	}
+	log.Infof("Launching upgrade process %s with upgrader image %s", p.trigger.GetUpgradeProcessId(), imageToLog)
+	err := p.createUpgraderDeploymentIfNecessary()
+
+	var launchErrMsg string
+	if err != nil {
+		launchErrMsg = err.Error()
+	}
+
+	p.checkInWithCentral(&central.UpgradeCheckInFromSensorRequest{
+		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
+			LaunchError: launchErrMsg,
+		},
+	})
 
 	p.watchUpgraderDeployment()
 }
@@ -257,7 +269,10 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	serviceAccountName := p.chooseServiceAccount()
 	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
 
-	newDeployment := createDeployment(p.trigger, serviceAccountName)
+	newDeployment, err := p.createDeployment(serviceAccountName)
+	if err != nil {
+		return errors.Wrap(err, "instantiating upgrader deployment object")
+	}
 
 	_, err = deploymentsClient.Create(newDeployment)
 	if err != nil {

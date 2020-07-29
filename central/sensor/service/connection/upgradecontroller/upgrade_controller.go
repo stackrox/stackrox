@@ -21,6 +21,7 @@ type UpgradeController interface {
 	ProcessCheckInFromUpgrader(req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error)
 	ProcessCheckInFromSensor(req *central.UpgradeCheckInFromSensorRequest) error
 	Trigger(ctx concurrency.Waitable) error
+	TriggerCertRotation(ctx concurrency.Waitable) error
 }
 
 // ClusterStorage is the fragment of the cluster store interface that is needed by the upgrade controller.

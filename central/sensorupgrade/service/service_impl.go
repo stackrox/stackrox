@@ -27,6 +27,7 @@ var (
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
 			"/v1.SensorUpgradeService/TriggerSensorUpgrade",
+			"/v1.SensorUpgradeService/TriggerSensorCertRotation",
 		},
 	})
 )
@@ -79,4 +80,16 @@ func (s *service) TriggerSensorUpgrade(ctx context.Context, req *v1.ResourceByID
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.Empty{}, nil
+}
+func (s *service) TriggerSensorCertRotation(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
+	if req.GetId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "no cluster ID specified")
+	}
+
+	err := s.manager.TriggerCertRotation(ctx, req.GetId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &v1.Empty{}, nil
+
 }

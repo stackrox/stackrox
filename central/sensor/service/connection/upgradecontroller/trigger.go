@@ -26,6 +26,12 @@ func constructTriggerUpgradeRequest(cluster *storage.Cluster, process *storage.C
 			},
 		},
 	}
+	if process.GetType() == storage.ClusterUpgradeStatus_UpgradeProcessStatus_CERT_ROTATION {
+		t.EnvVars = append(t.EnvVars, &central.SensorUpgradeTrigger_EnvVarDef{
+			Name:         env.UpgraderCertsOnly.EnvVar(),
+			DefaultValue: "true",
+		})
+	}
 	adjustTrigger(t, process.GetProgress().GetUpgradeState())
 	return t
 }
@@ -53,12 +59,20 @@ func sendTrigger(ctx concurrency.Waitable, injector common.MessageInjector, trig
 }
 
 func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
+	return u.trigger(ctx, u.doTriggerUpgrade)
+}
+
+func (u *upgradeController) TriggerCertRotation(ctx concurrency.Waitable) error {
+	return u.trigger(ctx, u.doTriggerCertRotation)
+}
+
+func (u *upgradeController) trigger(ctx concurrency.Waitable, triggerGenerateFunc func() (common.MessageInjector, *central.SensorUpgradeTrigger, error)) error {
 	var injector common.MessageInjector
 	var trigger *central.SensorUpgradeTrigger
 
 	err := u.do(func() error {
 		var err error
-		injector, trigger, err = u.doTrigger()
+		injector, trigger, err = triggerGenerateFunc()
 		return err
 	})
 	if err != nil {
@@ -68,13 +82,35 @@ func (u *upgradeController) Trigger(ctx concurrency.Waitable) error {
 	return sendTrigger(ctx, injector, trigger)
 }
 
-func (u *upgradeController) doTrigger() (common.MessageInjector, *central.SensorUpgradeTrigger, error) {
+func (u *upgradeController) checkActiveConnAndNoActiveProcess() error {
 	if u.activeSensorConn == nil {
-		return nil, nil, errors.Errorf("no active sensor connection for cluster %s exists, cannot trigger upgrade", u.clusterID)
+		return errors.Errorf("no active sensor connection for cluster %s exists, cannot trigger cert rotation", u.clusterID)
 	}
 
 	if u.active != nil {
-		return nil, nil, errors.Errorf("an upgrade is already in progress in cluster %s", u.clusterID)
+		return errors.Errorf("an upgrade is already in progress in cluster %s", u.clusterID)
+	}
+	return nil
+}
+
+func (u *upgradeController) doTriggerCertRotation() (common.MessageInjector, *central.SensorUpgradeTrigger, error) {
+	if err := u.checkActiveConnAndNoActiveProcess(); err != nil {
+		return nil, nil, err
+	}
+
+	if u.upgradeStatus.GetUpgradability() != storage.ClusterUpgradeStatus_UP_TO_DATE {
+		return nil, nil, errors.New("sensor is not up-to-date; cannot trigger cert rotation")
+	}
+
+	cluster := u.getCluster()
+	process := newCertRotationProcess()
+	u.makeProcessActive(cluster, process)
+	return u.activeSensorConn.injector, u.active.trigger, nil
+}
+
+func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central.SensorUpgradeTrigger, error) {
+	if err := u.checkActiveConnAndNoActiveProcess(); err != nil {
+		return nil, nil, err
 	}
 
 	// Check upgradability.

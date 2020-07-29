@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -50,6 +50,10 @@ func (i *instantiator) Instantiate(bundleContents Contents) ([]k8sutil.Object, e
 
 	if err := validateMetadata(allObjects); err != nil {
 		return nil, err
+	}
+
+	if i.ctx.InCertRotationMode() {
+		allObjects = common.FilterToOnlyCertObjects(allObjects)
 	}
 	return allObjects, nil
 }

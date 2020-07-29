@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/namespaces"
 	appsV1 "k8s.io/api/apps/v1"
@@ -30,7 +31,30 @@ func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1
 	return envVars
 }
 
-func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName string) *appsV1.Deployment {
+func (p *process) determineImage() (string, error) {
+	if image := p.trigger.GetImage(); image != "" {
+		return image, nil
+	}
+
+	// If the image is not specified, sensor uses the same image it's using to launch the upgrader.
+	// This code path will be hit during cert rotation.
+	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(namespaces.StackRox).Get(sensorDeploymentName, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to fetch sensor deployment from Kube")
+	}
+	for _, container := range sensorDeployment.Spec.Template.Spec.Containers {
+		if container.Name == sensorContainerName {
+			return container.Image, nil
+		}
+	}
+	return "", errors.New("no sensor container found in sensor deployment")
+}
+
+func (p *process) createDeployment(serviceAccountName string) (*appsV1.Deployment, error) {
+	image, err := p.determineImage()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to determine image")
+	}
 	deployment := &appsV1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -41,7 +65,7 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 			Namespace: namespaces.StackRox,
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
-				processIDLabelKey: trigger.GetUpgradeProcessId(),
+				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
 			},
 		},
 		Spec: appsV1.DeploymentSpec{
@@ -49,7 +73,7 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app":             upgraderDeploymentName,
-					processIDLabelKey: trigger.GetUpgradeProcessId(),
+					processIDLabelKey: p.trigger.GetUpgradeProcessId(),
 				},
 			},
 			Template: v1.PodTemplateSpec{
@@ -57,7 +81,7 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 					Namespace: namespaces.StackRox,
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
-						processIDLabelKey: trigger.GetUpgradeProcessId(),
+						processIDLabelKey: p.trigger.GetUpgradeProcessId(),
 					},
 				},
 				Spec: v1.PodSpec{
@@ -109,9 +133,9 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 					Containers: []v1.Container{
 						{
 							Name:    "upgrader",
-							Image:   trigger.GetImage(),
-							Command: trigger.GetCommand(),
-							Env:     toK8sEnvVars(trigger.GetEnvVars()),
+							Image:   image,
+							Command: p.trigger.GetCommand(),
+							Env:     toK8sEnvVars(p.trigger.GetEnvVars()),
 							VolumeMounts: []v1.VolumeMount{
 								{
 									Name:      "sensor-tls-volume",
@@ -149,5 +173,5 @@ func createDeployment(trigger *central.SensorUpgradeTrigger, serviceAccountName 
 		Value: fmt.Sprintf("%s:%s:%s/%s", deployment.Kind, deployment.APIVersion, deployment.Namespace, deployment.Name),
 	})
 
-	return deployment
+	return deployment, nil
 }

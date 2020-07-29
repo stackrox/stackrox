@@ -163,7 +163,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 		return
 	}
 
-	allowedPackages := []string{validImportRoot, "generated"}
+	allowedPackages := []string{validImportRoot, "generated", "image"}
 	// The migrator is NOT allowed to import all code from pkg except process/id as that pkg is isolated.
 	if validImportRoot != "pkg" && validImportRoot != "migrator" {
 		allowedPackages = append(allowedPackages, "pkg")
@@ -173,11 +173,6 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	// will need to be protected by strict compatibility guarantees.
 	if validImportRoot == "migrator" {
 		allowedPackages = append(allowedPackages, "pkg/env", "pkg/rocksdb", "pkg/process/id", "pkg/migrations", "pkg/testutils", "pkg/batcher", "pkg/config", "pkg/features", "pkg/grpc/routes", "pkg/logging")
-	}
-
-	// Allow central and roxctl to import "image" (for fixtures)
-	if validImportRoot == "central" || validImportRoot == "roxctl" || validImportRoot == "pkg" || validImportRoot == "scale" {
-		allowedPackages = append(allowedPackages, "image")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {

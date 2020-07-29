@@ -13,10 +13,9 @@ var (
 )
 
 // DetermineNextStateAndWorkflowForUpgrader takes the current state, and the input from the upgrader, and determines the final state.
-func DetermineNextStateAndWorkflowForUpgrader(currentUpgradeState storage.UpgradeProgress_UpgradeState, workflow string,
-	stage sensorupgrader.Stage, upgraderErr string) (nextState storage.UpgradeProgress_UpgradeState, workflowToExecute string, updateDetail bool) {
-
-	resp := computeNextStateAndResp(currentUpgradeState, workflow, stage, upgraderErr)
+func DetermineNextStateAndWorkflowForUpgrader(upgradeType storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType,
+	currentUpgradeState storage.UpgradeProgress_UpgradeState, workflow string, stage sensorupgrader.Stage, upgraderErr string) (nextState storage.UpgradeProgress_UpgradeState, workflowToExecute string, updateDetail bool) {
+	resp := computeNextStateAndResp(upgradeType, currentUpgradeState, workflow, stage, upgraderErr)
 	if resp != nil {
 		return resp.nextUpgradeState, resp.upgraderWorkflowToExecute, resp.updateDetail
 	}
@@ -27,10 +26,11 @@ func DetermineNextStateAndWorkflowForUpgrader(currentUpgradeState storage.Upgrad
 	return currentUpgradeState, sensorupgrader.CleanupWorkflow, false
 }
 
-func computeNextStateAndResp(currentUpgradeState storage.UpgradeProgress_UpgradeState, workflow string,
+func computeNextStateAndResp(upgradeType storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType, currentUpgradeState storage.UpgradeProgress_UpgradeState, workflow string,
 	stage sensorupgrader.Stage, upgraderErr string) *nextStateAndResponse {
 
 	req := stateAndUpgraderReq{
+		upgradeType:         upgradeType,
 		currentState:        currentUpgradeState,
 		workflow:            workflow,
 		stage:               stage,

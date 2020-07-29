@@ -133,13 +133,22 @@ message ClusterUpgradeStatus {
     string          upgradability_status_reason  = 2;
 
     message UpgradeProcessStatus {
+        enum UpgradeProcessType {
+            // UPGRADE represents a sensor version upgrade.
+            UPGRADE       = 0;
+            // CERT_ROTATION represents an upgrade process that only rotates the TLS certs
+            // used by the cluster, without changing anything else.
+            CERT_ROTATION = 1;
+        }
         bool active = 1;
 
         string id                              = 2;
-        string target_version                  = 3;
+        string target_version                  = 3; // only relevant if type == Upgrade
         string upgrader_image                  = 4;
         google.protobuf.Timestamp initiated_at = 5;
         UpgradeProgress progress               = 6;
+
+        UpgradeProcessType        type                      = 7;
     }
 
     // The progress of the current or most recent upgrade, if any,

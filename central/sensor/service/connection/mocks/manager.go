@@ -297,6 +297,20 @@ func (mr *MockManagerMockRecorder) TriggerUpgrade(ctx, clusterID interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerUpgrade", reflect.TypeOf((*MockManager)(nil).TriggerUpgrade), ctx, clusterID)
 }
 
+// TriggerCertRotation mocks base method
+func (m *MockManager) TriggerCertRotation(ctx context.Context, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TriggerCertRotation", ctx, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TriggerCertRotation indicates an expected call of TriggerCertRotation
+func (mr *MockManagerMockRecorder) TriggerCertRotation(ctx, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TriggerCertRotation", reflect.TypeOf((*MockManager)(nil).TriggerCertRotation), ctx, clusterID)
+}
+
 // ProcessCheckInFromUpgrader mocks base method
 func (m *MockManager) ProcessCheckInFromUpgrader(ctx context.Context, clusterID string, req *central.UpgradeCheckInFromUpgraderRequest) (*central.UpgradeCheckInFromUpgraderResponse, error) {
 	m.ctrl.T.Helper()

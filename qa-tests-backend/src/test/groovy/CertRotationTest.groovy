@@ -2,11 +2,16 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import groups.BAT
 import io.fabric8.kubernetes.api.model.Secret
+import io.stackrox.proto.storage.ClusterOuterClass.ClusterUpgradeStatus.UpgradeProcessStatus.UpgradeProcessType
+import io.stackrox.proto.storage.ClusterOuterClass.UpgradeProgress.UpgradeState
 import org.junit.experimental.categories.Category
 import org.yaml.snakeyaml.Yaml
 import services.ClusterService
 import services.DirectHTTPService
+import services.SensorUpgradeService
 import util.Cert
+
+import java.security.cert.X509Certificate
 
 @Category(BAT)
 class CertRotationTest extends BaseSpecification {
@@ -119,6 +124,70 @@ class CertRotationTest extends BaseSpecification {
                 "admission-control-cert.pem", "admission-control-key.pem",
                 "ADMISSION_CONTROL_SERVICE: ${cluster.getId()}", start)
         }
+    }
+
+    String extractCNFromCert(X509Certificate cert) {
+        def name = cert.subjectX500Principal.getName()
+        return name[name.indexOf("CN=")..-1]
+    }
+
+    def checkCurrentValueOfSecretIdenticalExceptNewCerts(Secret previousSecret, String name) {
+        def currentSecret = orchestrator.getSecret(name, "stackrox")
+        if (previousSecret == null) {
+            assert currentSecret == null
+            return true
+        }
+        assert previousSecret.metadata.name == name // Just an assertion on the test code itself.
+        assert currentSecret.data.keySet() == previousSecret.data.keySet()
+        for (k in currentSecret.data.keySet()) {
+            if (k.endsWith("cert.pem")) {
+                def currentCert = Cert.loadBase64EncodedCert(currentSecret.data[k])
+                def previousCert = Cert.loadBase64EncodedCert(previousSecret.data[k])
+                assert currentCert.notAfter.after(previousCert.notAfter)
+                assert currentCert.getSerialNumber() != previousCert.getSerialNumber()
+                assert extractCNFromCert(currentCert) == extractCNFromCert(previousCert)
+            } else if (!k.endsWith("key.pem")) {
+                assert currentSecret.data[k] == previousSecret.data[k]
+            }
+        }
+
+        return true
+    }
+
+    def "Test sensor cert rotation with upgrader"() {
+        when:
+        "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and trigger cert rotation"
+        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
+        assert sensorTLSSecret
+        def collectorTLSSecret = orchestrator.getSecret("collector-tls", "stackrox")
+        assert collectorTLSSecret
+        def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
+        // Intentionally don't assert, admission control TLS secret may not be present.
+
+        def cluster = ClusterService.getCluster()
+        assert cluster
+        def start = System.currentTimeSeconds()
+        SensorUpgradeService.triggerCertRotation(cluster.getId())
+
+        and:
+        "Wait for cert rotation to complete"
+        cluster = ClusterService.getCluster()
+        def mostRecentProcess = cluster.getStatus().getUpgradeStatus().getMostRecentProcess()
+        // Make sure the most recent process was just started. Subtract 60 seconds to allow for clock-skew
+        assert mostRecentProcess.initiatedAt.seconds > start - 60
+        assert mostRecentProcess.getType() == UpgradeProcessType.CERT_ROTATION
+        def processID = mostRecentProcess.getId()
+        withRetry(50, 5) {
+            cluster = ClusterService.getCluster()
+            mostRecentProcess = cluster.getStatus().getUpgradeStatus().getMostRecentProcess()
+            assert mostRecentProcess.getId() == processID
+            assert mostRecentProcess.getProgress().getUpgradeState() == UpgradeState.UPGRADE_COMPLETE
+        }
+
+        then:
+        checkCurrentValueOfSecretIdenticalExceptNewCerts(sensorTLSSecret, "sensor-tls")
+        checkCurrentValueOfSecretIdenticalExceptNewCerts(collectorTLSSecret, "collector-tls")
+        checkCurrentValueOfSecretIdenticalExceptNewCerts(admissionControlTLSSecret, "admission-control-tls")
     }
 
 }

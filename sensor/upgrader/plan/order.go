@@ -4,9 +4,9 @@ import (
 	"sort"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

@@ -3,11 +3,11 @@ package runner
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 )

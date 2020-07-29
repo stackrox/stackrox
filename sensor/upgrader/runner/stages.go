@@ -5,11 +5,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/sensor/upgrader/bundle"
 	"github.com/stackrox/rox/sensor/upgrader/cleanup"
 	"github.com/stackrox/rox/sensor/upgrader/execution"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/preflight"
 	"github.com/stackrox/rox/sensor/upgrader/snapshot"

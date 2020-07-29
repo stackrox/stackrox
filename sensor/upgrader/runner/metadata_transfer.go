@@ -2,8 +2,8 @@ package runner
 
 import (
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 )
 
 func transferMetadataMap(oldMap, newMap map[string]string) map[string]string {

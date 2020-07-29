@@ -9,11 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/upgrader/common"
-	"github.com/stackrox/rox/sensor/upgrader/k8sobjects"
 	"k8s.io/client-go/rest"
 )
 
@@ -22,6 +22,8 @@ type UpgraderConfig struct {
 	ClusterID       string
 	ProcessID       string
 	CentralEndpoint string
+
+	InCertRotationMode bool
 
 	K8sRESTConfig *rest.Config
 
@@ -66,10 +68,11 @@ func Create() (*UpgraderConfig, error) {
 		_, centralEndpoint = stringutils.Split2(centralEndpoint, "://")
 	}
 	cfg := &UpgraderConfig{
-		ClusterID:       clusterID,
-		ProcessID:       os.Getenv(upgradeProcessIDEnvVar),
-		CentralEndpoint: centralEndpoint,
-		K8sRESTConfig:   restConfig,
+		ClusterID:          clusterID,
+		ProcessID:          os.Getenv(upgradeProcessIDEnvVar),
+		CentralEndpoint:    centralEndpoint,
+		K8sRESTConfig:      restConfig,
+		InCertRotationMode: env.UpgraderCertsOnly.BooleanSetting(),
 	}
 
 	if ownerRefStr := os.Getenv(upgraderOwnerEnvVar); ownerRefStr != "" {
