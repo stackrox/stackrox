@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -9,6 +10,9 @@ import (
 )
 
 var (
+	// ErrAlreadyExists indicates that a cluster already exists.
+	ErrAlreadyExists = errors.New("already exists")
+
 	clusterBucket                = []byte("clusters")
 	clusterLastContactTimeBucket = []byte("clusters_last_contact")
 	clusterStatusBucket          = []byte("cluster_status")

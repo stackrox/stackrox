@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -105,10 +103,10 @@ func (b *storeImpl) CountClusters() (count int, err error) {
 func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Cluster")
 	if cluster.GetId() != "" {
-		return "", fmt.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
+		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
-	if cluster == nil {
-		return "", errors.New("cannot add a nil cluster")
+	if cluster.GetName() == "" {
+		return "", errors.New("cannot add a cluster without a name")
 	}
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -118,11 +116,10 @@ func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 			return err
 		}
 		if exists {
-			return errorhelpers.Newf(errorhelpers.ErrAlreadyExists,
-				"Cluster %v (%v) cannot be added because it already exists", currCluster.GetId(), currCluster.GetName())
+			return errors.Wrapf(ErrAlreadyExists, "could not add cluster with ID %s (%s)", currCluster.GetId(), currCluster.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
-			return errorhelpers.Newf(errorhelpers.ErrAlreadyExists, "Could not add cluster due to name validation: %s", err)
+			return errors.Wrapf(ErrAlreadyExists, "could not add cluster %s", cluster.GetName())
 		}
 		bytes, err := proto.Marshal(cluster)
 		if err != nil {

@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -154,6 +155,21 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 	count, err := suite.store.CountClusters()
 	suite.NoError(err)
 	suite.Equal(len(clusters), count)
+
+	// Test invalid add
+	noNameCluster := &storage.Cluster{}
+	_, err = suite.store.AddCluster(noNameCluster)
+	suite.Error(err)
+	suite.False(errors.Is(err, ErrAlreadyExists))
+
+	for _, b := range clusters {
+		// Try to insert cluster with a name that already exists
+		clusterToAdd := b.Clone()
+		clusterToAdd.Id = ""
+		_, err = suite.store.AddCluster(clusterToAdd)
+		suite.Error(err)
+		suite.True(errors.Is(err, ErrAlreadyExists))
+	}
 
 	// Test Remove
 	for _, b := range clusters {

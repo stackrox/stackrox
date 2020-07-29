@@ -6,14 +6,15 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/cluster/store"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -124,7 +125,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 
 	id, err := s.datastore.AddCluster(ctx, request)
 	if err != nil {
-		if errWrap, ok := err.(*errorhelpers.ErrorWrap); ok && errWrap.Type == errorhelpers.ErrAlreadyExists {
+		if errors.Is(err, store.ErrAlreadyExists) {
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
