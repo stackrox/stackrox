@@ -55,6 +55,8 @@ VOLUME /tmp
 RUN mkdir -p /stackrox/data && chown -R 4000:4000 /stackrox/data
 VOLUME /stackrox/data
 
+RUN ln -s /assets/downloads/cli/roxctl-linux /stackrox/roxctl
+
 USER 4000:4000
 
 HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
