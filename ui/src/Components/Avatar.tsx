@@ -1,8 +1,14 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import PropTypes from 'prop-types';
-import createInitials from 'initials';
+import { find as createInitials } from 'initials';
 
-function Avatar({ imageSrc, name, className }) {
+type Props = {
+    imageSrc?: string;
+    name?: string;
+    className?: string;
+};
+
+function Avatar({ imageSrc, name, className = '' }: Props): ReactElement {
     const finalClassName = `border border-base-400 rounded-full ${className}`;
     const initials = name ? createInitials(name) : '--';
 
@@ -20,8 +26,8 @@ Avatar.propTypes = {
 };
 
 Avatar.defaultProps = {
-    imageSrc: '',
-    name: '',
+    imageSrc: undefined,
+    name: undefined,
     className: '',
 };
 
