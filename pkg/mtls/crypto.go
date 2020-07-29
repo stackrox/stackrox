@@ -70,10 +70,15 @@ var (
 	// ScannerDBSubject is the identity used in certificates for Scanners Postgres DB
 	ScannerDBSubject = Subject{ServiceType: storage.ServiceType_SCANNER_DB_SERVICE, Identifier: "Scanner DB"}
 
-	readCAOnce sync.Once
-	caCert     *x509.Certificate
-	caCertDER  []byte
-	caCertErr  error
+	readCACertOnce     sync.Once
+	caCert             *x509.Certificate
+	caCertDER          []byte
+	caCertFileContents []byte
+	caCertErr          error
+
+	readCAKeyOnce     sync.Once
+	caKeyFileContents []byte
+	caKeyErr          error
 )
 
 // IssuedCert is a representation of an issued certificate
@@ -89,13 +94,9 @@ func LeafCertificateFromFile() (tls.Certificate, error) {
 	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
 }
 
-// loadCACertDER reads the PEM-decoded bytes of the cert from the local file system.
-func loadCACertDER() ([]byte, error) {
-	b, err := ioutil.ReadFile(caFilePathSetting.Setting())
-	if err != nil {
-		return nil, errors.Wrap(err, "file access")
-	}
-	decoded, _ := pem.Decode(b)
+// convertToDER converts the given certBytes to DER.
+func convertToDER(certBytes []byte) ([]byte, error) {
+	decoded, _ := pem.Decode(certBytes)
 	if decoded == nil {
 		return nil, errors.New("invalid PEM")
 	}
@@ -114,10 +115,27 @@ func CACertPEM() ([]byte, error) {
 	}), nil
 }
 
-// CACert reads the cert from the local file system and returns the cert and the DER encoding.
-func CACert() (*x509.Certificate, []byte, error) {
-	readCAOnce.Do(func() {
-		der, err := loadCACertDER()
+func readCAKey() ([]byte, error) {
+	readCAKeyOnce.Do(func() {
+		caKeyBytes, err := ioutil.ReadFile(caKeyFilePathSetting.Setting())
+		if err != nil {
+			caKeyErr = errors.Wrap(err, "reading CA key")
+			return
+		}
+		caKeyFileContents = caKeyBytes
+	})
+	return caKeyFileContents, caKeyErr
+}
+
+func readCA() (*x509.Certificate, []byte, []byte, error) {
+	readCACertOnce.Do(func() {
+		caBytes, err := ioutil.ReadFile(caFilePathSetting.Setting())
+		if err != nil {
+			caCertErr = errors.Wrap(err, "reading CA file")
+			return
+		}
+
+		der, err := convertToDER(caBytes)
 		if err != nil {
 			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
 			return
@@ -127,9 +145,16 @@ func CACert() (*x509.Certificate, []byte, error) {
 			caCertErr = errors.Wrap(err, "CA cert could not be parsed")
 			return
 		}
+		caCertFileContents = caBytes
 		caCert = cert
 		caCertDER = der
 	})
+	return caCert, caCertFileContents, caCertDER, caCertErr
+}
+
+// CACert reads the cert from the local file system and returns the cert and the DER encoding.
+func CACert() (*x509.Certificate, []byte, error) {
+	caCert, _, caCertDER, caCertErr := readCA()
 	return caCert, caCertDER, caCertErr
 }
 
@@ -164,6 +189,19 @@ func signingPolicy() *config.Signing {
 			},
 		},
 	}
+}
+
+// CACertAndKey returns the contents of the ca cert and ca key files.
+func CACertAndKey() ([]byte, []byte, error) {
+	_, caCertFileContents, _, err := readCA()
+	if err != nil {
+		return nil, nil, err
+	}
+	caKeyFileContents, err := readCAKey()
+	if err != nil {
+		return nil, nil, err
+	}
+	return caCertFileContents, caKeyFileContents, nil
 }
 
 // IssueNewCertFromCA issues a certificate from the CA that is passed in

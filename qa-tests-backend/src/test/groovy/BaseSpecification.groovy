@@ -77,8 +77,8 @@ class BaseSpecification extends Specification {
 
         // Add an image pull secret to the qa namespace and also the default service account so the qa namespace can
         // pull stackrox images from dockerhub
-        orchestrator.createImagePullSecret("stackrox", Env.mustGet("REGISTRY_USERNAME"),
-                Env.mustGet("REGISTRY_PASSWORD"), Constants.ORCHESTRATOR_NAMESPACE)
+        orchestrator.createImagePullSecret("stackrox", Env.mustGetInCI("REGISTRY_USERNAME", "fakeUsername"),
+                Env.mustGetInCI("REGISTRY_PASSWORD", "fakePassword"), Constants.ORCHESTRATOR_NAMESPACE)
         def sa = new K8sServiceAccount(
                 name: "default",
                 namespace: Constants.ORCHESTRATOR_NAMESPACE)
@@ -90,7 +90,7 @@ class BaseSpecification extends Specification {
                 name: "gcr-secret",
                 server: "https://us.gcr.io",
                 username: "_json_key",
-                password: Env.mustGet("GOOGLE_CREDENTIALS_GCR_SCANNER"),
+                password: Env.mustGetInCI("GOOGLE_CREDENTIALS_GCR_SCANNER", "fakeCreds"),
                 namespace: Constants.ORCHESTRATOR_NAMESPACE
         ))
         orchestrator.addServiceAccountImagePullSecret(

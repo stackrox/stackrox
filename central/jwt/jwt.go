@@ -24,8 +24,13 @@ const (
 	keyID = "jwtk0"
 )
 
+// GetPrivateKeyBytes returns the contents of the file containing the private key.
+func GetPrivateKeyBytes() ([]byte, error) {
+	return ioutil.ReadFile(privateKeyPath)
+}
+
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
-	privateKeyBytes, err := ioutil.ReadFile(privateKeyPath)
+	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "loading private key")
 	}

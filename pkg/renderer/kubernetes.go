@@ -4,15 +4,17 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
-	"github.com/stackrox/rox/image/sensor"
-	"github.com/stackrox/rox/pkg/images/utils"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -37,8 +39,12 @@ type mode int
 const (
 	// renderAll renders all objects (central/scanner/monitoring).
 	renderAll mode = iota
-	// scannerOnly renders only the scanner (which one depends on the config).
+	// scannerOnly renders only the scanner.
 	scannerOnly
+	// centralTLSOnly renders only the central tls secret.
+	centralTLSOnly
+	// scannerTLSOnly renders only the scanner tls secret
+	scannerTLSOnly
 )
 
 type chartPrefixPair struct {
@@ -46,33 +52,67 @@ type chartPrefixPair struct {
 	prefix string
 }
 
+func getCentralChart(centralOverrides map[string]func() io.ReadCloser) chartPrefixPair {
+	return chartPrefixPair{image.GetCentralChart(centralOverrides), "central"}
+
+}
+
 func getScannerChart() chartPrefixPair {
 	return chartPrefixPair{image.GetScannerChart(), "scanner"}
 }
 
-func getSensorChart(values map[string]interface{}, certs *sensor.Certs) chartPrefixPair {
-	return chartPrefixPair{image.GetSensorChart(values, certs), "sensor"}
+func filterChartToFiles(ch *chart.Chart, files set.FrozenStringSet) error {
+	var relevantTemplates []*chart.Template
+	for _, template := range ch.Templates {
+		if files.Contains(filepath.Base(template.Name)) {
+			relevantTemplates = append(relevantTemplates, template)
+		}
+	}
+	if len(relevantTemplates) != files.Cardinality() {
+		return utils.Should(errors.Errorf(
+			"did not find all expected mTLS files in %q chart (found %+v, expected %+v)",
+			ch.GetMetadata().GetName(), relevantTemplates, files.AsSlice(),
+		))
+	}
+	ch.Templates = relevantTemplates
+	return nil
 }
 
-func getChartsToProcess(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) (chartsToProcess []chartPrefixPair) {
-	if mode == scannerOnly {
-		chartsToProcess = []chartPrefixPair{getScannerChart()}
-		return
+func getChartsToProcess(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]chartPrefixPair, error) {
+	switch mode {
+	case scannerOnly:
+		return []chartPrefixPair{getScannerChart()}, nil
+	case centralTLSOnly:
+		centralChart := getCentralChart(centralOverrides)
+		if err := filterChartToFiles(centralChart.chart, image.CentralMTLSFiles); err != nil {
+			return nil, err
+		}
+		return []chartPrefixPair{centralChart}, nil
+	case scannerTLSOnly:
+		scannerChart := getScannerChart()
+		if err := filterChartToFiles(scannerChart.chart, image.ScannerMTLSFiles); err != nil {
+			return nil, err
+		}
+		return []chartPrefixPair{scannerChart}, nil
 	}
 
-	chartsToProcess = []chartPrefixPair{{image.GetCentralChart(centralOverrides), "central"}, getScannerChart()}
+	chartsToProcess := []chartPrefixPair{getCentralChart(centralOverrides), getScannerChart()}
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		chartsToProcess = append(chartsToProcess,
 			chartPrefixPair{image.GetMonitoringChart(), "monitoring"},
 		)
 	}
-	return
+	return chartsToProcess, nil
 }
 
 func renderKubectl(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
 	var renderedFiles []*zip.File
-	for _, chartPrefixPair := range getChartsToProcess(c, mode, centralOverrides) {
-		chartRenderedFiles, err := renderHelmFiles(c, chartPrefixPair.chart, chartPrefixPair.prefix)
+	chartsToProcess, err := getChartsToProcess(c, mode, centralOverrides)
+	if err != nil {
+		return nil, err
+	}
+	for _, chartPrefixPair := range chartsToProcess {
+		chartRenderedFiles, err := renderHelmFiles(c, mode, chartPrefixPair.chart, chartPrefixPair.prefix)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error rendering %s files", chartPrefixPair.prefix)
 		}
@@ -87,6 +127,9 @@ func postProcessConfig(c *Config, mode mode) error {
 	c.SecretsBase64Map = make(map[string]string)
 	for k, v := range c.SecretsByteMap {
 		c.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
+	}
+	if mode == centralTLSOnly || mode == scannerTLSOnly {
+		return nil
 	}
 	if c.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER {
 		c.K8sConfig.Command = "kubectl"
@@ -143,6 +186,28 @@ func RenderScannerOnly(c Config) ([]*zip.File, error) {
 	return render(c, scannerOnly, nil)
 }
 
+func renderAndExtractSingleFileContents(c Config, mode mode) ([]byte, error) {
+	files, err := render(c, mode, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(files) != 1 {
+		return nil, utils.Should(errors.Errorf("got unexpected number of files when rendering in mode %s: %d", mode, len(files)))
+	}
+	return files[0].Content, nil
+}
+
+// RenderCentralTLSSecretOnly renders just the file that contains the central-tls secret.
+func RenderCentralTLSSecretOnly(c Config) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, centralTLSOnly)
+}
+
+// RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.
+func RenderScannerTLSSecretOnly(c Config) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, scannerTLSOnly)
+}
+
 func render(c Config, mode mode, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
 	err := postProcessConfig(&c, mode)
 	if err != nil {
@@ -160,6 +225,9 @@ func render(c Config, mode mode, centralOverrides map[string]func() io.ReadClose
 	}
 	if err != nil {
 		return nil, err
+	}
+	if mode == centralTLSOnly || mode == scannerTLSOnly {
+		return renderedFiles, nil
 	}
 
 	if mode == renderAll {
@@ -186,7 +254,7 @@ func render(c Config, mode mode, centralOverrides map[string]func() io.ReadClose
 }
 
 func getTag(imageStr string) (string, error) {
-	imageName, err := utils.GenerateImageFromString(imageStr)
+	imageName, err := imageUtils.GenerateImageFromString(imageStr)
 	if err != nil {
 		return "", err
 	}

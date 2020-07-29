@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderDS "github.com/stackrox/rox/central/authprovider/datastore"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
+	"github.com/stackrox/rox/central/certgen"
 	"github.com/stackrox/rox/central/cli"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
@@ -313,6 +314,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		authproviderService.New(registry),
 		backupRestoreService.Singleton(),
 		backupService.Singleton(),
+		certgen.ServiceSingleton(),
 		clusterService.Singleton(),
 		complianceManagerService.Singleton(),
 		complianceService.Singleton(),

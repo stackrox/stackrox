@@ -10,11 +10,13 @@ func _() {
 	var x [1]struct{}
 	_ = x[renderAll-0]
 	_ = x[scannerOnly-1]
+	_ = x[centralTLSOnly-2]
+	_ = x[scannerTLSOnly-3]
 }
 
-const _mode_name = "renderAllscannerOnly"
+const _mode_name = "renderAllscannerOnlycentralTLSOnlyscannerTLSOnly"
 
-var _mode_index = [...]uint8{0, 9, 20}
+var _mode_index = [...]uint8{0, 9, 20, 34, 48}
 
 func (i mode) String() string {
 	if i < 0 || i >= mode(len(_mode_index)-1) {

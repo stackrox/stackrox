@@ -28,8 +28,8 @@ class Env {
         return INSTANCE.mustGetInternal(key)
     }
 
-    static String mustGetInCI(String key) {
-        return INSTANCE.mustGetInCIInternal(key)
+    static String mustGetInCI(String key, String defVal = null) {
+        return INSTANCE.mustGetInCIInternal(key, defVal)
     }
 
     private final envVars = new Properties()
@@ -64,12 +64,13 @@ class Env {
         return value
     }
 
-    protected String mustGetInCIInternal(String key) {
+    protected String mustGetInCIInternal(String key, String defVal) {
         def value = envVars.get(key)
         if (value == null) {
             if (inCI) {
                 throw new RuntimeException("No value assigned for required key ${key}")
             }
+            return defVal
         }
         return value
     }

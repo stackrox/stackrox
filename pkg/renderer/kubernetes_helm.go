@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"bytes"
 	"io"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/image/sensor"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -69,8 +71,7 @@ func getSensorChartFile(filename string, data []byte) (*zip.File, bool) {
 }
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
-// We need to
-func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, error) {
+func renderHelmFiles(c Config, mode mode, ch *chart.Chart, prefix string) ([]*zip.File, error) {
 	ch.Metadata = &chart.Metadata{
 		Name: prefix,
 	}
@@ -90,6 +91,10 @@ func renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, err
 		if file, ok := getChartFile(prefix, filepath.Base(k), []byte(v)); ok {
 			renderedFiles = append(renderedFiles, file)
 		}
+	}
+
+	if mode == centralTLSOnly || mode == scannerTLSOnly {
+		return renderedFiles, nil
 	}
 
 	// execute the extra files (scripts, README, etc), but filter out config files (these get rendered into configmaps
@@ -148,8 +153,13 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 }
 
 func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*zip.File, error) {
+	chartsToProcess, err := getChartsToProcess(c, renderAll, centralOverrides)
+	if err != nil {
+		return nil, err
+	}
+
 	var renderedFiles []*zip.File
-	for _, chartPrefixPair := range getChartsToProcess(c, renderAll, centralOverrides) {
+	for _, chartPrefixPair := range chartsToProcess {
 		currentRenderedFiles, err := chartToFiles(chartPrefixPair.prefix, chartPrefixPair.chart, c)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to render %s chart", chartPrefixPair.prefix)
@@ -159,10 +169,35 @@ func renderHelm(c Config, centralOverrides map[string]func() io.ReadCloser) ([]*
 	return renderedFiles, nil
 }
 
-// RenderSensorHelm renders the sensorchart and returns rendered files
-func RenderSensorHelm(values map[string]interface{}, certs *sensor.Certs) ([]*zip.File, error) {
-	chartPrefixPair := getSensorChart(values, certs)
-	ch := chartPrefixPair.chart
+// RenderSensorTLSSecretsOnly renders just the TLS secrets from the sensor helm chart, concatenated into one YAML file.
+func RenderSensorTLSSecretsOnly(values map[string]interface{}, certs *sensor.Certs) ([]byte, error) {
+	ch := image.GetSensorChart(values, certs)
+	if err := filterChartToFiles(ch, image.SensorMTLSFiles); err != nil {
+		return nil, err
+	}
+	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
+	if err != nil {
+		return nil, err
+	}
+
+	var out bytes.Buffer
+	var firstPrinted bool
+	for _, fileContents := range m {
+		if len(strings.TrimSpace(fileContents)) == 0 {
+			continue
+		}
+		if firstPrinted {
+			_, _ = out.WriteString("---\n")
+		}
+		_, _ = out.WriteString(fileContents)
+		firstPrinted = true
+	}
+	return out.Bytes(), nil
+}
+
+// RenderSensor renders the sensorchart and returns rendered files
+func RenderSensor(values map[string]interface{}, certs *sensor.Certs) ([]*zip.File, error) {
+	ch := image.GetSensorChart(values, certs)
 
 	m, err := renderutil.Render(ch, &chart.Config{Raw: ch.Values.Raw}, renderutil.Options{})
 	if err != nil {

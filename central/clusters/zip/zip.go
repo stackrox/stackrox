@@ -47,7 +47,7 @@ func renderBaseFiles(cluster *storage.Cluster, createUpgraderSA bool, certs sens
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
 
-	baseFiles, err := renderer.RenderSensorHelm(fields, &certs)
+	baseFiles, err := renderer.RenderSensor(fields, &certs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get required cluster information")
 	}
@@ -95,9 +95,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	certs, err := AddCertificatesToZip(wrapper, cluster, z.identityStore)
+	certs, err := GenerateCertsAndAddToZip(wrapper, cluster, z.identityStore)
 	if err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not add all required certificates"))
+		return
 	}
 
 	// Ignore the param unless the feature flag is enabled.

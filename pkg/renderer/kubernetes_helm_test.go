@@ -72,7 +72,7 @@ func TestRenderSensorHelm(t *testing.T) {
 				"admission-control-key.pem":  []byte("stu"),
 			}}
 
-			files, err := RenderSensorHelm(fields, certs)
+			files, err := RenderSensor(fields, certs)
 
 			admissionControllerRendered := false
 			admissionControllerSecretRendered := false

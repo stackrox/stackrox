@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/sensor"
 	rendererUtils "github.com/stackrox/rox/pkg/renderer/utils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -22,14 +23,12 @@ import (
 )
 
 const (
-	templatePath                      = "templates"
-	sensorChartPrefix                 = "helm/sensorchart/"
-	centralChartPrefix                = "helm/centralchart/"
-	scannerChartPrefix                = "helm/scannerchart/"
-	monitoringChartPrefix             = "helm/monitoringchart/"
-	centralChartWithDiagnosticsPrefix = "helm/centralchart-diagnostics/"
-	chartYamlFile                     = "Chart.yaml"
-	valuesYamlFile                    = "values.yaml"
+	templatePath          = "templates"
+	sensorChartPrefix     = "helm/sensorchart/"
+	centralChartPrefix    = "helm/centralchart/"
+	scannerChartPrefix    = "helm/scannerchart/"
+	monitoringChartPrefix = "helm/monitoringchart/"
+	chartYamlFile         = "Chart.yaml"
 )
 
 // These are the go based files from packr
@@ -116,6 +115,14 @@ func GetSensorChart(values map[string]interface{}, certs *sensor.Certs) *chart.C
 	return mustGetSensorChart(K8sBox, values, certs)
 }
 
+// This block enumerates the files in the various charts that have TLS secrets relevant for mTLS.
+// A unit test ensures that it is in sync with the contents of the YAML files.
+var (
+	SensorMTLSFiles  = set.NewFrozenStringSet("admission-controller-secret.yaml", "collector-secret.yaml", "sensor-secret.yaml")
+	CentralMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
+	ScannerMTLSFiles = set.NewFrozenStringSet("tls-secret.yaml")
+)
+
 // We need to stamp in the version to the Chart.yaml files prior to loading the chart
 // or it will fail
 func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.ReadCloser) (*chart.Chart, error) {
@@ -162,7 +169,7 @@ func getChart(box packr.Box, prefixes []string, overrides map[string]func() io.R
 	return chartutil.LoadFiles(chartFiles)
 }
 
-func processSensorChartFile(box packr.Box, path string, file packd.File, chartFiles *[]*chartutil.BufferedFile, values map[string]interface{}) error {
+func processSensorChartFile(path string, file packd.File, chartFiles *[]*chartutil.BufferedFile, values map[string]interface{}) error {
 	if path == "main.go" || path == ".helmignore" ||
 		path == "README.md" ||
 		strings.HasPrefix(path, "scripts") {
@@ -195,7 +202,7 @@ func getSensorChart(box packr.Box, values map[string]interface{}, certs *sensor.
 
 	err := box.WalkPrefix(sensorChartPrefix, func(name string, file packd.File) error {
 		trimmedPath := strings.TrimPrefix(name, sensorChartPrefix)
-		return processSensorChartFile(box, trimmedPath, file, &chartFiles, values)
+		return processSensorChartFile(trimmedPath, file, &chartFiles, values)
 	})
 
 	if err != nil {

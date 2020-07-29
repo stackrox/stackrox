@@ -40,7 +40,7 @@ func (h helmHandler) post(w http.ResponseWriter, r *http.Request) {
 
 	// Generate certificates for the cluster to be used in the Helm workflow
 	wrapper := zip.NewWrapper()
-	_, err = clustersZip.AddCertificatesToZip(wrapper, cluster, h.identityStore)
+	_, err = clustersZip.GenerateCertsAndAddToZip(wrapper, cluster, h.identityStore)
 	if err != nil {
 		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "Adding certificates to zip: %v", err)
 		return

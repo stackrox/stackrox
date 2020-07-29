@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/ioutils"
@@ -57,26 +58,13 @@ func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err err
 	fileMap["ca.pem"] = caCert
 	fileMap["ca-key.pem"] = caKey
 
-	cert, err := mtls.IssueNewCertFromCA(mtls.CentralSubject, caCert, caKey)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not issue central cert")
+	if err := certgen.IssueCentralCert(fileMap); err != nil {
+		return nil, nil, err
 	}
-	fileMap["cert.pem"] = cert.CertPEM
-	fileMap["key.pem"] = cert.KeyPEM
 
-	scannerCert, err := mtls.IssueNewCertFromCA(mtls.ScannerSubject, caCert, caKey)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not issue scanner cert")
+	if err := certgen.IssueScannerCerts(fileMap); err != nil {
+		return nil, nil, err
 	}
-	fileMap["scanner-cert.pem"] = scannerCert.CertPEM
-	fileMap["scanner-key.pem"] = scannerCert.KeyPEM
-
-	scannerDBCert, err := mtls.IssueNewCertFromCA(mtls.ScannerDBSubject, caCert, caKey)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "could not issue scanner db cert")
-	}
-	fileMap["scanner-db-cert.pem"] = scannerDBCert.CertPEM
-	fileMap["scanner-db-key.pem"] = scannerDBCert.KeyPEM
 
 	fileMap["scanner-db-password"] = []byte(renderer.CreatePassword())
 

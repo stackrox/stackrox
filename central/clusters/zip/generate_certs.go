@@ -42,10 +42,12 @@ func createIdentity(wrapper *zip.Wrapper, id string, servicePrefix string, servi
 	if err := identityStore.AddServiceIdentity(srvIDAllAccessCtx, issuedCert.ID); err != nil {
 		return err
 	}
-	wrapper.AddFiles(
-		zip.NewFile(fmt.Sprintf("%s-cert.pem", servicePrefix), issuedCert.CertPEM, 0),
-		zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
-	)
+	if wrapper != nil {
+		wrapper.AddFiles(
+			zip.NewFile(fmt.Sprintf("%s-cert.pem", servicePrefix), issuedCert.CertPEM, 0),
+			zip.NewFile(fmt.Sprintf("%s-key.pem", servicePrefix), issuedCert.KeyPEM, zip.Sensitive),
+		)
+	}
 	certs.Files[fmt.Sprintf("secrets/%s-cert.pem", servicePrefix)] = issuedCert.CertPEM
 	certs.Files[fmt.Sprintf("secrets/%s-key.pem", servicePrefix)] = issuedCert.KeyPEM
 	return nil
@@ -109,14 +111,17 @@ func getDefaultCertCA() (*zip.File, error) {
 	return nil, nil
 }
 
-// AddCertificatesToZip adds required service certificate and key files to the zip, and returns the cert and key files
-func AddCertificatesToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identityStore siDataStore.DataStore) (sensor.Certs, error) {
+// GenerateCertsAndAddToZip generates all the required certs for the cluster, and returns them.
+// If the passed wrapper is not-nil, the certificates are added to the wrapper.
+func GenerateCertsAndAddToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identityStore siDataStore.DataStore) (sensor.Certs, error) {
 	certs := sensor.Certs{Files: make(map[string][]byte)}
 	ca, err := mtls.CACertPEM()
 	if err != nil {
 		return certs, err
 	}
-	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
+	if wrapper != nil {
+		wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
+	}
 	certs.Files["secrets/ca.pem"] = ca
 
 	// Add MTLS files for sensor
@@ -136,11 +141,13 @@ func AddCertificatesToZip(wrapper *zip.Wrapper, cluster *storage.Cluster, identi
 		}
 	}
 
-	additionalCAFiles, err := getAdditionalCAs()
-	if err != nil {
-		return certs, err
+	if wrapper != nil {
+		additionalCAFiles, err := getAdditionalCAs()
+		if err != nil {
+			return certs, err
+		}
+		wrapper.AddFiles(additionalCAFiles...)
 	}
-	wrapper.AddFiles(additionalCAFiles...)
 
 	return certs, nil
 }
