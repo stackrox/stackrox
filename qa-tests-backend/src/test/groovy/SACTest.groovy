@@ -373,7 +373,7 @@ class SACTest extends BaseSpecification {
         "Cleanup"
         BaseService.useBasicAuth()
         where:
-        "Data iputs are: "
+        "Data inputs are: "
         tokenName           | minNumReturned | resultCountFunc          | service
         ALLACCESSTOKEN      | 1              | this.&getAlertCount      | "Alert"
         "searchAlertsToken" | 1              | this.&getAlertCount      | "Alert"

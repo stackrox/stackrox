@@ -4,6 +4,8 @@ import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 import common.Constants
 import groups.BAT
 import groups.SensorBounce
+import io.fabric8.kubernetes.api.model.Cluster
+import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
@@ -22,6 +24,7 @@ import objects.Service
 import objects.SlackNotifier
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.BaseService
 import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
@@ -61,7 +64,8 @@ class ComplianceTest extends BaseSpecification {
     private gcrId = ""
     @Shared
     private Map<String, String> standardsByName = [:]
-
+    static final private String NONE = "None"
+    static final private String COMPLIANCETOKEN = "stackrox-compliance"
     def setupSpec() {
         // Get cluster ID
         clusterId = ClusterService.getClusterId()
@@ -1123,5 +1127,33 @@ class ComplianceTest extends BaseSpecification {
             def controlResults = nodeResults.getControlResultsMap()
             assert controlResults.containsKey("NIST_800_190:4_2_1")
         }
+    }
+
+    @Category([BAT])
+    def "Verify ComplianceRuns with SAC on clusters with wildcard"() {
+        def otherClusterName = "disallowedCluster"
+
+        given:
+        "Enable SAC token and add other cluster"
+        ClusterService.createCluster(otherClusterName, "stackrox/main:latest", "central.stackrox:443")
+        ApiTokenService.GenerateTokenResponse token = services.ApiTokenService.generateToken(COMPLIANCETOKEN, NONE)
+        BaseService.useApiToken(token.token)
+
+        when:
+        "trigger wildcard compliance run"
+        def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait("*", "*")
+
+        then:
+        "check results under SAC"
+        for (String standard : complianceRuns.keySet()) {
+            def runId = complianceRuns.get(standard)
+            ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId, runId).results
+            assert runId == results.runMetadata.runId
+        }
+
+        cleanup:
+        "revert to basic auth and delete extra cluster"
+        BaseService.useBasicAuth()
+        ClusterService.deleteCluster(ClusterService.getClusterId(otherClusterName))
     }
 }

@@ -80,3 +80,43 @@ principal.authProvider.type == "api-token" && \
 			(scope.noun == "Deployment" || scope.noun == "NetworkGraph") \
 		) \
 	)
+
+principal.authProvider.type == "api-token" && \
+principal.attributes["name"][0] == "stackrox-compliance" && \
+( scope.verb == "view" || scope.verb == "edit" ) && \
+( \
+  scope.attributes.cluster == null || \
+  scope.attributes.cluster.name == "remote" \
+) && \
+( scope.attributes.namespace == "stackrox" || \
+  ( scope.attributes.namespace == null && \
+    ( \
+      scope.noun == "APIToken" || \
+      scope.noun == "AllComments" || \
+      scope.noun == "AuthPlugin" || \
+      scope.noun == "AuthProvider" || \
+      scope.noun == "BackupPlugins" || \
+      scope.noun == "ComplianceRunSchedule" || \
+      scope.noun == "Config" || \
+      scope.noun == "DebugLogs" || \
+      scope.noun == "Detection" || \
+      scope.noun == "Group" || \
+      scope.noun == "ImageIntegration" || \
+      scope.noun == "ImbuedLogs" || \
+      scope.noun == "Licenses" || \
+      scope.noun == "Notifier" || \
+      scope.noun == "Policy" || \
+      scope.noun == "ProbeUpload" || \
+      scope.noun == "Role" || \
+      scope.noun == "ScannerBundle" || \
+      scope.noun == "ScannerDefinitions" || \
+      scope.noun == "SensorUpgradeConfig" || \
+      scope.noun == "ServiceIdentity" || \
+      scope.noun == "User" || \
+      scope.noun == "Cluster" || \
+      scope.noun == "Compliance" || \
+      scope.noun == "ComplianceRuns" || \
+      scope.noun == "Node" \
+    ) \
+  ) \
+)

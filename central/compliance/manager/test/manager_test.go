@@ -17,16 +17,19 @@ import (
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	podDatastoreMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
+	"github.com/stackrox/rox/central/role/resources"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/factory/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
 
 type managerTestSuite struct {
 	suite.Suite
 
-	manager manager.ComplianceManager
-	testCtx context.Context
+	manager     manager.ComplianceManager
+	testCtx     context.Context
+	readOnlyCtx context.Context
 
 	mockCtrl            *gomock.Controller
 	standardRegistry    *standards.Registry
@@ -113,10 +116,25 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		{ClusterID: "cluster2", StandardID: "standard1"},
 		{ClusterID: "cluster2", StandardID: "standard2"},
 	})
+	// Test with readOnly Ctx
+	s.mockClusterStore.EXPECT().GetClusters(s.readOnlyCtx).Return([]*storage.Cluster{
+		{Id: "cluster1"},
+		{Id: "cluster2"},
+	}, nil)
+	pairs, err = s.manager.ExpandSelection(s.readOnlyCtx, manager.Wildcard, manager.Wildcard)
+	s.Equal(pairs, []compliance.ClusterStandardPair{})
+	s.NoError(err)
 }
 
 func (s *managerTestSuite) SetupTest() {
-	s.testCtx = context.Background()
+	s.testCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.ComplianceRuns)))
+	s.readOnlyCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ComplianceRuns)))
 	s.mockCtrl = gomock.NewController(s.T())
 	var err error
 	s.standardRegistry, err = standards.NewRegistry(nil, nil)
