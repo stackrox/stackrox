@@ -1050,15 +1050,19 @@ class ComplianceTest extends BaseSpecification {
         and:
         "verify deployment fully detected"
         Set<String> receivedProcessPaths = []
+        def foundSSHProcess = false
         Timer t = new Timer(30, 2)
         while (t.IsValid()) {
             receivedProcessPaths = ProcessService.getUniqueProcessPaths(deployment.deploymentUid)
-            if (receivedProcessPaths.size() > 1) {
-                break
+            for (String path : receivedProcessPaths) {
+                if (path.contains("ssh")) {
+                    foundSSHProcess = true
+                    break
+                }
             }
-            println "Didn't find all the expected processes, retrying..."
+            println "Didn't find an SSH processes, retrying..."
         }
-        assert receivedProcessPaths.size() > 1
+        assert foundSSHProcess
 
         and:
         "trigger compliance runs"
