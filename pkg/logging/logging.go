@@ -198,9 +198,12 @@ var (
 )
 
 func init() {
-	initLevel := os.Getenv("LOGLEVEL")
-	value, ok := LevelForLabel(initLevel)
-	zapLevel := levelToZapLevelOrDefault(value, zapcore.InfoLevel)
+	initLevel, initLevelValid := os.Getenv("LOGLEVEL"), false
+	if value, ok := LevelForLabel(initLevel); ok {
+		defaultLevel = value
+		initLevelValid = true
+	}
+	zapLevel := levelToZapLevelOrDefault(defaultLevel, zapcore.InfoLevel)
 
 	switch le := os.Getenv("LOGENCODING"); le {
 	case "", console.encoding:
@@ -214,9 +217,6 @@ func init() {
 	}
 
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
-	if ok {
-		SetGlobalLogLevel(value)
-	}
 
 	// To the alert reader: While we could theoretically create a zapcore.Core instance and use
 	// the logFile to create a MultiSyncWriter, we stick with using the config-based approach
@@ -255,7 +255,7 @@ func init() {
 
 	// Use direct calls to createLogger in this function, as New/NewOrGet/CurrentModule().Logger() refer to thisModuleLogger.
 	thisModuleLogger = createLogger(ModuleForName(thisModule))
-	if !ok && initLevel != "" {
+	if !initLevelValid && initLevel != "" {
 		thisModuleLogger.Warnf("Invalid LOGLEVEL value '%s', defaulting to %s", initLevel, LabelForLevelOrInvalid(defaultLevel))
 	}
 
