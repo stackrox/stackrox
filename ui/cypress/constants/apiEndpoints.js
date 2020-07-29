@@ -77,6 +77,16 @@ export const auth = {
     tokenRefresh: '/sso/session/tokenrefresh',
 };
 
+export const certExpiry = {
+    central: 'v1/credentialexpiry?component=CENTRAL',
+    scanner: 'v1/credentialexpiry?component=SCANNER',
+};
+
+export const certGen = {
+    central: 'api/extensions/certgen/central',
+    scanner: 'api/extensions/certgen/scanner',
+};
+
 export const dashboard = {
     timeseries: '/v1/alerts/summary/timeseries?*',
 };
@@ -133,4 +143,8 @@ export const integrations = {
 
 export const system = {
     config: '/v1/config',
+};
+
+export const permissions = {
+    mypermissions: '/v1/mypermissions',
 };

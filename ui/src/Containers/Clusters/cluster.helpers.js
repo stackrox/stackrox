@@ -188,17 +188,19 @@ export function formatLastCheckIn(status) {
     return 'N/A';
 }
 
+const warningDaysThreshold = 30;
+
 export function getCredentialExpirationProps(certExpiryStatus) {
     if (certExpiryStatus?.sensorCertExpiry) {
         const { sensorCertExpiry } = certExpiryStatus;
         const now = new Date();
         const diffInWords = dateFns.distanceInWordsStrict(sensorCertExpiry, now);
         const diffInDays = dateFns.differenceInDays(sensorCertExpiry, now);
-        const showExpiringSoon = diffInDays < 30;
+        const showExpiringSoon = diffInDays < warningDaysThreshold;
         let messageType;
         if (diffInDays < 7) {
             messageType = 'error';
-        } else if (diffInDays < 30) {
+        } else if (diffInDays < warningDaysThreshold) {
             messageType = 'warn';
         } else {
             messageType = 'info';

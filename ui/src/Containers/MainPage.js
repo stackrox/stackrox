@@ -41,6 +41,7 @@ import LicenseReminder from 'Containers/License/LicenseReminder';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import UnreachableWarning from 'Containers/UnreachableWarning';
 import AppWrapper from './AppWrapper';
+import CredentialExpiryBanners from './CredentialExpiry/CredentialExpiryBanners';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -168,6 +169,7 @@ class MainPage extends Component {
                     <UnreachableWarning />
                     <Notifications />
                     <LicenseReminder />
+                    <CredentialExpiryBanners />
                     <div className="navigation-gradient" />
                     {this.renderVersionOutOfDate()}
                     <header className="flex z-20 ignore-react-onclickoutside">

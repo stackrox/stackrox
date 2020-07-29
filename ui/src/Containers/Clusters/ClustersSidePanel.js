@@ -27,6 +27,8 @@ import {
     wizardSteps,
 } from './cluster.helpers';
 import CollapsibleCard from '../../Components/CollapsibleCard';
+import Button from '../../Components/Button';
+import { generateSecuredClusterCertSecret } from '../../services/CertGenerationService';
 
 function ClustersSidePanel({
     metadata,
@@ -50,6 +52,7 @@ function ClustersSidePanel({
     const [pollingCount, setPollingCount] = useState(0);
     const [pollingDelay, setPollingDelay] = useState(null);
     const [submissionError, setSubmissionError] = useState('');
+    const [freshCredentialsDownloaded, setFreshCredentialsDownloaded] = useState(false);
 
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
@@ -60,6 +63,7 @@ function ClustersSidePanel({
         setMessageState(null);
         setWizardStep(wizardSteps.FORM);
         setPollingDelay(null);
+        setFreshCredentialsDownloaded(false);
     }
 
     useEffect(
@@ -183,6 +187,20 @@ function ClustersSidePanel({
         });
     }
 
+    function generateCertSecret() {
+        generateSecuredClusterCertSecret(selectedClusterId).catch((error) => {
+            const serverError = get(
+                error,
+                'response.data.message',
+                'Failed to regenerate certificates.'
+            );
+
+            setSubmissionError(serverError);
+            setFreshCredentialsDownloaded(false);
+        });
+        setFreshCredentialsDownloaded(true);
+    }
+
     /**
      * rendering section
      */
@@ -234,14 +252,47 @@ function ClustersSidePanel({
                     <Message type={messageState.type} message={messageState.message} />
                 </div>
             )}
-            {!!credentialExpirationProps && credentialExpirationProps.showExpiringSoon && (
+            {freshCredentialsDownloaded && (
                 <div className="m-4">
                     <Message
-                        type={credentialExpirationProps.messageType}
-                        message={`This cluster’s credentials expire in ${credentialExpirationProps.diffInWords}. Deploy a new bundle to refresh the credentials.`}
+                        message={
+                            <div className="flex-1">
+                                Fresh credentials downloaded. Use{' '}
+                                <span className="italic text-accent-800">
+                                    {' '}
+                                    {selectedCluster.type === 'OPENSHIFT_CLUSTER'
+                                        ? 'oc'
+                                        : 'kubectl'}{' '}
+                                    apply -f
+                                </span>{' '}
+                                to apply the credentials to your cluster.
+                            </div>
+                        }
                     />
                 </div>
             )}
+            {!!credentialExpirationProps &&
+                credentialExpirationProps.showExpiringSoon &&
+                !freshCredentialsDownloaded && (
+                    <div className="m-4">
+                        <Message
+                            type={credentialExpirationProps.messageType}
+                            message={
+                                <div className="flex-1">
+                                    This cluster’s credentials expire in{' '}
+                                    {credentialExpirationProps.diffInWords}. To use renewed
+                                    certificates,{' '}
+                                    <Button
+                                        text="download this YAML file"
+                                        className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
+                                        onClick={generateCertSecret}
+                                    />{' '}
+                                    and apply it to your cluster.
+                                </div>
+                            }
+                        />
+                    </div>
+                )}
             {!!upgradeMessage && (
                 <div className="px-4 w-full">
                     <CollapsibleCard
