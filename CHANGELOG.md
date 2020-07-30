@@ -2,6 +2,9 @@
 All notable changes to this project that require documentation updates will be documented in this file.
 
 ## [NEXT RELEASE]
+
+## [47.0]
+- Configuration Management tables (except for Controls and Policies) are now paginated through the API, rather than loading all rows into the browser, for better performance in large environments (ROX-5067).
 - Added a global flag `--token-file` to roxctl causing an API token to be read from the specified file (ROX-2319).
 - Added strict validation for env var policies such that policies with non-raw sources must not specify expected values (ROX-5208). This change introduces a breaking adjustment to the `/v1.PolicyService/PostPolicy` RPC, with existing REST clients remaining unaffected.
 - Emit warning if the default value for flag `--create-updater-sa` is used in roxctl (ROX-5264).
