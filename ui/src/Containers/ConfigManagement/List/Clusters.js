@@ -1,28 +1,31 @@
 import React from 'react';
 import { gql } from '@apollo/client';
-import entityTypes from 'constants/entityTypes';
-import URLService from 'utils/URLService';
+import pluralize from 'pluralize';
 
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
 import LabelChip from 'Components/LabelChip';
 import StatusChip from 'Components/StatusChip';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import { clusterSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
-import pluralize from 'pluralize';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
-
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
-const QUERY = gql`
-    query clusters($query: String) {
-        results: clusters(query: $query) {
+const CLUSTERS_QUERY = gql`
+    query clusters($query: String, $pagination: Pagination) {
+        results: clusters(query: $query, pagination: $pagination) {
             id
             name
             serviceAccountCount
-            k8sroleCount
+            k8sRoleCount
             subjectCount
             status {
                 orchestratorMetadata {
@@ -42,8 +45,16 @@ const QUERY = gql`
                 }
             }
         }
+        count: clusterCount(query: $query)
     }
 `;
+
+export const defaultClusterSort = [
+    {
+        id: clusterSortFields.CLUSTER,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -58,16 +69,19 @@ const buildTableColumns = (match, location) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: clusterSortFields.CLUSTER,
+            sortField: clusterSortFields.CLUSTER,
         },
         {
             Header: `K8S Version`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'status.orchestratorMetadata.version',
+            sortable: false,
         },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -76,10 +90,11 @@ const buildTableColumns = (match, location) => {
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,
+            sortable: false,
         },
         {
             Header: `CIS Controls`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'complianceControlCount',
             // eslint-disable-next-line
@@ -102,10 +117,11 @@ const buildTableColumns = (match, location) => {
                     />
                 );
             },
+            sortable: false,
         },
         {
             Header: `Users & Groups`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -127,10 +143,11 @@ const buildTableColumns = (match, location) => {
             },
             id: 'subjectCount',
             accessor: (d) => d.subjectCount,
+            sortable: false,
         },
         {
             Header: `Service Accounts`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -155,15 +172,16 @@ const buildTableColumns = (match, location) => {
             },
             id: 'serviceAccountCount',
             accessor: (d) => d.serviceAccountCount,
+            sortable: false,
         },
         {
             Header: `Roles`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { k8sroleCount } = original;
-                if (!k8sroleCount) return <LabelChip text="No Roles" type="alert" />;
+                const { k8sRoleCount } = original;
+                if (!k8sRoleCount) return <LabelChip text="No Roles" type="alert" />;
                 const url = URLService.getURL(match, location)
                     .push(original.id)
                     .push(entityTypes.ROLE)
@@ -172,12 +190,13 @@ const buildTableColumns = (match, location) => {
                     <TableCellLink
                         pdf={pdf}
                         url={url}
-                        text={`${k8sroleCount} ${pluralize('Roles', k8sroleCount)}`}
+                        text={`${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`}
                     />
                 );
             },
-            id: 'k8sroleCount',
-            accessor: (d) => d.k8sroleCount,
+            id: 'k8sRoleCount',
+            accessor: (d) => d.k8sRoleCount,
+            sortable: false,
         },
     ];
     return tableColumns;
@@ -202,7 +221,7 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick, query
     return (
         <List
             className={className}
-            query={QUERY}
+            query={CLUSTERS_QUERY}
             variables={variables}
             entityType={entityTypes.CLUSTER}
             tableColumns={tableColumns}
@@ -210,6 +229,7 @@ const Clusters = ({ match, location, className, selectedRowId, onRowClick, query
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={defaultClusterSort}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
             autoFocusSearchInput={autoFocusSearchInput}

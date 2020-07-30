@@ -1,30 +1,7 @@
 import { gql } from '@apollo/client';
 
-export const ROLE_CURRENT_PERMISSIONS = gql`
-    query myPermissions {
-        myPermissions {
-            resourceToAccess {
-                key
-                value
-            }
-        }
-    }
-`;
-
-export const ROLE_PERMISSIONS = gql`
-    query role($roleName: ID!) {
-        role: role(id: $roleName) {
-            name
-            resourceToAccess {
-                key
-                value
-            }
-        }
-    }
-`;
-
-export const ROLE_FRAGMENT = gql`
-    fragment k8roleFields on K8SRole {
+export const K8S_ROLE_FRAGMENT = gql`
+    fragment k8RoleFields on K8SRole {
         id
         name
         type
@@ -49,23 +26,23 @@ export const ROLE_FRAGMENT = gql`
         clusterId
     }
 `;
-export const K8S_ROLE = gql`
+export const K8S_ROLE_QUERY = gql`
     query k8sRole($id: ID!) {
         clusters {
             id
-            k8srole(role: $id) {
-                ...k8roleFields
+            k8sRole(role: $id) {
+                ...k8RoleFields
             }
         }
     }
-    ${ROLE_FRAGMENT}
+    ${K8S_ROLE_FRAGMENT}
 `;
 
 export const ROLE_NAME = gql`
     query k8sRole($id: ID!) {
         clusters {
             id
-            k8srole(role: $id) {
+            k8sRole(role: $id) {
                 id
                 name
             }
@@ -73,11 +50,12 @@ export const ROLE_NAME = gql`
     }
 `;
 
-export const K8S_ROLES = gql`
-    query k8sRoles($query: String) {
-        results: k8sRoles(query: $query) {
-            ...k8roleFields
+export const K8S_ROLES_QUERY = gql`
+    query k8sRoles($query: String, $pagination: Pagination) {
+        results: k8sRoles(query: $query, pagination: $pagination) {
+            ...k8RoleFields
         }
+        count: k8sRoleCount(query: $query)
     }
-    ${ROLE_FRAGMENT}
+    ${K8S_ROLE_FRAGMENT}
 `;

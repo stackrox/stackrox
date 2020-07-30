@@ -1,8 +1,9 @@
 import qs from 'qs';
-import pageTypes from 'constants/pageTypes';
-import useCases from 'constants/useCaseTypes';
-import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { generatePath } from 'react-router-dom';
+
+import pageTypes from 'constants/pageTypes';
+import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
+import useCases from 'constants/useCaseTypes';
 import {
     nestedPaths as workflowPaths,
     riskPath,
@@ -100,6 +101,22 @@ function generateURL(workflowState) {
     if (!queryParams[sortParams.page]) delete queryParams[sortParams.page];
     if (!queryParams[sortParams.sidePanel]) delete queryParams[sortParams.sidePanel];
 
+    // hybrid approach to using page params in Config Mgmt, but keeping entities in URL params
+    if (useCase === useCases.CONFIG_MANAGEMENT) {
+        const stateToDowngrade = queryParams?.workflowState;
+        if (stateToDowngrade) {
+            const entityId1 = stateToDowngrade[0] && stateToDowngrade[0].i;
+            const entityType2 = stateToDowngrade[1] && stateToDowngrade[1].t;
+            const entityId2 = stateToDowngrade[1] && stateToDowngrade[1].i;
+
+            params.entityId1 = entityId1;
+            params.entityType2 = urlEntityListTypes[entityType2];
+            params.entityId2 = entityId2;
+
+            delete queryParams.workflowState;
+        }
+    }
+
     const queryString = queryParams
         ? qs.stringify(queryParams, {
               addQueryPrefix: true,
@@ -107,8 +124,8 @@ function generateURL(workflowState) {
               encodeValuesOnly: true,
           })
         : '';
-
-    return generatePath(path, params) + queryString;
+    const newPath = generatePath(path, params) + queryString;
+    return newPath;
 }
 
 export default generateURL;

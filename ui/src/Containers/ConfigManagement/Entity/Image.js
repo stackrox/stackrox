@@ -1,12 +1,8 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import queryService from 'utils/queryService';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import { entityToColumns } from 'constants/listColumns';
-import cloneDeep from 'lodash/cloneDeep';
-import { format } from 'date-fns';
-import isGQLLoading from 'utils/gqlLoading';
 import { gql } from '@apollo/client';
+import { format } from 'date-fns';
+import cloneDeep from 'lodash/cloneDeep';
+
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Loader from 'Components/Loader';
@@ -14,15 +10,21 @@ import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import CVETable from 'Containers/Images/CVETable';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import { entityToColumns } from 'constants/listColumns';
+import entityTypes from 'constants/entityTypes';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import searchContext from 'Containers/searchContext';
 import useCases from 'constants/useCaseTypes';
+import CVETable from 'Containers/Images/CVETable';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import TableWidget from './widgets/TableWidget';
 import EntityList from '../List/EntityList';
 
-const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Image = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
     const safeImageId = decodeURIComponent(id);
 
@@ -33,11 +35,12 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
             ...query[searchParam],
             'Lifecycle Stage': 'DEPLOY',
         }),
+        pagination,
     };
 
     const defaultQuery = gql`
         query getImage($id: ID!${entityListType ? ', $query: String' : ''}) {
-            image(sha: $id) {
+            image(id: $id) {
                 id
                 lastUpdated
                 ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount'}
@@ -90,12 +93,14 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getImage_${entityListType}($id: ID!, $query: String) {
-                image(sha: $id) {
+            query getImage_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
+                image(id: $id) {
                     id
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -115,6 +120,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
+                            totalResults={data?.image?.count}
                             entityContext={{ ...entityContext, [entityTypes.IMAGE]: id }}
                             query={query}
                         />
@@ -183,7 +189,7 @@ const Image = ({ id, entityListType, entityId1, query, entityContext }) => {
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Dockerfile">
-                            <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                            <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                 {layers.length === 0 && (
                                     <NoResultsMessage
                                         message="No layers available in this image"

@@ -30,7 +30,7 @@ export const POLICY_FRAGMENT = gql`
         }
     }
 `;
-export const POLICY = gql`
+export const POLICY_QUERY = gql`
     query policy($id: ID!) {
         policy(id: $id) {
             ...policyFields
@@ -47,9 +47,9 @@ export const POLICY_NAME = gql`
     }
 `;
 
-export const POLICIES = gql`
-    query policies($query: String) {
-        policies(query: $query) {
+export const POLICIES_QUERY = gql`
+    query policies($query: String, $pagination: Pagination) {
+        policies(query: $query, pagination: $pagination) {
             id
             name
             enforcementActions
@@ -59,5 +59,6 @@ export const POLICIES = gql`
             lifecycleStages
             disabled
         }
+        count: policyCount(query: $query)
     }
 `;

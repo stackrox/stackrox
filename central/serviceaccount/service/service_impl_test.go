@@ -53,6 +53,7 @@ var (
 		RoleId: "role1",
 		Subjects: []*storage.Subject{
 			{
+				ClusterId: "cluster",
 				Name:      "serviceaccountname",
 				Namespace: "namespace",
 				Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
@@ -67,6 +68,7 @@ var (
 		RoleId: "role2",
 		Subjects: []*storage.Subject{
 			{
+				ClusterId: "cluster",
 				Name:      "serviceaccountname",
 				Namespace: "namespace",
 				Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
@@ -125,7 +127,6 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 	suite.Equal(1, len(sa.SaAndRole.ScopedRoles))
 	suite.Equal(1, len(sa.SaAndRole.ClusterRoles))
 	suite.Equal("namespace", sa.SaAndRole.ScopedRoles[0].Namespace)
-
 }
 
 // Test that when we fail to find a service account, an error is returned.

@@ -15,7 +15,7 @@ export const NAMESPACE_FRAGMENT = gql`
         numSecrets
         imageCount
         policyCount
-        k8sroleCount
+        k8sRoleCount
         serviceAccountCount
         subjectCount
         policyStatus {
@@ -27,6 +27,25 @@ export const NAMESPACE_FRAGMENT = gql`
         }
     }
 `;
+
+export const CONFIG_NAMESPACE_FRAGMENT = gql`
+    fragment namespaceFields on Namespace {
+        metadata {
+            name
+            id
+            clusterId
+            clusterName
+        }
+        numSecrets
+        k8sRoleCount
+        serviceAccountCount
+        subjectCount
+        policyStatus {
+            status
+        }
+    }
+`;
+
 export const NAMESPACES_QUERY = gql`
     query namespaces($query: String) {
         results: namespaces(query: $query) {
@@ -49,7 +68,7 @@ export const NAMESPACE_NO_POLICIES_FRAGMENT = gql`
             }
         }
         numSecrets
-        k8sroleCount
+        k8sRoleCount
         serviceAccountCount
         subjectCount
         policyStatus {
@@ -58,10 +77,11 @@ export const NAMESPACE_NO_POLICIES_FRAGMENT = gql`
     }
 `;
 export const NAMESPACES_NO_POLICIES_QUERY = gql`
-    query namespaces($query: String) {
-        results: namespaces(query: $query) {
+    query namespaces($query: String, $pagination: Pagination) {
+        results: namespaces(query: $query, pagination: $pagination) {
             ...namespaceNoPoliciesFields
         }
+        count: namespaceCount(query: $query)
     }
     ${NAMESPACE_NO_POLICIES_FRAGMENT}
 `;

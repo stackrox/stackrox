@@ -1,63 +1,49 @@
 import entityTypes from 'constants/entityTypes';
-import { SERVICE_ACCOUNTS, SERVICE_ACCOUNT, SERVICE_ACCOUNT_NAME } from 'queries/serviceAccount';
 import {
-    DEPLOYMENT_QUERY as DEPLOYMENT,
-    DEPLOYMENTS_QUERY as DEPLOYMENTS,
-    DEPLOYMENT_NAME,
-} from 'queries/deployment';
-import { K8S_ROLES as ROLES, K8S_ROLE as ROLE, ROLE_NAME } from 'queries/role';
-import { SECRET, SECRETS, SECRET_NAME } from 'queries/secret';
-import {
-    CLUSTER_QUERY as CLUSTER,
-    CLUSTERS_QUERY as CLUSTERS,
-    CLUSTER_NAME,
-} from 'queries/cluster';
+    SERVICE_ACCOUNTS_QUERY,
+    SERVICE_ACCOUNT_QUERY,
+    SERVICE_ACCOUNT_NAME,
+} from 'queries/serviceAccount';
+import { DEPLOYMENT_QUERY, DEPLOYMENTS_QUERY, DEPLOYMENT_NAME } from 'queries/deployment';
+import { K8S_ROLES_QUERY, K8S_ROLE_QUERY, ROLE_NAME } from 'queries/role';
+import { SECRET_QUERY, SECRETS_QUERY, SECRET_NAME } from 'queries/secret';
+import { CLUSTER_QUERY, CLUSTERS_QUERY, CLUSTER_NAME } from 'queries/cluster';
 import { CVE_NAME } from 'queries/cve';
-import {
-    NAMESPACE_QUERY as NAMESPACE,
-    NAMESPACES_QUERY as NAMESPACES,
-    NAMESPACE_NAME,
-} from 'queries/namespace';
-import { POLICY, POLICIES, POLICY_NAME } from 'queries/policy';
-import { CONTROL_QUERY as CONTROL, CONTROL_NAME } from 'queries/controls';
-import { IMAGE, IMAGES, IMAGE_NAME } from 'queries/image';
-import { NODES_QUERY as NODES, NODE_QUERY as NODE, NODE_NAME } from 'queries/node';
-import {
-    SUBJECTS_QUERY as SUBJECTS,
-    SUBJECT_QUERY as SUBJECT,
-    SUBJECT_NAME,
-} from 'queries/subject';
+import { NAMESPACE_QUERY, NAMESPACES_QUERY, NAMESPACE_NAME } from 'queries/namespace';
+import { POLICY_QUERY, POLICIES_QUERY, POLICY_NAME } from 'queries/policy';
+import { CONTROL_QUERY, CONTROL_NAME } from 'queries/controls';
+import { IMAGE_QUERY, IMAGES_QUERY, IMAGE_NAME } from 'queries/image';
+import { NODES_QUERY, NODE_QUERY, NODE_NAME } from 'queries/node';
+import { SUBJECTS_QUERY, SUBJECT_QUERY, SUBJECT_NAME } from 'queries/subject';
 
 import COMPONENT_NAME from 'queries/components';
 
 export const entityQueryMap = {
-    [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT,
-    [entityTypes.SECRET]: SECRET,
-    [entityTypes.DEPLOYMENT]: DEPLOYMENT,
-    [entityTypes.CLUSTER]: CLUSTER,
-    [entityTypes.NAMESPACE]: NAMESPACE,
-    [entityTypes.ROLE]: ROLE,
-    [entityTypes.NODE]: NODE,
-    [entityTypes.CONTROL]: CONTROL,
-    [entityTypes.IMAGE]: IMAGE,
-    [entityTypes.POLICY]: POLICY,
-    [entityTypes.SUBJECT]: SUBJECT,
+    [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_QUERY,
+    [entityTypes.SECRET]: SECRET_QUERY,
+    [entityTypes.DEPLOYMENT]: DEPLOYMENT_QUERY,
+    [entityTypes.CLUSTER]: CLUSTER_QUERY,
+    [entityTypes.NAMESPACE]: NAMESPACE_QUERY,
+    [entityTypes.ROLE]: K8S_ROLE_QUERY,
+    [entityTypes.NODE]: NODE_QUERY,
+    [entityTypes.CONTROL]: CONTROL_QUERY,
+    [entityTypes.IMAGE]: IMAGE_QUERY,
+    [entityTypes.POLICY]: POLICY_QUERY,
+    [entityTypes.SUBJECT]: SUBJECT_QUERY,
 };
 
 export const entityListQueryMap = {
-    [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNTS,
-    [entityTypes.SECRET]: SECRETS,
-    [entityTypes.DEPLOYMENT]: DEPLOYMENTS,
-    [entityTypes.CLUSTER]: CLUSTERS,
-    [entityTypes.NAMESPACE]: NAMESPACES,
-    [entityTypes.ROLE]: ROLES,
-    [entityTypes.SECRET]: SECRETS,
-    [entityTypes.POLICY]: POLICIES,
-    [entityTypes.IMAGE]: IMAGES,
-    [entityTypes.NODE]: NODES,
-    [entityTypes.NAMESPACE]: NAMESPACES,
-    [entityTypes.POLICY]: POLICIES,
-    [entityTypes.SUBJECT]: SUBJECTS,
+    [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNTS_QUERY,
+    [entityTypes.DEPLOYMENT]: DEPLOYMENTS_QUERY,
+    [entityTypes.CLUSTER]: CLUSTERS_QUERY,
+    [entityTypes.NAMESPACE]: NAMESPACES_QUERY,
+    [entityTypes.ROLE]: K8S_ROLES_QUERY,
+    [entityTypes.SECRET]: SECRETS_QUERY,
+    [entityTypes.POLICY]: POLICIES_QUERY,
+    [entityTypes.IMAGE]: IMAGES_QUERY,
+    [entityTypes.NODE]: NODES_QUERY,
+    [entityTypes.NAMESPACE]: NAMESPACES_QUERY,
+    [entityTypes.SUBJECT]: SUBJECTS_QUERY,
 };
 
 export const entityNameQueryMap = {

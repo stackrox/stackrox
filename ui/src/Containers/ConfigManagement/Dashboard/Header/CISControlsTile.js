@@ -14,18 +14,13 @@ const NUM_CIS_CONTROLS = gql`
     }
 `;
 
-function getNumCISControls(data) {
-    if (!data || !data.executedControlCount) return 0;
-    return data.executedControlCount;
-}
-
 const CISControlsTile = ({ match, location }) => {
     const { loading, error, data } = useQuery(NUM_CIS_CONTROLS);
     if (error) logError(error);
 
     const controlsURL = URLService.getURL(match, location).base(entityTypes.CONTROL).url();
 
-    const numCISControls = !loading ? getNumCISControls(data) : 0;
+    const numCISControls = data?.executedControlCount || 0;
     return (
         <EntityTileLink
             count={numCISControls}

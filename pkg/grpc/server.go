@@ -36,7 +36,7 @@ import (
 )
 
 const (
-	maxMsgSize                = 8 * 1024 * 1024
+	maxMsgSize                = 12 * 1024 * 1024
 	defaultMaxResponseMsgSize = 256 * 1024 * 1024 // 256MB
 )
 

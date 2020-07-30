@@ -21,7 +21,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("images(query: String, pagination: Pagination): [Image!]!"),
 		schema.AddQuery("imageCount(query: String): Int!"),
-		schema.AddQuery("image(sha:ID!): Image"),
+		schema.AddQuery("image(id: ID!): Image"),
 		schema.AddExtraResolver("Image", "deployments(query: String, pagination: Pagination): [Deployment!]!"),
 		schema.AddExtraResolver("Image", "deploymentCount(query: String): Int!"),
 		schema.AddExtraResolver("Image", "topVuln(query: String): EmbeddedVulnerability"),
@@ -73,7 +73,7 @@ func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32,
 }
 
 // Image returns a graphql resolver for the identified image, if it exists
-func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID }) (*imageResolver, error) {
+func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID }) (*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID
 	if err != nil {
 		return nil, err
 	}
-	image, err := imageLoader.FromID(ctx, string(args.Sha))
+	image, err := imageLoader.FromID(ctx, string(args.ID))
 	return resolver.wrapImage(image, image != nil, err)
 }
 

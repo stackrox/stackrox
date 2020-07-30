@@ -1024,6 +1024,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"truncate: Int!",
 	}))
 	utils.Must(builder.AddType("Subject", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"id: ID!",
 		"kind: SubjectKind!",
 		"name: String!",
 		"namespace: String!",
@@ -8759,6 +8762,21 @@ func (resolver *Resolver) wrapSubjects(values []*storage.Subject, err error) ([]
 		output[i] = &subjectResolver{root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *subjectResolver) ClusterId(ctx context.Context) string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *subjectResolver) ClusterName(ctx context.Context) string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *subjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
 }
 
 func (resolver *subjectResolver) Kind(ctx context.Context) string {

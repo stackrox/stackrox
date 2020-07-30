@@ -19,7 +19,7 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     private static final String GET_CVES_INFO_WITH_IMAGE_QUERY = """
     query image(\$id: ID!) {
         image:
-        image(sha: \$id) {
+        image(id: \$id) {
            //cve_info here
            id
         lastUpdated

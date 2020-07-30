@@ -18,7 +18,7 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
             id
         }
         secrets
-        roles {
+        k8sRoles {
             id
             name
         }
@@ -42,9 +42,9 @@ export const SERVICE_ACCOUNT_FRAGMENT = gql`
         }
     }
 `;
-export const SERVICE_ACCOUNTS = gql`
-    query serviceAccounts($query: String) {
-        results: serviceAccounts(query: $query) {
+export const SERVICE_ACCOUNTS_QUERY = gql`
+    query serviceAccounts($query: String, $pagination: Pagination) {
+        results: serviceAccounts(query: $query, pagination: $pagination) {
             id
             name
             clusterAdmin
@@ -57,12 +57,13 @@ export const SERVICE_ACCOUNTS = gql`
             }
             clusterName
             clusterId
-            roles {
+            k8sRoles {
                 id
                 name
             }
             deploymentCount
         }
+        count: serviceAccountCount(query: $query)
     }
 `;
 
@@ -75,7 +76,7 @@ export const SERVICE_ACCOUNT_NAME = gql`
     }
 `;
 
-export const SERVICE_ACCOUNT = gql`
+export const SERVICE_ACCOUNT_QUERY = gql`
     query serviceAccount($id: ID!) {
         serviceAccount(id: $id) {
             ...serviceAccountFields

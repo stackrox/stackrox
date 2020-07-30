@@ -1,18 +1,30 @@
 import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import StatusChip from 'Components/StatusChip';
+import searchContext from 'Containers/searchContext';
 import entityTypes from 'constants/entityTypes';
-import { DEPLOYMENTS_QUERY as QUERY } from 'queries/deployment';
-import URLService from 'utils/URLService';
+import { deploymentSortFields } from 'constants/sortFields';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-import searchContext from 'Containers/searchContext';
+import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import queryService from 'utils/queryService';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import StatusChip from 'Components/StatusChip';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
+
+export const defaultDeploymentSort = [
+    {
+        id: deploymentSortFields.DEPLOYMENT,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -27,6 +39,8 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: deploymentSortFields.DEPLOYMENT,
+            sortField: deploymentSortFields.DEPLOYMENT,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -44,6 +58,8 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: deploymentSortFields.CLUSTER,
+                  sortField: deploymentSortFields.CLUSTER,
               },
         entityContext && entityContext[entityTypes.NAMESPACE]
             ? null
@@ -61,10 +77,12 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={namespace} />;
                   },
+                  id: deploymentSortFields.NAMESPACE,
+                  sortField: deploymentSortFields.NAMESPACE,
               },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -73,10 +91,11 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             id: 'policyStatus',
             accessor: 'policyStatus',
+            sortable: false,
         },
         {
             Header: `Images`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -95,10 +114,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             accessor: 'imageCount',
+            sortable: false,
         },
         {
             Header: `Secrets`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -117,6 +137,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             accessor: 'secretCount',
+            sortable: false,
         },
         entityContext && entityContext[entityTypes.SERVICE_ACCOUNT]
             ? null
@@ -134,6 +155,8 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={serviceAccount} />;
                   },
+                  id: deploymentSortFields.SERVICE_ACCOUNT,
+                  sortField: deploymentSortFields.SERVICE_ACCOUNT,
               },
     ];
     return tableColumns.filter((col) => col);
@@ -149,6 +172,7 @@ const Deployments = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const searchParam = useContext(searchContext);
@@ -172,7 +196,7 @@ const Deployments = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={DEPLOYMENTS_QUERY}
             variables={variables}
             entityType={entityTypes.DEPLOYMENT}
             tableColumns={tableColumns}
@@ -180,18 +204,10 @@ const Deployments = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
-            defaultSorted={[
-                {
-                    id: 'failingPolicies',
-                    desc: true,
-                },
-                {
-                    id: 'name',
-                    desc: false,
-                },
-            ]}
+            defaultSorted={defaultDeploymentSort}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

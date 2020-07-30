@@ -76,8 +76,8 @@ export const DEPLOYMENT_NAME = gql`
 `;
 
 export const DEPLOYMENTS_QUERY = gql`
-    query getDeployments($query: String) {
-        results: deployments(query: $query) {
+    query getDeployments($query: String, $pagination: Pagination) {
+        results: deployments(query: $query, pagination: $pagination) {
             id
             name
             clusterName
@@ -90,6 +90,7 @@ export const DEPLOYMENTS_QUERY = gql`
             imageCount
             policyStatus
         }
+        count: deploymentCount(query: $query)
     }
 `;
 

@@ -1,17 +1,14 @@
 import React from 'react';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
-import URLService from 'utils/URLService';
-import { Link, withRouter } from 'react-router-dom';
-import getEntityName from 'utils/getEntityName';
-import { entityNameQueryMap } from 'utils/queryMap';
-
 import { ChevronRight } from 'react-feather';
-import Query from 'Components/ThrowingQuery';
+import { Link, withRouter } from 'react-router-dom';
+
 import BackButton from 'Containers/ConfigManagement/SidePanel/buttons/BackButton';
-import entityTypes from 'constants/entityTypes';
+import useEntityName from 'hooks/useEntityName';
+import entityLabels from 'messages/entity';
+import URLService from 'utils/URLService';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />
@@ -112,53 +109,33 @@ BreadCrumbLinks.defaultProps = {
     className: '',
 };
 
-const getEntityVariables = (type, id) => {
-    if (type === entityTypes.SUBJECT) {
-        return { name: id };
-    }
-    return { id };
-};
-
 const BreadCrumbs = (props) => {
     const { className, match, location, ...params } = props;
     const { entityType1, entityId1, entityType2, entityListType2, entityId2 } = params;
-    if (!entityId1) return null;
-
-    const entityQuery = entityNameQueryMap[entityType1];
-    const entityVariables = getEntityVariables(entityType1, entityId1);
 
     const relatedEntityType = entityListType2 || entityType2;
-    const relatedEntityQuery = entityNameQueryMap[relatedEntityType];
-    const relatedEntityVariables = getEntityVariables(relatedEntityType, entityId2);
 
+    const { loading: entityLoading, entityName: mainEntityName } = useEntityName(
+        entityType1,
+        entityId1
+    );
+    const { loading: relatedEntityLoading, entityName: childEntityName } = useEntityName(
+        relatedEntityType,
+        entityId2
+    );
+
+    if (!entityLoading && !mainEntityName) return null;
+    if (!entityId2) {
+        return <BreadCrumbLinks {...props} entityName={mainEntityName} />;
+    }
+
+    if (!relatedEntityLoading && !childEntityName) return null;
     return (
-        <Query query={entityQuery} variables={entityVariables}>
-            {({ loading: entityLoading, data: entityData }) => {
-                if (!entityLoading && !entityData) return null;
-                const entityName = getEntityName(entityType1, entityData);
-                if (!entityId2) {
-                    return <BreadCrumbLinks {...props} entityName={entityName} />;
-                }
-                return (
-                    <Query query={relatedEntityQuery} variables={relatedEntityVariables}>
-                        {({ loading: relatedEntityLoading, data: relatedEntityData }) => {
-                            if (!relatedEntityLoading && !relatedEntityData) return null;
-                            const relatedEntityName = getEntityName(
-                                relatedEntityType,
-                                relatedEntityData
-                            );
-                            return (
-                                <BreadCrumbLinks
-                                    {...props}
-                                    entityName={entityName}
-                                    relatedEntityName={relatedEntityName}
-                                />
-                            );
-                        }}
-                    </Query>
-                );
-            }}
-        </Query>
+        <BreadCrumbLinks
+            {...props}
+            entityName={mainEntityName}
+            relatedEntityName={childEntityName}
+        />
     );
 };
 

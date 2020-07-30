@@ -4,9 +4,9 @@ import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
 import { NODE_FRAGMENT } from 'queries/node';
 import { DEPLOYMENT_FRAGMENT } from 'queries/deployment';
-import { NAMESPACE_FRAGMENT } from 'queries/namespace';
-import { SUBJECT_WITH_CLUSTER_FRAGMENT } from 'queries/subject';
-import { ROLE_FRAGMENT } from 'queries/role';
+import { NAMESPACE_FRAGMENT, CONFIG_NAMESPACE_FRAGMENT } from 'queries/namespace';
+import { SUBJECT_WITH_CLUSTER_FRAGMENT, SUBJECT_FRAGMENT } from 'queries/subject';
+import { K8S_ROLE_FRAGMENT } from 'queries/role';
 import { SECRET_FRAGMENT } from 'queries/secret';
 import { SERVICE_ACCOUNT_FRAGMENT } from 'queries/serviceAccount';
 import { CONTROL_FRAGMENT } from 'queries/controls';
@@ -93,7 +93,7 @@ function getListFieldName(entityType, listType, useCase) {
         }
 
         if (listType === entityTypes.ROLE) {
-            return 'k8sroles';
+            return 'k8sRoles';
         }
         if (listType === entityTypes.CONTROL) return 'complianceResults';
     }
@@ -117,7 +117,13 @@ function getListFieldName(entityType, listType, useCase) {
         }
 
         if (listType === entityTypes.ROLE) {
-            return 'k8sroles';
+            return 'k8sRoles';
+        }
+    }
+
+    if (entityType === entityTypes.SERVICE_ACCOUNT) {
+        if (listType === entityTypes.ROLE) {
+            return 'k8sRoles';
         }
     }
 
@@ -141,9 +147,9 @@ function getFragmentName(entityType) {
         case entityTypes.NAMESPACE:
             return 'namespaceFields';
         case entityTypes.SUBJECT:
-            return 'subjectWithClusterFields';
+            return 'subjectFields';
         case entityTypes.ROLE:
-            return 'k8roleFields';
+            return 'k8RoleFields';
         case entityTypes.SECRET:
             return 'secretFields';
         case entityTypes.POLICY:
@@ -168,7 +174,7 @@ function getFragment(entityType, useCase) {
         [entityTypes.DEPLOYMENT]: DEPLOYMENT_FRAGMENT,
         [entityTypes.NAMESPACE]: NAMESPACE_FRAGMENT,
         [entityTypes.SUBJECT]: SUBJECT_WITH_CLUSTER_FRAGMENT,
-        [entityTypes.ROLE]: ROLE_FRAGMENT,
+        [entityTypes.ROLE]: K8S_ROLE_FRAGMENT,
         [entityTypes.SECRET]: SECRET_FRAGMENT,
         [entityTypes.POLICY]: POLICY_FRAGMENT,
         [entityTypes.SERVICE_ACCOUNT]: SERVICE_ACCOUNT_FRAGMENT,
@@ -176,6 +182,11 @@ function getFragment(entityType, useCase) {
     };
 
     const fragmentsByUseCase = {
+        [useCases.CONFIG_MANAGEMENT]: {
+            ...defaultFragments,
+            [entityTypes.NAMESPACE]: CONFIG_NAMESPACE_FRAGMENT,
+            [entityTypes.SUBJECT]: SUBJECT_FRAGMENT,
+        },
         [useCases.VULN_MANAGEMENT]: {
             ...defaultFragments,
             [entityTypes.COMPONENT]: VULN_COMPONENT_LIST_FRAGMENT,

@@ -21,7 +21,7 @@ const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, name
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
     const displayedEntityType = resourceLabels[entityType];
-    const idFieldName = entityType === entityTypes.IMAGE ? 'sha' : 'id';
+    const idFieldName = 'id';
 
     // `id` field is not needed in result,
     //   but is needed to keep apollo-client from throwing an error with certain entities,

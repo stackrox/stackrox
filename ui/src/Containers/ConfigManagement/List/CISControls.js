@@ -1,18 +1,18 @@
 import React, { useContext } from 'react';
 import { capitalize } from 'lodash';
+
+import StatusChip from 'Components/StatusChip';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import searchContext from 'Containers/searchContext';
+import COMPLIANCE_STATES from 'constants/complianceStates';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import entityTypes from 'constants/entityTypes';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
-import queryService from 'utils/queryService';
 import { sortVersion, sortStatus } from 'sorters/sorters';
-import searchContext from 'Containers/searchContext';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
-import COMPLIANCE_STATES from 'constants/complianceStates';
-
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import StatusChip from 'Components/StatusChip';
-import List from './List';
+import queryService from 'utils/queryService';
+import ListFrontendPaginated from './ListFrontendPaginated';
 
 const tableColumns = [
     {
@@ -118,7 +118,7 @@ const CISControls = ({ className, selectedRowId, onRowClick, query, data }) => {
         return filteredTableRows;
     }
     return (
-        <List
+        <ListFrontendPaginated
             className={className}
             query={QUERY}
             variables={variables}

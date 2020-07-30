@@ -1,8 +1,9 @@
 import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import dateTimeFormat from 'constants/dateTimeFormat';
+import { gql } from '@apollo/client';
 import { format } from 'date-fns';
-import { sortVersion } from 'sorters/sorters';
+
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -11,19 +12,19 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
+import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import TableWidget from 'Containers/ConfigManagement/Entity/widgets/TableWidget';
 import searchContext from 'Containers/searchContext';
-import { gql } from '@apollo/client';
-import queryService from 'utils/queryService';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import { standardLabels } from 'messages/standards';
 import { CONTROL_FRAGMENT } from 'queries/controls';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { sortVersion } from 'sorters/sorters';
 import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import EntityList from '../List/EntityList';
 
-const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Node = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const queryObject = { ...query[searchParam] };
@@ -33,6 +34,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.getEntityWhereClause(queryObject),
+        pagination,
     };
 
     const QUERY = gql`
@@ -180,7 +182,7 @@ const Node = ({ id, entityListType, entityId1, query, entityContext }) => {
                         </CollapsibleSection>
                         {!(entityContext && entityContext[entityTypes.CONTROL]) && (
                             <CollapsibleSection title="Node Findings">
-                                <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                                <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     {failedComplianceResults.length === 0 && (
                                         <NoResultsMessage
                                             message="No nodes failing controls on this node"

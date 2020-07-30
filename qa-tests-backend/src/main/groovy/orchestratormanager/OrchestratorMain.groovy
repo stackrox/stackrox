@@ -93,6 +93,7 @@ interface OrchestratorMain {
     def getNodeCount()
     List<Node> getNodeDetails()
     def supportsNetworkPolicies()
+    def isGKE()
 
     //Service Accounts
     List<K8sServiceAccount> getServiceAccounts()

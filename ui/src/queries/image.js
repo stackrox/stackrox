@@ -51,7 +51,7 @@ export const IMAGE_FRAGMENT = gql`
 
 export const IMAGE_NAME = gql`
     query getImageName($id: ID!) {
-        image(sha: $id) {
+        image(id: $id) {
             id
             name {
                 fullName
@@ -60,18 +60,18 @@ export const IMAGE_NAME = gql`
     }
 `;
 
-export const IMAGE = gql`
+export const IMAGE_QUERY = gql`
     query image($id: ID!) {
-        image(sha: $id) {
+        image(id: $id) {
             ...imageFields
         }
     }
     ${IMAGE_FRAGMENT}
 `;
 
-export const IMAGES = gql`
-    query images($query: String) {
-        images(query: $query) {
+export const IMAGES_QUERY = gql`
+    query images($query: String, $pagination: Pagination) {
+        images(query: $query, pagination: $pagination) {
             id
             lastUpdated
             metadata {
@@ -94,5 +94,6 @@ export const IMAGES = gql`
                 name
             }
         }
+        count: imageCount(query: $query)
     }
 `;

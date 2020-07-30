@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
+import { gql } from '@apollo/client';
+
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -9,22 +9,25 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
-import searchContext from 'Containers/searchContext';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import queryService from 'utils/queryService';
+import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import EntityList from '../../List/EntityList';
 import DeploymentFindings from './DeploymentFindings';
 
-const Deployment = ({ id, entityContext, entityListType, query }) => {
+const Deployment = ({ id, entityContext, entityListType, query, pagination }) => {
     const searchParam = useContext(searchContext);
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam]),
+        pagination,
     };
 
     const defaultQuery = gql`
@@ -92,12 +95,14 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getDeployment${entityListType}($id: ID!, $query: String) {
+            query getDeployment${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 deployment(id: $id) {
                     id
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -122,6 +127,7 @@ const Deployment = ({ id, entityContext, entityListType, query }) => {
                         <EntityList
                             entityListType={entityListType}
                             data={listData}
+                            totalResults={data?.deployment?.count}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.DEPLOYMENT]: id }}
                         />

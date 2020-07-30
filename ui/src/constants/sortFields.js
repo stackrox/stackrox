@@ -116,6 +116,54 @@ export const namespaceSortFields = {
     PRIORITY: 'Priority',
 };
 
+export const nodeSortFields = {
+    CLUSTER: 'Cluster',
+    CONTAINER_RUNTIME: 'Container Runtime',
+    NODE: 'Node',
+    NODE_JOIN_TIME: 'Node Join Time',
+    OPERATING_SYSTEM: 'Operating System',
+};
+
+/**
+ * added in order to use backend pagination on Config Mgmt Secrets list page
+ */
+export const secretSortFields = {
+    SECRET: 'Secret',
+    CREATED: 'Created Time',
+    CLUSTER: 'Cluster',
+};
+
+/**
+ * added in order to use backend pagination on Config Mgmt Roles list page
+ */
+export const roleSortFields = {
+    ROLE: 'Role',
+    CLUSTER: 'Cluster',
+};
+
+/**
+ * added in order to use backend pagination on Config Mgmt Service Account list page
+ */
+export const serviceAccountSortFields = {
+    SERVCE_ACCOUNT: 'Service Account',
+    CLUSTER: 'Cluster',
+    NAMESPACE: 'Namespace',
+};
+
+/**
+ * added in order to use backend pagination on Config Mgmt Subject list page
+ */
+export const subjectSortFields = {
+    SUBJECT: 'Subject',
+    SUBJECT_KIND: 'Subject Kind',
+};
+
+/**
+ * added in order to use backend pagination on Config Mgmt Nodes list page
+ *
+ * completely derived from trial-and-error
+ */
+
 /**
  * derived from search categories for policies,
  *   "Category", "Description", "Disabled", "Enforcement", "Lifecycle Stage", "Policy", "Severity"

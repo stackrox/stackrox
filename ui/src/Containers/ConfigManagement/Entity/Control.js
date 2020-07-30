@@ -72,6 +72,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                             match={match}
                             location={location}
                             data={complianceControlNodes}
+                            totalResults={complianceControlNodes?.length}
                             entityContext={{ ...entityContext, [entityTypes.CONTROL]: id }}
                         />
                     );
@@ -128,7 +129,7 @@ const Control = ({ id, entityListType, query, match, location, entityContext }) 
                         </CollapsibleSection>
                         {!(entityContext && entityContext[entityTypes.NODE]) && (
                             <CollapsibleSection title="Control Findings">
-                                <div className="flex pdf-page pdf-stretch shadow rounded relative rounded bg-base-100 mb-4 ml-4 mr-4">
+                                <div className="flex pdf-page pdf-stretch shadow relative rounded bg-base-100 mb-4 ml-4 mr-4">
                                     <NodesWithFailedControls
                                         entityType={entityTypes.CONTROL}
                                         entityContext={{

@@ -1,15 +1,20 @@
 import React from 'react';
-import entityTypes from 'constants/entityTypes';
-import { SECRETS as QUERY } from 'queries/secret';
 import uniq from 'lodash/uniq';
 import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import URLService from 'utils/URLService';
-import { sortValueByLength, sortDate } from 'sorters/sorters';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
+
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import entityTypes from 'constants/entityTypes';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { SECRETS_QUERY } from 'queries/secret';
+import { secretSortFields } from 'constants/sortFields';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
 
@@ -28,6 +33,13 @@ const secretTypeEnumMapping = {
     IMAGE_PULL_SECRET: 'Image Pull Secret',
 };
 
+export const defaultSecretSort = [
+    {
+        id: secretSortFields.SECRET,
+        desc: false,
+    },
+];
+
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
@@ -41,6 +53,8 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: secretSortFields.SECRET,
+            sortField: secretSortFields.SECRET,
         },
         {
             Header: `Created`,
@@ -51,11 +65,12 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(createdAt, dateTimeFormat);
             },
             accessor: 'createdAt',
-            sortMethod: sortDate,
+            id: secretSortFields.CREATED,
+            sortField: secretSortFields.CREATED,
         },
         {
             Header: `Types`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'files',
             // eslint-disable-next-line
@@ -68,7 +83,7 @@ const buildTableColumns = (match, location, entityContext) => {
                     </span>
                 );
             },
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -86,24 +101,26 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: secretSortFields.CLUSTER,
+                  sortField: secretSortFields.CLUSTER,
               },
         {
             Header: `Deployments`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'deployments',
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { deployments, id } = original;
-                if (!deployments.length) return 'No Deployments';
+                const { deploymentCount, id } = original;
+                if (!deploymentCount) return 'No Deployments';
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.DEPLOYMENT)
                     .url();
-                const text = `${deployments.length} ${pluralize('Deployment', deployments.length)}`;
+                const text = `${deploymentCount} ${pluralize('Deployment', deploymentCount)}`;
                 return <TableCellLink dataTestId="deployment" pdf={pdf} url={url} text={text} />;
             },
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
     ];
     return tableColumns.filter((col) => col);
@@ -121,6 +138,7 @@ const Secrets = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
@@ -130,7 +148,7 @@ const Secrets = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={SECRETS_QUERY}
             variables={variables}
             entityType={entityTypes.SECRET}
             tableColumns={tableColumns}
@@ -138,13 +156,9 @@ const Secrets = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
-            defaultSorted={[
-                {
-                    id: 'name',
-                    desc: false,
-                },
-            ]}
+            defaultSorted={defaultSecretSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

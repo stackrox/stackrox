@@ -25,7 +25,6 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
-		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
 		schema.AddType("PolicyStatus", []string{"status: String!", "failingPolicies: [Policy!]!"}),
 		schema.AddQuery("clusters(query: String, pagination: Pagination): [Cluster!]!"),
 		schema.AddQuery("clusterCount(query: String): Int!"),
@@ -43,14 +42,14 @@ func init() {
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
 		schema.AddExtraResolver("Cluster", `namespaceCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", "complianceResults(query: String): [ControlResult!]!"),
-		schema.AddExtraResolver("Cluster", `k8sroles(query: String): [K8SRole!]!`),
-		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
-		schema.AddExtraResolver("Cluster", `k8sroleCount(query: String): Int!`),
+		schema.AddExtraResolver("Cluster", `k8sRoles(query: String, pagination: Pagination): [K8SRole!]!`),
+		schema.AddExtraResolver("Cluster", `k8sRole(role: ID!): K8SRole`),
+		schema.AddExtraResolver("Cluster", `k8sRoleCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!`),
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 		schema.AddExtraResolver("Cluster", `serviceAccountCount(query: String): Int!`),
-		schema.AddExtraResolver("Cluster", `subjects(query: String, pagination: Pagination): [SubjectWithClusterID!]!`),
-		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID`),
+		schema.AddExtraResolver("Cluster", `subjects(query: String, pagination: Pagination): [Subject!]!`),
+		schema.AddExtraResolver("Cluster", `subject(name: String!): Subject`),
 		schema.AddExtraResolver("Cluster", `subjectCount(query: String): Int!`),
 		schema.AddExtraResolver("Cluster", `images(query: String, pagination: Pagination): [Image!]!`),
 		schema.AddExtraResolver("Cluster", `imageCount(query: String): Int!`),
@@ -431,7 +430,7 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 }
 
 // Subjects returns GraphQL resolvers for all subjects in this cluster
-func (resolver *clusterResolver) Subjects(ctx context.Context, args PaginatedQuery) ([]*subjectWithClusterIDResolver, error) {
+func (resolver *clusterResolver) Subjects(ctx context.Context, args PaginatedQuery) ([]*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subjects")
 
 	q, err := args.AsV1QueryOrEmpty()
@@ -449,8 +448,8 @@ func (resolver *clusterResolver) Subjects(ctx context.Context, args PaginatedQue
 
 	resolvers, err := paginationWrapper{
 		pv: pagination,
-	}.paginate(wrapSubjects(resolver.data.GetId(), resolver.data.GetName(), subjectResolvers), nil)
-	return resolvers.([]*subjectWithClusterIDResolver), err
+	}.paginate(subjectResolvers, nil)
+	return resolvers.([]*subjectResolver), err
 }
 
 // SubjectCount returns count of Users and Groups in this cluster
@@ -469,8 +468,8 @@ func (resolver *clusterResolver) SubjectCount(ctx context.Context, args RawQuery
 	return int32(len(subjects)), nil
 }
 
-// ServiceAccount returns clusterResolver GraphQL resolver for a given service account
-func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
+// Subject returns clusterResolver GraphQL resolver for a given subject
+func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "Subject")
 
 	subjectName, err := url.QueryUnescape(args.Name)
@@ -491,11 +490,7 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 		log.Errorf("Subject: %q not found on Cluster: %q", subjectName, resolver.data.GetName())
 		return nil, nil
 	}
-	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
-	if err != nil {
-		return nil, err
-	}
-	return wrapSubject(resolver.data.GetId(), resolver.data.GetName(), subject), nil
+	return resolver.root.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
 }
 
 func (resolver *clusterResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {

@@ -15,10 +15,8 @@ const QUERY = gql`
         clusters {
             id
             subjects {
-                subject {
-                    name
-                }
-                type
+                id
+                name
                 clusterAdmin
             }
         }
@@ -36,10 +34,18 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
             cluster.subjects
                 .filter((subject) => subject.clusterAdmin)
                 .forEach((subject) => {
-                    const { name } = subject.subject;
-                    if (!allSubjects[name]) newSubjects[name] = 0;
+                    const { name, id } = subject;
+                    if (!allSubjects[name]) {
+                        newSubjects[name] = {
+                            id,
+                            count: 0,
+                        };
+                    }
 
-                    newSubjects[name] += 1;
+                    newSubjects[name] = {
+                        ...newSubjects[name],
+                        count: (newSubjects[name].count += 1),
+                    };
                 });
             return newSubjects;
         }, {});
@@ -48,14 +54,14 @@ const UsersWithMostClusterAdminRoles = ({ match, location }) => {
             .map((entry) => {
                 const link = URLService.getURL(match, location)
                     .base(entityTypes.SUBJECT)
-                    .push(entry[0])
+                    .push(entry[1]?.id)
                     .url();
                 return {
                     y: entry[0],
-                    x: entry[1],
+                    x: entry[1].count,
                     hint: {
                         title: entry[0],
-                        body: entry[1],
+                        body: entry[1].count,
                     },
                     link,
                 };

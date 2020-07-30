@@ -33,10 +33,7 @@ export const SECRET_FRAGMENT = gql`
             }
         }
         namespace
-        deployments {
-            id
-            name
-        }
+        deploymentCount(query: $query)
         labels {
             key
             value
@@ -49,7 +46,7 @@ export const SECRET_FRAGMENT = gql`
         clusterId
     }
 `;
-export const SECRET = gql`
+export const SECRET_QUERY = gql`
     query secret($id: ID!) {
         secret(id: $id) {
             ...secretFields
@@ -67,9 +64,9 @@ export const SECRET_NAME = gql`
     }
 `;
 
-export const SECRETS = gql`
-    query secrets($query: String) {
-        secrets(query: $query) {
+export const SECRETS_QUERY = gql`
+    query secrets($query: String, $pagination: Pagination) {
+        secrets(query: $query, pagination: $pagination) {
             id
             name
             createdAt
@@ -77,12 +74,10 @@ export const SECRETS = gql`
                 type
             }
             namespace
-            deployments {
-                id
-                name
-            }
+            deploymentCount(query: $query)
             clusterName
             clusterId
         }
+        count: secretCount(query: $query)
     }
 `;

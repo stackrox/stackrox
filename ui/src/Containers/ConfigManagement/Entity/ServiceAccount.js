@@ -1,26 +1,28 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
+import { gql } from '@apollo/client';
+
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
-import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
-import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
-import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import searchContext from 'Containers/searchContext';
-import useCases from 'constants/useCaseTypes';
-import queryService from 'utils/queryService';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
+import ClusterScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/ClusterScopedPermissions';
+import NamespaceScopedPermissions from 'Containers/ConfigManagement/Entity/widgets/NamespaceScopedPermissions';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
-const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext }) => {
+const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -30,6 +32,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
             ...query[searchParam],
             'Lifecycle Stage': 'DEPLOY',
         }),
+        pagination,
     };
 
     const defaultQuery = gql`
@@ -46,7 +49,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                 clusterId
                 clusterName
                 deploymentCount
-                roleCount
+                k8sRoleCount
                 automountToken
                 createdAt
                 labels {
@@ -79,12 +82,14 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getServiceAccount_${entityListType}($id: ID!, $query: String) {
+            query getServiceAccount_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 serviceAccount(id: $id) {
                     id
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -101,7 +106,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                 if (entityListType) {
                     const listData =
                         entityListType === entityTypes.ROLE
-                            ? entity.roles
+                            ? entity.k8sRoles
                             : getSubListFromEntity(entity, entityListType);
                     return (
                         <EntityList
@@ -109,6 +114,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                             entityId={entityId1}
                             entityContext={{ ...entityContext, [entityTypes.SERVICE_ACCOUNT]: id }}
                             data={listData}
+                            totalResults={data?.serviceAccount?.count}
                             query={query}
                         />
                     );
@@ -120,7 +126,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                     labels = [],
                     secrets = [],
                     deploymentCount,
-                    roleCount,
+                    k8sRoleCount,
                     saNamespace,
                     scopedPermissions = [],
                     annotations,
@@ -184,7 +190,7 @@ const ServiceAccount = ({ id, entityListType, entityId1, query, entityContext })
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
-                                    value={roleCount}
+                                    value={k8sRoleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                             </div>

@@ -1,16 +1,28 @@
 import React from 'react';
-import entityTypes from 'constants/entityTypes';
-import { IMAGES as QUERY } from 'queries/image';
-import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import { sortDate } from 'sorters/sorters';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
+import { format } from 'date-fns';
+
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { imageSortFields } from 'constants/sortFields';
+import { IMAGES_QUERY } from 'queries/image';
+import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 import TableCellLink from './Link';
 import List from './List';
+
+export const defaultImageSort = [
+    {
+        id: imageSortFields.NAME,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -25,6 +37,8 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name.fullName',
+            id: imageSortFields.NAME,
+            sortField: imageSortFields.NAME,
         },
         {
             Header: `Created`,
@@ -35,13 +49,14 @@ const buildTableColumns = (match, location, entityContext) => {
                 if (!metadata) return '-';
                 return format(metadata.v1.created, dateTimeFormat);
             },
-            sortMethod: sortDate,
+            id: imageSortFields.CREATED_TIME,
+            sortField: imageSortFields.CREATED_TIME,
         },
         entityContext && entityContext[entityTypes.DEPLOYMENT]
             ? null
             : {
                   Header: `Deployments`,
-                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
@@ -56,6 +71,7 @@ const buildTableColumns = (match, location, entityContext) => {
                       return <TableCellLink pdf={pdf} url={url} text={text} />;
                   },
                   accessor: 'deployments',
+                  sortable: false,
               },
     ];
 
@@ -72,6 +88,7 @@ const Images = ({
     match,
     location,
     data,
+    totalResults,
     entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
@@ -81,7 +98,7 @@ const Images = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={IMAGES_QUERY}
             variables={variables}
             entityType={entityTypes.IMAGE}
             tableColumns={tableColumns}
@@ -89,7 +106,9 @@ const Images = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={defaultImageSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

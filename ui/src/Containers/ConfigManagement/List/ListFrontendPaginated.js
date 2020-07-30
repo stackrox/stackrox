@@ -1,7 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
@@ -9,23 +9,17 @@ import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import Panel from 'Components/Panel';
-import Table from 'Components/Table';
+import Table, { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
-import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
-import workflowStateContext from 'Containers/workflowStateContext';
 import { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
-import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import entityLabels from 'messages/entity';
 import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 import isGQLLoading from 'utils/gqlLoading';
 import createPDFTable from 'utils/pdfUtils';
-import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
 
-const serverSidePagination = true;
-
-const List = ({
+const ListFrontendPaginated = ({
     className,
     headerText,
     query,
@@ -38,20 +32,13 @@ const List = ({
     defaultSorted,
     defaultSearchOptions,
     data,
-    totalResults,
     autoFocusSearchInput,
     noDataText,
     match,
     location,
     history,
 }) => {
-    const workflowState = useContext(workflowStateContext);
-    const configMgmtPagination = useContext(configMgmtPaginationContext);
-    const page = workflowState.paging[configMgmtPagination.pageParam];
-    const pageSort = workflowState.sort[configMgmtPagination.sortParam];
-    const tableSort = pageSort || defaultSorted;
-
-    const [sortFields, setSortFields] = useState({});
+    const [page, setPage] = useState(0);
 
     function onRowClickHandler(row) {
         const id = resolvePath(row, idAttribute);
@@ -61,10 +48,10 @@ const List = ({
 
     const categories = [searchCategoryTypes[entityType]];
 
-    function getRenderComponents(headerComponents, tableRows, totalCount) {
-        const header = `${totalCount} ${pluralize(
+    function getRenderComponents(headerComponents, tableRows) {
+        const header = `${tableRows.length} ${pluralize(
             headerText || entityLabels[entityType],
-            totalCount
+            tableRows.length
         )}`;
 
         return (
@@ -78,32 +65,10 @@ const List = ({
                     selectedRowId={selectedRowId}
                     noDataText={noDataText}
                     page={page}
-                    sorted={tableSort}
-                    onSortedChange={onSortedChange}
-                    manual={serverSidePagination}
-                    disableSortRemove
+                    defaultSorted={defaultSorted}
                 />
             </Panel>
         );
-    }
-
-    function setPage(newPage) {
-        history.push(workflowState.setPage(newPage).toUrl());
-    }
-
-    function onSortedChange(newSort, column) {
-        const workflowSort = newSort.map((sortItem) => {
-            const id = sortFields[sortItem.id] || column.sortField;
-            setSortFields({ [sortItem.id]: id, ...sortFields });
-            const { desc } = sortItem;
-            return {
-                id,
-                desc,
-            };
-        });
-
-        const url = workflowState.setSort(workflowSort).toUrl();
-        history.push(url);
     }
 
     function getHeaderComponents(totalRows) {
@@ -131,45 +96,40 @@ const List = ({
                     page={page}
                     dataLength={totalRows}
                     setPage={setPage}
-                    pageSize={LIST_PAGE_SIZE}
+                    pageSize={DEFAULT_PAGE_SIZE}
                 />
             </>
         );
     }
 
     if (data) {
-        const headerComponents = getHeaderComponents(totalResults);
+        const headerComponents = getHeaderComponents(data.length);
         if (data.length) {
             createPDFTable(data, entityType, query, 'capture-list', tableColumns);
         }
-        return getRenderComponents(headerComponents, data, totalResults);
+        return getRenderComponents(headerComponents, data);
     }
 
-    const varsWithPagination = {
-        ...variables,
-        pagination: queryService.getPagination(tableSort, page, LIST_PAGE_SIZE),
-    };
     return (
         <section className="h-full w-full" id="capture-list">
-            <Query query={query} variables={varsWithPagination}>
+            <Query query={query} variables={variables}>
                 {({ loading, data: queryData }) => {
                     if (isGQLLoading(loading, data)) return <Loader />;
                     if (!queryData) return <PageNotFound resourceType={entityType} />;
                     const tableRows = createTableRows(queryData) || [];
-                    const totalCount = queryData?.count || 0;
-                    const headerComponents = getHeaderComponents(totalCount);
+                    const headerComponents = getHeaderComponents(tableRows.length);
 
                     if (tableRows.length) {
                         createPDFTable(tableRows, entityType, query, 'capture-list', tableColumns);
                     }
-                    return getRenderComponents(headerComponents, tableRows, totalCount);
+                    return getRenderComponents(headerComponents, tableRows);
                 }}
             </Query>
         </section>
     );
 };
 
-List.propTypes = {
+ListFrontendPaginated.propTypes = {
     className: PropTypes.string,
     query: PropTypes.shape().isRequired,
     variables: PropTypes.shape(),
@@ -182,7 +142,6 @@ List.propTypes = {
     defaultSorted: PropTypes.arrayOf(PropTypes.shape({})),
     defaultSearchOptions: PropTypes.arrayOf(PropTypes.string),
     data: PropTypes.arrayOf(PropTypes.shape({})),
-    totalResults: PropTypes.number,
     autoFocusSearchInput: PropTypes.bool,
     noDataText: PropTypes.string,
     match: ReactRouterPropTypes.match.isRequired,
@@ -190,7 +149,7 @@ List.propTypes = {
     history: ReactRouterPropTypes.history.isRequired,
 };
 
-List.defaultProps = {
+ListFrontendPaginated.defaultProps = {
     className: '',
     variables: {},
     headerText: '',
@@ -198,9 +157,8 @@ List.defaultProps = {
     defaultSorted: [],
     defaultSearchOptions: [],
     data: null,
-    totalResults: null,
     autoFocusSearchInput: true,
     noDataText: 'No results found. Please refine your search.',
 };
 
-export default withRouter(List);
+export default withRouter(ListFrontendPaginated);

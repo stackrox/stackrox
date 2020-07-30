@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/service"
@@ -20,72 +21,35 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddQuery("subject(id: ID): Subject"),
 		schema.AddQuery("subjects(query: String, pagination: Pagination): [Subject!]!"),
 		schema.AddQuery("subjectCount(query: String): Int!"),
-		schema.AddExtraResolver("Subject", `subjectWithClusterID: [SubjectWithClusterID!]!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `name: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `clusterName: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `namespace: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `type: String!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `roleCount: Int!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `roles(query: String): [K8SRole!]!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `scopedPermissions: [ScopedPermissions!]!`),
-		schema.AddExtraResolver("SubjectWithClusterID", `clusterAdmin: Boolean!`),
+		schema.AddExtraResolver("Subject", `type: String!`),
+		schema.AddExtraResolver("Subject", `k8sRoleCount(query: String): Int!`),
+		schema.AddExtraResolver("Subject", `k8sRoles(query: String, pagination: Pagination): [K8SRole!]!`),
+		schema.AddExtraResolver("Subject", `scopedPermissions: [ScopedPermissions!]!`),
+		schema.AddExtraResolver("Subject", `clusterAdmin: Boolean!`),
 	)
 }
 
-func (resolver *subjectResolver) SubjectWithClusterID(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "SubjectWithClusterID")
+// Subject returns a GraphQL resolver for a given id
+func (resolver *Resolver) Subject(ctx context.Context, args struct{ *graphql.ID }) (*subjectResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Subject")
 	if err := readK8sSubjects(ctx); err != nil {
 		return nil, err
 	}
-	if err := readK8sRoleBindings(ctx); err != nil {
-		return nil, err
+	if args.ID == nil {
+		return nil, errors.New("id required to lookup subject")
 	}
-
-	q := search.NewQueryBuilder().
-		AddExactMatches(search.SubjectName, resolver.data.GetName()).
-		AddExactMatches(search.SubjectKind, resolver.data.GetKind().String()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	clusterID, subjectName, err := k8srbac.SplitSubjectID(string(*args.ID))
 	if err != nil {
 		return nil, err
 	}
-
-	var resolvers []*subjectWithClusterIDResolver
-	seenClusterIDs := set.NewStringSet()
-	for _, binding := range bindings {
-		if !seenClusterIDs.Add(binding.GetClusterId()) {
-			continue
-		}
-		resolvers = append(resolvers, wrapSubject(binding.GetClusterId(), binding.GetClusterName(), resolver))
+	bindings, err := resolver.K8sRoleBindingStore.SearchRawRoleBindings(ctx, search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
+	if err != nil {
+		return nil, err
 	}
-	return resolvers, nil
-}
-
-func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Name")
-	if err := readK8sSubjects(ctx); err != nil {
-		return "", err
-	}
-
-	return resolver.subject.Name(ctx), nil
-}
-
-func (resolver *subjectWithClusterIDResolver) ClusterName(ctx context.Context) (string, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ClusterName")
-	if err := readClusters(ctx); err != nil {
-		return "", err
-	}
-	return resolver.clusterName, nil
-}
-
-func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (string, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Namespace")
-	if err := readK8sSubjects(ctx); err != nil {
-		return "", err
-	}
-
-	return resolver.subject.Namespace(ctx), nil
+	return resolver.wrapSubject(k8srbac.GetSubject(subjectName, bindings))
 }
 
 // Subjects resolves list of subjects matching a query
@@ -140,18 +104,19 @@ func (resolver *Resolver) getFilteredSubjects(ctx context.Context, query *v1.Que
 	if err != nil {
 		return nil, err
 	}
+
 	// Subject return only users and groups, there is a separate resolver for service accounts.
 	subjects := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	return service.GetFilteredSubjects(query, subjects)
 }
 
-func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string, error) {
+func (resolver *subjectResolver) Type(ctx context.Context) (string, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Type")
 	if err := readK8sSubjects(ctx); err != nil {
 		return "", err
 	}
 
-	subject := resolver.subject.data
+	subject := resolver.data
 	switch subject.GetKind() {
 	case storage.SubjectKind_USER:
 		return "User", nil
@@ -162,7 +127,7 @@ func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string,
 	}
 }
 
-func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (int32, error) {
+func (resolver *subjectResolver) K8sRoleCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "RoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
@@ -171,14 +136,19 @@ func (resolver *subjectWithClusterIDResolver) RoleCount(ctx context.Context) (in
 		return 0, err
 	}
 
-	roles, err := resolver.getRolesForSubject(ctx, RawQuery{})
+	filterQ, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	roles, err := resolver.getRolesForSubject(ctx, filterQ)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(roles)), nil
 }
 
-func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args RawQuery) ([]*k8SRoleResolver, error) {
+func (resolver *subjectResolver) K8sRoles(ctx context.Context, args PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -187,42 +157,46 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context, args Ra
 		return nil, err
 	}
 
-	roles, err := resolver.getRolesForSubject(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.subject.root.wrapK8SRoles(roles, nil)
-
-}
-
-func (resolver *subjectWithClusterIDResolver) getRolesForSubject(ctx context.Context, args RawQuery) ([]*storage.K8SRole, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).
-		AddExactMatches(search.SubjectName, resolver.subject.Name(ctx)).
-		AddExactMatches(search.SubjectKind, resolver.subject.Kind(ctx)).
-		ProtoQuery()
-	bindings, err := resolver.subject.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
-
-	if err != nil {
-		return nil, err
-	}
-
 	filterQ, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
 
-	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).ProtoQuery()
-	roles, err := resolver.subject.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(q, filterQ))
-
+	roles, err := resolver.getRolesForSubject(ctx, filterQ)
 	if err != nil {
 		return nil, err
 	}
 
-	return k8srbac.NewEvaluator(roles, bindings).RolesForSubject(resolver.subject.data), nil
+	resolvers, err := paginationWrapper{
+		pv: filterQ.Pagination,
+	}.paginate(resolver.root.wrapK8SRoles(roles, nil))
+	if err != nil {
+		return nil, err
+	}
+	return resolvers.([]*k8SRoleResolver), err
+}
+
+func (resolver *subjectResolver) getRolesForSubject(ctx context.Context, filterQ *v1.Query) ([]*storage.K8SRole, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.SubjectName, resolver.data.GetName()).
+		AddExactMatches(search.SubjectKind, resolver.data.GetKind().String()).
+		ProtoQuery()
+
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(q, filterQ))
+	if err != nil {
+		return nil, err
+	}
+	return k8srbac.NewEvaluator(roles, bindings).RolesForSubject(resolver.data), nil
 }
 
 // Permission returns which scopes do the permissions for the subject
-func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
+func (resolver *subjectResolver) ScopedPermissions(ctx context.Context) ([]*scopedPermissionsResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ScopedPermissions")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -239,7 +213,7 @@ func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Cont
 
 	permissionScopeMap := make(map[string]map[string]set.StringSet)
 	for scope, evaluator := range evaluators {
-		permissions := evaluator.ForSubject(ctx, resolver.subject.data).GetPermissionMap()
+		permissions := evaluator.ForSubject(ctx, resolver.data).GetPermissionMap()
 		if len(permissions) != 0 {
 			permissionScopeMap[scope] = permissions
 		}
@@ -249,18 +223,18 @@ func (resolver *subjectWithClusterIDResolver) ScopedPermissions(ctx context.Cont
 }
 
 // ClusterAdmin returns if the service account is a cluster admin or not
-func (resolver *subjectWithClusterIDResolver) ClusterAdmin(ctx context.Context) (bool, error) {
+func (resolver *subjectResolver) ClusterAdmin(ctx context.Context) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Subjects, "ClusterAdmin")
-	subject := resolver.subject.data
+	subject := resolver.data
 	evaluator := resolver.getClusterEvaluator(ctx)
 
 	return evaluator.IsClusterAdmin(ctx, subject), nil
 }
 
-func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.EvaluatorForContext, error) {
+func (resolver *subjectResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.EvaluatorForContext, error) {
 	evaluators := make(map[string]k8srbac.EvaluatorForContext)
-	clusterID := resolver.clusterID
-	rootResolver := resolver.subject.root
+	clusterID := resolver.data.GetClusterId()
+	rootResolver := resolver.root
 
 	evaluators["Cluster"] =
 		rbacUtils.NewClusterPermissionEvaluator(clusterID,
@@ -279,8 +253,8 @@ func (resolver *subjectWithClusterIDResolver) getEvaluators(ctx context.Context)
 	return evaluators, nil
 }
 
-func (resolver *subjectWithClusterIDResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
-	rootResolver := resolver.subject.root
-	return rbacUtils.NewClusterPermissionEvaluator(resolver.clusterID,
+func (resolver *subjectResolver) getClusterEvaluator(ctx context.Context) k8srbac.EvaluatorForContext {
+	rootResolver := resolver.root
+	return rbacUtils.NewClusterPermissionEvaluator(resolver.data.GetClusterId(),
 		rootResolver.K8sRoleStore, rootResolver.K8sRoleBindingStore)
 }

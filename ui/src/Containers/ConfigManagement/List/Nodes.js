@@ -1,23 +1,27 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import { gql } from '@apollo/client';
-import entityTypes from 'constants/entityTypes';
-import URLService from 'utils/URLService';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'utils/queryService';
 import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import { sortDate } from 'sorters/sorters';
+import pluralize from 'pluralize';
 
 import LabelChip from 'Components/LabelChip';
-import pluralize from 'pluralize';
-import { withRouter } from 'react-router-dom';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import entityTypes from 'constants/entityTypes';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { nodeSortFields } from 'constants/sortFields';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
 
 const QUERY = gql`
-    query nodes($query: String) {
-        results: nodes(query: $query) {
+    query nodes($query: String, $pagination: Pagination) {
+        results: nodes(query: $query, pagination: $pagination) {
             id
             name
             clusterName
@@ -31,8 +35,16 @@ const QUERY = gql`
                 unknownCount
             }
         }
+        count: nodeCount(query: $query)
     }
 `;
+
+export const defaultNodeSort = [
+    {
+        id: nodeSortFields.NODE,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -47,18 +59,24 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: nodeSortFields.NODE,
+            sortField: nodeSortFields.NODE,
         },
         {
             Header: `Operating System`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'osImage',
+            id: nodeSortFields.OPERATING_SYSTEM,
+            sortField: nodeSortFields.OPERATING_SYSTEM,
         },
         {
             Header: `Container Runtime`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'containerRuntimeVersion',
+            id: nodeSortFields.CONTAINER_RUNTIME,
+            sortField: nodeSortFields.CONTAINER_RUNTIME,
         },
         {
             Header: `Node join time`,
@@ -70,7 +88,8 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(joinedAt, dateTimeFormat);
             },
             accessor: 'joinedAt',
-            sortMethod: sortDate,
+            id: nodeSortFields.NODE_JOIN_TIME,
+            sortField: nodeSortFields.NODE_JOIN_TIME,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -88,12 +107,14 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: nodeSortFields.CLUSTER,
+                  sortField: nodeSortFields.CLUSTER,
               },
         entityContext && entityContext[entityTypes.CONTROL]
             ? null
             : {
                   Header: `CIS Controls`,
-                  headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+                  headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'nodeComplianceControlCount',
                   // eslint-disable-next-line
@@ -120,6 +141,7 @@ const buildTableColumns = (match, location, entityContext) => {
                           />
                       );
                   },
+                  sortable: false,
               },
     ];
     return tableColumns.filter((col) => col);
@@ -135,6 +157,7 @@ const Nodes = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
@@ -152,7 +175,9 @@ const Nodes = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={defaultNodeSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

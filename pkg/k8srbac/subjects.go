@@ -1,10 +1,40 @@
 package k8srbac
 
 import (
+	"encoding/base64"
+	"fmt"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+var (
+	log = logging.LoggerForModule()
+)
+
+// CreateSubjectID creates a composite ID from cluster id and subject
+func CreateSubjectID(clusterID, subjectName string) string {
+	clusterEncoded := base64.URLEncoding.EncodeToString([]byte(clusterID))
+	subjectEncoded := base64.URLEncoding.EncodeToString([]byte(subjectName))
+	return fmt.Sprintf("%s:%s", clusterEncoded, subjectEncoded)
+}
+
+// SplitSubjectID returns the components of the ID
+func SplitSubjectID(id string) (string, string, error) {
+	clusterEncoded, subjectEncoded := stringutils.Split2(id, ":")
+	clusterID, err := base64.URLEncoding.DecodeString(clusterEncoded)
+	if err != nil {
+		return "", "", err
+	}
+	subjectName, err := base64.URLEncoding.DecodeString(subjectEncoded)
+	if err != nil {
+		return "", "", err
+	}
+	return string(clusterID), string(subjectName), nil
+}
 
 // GetSubjectForDeployment returns the subject represented by a deployment.
 func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
@@ -16,18 +46,22 @@ func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
 	}
 
 	return &storage.Subject{
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:      serviceAccount,
-		Namespace: deployment.GetNamespace(),
+		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
+		Name:        serviceAccount,
+		Namespace:   deployment.GetNamespace(),
+		ClusterId:   deployment.GetClusterId(),
+		ClusterName: deployment.GetClusterName(),
 	}
 }
 
 // GetSubjectForServiceAccount returns the subject represented by a service account.
 func GetSubjectForServiceAccount(sa *storage.ServiceAccount) *storage.Subject {
 	return &storage.Subject{
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:      sa.GetName(),
-		Namespace: sa.GetNamespace(),
+		Kind:        storage.SubjectKind_SERVICE_ACCOUNT,
+		Name:        sa.GetName(),
+		Namespace:   sa.GetNamespace(),
+		ClusterName: sa.GetClusterName(),
+		ClusterId:   sa.GetClusterId(),
 	}
 }
 

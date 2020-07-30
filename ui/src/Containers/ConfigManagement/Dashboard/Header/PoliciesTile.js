@@ -10,19 +10,9 @@ import queryService from 'utils/queryService';
 
 const policiesQuery = gql`
     query numPolicies($query: String) {
-        policies(query: $query) {
-            id
-            lifecycleStages
-            policyStatus
-        }
+        policyCount(query: $query)
     }
 `;
-
-function getTotalNumPolicies(data) {
-    if (!data || !data.policies) return 0;
-    const totalPolicies = data.policies.length;
-    return totalPolicies;
-}
 
 const PoliciesTile = ({ match, location }) => {
     const policiesURL = URLService.getURL(match, location).base(entityTypes.POLICY).url();
@@ -34,7 +24,7 @@ const PoliciesTile = ({ match, location }) => {
             }}
         >
             {({ loading, data }) => {
-                const totalNumPolicies = getTotalNumPolicies(data);
+                const totalNumPolicies = data?.policyCount || 0;
                 return (
                     <EntityTileLink
                         count={totalNumPolicies}

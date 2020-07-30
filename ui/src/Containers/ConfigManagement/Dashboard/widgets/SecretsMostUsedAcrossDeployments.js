@@ -36,9 +36,7 @@ const QUERY = gql`
                     }
                 }
             }
-            deployments {
-                id
-            }
+            deploymentCount
         }
     }
 `;
@@ -72,8 +70,8 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
         if (!data || !data.secrets) return [];
 
         return data.secrets
-            .filter((secret) => secret.deployments.length !== 0)
-            .sort((a, b) => b.deployments.length - a.deployments.length)
+            .filter((secret) => secret.deploymentCount)
+            .sort((a, b) => b.deploymentCount - a.deploymentCount)
             .slice(0, 10);
     }
     return (
@@ -127,22 +125,22 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
                                                         content={
                                                             <TooltipOverlay>
                                                                 {`${
-                                                                    item.deployments.length
+                                                                    item.deploymentCount
                                                                 } ${pluralize(
                                                                     'Deployment',
-                                                                    item.deployments.length
+                                                                    item.deploymentCount
                                                                 )}, `}
                                                                 {getCertificateStatus(item.files)}
                                                             </TooltipOverlay>
                                                         }
                                                     >
-                                                        {item.deployments.length > 0 && (
+                                                        {item.deploymentCount > 0 && (
                                                             <div className="truncate italic">
                                                                 {`${
-                                                                    item.deployments.length
+                                                                    item.deploymentCount
                                                                 } ${pluralize(
                                                                     'Deployment',
-                                                                    item.deployments.length
+                                                                    item.deploymentCount
                                                                 )}, `}
                                                                 {getCertificateStatus(item.files)}
                                                             </div>

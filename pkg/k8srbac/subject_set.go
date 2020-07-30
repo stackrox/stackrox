@@ -18,20 +18,20 @@ type SubjectSet interface {
 // NewSubjectSet returns a new SubjectSet instance.
 func NewSubjectSet(subs ...*storage.Subject) SubjectSet {
 	ss := &subjectSet{
-		subjectsByKey: make(map[subjectKey]struct{}),
+		subjectsByKey: make(map[subjectKey]*storage.Subject),
 	}
 	ss.Add(subs...)
 	return ss
 }
 
 type subjectSet struct {
-	subjectsByKey map[subjectKey]struct{}
+	subjectsByKey map[subjectKey]*storage.Subject
 }
 
 // AddAll adds all of the inputs to the set.
 func (ss *subjectSet) Add(subs ...*storage.Subject) {
 	for _, sub := range subs {
-		ss.subjectsByKey[keyForSubject(sub)] = struct{}{}
+		ss.subjectsByKey[keyForSubject(sub)] = sub
 	}
 }
 
@@ -67,11 +67,11 @@ func (ss *subjectSet) Cardinality() int {
 	return len(ss.subjectsByKey)
 }
 
-func getSortedSubjectList(subjectsByKey map[subjectKey]struct{}) []*storage.Subject {
+func getSortedSubjectList(subjectsByKey map[subjectKey]*storage.Subject) []*storage.Subject {
 	// Sort for stability
 	sortedSubjects := make([]*storage.Subject, 0, len(subjectsByKey))
-	for key := range subjectsByKey {
-		sortedSubjects = append(sortedSubjects, subjectForKey(key))
+	for _, subj := range subjectsByKey {
+		sortedSubjects = append(sortedSubjects, subj)
 	}
 	sort.SliceStable(sortedSubjects, func(idx1, idx2 int) bool {
 		return subjectIsLess(sortedSubjects[idx1], sortedSubjects[idx2])

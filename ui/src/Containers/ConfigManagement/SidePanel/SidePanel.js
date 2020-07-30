@@ -1,15 +1,17 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
-import URLService from 'utils/URLService';
 import onClickOutside from 'react-onclickoutside';
-import { useTheme } from 'Containers/ThemeProvider';
-
 import { ExternalLink as ExternalLinkIcon } from 'react-feather';
+
 import Panel from 'Components/Panel';
 import searchContext from 'Containers/searchContext';
-import EntityPage from 'Containers/ConfigManagement/Entity';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import Entity from 'Containers/ConfigManagement/Entity';
+import { useTheme } from 'Containers/ThemeProvider';
+import workflowStateContext from 'Containers/workflowStateContext';
+import parseURL from 'utils/URLParser';
+import URLService from 'utils/URLService';
 import BreadCrumbs from './BreadCrumbs';
 
 const SidePanel = ({
@@ -28,6 +30,7 @@ const SidePanel = ({
     query,
 }) => {
     const { isDarkMode } = useTheme();
+    const workflowState = parseURL(location);
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || (entityListType2 && !entityId2);
 
@@ -89,40 +92,42 @@ const SidePanel = ({
     if (contextEntityType) entityContext[contextEntityType] = contextEntityId;
     if (entityId2) entityContext[entityType1 || entityListType1] = entityId1;
     return (
-        <div className={`rounded-tl-lg ${className}`}>
-            <Panel
-                id="side-panel"
-                headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
-                    !isDarkMode
-                        ? 'bg-side-panel-wave border-base-100'
-                        : 'bg-primary-200 border-primary-400'
-                }`}
-                bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
-                headerTextComponent={
-                    <BreadCrumbs
-                        className="font-700 leading-normal text-base-600 tracking-wide truncate"
-                        entityType1={entityType1 || entityListType1}
-                        entityId1={entityId1}
-                        entityType2={entityType2}
-                        entityListType2={entityListType2}
-                        entityId2={entityId2}
+        <workflowStateContext.Provider value={workflowState}>
+            <div className={`rounded-tl-lg ${className}`}>
+                <Panel
+                    id="side-panel"
+                    headerClassName={`flex w-full h-14 rounded-tl-lg overflow-y-hidden border-b ${
+                        !isDarkMode
+                            ? 'bg-side-panel-wave border-base-100'
+                            : 'bg-primary-200 border-primary-400'
+                    }`}
+                    bodyClassName={isDarkMode ? 'bg-base-0' : 'bg-base-100'}
+                    headerTextComponent={
+                        <BreadCrumbs
+                            className="font-700 leading-normal text-base-600 tracking-wide truncate"
+                            entityType1={entityType1 || entityListType1}
+                            entityId1={entityId1}
+                            entityType2={entityType2}
+                            entityListType2={entityListType2}
+                            entityId2={entityId2}
+                        />
+                    }
+                    headerComponents={externalLink}
+                    onClose={onClose}
+                    closeButtonClassName={
+                        isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
+                    }
+                >
+                    <Entity
+                        entityContext={entityContext}
+                        entityType={entityType}
+                        entityId={entityId}
+                        entityListType={listType}
+                        query={query}
                     />
-                }
-                headerComponents={externalLink}
-                onClose={onClose}
-                closeButtonClassName={
-                    isDarkMode ? 'border-l border-base-400' : 'border-l border-base-100'
-                }
-            >
-                <EntityPage
-                    entityContext={entityContext}
-                    entityType={entityType}
-                    entityId={entityId}
-                    entityListType={listType}
-                    query={query}
-                />
-            </Panel>
-        </div>
+                </Panel>
+            </div>
+        </workflowStateContext.Provider>
     );
 };
 

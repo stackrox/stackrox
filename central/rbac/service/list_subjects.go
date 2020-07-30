@@ -120,7 +120,6 @@ func GetFilteredSubjects(query *v1.Query, subjectsToFilter []*storage.Subject) (
 	if err := sortSubjects(query, filteredSubjects); err != nil {
 		return nil, err
 	}
-
 	return filteredSubjects, nil
 }
 

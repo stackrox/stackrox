@@ -12,7 +12,7 @@ export const NotFoundMessage = ({ message, actionText, onClick, url }) => {
     return (
         <div className="text-center flex w-full justify-center items-center p-8 min-h-full bg-primary-200">
             <div>
-                <p className="text-tertiary-800 mb-8">{message}</p>
+                <div className="text-tertiary-800 mb-8">{message}</div>
                 {isButtonVisible && (
                     <Button className={buttonClassName} text={actionText} onClick={onClick} />
                 )}

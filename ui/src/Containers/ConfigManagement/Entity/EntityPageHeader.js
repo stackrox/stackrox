@@ -1,64 +1,50 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import getEntityName from 'utils/getEntityName';
-import { entityNameQueryMap } from 'utils/queryMap';
-import entityLabels from 'messages/entity';
-import entityTypes from 'constants/entityTypes';
-
-import Query from 'Components/ThrowingQuery';
-import PageHeader from 'Components/PageHeader';
 import startCase from 'lodash/startCase';
+
+import PageHeader from 'Components/PageHeader';
 import ExportButton from 'Components/ExportButton';
-
-const getEntityVariables = (type, id) => {
-    if (type === entityTypes.SUBJECT) {
-        return { name: id };
-    }
-    return { id };
-};
-
-const getQueryAndVariables = (entityType, entityId) => {
-    const query = entityNameQueryMap[entityType] || null;
-    const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
-    return {
-        query,
-        variables: getEntityVariables(entityType, safeEntityId),
-    };
-};
+import EntitiesMenu from 'Components/workflow/EntitiesMenu';
+import useCaseTypes from 'constants/useCaseTypes';
+import useEntityName from 'hooks/useEntityName';
+import entityLabels from 'messages/entity';
+import { useCaseEntityMap } from 'utils/entityRelationships';
 
 const EntityPageHeader = ({ entityType, entityId, urlParams }) => {
-    const { query, variables } = getQueryAndVariables(entityType, entityId);
-    if (!query) return null;
+    const safeEntityId = decodeURIComponent(entityId); // fix bug  ROX-4543-fix-bad-encoding-in-config-mgt-API-request
+    const { entityName } = useEntityName(entityType, safeEntityId);
 
+    const header = entityName || '-';
+    const subHeader = entityLabels[entityType];
+    const exportFilename = `${startCase(subHeader)} Report: "${header}"`;
+
+    let pdfId = 'capture-dashboard-stretch';
+    if (urlParams && urlParams.entityListType1) {
+        pdfId = 'capture-list';
+    }
     return (
-        <Query query={query} variables={variables}>
-            {({ data }) => {
-                const header = getEntityName(entityType, data, entityId) || '-';
-                const subHeader = entityLabels[entityType];
-                const exportFilename = `${startCase(subHeader)} Report: "${header}"`;
-
-                let pdfId = 'capture-dashboard-stretch';
-                if (urlParams && urlParams.entityListType1) {
-                    pdfId = 'capture-list';
-                }
-                return (
-                    <PageHeader classes="z-1" header={header} subHeader={subHeader}>
-                        <div className="flex flex-1 justify-end">
-                            <div className="flex">
-                                <div className="flex items-center">
-                                    <ExportButton
-                                        fileName={exportFilename}
-                                        type={entityType}
-                                        page="configManagement"
-                                        pdfId={pdfId}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </PageHeader>
-                );
-            }}
-        </Query>
+        <PageHeader
+            header={header}
+            subHeader={subHeader}
+            classes="z-1 pr-0 ignore-react-onclickoutside"
+        >
+            <div className="flex flex-1 justify-end h-full">
+                <div className="flex items-center">
+                    <ExportButton
+                        fileName={exportFilename}
+                        type={entityType}
+                        page="configManagement"
+                        pdfId={pdfId}
+                    />
+                </div>
+                <div className="flex items-center pl-2">
+                    <EntitiesMenu
+                        text="All Entities"
+                        options={useCaseEntityMap[useCaseTypes.CONFIG_MANAGEMENT]}
+                    />
+                </div>
+            </div>
+        </PageHeader>
     );
 };
 

@@ -43,15 +43,18 @@ class GraphQLService {
     static class Response {
         private final int code
         private final Object value
+        private final List<String> errors
 
         Response() {
             this.code = 0
             this.value = new Object()
+            this.errors = new ArrayList<>()
         }
 
-        Response(int code, Object value) {
+        Response(int code, Object value, List<String> errors) {
             this.code = code
             this.value = value
+            this.errors = errors
         }
 
         int getCode() {
@@ -60,6 +63,10 @@ class GraphQLService {
 
         Object getValue() {
             return this.value
+        }
+
+        Boolean hasNoErrors() {
+            return this.code == 200 && (this.errors == null || this.errors.size() == 0)
         }
     }
 
@@ -115,7 +122,7 @@ class GraphQLService {
             def bsa = new ByteArrayOutputStream()
             response.getEntity().writeTo(bsa)
             def returnedValue = new JsonSlurper().parseText(bsa.toString())
-            return new Response(response.getStatusLine().getStatusCode(), returnedValue.data)
+            return new Response(response.getStatusLine().getStatusCode(), returnedValue.data, returnedValue.errors)
         }
 
         private CloseableHttpClient buildClient()  {

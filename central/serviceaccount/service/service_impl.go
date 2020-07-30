@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -139,11 +140,7 @@ func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storag
 }
 
 func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) ([]*storage.K8SRole, []*v1.ScopedRoles, error) {
-	subject := &storage.Subject{
-		Name:      sa.GetName(),
-		Namespace: sa.GetNamespace(),
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-	}
+	subject := k8srbac.GetSubjectForServiceAccount(sa)
 
 	clusterEvaluator := utils.NewClusterPermissionEvaluator(sa.GetClusterId(), s.roles, s.bindings)
 	clusterRoles := clusterEvaluator.RolesForSubject(ctx, subject)

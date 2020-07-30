@@ -1,15 +1,26 @@
 import React from 'react';
-import entityTypes from 'constants/entityTypes';
-import { SUBJECTS_QUERY } from 'queries/subject';
-import URLService from 'utils/URLService';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-
-import { sortValueByLength } from 'sorters/sorters';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
+
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { subjectSortFields } from 'constants/sortFields';
+import { SUBJECTS_QUERY } from 'queries/subject';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
+
+export const defaultSubjectSort = [
+    {
+        id: subjectSortFields.SUBJECT,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location) => {
     const tableColumns = [
@@ -23,71 +34,71 @@ const buildTableColumns = (match, location) => {
             Header: 'Users & Groups',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
-            accessor: 'subject.name',
+            accessor: 'name',
+            id: subjectSortFields.SUBJECT,
+            sortField: subjectSortFields.SUBJECT,
+        },
+        {
+            Header: 'Cluster',
+            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            className: `w-1/10 ${defaultColumnClassName}`,
+            accessor: 'clusterName',
         },
         {
             Header: 'Type',
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'type',
+            id: subjectSortFields.SUBJECT_KIND,
+            sortField: subjectSortFields.SUBJECT_KIND,
         },
         {
             Header: `Cluster Admin Role`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
             },
             accessor: 'clusterAdmin',
+            sortable: false,
         },
         {
             Header: `Roles`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { id, roles } = original;
-                const { length } = roles;
+                const { id, k8sRoles } = original;
+                const { length } = k8sRoles;
                 if (!length) return 'No Roles';
                 const url = URLService.getURL(match, location)
                     .push(id)
                     .push(entityTypes.ROLE)
                     .url();
                 const text =
-                    length === 1
-                        ? original.roles[0].name
-                        : `${length} ${pluralize('Role', length)}`;
+                    length === 1 ? k8sRoles[0].name : `${length} ${pluralize('Role', length)}`;
                 return <TableCellLink pdf={pdf} url={url} text={text} />;
             },
-            accessor: 'roles',
-            sortMethod: sortValueByLength,
+            accessor: 'k8sRoles',
+            sortable: false,
         },
     ];
     return tableColumns;
 };
 
-const createTableRows = (data) => {
-    const subjectsMap = {};
-    data.clusters.forEach((cluster) => {
-        cluster.subjects.forEach((subject) => {
-            const { id: subjectId, roles: subjectRoles } = subject;
-            if (subjectsMap[subjectId]) {
-                const { roles } = subjectsMap[subjectId];
-                subjectsMap[subjectId].roles = [...roles, ...subjectRoles];
-            } else {
-                subjectsMap[subjectId] = {
-                    ...subject,
-                    clusterId: cluster.id,
-                    clusterName: cluster.name,
-                };
-            }
-        });
-    });
-    return Object.values(subjectsMap);
-};
+const createTableRows = (data) => data?.results || [];
 
-const Subjects = ({ match, location, selectedRowId, onRowClick, query, className, data }) => {
+const Subjects = ({
+    match,
+    location,
+    selectedRowId,
+    onRowClick,
+    query,
+    className,
+    data,
+    totalResults,
+}) => {
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
@@ -103,17 +114,9 @@ const Subjects = ({ match, location, selectedRowId, onRowClick, query, className
             selectedRowId={selectedRowId}
             onRowClick={onRowClick}
             idAttribute="id"
-            defaultSorted={[
-                {
-                    id: 'clusterAdmin',
-                    desc: true,
-                },
-                {
-                    id: 'name',
-                    desc: false,
-                },
-            ]}
+            defaultSorted={defaultSubjectSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

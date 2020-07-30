@@ -1,18 +1,30 @@
 import React from 'react';
-import entityTypes from 'constants/entityTypes';
-import { POLICIES as QUERY } from 'queries/policy';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'utils/queryService';
-import { sortSeverity } from 'sorters/sorters';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
 import SeverityLabel from 'Components/SeverityLabel';
 import StatusChip from 'Components/StatusChip';
-import List from './List';
+import entityTypes from 'constants/entityTypes';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import { policySortFields } from 'constants/sortFields';
+import { POLICIES_QUERY } from 'queries/policy';
+import { sortSeverity } from 'sorters/sorters';
+import queryService from 'utils/queryService';
+import ListFrontendPaginated from './ListFrontendPaginated';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
+
+export const defaultPolicyrSort = [
+    {
+        id: policySortFields.POLICY,
+        desc: false,
+    },
+];
 
 const tableColumns = [
     {
@@ -26,16 +38,19 @@ const tableColumns = [
         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         accessor: 'name',
+        id: policySortFields.POLICY,
+        sortField: policySortFields.POLICY,
     },
     {
         Header: `Enabled`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         Cell: ({ original }) => {
             const { disabled } = original;
             return disabled ? 'No' : 'Yes';
         },
         accessor: 'disabled',
+        sortable: false, // not performant as of 2020-06-11
     },
     {
         Header: `Enforced`,
@@ -49,10 +64,12 @@ const tableColumns = [
                 : 'Yes';
         },
         accessor: 'enforcementActions',
+        id: policySortFields.ENFORCEMENT,
+        sortField: policySortFields.ENFORCEMENT,
     },
     {
         Header: `Policy Status`,
-        headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+        headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
         className: `w-1/8 ${defaultColumnClassName}`,
         // eslint-disable-next-line
         Cell: ({ original, pdf }) => {
@@ -60,6 +77,7 @@ const tableColumns = [
             return <StatusChip status={policyStatus} asString={pdf} />;
         },
         accessor: 'policyStatus',
+        sortable: false, // not performant as of 2020-06-11
     },
     {
         Header: `Severity`,
@@ -72,6 +90,8 @@ const tableColumns = [
         },
         accessor: 'severity',
         sortMethod: sortSeverity,
+        id: policySortFields.SEVERITY,
+        sortField: policySortFields.SEVERITY,
     },
     {
         Header: `Categories`,
@@ -82,6 +102,8 @@ const tableColumns = [
             return categories.join(', ');
         },
         accessor: 'categories',
+        id: policySortFields.CATEGORY,
+        sortField: policySortFields.CATEGORY,
     },
     {
         Header: `Lifecycle Stage`,
@@ -98,6 +120,8 @@ const tableColumns = [
             ));
         },
         accessor: 'lifecycleStages',
+        id: policySortFields.LIFECYCLE_STAGE,
+        sortField: policySortFields.LIFECYCLE_STAGE,
     },
 ];
 
@@ -119,9 +143,9 @@ const Policies = ({ className, onRowClick, query, selectedRowId, data }) => {
     }
 
     return (
-        <List
+        <ListFrontendPaginated
             className={className}
-            query={QUERY}
+            query={POLICIES_QUERY}
             variables={variables}
             entityType={entityTypes.POLICY}
             tableColumns={tableColumns}

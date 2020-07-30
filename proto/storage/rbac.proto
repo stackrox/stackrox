@@ -61,9 +61,12 @@ message K8sRoleBinding {
 // Properties of an individual subjects who are granted roles via role bindings.
 //////////////////////////////////////////
 message Subject {
+    string id           = 4; // ID is derived from base64 of cluster id and name
     SubjectKind kind    = 1 [(gogoproto.moretags) = "search:\"Subject Kind\""];
     string name         = 2 [(gogoproto.moretags) = "search:\"Subject\""];
     string namespace    = 3;
+    string cluster_id   = 5;
+    string cluster_name = 6;
 }
 
 // For any update to PermissionLevel, also update:

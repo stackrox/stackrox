@@ -1,24 +1,26 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 import { Link } from 'react-router-dom';
-import useCases from 'constants/useCaseTypes';
+import { gql } from '@apollo/client';
+
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import SeverityLabel from 'Components/SeverityLabel';
 import LifecycleStageLabel from 'Components/LifecycleStageLabel';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import Widget from 'Components/Widget';
 import Metadata from 'Components/Metadata';
 import Button from 'Components/Button';
-import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import queryService from 'utils/queryService';
-import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
-import searchContext from 'Containers/searchContext';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
+import entityTypes from 'constants/entityTypes';
+import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import useCases from 'constants/useCaseTypes';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import EntityList from '../../List/EntityList';
 import PolicyFindings from './PolicyFindings';
 
@@ -34,7 +36,7 @@ PolicyEditButton.propTypes = {
     id: PropTypes.string.isRequired,
 };
 
-const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Policy = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
@@ -44,6 +46,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
             'Policy Id': id,
             'Lifecycle Stage': 'DEPLOY',
         }),
+        pagination,
     };
 
     const defaultQuery = gql`
@@ -91,12 +94,14 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getPolicy_${entityListType}($id: ID!, $query: String) {
+            query getPolicy_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 policy(id: $id) {
                     id
-                    ${listFieldName}{ ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination){ ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -116,6 +121,7 @@ const Policy = ({ id, entityListType, entityId1, query, entityContext }) => {
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
+                            totalResults={data?.policy?.count}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.POLICY]: id }}
                         />

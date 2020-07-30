@@ -28,6 +28,7 @@ class Table extends Component {
         trClassName: PropTypes.string,
         showThead: PropTypes.bool,
         defaultSorted: PropTypes.arrayOf(PropTypes.object),
+        pageSize: PropTypes.number,
     };
 
     static defaultProps = {
@@ -41,6 +42,7 @@ class Table extends Component {
         trClassName: '',
         showThead: true,
         defaultSorted: [],
+        pageSize: DEFAULT_PAGE_SIZE,
     };
 
     getTheadProps = () => {
@@ -85,7 +87,7 @@ class Table extends Component {
     getHeaderClassName = (column) => column.headerClassName || defaultHeaderClassName;
 
     render() {
-        const { rows, columns, defaultSorted, manual, ...rest } = this.props;
+        const { rows, columns, defaultSorted, manual, pageSize, ...rest } = this.props;
         if (!columns || !columns.length) return null;
         columns.forEach((column) =>
             Object.assign(column, {
@@ -101,7 +103,7 @@ class Table extends Component {
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
                 getTheadProps={this.getTheadProps}
-                defaultPageSize={DEFAULT_PAGE_SIZE}
+                defaultPageSize={pageSize}
                 defaultSorted={defaultSorted}
                 className={`flex flex-1 overflow-auto border-0 w-full h-full z-0 ${
                     rest.expanded ? 'expanded' : ''
@@ -110,7 +112,7 @@ class Table extends Component {
                 sortable
                 defaultSortDesc={false}
                 showPageJump={false}
-                minRows={Math.min(this.props.rows.length, DEFAULT_PAGE_SIZE)}
+                minRows={Math.min(this.props.rows.length, pageSize)}
                 page={this.props.page}
                 showPagination={false}
                 manual={manual}

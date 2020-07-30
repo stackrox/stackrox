@@ -4,7 +4,6 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
-import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntity from 'Components/RelatedEntity';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
@@ -18,48 +17,47 @@ import searchContext from 'Containers/searchContext';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
 import useCases from 'constants/useCaseTypes';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
 
-const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Role = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
         id,
         query: queryService.objectToWhereClause(query[searchParam]),
+        pagination,
     };
 
     const defaultQuery = gql`
         query k8sRole($id: ID!${entityListType ? ', $query: String' : ''}) {
-            clusters {
+            k8sRole(id: $id) {
                 id
-                k8srole(role: $id) {
-                    id
-                    name
-                    type
-                    verbs
-                    createdAt
-                    ${
-                        entityContext[entityTypes.NAMESPACE]
-                            ? ''
-                            : `roleNamespace {
-                        metadata {
-                            id
-                            name
-                        }
-                    }`
+                name
+                type
+                verbs
+                createdAt
+                ${
+                    entityContext[entityTypes.NAMESPACE]
+                        ? ''
+                        : `roleNamespace {
+                    metadata {
+                        id
+                        name
                     }
-                    serviceAccountCount
-                    subjectCount
-                    rules {
-                        apiGroups
-                        nonResourceUrls
-                        resourceNames
-                        resources
-                        verbs
-                    }
-                    ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
+                }`
                 }
+                serviceAccountCount
+                subjectCount
+                rules {
+                    apiGroups
+                    nonResourceUrls
+                    resourceNames
+                    resources
+                    verbs
+                }
+                ${entityContext[entityTypes.CLUSTER] ? '' : 'clusterId clusterName'}
             }
         }
     `;
@@ -72,15 +70,15 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
             useCases.CONFIG_MANAGEMENT
         );
 
+        const countQuery = getConfigMgmtCountQuery(entityListType);
         return gql`
-            query getRole_${entityListType}($id: ID!, $query: String) {
-                clusters {
-                    id
-                    k8srole(role: $id) {
+            query getRole_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
+                    k8sRole(id: $id) {
                         id
-                        ${listFieldName}(query: $query) { ...${fragmentName} }
+                        ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                        ${countQuery}
                     }
-                }
+
             }
             ${fragment}
         `;
@@ -89,18 +87,15 @@ const Role = ({ id, entityListType, entityId1, query, entityContext }) => {
         <Query query={getQuery()} variables={variables}>
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) return <Loader />;
-                const { clusters } = data;
-                if (!clusters || !clusters.length)
-                    return <PageNotFound resourceType={entityTypes.ROLE} />;
 
-                const { k8srole: entity } = clusters.find((cluster) => cluster.k8srole);
-
+                const { k8sRole: entity } = data;
                 if (entityListType) {
                     return (
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={getSubListFromEntity(entity, entityListType)}
+                            totalResults={entity.count}
                             entityContext={{ ...entityContext, [entityTypes.ROLE]: id }}
                             query={query}
                         />

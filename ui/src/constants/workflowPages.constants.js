@@ -14,6 +14,11 @@ export const defaultCountKeyMap = {
     [entityTypes.K8S_CVE]: 'vulnCount: k8sVulnCount',
     [entityTypes.DEPLOYMENT]: 'deploymentCount',
     [entityTypes.NAMESPACE]: 'namespaceCount',
+    [entityTypes.NODE]: 'nodeCount',
     [entityTypes.IMAGE]: 'imageCount',
     [entityTypes.POLICY]: 'policyCount',
+    [entityTypes.SECRET]: 'secretCount',
+    [entityTypes.SUBJECT]: 'subjectCount',
+    [entityTypes.SERVICE_ACCOUNT]: 'serviceAccountCount',
+    [entityTypes.ROLE]: 'k8sRoleCount',
 };

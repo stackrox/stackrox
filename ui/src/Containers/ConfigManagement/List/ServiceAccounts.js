@@ -1,16 +1,27 @@
 import React from 'react';
-import URLService from 'utils/URLService';
-import entityTypes from 'constants/entityTypes';
-import { SERVICE_ACCOUNTS as QUERY } from 'queries/serviceAccount';
-import { sortValueByLength } from 'sorters/sorters';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import queryService from 'utils/queryService';
 import pluralize from 'pluralize';
 
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { serviceAccountSortFields } from 'constants/sortFields';
+import { SERVICE_ACCOUNTS_QUERY } from 'queries/serviceAccount';
+import { sortValueByLength } from 'sorters/sorters';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
 
+export const defaultServiceAccountSort = [
+    {
+        id: serviceAccountSortFields.SERVCE_ACCOUNT,
+        desc: false,
+    },
+];
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
         {
@@ -24,16 +35,19 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: serviceAccountSortFields.SERVCE_ACCOUNT,
+            sortField: serviceAccountSortFields.SERVCE_ACCOUNT,
         },
         {
             Header: `Cluster Admin Role`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { clusterAdmin } = original;
                 return clusterAdmin ? 'Enabled' : 'Disabled';
             },
             accessor: 'clusterAdmin',
+            sortable: false,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -43,7 +57,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/8 ${defaultColumnClassName}`,
                   accessor: 'clusterName',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const { clusterName, clusterId, id } = original;
                       const url = URLService.getURL(match, location)
                           .push(id)
@@ -51,6 +65,8 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: serviceAccountSortFields.CLUSTER,
+                  sortField: serviceAccountSortFields.CLUSTER,
               },
         entityContext && entityContext[entityTypes.NAMESPACE]
             ? null
@@ -60,7 +76,7 @@ const buildTableColumns = (match, location, entityContext) => {
                   className: `w-1/10 ${defaultColumnClassName}`,
                   accessor: 'namespace',
                   // eslint-disable-next-line
-            Cell: ({ original, pdf }) => {
+                  Cell: ({ original, pdf }) => {
                       const {
                           id,
                           saNamespace: { metadata },
@@ -73,14 +89,16 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={name} />;
                   },
+                  id: serviceAccountSortFields.NAMESPACE,
+                  sortField: serviceAccountSortFields.NAMESPACE,
               },
         {
             Header: `Roles`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
-                const { id, roles } = original;
-                const { length } = roles;
+                const { id, k8sRoles } = original;
+                const { length } = k8sRoles;
                 if (!length) return 'No Roles';
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -94,14 +112,15 @@ const buildTableColumns = (match, location, entityContext) => {
                             text={`${length} ${pluralize('Roles', length)}`}
                         />
                     );
-                return original.roles[0].name;
+                return original.k8sRoles[0].name;
             },
-            accessor: 'roles',
+            accessor: 'k8sRoles',
             sortMethod: sortValueByLength,
+            sortable: false,
         },
         {
             Header: `Deployments`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -120,6 +139,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             accessor: 'deploymentCount',
+            sortable: false,
         },
     ];
     return tableColumns.filter((col) => col);
@@ -135,6 +155,7 @@ const ServiceAccounts = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
@@ -144,7 +165,7 @@ const ServiceAccounts = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={SERVICE_ACCOUNTS_QUERY}
             variables={variables}
             entityType={entityTypes.SERVICE_ACCOUNT}
             tableColumns={tableColumns}
@@ -152,17 +173,9 @@ const ServiceAccounts = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
-            defaultSorted={[
-                {
-                    id: 'clusterAdmin',
-                    desc: true,
-                },
-                {
-                    id: 'name',
-                    desc: false,
-                },
-            ]}
+            defaultSorted={defaultServiceAccountSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

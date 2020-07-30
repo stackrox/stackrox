@@ -13,8 +13,8 @@ const entityNameKeyMap = {
     [entityTypes.ROLE]: (data) => {
         if (!data || !data.clusters || !data.clusters.length) return null;
         const result = data.clusters.reduce((acc, curr) => {
-            if (!curr.k8srole) return acc;
-            return curr.k8srole.name;
+            if (!curr.k8sRole) return acc;
+            return curr.k8sRole.name;
         }, null);
         return result;
     },
@@ -25,14 +25,7 @@ const entityNameKeyMap = {
     },
     [entityTypes.IMAGE]: (data) => resolvePath(data, 'image.name.fullName'),
     [entityTypes.POLICY]: (data) => resolvePath(data, 'policy.name'),
-    [entityTypes.SUBJECT]: (data) => {
-        if (!data || !data.clusters || !data.clusters.length) return null;
-        const result = data.clusters.reduce((acc, curr) => {
-            if (!curr.subject) return acc;
-            return curr.subject.subject.name;
-        }, null);
-        return result;
-    },
+    [entityTypes.SUBJECT]: (data) => resolvePath(data, 'subject.name'),
 };
 
 function extractEntityName(entityType, data) {
@@ -43,7 +36,7 @@ function extractEntityName(entityType, data) {
 
     // No name extraction method defined. Make an educated guess.
     const firstKey = Object.keys(data)[0];
-    return data[firstKey].name;
+    return data[firstKey]?.name;
 }
 
 const getEntityName = (entityType, data) => {

@@ -509,6 +509,13 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
+func (resolver *deploymentResolver) scopeContext(ctx context.Context) context.Context {
+	return scoped.Context(ctx, scoped.Scope{
+		ID:    resolver.data.GetId(),
+		Level: v1.SearchCategory_DEPLOYMENTS,
+	})
+}
+
 func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
 	if err := readImages(ctx); err != nil {
@@ -518,9 +525,7 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 		return nil, nil
 	}
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	return resolver.root.Images(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
+	return resolver.root.Images(resolver.scopeContext(ctx), PaginatedQuery{Query: args.Query, Pagination: args.Pagination})
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -529,9 +534,7 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuer
 		return 0, err
 	}
 
-	query := search.AddRawQueriesAsConjunction(args.String(), resolver.getDeploymentRawQuery())
-
-	return resolver.root.ImageCount(ctx, RawQuery{Query: &query})
+	return resolver.root.ImageCount(resolver.scopeContext(ctx), RawQuery{Query: args.Query})
 }
 
 func (resolver *deploymentResolver) Components(ctx context.Context, args PaginatedQuery) ([]ComponentResolver, error) {

@@ -21,8 +21,8 @@ func init() {
 		schema.AddQuery("secret(id:ID!): Secret"),
 		schema.AddQuery("secrets(query: String, pagination: Pagination): [Secret!]!"),
 		schema.AddQuery("secretCount(query: String): Int!"),
-		schema.AddExtraResolver("Secret", "deployments(query: String): [Deployment!]!"),
-		schema.AddExtraResolver("Secret", "deploymentCount: Int!"),
+		schema.AddExtraResolver("Secret", "deployments(query: String, pagination: Pagination): [Deployment!]!"),
+		schema.AddExtraResolver("Secret", "deploymentCount(query: String): Int!"),
 	)
 }
 
@@ -58,12 +58,7 @@ func (resolver *Resolver) Secrets(ctx context.Context, args PaginatedQuery) ([]*
 	for _, secret := range secrets {
 		resolver.getDeploymentRelationships(ctx, secret)
 	}
-
-	resolvers, err := paginationWrapper{
-		pv: q.Pagination,
-	}.paginate(resolver.wrapSecrets(secrets, nil))
-
-	return resolvers.([]*secretResolver), err
+	return resolver.wrapSecrets(secrets, nil)
 }
 
 // SecretCount gets count of all secrets
@@ -83,25 +78,30 @@ func (resolver *Resolver) SecretCount(ctx context.Context, args RawQuery) (int32
 	return int32(len(results)), nil
 }
 
-func (resolver *secretResolver) Deployments(ctx context.Context, args RawQuery) ([]*deploymentResolver, error) {
+func (resolver *secretResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Secrets, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-
 	if len(resolver.data.Relationship.GetDeploymentRelationships()) == 0 {
 		return nil, nil
 	}
 
-	q, err := resolver.getDeploymentQuery(args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+
+	deploymentQuery, err := resolver.getDeploymentQuery(q)
+	if err != nil {
+		return nil, err
+	}
+
 	return resolver.root.wrapDeployments(
-		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, q))
+		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, deploymentQuery))
 }
 
-func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, error) {
+func (resolver *secretResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Secrets, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
@@ -111,23 +111,22 @@ func (resolver *secretResolver) DeploymentCount(ctx context.Context) (int32, err
 		return 0, nil
 	}
 
-	q, err := resolver.getDeploymentQuery(RawQuery{})
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, q)
+	deploymentQuery, err := resolver.getDeploymentQuery(q)
+	if err != nil {
+		return 0, err
+	}
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, deploymentQuery)
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(results)), nil
 }
 
-func (resolver *secretResolver) getDeploymentQuery(args RawQuery) (*v1.Query, error) {
-	deploymentFilterQuery, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-
+func (resolver *secretResolver) getDeploymentQuery(query *v1.Query) (*v1.Query, error) {
 	secret := resolver.data
 	deploymentIDs := set.NewStringSet()
 
@@ -136,7 +135,7 @@ func (resolver *secretResolver) getDeploymentQuery(args RawQuery) (*v1.Query, er
 	}
 	deploymentIDQuery := search.NewQueryBuilder().AddDocIDSet(deploymentIDs).ProtoQuery()
 
-	return search.NewConjunctionQuery(deploymentIDQuery, deploymentFilterQuery), nil
+	return search.NewConjunctionQuery(deploymentIDQuery, query), nil
 }
 
 func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {

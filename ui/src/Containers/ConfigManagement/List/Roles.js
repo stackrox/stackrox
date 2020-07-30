@@ -1,17 +1,29 @@
 import React from 'react';
-import entityTypes from 'constants/entityTypes';
-import { K8S_ROLES as QUERY } from 'queries/role';
-import { format } from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
-import URLService from 'utils/URLService';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import { sortValueByLength, sortDate } from 'sorters/sorters';
-import queryService from 'utils/queryService';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import LabelChip from 'Components/LabelChip';
 import pluralize from 'pluralize';
+import { format } from 'date-fns';
+
+import LabelChip from 'Components/LabelChip';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import dateTimeFormat from 'constants/dateTimeFormat';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { roleSortFields } from 'constants/sortFields';
+import { K8S_ROLES_QUERY } from 'queries/role';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
+
+export const defaultRoleSort = [
+    {
+        id: roleSortFields.ROLE,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -26,16 +38,19 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'name',
+            id: roleSortFields.ROLE,
+            sortField: roleSortFields.ROLE,
         },
         {
             Header: `Type`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'type',
+            sortable: false,
         },
         {
             Header: `Permissions`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => {
@@ -44,11 +59,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <div className="capitalize">{permissions.join(', ')}</div>;
             },
             accessor: 'verbs',
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
         {
             Header: `Created`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line react/prop-types
             Cell: ({ original }) => {
@@ -56,7 +71,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return format(createdAt, dateTimeFormat);
             },
             accessor: 'createdAt',
-            sortMethod: sortDate,
+            sortable: false,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -74,10 +89,12 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: roleSortFields.CLUSTER,
+                  sortField: roleSortFields.CLUSTER,
               },
         {
             Header: `Namespace Scope`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
@@ -93,10 +110,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <TableCellLink pdf={pdf} url={url} text={name} />;
             },
             accessor: 'roleNamespace.metadata.name',
+            sortable: false,
         },
         {
             Header: `Users & Groups`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line react/prop-types
             Cell: ({ original, pdf }) => {
@@ -131,7 +149,7 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             id: 'subjects',
             accessor: (d) => d.subjects,
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
         {
             Header: `Service Accounts`,
@@ -171,7 +189,7 @@ const buildTableColumns = (match, location, entityContext) => {
                 return <TableCellLink pdf={pdf} url={url} text={serviceAccount.name} />;
             },
             accessor: 'serviceAccounts',
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
     ];
     return tableColumns.filter((col) => col);
@@ -187,6 +205,7 @@ const Roles = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const autoFocusSearchInput = !selectedRowId;
@@ -196,7 +215,7 @@ const Roles = ({
     return (
         <List
             className={className}
-            query={QUERY}
+            query={K8S_ROLES_QUERY}
             variables={variables}
             entityType={entityTypes.ROLE}
             tableColumns={tableColumns}
@@ -204,7 +223,9 @@ const Roles = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="id"
+            defaultSorted={defaultRoleSort}
             data={data}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

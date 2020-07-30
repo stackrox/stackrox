@@ -24,11 +24,11 @@ func init() {
 		schema.AddQuery("serviceAccountCount(query: String): Int!"),
 		schema.AddType("StringListEntry", []string{"key: String!", "values: [String!]!"}),
 		schema.AddType("ScopedPermissions", []string{"scope: String!", "permissions: [StringListEntry!]!"}),
-		schema.AddExtraResolver("ServiceAccount", `roles(query: String): [K8SRole!]!`),
-		schema.AddExtraResolver("ServiceAccount", `roleCount:Int!`),
+		schema.AddExtraResolver("ServiceAccount", `k8sRoles(query: String, pagination: Pagination): [K8SRole!]!`),
+		schema.AddExtraResolver("ServiceAccount", `k8sRoleCount(query: String): Int!`),
 		schema.AddExtraResolver("ServiceAccount", `scopedPermissions: [ScopedPermissions!]!`),
-		schema.AddExtraResolver("ServiceAccount", `deployments(query: String): [Deployment!]!`),
-		schema.AddExtraResolver("ServiceAccount", `deploymentCount: Int!`),
+		schema.AddExtraResolver("ServiceAccount", `deployments(query: String, pagination: Pagination): [Deployment!]!`),
+		schema.AddExtraResolver("ServiceAccount", `deploymentCount(query: String): Int!`),
 		schema.AddExtraResolver("ServiceAccount", `saNamespace: Namespace!`),
 		schema.AddExtraResolver("ServiceAccount", `cluster: Cluster!`),
 		schema.AddExtraResolver("ServiceAccount", `clusterAdmin: Boolean!`),
@@ -81,7 +81,7 @@ func (resolver *Resolver) ServiceAccountCount(ctx context.Context, args RawQuery
 	return int32(len(results)), nil
 }
 
-func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, error) {
+func (resolver *serviceAccountResolver) K8sRoleCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "RoleCount")
 	if err := readK8sRoles(ctx); err != nil {
 		return 0, err
@@ -90,20 +90,20 @@ func (resolver *serviceAccountResolver) RoleCount(ctx context.Context) (int32, e
 		return 0, err
 	}
 
-	bindings, roles, err := resolver.getRolesAndBindings(ctx, RawQuery{})
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
-	subject := &storage.Subject{
-		Name:      resolver.data.GetName(),
-		Namespace: resolver.data.GetNamespace(),
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-	}
 
+	bindings, roles, err := resolver.getRolesAndBindings(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	subject := k8srbac.GetSubjectForServiceAccount(resolver.data)
 	return int32(len(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject))), nil
 }
 
-func (resolver *serviceAccountResolver) Roles(ctx context.Context, args RawQuery) ([]*k8SRoleResolver, error) {
+func (resolver *serviceAccountResolver) K8sRoles(ctx context.Context, args PaginatedQuery) ([]*k8SRoleResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Roles")
 	if err := readK8sRoles(ctx); err != nil {
 		return nil, err
@@ -112,64 +112,77 @@ func (resolver *serviceAccountResolver) Roles(ctx context.Context, args RawQuery
 		return nil, err
 	}
 
-	bindings, roles, err := resolver.getRolesAndBindings(ctx, args)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	subject := &storage.Subject{
-		Name:      resolver.data.GetName(),
-		Namespace: resolver.data.GetNamespace(),
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+	pagination := q.Pagination
+	q.Pagination = nil
+
+	bindings, roles, err := resolver.getRolesAndBindings(ctx, q)
+	if err != nil {
+		return nil, err
 	}
-	return resolver.root.wrapK8SRoles(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject), nil)
+	subject := k8srbac.GetSubjectForServiceAccount(resolver.data)
+	roleResolvers, err := resolver.root.wrapK8SRoles(k8srbac.NewEvaluator(roles, bindings).RolesForSubject(subject), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers, err := paginationWrapper{
+		pv: pagination,
+	}.paginate(roleResolvers, nil)
+
+	return resolvers.([]*k8SRoleResolver), err
 }
 
-func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, args RawQuery) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
+func (resolver *serviceAccountResolver) getRolesAndBindings(ctx context.Context, passedQuery *v1.Query) ([]*storage.K8SRoleBinding, []*storage.K8SRole, error) {
+	bindingQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, bindingQuery)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	q, err = resolver.getConjunctionQuery(args, q)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, q)
+	bindingQuery = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, search.NewConjunctionQuery(passedQuery, bindingQuery))
 	if err != nil {
 		return nil, nil, err
 	}
 	return bindings, roles, nil
 }
 
-func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args RawQuery) ([]*deploymentResolver, error) {
+func (resolver *serviceAccountResolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
-		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
-		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
-
-	q, err := resolver.getConjunctionQuery(args, q)
+	q, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, q))
+	scopedQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
+		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
+
+	return resolver.root.wrapDeployments(resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, search.NewConjunctionQuery(scopedQuery, q)))
 }
 
-func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context) (int32, error) {
+func (resolver *serviceAccountResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ServiceAccounts, "DeploymentCount")
 	if err := readDeployments(ctx); err != nil {
 		return 0, err
 	}
-	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
+
+	q, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return 0, err
+	}
+
+	scopedQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
 
-	results, err := resolver.root.DeploymentDataStore.Search(ctx, q)
+	results, err := resolver.root.DeploymentDataStore.Search(ctx, search.NewConjunctionQuery(scopedQuery, q))
 	if err != nil {
 		return 0, err
 	}
@@ -192,12 +205,7 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 		return nil, err
 	}
 
-	subject := &storage.Subject{
-		Name:      resolver.data.GetName(),
-		Namespace: resolver.data.GetNamespace(),
-		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-	}
-
+	subject := k8srbac.GetSubjectForServiceAccount(resolver.data)
 	permissionScopeMap := make(map[string]map[string]set.StringSet)
 	for scope, evaluator := range evaluators {
 		permissions := evaluator.ForSubject(ctx, subject).GetPermissionMap()
@@ -275,6 +283,12 @@ func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Conte
 	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
+
+	passedQuery, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+
 	secretNames := resolver.data.GetImagePullSecrets()
 	if len(secretNames) == 0 {
 		return []*secretResolver{}, nil
@@ -282,20 +296,7 @@ func (resolver *serviceAccountResolver) ImagePullSecretObjects(ctx context.Conte
 	q := search.NewQueryBuilder().AddExactMatches(search.SecretName, secretNames...).
 		AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.Namespace, resolver.data.GetNamespace()).ProtoQuery()
-	q, err := resolver.getConjunctionQuery(args, q)
-	if err != nil {
-		return nil, err
-	}
-	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
-}
 
-func (resolver *serviceAccountResolver) getConjunctionQuery(args RawQuery, q2 *v1.Query) (*v1.Query, error) {
-	if args.Query == nil {
-		return q2, nil
-	}
-	q1, err := args.AsV1QueryOrEmpty()
-	if err != nil {
-		return nil, err
-	}
-	return search.NewConjunctionQuery(q1, q2), nil
+	q = search.NewConjunctionQuery(passedQuery, q)
+	return resolver.root.wrapSecrets(resolver.root.SecretsDataStore.SearchRawSecrets(ctx, q))
 }

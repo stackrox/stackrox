@@ -255,9 +255,12 @@ describe('Config Management Dashboard Page', () => {
 
     it('switching clusters in the "CIS Standard Across Clusters" widget\'s should change the data', () => {
         cy.visit(url.dashboard);
-        cy.get(selectors.cisStandardsAcrossClusters.select.value).should('contain', 'CIS Docker');
-        cy.get(selectors.cisStandardsAcrossClusters.select.input).click();
-        cy.get(selectors.cisStandardsAcrossClusters.select.options, { timeout: 8000 })
+        cy.get(selectors.cisStandardsAcrossClusters.select.value, { timeout: 18000 }).should(
+            'contain',
+            'CIS Docker'
+        );
+        cy.get(selectors.cisStandardsAcrossClusters.select.input, { timeout: 8000 }).click();
+        cy.get(`${selectors.cisStandardsAcrossClusters.select.options}:last`, { timeout: 8000 })
             .last()
             .click({ force: true });
         cy.get(selectors.cisStandardsAcrossClusters.select.value).should(

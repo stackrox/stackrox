@@ -2,7 +2,6 @@ import React, { useContext } from 'react';
 import entityTypes from 'constants/entityTypes';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
-import PageNotFound from 'Components/PageNotFound';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
@@ -16,71 +15,35 @@ import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants
 import searchContext from 'Containers/searchContext';
 import EntityList from '../List/EntityList';
 
-const processSubjectDataByClusters = (data) => {
-    const entity = data.clusters.reduce(
-        (acc, curr) => {
-            if (!curr.subject) return acc;
-            const { subject, type, clusterAdmin, roles, roleCount = 0, ...rest } = curr.subject;
-            const { id: clusterId, name: clusterName } = curr;
-            let allRoles = [...acc.roles];
-            if (roles) allRoles = allRoles.concat(roles);
-            const totalRoles = acc.roleCount + roleCount;
-            return {
-                subject,
-                type,
-                clusterAdmin,
-                roles: allRoles,
-                roleCount: totalRoles,
-                clusters: [...acc.clusters, { ...rest, clusterId, clusterName }],
-            };
-        },
-        { roles: [], clusters: [], roleCount: 0 }
-    );
-    return entity;
-};
-
-const getClustersQuery = (entityContext) => {
-    if (entityContext && entityContext[entityTypes.CLUSTER]) {
-        return queryService.objectToWhereClause({
-            [`${entityTypes.CLUSTER} ID`]: entityContext[entityTypes.CLUSTER],
-        });
-    }
-    return null;
-};
-
-const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Subject = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
         cacheBuster: new Date().getUTCMilliseconds(),
-        clustersQuery: getClustersQuery(entityContext),
-        name: id,
+        id: decodeURIComponent(id),
         query: queryService.objectToWhereClause(query[searchParam]),
+        pagination,
     };
 
     const defaultQuery = gql`
-        query subject($clustersQuery: String, $name: String!) {
-            clusters(query: $clustersQuery) {
+        query getSubject($id: ID) {
+            subject(id: $id) {
                 id
                 name
-                subject(name: $name) {
-                    id: name
-                    subject {
-                        name
-                        kind
-                        namespace
+                kind
+                namespace
+                type
+                scopedPermissions {
+                    scope
+                    permissions {
+                        key
+                        values
                     }
-                    type
-                    scopedPermissions {
-                        scope
-                        permissions {
-                            key
-                            values
-                        }
-                    }
-                    clusterAdmin
-                    roleCount
                 }
+                clusterName
+                clusterId
+                clusterAdmin
+                k8sRoleCount
             }
         }
     `;
@@ -94,16 +57,25 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
         );
 
         return gql`
-            query subject($clustersQuery: String, $name: String!, $query: String) {
-                clusters(query: $clustersQuery) {
+            query subject_${entityListType}($id: ID, $query: String, $pagination: Pagination) {
+                subject(id: $id) {
                     id
-                    subject(name: $name) {
-                        id: name
-                        name
-                        roles(query: $query) {
-                            ...k8roleFields
+                    name
+                    kind
+                    namespace
+                    type
+                    scopedPermissions {
+                        scope
+                        permissions {
+                            key
+                            values
                         }
                     }
+                    k8sRoles(query: $query, pagination: $pagination) {
+                       ...k8RoleFields
+                    }
+                    clusterAdmin
+                    k8sRoleCount
                 }
             }
             ${fragment}
@@ -115,37 +87,44 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
             {({ loading, data }) => {
                 if (isGQLLoading(loading, data)) return <Loader />;
 
-                if (!data.clusters || !data.clusters.length)
-                    return <PageNotFound resourceType={entityTypes.SUBJECT} />;
-                const entity = processSubjectDataByClusters(data);
-                const { type, clusterAdmin, clusters = [], roleCount } = entity;
+                const entity = data.subject;
+                const {
+                    clusterId,
+                    clusterName,
+                    scopedPermissions,
+                    type,
+                    clusterAdmin,
+                    k8sRoles,
+                    k8sRoleCount,
+                } = entity;
 
                 if (entityListType) {
                     let listData;
+                    let listCount;
                     switch (entityListType) {
                         case entityTypes.ROLE:
-                            listData = entity.roles;
+                            listData = k8sRoles;
+                            listCount = k8sRoleCount;
                             break;
                         default:
                             listData = [];
+                            listCount = 0;
                     }
                     return (
                         <EntityList
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={listData}
+                            totalResults={listCount}
                             query={query}
                             entityContext={{ ...entityContext, [entityTypes.SUBJECT]: id }}
                         />
                     );
                 }
 
-                const scopedPermissionsAcrossAllClusters = clusters.reduce(
-                    (acc, { clusterId = '', clusterName = '', scopedPermissions = [] }) => {
-                        return [...acc, { clusterId, clusterName, scopedPermissions }];
-                    },
-                    []
-                );
+                const scopedPermissionsAcrossAllClusters = [
+                    { clusterId, clusterName, scopedPermissions },
+                ];
                 const metadataKeyValuePairs = [
                     { key: 'Role type', value: type },
                     {
@@ -165,7 +144,7 @@ const Subject = ({ id, entityListType, entityId1, query, entityContext }) => {
                                 <RelatedEntityListCount
                                     className="mx-4 min-w-48 min-h-48 mb-4"
                                     name="Roles"
-                                    value={roleCount}
+                                    value={k8sRoleCount}
                                     entityType={entityTypes.ROLE}
                                 />
                             </div>

@@ -6,7 +6,7 @@ export const CLUSTERS_QUERY = gql`
             id
             name
             serviceAccountCount
-            k8sroleCount
+            k8sRoleCount
             subjectCount
             status {
                 orchestratorMetadata {
@@ -57,7 +57,7 @@ export const CLUSTER_QUERY = gql`
             subjects {
                 name
             }
-            k8sroles {
+            k8sRoles {
                 id
             }
             serviceAccounts {

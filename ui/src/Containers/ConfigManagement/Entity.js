@@ -1,9 +1,14 @@
-import React from 'react';
-import entityTypes from 'constants/entityTypes';
+import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useTheme } from 'Containers/ThemeProvider';
 
 import PageNotFound from 'Components/PageNotFound';
+import entityTypes from 'constants/entityTypes';
+import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
+import configMgmtPaginationContext from 'Containers/configMgmtPaginationContext';
+import { useTheme } from 'Containers/ThemeProvider';
+import workflowStateContext from 'Containers/workflowStateContext';
+import { getConfigMgmtDefaultSort } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import queryService from 'utils/queryService';
 import ServiceAccount from './Entity/ServiceAccount';
 import Secret from './Entity/Secret';
 import Deployment from './Entity/Deployment/Deployment';
@@ -33,6 +38,17 @@ const entityComponentMap = {
 
 const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
     const { isDarkMode } = useTheme();
+
+    const workflowState = useContext(workflowStateContext);
+    const configMgmtPagination = useContext(configMgmtPaginationContext);
+    const page = workflowState.paging[configMgmtPagination.pageParam];
+    const pageSort = workflowState.sort[configMgmtPagination.sortParam];
+
+    const defaultSorted = getConfigMgmtDefaultSort(entityListType);
+    const tableSort = pageSort || defaultSorted;
+
+    const pagination = queryService.getPagination(tableSort, page, LIST_PAGE_SIZE);
+
     const Component = entityComponentMap[entityType];
     if (!Component) return <PageNotFound resourceType={entityType} />;
     return (
@@ -41,7 +57,12 @@ const Entity = ({ entityType, entityId, entityListType, ...rest }) => {
                 !isDarkMode && !entityListType ? 'bg-side-panel-wave min-h-full' : 'h-full'
             }`}
         >
-            <Component id={entityId} entityListType={entityListType} {...rest} />
+            <Component
+                id={entityId}
+                entityListType={entityListType}
+                pagination={pagination}
+                {...rest}
+            />
         </div>
     );
 };

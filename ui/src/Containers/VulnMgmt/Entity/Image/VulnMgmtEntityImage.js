@@ -30,7 +30,7 @@ const VulnMgmtImage = ({
 
     const overviewQuery = gql`
         query getImage($id: ID!, $query: String, $scopeQuery: String) {
-            result: image(sha: $id) {
+            result: image(id: $id) {
                 id
                 lastUpdated
                 ${entityContext[entityTypes.DEPLOYMENT] ? '' : 'deploymentCount(query: $query)'}
@@ -81,7 +81,7 @@ const VulnMgmtImage = ({
     function getListQuery(listFieldName, fragmentName, fragment) {
         return gql`
         query getImage${entityListType}($id: ID!, $pagination: Pagination, $query: String, $policyQuery: String, $scopeQuery: String) {
-            result: image(sha: $id) {
+            result: image(id: $id) {
                 id
                 ${defaultCountKeyMap[entityListType]}(query: $query)
                 ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }

@@ -1,12 +1,14 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
+
 import Widget from 'Components/Widget';
 import EntityIcon from 'Components/EntityIcon';
-import hexagonal from 'images/side-panel-icons/hexagonal.svg';
-import { withRouter } from 'react-router-dom';
-import URLService from 'utils/URLService';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { newWorkflowCases } from 'constants/useCaseTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
+import hexagonal from 'images/side-panel-icons/hexagonal.svg';
+import URLService from 'utils/URLService';
 
 // @TODO We should try to use this component for Compliance as well
 const RelatedEntity = ({
@@ -27,7 +29,7 @@ const RelatedEntity = ({
 
         let url;
         // this is a workaround to make this flexible for legacy URLService and new workflow state manager
-        if (workflowState && workflowState.useCase) {
+        if (newWorkflowCases.includes(workflowState?.useCase)) {
             url = workflowState.pushRelatedEntity(entityType, entityId).toUrl();
         } else {
             url = URLService.getURL(match, location).push(entityType, entityId).url();

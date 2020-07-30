@@ -116,13 +116,14 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
 
 TablePagination.propTypes = {
     page: PropTypes.number.isRequired,
-    dataLength: PropTypes.number.isRequired,
+    dataLength: PropTypes.number,
     setPage: PropTypes.func.isRequired,
     pageSize: PropTypes.number,
 };
 
 TablePagination.defaultProps = {
     pageSize: defaultPageSize,
+    dataLength: 0,
 };
 
 export default withRouter(TablePagination);

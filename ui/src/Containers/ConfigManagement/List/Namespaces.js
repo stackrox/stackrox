@@ -1,20 +1,31 @@
 import React, { useContext } from 'react';
 import pluralize from 'pluralize';
 
-import entityTypes from 'constants/entityTypes';
-import URLService from 'utils/URLService';
-import searchContext from 'Containers/searchContext';
-import { sortValueByLength } from 'sorters/sorters';
-import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
-import queryService from 'utils/queryService';
-import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 import StatusChip from 'Components/StatusChip';
+import {
+    defaultHeaderClassName,
+    defaultColumnClassName,
+    nonSortableHeaderClassName,
+} from 'Components/Table';
+import searchContext from 'Containers/searchContext';
+import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
+import { namespaceSortFields } from 'constants/sortFields';
+import { NAMESPACES_NO_POLICIES_QUERY } from 'queries/namespace';
+import queryService from 'utils/queryService';
+import URLService from 'utils/URLService';
 import List from './List';
 import TableCellLink from './Link';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
+
+export const defaultNamespaceSort = [
+    {
+        id: namespaceSortFields.NAMESPACE,
+        desc: false,
+    },
+];
 
 const buildTableColumns = (match, location, entityContext) => {
     const tableColumns = [
@@ -29,6 +40,8 @@ const buildTableColumns = (match, location, entityContext) => {
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             accessor: 'metadata.name',
+            id: namespaceSortFields.NAMESPACE,
+            sortField: namespaceSortFields.NAMESPACE,
         },
         entityContext && entityContext[entityTypes.CLUSTER]
             ? null
@@ -48,10 +61,12 @@ const buildTableColumns = (match, location, entityContext) => {
                           .url();
                       return <TableCellLink pdf={pdf} url={url} text={clusterName} />;
                   },
+                  id: namespaceSortFields.CLUSTER,
+                  sortField: namespaceSortFields.CLUSTER,
               },
         {
             Header: `Policy Status`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -60,10 +75,11 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             id: 'status',
             accessor: (d) => d.policyStatus.status,
+            sortable: false,
         },
         {
             Header: `Secrets`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -84,11 +100,11 @@ const buildTableColumns = (match, location, entityContext) => {
             },
             id: 'numSecrets',
             accessor: (d) => d.numSecrets,
-            sortMethod: sortValueByLength,
+            sortable: false,
         },
         {
             Header: `Users & Groups`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -108,10 +124,11 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             accessor: 'subjectCount',
+            sortable: false,
         },
         {
             Header: `Service Accounts`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
@@ -134,15 +151,16 @@ const buildTableColumns = (match, location, entityContext) => {
                 );
             },
             accessor: 'serviceAccountCount',
+            sortable: false,
         },
         {
             Header: `Roles`,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
+            headerClassName: `w-1/8 ${nonSortableHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
             // eslint-disable-next-line
             Cell: ({ original, pdf }) => {
-                const { k8sroleCount, metadata } = original;
-                if (!k8sroleCount || k8sroleCount === 0) return 'No Roles';
+                const { k8sRoleCount, metadata } = original;
+                if (!k8sRoleCount || k8sRoleCount === 0) return 'No Roles';
                 const { id } = metadata;
                 const url = URLService.getURL(match, location)
                     .push(id)
@@ -152,11 +170,12 @@ const buildTableColumns = (match, location, entityContext) => {
                     <TableCellLink
                         pdf={pdf}
                         url={url}
-                        text={`${k8sroleCount} ${pluralize('Roles', k8sroleCount)}`}
+                        text={`${k8sRoleCount} ${pluralize('Roles', k8sRoleCount)}`}
                     />
                 );
             },
-            accessor: 'k8sroleCount',
+            accessor: 'k8sRoleCount',
+            sortable: false,
         },
     ];
     return tableColumns.filter((col) => col);
@@ -172,6 +191,7 @@ const Namespaces = ({
     onRowClick,
     query,
     data,
+    totalResults,
     entityContext,
 }) => {
     const searchParam = useContext(searchContext);
@@ -202,8 +222,10 @@ const Namespaces = ({
             onRowClick={onRowClick}
             selectedRowId={selectedRowId}
             idAttribute="metadata.id"
+            defaultSorted={defaultNamespaceSort}
             defaultSearchOptions={[SEARCH_OPTIONS.POLICY_STATUS.CATEGORY]}
             data={filterByPolicyStatus(data, policyStatus)}
+            totalResults={totalResults}
             autoFocusSearchInput={autoFocusSearchInput}
         />
     );

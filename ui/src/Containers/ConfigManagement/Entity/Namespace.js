@@ -1,9 +1,7 @@
 import React, { useContext } from 'react';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
-import queryService from 'utils/queryService';
-import useCases from 'constants/useCaseTypes';
+import { gql } from '@apollo/client';
+
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PageNotFound from 'Components/PageNotFound';
@@ -11,15 +9,19 @@ import CollapsibleSection from 'Components/CollapsibleSection';
 import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import RelatedEntity from 'Components/RelatedEntity';
 import Metadata from 'Components/Metadata';
-import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
-import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import searchContext from 'Containers/searchContext';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
+import DeploymentsWithFailedPolicies from 'Containers/ConfigManagement/Entity/widgets/DeploymentsWithFailedPolicies';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
 import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
-const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Namespace = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -29,6 +31,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
             ...query[searchParam],
             'Lifecycle Stage': 'DEPLOY',
         }),
+        pagination,
     };
 
     const defaultQuery = gql`
@@ -50,7 +53,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                 imageCount
                 deploymentCount
                 subjectCount
-                k8sroleCount
+                k8sRoleCount
                 serviceAccountCount
                 secretCount
                 policyCount(query: $query)
@@ -65,14 +68,16 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getNamespace_${entityListType}($id: ID!, $query: String) {
+            query getNamespace_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 namespace(id: $id) {
                     metadata {
                         id
                     }
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -92,6 +97,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={getSubListFromEntity(namespace, entityListType)}
+                            totalResults={data?.namespace?.count}
                             entityContext={{ ...entityContext, [entityTypes.NAMESPACE]: id }}
                         />
                     );
@@ -104,6 +110,7 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                     secretCount,
                     imageCount,
                     serviceAccountCount,
+                    k8sRoleCount,
                 } = namespace;
 
                 const { name, creationTime, labels = [] } = metadata;
@@ -157,10 +164,16 @@ const Namespace = ({ id, entityListType, entityId1, query, entityContext }) => {
                                     value={serviceAccountCount}
                                     entityType={entityTypes.SERVICE_ACCOUNT}
                                 />
+                                <RelatedEntityListCount
+                                    className="mx-4 min-w-48 min-h-48 mb-4"
+                                    name="Roles"
+                                    value={k8sRoleCount}
+                                    entityType={entityTypes.ROLE}
+                                />
                             </div>
                         </CollapsibleSection>
                         <CollapsibleSection title="Namespace Findings">
-                            <div className="flex pdf-page pdf-stretch rounded relative rounded mb-4 ml-4 mr-4">
+                            <div className="flex pdf-page pdf-stretch relative rounded mb-4 ml-4 mr-4">
                                 <DeploymentsWithFailedPolicies
                                     query={queryService.objectToWhereClause({
                                         Cluster: cluster.name,

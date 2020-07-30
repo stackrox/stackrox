@@ -15,6 +15,7 @@ import (
 )
 
 func TestPermissionScore(t *testing.T) {
+	deployment := multipliers.GetMockDeployment()
 	clusterCases := []struct {
 		name     string
 		sa       *storage.ServiceAccount
@@ -129,6 +130,7 @@ func TestPermissionScore(t *testing.T) {
 							Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 							Name:      "service-account",
 							Namespace: "namespace",
+							ClusterId: deployment.GetClusterId(),
 						},
 					},
 					ClusterRole: true,
@@ -192,6 +194,7 @@ func TestPermissionScore(t *testing.T) {
 							Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 							Name:      "service-account",
 							Namespace: "namespace",
+							ClusterId: "cluster",
 						},
 					},
 					ClusterRole: true,
@@ -211,7 +214,6 @@ func TestPermissionScore(t *testing.T) {
 
 	for _, c := range clusterCases {
 		t.Run(c.name, func(t *testing.T) {
-			deployment := multipliers.GetMockDeployment()
 			ctx := context.Background()
 
 			mockCtrl := gomock.NewController(t)

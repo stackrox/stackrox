@@ -47,12 +47,12 @@ describe('getEntityName', () => {
             clusters: [
                 {
                     id: '07a88749-1c93-4c64-98dc-a737dd8f2283',
-                    k8srole: null,
+                    k8sRole: null,
                     __typename: 'Cluster',
                 },
                 {
                     id: 'de9e9702-f1f1-4a6e-b98a-1df994aeadc1',
-                    k8srole: {
+                    k8sRole: {
                         id: '017eefb7-6f72-11ea-a65a-42010a8a0161',
                         name: 'system:kube-dns',
                         __typename: 'K8SRole',
@@ -88,32 +88,15 @@ describe('getEntityName', () => {
     it('handles nested data for a SUBJECT entity', () => {
         const entityType = entityTypes.SUBJECT;
         const data = {
-            clusters: [
-                {
-                    id: '07a88749-1c93-4c64-98dc-a737dd8f2283',
-                    subject: {
-                        id: 'system:kube-controller-manager',
-                        subject: {
-                            name: 'system:kube-controller-manager',
-                            __typename: 'Subject',
-                        },
-                        __typename: 'SubjectWithClusterID',
-                    },
-                    __typename: 'Cluster',
+            subject: {
+                id: '867-5309',
+                name: 'system:kube-controller-manager',
+                subject: {
+                    name: 'system:kube-controller-manager',
+                    __typename: 'Subject',
                 },
-                {
-                    id: 'de9e9702-f1f1-4a6e-b98a-1df994aeadc1',
-                    subject: {
-                        id: 'system:kube-controller-manager',
-                        subject: {
-                            name: 'system:kube-controller-manager',
-                            __typename: 'Subject',
-                        },
-                        __typename: 'SubjectWithClusterID',
-                    },
-                    __typename: 'Cluster',
-                },
-            ],
+                __typename: 'SubjectWithClusterID',
+            },
         };
 
         const entityName = getEntityName(entityType, data);

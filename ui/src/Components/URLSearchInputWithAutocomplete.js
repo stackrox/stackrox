@@ -11,6 +11,7 @@ import { Creatable } from 'Components/ReactSelect';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
+import { newWorkflowCases } from 'constants/useCaseTypes';
 
 const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
@@ -169,7 +170,7 @@ const URLSearchInputWithAutocomplete = ({
         // to not clear the `groupBy` query. will need to remove once search officially supports groupBy
         // if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
 
-        if (workflowState && workflowState.useCase) {
+        if (newWorkflowCases.includes(workflowState?.useCase)) {
             // Get the full querystring to redirect to
             const url = workflowState.setSearch(newSearch).toUrl();
             const qsStart = url.indexOf('?');
@@ -188,10 +189,9 @@ const URLSearchInputWithAutocomplete = ({
     function transformQueryStringToSearchOptions() {
         const queryStringOptions = [];
         const fullQueryObject = getFullQueryObject();
-        const queryObj =
-            workflowState && workflowState.useCase
-                ? workflowState.getCurrentSearchState()
-                : fullQueryObject[searchParam] || {};
+        const queryObj = newWorkflowCases.includes(workflowState?.useCase)
+            ? workflowState.getCurrentSearchState()
+            : fullQueryObject[searchParam] || {};
         Object.keys(queryObj).forEach((key) => {
             const matchedOptionKey = categoryOptions.find(
                 (category) => category.toLowerCase() === key.toLowerCase()

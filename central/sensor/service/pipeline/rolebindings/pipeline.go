@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -99,6 +100,14 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, action central.Res
 	return nil
 }
 
+func enrichSubjects(binding *storage.K8SRoleBinding) {
+	for _, subject := range binding.GetSubjects() {
+		subject.ClusterId = binding.GetClusterId()
+		subject.ClusterName = binding.GetClusterName()
+		subject.Id = k8srbac.CreateSubjectID(subject.GetClusterId(), subject.GetName())
+	}
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.ResourceAction, binding *storage.K8SRoleBinding) error {
 	if err := s.validateInput(binding); err != nil {
@@ -108,6 +117,8 @@ func (s *pipelineImpl) runGeneralPipeline(ctx context.Context, action central.Re
 	if err := s.enrichCluster(ctx, binding); err != nil {
 		return err
 	}
+
+	enrichSubjects(binding)
 
 	if err := s.bindings.UpsertRoleBinding(ctx, binding); err != nil {
 		return err

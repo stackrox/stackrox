@@ -1,9 +1,8 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { format } from 'date-fns';
 import pluralize from 'pluralize';
+import { gql } from '@apollo/client';
 
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
@@ -14,13 +13,15 @@ import RelatedEntityListCount from 'Components/RelatedEntityListCount';
 import Metadata from 'Components/Metadata';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import Widget from 'Components/Widget';
-import isGQLLoading from 'utils/gqlLoading';
-import { gql } from '@apollo/client';
-import searchContext from 'Containers/searchContext';
-import useCases from 'constants/useCaseTypes';
-import queryService from 'utils/queryService';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { entityComponentPropTypes, entityComponentDefaultProps } from 'constants/entityPageProps';
+import entityTypes from 'constants/entityTypes';
+import useCases from 'constants/useCaseTypes';
+import searchContext from 'Containers/searchContext';
+import { getConfigMgmtCountQuery } from 'Containers/ConfigManagement/ConfigMgmt.utils';
+import getSubListFromEntity from 'utils/getSubListFromEntity';
+import isGQLLoading from 'utils/gqlLoading';
+import queryService from 'utils/queryService';
 import EntityList from '../List/EntityList';
 
 const SecretDataMetadata = ({ metadata }) => {
@@ -142,7 +143,7 @@ SecretValues.propTypes = {
     files: PropTypes.arrayOf(PropTypes.shape).isRequired,
 };
 
-const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
+const Secret = ({ id, entityListType, entityId1, query, entityContext, pagination }) => {
     const searchParam = useContext(searchContext);
 
     const variables = {
@@ -150,8 +151,8 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
         id,
         query: queryService.objectToWhereClause({
             ...query[searchParam],
-            'Lifecycle Stage': 'DEPLOY',
         }),
+        pagination,
     };
 
     const defaultQuery = gql`
@@ -209,12 +210,14 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
             entityListType,
             useCases.CONFIG_MANAGEMENT
         );
+        const countQuery = getConfigMgmtCountQuery(entityListType);
 
         return gql`
-            query getSecret_${entityListType}($id: ID!, $query: String) {
+            query getSecret_${entityListType}($id: ID!, $query: String, $pagination: Pagination) {
                 secret(id: $id) {
                     id
-                    ${listFieldName}(query: $query) { ...${fragmentName} }
+                    ${listFieldName}(query: $query, pagination: $pagination) { ...${fragmentName} }
+                    ${countQuery}
                 }
             }
             ${fragment}
@@ -235,6 +238,7 @@ const Secret = ({ id, entityListType, entityId1, query, entityContext }) => {
                             entityListType={entityListType}
                             entityId={entityId1}
                             data={getSubListFromEntity(secret, entityListType)}
+                            totalResults={data?.secret?.count}
                             query={query}
                         />
                     );
