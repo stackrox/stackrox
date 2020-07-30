@@ -285,6 +285,21 @@ export function parseUpgradeStatus(upgradeStatus) {
     return cloneDeep(state);
 }
 
+/**
+ * If the most recent upgrade was a cert rotation, return the initiation time.
+ * Else, return null.
+ */
+export function initiationOfCertRotationIfApplicable(upgradeStatus) {
+    const mostRecentProcess = upgradeStatus?.mostRecentProcess;
+    if (mostRecentProcess?.type !== 'CERT_ROTATION') {
+        return null;
+    }
+    if (mostRecentProcess?.progress?.upgradeState !== 'UPGRADE_COMPLETE') {
+        return null;
+    }
+    return mostRecentProcess.initiatedAt;
+}
+
 function findUpgradeState(upgradeStatus) {
     const upgradability = get(upgradeStatus, 'upgradability', null);
     if (!upgradability || upgradability === 'UNSET') {
@@ -292,7 +307,19 @@ function findUpgradeState(upgradeStatus) {
     }
 
     switch (upgradability) {
-        case 'UP_TO_DATE':
+        case 'UP_TO_DATE': {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+                return upgradeStates.UP_TO_DATE;
+            }
+
+            const upgradeState = get(
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
+                'unknown'
+            );
+
+            return upgradeStates[upgradeState] || upgradeStates.unknown;
+        }
         case 'MANUAL_UPGRADE_REQUIRED': {
             return upgradeStates[upgradability];
         }

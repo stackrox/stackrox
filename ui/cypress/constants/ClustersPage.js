@@ -28,4 +28,7 @@ export const selectors = {
     },
     dialog: '.dialog',
     checkboxes: 'input[data-testid="checkbox-table-row-selector"',
+    tableFirstRow: '[data-testid="clusters-table"] > * div.rt-tr-group:not(.hidden):first',
+    sidePanel: '[data-testid="clusters-side-panel"]',
+    credentialExpirationBanner: '[data-testid="credential-expiration-banner"]',
 };

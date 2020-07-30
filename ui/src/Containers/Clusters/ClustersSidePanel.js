@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
+import { format } from 'date-fns';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
 import cloneDeep from 'lodash/cloneDeep';
@@ -17,6 +18,7 @@ import {
     saveCluster,
     downloadClusterYaml,
     fetchKernelSupportAvailable,
+    rotateClusterCerts,
 } from 'services/ClustersService';
 
 import ClusterEditForm from './ClusterEditForm';
@@ -26,6 +28,7 @@ import {
     formatUpgradeMessage,
     getCredentialExpirationProps,
     getUpgradeStatusDetail,
+    initiationOfCertRotationIfApplicable,
     newClusterDefault,
     parseUpgradeStatus,
     wizardSteps,
@@ -33,6 +36,7 @@ import {
 import CollapsibleCard from '../../Components/CollapsibleCard';
 import Button from '../../Components/Button';
 import { generateSecuredClusterCertSecret } from '../../services/CertGenerationService';
+import Dialog from '../../Components/Dialog';
 
 function ClustersSidePanel({
     metadata,
@@ -58,6 +62,7 @@ function ClustersSidePanel({
     const [pollingDelay, setPollingDelay] = useState(null);
     const [submissionError, setSubmissionError] = useState('');
     const [freshCredentialsDownloaded, setFreshCredentialsDownloaded] = useState(false);
+    const [showCertRotationModal, setShowCertRotationModal] = useState(false);
 
     const [createUpgraderSA, setCreateUpgraderSA] = useState(true);
 
@@ -69,6 +74,7 @@ function ClustersSidePanel({
         setWizardStep(wizardSteps.FORM);
         setPollingDelay(null);
         setFreshCredentialsDownloaded(false);
+        setShowCertRotationModal(false);
     }
 
     useEffect(
@@ -201,6 +207,30 @@ function ClustersSidePanel({
         });
     }
 
+    function openCertRotationModal() {
+        setShowCertRotationModal(true);
+    }
+
+    function hideCertRotationModal() {
+        setShowCertRotationModal(false);
+    }
+
+    function triggerClusterCertRotation() {
+        rotateClusterCerts(selectedClusterId)
+            .then(() => {
+                hideCertRotationModal();
+            })
+            .catch((error) => {
+                const serverError = get(
+                    error,
+                    'response.data.message',
+                    'Failed to apply new credentials to the cluster.'
+                );
+
+                setSubmissionError(serverError);
+            });
+    }
+
     function generateCertSecret() {
         generateSecuredClusterCertSecret(selectedClusterId).catch((error) => {
             const serverError = get(
@@ -252,15 +282,26 @@ function ClustersSidePanel({
     const upgradeMessage =
         upgradeStatus && formatUpgradeMessage(parsedUpgradeStatus, upgradeStatusDetail);
     const credentialExpirationProps = getCredentialExpirationProps(certExpiryStatus);
+    const initiationOfCertRotation = initiationOfCertRotationIfApplicable(upgradeStatus);
 
     return (
         <Panel
+            id="clusters-side-panel"
             header={selectedClusterName}
             headerComponents={showPanelButtons ? panelButtons : <div />}
             bodyClassName="pt-4"
             className="w-full h-full absolute right-0 top-0 md:w-1/2 min-w-72 md:relative z-0 bg-base-100"
             onClose={unselectCluster}
         >
+            <Dialog
+                className="w-1/3"
+                isOpen={showCertRotationModal}
+                text={`Select "Apply Update" to create new credentials in your cluster immediately. Each StackRox service begins using the new credentials after it restarts.`}
+                onConfirm={triggerClusterCertRotation}
+                confirmText="Apply update"
+                onCancel={hideCertRotationModal}
+            />
+
             {!!messageState && (
                 <div className="m-4">
                     <Message type={messageState.type} message={messageState.message} />
@@ -288,7 +329,7 @@ function ClustersSidePanel({
             {!!credentialExpirationProps &&
                 credentialExpirationProps.showExpiringSoon &&
                 !freshCredentialsDownloaded && (
-                    <div className="m-4">
+                    <div data-testid="credential-expiration-banner" className="m-4">
                         <Message
                             type={credentialExpirationProps.messageType}
                             message={
@@ -301,7 +342,34 @@ function ClustersSidePanel({
                                         className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
                                         onClick={generateCertSecret}
                                     />{' '}
-                                    and apply it to your cluster.
+                                    and apply it to your cluster
+                                    {parsedUpgradeStatus.type === 'current' ? (
+                                        <>
+                                            , or{' '}
+                                            <Button
+                                                text="apply credentials by using an automatic upgrade"
+                                                className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
+                                                onClick={openCertRotationModal}
+                                            />
+                                            .
+                                            {initiationOfCertRotation && (
+                                                <p className="py-2">
+                                                    An automatic upgrade applied renewed credentials
+                                                    on{' '}
+                                                    {format(
+                                                        initiationOfCertRotation,
+                                                        'MMMM D, YYYY'
+                                                    )}
+                                                    , at{' '}
+                                                    {format(initiationOfCertRotation, 'h:mm a')}.
+                                                    Each StackRox service begins using its new
+                                                    credentials the next time it restarts.
+                                                </p>
+                                            )}
+                                        </>
+                                    ) : (
+                                        '.'
+                                    )}
                                 </div>
                             }
                         />

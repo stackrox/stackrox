@@ -479,7 +479,7 @@ const ClustersPage = ({
                                     {messages}
                                 </div>
                             )}
-                            <div className="w-full">
+                            <div data-testid="clusters-table" className="w-full">
                                 <CheckboxTable
                                     ref={(table) => {
                                         setTableRef(table);

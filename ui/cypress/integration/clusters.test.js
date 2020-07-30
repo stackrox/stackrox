@@ -1,3 +1,4 @@
+import dateFns from 'date-fns';
 import { selectors, clustersUrl } from '../constants/ClustersPage';
 import { clusters as clustersApi } from '../constants/apiEndpoints';
 import withAuth from '../helpers/basicAuth';
@@ -18,6 +19,108 @@ describe('Clusters page', () => {
 
         it('should have a toggle control for the auto-upgrade setting', () => {
             cy.get(selectors.autoUpgradeInput);
+        });
+    });
+});
+
+describe('Cluster Cert Expiration', () => {
+    withAuth();
+
+    // Make a request to the clusters API, and modify it to have the changes we need.
+    // Do it this way to avoid having to deal with the overhead of maintaining full-blown fixtures.
+    const getMockClustersResp = (expiry, upgradeStatusOutOfDate, recentCertRotationUpgradeTime) => {
+        return cy
+            .request({
+                method: 'GET',
+                url: 'v1/clusters',
+                auth: {
+                    bearer: Cypress.env('ROX_AUTH_TOKEN'),
+                },
+            })
+            .then((resp) => {
+                const { clusters } = resp.body;
+                expect(clusters.length).to.be.greaterThan(0);
+                // For simplicity, keep only the first row.
+                clusters.splice(1);
+                clusters[0].status.certExpiryStatus = { sensorCertExpiry: expiry };
+                if (upgradeStatusOutOfDate) {
+                    clusters[0].status.upgradeStatus.upgradability = 'AUTO_UPGRADE_POSSIBLE';
+                } else {
+                    clusters[0].status.upgradeStatus.upgradability = 'UP_TO_DATE';
+                }
+                if (recentCertRotationUpgradeTime) {
+                    clusters[0].status.upgradeStatus.mostRecentProcess = {
+                        type: 'CERT_ROTATION',
+                        initiatedAt: recentCertRotationUpgradeTime,
+                        progress: {
+                            upgradeState: 'UPGRADE_COMPLETE',
+                        },
+                    };
+                } else {
+                    clusters[0].status.upgradeStatus.mostRecentProcess = null;
+                }
+                return { clusters };
+            });
+    };
+
+    const openSidePanelWithMockedClusters = (mockClusters) => {
+        cy.server();
+        cy.route('GET', clustersApi.list, mockClusters).as('clusters');
+        cy.visit(clustersUrl);
+        cy.wait('@clusters');
+        cy.get(selectors.tableFirstRow).click();
+        cy.get(selectors.sidePanel);
+    };
+
+    it('shoud not show warning if expiration is more than 30 days away', () => {
+        const mockExpiry = dateFns.addDays(new Date(), 31);
+        getMockClustersResp(mockExpiry).then((mockClusters) => {
+            openSidePanelWithMockedClusters(mockClusters);
+            cy.get(selectors.credentialExpirationBanner).should('not.exist');
+        });
+    });
+
+    describe('should show warning if expiration is less than 30 days away', () => {
+        const verifyBannerTextEquals = (expectedText) => {
+            cy.get(selectors.credentialExpirationBanner)
+                .invoke('text')
+                .then((text) => {
+                    expect(text).to.equal(expectedText);
+                });
+        };
+
+        const mockExpiry = dateFns.addDays(new Date(), 29);
+        it('should not show auto-upgrade link if sensor is not up-to-date', () => {
+            getMockClustersResp(mockExpiry, true).then((mockClusters) => {
+                openSidePanelWithMockedClusters(mockClusters);
+                verifyBannerTextEquals(
+                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster.'
+                );
+            });
+        });
+
+        it('shoud show auto-upgrade link if sensor is up-to-date', () => {
+            getMockClustersResp(mockExpiry).then((mockClusters) => {
+                openSidePanelWithMockedClusters(mockClusters);
+                verifyBannerTextEquals(
+                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster, or apply credentials by using an automatic upgrade.'
+                );
+            });
+        });
+
+        it('shoud show auto-upgrade link, and banner with time of recent upgrade', () => {
+            const mockCertRotationTime = dateFns.addMinutes(new Date(), -5);
+            getMockClustersResp(mockExpiry, false, mockCertRotationTime).then((mockClusters) => {
+                openSidePanelWithMockedClusters(mockClusters);
+                cy.get(selectors.credentialExpirationBanner).should(
+                    'contain',
+                    'This cluster’s credentials expire in 28 days. To use renewed certificates, download this YAML file and apply it to your cluster, or apply credentials by using an automatic upgrade.'
+                );
+                cy.get(selectors.credentialExpirationBanner).should(
+                    'contain',
+                    'An automatic upgrade applied renewed credentials on '
+                );
+            });
         });
     });
 });

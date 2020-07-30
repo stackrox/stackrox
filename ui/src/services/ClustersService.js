@@ -89,6 +89,16 @@ export function upgradeCluster(id) {
 }
 
 /**
+ * Start a cluster cert rotation.
+ *
+ * @param id
+ * @returns {Promise<undefined, Error>} resolved if operation was successful.
+ */
+export function rotateClusterCerts(id) {
+    return axios.post(`${upgradesUrl}/rotateclustercerts/${id}`);
+}
+
+/**
  * Manually start a sensor upgrade for an array of clusters.
  *
  * @returns {Promise<Object, Error>} whose only value is resolved or rejected

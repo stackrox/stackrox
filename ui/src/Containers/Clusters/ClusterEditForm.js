@@ -452,7 +452,7 @@ ClusterEditForm.propTypes = {
         slimCollectorMode: PropTypes.bool,
     }).isRequired,
     handleChange: PropTypes.func.isRequired,
-    isLoading: PropTypes.func.isRequired,
+    isLoading: PropTypes.bool.isRequired,
 };
 
 export default ClusterEditForm;
