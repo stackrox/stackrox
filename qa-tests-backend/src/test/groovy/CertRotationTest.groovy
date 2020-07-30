@@ -188,6 +188,14 @@ class CertRotationTest extends BaseSpecification {
         checkCurrentValueOfSecretIdenticalExceptNewCerts(sensorTLSSecret, "sensor-tls")
         checkCurrentValueOfSecretIdenticalExceptNewCerts(collectorTLSSecret, "collector-tls")
         checkCurrentValueOfSecretIdenticalExceptNewCerts(admissionControlTLSSecret, "admission-control-tls")
+
+        // Cleanup: revert secrets to what they were before this test was run.
+        cleanup:
+        orchestrator.updateSecret(sensorTLSSecret)
+        orchestrator.updateSecret(collectorTLSSecret)
+        if (admissionControlTLSSecret != null) {
+            orchestrator.updateSecret(admissionControlTLSSecret)
+        }
     }
 
 }

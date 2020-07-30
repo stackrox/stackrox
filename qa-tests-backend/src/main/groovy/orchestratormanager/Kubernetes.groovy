@@ -756,6 +756,12 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
+    String updateSecret(Secret secret) {
+        return withRetry(2, 3) {
+            client.secrets().inNamespace(secret.metadata.namespace).createOrReplace(secret)
+        }
+    }
+
     def deleteSecret(String name, String namespace = this.namespace) {
         withRetry(2, 3) {
             client.secrets().inNamespace(namespace).withName(name).delete()

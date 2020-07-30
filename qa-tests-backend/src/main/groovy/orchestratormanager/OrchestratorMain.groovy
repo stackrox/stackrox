@@ -75,6 +75,7 @@ interface OrchestratorMain {
     def deleteSecret(String name, String namespace)
     def getSecretCount(String ns)
     io.fabric8.kubernetes.api.model.Secret getSecret(String name, String namespace)
+    def updateSecret(io.fabric8.kubernetes.api.model.Secret secret)
 
     //Namespaces
     String createNamespace(String ns)
