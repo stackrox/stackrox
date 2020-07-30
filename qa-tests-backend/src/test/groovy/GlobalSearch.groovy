@@ -19,7 +19,13 @@ class GlobalSearch extends BaseSpecification {
         orchestrator.createDeployment(DEPLOYMENT)
         assert Services.waitForDeployment(DEPLOYMENT)
         // Wait for the latest tag violation since we try to search by it.
-        assert waitForViolation(DEPLOYMENT.getName(), "Latest tag")
+        def foundViolation = waitForViolation(DEPLOYMENT.getName(), "Latest tag")
+        if (!foundViolation) {
+            def policy = Services.getPolicyByName("Latest tag")
+            println "'Latest tag' policy:"
+            println policy
+        }
+        assert foundViolation
     }
 
     def cleanupSpec() {
