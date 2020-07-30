@@ -1,29 +1,18 @@
 # dependencies
-/node_modules
+node_modules/
 /yarn.lock.sha256
 
 # build
 lint
-
-# testing
-/coverage
-/.nyc_output
-
-# production
 /build
-index.css
-storybook-static/
+/test-results
 
-# IDE
-/.vscode
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# development
+.vscode
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log
+
+# misc
+.DS_Store

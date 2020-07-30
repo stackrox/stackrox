@@ -1,5 +1,5 @@
-@import '../node_modules/slick-carousel/slick/slick.css';
-@import '../node_modules/slick-carousel/slick/slick-theme.css';
+@import '~slick-carousel/slick/slick.css';
+@import '~slick-carousel/slick/slick-theme.css';
 @import 'css/style.css';
 
 .theme-light {
@@ -783,7 +783,7 @@ h6 {
 }
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
-@import '../node_modules/react-table/react-table.css';
+@import '~react-table/react-table.css';
 
 .ReactTable .rt-table {
     overflow: overlay !important;
@@ -1136,7 +1136,7 @@ h6 {
 }
 
 /* React-vis */
-@import '../node_modules/react-vis/dist/style.css';
+@import '~react-vis/dist/style.css';
 
 /* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {

@@ -420,7 +420,6 @@ endif
 
 .PHONY: ui-test
 ui-test:
-	@# UI tests don't work in Bazel yet.
 	make -C ui test
 
 .PHONY: test

@@ -1,0 +1,12 @@
+# development
+storybook-static/
+
+# testing
+/coverage
+/**/__snapshots__
+/cypress/test-results
+/.nyc_output
+
+# production
+/build
+/src/index.css

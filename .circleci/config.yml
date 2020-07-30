@@ -78,13 +78,12 @@ restoreGradle: &restoreGradle
       - *gradleCacheKey
       - v1-rox-gradle
 
-uiCacheKey: &uiCacheKey 'v4-rox-ui-deps-{{ checksum "ui/package.json" }}-{{ checksum "ui/yarn.lock" }}'
+uiCacheKey: &uiCacheKey 'v5-rox-ui-deps-{{ checksum "ui/yarn.lock" }}'
 restoreUI: &restoreUI
   restore_cache:
     keys:
       - *uiCacheKey
-      - v4-rox-ui-deps-{{ checksum "ui/package.json" }}-
-      - v4-rox-ui-deps-
+      - v5-rox-ui-deps-
 
 setupHelm: &setupHelm
   run:
@@ -292,9 +291,9 @@ runUIE2E: &runUIE2E
       fi
 
       if [ "${UI_E2E_COLLECT_COVERAGE}" = "true" ]; then
-        make -C ui test-e2e-ci-coverage
+        make -C ui test-e2e-coverage
       else
-        make -C ui test-e2e-ci
+        make -C ui test-e2e
       fi
 
 collectImbuedUILogs: &collectImbuedUILogs
@@ -423,24 +422,14 @@ storeProfilingResults: &storeProfilingResults
     path: /tmp/pprof.zip
     destination: pprof.zip
 
-storeCypressResults: &storeCypressResults
+storeUITestReports: &storeUITestReports
   store_test_results:
-    path: ui/cypress/reports
+    path: ui/test-results/reports
 
-storeCypressVideos: &storeCypressVideos
+storeUITestArtifacts: &storeUITestArtifacts
   store_artifacts:
-    path: ui/cypress/videos
-    destination: ui-e2e-videos
-
-storeCypressScreenshots: &storeCypressScreenshots
-  store_artifacts:
-    path: ui/cypress/screenshots
-    destination: ui-e2e-screenshots
-
-storeUITestCoverage: &storeUITestCoverage
-  store_artifacts:
-    path: ui/coverage
-    destination: ui-test-coverage
+    path: ui/test-results/artifacts
+    destination: ui-test-artifacts
 
 storeQATestResults: &storeQATestResults
   store_test_results:
@@ -1706,6 +1695,8 @@ jobs:
           name: Run UI unit tests
           command: make ui-test
 
+      - *storeUITestReports
+
       - run:
           name: Upload coverage information
           command: |
@@ -1857,17 +1848,20 @@ jobs:
       - save_cache:
           key: *uiCacheKey
           paths:
-            - ui/node_modules
             - ui/yarn.lock.sha256
             - ui/deps
             - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
+            - ui/node_modules # CircleCI doesn't support globbing here https://circleci.com/docs/2.0/caching/#basic-example-of-dependency-caching so all `node_nodules` need to be listed
+            - ui/apps/platform/node_modules
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
             - ui/build # Copied directly into the image downstream.
             - ui/deps
-            - ui/node_modules # Used for OSS license auditing downstream.
+            - ui/node_modules # node_modules dirs here and below are used for OSS license auditing downstream
+            - ui/apps/*/node_modules
+            - ui/packages/*/node_modules
 
       - cleanup-clusters-on-fail
 
@@ -1983,7 +1977,6 @@ jobs:
       - run:
           name: Generate OSS notice
           command: |
-            ls ui/node_modules
             make ossls-notice
 
       - run:
@@ -2052,7 +2045,6 @@ jobs:
       - run:
           name: Generate OSS notice
           command: |
-            ls ui/node_modules
             make ossls-notice
 
       - run:
@@ -2714,10 +2706,8 @@ jobs:
 
       - teardown-gke
 
-      - *storeCypressResults
-      - *storeCypressScreenshots
-      - *storeCypressVideos
-      - *storeUITestCoverage
+      - *storeUITestReports
+      - *storeUITestArtifacts
 
   gke-api-e2e-tests:
     executor: custom

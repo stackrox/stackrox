@@ -3,15 +3,12 @@ UI_BASE_URL ?= https://localhost:8000
 .PHONY: all
 all: deps lint test build
 
-deps: package.json
+deps: yarn.lock
 	yarn install --frozen-lockfile
 	@touch deps
 
-SOURCES := $(shell ls *.json) tailwind.config.js yarn.lock
-SOURCES += $(shell find public)
-SOURCES += $(shell find src -name '*.js' -print)
-SOURCES += $(shell find src -name '*.css' -print)
-SOURCES += $(shell find src -name '*.html' -print)
+SOURCES := $(shell find packages -type d \( -name node_modules \) -prune -o -print)
+SOURCES += $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 
 .PHONY: printsrcs
 printsrcs:
@@ -20,7 +17,7 @@ printsrcs:
 
 lint: deps $(SOURCES)
 	@echo "+ $@"
-	yarn lint --quiet
+	yarn lint
 	@touch lint
 
 build: deps $(SOURCES)
@@ -42,39 +39,25 @@ test: deps $(SOURCES)
 	@echo "+ $@"
 	yarn test
 
-.PHONY: test-watch
-test-watch: deps
+.PHONY: test-e2e
+test-e2e: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-watch
+	yarn test-e2e
 
-.PHONY: test-e2e-local
-test-e2e-local: deps $(SOURCES)
+.PHONY: test-e2e-coverage
+test-e2e-coverage: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-e2e-local
+	yarn test-e2e:coverage
 
-.PHONY: test-e2e-ci
-test-e2e-ci: deps $(SOURCES)
+.PHONY: test-e2e-demo
+test-e2e-demo: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-e2e-ci --config baseUrl=$(UI_BASE_URL)
-
-.PHONY: test-e2e-ci-coverage
-test-e2e-ci-coverage: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e-ci:coverage --config baseUrl=$(UI_BASE_URL)
-
-.PHONY: test-e2e-demo-local
-test-e2e-demo-local: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e-demo-local
-
-.PHONY: test-e2e-demo-ci
-test-e2e-demo-ci: deps $(SOURCES)
-	@echo "+ $@"
-	yarn test-e2e-demo-ci --config baseUrl=$(UI_BASE_URL)
+	yarn test-e2e-demo
 
 .PHONY: clean
 clean:
 	@echo "+ $@"
+	yarn clean
 	rm -f deps
 	rm -f lint
 	rm -rf build

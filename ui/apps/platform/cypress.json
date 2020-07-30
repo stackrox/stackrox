@@ -5,10 +5,5 @@
     "ignoreTestFiles": ["**/constants/**/*", "**/helpers/**/*"],
     "viewportWidth": 1440,
     "viewportHeight": 850,
-    "reporter": "junit",
-    "reporterOptions": {
-        "mochaFile": "cypress-report.xml",
-        "toConsole": true
-    },
     "numTestsKeptInMemory": 0
 }

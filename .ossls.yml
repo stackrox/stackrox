@@ -5,6 +5,7 @@ yarn:
   lockfile: ui/yarn.lock
   node-modules-dirs:
     - ui/node_modules
+    - ui/apps/platform/node_modules
 
 patterns:
   - "*AUTHOR*"

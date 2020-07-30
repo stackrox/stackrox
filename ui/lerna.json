@@ -1,0 +1,14 @@
+{
+    "packages": ["packages/*", "apps/*"],
+    "version": "0.1.0-alpha.0",
+    "npmClient": "yarn",
+    "useWorkspaces": true,
+    "command": {
+        "version": {
+            "private": false
+        },
+        "publish": {
+            "registry": "https://npm.pkg.github.com"
+        }
+    }
+}

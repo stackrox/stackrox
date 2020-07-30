@@ -3,13 +3,4 @@
 # local build artifacts
 /node_modules
 /build
-/coverage
-
-# generated sources
-/src/index.css
-
-# for now also ignoring any non-code file
-# TODO: eventually enable formatting for those files too
-**/*.css
-**/*.json
-**/*.md
+/test-results
