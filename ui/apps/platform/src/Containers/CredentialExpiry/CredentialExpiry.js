@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
+import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
 
 import MessageBanner from 'Components/MessageBanner';
-import { differenceInDays, distanceInWordsStrict, format } from 'date-fns';
+import { selectors } from 'reducers';
 import Button from '../../Components/Button';
 
 const getExpirationMessageType = (daysLeft) => {
@@ -22,10 +22,19 @@ const CredentialExpiry = ({
 }) => {
     const [expirationDate, setExpirationDate] = useState(null);
     useEffect(() => {
-        expiryFetchFunc().then((expiry) => {
-            setExpirationDate(expiry);
-        });
-    }, [expiryFetchFunc]);
+        expiryFetchFunc()
+            .then((expiry) => {
+                setExpirationDate(expiry);
+            })
+            .catch((e) => {
+                // ignored because it's either a temporary network issue,
+                //   or symptom of a larger problem
+                // Either way, we don't want to spam the logimbue service
+
+                // eslint-disable-next-line no-console
+                console.warn(`Problem checking the certification expiration for ${component}.`, e);
+            });
+    }, [expiryFetchFunc, component]);
 
     if (!expirationDate) {
         return null;
