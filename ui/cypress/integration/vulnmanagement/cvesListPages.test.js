@@ -122,7 +122,10 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 
-            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(`${selectors.tableRowCheckbox}:first`)
+                .wait(100)
+                .get(`${selectors.tableRowCheckbox}:first`)
+                .click();
             cy.get(selectors.cveAddToPolicyButton).click();
 
             // TODO: finish testing with react-select, that evil component
@@ -135,7 +138,10 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 
-            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(`${selectors.tableRowCheckbox}:first`)
+                .wait(100)
+                .get(`${selectors.tableRowCheckbox}:first`)
+                .click();
             cy.get(selectors.cveAddToPolicyButton).click();
 
             // TODO: finish testing with react-select, that evil component
@@ -149,7 +155,10 @@ describe('CVEs list Page and its entity detail page,sub list  validations ', () 
 
             cy.get(selectors.cveAddToPolicyButton).should('be.disabled');
 
-            cy.get(selectors.tableRowCheckbox).first().click();
+            cy.get(`${selectors.tableRowCheckbox}:first`)
+                .wait(100)
+                .get(`${selectors.tableRowCheckbox}:first`)
+                .click();
             cy.get(selectors.cveAddToPolicyButton).click();
 
             // TODO: finish testing with react-select, that evil component
