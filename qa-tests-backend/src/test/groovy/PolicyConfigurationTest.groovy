@@ -1,3 +1,4 @@
+import static Services.checkForNoViolations
 import static Services.waitForViolation
 
 import services.ImageService
@@ -618,7 +619,7 @@ class PolicyConfigurationTest extends BaseSpecification {
         nonViolatedDeployments.each {
             // We can wait for a very short period of time here because if we have the violation deployments
             // we have acknowledged that reassessment of the deployments is in progress
-            assert !waitForViolation(it.name, policy.getName(), 5)
+            assert checkForNoViolations(it.name, policy.getName())
         }
 
         cleanup:

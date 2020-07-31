@@ -9,6 +9,7 @@ import objects.NetworkPolicy
 import orchestratormanager.OrchestratorType
 import services.AlertService
 import services.BaseService
+import services.PolicyService
 import io.stackrox.proto.api.v1.ImageServiceOuterClass.ListImagesResponse
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
@@ -137,6 +138,16 @@ class Services extends BaseService {
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
+        if (violations == null || violations.size() == 0) {
+            // See is a policy reassess _would_ trigger the desired violation
+            println "Issuing a policy reassess"
+            PolicyService.reassessPolicies()
+            violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)
+            if (violations != null && violations.size() > 0) {
+                println "Violation(s) were found after a policy reasses"
+            }
+            return false // still return false pending debate
+        }
         return violations != null && violations.size() > 0
     }
 
@@ -164,6 +175,11 @@ class Services extends BaseService {
 
     static getViolationsByDeploymentID(String deploymentID, String policyName, int timeoutSeconds) {
         return getViolationsHelper("Deployment Id:${deploymentID}+Policy:${policyName}", policyName, timeoutSeconds)
+    }
+
+    static checkForNoViolations(String deploymentName, String policyName, int checkSeconds = 5) {
+        def violations = getViolationsWithTimeout(deploymentName, policyName, checkSeconds)
+        return violations == null || violations.size() == 0
     }
 
     static scanImage(String image) {
