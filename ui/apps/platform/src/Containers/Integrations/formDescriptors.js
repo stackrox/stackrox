@@ -225,6 +225,20 @@ const formDescriptors = {
                 listRender: renderKeyValues,
             },
         ],
+        awssh: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'AWS Security Hub Integration',
+            },
+            {
+                label: 'AWS Region',
+                jsonpath: 'labelDefault',
+                type: 'text',
+                placeholder: 'for example, us-east-1',
+            },
+        ],
         jira: [
             {
                 label: 'Integration Name',

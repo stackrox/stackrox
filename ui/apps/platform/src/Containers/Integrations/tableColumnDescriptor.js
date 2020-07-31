@@ -21,6 +21,10 @@ const tableColumnDescriptor = Object.freeze({
         ],
     },
     notifiers: {
+        awssh: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelRegion', Header: 'AWS Region', className: 'word-break' },
+        ],
         slack: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'labelDefault', Header: 'Default Webhook', className: 'word-break' },

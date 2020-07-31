@@ -5,7 +5,7 @@ node_modules/
 # build
 lint
 /build
-/test-results
+test-results
 
 # development
 .vscode

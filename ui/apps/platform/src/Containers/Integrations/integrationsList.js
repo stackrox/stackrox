@@ -19,6 +19,7 @@ import s3 from 'images/s3.svg';
 import teams from 'images/teams.svg';
 import pagerduty from 'images/pagerduty.svg';
 import tenable from 'images/tenable.svg';
+import { knownBackendFlags } from 'utils/featureFlags';
 
 const integrationsList = {
     authProviders: [
@@ -197,6 +198,13 @@ const integrationsList = {
             type: 'teams',
             source: 'notifiers',
             image: teams,
+        },
+        {
+            label: 'AWS Security Hub',
+            type: 'awssh',
+            source: 'notifiers',
+            image: s3, // TODO: replace with ref to Security Hub image when that becomes available
+            featureFlagDependency: knownBackendFlags.ROX_AWS_SECURITY_HUB_INTEGRATION,
         },
     ],
     backups: [
