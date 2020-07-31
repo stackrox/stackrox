@@ -23,12 +23,23 @@ echo "Pulled context: ${context}"
 server=$(echo "${context}" | sed -En 's/(.*)\-(\w+)\-ci\-rox\-systems\-.*/\1.\2.ci.rox.systems/p')
 echo "Pulled server: ${server}"
 
+CTL="kubectl"
+CLUSTER_TYPE=""
+if [[ $(kubectl get ns | grep openshift) ]]; then
+  CTL="oc"
+  CLUSTER_TYPE="openshift"
+fi
+
 while true; do
   date
   if [[ ! -z "${server}" ]]; then
     host "${server}"
   fi
-  kubectl get nodes
+  if [[ ! -z "${CLUSTER_TYPE}" && "${CLUSTER_TYPE}" -eq "openshift" ]]; then
+    oc -n openshift-apiserver describe svc/api
+    oc -n openshift-apiserver logs svc/api | tail -50
+  fi
+  "${CTL}" describe nodes
   ps axw | grep "port-forward"
   curl --silent --insecure --show-error "${METADATA_URL}" | jq
   sleep 60
