@@ -105,6 +105,25 @@ class TestRailManager {
 
     static void createSectionIfNotExists(String specName) {
         def section = sections.find { it.name == specName && it.parentId == automationSectionId }
+
+        // Refresh existing list of sections to confirm that section does not exist
+        if (section == null) {
+            def startTime = System.currentTimeMillis()
+            def refreshed = false
+            while (!refreshed && System.currentTimeMillis() - startTime < TESTRAIL_API_TIMEOUT) {
+                try {
+                    sections = testRail.sections().list(projectId, suiteId).execute()
+                    section = sections.find { it.name == specName && it.parentId == automationSectionId }
+                    refreshed = true
+                } catch (Exception e) {
+                    println "failed to create section: ${e.toString()}"
+                    println "Retrying in 5 seconds..."
+                    sleep 5000
+                }
+            }
+        }
+
+        // Only if refreshed list of sections does not contain the section, then add
         if (section == null) {
             println "Test Spec Section \"${specName}\" not found in TestRail. Creating..."
             def created = false
@@ -134,6 +153,25 @@ class TestRailManager {
     static Case createCaseIfNotExists(TestResult test) {
         def sectionId = sections.find { it.name == test.suite && it.parentId == automationSectionId }?.id
         def testCase = cases.find { it.title == test.testName && it.sectionId == sectionId }
+
+        // Refresh existing list of test cases to confirm that test cases does not exist
+        if (testCase == null) {
+            def startTime = System.currentTimeMillis()
+            def refreshed = false
+            while (!refreshed && System.currentTimeMillis() - startTime < TESTRAIL_API_TIMEOUT) {
+                try {
+                    cases = testRail.cases().list(projectId, suiteId, caseFields).execute()
+                    testCase = cases.find { it.title == test.testName && it.sectionId == sectionId }
+                    refreshed = true
+                } catch (Exception e) {
+                    println "failed to create case: ${e.toString()}"
+                    println "Retrying in 5 seconds..."
+                    sleep 5000
+                }
+            }
+        }
+
+        // Only if refreshed list of tests does not contain the test, then add
         if (testCase == null) {
             println "Test Case \"${test.testName}\" not found in TestRail. Creating..."
             def created = false
@@ -161,6 +199,25 @@ class TestRailManager {
 
     static int createMilestoneIfNotExists() {
         Milestone milestone = milestones.find { it.name == milestoneName }
+
+        // Refresh existing list of milestones to confirm that milestone does not exist
+        if (milestone == null) {
+            def startTime = System.currentTimeMillis()
+            def refreshed = false
+            while (!refreshed && System.currentTimeMillis() - startTime < TESTRAIL_API_TIMEOUT) {
+                try {
+                    milestones = testRail.milestones().list(projectId).execute()
+                    milestone = milestones.find { it.name == milestoneName }
+                    refreshed = true
+                } catch (Exception e) {
+                    println "failed to create milestone: ${e.toString()}"
+                    println "Retrying in 5 seconds..."
+                    sleep 5000
+                }
+            }
+        }
+
+        // Only if refreshed list of milestones does not contain the milestone, then add
         if (milestone == null) {
             println "milestone \"${milestoneName}\" not found in TestRail. Creating..."
             def startTime = System.currentTimeMillis()
