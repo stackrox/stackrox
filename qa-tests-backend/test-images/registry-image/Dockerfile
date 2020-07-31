@@ -1,7 +1,7 @@
 FROM debian:8.11
 
 RUN apt-get -y update || true
-RUN apt-get -y install libssh-4=0.6.3-4+deb8u2 wget=1.16-1+deb8u7 tomcat7=7.0.56-3+deb8u11 openjdk-7-jre-headless=7u251-2.6.21-1~deb8u1 && \
+RUN apt-get -y install libssh-4=0.6.3-4+deb8u2 wget=1.16-1+deb8u7 tomcat7=7.0.56-3+deb8u11 openjdk-7-jre-headless=7u261-2.6.22-1~deb8u1 && \
     wget https://raw.githubusercontent.com/opsxcq/exploit-CVE-2014-6271/master/packages/bash_4.2%252Bdfsg-0.1_amd64.deb -O bash.deb && \
     dpkg -i bash.deb && \
     apt-get -y install bash=4.2+dfsg-0.1 && \
