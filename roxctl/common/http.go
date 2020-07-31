@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -71,12 +70,19 @@ func DoHTTPRequestAndCheck200(path string, timeout time.Duration, method string,
 }
 
 // AddAuthToRequest adds the correct auth to the request
-func AddAuthToRequest(req *http.Request) {
-	if token := env.TokenEnv.Setting(); token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else {
-		req.SetBasicAuth(basic.DefaultUsername, flags.Password())
+func AddAuthToRequest(req *http.Request) error {
+	token, err := RetrieveAuthToken()
+	if err != nil {
+		return errors.Wrap(err, "Failed to enrich HTTP request with authentication information")
 	}
+
+	if flags.Password() != "" {
+		req.SetBasicAuth(basic.DefaultUsername, flags.Password())
+	} else if token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+
+	return nil
 }
 
 func getURL(path string) (string, error) {
@@ -105,7 +111,10 @@ func NewHTTPRequestWithAuth(method string, path string, body io.Reader) (*http.R
 	if req.URL.Scheme != "https" && !flags.UseInsecure() {
 		return nil, errors.Errorf("URL %v uses insecure scheme %q, use --insecure flags to enable sending credentials", req.URL, req.URL.Scheme)
 	}
-	AddAuthToRequest(req)
+	err = AddAuthToRequest(req)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }

@@ -1,14 +1,10 @@
 package common
 
 import (
-	"fmt"
 	"net"
-	"os"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	http1DowngradeClient "github.com/stackrox/rox/pkg/grpc/http1downgrade/client"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -16,10 +12,6 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"google.golang.org/grpc"
 )
-
-const userHelpLiteralToken = `There is no token in file %q. The token file should only contain a single authentication token.
-To provide a token value directly, set the ROX_API_TOKEN environment variable.
-`
 
 // GetGRPCConnection gets a grpc connection to Central with the correct auth
 func GetGRPCConnection() (*grpc.ClientConn, error) {
@@ -57,25 +49,9 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 		opts.DialTLS = http1DowngradeClient.ConnectViaProxy
 	}
 
-	// Try to retrieve API token. First via --token-file parameter and then from the environment.
-	// Sets apiToken on success.
-	var apiToken string
-	if tokenFile := flags.APITokenFile(); tokenFile != "" {
-		// Error out if --token-file and --password is present on the command line.
-		if flags.Password() != "" {
-			return nil, errors.New("Cannot use password- and token-based authentication at the same time")
-		}
-
-		apiToken, err = flags.ReadTokenFromFile(tokenFile)
-		if err != nil {
-			if !strings.Contains(tokenFile, "/") {
-				// Specified token file looks somewhat like a literal token, try to help the user.
-				fmt.Fprintf(os.Stderr, userHelpLiteralToken, tokenFile)
-			}
-			return nil, err
-		}
-	} else if token := env.TokenEnv.Setting(); token != "" {
-		apiToken = token
+	apiToken, err := RetrieveAuthToken()
+	if err != nil {
+		return nil, err
 	}
 
 	if flags.Password() != "" {
