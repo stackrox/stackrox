@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generate"
+	"github.com/stackrox/rox/roxctl/sensor/generatecerts"
 	"github.com/stackrox/rox/roxctl/sensor/getbundle"
 )
 
@@ -15,6 +16,7 @@ func Command() *cobra.Command {
 	c.AddCommand(
 		generate.Command(),
 		getbundle.Command(),
+		generatecerts.Command(),
 	)
 	flags.AddTimeout(c)
 	return c

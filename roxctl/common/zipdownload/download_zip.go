@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/download"
 )
 
 const (
@@ -68,19 +68,6 @@ func extractFile(f *zip.File, outputDir string) error {
 	return nil
 }
 
-func parseFilenameFromHeader(header http.Header) (string, error) {
-	data := header.Get("Content-Disposition")
-	if data == "" {
-		return data, fmt.Errorf("could not parse filename from header: %+v", header)
-	}
-	oldLen := len(data)
-	data = strings.TrimPrefix(data, "attachment; filename=")
-	if len(data) == oldLen {
-		return "", fmt.Errorf("cannot parse filename from Content-Disposition header value %q", data)
-	}
-	return strings.Trim(data, `"`), nil
-}
-
 func printf(val string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, val, args...)
 }
@@ -128,7 +115,7 @@ func GetZip(opts GetZipOptions) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	zipFileName, err := parseFilenameFromHeader(resp.Header)
+	zipFileName, err := download.ParseFilenameFromHeader(resp.Header)
 	if err != nil {
 		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
 		printf("Warning: could not obtain output file name from HTTP response: %v.", err)

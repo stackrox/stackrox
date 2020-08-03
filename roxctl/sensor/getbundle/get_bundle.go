@@ -1,53 +1,16 @@
 package getbundle
 
 import (
-	"context"
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 )
 
-func resolveCluster(idOrName string, timeout time.Duration) (string, error) {
-	if _, err := uuid.FromString(idOrName); err == nil {
-		return idOrName, nil
-	}
-
-	conn, err := common.GetGRPCConnection()
-	if err != nil {
-		return "", err
-	}
-
-	service := v1.NewClustersServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(pkgCommon.Context(), timeout)
-	defer cancel()
-
-	clusters, err := service.GetClusters(ctx, &v1.GetClustersRequest{
-		Query: fmt.Sprintf("%s:%s", search.Cluster, idOrName),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	for _, cluster := range clusters.GetClusters() {
-		if cluster.GetName() == idOrName {
-			return cluster.GetId(), nil
-		}
-	}
-	return "", errors.Errorf("no cluster with name %q found", idOrName)
-}
-
 func downloadBundle(outputDir, clusterIDOrName string, createUpgraderSA bool, timeout time.Duration) error {
-	clusterID, err := resolveCluster(clusterIDOrName, timeout)
+	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout)
 	if err != nil {
 		return err
 	}
