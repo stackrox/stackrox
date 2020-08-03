@@ -61,7 +61,8 @@ type DataStore interface {
 
 // New returns an instance of DataStore.
 func New(
-	storage store.Store,
+	clusterStorage store.ClusterStore,
+	clusterHealthStorage store.ClusterHealthStore,
 	indexer index.Indexer,
 	ads alertDataStore.DataStore,
 	namespaceDS namespaceDataStore.DataStore,
@@ -73,17 +74,18 @@ func New(
 	graphProvider graph.Provider,
 	clusterRanker *ranking.Ranker) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:             storage,
-		indexer:             indexer,
-		searcher:            search.New(storage, indexer, graphProvider, clusterRanker),
-		alertDataStore:      ads,
-		namespaceDataStore:  namespaceDS,
-		deploymentDataStore: dds,
-		nodeDataStore:       ns,
-		secretsDataStore:    ss,
-		cm:                  cm,
-		notifier:            notifier,
-		clusterRanker:       clusterRanker,
+		clusterStorage:       clusterStorage,
+		clusterHealthStorage: clusterHealthStorage,
+		indexer:              indexer,
+		searcher:             search.New(clusterStorage, indexer, graphProvider, clusterRanker),
+		alertDataStore:       ads,
+		namespaceDataStore:   namespaceDS,
+		deploymentDataStore:  dds,
+		nodeDataStore:        ns,
+		secretsDataStore:     ss,
+		cm:                   cm,
+		notifier:             notifier,
+		clusterRanker:        clusterRanker,
 
 		cache: simplecache.New(),
 	}

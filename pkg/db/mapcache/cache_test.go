@@ -40,7 +40,7 @@ func (s *CacheTestSuite) SetupTest() {
 
 	s.underlyingDB = mocks.NewMockCrud(s.ctrl)
 
-	s.underlyingDB.EXPECT().Walk(gomock.Any()).Return(nil)
+	s.underlyingDB.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)
 	cache, err := NewMapCache(s.underlyingDB, alertKeyFunc)
 	s.NoError(err)
 	s.cache = cache.(*cacheImpl)

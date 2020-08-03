@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/db"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -30,15 +31,16 @@ func NewUniqueKeyCRUD(db *rocksdb.RocksDB, prefix []byte, keyFunc KeyFunc, alloc
 
 func (c *uniqueKeyCRUD) checkForConflicts(newID []byte, newMsg proto.Message) error {
 	newUniqueKey := c.uniqueKeyFunc(newMsg)
-	return c.Crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
+	err := c.Crud.WalkAllWithID(func(id []byte, msg proto.Message) error {
 		if bytes.Equal(newID, id) {
 			return nil
 		}
 		if bytes.Equal(newUniqueKey, c.uniqueKeyFunc(msg)) {
-			return errors.Errorf("unique key conflict between %s and existing %s on value: %s", newID, id, newUniqueKey)
+			return errors.Wrapf(errorhelpers.ErrAlreadyExists, "unique key conflict between %s and existing %s on value: %s", newID, id, newUniqueKey)
 		}
 		return nil
 	})
+	return err
 }
 
 func (c *uniqueKeyCRUD) Upsert(msg proto.Message) error {

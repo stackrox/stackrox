@@ -105,6 +105,7 @@ message ClusterCertExpiryStatus {
 
 message ClusterStatus {
     string                    sensor_version        = 1;
+    // This field will be deprecated starting release 48.0. Use healthStatus.lastUpdated instead.
     google.protobuf.Timestamp last_contact          = 2;
     ProviderMetadata          provider_metadata     = 3;
     OrchestratorMetadata      orchestrator_metadata = 4;
@@ -205,7 +206,7 @@ message ClusterCVEEdge {
 message ClusterHealthStatus {
     enum HealthStatusLabel {
         UNINITIALIZED = 0;
-        // only collector can have unavailable status
+        // Only collector can have unavailable status
         UNAVAILABLE   = 1;
         UNHEALTHY     = 2;
         DEGRADED      = 3;
@@ -214,21 +215,22 @@ message ClusterHealthStatus {
 
     CollectorHealthInfo       collector_health_info   = 1;
 
-    // fields that are derived and filled in by central processing
+    // Fields that are derived and filled in by central processing
     HealthStatusLabel         sensor_health_status    = 2 [(gogoproto.moretags) = "search:\"Sensor Status\""];
     HealthStatusLabel         collector_health_status = 3 [(gogoproto.moretags) = "search:\"Collector Status\""];
 
     HealthStatusLabel         overall_health_status   = 4 [(gogoproto.moretags) = "search:\"Cluster Status\""];
 
+    // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
-    google.protobuf.Timestamp collector_last_updated  = 5;
+    google.protobuf.Timestamp last_updated            = 5;
 
-    // to track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
+    // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
     bool                      health_info_complete    = 6;
 }
 
 message CollectorHealthInfo {
-    // this is the version of the collector deamonset as returned by k8s API
+    // This is the version of the collector deamonset as returned by k8s API
     string version                = 1;
     int32  total_desired_pods     = 2;
     int32  total_ready_pods       = 3;

@@ -41,9 +41,9 @@ func (c *cacheImpl) populate() error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	return c.db.Walk(func(msg proto.Message) error {
+	return c.db.WalkAllWithID(func(id []byte, msg proto.Message) error {
 		// No need to clone objects pulled directly from the DB
-		c.cache[string(c.keyFunc(msg))] = msg
+		c.cache[string(id)] = msg
 		return nil
 	})
 }

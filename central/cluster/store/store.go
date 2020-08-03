@@ -1,45 +1,30 @@
 package store
 
 import (
-	"errors"
-	"time"
-
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-var (
-	// ErrAlreadyExists indicates that a cluster already exists.
-	ErrAlreadyExists = errors.New("already exists")
-
-	clusterBucket                = []byte("clusters")
-	clusterLastContactTimeBucket = []byte("clusters_last_contact")
-	clusterStatusBucket          = []byte("cluster_status")
-)
-
-// Store provides storage functionality for alerts.
+// ClusterStore provides storage functionality for clusters.
 //go:generate mockgen-wrapper
-type Store interface {
-	GetCluster(id string) (*storage.Cluster, bool, error)
-	GetClusters() ([]*storage.Cluster, error)
-	GetSelectedClusters(ids []string) ([]*storage.Cluster, []int, error)
-	CountClusters() (int, error)
-	AddCluster(cluster *storage.Cluster) (string, error)
-	UpdateCluster(cluster *storage.Cluster) error
-	RemoveCluster(id string) error
-	UpdateClusterContactTimes(t time.Time, ids ...string) error
-	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
-	UpdateClusterUpgradeStatus(id string, status *storage.ClusterUpgradeStatus) error
-	UpdateClusterCertExpiryStatus(id string, certExpiryStatus *storage.ClusterCertExpiryStatus) error
+type ClusterStore interface {
+	Count() (int, error)
+	Walk(fn func(obj *storage.Cluster) error) error
+
+	Get(id string) (*storage.Cluster, bool, error)
+	GetMany(ids []string) ([]*storage.Cluster, []int, error)
+
+	Upsert(cluster *storage.Cluster) error
+	Delete(id string) error
 }
 
-// New returns a new Store instance using the provided bolt DB instance.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, clusterBucket)
-	bolthelper.RegisterBucketOrPanic(db, clusterLastContactTimeBucket)
-	bolthelper.RegisterBucketOrPanic(db, clusterStatusBucket)
-	return &storeImpl{
-		DB: db,
-	}
+// ClusterHealthStore provides storage functionality for cluster health.
+//go:generate mockgen-wrapper
+type ClusterHealthStore interface {
+	Get(id string) (*storage.ClusterHealthStatus, bool, error)
+	GetMany(ids []string) ([]*storage.ClusterHealthStatus, []int, error)
+	UpsertWithID(id string, obj *storage.ClusterHealthStatus) error
+	UpsertManyWithIDs(ids []string, objs []*storage.ClusterHealthStatus) error
+
+	Delete(id string) error
+	WalkAllWithID(fn func(id string, obj *storage.ClusterHealthStatus) error) error
 }

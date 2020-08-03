@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +41,8 @@ type ClusterDataStoreTestSuite struct {
 	hasReadCtx  context.Context
 	hasWriteCtx context.Context
 
-	clusters            *clusterMocks.MockStore
+	clusters            *clusterMocks.MockClusterStore
+	healthStatuses      *clusterMocks.MockClusterHealthStore
 	indexer             *clusterIndexMocks.MockIndexer
 	clusterDataStore    DataStore
 	namespaceDataStore  *namespaceMocks.MockDataStore
@@ -67,7 +69,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.Cluster)))
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.clusters = clusterMocks.NewMockStore(suite.mockCtrl)
+	suite.clusters = clusterMocks.NewMockClusterStore(suite.mockCtrl)
+	suite.healthStatuses = clusterMocks.NewMockClusterHealthStore(suite.mockCtrl)
 	suite.indexer = clusterIndexMocks.NewMockIndexer(suite.mockCtrl)
 
 	suite.namespaceDataStore = namespaceMocks.NewMockDataStore(suite.mockCtrl)
@@ -82,12 +85,14 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 
 	suite.nodeDataStore.EXPECT().GetAllClusterNodeStores(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
-	suite.clusters.EXPECT().GetClusters().Return(([]*storage.Cluster)(nil), nil)
+	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().WalkAllWithID(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
 	suite.clusterDataStore, err = New(
 		suite.clusters,
+		suite.healthStatuses,
 		suite.indexer,
 		suite.alertDataStore,
 		suite.namespaceDataStore,
@@ -109,7 +114,7 @@ func (suite *ClusterDataStoreTestSuite) TearDownTest() {
 //// Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
+	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
@@ -120,7 +125,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	// Return an error trying to fetch the cluster.
 	expectedErr := errors.New("issues need tissues")
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
+	suite.clusters.EXPECT().Get(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(suite.hasWriteCtx, fakeClusterID, nil)
@@ -132,8 +137,8 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 	testDeployments := []search.Result{{ID: "fakeDeployment"}}
 	testAlerts := []*storage.Alert{{}}
 	testSecrets := []*storage.ListSecret{{}}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(testCluster, true, nil)
-	suite.clusters.EXPECT().RemoveCluster(fakeClusterID).Return(nil)
+	suite.clusters.EXPECT().Get(fakeClusterID).Return(testCluster, true, nil)
+	suite.clusters.EXPECT().Delete(fakeClusterID).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(fakeClusterID).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil)
@@ -153,7 +158,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveCluster() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
-	suite.clusters.EXPECT().GetCluster(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Get(gomock.Any()).Times(0)
 
 	cluster, exists, err := suite.clusterDataStore.GetCluster(suite.hasNoneCtx, "hkjddjhk")
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -162,20 +167,21 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGet() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsGet() {
-	suite.clusters.EXPECT().GetCluster(gomock.Any()).Return(nil, false, nil)
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
 
 	_, _, err := suite.clusterDataStore.GetCluster(suite.hasReadCtx, "An Id")
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().GetCluster(gomock.Any()).Return(nil, false, nil)
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(nil, false, nil)
 
 	_, _, err = suite.clusterDataStore.GetCluster(suite.hasWriteCtx, "beef")
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
-	suite.clusters.EXPECT().GetSelectedClusters([]string{}).Return(nil, nil, nil)
+	suite.clusters.EXPECT().GetMany([]string{}).Return(nil, nil, nil)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	clusters, err := suite.clusterDataStore.GetClusters(suite.hasNoneCtx)
 	suite.NoError(err, "expected no error, should return nil without access")
@@ -183,19 +189,21 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesGetAll() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsGetAll() {
-	suite.clusters.EXPECT().GetClusters().Return(nil, nil)
+	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err := suite.clusterDataStore.GetClusters(suite.hasReadCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().GetClusters().Return(nil, nil)
+	suite.clusters.EXPECT().Walk(gomock.Any()).Return(nil)
+	suite.healthStatuses.EXPECT().GetMany(gomock.Any()).Return([]*storage.ClusterHealthStatus{}, []int{}, nil)
 
 	_, err = suite.clusterDataStore.GetClusters(suite.hasWriteCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
-	suite.clusters.EXPECT().CountClusters().Times(0)
+	suite.clusters.EXPECT().Count().Times(0)
 	suite.indexer.EXPECT().Search(gomock.Any()).Return([]search.Result{{ID: "hgdskdf"}}, nil)
 
 	count, err := suite.clusterDataStore.CountClusters(suite.hasNoneCtx)
@@ -204,19 +212,19 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesCount() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsCount() {
-	suite.clusters.EXPECT().CountClusters().Return(99, nil)
+	suite.clusters.EXPECT().Count().Return(99, nil)
 
 	_, err := suite.clusterDataStore.CountClusters(suite.hasReadCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 
-	suite.clusters.EXPECT().CountClusters().Return(42, nil)
+	suite.clusters.EXPECT().Count().Return(42, nil)
 
 	_, err = suite.clusterDataStore.CountClusters(suite.hasWriteCtx)
 	suite.NoError(err, "expected no error trying to read with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
-	suite.clusters.EXPECT().AddCluster(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Upsert(gomock.Any()).Times(0)
 
 	_, err := suite.clusterDataStore.AddCluster(suite.hasNoneCtx, &storage.Cluster{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -226,15 +234,15 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesAdd() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsAdd() {
-	suite.clusters.EXPECT().AddCluster(gomock.Any()).Return("hsdhjkbf", nil)
+	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 
-	_, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &storage.Cluster{})
+	_, err := suite.clusterDataStore.AddCluster(suite.hasWriteCtx, &storage.Cluster{Name: "blah"})
 	suite.NoError(err, "expected no error trying to write with permissions")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
-	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Upsert(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.UpdateCluster(suite.hasNoneCtx, &storage.Cluster{})
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -244,16 +252,22 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdate() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdate() {
-	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
+	suite.clusters.EXPECT().Upsert(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().AddCluster(gomock.Any()).Return(nil)
 	suite.connMgr.EXPECT().GetConnection(gomock.Any()).Return(nil)
 
-	err := suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{})
+	err := suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blah"})
 	suite.NoError(err, "expected no error trying to write with permissions")
+
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "1", Name: "blah"}, true, nil)
+
+	err = suite.clusterDataStore.UpdateCluster(suite.hasWriteCtx, &storage.Cluster{Id: "1", Name: "blahDiff"})
+	suite.Error(err, "expected error trying to rename cluster")
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
-	suite.clusters.EXPECT().RemoveCluster(gomock.Any()).Times(0)
+	suite.clusters.EXPECT().Delete(gomock.Any()).Times(0)
 
 	err := suite.clusterDataStore.RemoveCluster(suite.hasNoneCtx, "jiogserlksd", nil)
 	suite.Error(err, "expected an error trying to write without permissions")
@@ -263,9 +277,9 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesRemove() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
-	// This is a weird thing for store.GetCluster() to return but we're only testing auth here
-	suite.clusters.EXPECT().GetCluster("poiuytre").Return(nil, true, nil)
-	suite.clusters.EXPECT().RemoveCluster(gomock.Any()).Return(nil)
+	// This is a weird thing for store.Get() to return but we're only testing auth here
+	suite.clusters.EXPECT().Get("poiuytre").Return(nil, true, nil)
+	suite.clusters.EXPECT().Delete(gomock.Any()).Return(nil)
 	suite.indexer.EXPECT().DeleteCluster(gomock.Any()).Return(nil)
 	suite.namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
 	suite.deploymentDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil)
@@ -280,8 +294,6 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsRemove() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {
-	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
-
 	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasNoneCtx, time.Now(), "F")
 	suite.Error(err, "expected an error trying to write without permissions")
 
@@ -289,16 +301,7 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterContactTime() {
 	suite.Error(err, "expected an error trying to write without permissions")
 }
 
-func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterContactTime() {
-	suite.clusters.EXPECT().UpdateClusterContactTimes(gomock.Any(), gomock.Any()).Return(nil)
-
-	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasWriteCtx, time.Now(), "qwerty")
-	suite.NoError(err, "expected no error trying to write with permissions")
-}
-
 func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterStatus() {
-	suite.clusters.EXPECT().UpdateCluster(gomock.Any()).Times(0)
-
 	err := suite.clusterDataStore.UpdateClusterStatus(suite.hasNoneCtx, "F", &storage.ClusterStatus{})
 	suite.Error(err, "expected an error trying to write without permissions")
 
@@ -307,7 +310,8 @@ func (suite *ClusterDataStoreTestSuite) TestEnforcesUpdateClusterStatus() {
 }
 
 func (suite *ClusterDataStoreTestSuite) TestAllowsUpdateClusterStatus() {
-	suite.clusters.EXPECT().UpdateClusterStatus(gomock.Any(), gomock.Any()).Return(nil)
+	suite.clusters.EXPECT().Get(gomock.Any()).Return(&storage.Cluster{Id: "qwerty", Name: "blah"}, true, nil)
+	suite.clusters.EXPECT().Upsert(&storage.Cluster{Id: "qwerty", Name: "blah", Status: &storage.ClusterStatus{}}).Return(nil)
 
 	err := suite.clusterDataStore.UpdateClusterStatus(suite.hasWriteCtx, "qwerty", &storage.ClusterStatus{})
 	suite.NoError(err, "expected no error trying to write with permissions")
@@ -331,4 +335,199 @@ func (suite *ClusterDataStoreTestSuite) TestAllowsSearch() {
 
 	_, err = suite.clusterDataStore.Search(suite.hasWriteCtx, search.EmptyQuery())
 	suite.NoError(err, "expected no error trying to read with permissions")
+}
+
+func (suite *ClusterDataStoreTestSuite) TestUpdateClusterContactTimes() {
+	t := time.Now()
+	ts := protoconv.ConvertTimeToTimestamp(t)
+	ids := []string{"1", "2", "3", "4", "5", "6"}
+
+	existingHealths := []*storage.ClusterHealthStatus{
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			LastUpdated:        ts,
+		},
+	}
+	healths := []*storage.ClusterHealthStatus{
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			LastUpdated: ts,
+		},
+		{
+			LastUpdated: ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			LastUpdated: ts,
+		},
+	}
+
+	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{1, 2, 5}, nil)
+	suite.healthStatuses.EXPECT().UpsertManyWithIDs(ids, healths).Return(nil)
+
+	err := suite.clusterDataStore.UpdateClusterContactTimes(suite.hasWriteCtx, t, ids...)
+	suite.NoError(err)
+}
+
+func (suite *ClusterDataStoreTestSuite) TestPopulateClusterContactTimes() {
+	t := time.Now()
+	ts := protoconv.ConvertTimeToTimestamp(t)
+	ids := []string{"1", "2", "3", "4", "5", "6"}
+	existingHealths := []*storage.ClusterHealthStatus{
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			LastUpdated:        ts,
+		},
+	}
+	results := []search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}, {ID: "6"}}
+	clusters := []*storage.Cluster{{Id: "1"}, {Id: "2"}, {Id: "3"}, {Id: "4"}, {Id: "5"}, {Id: "6"}}
+	expected := []*storage.Cluster{
+		{
+			Id:       "1",
+			Priority: 1,
+		},
+		{
+			Id: "2",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id:       "3",
+			Priority: 1,
+		},
+		{
+			Id: "4",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "5",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id:       "6",
+			Priority: 1,
+		},
+	}
+
+	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
+	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{0, 2, 5}, nil)
+
+	actuals, err := suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(expected, actuals)
+
+	// none are missing
+	existingHealths = []*storage.ClusterHealthStatus{
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
+			LastUpdated:        ts,
+		},
+		{
+			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+			LastUpdated:        ts,
+		},
+	}
+	expected = []*storage.Cluster{
+		{
+			Id: "1",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "2",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "3",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "4",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "5",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+		{
+			Id: "6",
+			Status: &storage.ClusterStatus{
+				LastContact: ts,
+			},
+			Priority: 1,
+		},
+	}
+
+	suite.indexer.EXPECT().Search(gomock.Any()).Return(results, nil)
+	suite.clusters.EXPECT().GetMany(ids).Return(clusters, []int{}, nil)
+	suite.healthStatuses.EXPECT().GetMany(ids).Return(existingHealths, []int{}, nil)
+
+	actuals, err = suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(expected, actuals)
 }

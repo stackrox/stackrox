@@ -19,10 +19,10 @@ type Searcher interface {
 	SearchClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)
 }
 
-// New returns a new instance of Searcher for the given storage and indexer.
-func New(storage store.Store, indexer index.Indexer, graphProvider graph.Provider, clusterRanker *ranking.Ranker) Searcher {
+// New returns a new instance of Searcher for the given clusterStorage and indexer.
+func New(storage store.ClusterStore, indexer index.Indexer, graphProvider graph.Provider, clusterRanker *ranking.Ranker) Searcher {
 	return &searcherImpl{
-		storage:           storage,
+		clusterStorage:    storage,
 		indexer:           indexer,
 		formattedSearcher: formatSearcher(indexer, graphProvider, clusterRanker),
 	}

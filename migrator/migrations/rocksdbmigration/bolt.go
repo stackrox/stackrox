@@ -68,3 +68,12 @@ func migrateBolt(databases *types.Databases) error {
 	}
 	return nil
 }
+
+// GetPrefixedKey returns fully-qualified key for rocksDB
+func GetPrefixedKey(prefix []byte, id []byte) []byte {
+	newKey := make([]byte, 0, len(id)+len(prefix)+len(separator))
+	newKey = append(newKey, prefix...)
+	newKey = append(newKey, separator...)
+	newKey = append(newKey, id...)
+	return newKey
+}

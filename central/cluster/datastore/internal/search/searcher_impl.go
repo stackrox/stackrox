@@ -35,7 +35,7 @@ var (
 )
 
 type searcherImpl struct {
-	storage           store.Store
+	clusterStorage    store.ClusterStore
 	indexer           index.Indexer
 	formattedSearcher search.Searcher
 }
@@ -46,8 +46,8 @@ func (ds *searcherImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 		return nil, err
 	}
 	protoResults := make([]*v1.SearchResult, 0, len(clusters))
-	for i, alert := range clusters {
-		protoResults = append(protoResults, convertCluster(alert, results[i]))
+	for i, cluster := range clusters {
+		protoResults = append(protoResults, convertCluster(cluster, results[i]))
 	}
 	return protoResults, nil
 }
@@ -63,10 +63,11 @@ func (ds *searcherImpl) searchClusters(ctx context.Context, q *v1.Query) ([]*sto
 		return nil, nil, err
 	}
 
-	clusters, missingIndices, err := ds.storage.GetSelectedClusters(search.ResultsToIDs(results))
+	clusters, missingIndices, err := ds.clusterStorage.GetMany(search.ResultsToIDs(results))
 	if err != nil {
 		return nil, nil, err
 	}
+
 	results = search.RemoveMissingResults(results, missingIndices)
 	return clusters, results, nil
 }
