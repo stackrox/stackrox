@@ -6,11 +6,17 @@ import featureFlags from 'utils/featureFlags';
 import entityTypes from 'constants/entityTypes';
 import { filterModes } from 'Containers/Network/Graph/filterModes';
 
+const edgeTypes = {
+    NAMESPACE_EDGE: 'NAMESPACE_EDGE',
+};
+
 export const isNonIsolatedNode = (node) => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
 export const isDeployment = (node) => node?.type === entityTypes.DEPLOYMENT;
 
 export const isNamespace = (node) => node?.type === entityTypes.NAMESPACE;
+
+export const isNamespaceEdge = (edge) => edge?.type === edgeTypes.NAMESPACE_EDGE;
 
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
@@ -142,54 +148,103 @@ export const getClasses = (map) => {
 /**
  * Iterates through a list of links and returns bundled edges between namespaces
  *
- * @param {string} nodeId nodeId
+ * @param {string} highlightedNodeId the hovered or selected node
  * @param {!Object} configObj config object of the current network graph state
  *                            that contains links, filterState, and nodeSideMap
  * @returns {!Object[]} list of objects describing bundled edges between namespaces
  */
-export const getNamespaceEdges = (nodeId, { links, filterState, nodeSideMap }) => {
+export const getNamespaceEdges = (
+    highlightedNodeId,
+    { nodes = [], links = [], filterState, nodeSideMap }
+) => {
     const delimiter = '**__**';
+
+    const visitedNodeLinks = {};
+    const disallowedNamespaceLinks = {};
+    const activeNamespaceLinks = {};
+    const namespaceLinks = {};
+    const linkPortsAndProtocols = {};
 
     const filteredLinks = links.filter(
         ({ source, target, isActive, sourceNS, targetNS }) =>
-            (!nodeId ||
-                source === nodeId ||
-                target === nodeId ||
-                sourceNS === nodeId ||
-                targetNS === nodeId) &&
+            (!highlightedNodeId ||
+                source === highlightedNodeId ||
+                target === highlightedNodeId ||
+                sourceNS === highlightedNodeId ||
+                targetNS === highlightedNodeId) &&
             (filterState !== filterModes.active || isActive) &&
             sourceNS &&
             targetNS &&
             sourceNS !== targetNS
     );
 
-    const sourceTargetMap = {};
-    const disallowedLinkMap = {};
-    const activeLinkMap = {};
-    const edgeBundleCountMap = {};
-    filteredLinks.forEach(({ source, target, sourceNS, targetNS, isActive, isDisallowed }) => {
-        const NSLinkKey = [sourceNS, targetNS].sort().join(delimiter);
-        if (isActive) activeLinkMap[NSLinkKey] = true;
-        if (isDisallowed) disallowedLinkMap[NSLinkKey] = true;
-
-        const namespaceSourceTargetKey = [source, target].sort().join(delimiter);
-        if (!sourceTargetMap[namespaceSourceTargetKey]) {
-            sourceTargetMap[namespaceSourceTargetKey] = true;
-            edgeBundleCountMap[NSLinkKey] = edgeBundleCountMap[NSLinkKey]
-                ? edgeBundleCountMap[NSLinkKey] + 1
-                : 1;
-        }
+    // create a mapping of node edges -> ports and protocols
+    nodes.forEach((sourceNode) => {
+        const targetNodeIndices = Object.keys(sourceNode.outEdges);
+        targetNodeIndices.forEach((targetNodeIndex) => {
+            const { properties } = sourceNode.outEdges[targetNodeIndex];
+            const targetNode = nodes[targetNodeIndex];
+            if (
+                sourceNode.entity.type === entityTypes.DEPLOYMENT &&
+                targetNode.entity.type === entityTypes.DEPLOYMENT
+            ) {
+                const nodeLinkKey = [sourceNode.entity.id, targetNode.entity.id]
+                    .sort()
+                    .join(delimiter);
+                linkPortsAndProtocols[nodeLinkKey] = properties;
+            }
+        });
     });
 
-    return Object.keys(edgeBundleCountMap).map((key) => {
-        const [sourceNS, targetNS] = key.split(delimiter);
-        const count = edgeBundleCountMap[key];
-        const isActive = filterState !== filterModes.allowed && activeLinkMap[key];
+    filteredLinks.forEach(({ source, target, sourceNS, targetNS, isActive, isDisallowed }) => {
+        const namespaceLinkKey = [sourceNS, targetNS].sort().join(delimiter);
+        const nodeLinkKey = [source, target].sort().join(delimiter);
+
+        // keep track of which namespace links are active
+        if (isActive) activeNamespaceLinks[namespaceLinkKey] = true;
+        // keep track of which namespace links are disallowed
+        if (isDisallowed) disallowedNamespaceLinks[namespaceLinkKey] = true;
+
+        const portsAndProtocols = linkPortsAndProtocols[nodeLinkKey] || [];
+        const isLinkPreviouslyVisited = visitedNodeLinks[nodeLinkKey];
+
+        const namespaceLink = namespaceLinks[namespaceLinkKey] || {
+            portsAndProtocols: [],
+            numBidirectionalLinks: 0,
+            numUnidirectionalLinks: 0,
+        };
+
+        namespaceLink.portsAndProtocols = [
+            ...namespaceLink.portsAndProtocols,
+            ...portsAndProtocols,
+        ];
+
+        if (isLinkPreviouslyVisited) {
+            namespaceLink.numBidirectionalLinks += 1;
+            namespaceLink.numUnidirectionalLinks -= 1;
+        } else {
+            namespaceLink.numUnidirectionalLinks += 1;
+        }
+
+        namespaceLinks[namespaceLinkKey] = namespaceLink;
+    });
+
+    return Object.keys(namespaceLinks).map((namespaceLinkKey) => {
+        const [sourceNS, targetNS] = namespaceLinkKey.split(delimiter);
+        const { portsAndProtocols, numBidirectionalLinks, numUnidirectionalLinks } = namespaceLinks[
+            namespaceLinkKey
+        ];
+
+        const isNamespaceActive = activeNamespaceLinks[namespaceLinkKey];
+        const isNamespaceEdgeActive = filterState !== filterModes.allowed && isNamespaceActive;
+        const isNamespaceEdgeDisallowed = disallowedNamespaceLinks[namespaceLinkKey];
+
         const classes = getClasses({
             namespace: true,
-            active: isActive,
-            disallowed: isActive && disallowedLinkMap[key],
+            active: isNamespaceEdgeActive,
+            disallowed: isNamespaceEdgeActive && isNamespaceEdgeDisallowed,
         });
+
         const { source, target } = getSideMap(sourceNS, targetNS, nodeSideMap) || {
             source: sourceNS,
             target: targetNS,
@@ -199,7 +254,11 @@ export const getNamespaceEdges = (nodeId, { links, filterState, nodeSideMap }) =
             data: {
                 source,
                 target,
-                count,
+                numBidirectionalLinks,
+                numUnidirectionalLinks,
+                count: numBidirectionalLinks + numUnidirectionalLinks,
+                portsAndProtocols,
+                type: edgeTypes.NAMESPACE_EDGE,
             },
             classes,
         };
@@ -446,10 +505,10 @@ export const getNodeData = (id, deploymentList) => {
  */
 export const getEdges = (configObj) => {
     const { hoveredNode, selectedNode } = configObj;
-    const node = hoveredNode || selectedNode;
-    let allEdges = getNamespaceEdges(node?.id, configObj);
-    if (node) {
-        allEdges = allEdges.concat(getEdgesFromNode(node.id, configObj));
+    const highlightedNode = hoveredNode || selectedNode;
+    let allEdges = getNamespaceEdges(highlightedNode?.id, configObj);
+    if (highlightedNode) {
+        allEdges = [...allEdges, ...getEdgesFromNode(highlightedNode.id, configObj)];
     }
     return allEdges;
 };

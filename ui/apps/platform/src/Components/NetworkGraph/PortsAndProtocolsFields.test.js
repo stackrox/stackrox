@@ -1,4 +1,4 @@
-import { getPortsAndProtocolsMap, getPortsText } from './NodeTooltipOverlay';
+import { getPortsAndProtocolsMap, getPortsText } from './PortsAndProtocolsFields';
 
 describe('getPortsAndProtocolsMap', () => {
     it('should group an array of ports/protocols where the key is a protocol and the value is a list of ports', () => {

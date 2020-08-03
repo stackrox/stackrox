@@ -23,6 +23,7 @@ import {
     getLinks,
     isNamespace,
     isDeployment,
+    isNamespaceEdge,
     getNodeData,
     getEdges,
     getNamespaceEdgeNodes,
@@ -35,6 +36,7 @@ import {
 import { NS_FONT_SIZE, MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/networkGraph';
 import { defaultTippyTooltipProps } from 'Components/Tooltip';
 import NodeTooltipOverlay from './NodeTooltipOverlay';
+import NamespaceEdgeTooltipOverlay from './NamespaceEdgeTooltipOverlay';
 
 Cytoscape.use(popper);
 Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
@@ -75,26 +77,16 @@ const NetworkGraph = ({
 
     const links = getLinks(data, networkEdgeMap, networkNodeMap);
 
-    function makePopperDiv(node, ingressPortsAndProtocols, egressPortsAndProtocols) {
-        const div = document.createElement('div');
-        ReactDOM.render(
-            <NodeTooltipOverlay
-                node={node}
-                ingressPortsAndProtocols={ingressPortsAndProtocols}
-                egressPortsAndProtocols={egressPortsAndProtocols}
-            />,
-            div
-        );
-        return div;
-    }
-
-    function createTippy(elm, node, ingressPortsAndProtocols, egressPortsAndProtocols) {
+    function showTooltip(elm, component) {
         if (!elm) return;
         const popperRef = elm.popperRef();
         if (tippyRef.current) tippyRef.current.destroy();
 
+        const content = document.createElement('div');
+        ReactDOM.render(component, content);
+
         tippyRef.current = tippy(document.createElement('div'), {
-            content: makePopperDiv(node, ingressPortsAndProtocols, egressPortsAndProtocols),
+            content,
             ...defaultTippyTooltipProps,
             lazy: false,
             onCreate(instance) {
@@ -106,6 +98,10 @@ const NetworkGraph = ({
         tippyRef.current.show();
     }
 
+    function hideTooltip() {
+        if (tippyRef.current) tippyRef.current.destroy();
+    }
+
     function nodeHoverHandler(ev) {
         const node = ev.target.data();
         const { id, parent, side, outEdges } = node;
@@ -113,6 +109,7 @@ const NetworkGraph = ({
         if (!cyRef || !isChild || side) return;
 
         setHoveredNode(node);
+
         const nodeElm = cyRef.current.getElementById(id);
         const parentElm = cyRef.current.getElementById(parent);
 
@@ -123,14 +120,39 @@ const NetworkGraph = ({
 
         const ingressPortsAndProtocols = getIngressPortsAndProtocols(sourceNodes, node);
         const egressPortsAndProtocols = getEgressPortsAndProtocols(outEdges);
+        const component = (
+            <NodeTooltipOverlay
+                node={node}
+                ingressPortsAndProtocols={ingressPortsAndProtocols}
+                egressPortsAndProtocols={egressPortsAndProtocols}
+            />
+        );
 
-        createTippy(nodeElm, node, ingressPortsAndProtocols, egressPortsAndProtocols);
+        showTooltip(nodeElm, component);
         const children = parentElm.descendants();
         children.removeClass('background');
     }
 
     function nodeMouseOutHandler() {
         setHoveredNode();
+    }
+
+    function edgeHoverHandler(ev) {
+        const edge = ev.target.data();
+        if (!isNamespaceEdge(edge)) return;
+
+        const { id, numBidirectionalLinks, numUnidirectionalLinks, portsAndProtocols } = edge;
+        const edgeElm = cyRef.current.getElementById(id);
+
+        const component = (
+            <NamespaceEdgeTooltipOverlay
+                numBidirectionalLinks={numBidirectionalLinks}
+                numUnidirectionalLinks={numUnidirectionalLinks}
+                portsAndProtocols={portsAndProtocols}
+            />
+        );
+
+        showTooltip(edgeElm, component);
     }
 
     function clickHandler(ev) {
@@ -219,6 +241,7 @@ const NetworkGraph = ({
             hoveredNode,
             selectedNode,
             links,
+            nodes,
             filterState,
             nodeSideMap,
             networkNodeMap,
@@ -348,7 +371,11 @@ const NetworkGraph = ({
             .on('mouseover', 'node', throttle(nodeHoverHandler, 100))
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
-                if (tippyRef.current) tippyRef.current.destroy();
+                hideTooltip();
+            })
+            .on('mouseover', 'edge', throttle(edgeHoverHandler, 100))
+            .on('mouseout mousedown', 'edge', () => {
+                hideTooltip();
             })
             .on('drag', throttle(handleDrag, 100))
             .on('zoom', zoomHandler)

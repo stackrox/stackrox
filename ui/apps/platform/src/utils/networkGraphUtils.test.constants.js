@@ -11,7 +11,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -23,7 +42,26 @@ export const nodes = [
         policyIds: ['88b16ad6-b70d-11ea-a716-025000000001'],
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -35,7 +73,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -47,7 +104,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -59,7 +135,17 @@ export const nodes = [
         policyIds: ['88b05432-b70d-11ea-a716-025000000001'],
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
-        outEdges: { '8': { properties: [] } },
+        outEdges: {
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -71,7 +157,26 @@ export const nodes = [
         policyIds: ['e34e6cce-b70c-11ea-a716-025000000001'],
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -83,7 +188,35 @@ export const nodes = [
         policyIds: ['e34dc4b5-b70c-11ea-a716-025000000001'],
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '5': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '5': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -95,7 +228,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -107,7 +259,26 @@ export const nodes = [
         policyIds: ['e2f3b506-b70c-11ea-a716-025000000001'],
         nonIsolatedIngress: false,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '6': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '6': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -123,7 +294,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -139,7 +329,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -155,7 +364,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
     {
         entity: {
@@ -171,7 +399,26 @@ export const nodes = [
         policyIds: [],
         nonIsolatedIngress: true,
         nonIsolatedEgress: true,
-        outEdges: { '4': { properties: [] }, '8': { properties: [] } },
+        outEdges: {
+            '4': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+            '8': {
+                properties: [
+                    {
+                        lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                        port: 443,
+                        protocol: 'L4_PROTOCOL_TCP',
+                    },
+                ],
+            },
+        },
     },
 ];
 
@@ -298,6 +545,7 @@ export const nodeSideMap = {
 };
 
 export const configObj = {
+    nodes,
     links,
     filterState: filterModes.active,
     nodeSideMap,
@@ -312,6 +560,16 @@ export const namespaceEdges = [
             count: 2,
             source: 'kube-system_right',
             target: 'stackrox_left',
+            numBidirectionalLinks: 0,
+            numUnidirectionalLinks: 2,
+            portsAndProtocols: [
+                {
+                    lastActiveTimestamp: '2020-07-31T06:36:29.194197900Z',
+                    port: 443,
+                    protocol: 'L4_PROTOCOL_TCP',
+                },
+            ],
+            type: 'NAMESPACE_EDGE',
         },
     },
 ];
