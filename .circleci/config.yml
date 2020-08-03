@@ -88,7 +88,7 @@ restoreUI: &restoreUI
 setupHelm: &setupHelm
   run:
     name: Setup tiller by default in GKE Cluster
-    command:  |
+    command: |
       kubectl apply -f ./deploy/k8s/tillerbind.yaml
 
       SUCCESS=0
@@ -111,7 +111,6 @@ refreshAlpineBaseImage: &refreshAlpineBaseImage
   run:
     name: Refresh base image
     command: docker pull alpine:3.11
-
 
 setupRoxctl: &setupRoxctl
   run:
@@ -316,14 +315,12 @@ collectImbuedUILogs: &collectImbuedUILogs
         echo "Received error status code ${status_code} from the log imbue endpoint; is the log imbue handler broken?"
         exit 1
       fi
-    when:
-      always
+    when: always
 
 storeImbuedUILogs: &storeImbuedUILogs
   store_artifacts:
     path: /tmp/imbued-ui-logs
     destination: imbued-ui-logs
-
 
 collectK8sLogs: &collectK8sLogs
   run:
@@ -1188,10 +1185,33 @@ commands:
             echo "use-crio: '<< parameters.crio >>'" >> openshift/configuration.yaml
             cat openshift/configuration.yaml
 
-            docker run --rm -t -v "$PWD/openshift:/well-known" \
-              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
-              create 2>&1 | scripts/ci/monitor-output.sh 60
+            set +e
+            try=0
+            max_attempts=2
+            while [[ ${try} -lt ${max_attempts} ]]; do
+                try=$((try + 1))
+                echo "============= Openshift provision try ${try} ============="
+                docker run --rm -t -v "$PWD/openshift:/well-known" \
+                  -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+                  "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
+                  create 2>&1 | scripts/ci/monitor-output.sh 60
+                rc=$?
+                if [[ ${rc} == 0 ]]; then
+                    echo "============= Openshift provision succeeded ============="
+                    break
+                fi
+                echo "============= Openshift provision failed on try ${try} ============="
+                if [[ ${try} -lt ${max_attempts} ]]; then
+                    docker run --rm -t -v "$PWD/openshift:/well-known" \
+                      -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
+                      "stackrox/openshift-automation:<< parameters.flavor >>-<< parameters.version >>" \
+                      destroy
+                fi
+            done
+            if [[ $rc != 0 ]]; then
+                exit $rc
+            fi
+            set -e
 
       - store_artifacts:
           path: openshift
@@ -1344,7 +1364,6 @@ commands:
 
             ./scripts/ci/openshift-gcr-secrets.sh
 
-
       - remove-existing-stackrox-resources
       - *setupGoogleAppCreds
       - *setupLicense
@@ -1353,7 +1372,7 @@ commands:
 
       - deploy-stackrox:
           orchestrator-flavor: openshift
-          sensor-deploy-flavor:  << parameters.sensor-deploy-flavor >>
+          sensor-deploy-flavor: << parameters.sensor-deploy-flavor >>
           validate-autoupgrade-label: true
           post-central-deploy-steps:
             - *setupClientTLSCerts
@@ -1791,7 +1810,6 @@ jobs:
             fi
 
       - *saveGoBuildCache
-
 
   ###
   # Build jobs
@@ -2402,7 +2420,6 @@ jobs:
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
               stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
-
 
   ###
   # Test jobs against built artifacts
@@ -3733,7 +3750,6 @@ jobs:
             ls /home/circleci/rox-openshift-bundle
             test -f /home/circleci/rox-openshift-bundle/README
 
-
   ###
   # Post-build jobs to handle built artifacts (like tag, scan and publish images)
   ###
@@ -3988,7 +4004,6 @@ jobs:
       - *storeK8sLogs
       - teardown-gke
 
-
   ###
   # Infrastructure and workflow utility jobs
   ###
@@ -4127,7 +4142,6 @@ jobs:
       - run:
           name: Collect and send test jobs stats
           command: CIRCLE_TOKEN="$CIRCLE_TOKEN_ROXBOT" .circleci/collect-tests-stats.sh "stackrox-ci" "ci_metrics.rox_jobs_stats"
-
 
 workflows:
   version: 2
