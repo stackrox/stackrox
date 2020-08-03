@@ -11,9 +11,6 @@ var (
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	EventTimelineClusteredEventsUI = registerFeature("Enable Event Timeline Clustered Events UI", "ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI", true)
 
-	// ImageLabelPolicy enables the Required Image Label policy type
-	ImageLabelPolicy = registerFeature("Enable the Required Image Label Policy", "ROX_REQUIRED_IMAGE_LABEL_POLICY", true)
-
 	// AdmissionControlService enables running admission control as a separate microservice.
 	AdmissionControlService = registerFeature("Separate admission control microservice", "ROX_ADMISSION_CONTROL_SERVICE", true)
 
