@@ -3,10 +3,6 @@ package features
 //lint:file-ignore U1000 we want to introduce this feature flag unused.
 
 var (
-	// AnalystNotesUI enables the Analyst Notes UI.
-	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
-	AnalystNotesUI = registerFeature("Enable Analyst Notes UI", "ROX_ANALYST_NOTES_UI", true)
-
 	// EventTimelineClusteredEventsUI enables the Event Timeline UI for Clustered Events.
 	// NB: When removing this feature flag, remove references in ui/src/utils/featureFlags.js
 	EventTimelineClusteredEventsUI = registerFeature("Enable Event Timeline Clustered Events UI", "ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI", true)

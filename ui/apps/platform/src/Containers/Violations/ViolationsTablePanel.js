@@ -2,15 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
 
-import { knownBackendFlags } from 'utils/featureFlags';
-
 import { Tag, Check, BellOff } from 'react-feather';
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import { pageSize } from 'Components/TableV2';
 import TablePagination from 'Components/TablePaginationV2';
 import TableHeader from 'Components/TableHeader';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import ViolationsTable from './ViolationsTable';
 import dialogues from './dialogues';
 
@@ -51,30 +48,23 @@ function ViolationsTablePanelButtons({ setDialogue, checkedAlertIds, runtimeAler
     const whitelistCount = numCheckedAlertIds;
     return (
         <>
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled &&
-                        numCheckedAlertIds !== 0 && (
-                            <PanelButton
-                                icon={<Tag className="h-4 ml-1" />}
-                                dataTestId="bulk-add-tags-button"
-                                className="btn btn-base ml-2"
-                                onClick={showTagConfirmationDialog}
-                                tooltip={`Add Tags for ${pluralize(
-                                    'Violation',
-                                    numCheckedAlertIds
-                                )} (${numCheckedAlertIds})`}
-                            >
-                                {`Add Tags for ${pluralize(
-                                    'Violation',
-                                    numCheckedAlertIds
-                                )} (${numCheckedAlertIds})`}
-                            </PanelButton>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            {numCheckedAlertIds !== 0 && (
+                <PanelButton
+                    icon={<Tag className="h-4 ml-1" />}
+                    dataTestId="bulk-add-tags-button"
+                    className="btn btn-base ml-2"
+                    onClick={showTagConfirmationDialog}
+                    tooltip={`Add Tags for ${pluralize(
+                        'Violation',
+                        numCheckedAlertIds
+                    )} (${numCheckedAlertIds})`}
+                >
+                    {`Add Tags for ${pluralize(
+                        'Violation',
+                        numCheckedAlertIds
+                    )} (${numCheckedAlertIds})`}
+                </PanelButton>
+            )}
             {checkedRuntimeAlerts !== 0 && (
                 <PanelButton
                     icon={<Check className="h-4 ml-1" />}

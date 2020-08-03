@@ -2440,7 +2440,6 @@ jobs:
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
       - ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI: true
       - ROX_SENSOR_DETECTION: true
@@ -2682,7 +2681,6 @@ jobs:
       - SCANNER_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
-      - ROX_ANALYST_NOTES_UI: true
       - ROX_BADGER_DB: true
       - ROX_EVENT_TIMELINE_UI: true
       - ROX_SENSOR_DETECTION: true

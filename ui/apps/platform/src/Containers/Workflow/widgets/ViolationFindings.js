@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
@@ -60,28 +58,12 @@ const ViolationFindings = ({ data, message }) => {
                         })}
                     </ul>
                 </Widget>
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    {({ featureEnabled }) => {
-                        return (
-                            featureEnabled && (
-                                <>
-                                    <div className="lg:sx-2 md:sx-1 sy-1">
-                                        <ViolationTags
-                                            resourceId={policyViolation.id}
-                                            isCollapsible={false}
-                                        />
-                                    </div>
-                                    <div className="sx-1 sy-1">
-                                        <ViolationComments
-                                            resourceId={policyViolation.id}
-                                            isCollapsible={false}
-                                        />
-                                    </div>
-                                </>
-                            )
-                        );
-                    }}
-                </FeatureEnabled>
+                <div className="lg:sx-2 md:sx-1 sy-1">
+                    <ViolationTags resourceId={policyViolation.id} isCollapsible={false} />
+                </div>
+                <div className="sx-1 sy-1">
+                    <ViolationComments resourceId={policyViolation.id} isCollapsible={false} />
+                </div>
             </div>
         );
     } else {

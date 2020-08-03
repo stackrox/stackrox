@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import ViolationComments from 'Containers/AnalystNotes/ViolationComments';
 import ViolationTags from 'Containers/AnalystNotes/ViolationTags';
 import DeploytimeMessages from './DeploytimeMessages';
@@ -11,22 +9,12 @@ import RuntimeMessages from './RuntimeMessages';
 function ViolationsDetails({ violationId, violations, processViolation }) {
     return (
         <div className="w-full px-3 pb-5 mt-5">
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled && (
-                            <>
-                                <div className="mb-4" data-testid="violation-tags">
-                                    <ViolationTags resourceId={violationId} />
-                                </div>
-                                <div className="mb-4" data-testid="violation-comments">
-                                    <ViolationComments resourceId={violationId} />
-                                </div>
-                            </>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            <div className="mb-4" data-testid="violation-tags">
+                <ViolationTags resourceId={violationId} />
+            </div>
+            <div className="mb-4" data-testid="violation-comments">
+                <ViolationComments resourceId={violationId} />
+            </div>
             <RuntimeMessages processViolation={processViolation} />
             <DeploytimeMessages violations={violations} />
         </div>

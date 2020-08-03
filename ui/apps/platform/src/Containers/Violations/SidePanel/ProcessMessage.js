@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import { format } from 'date-fns';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
-import { knownBackendFlags } from 'utils/featureFlags';
-import FeatureEnabled from 'Containers/FeatureEnabled';
 import ProcessComments from 'Containers/AnalystNotes/ProcessComments';
 import ProcessTags from 'Containers/AnalystNotes/ProcessTags';
 import FormCollapsibleButton from 'Containers/AnalystNotes/FormCollapsibleButton';
@@ -44,24 +42,16 @@ function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
         <div className="border-t border-base-300" label={process.id}>
             <div className="flex text-base-600">
                 <span className="py-2 px-2 bg-caution-200">{execFilePath}</span>
-                <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                    {({ featureEnabled }) => {
-                        return (
-                            featureEnabled && (
-                                <div className="flex flex-1 justify-end">
-                                    <FormCollapsibleButton
-                                        deploymentID={deploymentId}
-                                        containerName={containerName}
-                                        execFilePath={execFilePath}
-                                        args={args}
-                                        isOpen={areAnalystNotesVisible}
-                                        onClick={selectProcessIdHandler}
-                                    />
-                                </div>
-                            )
-                        );
-                    }}
-                </FeatureEnabled>
+                <div className="flex flex-1 justify-end">
+                    <FormCollapsibleButton
+                        deploymentID={deploymentId}
+                        containerName={containerName}
+                        execFilePath={execFilePath}
+                        args={args}
+                        isOpen={areAnalystNotesVisible}
+                        onClick={selectProcessIdHandler}
+                    />
+                </div>
             </div>
             <div className="flex flex-1 text-base-600 px-4 py-2 justify-between">
                 <KeyValue label="Container ID:" value={containerId} />
@@ -74,33 +64,26 @@ function ProcessMessage({ process, areAnalystNotesVisible, selectProcessId }) {
                 <KeyValue label="Arguments:" value={args} />
             </div>
             {ancestors}
-            <FeatureEnabled featureFlag={knownBackendFlags.ROX_ANALYST_NOTES_UI}>
-                {({ featureEnabled }) => {
-                    return (
-                        featureEnabled &&
-                        areAnalystNotesVisible && (
-                            <>
-                                <div className="pt-4 px-4">
-                                    <ProcessTags
-                                        deploymentID={deploymentId}
-                                        containerName={containerName}
-                                        execFilePath={execFilePath}
-                                        args={args}
-                                    />
-                                </div>
-                                <div className="py-4 px-4">
-                                    <ProcessComments
-                                        deploymentID={deploymentId}
-                                        containerName={containerName}
-                                        execFilePath={execFilePath}
-                                        args={args}
-                                    />
-                                </div>
-                            </>
-                        )
-                    );
-                }}
-            </FeatureEnabled>
+            {areAnalystNotesVisible && (
+                <>
+                    <div className="pt-4 px-4">
+                        <ProcessTags
+                            deploymentID={deploymentId}
+                            containerName={containerName}
+                            execFilePath={execFilePath}
+                            args={args}
+                        />
+                    </div>
+                    <div className="py-4 px-4">
+                        <ProcessComments
+                            deploymentID={deploymentId}
+                            containerName={containerName}
+                            execFilePath={execFilePath}
+                            args={args}
+                        />
+                    </div>
+                </>
+            )}
         </div>
     );
 }
