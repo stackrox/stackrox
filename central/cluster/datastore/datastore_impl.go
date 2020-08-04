@@ -62,6 +62,14 @@ type datastoreImpl struct {
 	lock sync.Mutex
 }
 
+func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clusterHealth *storage.ClusterHealthStatus) error {
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+	//TODO: Implement store logic, and call it here
+	return nil
+}
+
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err

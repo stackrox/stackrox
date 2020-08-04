@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/timestamp"
 )
 
 var (
@@ -42,8 +44,16 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	_ = msg.GetClusterHealthInfo().GetCollectorHealthInfo()
-	// TODO: process collector health info here
+	m := msg.GetClusterHealthInfo().GetCollectorHealthInfo()
+
+	clusterHealth := &storage.ClusterHealthStatus{
+		CollectorHealthInfo: m,
+		LastUpdated:         timestamp.Now().GogoProtobuf(),
+	}
+
+	if err := s.clusters.UpdateClusterHealth(ctx, clusterID, clusterHealth); err != nil {
+		return err
+	}
 	return nil
 }
 
