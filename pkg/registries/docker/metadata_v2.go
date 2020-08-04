@@ -12,6 +12,9 @@ func HandleV2ManifestList(r *Registry, remote, ref string) (*storage.ImageMetada
 	if err != nil {
 		return nil, err
 	}
+	if len(manifestList.Manifests) == 1 {
+		return HandleV2Manifest(r, remote, manifestList.Manifests[0].Digest)
+	}
 	for _, manifest := range manifestList.Manifests {
 		// Default to linux arch
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
