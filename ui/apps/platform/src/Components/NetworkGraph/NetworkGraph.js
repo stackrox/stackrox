@@ -248,9 +248,18 @@ const NetworkGraph = ({
         };
     }
 
+    function getNodeDataFromList(id) {
+        const configObj = getConfigObj();
+        // for the case when you want to pull the selected node from the URL on refresh
+        if (match.params.deploymentId) configObj.selectedNode = { id: match.params.deploymentId };
+        const filteredData = data.filter((datum) => datum?.entity?.deployment);
+        const deploymentList = getDeploymentList(filteredData, configObj);
+        return getNodeData(id, deploymentList);
+    }
+
     function getElements() {
         const configObj = getConfigObj();
-        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
+        const filteredData = data.filter((datum) => datum?.entity?.deployment);
         const deploymentList = getDeploymentList(filteredData, configObj);
         const namespaceList = getNamespaceList(filteredData, deploymentList, configObj);
         const namespaceEdgeNodes = getNamespaceEdgeNodes(namespaceList);
@@ -408,7 +417,7 @@ const NetworkGraph = ({
             zoomOut,
             setSelectedNode,
             selectedNode,
-            getNodeData,
+            getNodeData: getNodeDataFromList,
             onNodeClick,
         });
     }
@@ -428,10 +437,7 @@ const NetworkGraph = ({
             }).run();
         });
         CY.fit(null, GRAPH_PADDING);
-        const configObj = getConfigObj();
-        const filteredData = data.filter((datum) => datum.entity && datum.entity.deployment);
-        const deploymentList = getDeploymentList(filteredData, configObj);
-        const node = getNodeData(match.params.deploymentId, deploymentList);
+        const node = getNodeDataFromList(match.params.deploymentId);
         if (setSelectedNodeInGraph && node.length) {
             setSelectedNodeInGraph(node[0].data);
             setSelectedNode(node[0].data);

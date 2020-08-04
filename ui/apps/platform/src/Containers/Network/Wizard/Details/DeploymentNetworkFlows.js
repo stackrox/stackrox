@@ -25,7 +25,7 @@ const DeploymentNetworkFlows = ({
     function getNodeData(data) {
         const { getNodeData: getNodeDataFromRef } = networkGraphRef;
         const node = getNodeDataFromRef(data.destNodeId);
-        return node && node[0] && node[0].data;
+        return node?.[0]?.data;
     }
 
     function highlightNode({ data }) {
@@ -60,6 +60,12 @@ const DeploymentNetworkFlows = ({
     function renderTable() {
         const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
         const columns = [
+            {
+                Header: 'Traffic',
+                accessor: 'data.traffic',
+                // eslint-disable-next-line react/prop-types
+                Cell: ({ value }) => <span>{value}</span>,
+            },
             {
                 Header: 'Deployment',
                 accessor: 'data.destNodeName',

@@ -293,6 +293,7 @@ export const getEdgesFromNode = (
         const destNodeId = isSourceNode ? target : source;
         const destNodeNS = isSourceNode ? targetNS : sourceNS;
         const destNodeName = isSourceNode ? targetName : sourceName;
+
         if ((isSourceNode || isTargetNode) && (filterState !== filterModes.active || isActive)) {
             const coreClasses = {
                 edge: true,
@@ -320,12 +321,14 @@ export const getEdgesFromNode = (
                             destNodeNS,
                             destNodeName,
                             ...linkItem,
+                            traffic: isIngress ? 'ingress' : 'egress',
                         },
                         classes,
                     };
                 } else if (!edgeMap[edgeKey].data.isBidirectional) {
                     // if this edge is already in the edgeMap, it means it's going in the other direction
                     edgeMap[edgeKey].data.isBidirectional = true;
+                    edgeMap[edgeKey].data.traffic = 'bidirectional';
                     edgeMap[edgeKey].classes = getClasses({ ...coreClasses, bidirectional: true });
                 }
             } else {
@@ -362,12 +365,14 @@ export const getEdgesFromNode = (
                             source,
                             target: sourceNSSide,
                             isDisallowed,
+                            traffic: isIngress ? 'ingress' : 'egress',
                         },
                         classes,
                     };
                 } else if (!edgeMap[innerSourceEdgeKey].data.isBidirectional && !isWithinSourceNS) {
                     // if this edge is already in the edgeMap, it means it's going in the other direction
                     edgeMap[innerSourceEdgeKey].data.isBidirectional = true;
+                    edgeMap[innerSourceEdgeKey].data.traffic = 'bidirectional';
                     edgeMap[innerSourceEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
@@ -392,12 +397,14 @@ export const getEdgesFromNode = (
                             destNodeNS,
                             isActive,
                             isDisallowed,
+                            traffic: isIngress ? 'ingress' : 'egress',
                         },
                         classes,
                     };
                 } else if (!edgeMap[innerTargetEdgeKey].data.isBidirectional && !isWithinTargetNS) {
                     // if this edge is already in the edgeMap, it means it's going in the other direction
                     edgeMap[innerTargetEdgeKey].data.isBidirectional = true;
+                    edgeMap[innerTargetEdgeKey].data.traffic = 'bidirectional';
                     edgeMap[innerTargetEdgeKey].classes = getClasses({
                         ...coreClasses,
                         bidirectional: true,
@@ -418,7 +425,7 @@ export const getEdgesFromNode = (
  *                            networkNodeMap, hoveredNode, and selectedNode
  * @returns {!Object[]}
  */
-export const getDeploymentList = (filteredData, configObj) => {
+export const getDeploymentList = (filteredData, configObj = {}) => {
     const { hoveredNode, selectedNode, filterState, networkNodeMap } = configObj;
     const deploymentList = filteredData.map((datum) => {
         const { entity, ...datumProps } = datum;
@@ -481,6 +488,7 @@ export const getDeploymentList = (filteredData, configObj) => {
         };
         return deploymentNode;
     });
+
     return deploymentList;
 };
 

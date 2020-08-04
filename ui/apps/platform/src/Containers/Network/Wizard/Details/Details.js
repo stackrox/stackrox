@@ -122,6 +122,7 @@ Details.propTypes = {
     }).isRequired,
     selectedNode: PropTypes.shape({
         edges: PropTypes.arrayOf(PropTypes.shape({})),
+        id: PropTypes.string.isRequired,
     }),
     selectedNamespace: PropTypes.shape({}),
     isFetchingNode: PropTypes.bool.isRequired,
