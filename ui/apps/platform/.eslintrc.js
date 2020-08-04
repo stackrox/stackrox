@@ -1,3 +1,5 @@
+const path = require('path');
+
 const commonRules = {
     'prettier/prettier': 'error',
 
@@ -16,12 +18,12 @@ const commonRules = {
         'error',
         {
             devDependencies: [
-                '**/*.test.js',
-                'cypress/**',
-                'src/setupTests.js',
-                'src/setupProxy.js',
-                'tailwind.config.js',
-                'postcss.config.js',
+                path.join(__dirname, '**/*.test.js'),
+                path.join(__dirname, 'cypress/**'),
+                path.join(__dirname, 'src/setupTests.js'),
+                path.join(__dirname, 'src/setupProxy.js'),
+                path.join(__dirname, 'tailwind.config.js'),
+                path.join(__dirname, 'postcss.config.js'),
             ],
             optionalDependencies: false,
         },
