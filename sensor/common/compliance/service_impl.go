@@ -62,15 +62,16 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 
 // GetScrapeConfig returns the scrape configuration for the given node name and scrape ID.
 func (s *serviceImpl) GetScrapeConfig(ctx context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
-	containerRuntimeVersion, err := s.orchestrator.GetNodeContainerRuntime(nodeName)
+	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
 		return nil, err
 	}
 
-	rt, _ := k8sutil.ParseContainerRuntimeString(containerRuntimeVersion)
+	rt, _ := k8sutil.ParseContainerRuntimeString(nodeScrapeConfig.ContainerRuntimeVersion)
 
 	return &sensor.MsgToCompliance_ScrapeConfig{
 		ContainerRuntime: rt,
+		IsMasterNode:     nodeScrapeConfig.IsMasterNode,
 	}, nil
 }
 

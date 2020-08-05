@@ -155,15 +155,15 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 			continue
 		}
 		switch key {
-		case "checkResults":
+		case "node_check_results":
 			if in.IsNull() {
 				in.Skip()
 			} else {
 				in.Delim('{')
 				if !in.IsDelim('}') {
-					out.CheckResults = make(map[string]*storage.ComplianceResultValue)
+					out.NodeCheckResults = make(map[string]*storage.ComplianceResultValue)
 				} else {
-					out.CheckResults = nil
+					out.NodeCheckResults = nil
 				}
 				for !in.IsDelim('}') {
 					key := string(in.String())
@@ -178,7 +178,35 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedInternalapiCompliance(in
 						}
 						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v3)
 					}
-					(out.CheckResults)[key] = v3
+					(out.NodeCheckResults)[key] = v3
+					in.WantComma()
+				}
+				in.Delim('}')
+			}
+		case "cluster_check_results":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				in.Delim('{')
+				if !in.IsDelim('}') {
+					out.ClusterCheckResults = make(map[string]*storage.ComplianceResultValue)
+				} else {
+					out.ClusterCheckResults = nil
+				}
+				for !in.IsDelim('}') {
+					key := string(in.String())
+					in.WantColon()
+					var v4 *storage.ComplianceResultValue
+					if in.IsNull() {
+						in.Skip()
+						v4 = nil
+					} else {
+						if v4 == nil {
+							v4 = new(storage.ComplianceResultValue)
+						}
+						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in, v4)
+					}
+					(out.ClusterCheckResults)[key] = v4
 					in.WantComma()
 				}
 				in.Delim('}')
@@ -197,8 +225,8 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 	out.RawByte('{')
 	first := true
 	_ = first
-	if len(in.CheckResults) != 0 {
-		const prefix string = ",\"checkResults\":"
+	if len(in.NodeCheckResults) != 0 {
+		const prefix string = ",\"node_check_results\":"
 		if first {
 			first = false
 			out.RawString(prefix[1:])
@@ -207,19 +235,47 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedInternalapiCompliance(ou
 		}
 		{
 			out.RawByte('{')
-			v4First := true
-			for v4Name, v4Value := range in.CheckResults {
-				if v4First {
-					v4First = false
+			v5First := true
+			for v5Name, v5Value := range in.NodeCheckResults {
+				if v5First {
+					v5First = false
 				} else {
 					out.RawByte(',')
 				}
-				out.String(string(v4Name))
+				out.String(string(v5Name))
 				out.RawByte(':')
-				if v4Value == nil {
+				if v5Value == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v4Value)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v5Value)
+				}
+			}
+			out.RawByte('}')
+		}
+	}
+	if len(in.ClusterCheckResults) != 0 {
+		const prefix string = ",\"cluster_check_results\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		{
+			out.RawByte('{')
+			v6First := true
+			for v6Name, v6Value := range in.ClusterCheckResults {
+				if v6First {
+					v6First = false
+				} else {
+					out.RawByte(',')
+				}
+				out.String(string(v6Name))
+				out.RawByte(':')
+				if v6Value == nil {
+					out.RawString("null")
+				} else {
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out, *v6Value)
 				}
 			}
 			out.RawByte('}')
@@ -262,17 +318,17 @@ func easyjson24245084DecodeGithubComStackroxRoxGeneratedStorage(in *jlexer.Lexer
 					out.Evidence = (out.Evidence)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v5 *storage.ComplianceResultValue_Evidence
+					var v7 *storage.ComplianceResultValue_Evidence
 					if in.IsNull() {
 						in.Skip()
-						v5 = nil
+						v7 = nil
 					} else {
-						if v5 == nil {
-							v5 = new(storage.ComplianceResultValue_Evidence)
+						if v7 == nil {
+							v7 = new(storage.ComplianceResultValue_Evidence)
 						}
-						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(in, v5)
+						easyjson24245084DecodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(in, v7)
 					}
-					out.Evidence = append(out.Evidence, v5)
+					out.Evidence = append(out.Evidence, v7)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -303,14 +359,14 @@ func easyjson24245084EncodeGithubComStackroxRoxGeneratedStorage(out *jwriter.Wri
 		}
 		{
 			out.RawByte('[')
-			for v6, v7 := range in.Evidence {
-				if v6 > 0 {
+			for v8, v9 := range in.Evidence {
+				if v8 > 0 {
 					out.RawByte(',')
 				}
-				if v7 == nil {
+				if v9 == nil {
 					out.RawString("null")
 				} else {
-					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, *v7)
+					easyjson24245084EncodeGithubComStackroxRoxGeneratedStorageComplianceResultValue(out, *v9)
 				}
 			}
 			out.RawByte(']')

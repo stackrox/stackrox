@@ -31,10 +31,16 @@ func New(kubernetes kubernetes.Interface) orchestrator.Orchestrator {
 	}
 }
 
-func (k *kubernetesOrchestrator) GetNodeContainerRuntime(nodeName string) (string, error) {
+func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestrator.NodeScrapeConfig, error) {
 	node, err := k.nodeLister.Get(nodeName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return node.Status.NodeInfo.ContainerRuntimeVersion, nil
+
+	_, isMasterNode := node.GetLabels()["node-role.kubernetes.io/master"]
+
+	return &orchestrator.NodeScrapeConfig{
+		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
+		IsMasterNode:            isMasterNode,
+	}, nil
 }

@@ -4,19 +4,26 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		standards.CISDockerCheckName("6_1"): {
-			CheckFunc:          common.CheckWithDockerData(imageSprawl),
-			InterpretationText: "StackRox checks how many of the images present on each node are actually in use",
+			CheckFunc: common.CheckWithDockerData(imageSprawl),
+			Metadata: &standards.Metadata{
+				InterpretationText: "StackRox checks how many of the images present on each node are actually in use",
+				TargetKind:         framework.NodeKind,
+			},
 		},
 		standards.CISDockerCheckName("6_2"): {
-			CheckFunc:          common.CheckWithDockerData(containerSprawl),
-			InterpretationText: "StackRox checks how many of the containers present on each node are actually running",
+			CheckFunc: common.CheckWithDockerData(containerSprawl),
+			Metadata: &standards.Metadata{
+				InterpretationText: "StackRox checks how many of the containers present on each node are actually running",
+				TargetKind:         framework.NodeKind,
+			},
 		},
 	})
 }

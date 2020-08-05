@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	complianceCompress "github.com/stackrox/rox/pkg/compliance/compress"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -49,10 +50,21 @@ func (s *ComplianceResultsBuilderTestSuite) decompressEvidence(chunk *compliance
 	}()
 	decompresedBytes, err := ioutil.ReadAll(gr)
 	s.Require().NoError(err)
-	var result *complianceCompress.ResultWrapper
+	var result complianceCompress.ResultWrapper
 	err = json.Unmarshal(decompresedBytes, &result)
 	s.Require().NoError(err)
-	return result
+
+	// This is a test artifact.  Compression/decompression will convert empty maps to nil maps, but we're going to do a .equals with a data structure containing an empty map.
+	for _, standardResult := range result.ResultMap {
+		if standardResult.NodeCheckResults == nil {
+			standardResult.NodeCheckResults = make(map[string]*storage.ComplianceResultValue)
+		}
+		if standardResult.ClusterCheckResults == nil {
+			standardResult.ClusterCheckResults = make(map[string]*storage.ComplianceResultValue)
+		}
+	}
+
+	return &result
 }
 
 func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*compliance.ComplianceStandardResult, *mockClient, *complianceCompress.ResultWrapper) {
@@ -71,18 +83,19 @@ func (s *ComplianceResultsBuilderTestSuite) getMockData() (map[string]*complianc
 	mockData := &complianceCompress.ResultWrapper{
 		ResultMap: map[string]*compliance.ComplianceStandardResult{
 			standardID: {
-				CheckResults: map[string]*storage.ComplianceResultValue{
+				NodeCheckResults: map[string]*storage.ComplianceResultValue{
 					checkNameOne: {
 						Evidence:     evidenceOne,
 						OverallState: 0,
 					},
 				},
+				ClusterCheckResults: map[string]*storage.ComplianceResultValue{},
 			},
 		},
 	}
 
 	testResults := map[string]*compliance.ComplianceStandardResult{}
-	addCheckResultsToResponse(testResults, standardID, checkNameOne, evidenceOne)
+	addCheckResultsToResponse(testResults, standardID, checkNameOne, framework.NodeKind, evidenceOne)
 	s.Equal(mockData.ResultMap, testResults)
 
 	return testResults, client, mockData
@@ -101,11 +114,11 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 			Message: "def",
 		},
 	}
-	mockData.ResultMap[standardID].CheckResults[checkNameTwo] = &storage.ComplianceResultValue{
+	mockData.ResultMap[standardID].NodeCheckResults[checkNameTwo] = &storage.ComplianceResultValue{
 		Evidence:     evidenceTwo,
 		OverallState: 0,
 	}
-	addCheckResultsToResponse(testResults, standardID, checkNameTwo, evidenceTwo)
+	addCheckResultsToResponse(testResults, standardID, checkNameTwo, framework.NodeKind, evidenceTwo)
 	s.Equal(mockData.ResultMap, testResults)
 
 	// Add a result from a different standard
@@ -118,14 +131,32 @@ func (s *ComplianceResultsBuilderTestSuite) TestAddEvidence() {
 		},
 	}
 	mockData.ResultMap[standardIDTwo] = &compliance.ComplianceStandardResult{
-		CheckResults: map[string]*storage.ComplianceResultValue{
+		NodeCheckResults: map[string]*storage.ComplianceResultValue{
 			checkNameThree: {
 				Evidence:     evidenceThree,
 				OverallState: 0,
 			},
 		},
+		ClusterCheckResults: map[string]*storage.ComplianceResultValue{},
 	}
-	addCheckResultsToResponse(testResults, standardIDTwo, checkNameThree, evidenceThree)
+	addCheckResultsToResponse(testResults, standardIDTwo, checkNameThree, framework.NodeKind, evidenceThree)
+	s.Equal(mockData.ResultMap, testResults)
+
+	// Add a cluster-level result
+	checkNameFour := "jkdfdjk"
+	evidenceFour := []*storage.ComplianceResultValue_Evidence{
+		{
+			State:   0,
+			Message: "jkl",
+		},
+	}
+	mockData.ResultMap[standardIDTwo].ClusterCheckResults = map[string]*storage.ComplianceResultValue{
+		checkNameFour: {
+			Evidence:     evidenceFour,
+			OverallState: 0,
+		},
+	}
+	addCheckResultsToResponse(testResults, standardIDTwo, checkNameFour, framework.ClusterKind, evidenceFour)
 	s.Equal(mockData.ResultMap, testResults)
 }
 

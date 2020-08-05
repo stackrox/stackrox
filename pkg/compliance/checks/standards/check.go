@@ -20,4 +20,5 @@ type ComplianceData struct {
 	SystemdFiles         map[string]*compliance.File
 	ContainerRuntimeInfo *compliance.ContainerRuntimeInfo
 	Time                 *types.Timestamp
+	IsMasterNode         bool
 }

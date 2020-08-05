@@ -7,10 +7,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("1_1_1"): common.OptionalPermissionCheck("/etc/kubernetes/manifests/kube-apiserver.yaml", 0644),
 		standards.CISKubeCheckName("1_1_2"): common.OptionalOwnershipCheck("/etc/kubernetes/manifests/kube-apiserver.yaml", "root", "root"),
 
@@ -64,8 +65,8 @@ func getDirectoryFileFromCommandLine(complianceData *standards.ComplianceData, p
 	return dirFile, nil
 }
 
-func cniFilePermissions() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func cniFilePermissions() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			var results []*storage.ComplianceResultValue_Evidence
 			dirFile, result := getDirectoryFileFromCommandLine(complianceData, "kubelet", "cni-conf-dir", "/etc/cni/net.d")
@@ -93,12 +94,15 @@ func cniFilePermissions() *standards.CheckAndInterpretation {
 			}
 			return results
 		},
-		InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 
-func cniFileOwnership() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func cniFileOwnership() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			var results []*storage.ComplianceResultValue_Evidence
 			dirFile, result := getDirectoryFileFromCommandLine(complianceData, "kubelet", "cni-conf-dir", "/etc/cni/net.d")
@@ -117,12 +121,15 @@ func cniFileOwnership() *standards.CheckAndInterpretation {
 			}
 			return results
 		},
-		InterpretationText: "StackRox checks that the owner and group of files in the CNI configuration and binary directories is root:root",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the owner and group of files in the CNI configuration and binary directories is root:root",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 
-func etcdDataPermissions() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func etcdDataPermissions() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			var results []*storage.ComplianceResultValue_Evidence
 			dirFile, result := getDirectoryFileFromCommandLine(complianceData, "etcd", "data-dir", "/var/lib/etcddisk")
@@ -138,12 +145,15 @@ func etcdDataPermissions() *standards.CheckAndInterpretation {
 			}
 			return results
 		},
-		InterpretationText: "StackRox checks that the permissions of the etcd data directory are set to '0700'",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the permissions of the etcd data directory are set to '0700'",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 
-func etcdDataOwnership() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func etcdDataOwnership() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			var results []*storage.ComplianceResultValue_Evidence
 			dirFile, result := getDirectoryFileFromCommandLine(complianceData, "etcd", "data-dir", "/var/lib/etcddisk")
@@ -155,6 +165,9 @@ func etcdDataOwnership() *standards.CheckAndInterpretation {
 			}
 			return results
 		},
-		InterpretationText: "StackRox checks that the owner and group of the etcd data directory are set to etcd:etcd",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the owner and group of the etcd data directory are set to etcd:etcd",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }

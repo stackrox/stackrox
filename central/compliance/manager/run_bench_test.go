@@ -41,7 +41,7 @@ func BenchmarkFold(b *testing.B) {
 		results := &storage.ComplianceRunResults{
 			NodeResults: make(map[string]*storage.ComplianceRunResults_EntityResults),
 		}
-		run.foldNodeResults(results, nodeResults)
+		run.foldRemoteResults(results, nodeResults)
 	}
 }
 

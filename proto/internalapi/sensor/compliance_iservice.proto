@@ -23,6 +23,7 @@ message MsgFromCompliance {
 message MsgToCompliance {
     message ScrapeConfig {
         storage.ContainerRuntime container_runtime = 1;
+        bool                     is_master_node    = 2;
     }
     message TriggerRun {
         string          scrape_id    = 1;

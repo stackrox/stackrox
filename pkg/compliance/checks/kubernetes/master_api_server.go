@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apiserver/pkg/apis/config/v1"
@@ -31,7 +32,7 @@ const defaultTLSCiphers = "TLS_RSA_WITH_AES_256_GCM_SHA384;" +
 	"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA"
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("1_2_1"):  masterAPIServerCommandLine("anonymous-auth", "false", "true", common.Matches),
 		standards.CISKubeCheckName("1_2_2"):  masterAPIServerCommandLine("basic-auth-file", "", "", common.Unset),
 		standards.CISKubeCheckName("1_2_3"):  masterAPIServerCommandLine("token-auth-file", "", "", common.Unset),
@@ -70,12 +71,12 @@ func init() {
 	})
 }
 
-func masterAPIServerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndInterpretation {
-	return genericKubernetesCommandlineCheck(kubeAPIProcessName, key, target, defaultVal, evalFunc)
+func masterAPIServerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
+	return masterNodeKubernetesCommandlineCheck(kubeAPIProcessName, key, target, defaultVal, evalFunc)
 }
 
-func encryptionProvider() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func encryptionProvider() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			process, exists := common.GetProcess(complianceData, kubeAPIProcessName)
 			if !exists {
@@ -110,12 +111,15 @@ func encryptionProvider() *standards.CheckAndInterpretation {
 			}
 			return common.FailList("Provider is not set as aescbc, secretbox or kms")
 		},
-		InterpretationText: "StackRox checks that the Kubernetes API server uses the `aescbc, kms or secretbox` encryption provider",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the Kubernetes API server uses the `aescbc, kms or secretbox` encryption provider",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 
-func securityContextDenyChecker() *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func securityContextDenyChecker() *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			key := "enable-admission-plugins"
 			process, exists := common.GetProcess(complianceData, kubeAPIProcessName)
@@ -139,6 +143,9 @@ func securityContextDenyChecker() *standards.CheckAndInterpretation {
 			}
 			return common.FailListf("%q does not contain PodSecurityPolicy or SecurityContextDeny", key)
 		},
-		InterpretationText: "StackRox checks that the admission control plugin SecurityContextDeny is set if PodSecurityPolicy is not used",
+		Metadata: &standards.Metadata{
+			InterpretationText: "StackRox checks that the admission control plugin SecurityContextDeny is set if PodSecurityPolicy is not used",
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }

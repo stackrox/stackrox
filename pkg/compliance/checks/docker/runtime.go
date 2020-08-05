@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 	"github.com/stackrox/rox/pkg/set"
@@ -16,7 +17,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		standards.CISDockerCheckName("5_1"):  runningContainerCheck(appArmor, "has an AppArmor profile configured"),
 		standards.CISDockerCheckName("5_2"):  runningContainerCheck(selinux, "has SELinux configured"),
 		standards.CISDockerCheckName("5_3"):  runningContainerCheck(capabilities, "has extra capabilities enabled"),
@@ -55,8 +56,8 @@ func init() {
 }
 
 // Removed runningOnly parameter because it was always true
-func runningContainerCheck(f func(container types.ContainerJSON) []*storage.ComplianceResultValue_Evidence, desc string) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func runningContainerCheck(f func(container types.ContainerJSON) []*storage.ComplianceResultValue_Evidence, desc string) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: common.CheckWithDockerData(func(data *types.Data) []*storage.ComplianceResultValue_Evidence {
 			var results []*storage.ComplianceResultValue_Evidence
 			for _, c := range data.Containers {
@@ -70,7 +71,10 @@ func runningContainerCheck(f func(container types.ContainerJSON) []*storage.Comp
 			}
 			return results
 		}),
-		InterpretationText: fmt.Sprintf("StackRox checks that every running container on each node %s", desc),
+		Metadata: &standards.Metadata{
+			InterpretationText: fmt.Sprintf("StackRox checks that every running container on each node %s", desc),
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 

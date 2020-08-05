@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("4_1_1"): common.OptionalPermissionCheck("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", 0644),
 		standards.CISKubeCheckName("4_1_2"): common.OptionalOwnershipCheck("/etc/systemd/system/kubelet.service.d/10-kubeadm.conf", "root", "root"),
 

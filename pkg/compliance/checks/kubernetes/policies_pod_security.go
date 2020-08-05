@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("5_2_1"): common.NoteCheck("Minimize the admission of privileged containers"),
 		standards.CISKubeCheckName("5_2_2"): common.NoteCheck("Minimize the admission of containers wishing to share the host process ID namespace"),
 		standards.CISKubeCheckName("5_2_3"): common.NoteCheck("Minimize the admission of containers wishing to share the host IPC namespace"),

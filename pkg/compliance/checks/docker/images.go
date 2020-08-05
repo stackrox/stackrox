@@ -7,12 +7,13 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"github.com/stackrox/rox/pkg/docker/types"
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		// 4_1 is in runtime.go
 		standards.CISDockerCheckName("4_2"):  common.NoteCheck("Verify that only trusted base images are used"),
 		standards.CISDockerCheckName("4_3"):  common.NoteCheck("Check if the packages inside the image are necessary"),
@@ -27,8 +28,8 @@ func init() {
 	})
 }
 
-func imageCheck(f func(wrap types.ImageWrap) []*storage.ComplianceResultValue_Evidence, desc string) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func imageCheck(f func(wrap types.ImageWrap) []*storage.ComplianceResultValue_Evidence, desc string) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: common.CheckWithDockerData(func(data *types.Data) []*storage.ComplianceResultValue_Evidence {
 			var checkResults []*storage.ComplianceResultValue_Evidence
 			for _, i := range data.Images {
@@ -36,7 +37,10 @@ func imageCheck(f func(wrap types.ImageWrap) []*storage.ComplianceResultValue_Ev
 			}
 			return checkResults
 		}),
-		InterpretationText: fmt.Sprintf("StackRox checks that each image on every node %s", desc),
+		Metadata: &standards.Metadata{
+			InterpretationText: fmt.Sprintf("StackRox checks that each image on every node %s", desc),
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 

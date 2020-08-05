@@ -4,7 +4,6 @@ import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 import common.Constants
 import groups.BAT
 import groups.SensorBounce
-import io.fabric8.kubernetes.api.model.Cluster
 import io.stackrox.proto.api.v1.ApiTokenService
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
@@ -1126,6 +1125,46 @@ class ComplianceTest extends BaseSpecification {
         for (ComplianceRunResults.EntityResults nodeResults : nistResults.getNodeResultsMap().values()) {
             def controlResults = nodeResults.getControlResultsMap()
             assert controlResults.containsKey("NIST_800_190:4_2_1")
+        }
+    }
+
+    @Category([BAT])
+    def "Verify per-node cluster checks generate correct results when there is a master node"() {
+        given:
+        "a control result which should only be returned from a master node"
+        def kubernetesResults = BASE_RESULTS.get("CIS_Kubernetes_v1_5")
+        def clusterResults = kubernetesResults.getClusterResults().getControlResultsMap()
+        // pick any check which should have a result when a master node exists and a note when no master node exists,
+        // for example Kubernetes 1.2.32
+        def controlResult = clusterResults["CIS_Kubernetes_v1_5:1_2_32"]
+
+        expect:
+        "the control result has a pass/fail result when run in an environment with a master node"
+        List<objects.Node> orchNodes = orchestrator.getNodeDetails()
+        def hasMaster = false
+        for (objects.Node node : orchNodes) {
+            for (String label : node.getLabels().keySet()) {
+                if (label == "node-role.kubernetes.io/master") {
+                    hasMaster = true
+                    break
+                }
+            }
+            if (hasMaster) {
+                break
+            }
+        }
+
+        if (hasMaster) {
+            // When there is a master node we hsould make sure the note came from the master node.
+            assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_SUCCESS ||
+                    controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_FAILURE
+            assert controlResult.evidenceList.size() == 1
+        } else {
+            // When there is no master node we should make sure the note is the default generated in Central
+            assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_NOTE
+            assert controlResult.evidenceList.size() == 1
+            def evidence = controlResult.evidenceList[0]
+            assert evidence.message.contains("No evidence was received for this check")
         }
     }
 

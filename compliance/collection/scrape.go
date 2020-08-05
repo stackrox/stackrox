@@ -96,6 +96,8 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, scrapeID stri
 	}
 	log.Info("Successfully collected relevant command lines")
 
+	complianceData.IsMasterNode = scrapeConfig.GetIsMasterNode()
+
 	complianceData.Time = types.TimestampNow()
 	return complianceData
 }

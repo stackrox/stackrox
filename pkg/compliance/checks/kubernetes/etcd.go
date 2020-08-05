@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("2_1"): multipleFlagsSetCheck("etcd", nil, "cert-file", "key-file"),
 		standards.CISKubeCheckName("2_2"): etcdCommandLineCheck("client-cert-auth", "true", "false", common.Matches),
 		standards.CISKubeCheckName("2_3"): etcdCommandLineCheck("auto-tls", "true", "false", common.NotMatches),
@@ -17,6 +17,6 @@ func init() {
 	})
 }
 
-func etcdCommandLineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndInterpretation {
+func etcdCommandLineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
 	return genericKubernetesCommandlineCheck("etcd", key, target, defaultVal, evalFunc)
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("4_2_1"):  kubeletCommandLineCheck("anonymous-auth", "false", "true", common.Matches),
 		standards.CISKubeCheckName("4_2_2"):  kubeletCommandLineCheck("authorization-mode", "AlwaysAllow", "AlwaysAllow", common.NotContains),
 		standards.CISKubeCheckName("4_2_3"):  kubeletCommandLineCheck("client-ca-file", "", "", common.Set),
@@ -28,6 +28,6 @@ func kubeletCommandLineOverride(msg string) []*storage.ComplianceResultValue_Evi
 	return common.NoteListf("%s. Please check the kubelet config file to verify this result.", msg)
 }
 
-func kubeletCommandLineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndInterpretation {
+func kubeletCommandLineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
 	return genericKubernetesCommandlineCheck("kubelet", key, target, defaultVal, evalFunc, kubeletCommandLineOverride)
 }

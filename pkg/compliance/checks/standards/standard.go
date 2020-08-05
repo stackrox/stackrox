@@ -2,33 +2,49 @@ package standards
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 // NodeChecks is the global map of standard names to checks
 var (
-	NodeChecks = make(map[string]map[string]*CheckAndInterpretation)
+	NodeChecks = make(map[string]map[string]*CheckAndMetadata)
 )
 
-// CheckAndInterpretation is a pair matching a Check to an interpretation text
-type CheckAndInterpretation struct {
-	CheckFunc          Check
+// Metadata contains metadata about a Check
+type Metadata struct {
 	InterpretationText string
+	TargetKind         framework.TargetKind
+}
+
+// CheckAndMetadata is a pair matching a Check to an interpretation text
+type CheckAndMetadata struct {
+	CheckFunc Check
+	Metadata  *Metadata
 }
 
 // RegisterChecksForStandard takes a standard name and some Checks and adds them to the golabl registry
-func RegisterChecksForStandard(standardName string, standardChecks map[string]*CheckAndInterpretation) {
+func RegisterChecksForStandard(standardName string, standardChecks map[string]*CheckAndMetadata) {
+	for _, checkAndMetadata := range standardChecks {
+		if checkAndMetadata.Metadata == nil {
+			checkAndMetadata.Metadata = &Metadata{
+				// All of these checks are expected to run in the nodes.  If no metadata is specified we assume the target is NodeKind.
+				TargetKind: framework.NodeKind,
+			}
+		}
+	}
+
 	standard, ok := NodeChecks[standardName]
 	if !ok {
 		NodeChecks[standardName] = standardChecks
 		return
 	}
 
-	for checkName, check := range standardChecks {
+	for checkName, checkAndMetadata := range standardChecks {
 		if _, ok := standard[checkName]; ok {
 			utils.Should(errors.Errorf("duplicate check in collector: %s", checkName))
 		}
-		standard[checkName] = check
+		standard[checkName] = checkAndMetadata
 	}
 }
 

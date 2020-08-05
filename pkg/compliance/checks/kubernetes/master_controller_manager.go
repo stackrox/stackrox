@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISKubernetes, map[string]*standards.CheckAndMetadata{
 		standards.CISKubeCheckName("1_3_1"): masterControllerManagerCommandLine("terminated-pod-gc-threshold", "", "12500", common.Set),
 		standards.CISKubeCheckName("1_3_2"): masterControllerManagerCommandLine("profiling", "false", "true", common.Matches),
 		standards.CISKubeCheckName("1_3_3"): masterControllerManagerCommandLine("use-service-account-credentials", "true", "true", common.Matches),
@@ -17,6 +17,6 @@ func init() {
 	})
 }
 
-func masterControllerManagerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndInterpretation {
-	return genericKubernetesCommandlineCheck("kube-controller-manager", key, target, defaultVal, evalFunc)
+func masterControllerManagerCommandLine(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
+	return masterNodeKubernetesCommandlineCheck("kube-controller-manager", key, target, defaultVal, evalFunc)
 }

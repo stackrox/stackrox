@@ -8,6 +8,7 @@ import (
 	_ "github.com/stackrox/rox/pkg/compliance/checks" // Make sure all checks are available
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/compliance/data"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 )
 
 func runChecks(client sensor.ComplianceService_CommunicateClient, scrapeConfig *sensor.MsgToCompliance_ScrapeConfig, run *sensor.MsgToCompliance_TriggerRun) error {
@@ -26,23 +27,24 @@ func getCheckResults(run *sensor.MsgToCompliance_TriggerRun, complianceData *sta
 			log.Infof("no checks found for standard %s during compliance run %s", standardID, run.GetScrapeId())
 			continue
 		}
-		for checkName, checkAndInterpretation := range standard {
-			if checkAndInterpretation.CheckFunc == nil {
+		for checkName, checkAndMetadata := range standard {
+			if checkAndMetadata.CheckFunc == nil {
 				log.Infof("no check function found for check %s in standard %s during compliance run %s", checkName, standardID, run.GetScrapeId())
 				continue
 			}
-			evidence := checkAndInterpretation.CheckFunc(complianceData)
-			addCheckResultsToResponse(results, standardID, checkName, evidence)
+			evidence := checkAndMetadata.CheckFunc(complianceData)
+			addCheckResultsToResponse(results, standardID, checkName, checkAndMetadata.Metadata.TargetKind, evidence)
 		}
 	}
 	return results
 }
 
-func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandardResult, standardID, checkName string, evidence []*storage.ComplianceResultValue_Evidence) {
+func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandardResult, standardID, checkName string, target framework.TargetKind, evidence []*storage.ComplianceResultValue_Evidence) {
 	standardResults, ok := results[standardID]
 	if !ok {
 		standardResults = &compliance.ComplianceStandardResult{
-			CheckResults: make(map[string]*storage.ComplianceResultValue),
+			NodeCheckResults:    make(map[string]*storage.ComplianceResultValue),
+			ClusterCheckResults: make(map[string]*storage.ComplianceResultValue),
 		}
 		results[standardID] = standardResults
 	}
@@ -54,9 +56,16 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 		}
 	}
 
-	standardResults.CheckResults[checkName] = &storage.ComplianceResultValue{
+	resultValue := &storage.ComplianceResultValue{
 		Evidence:     evidence,
 		OverallState: overallState,
+	}
+
+	switch target {
+	case framework.NodeKind:
+		standardResults.NodeCheckResults[checkName] = resultValue
+	case framework.ClusterKind:
+		standardResults.ClusterCheckResults[checkName] = resultValue
 	}
 }
 

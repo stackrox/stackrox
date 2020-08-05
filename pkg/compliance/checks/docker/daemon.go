@@ -10,21 +10,28 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	internalTypes "github.com/stackrox/rox/pkg/docker/types"
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		standards.CISDockerCheckName("2_1"): {
-			CheckFunc:          common.CheckWithDockerData(networkRestrictionCheck),
-			InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
+			CheckFunc: common.CheckWithDockerData(networkRestrictionCheck),
+			Metadata: &standards.Metadata{
+				InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
+				TargetKind:         framework.NodeKind,
+			},
 		},
 		standards.CISDockerCheckName("2_2"): genericDockerCommandlineCheck("log-level", "info", "info", common.Matches),
 		standards.CISDockerCheckName("2_3"): genericDockerCommandlineCheck("iptables", "false", "true", common.NotMatches),
 		standards.CISDockerCheckName("2_4"): {
-			CheckFunc:          common.CheckNoInsecureRegistries,
-			InterpretationText: `StackRox checks that no insecure Docker Registries are configured on any host, except for those with an IP in a private subnet (such as 127.0.0.0/8 or 10.0.0.0/8)`,
+			CheckFunc: common.CheckNoInsecureRegistries,
+			Metadata: &standards.Metadata{
+				InterpretationText: `StackRox checks that no insecure Docker Registries are configured on any host, except for those with an IP in a private subnet (such as 127.0.0.0/8 or 10.0.0.0/8)`,
+				TargetKind:         framework.NodeKind,
+			},
 		},
 		standards.CISDockerCheckName("2_5"): dockerInfoCheck(aufs),
 
@@ -54,17 +61,20 @@ func networkRestrictionCheck(data *internalTypes.Data) []*storage.ComplianceResu
 	return common.PassListf("Enable icc is false on bridge network")
 }
 
-func dockerInfoCheck(f func(info types.Info) []*storage.ComplianceResultValue_Evidence, optInterpretation ...string) *standards.CheckAndInterpretation {
+func dockerInfoCheck(f func(info types.Info) []*storage.ComplianceResultValue_Evidence, optInterpretation ...string) *standards.CheckAndMetadata {
 	var interpretationText string
 	if len(optInterpretation) > 0 {
 		interpretationText = optInterpretation[0]
 	}
-	return &standards.CheckAndInterpretation{
+	return &standards.CheckAndMetadata{
 		CheckFunc: common.CheckWithDockerData(
 			func(data *internalTypes.Data) []*storage.ComplianceResultValue_Evidence {
 				return f(data.Info)
 			}),
-		InterpretationText: interpretationText,
+		Metadata: &standards.Metadata{
+			InterpretationText: interpretationText,
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 
@@ -143,8 +153,8 @@ func getDockerdProcess(complianceData *standards.ComplianceData) (*compliance.Co
 
 // Handle the command line inputs as well as if the daemon exists
 // Here are all the handlers for just the daemon portion
-func genericDockerCommandlineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func genericDockerCommandlineCheck(key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			dockerdProcess, config, err := getDockerdProcess(complianceData)
 			if err != nil {

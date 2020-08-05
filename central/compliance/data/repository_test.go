@@ -57,7 +57,7 @@ func (s *RepositoryTestSuite) TestGetNodeResults() {
 
 	testEvidence := map[string]*compliance.ComplianceStandardResult{
 		"testStandardName": {
-			CheckResults: map[string]*storage.ComplianceResultValue{
+			NodeCheckResults: map[string]*storage.ComplianceResultValue{
 				"testCheckName": {
 					Evidence: []*storage.ComplianceResultValue_Evidence{
 						{

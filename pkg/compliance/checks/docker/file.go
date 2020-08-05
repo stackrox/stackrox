@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/common"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
+	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 )
 
@@ -19,7 +20,7 @@ var (
 const auditFile = "/etc/audit/audit.rules"
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		standards.CISDockerCheckName("1_1_1"): common.NoteCheck("Ensure the container host has been Hardened"),
 		standards.CISDockerCheckName("1_1_2"): common.NoteCheck(" Ensure that the version of Docker is up to date"),
 		standards.CISDockerCheckName("1_2_1"): {
@@ -46,8 +47,8 @@ func init() {
 	})
 }
 
-func auditCheckFunc(files ...string) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func auditCheckFunc(files ...string) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			f, ok := complianceData.Files[auditFile]
 			if !ok {
@@ -75,7 +76,10 @@ func auditCheckFunc(files ...string) *standards.CheckAndInterpretation {
 			}
 			return results
 		},
-		InterpretationText: fmt.Sprintf("StackRox checks that auditd rules exist for files %s (if present)", msgfmt.FormatStrings(files...)),
+		Metadata: &standards.Metadata{
+			InterpretationText: fmt.Sprintf("StackRox checks that auditd rules exist for files %s (if present)", msgfmt.FormatStrings(files...)),
+			TargetKind:         framework.NodeKind,
+		},
 	}
 }
 

@@ -48,7 +48,8 @@ message ContainerRuntimeInfo {
 }
 
 message ComplianceStandardResult {
-    map<string, storage.ComplianceResultValue> checkResults = 1;
+    map<string, storage.ComplianceResultValue> node_check_results    = 1;
+    map<string, storage.ComplianceResultValue> cluster_check_results = 2;
 }
 
 // Next Available Tag: 11

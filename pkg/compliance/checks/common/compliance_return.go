@@ -7,8 +7,8 @@ import (
 )
 
 // CommandLineFileOwnership returns a check that checks the ownership of a file that is specified by the command line
-func CommandLineFileOwnership(processName, flag, user, group string) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func CommandLineFileOwnership(processName, flag, user, group string) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			process, exists := GetProcess(complianceData, processName)
 			if !exists {
@@ -26,8 +26,8 @@ func CommandLineFileOwnership(processName, flag, user, group string) *standards.
 }
 
 // CommandLineFilePermissions returns a check that checks the permissions of a file that is specified by the command line
-func CommandLineFilePermissions(processName, flag string, perms uint32) *standards.CheckAndInterpretation {
-	return &standards.CheckAndInterpretation{
+func CommandLineFilePermissions(processName, flag string, perms uint32) *standards.CheckAndMetadata {
+	return &standards.CheckAndMetadata{
 		CheckFunc: func(complianceData *standards.ComplianceData) []*storage.ComplianceResultValue_Evidence {
 			process, exists := GetProcess(complianceData, processName)
 			if !exists {

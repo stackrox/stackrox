@@ -6,7 +6,7 @@ import (
 )
 
 func init() {
-	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndInterpretation{
+	standards.RegisterChecksForStandard(standards.CISDocker, map[string]*standards.CheckAndMetadata{
 		standards.CISDockerCheckName("3_1"): common.SystemdOwnershipCheck("docker.service", "root", "root"),
 		standards.CISDockerCheckName("3_2"): common.SystemdPermissionCheck("docker.service", 0644),
 
