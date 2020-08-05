@@ -26,7 +26,6 @@ import {
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 import asyncComponent from 'Components/AsyncComponent';
 import Button from 'Components/Button';
@@ -69,6 +68,7 @@ class MainPage extends Component {
         globalSearchView: PropTypes.bool.isRequired,
         cliDownloadView: PropTypes.bool.isRequired,
         metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired }),
+        // eslint-disable-next-line react/no-unused-prop-types
         featureFlags: PropTypes.arrayOf(
             PropTypes.shape({
                 envVar: PropTypes.string.isRequired,
@@ -119,15 +119,7 @@ class MainPage extends Component {
                         component={AsyncLicensePage}
                         requiredPermission="Licenses"
                     />
-                    <ProtectedRoute
-                        path={userPath}
-                        component={AsyncUserPage}
-                        featureFlagEnabled={isBackendFeatureFlagEnabled(
-                            this.props.featureFlags,
-                            knownBackendFlags.ROX_CURRENT_USER_INFO,
-                            false
-                        )}
-                    />
+                    <ProtectedRoute path={userPath} component={AsyncUserPage} />
                     <ProtectedRoute path={systemConfigPath} component={AsyncSystemConfigPage} />
                     <ProtectedRoute path={vulnManagementPath} component={AsyncVulnMgmtPage} />
                     <ProtectedRoute

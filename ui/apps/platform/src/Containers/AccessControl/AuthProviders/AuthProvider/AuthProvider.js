@@ -8,8 +8,6 @@ import HeaderButtons from 'Containers/AccessControl/AuthProviders/AuthProvider/H
 import Form from 'Containers/AccessControl/AuthProviders/AuthProvider/Form/Form';
 import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details';
 import { getAuthProviderLabelByValue } from 'constants/accessControl';
-import FeatureEnabled from 'Containers/FeatureEnabled';
-import { knownBackendFlags } from 'utils/featureFlags';
 
 class AuthProvider extends Component {
     static propTypes = {
@@ -208,27 +206,17 @@ class AuthProvider extends Component {
         ) : (
             <>
                 {this.testModeSupported(selectedAuthProvider) && !selectedAuthProvider.active && (
-                    <FeatureEnabled featureFlag={knownBackendFlags.ROX_AUTH_TEST_MODE_UI}>
-                        {({ featureEnabled }) => {
-                            return (
-                                featureEnabled && (
-                                    <div className="w-full pt-4 pl-4 pr-4">
-                                        <Message
-                                            type="guidance"
-                                            message={
-                                                <span>
-                                                    Select{' '}
-                                                    <strong className="font-700">Test Login</strong>{' '}
-                                                    to check that your authentication provider is
-                                                    working properly.
-                                                </span>
-                                            }
-                                        />
-                                    </div>
-                                )
-                            );
-                        }}
-                    </FeatureEnabled>
+                    <div className="w-full pt-4 pl-4 pr-4">
+                        <Message
+                            type="guidance"
+                            message={
+                                <span>
+                                    Select <strong className="font-700">Test Login</strong> to check
+                                    that your authentication provider is working properly.
+                                </span>
+                            }
+                        />
+                    </div>
                 )}
                 <Details
                     authProvider={selectedAuthProvider}

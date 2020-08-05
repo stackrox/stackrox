@@ -2446,7 +2446,6 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2687,8 +2686,6 @@ jobs:
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
-      - ROX_CURRENT_USER_INFO: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2758,7 +2755,6 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2780,7 +2776,6 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2814,7 +2809,6 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2844,7 +2838,6 @@ jobs:
       - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_ROCKSDB: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
@@ -3496,7 +3489,6 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3515,7 +3507,6 @@ jobs:
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ROX_SENSOR_DETECTION: true
-      - ROX_AUTH_TEST_MODE_UI: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:

@@ -1,4 +1,3 @@
-import checkFeatureFlag from '../helpers/features';
 import withAuth from '../helpers/basicAuth';
 import { selectors as userPageSelectors, url as userPageUrl } from '../constants/UserPage';
 import { url as dashboardURL } from '../constants/DashboardPage';
@@ -7,13 +6,6 @@ import * as api from '../constants/apiEndpoints';
 
 describe('User Info', () => {
     withAuth();
-
-    before(function beforeHook() {
-        // skip the whole suite if user info feature isn't enabled
-        if (checkFeatureFlag('ROX_CURRENT_USER_INFO', false)) {
-            this.skip();
-        }
-    });
 
     function mockWithAdminUser() {
         cy.server();

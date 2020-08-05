@@ -16,12 +16,6 @@ var (
 	// PolicyImportExport feature flag enables policy import and export
 	PolicyImportExport = registerFeature("Enable Import/Export for Analyst Workflow", "ROX_POLICY_IMPORT_EXPORT", true)
 
-	// AuthTestMode feature flag allows test mode flow for new auth provider in UI
-	AuthTestMode = registerFeature("Enable Auth Test Mode UI", "ROX_AUTH_TEST_MODE_UI", true)
-
-	// CurrentUserInfo enables showing information about the current user in UI
-	CurrentUserInfo = registerFeature("Enable Current User Info UI", "ROX_CURRENT_USER_INFO", true)
-
 	// ComplianceInNodes enables running of node-related Compliance checks in the compliance pods
 	ComplianceInNodes = registerFeature("Enable compliance checks in nodes", "ROX_COMPLIANCE_IN_NODES", true)
 

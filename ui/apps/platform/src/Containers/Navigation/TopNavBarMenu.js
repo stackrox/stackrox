@@ -10,12 +10,20 @@ import { actions as authActions } from 'reducers/auth';
 import Menu from 'Components/Menu';
 import Avatar from 'Components/Avatar';
 import User from 'utils/User';
-import { isBackendFeatureFlagEnabled, knownBackendFlags } from 'utils/featureFlags';
 
 const topNavMenuBtnClass =
     'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
-function TopNavBarMenu({ logout, shouldHaveReadPermission, userData, featureFlags }) {
+function TopNavBarMenu({ logout, shouldHaveReadPermission, userData }) {
+    /**
+     * TODO: rework the logic for the top-right menu
+     * currently starts with the last item and we conditional unshift middle item,
+     * then always unshift top item
+     * The use of unshift is a bit odd, especially now that the UserMenu is no longer feature-flagged.
+     * Even without that, this building up of array backwards is taking the whole UI-as-code idea too far.
+     *
+     * Menu component should probably be adapted to just take children
+     */
     const options = [{ label: 'Logout', onClick: () => logout() }];
 
     if (shouldHaveReadPermission('Licenses')) {
@@ -26,40 +34,35 @@ function TopNavBarMenu({ logout, shouldHaveReadPermission, userData, featureFlag
     let buttonText = null;
     const buttonTextClassName = 'border rounded-full mx-3 p-3 text-xl border-base-400';
 
-    if (isBackendFeatureFlagEnabled(featureFlags, knownBackendFlags.ROX_CURRENT_USER_INFO, false)) {
-        const user = new User(userData);
-        const menuOptionComponent = (
-            <div className="flex flex-col pl-2">
-                <div
-                    // TODO: Ideally we display both name and username as-is w/o capitalization, yet Menu component is too smart
-                    className={`font-700 ${!user.name && 'lowercase'}`}
-                    data-testid="menu-user-name"
-                >
-                    {user.name || user.username}
-                </div>
-                {user.email && (
-                    <div
-                        className="lowercase text-base-500 italic pt-px"
-                        data-testid="menu-user-email"
-                    >
-                        {user.email}
-                    </div>
-                )}
-                <div className="pt-1" data-testid="menu-user-roles">
-                    <span className="font-700 pr-2">Roles ({user.roles.length}):</span>
-                    <span>{user.roles.map((role) => role.name).join(', ')}</span>
-                </div>
+    const user = new User(userData);
+    const menuOptionComponent = (
+        <div className="flex flex-col pl-2">
+            <div
+                // TODO: Ideally we display both name and username as-is w/o capitalization, yet Menu component is too smart
+                className={`font-700 ${!user.name && 'lowercase'}`}
+                data-testid="menu-user-name"
+            >
+                {user.name || user.username}
             </div>
-        );
-        options.unshift({ component: menuOptionComponent, link: '/main/user' });
-        buttonIcon = (
-            <Avatar
-                name={user.name || user.username}
-                className="mx-3 h-10 w-10 flex items-center justify-center leading-none"
-            />
-        );
-        buttonText = '';
-    }
+            {user.email && (
+                <div className="lowercase text-base-500 italic pt-px" data-testid="menu-user-email">
+                    {user.email}
+                </div>
+            )}
+            <div className="pt-1" data-testid="menu-user-roles">
+                <span className="font-700 pr-2">Roles ({user.roles.length}):</span>
+                <span>{user.roles.map((role) => role.name).join(', ')}</span>
+            </div>
+        </div>
+    );
+    options.unshift({ component: menuOptionComponent, link: '/main/user' });
+    buttonIcon = (
+        <Avatar
+            name={user.name || user.username}
+            className="mx-3 h-10 w-10 flex items-center justify-center leading-none"
+        />
+    );
+    buttonText = '';
 
     return (
         <div className="flex items-center border-l border-base-400 hover:bg-base-200">
@@ -91,6 +94,7 @@ TopNavBarMenu.propTypes = {
         }),
         userAttributes: PropTypes.arrayOf(PropTypes.shape({})),
     }).isRequired,
+    // eslint-disable-next-line react/no-unused-prop-types
     featureFlags: PropTypes.arrayOf(
         PropTypes.shape({
             envVar: PropTypes.string.isRequired,
