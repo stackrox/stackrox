@@ -46,8 +46,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `CVEs`,
             entityType: entityTypes.CVE,
-            headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-            className: `w-1/8 ${defaultColumnClassName}`,
+            headerClassName: `w-1/6 ${defaultHeaderClassName}`,
+            className: `w-1/6 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { vulnCounter, id, scan } = original;
                 if (!vulnCounter || vulnCounter.all.total === 0) {
@@ -73,8 +73,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Top CVSS`,
-            headerClassName: `w-1/10 text-center ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 text-center ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { topVuln } = original;
                 if (!topVuln)
@@ -92,8 +92,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Created`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { metadata } = original;
                 if (!metadata || !metadata.v1) return '–';
@@ -105,8 +105,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Scan Time`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { scan } = original;
                 if (!scan) return '–';
@@ -118,8 +118,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Image OS`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original }) => {
                 const { scan } = original;
                 if (!scan?.operatingSystem) return '–';
@@ -131,8 +131,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: 'Image Status',
-            headerClassName: `w-1/10 ${nonSortableHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${nonSortableHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => {
                 const { deploymentCount } = original;
                 const imageStatus = deploymentCount === 0 ? 'inactive' : 'active';
@@ -146,8 +146,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `Deployments`,
             entityType: entityTypes.DEPLOYMENT,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.DEPLOYMENT}
@@ -163,8 +163,8 @@ export function getImageTableColumns(workflowState) {
         {
             Header: `Components`,
             entityType: entityTypes.COMPONENT,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             Cell: ({ original, pdf }) => (
                 <TableCountLink
                     entityType={entityTypes.COMPONENT}
@@ -179,8 +179,8 @@ export function getImageTableColumns(workflowState) {
         },
         {
             Header: `Risk Priority`,
-            headerClassName: `w-1/10 ${defaultHeaderClassName}`,
-            className: `w-1/10 ${defaultColumnClassName}`,
+            headerClassName: `w-1/12 ${defaultHeaderClassName}`,
+            className: `w-1/12 ${defaultColumnClassName}`,
             id: imageSortFields.PRIORITY,
             accessor: 'priority',
             sortField: imageSortFields.PRIORITY,
