@@ -186,7 +186,7 @@ func TestGetFlatChecksFromRunResult(t *testing.T) {
 	ag := &aggregatorImpl{
 		standards: mockStandardsRepo{},
 	}
-	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]*set.StringSet{}))
+	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), &mask{}))
 }
 
 func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) string {
@@ -197,6 +197,10 @@ func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggreg
 	return fmt.Sprintf("GroupBy %s - Unit %s", strings.Join(groupBys, "-"), unit.String())
 }
 
+func TestMaxScopeMatches(t *testing.T) {
+	assert.Equal(t, len(v1.ComplianceAggregation_Scope_name)-1, int(maxScope))
+}
+
 func TestGetAggregatedResults(t *testing.T) {
 	var cases = []struct {
 		groupBy       []v1.ComplianceAggregation_Scope
@@ -205,7 +209,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		failPerResult int32
 		skipPerResult int32
 		numResults    int
-		mask          [numScopes]*set.StringSet
+		mask          *mask
 	}{
 		{
 			unit:          v1.ComplianceAggregation_CLUSTER,
@@ -303,8 +307,18 @@ func TestGetAggregatedResults(t *testing.T) {
 			failPerResult: 2,
 			passPerResult: 4,
 			numResults:    1,
-			mask: [numScopes]*set.StringSet{
-				v1.ComplianceAggregation_NAMESPACE - minScope: &[]set.StringSet{set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1"))}[0],
+			mask: &mask{
+				v1.ComplianceAggregation_NAMESPACE - minScope: set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1")),
+			},
+		},
+		{
+			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_DEPLOYMENT},
+			unit:          v1.ComplianceAggregation_CHECK,
+			failPerResult: 2,
+			passPerResult: 4,
+			numResults:    1,
+			mask: &mask{
+				v1.ComplianceAggregation_DEPLOYMENT - minScope: set.NewStringSet("cluster1deployment1"),
 			},
 		},
 	}
@@ -398,7 +412,7 @@ func TestDomainAttribution(t *testing.T) {
 		[]v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE},
 		v1.ComplianceAggregation_CHECK,
 		complianceRunResults,
-		[numScopes]*set.StringSet{},
+		&mask{},
 	)
 
 	for i, r := range results {
@@ -454,27 +468,27 @@ func TestIsValidCheck(t *testing.T) {
 			checks: []check{
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER: "A",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope: "A",
 						},
 					},
 					result: true,
 				},
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER:    "A",
-							v1.ComplianceAggregation_NAMESPACE:  "B",
-							v1.ComplianceAggregation_DEPLOYMENT: "C",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope:    "A",
+							v1.ComplianceAggregation_NAMESPACE - minScope:  "B",
+							v1.ComplianceAggregation_DEPLOYMENT - minScope: "C",
 						},
 					},
 					result: true,
 				},
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER: "A",
-							v1.ComplianceAggregation_NODE:    "D",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope: "A",
+							v1.ComplianceAggregation_NODE - minScope:    "D",
 						},
 					},
 					result: true,
@@ -489,27 +503,27 @@ func TestIsValidCheck(t *testing.T) {
 			checks: []check{
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER: "A",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope: "A",
 						},
 					},
 					result: false,
 				},
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER:    "A",
-							v1.ComplianceAggregation_NAMESPACE:  "B",
-							v1.ComplianceAggregation_DEPLOYMENT: "C",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope:    "A",
+							v1.ComplianceAggregation_NAMESPACE - minScope:  "B",
+							v1.ComplianceAggregation_DEPLOYMENT - minScope: "C",
 						},
 					},
 					result: true,
 				},
 				{
 					fc: flatCheck{
-						values: map[v1.ComplianceAggregation_Scope]string{
-							v1.ComplianceAggregation_CLUSTER: "A",
-							v1.ComplianceAggregation_NODE:    "D",
+						values: &flatCheckValues{
+							v1.ComplianceAggregation_CLUSTER - minScope: "A",
+							v1.ComplianceAggregation_NODE - minScope:    "D",
 						},
 					},
 					result: false,
@@ -519,10 +533,9 @@ func TestIsValidCheck(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		// testCase mask to actual mask
-		testMask := [numScopes]*set.StringSet{}
+		testMask := &mask{}
 		for k, v := range testCase.mask {
-			vCopy := v
-			testMask[getMaskIndex(k)] = &vCopy
+			testMask.set(k, v.Clone())
 		}
 		for _, c := range testCase.checks {
 			t.Run("aggregation", func(t *testing.T) {
