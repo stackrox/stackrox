@@ -508,7 +508,7 @@ const ClustersPage = ({
             <Dialog
                 className="w-1/3"
                 isOpen={showDialog}
-                text={`Cluster deletion won't tear down StackRox services running on this cluster. You can remove them from the corresponding cluster by running the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
+                text={`Deleting a cluster configuration doesn't remove StackRox services running in the cluster. To remove them, run the "delete-sensor.sh" script from the sensor installation bundle. Are you sure you want to delete ${checkedClusterIds.length} cluster(s)?`}
                 onConfirm={makeDeleteRequest}
                 confirmText="Delete"
                 onCancel={hideDialog}
