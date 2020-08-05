@@ -1154,16 +1154,22 @@ class ComplianceTest extends BaseSpecification {
             }
         }
 
+        def overalLState = controlResult.getOverallState()
+        assert controlResult.evidenceList.size() == 1
+        def evidence = controlResult.evidenceList[0]
         if (hasMaster) {
-            // When there is a master node we hsould make sure the note came from the master node.
-            assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_SUCCESS ||
-                    controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_FAILURE
-            assert controlResult.evidenceList.size() == 1
+            if (overalLState == ComplianceState.COMPLIANCE_STATE_NOTE) {
+                // openshift-crio has a master node but does not run the master API process so it should note that the
+                // master API process does not exist.
+                assert evidence.message.contains("not found on host")
+            } else {
+                // kops has a master node and DOES run the master API process so it should succeed or fail
+                assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_SUCCESS ||
+                        controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_FAILURE
+            }
         } else {
             // When there is no master node we should make sure the note is the default generated in Central
-            assert controlResult.getOverallState() == ComplianceState.COMPLIANCE_STATE_NOTE
-            assert controlResult.evidenceList.size() == 1
-            def evidence = controlResult.evidenceList[0]
+            assert overalLState == ComplianceState.COMPLIANCE_STATE_NOTE
             assert evidence.message.contains("No evidence was received for this check")
         }
     }
