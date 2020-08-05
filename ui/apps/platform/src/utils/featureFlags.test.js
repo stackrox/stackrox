@@ -35,7 +35,7 @@ describe('featureFlags utils', () => {
         });
 
         it('should return default value if there is no matching flag in the list of known flags', () => {
-            const flagToFind = 'ROX_BADGER_DB';
+            const flagToFind = 'ROX_NON_EXISTENT_FEATURE_FLAG';
             const defaultVal = false;
 
             const isEnabled = isBackendFeatureFlagEnabled(
@@ -50,7 +50,7 @@ describe('featureFlags utils', () => {
         it('should log warning, in the dev environment, if there is no matching flag in the list of known flags', () => {
             jest.spyOn(global.console, 'warn');
 
-            const flagToFind = 'ROX_BADGER_DB';
+            const flagToFind = 'ROX_NON_EXISTENT_FEATURE_FLAG';
             const defaultVal = false;
             process.env.NODE_ENV = 'development';
 

@@ -2436,13 +2436,10 @@ jobs:
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ROX_PLAINTEXT_ENDPOINTS: "8080,grpc@8081"
       - ROXDEPLOY_CONFIG_FILE_MAP: "scripts/ci/endpoints/endpoints.yaml"
-      - ROX_BADGER_DB: true
       - ROX_EVENT_TIMELINE_CLUSTERED_EVENTS_UI: true
-      - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
@@ -2678,11 +2675,8 @@ jobs:
     environment:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
-      - ROX_BADGER_DB: true
       - ROX_EVENT_TIMELINE_UI: true
-      - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_SERVICE_ENFORCE_ON_UPDATE: true
       - ROX_POLICY_IMPORT_EXPORT: true
@@ -2747,12 +2741,9 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_BADGER_DB: true
-      - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
@@ -2773,9 +2764,7 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -2801,12 +2790,9 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_BADGER_DB: true
-      - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
@@ -2831,11 +2817,9 @@ jobs:
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
-      - ROX_SENSOR_DETECTION: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
       - ROX_ROCKSDB: true
@@ -3486,9 +3470,7 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3504,9 +3486,7 @@ jobs:
       - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: false
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
-      - ROX_SENSOR_DETECTION: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3614,7 +3594,6 @@ jobs:
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - SCANNER_SUPPORT: true
-      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_WHITELIST_GENERATION_DURATION: 1m
       - ADMISSION_CONTROLLER: true
       - ADMISSION_CONTROLLER_UPDATES: true
@@ -3955,7 +3934,6 @@ jobs:
     executor: custom
     environment:
       - SCANNER_SUPPORT: true
-      - ROX_SENSOR_DETECTION: true
       - AUTH0_SUPPORT: false
 
     steps:
