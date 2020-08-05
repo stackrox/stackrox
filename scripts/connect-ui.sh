@@ -16,13 +16,17 @@ if [[ -z "${CLUSTER_NAME}" ]]; then
   fi
 fi
 
-zone=""
+zone="--zone us-central1-a"
 if [[ -n $ZONE ]]; then
     zone="--zone $ZONE"
 fi
+# Zone values for different types of infra clusters
+# GKE (default): us-central1-a
+# Demo: us-central1-b
+# Openshift: us-east1-d
 
 # get gcloud user name
-gcloud container clusters get-credentials "${CLUSTER_NAME}" --project ultra-current-825 $zone || {
+gcloud container clusters get-credentials "${CLUSTER_NAME}" --project stackrox-ci $zone || {
   exit 1
 }
 [[ -n "$GCLOUD_USER" ]] || GCLOUD_USER="$(gcloud config get-value account 2>/dev/null)"
