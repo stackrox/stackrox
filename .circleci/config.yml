@@ -2185,7 +2185,7 @@ jobs:
           crio: false
           suffix: -rhel
           flavor: lite
-          version: 0.6.3
+          version: 0.6.4
 
   provision-gke-rhel-api-e2e-tests:
     executor: custom
@@ -2290,7 +2290,7 @@ jobs:
           crio: false
           flavor: lite
           gate-label: ci-openshift-tests
-          version: 0.6.3
+          version: 0.6.4
 
   provision-openshift-crio-api-e2e-tests:
     machine: true
@@ -2300,7 +2300,7 @@ jobs:
           flavor: multi
           gate-label: ci-openshift-crio-tests
           suffix: -crio
-          version: 0.6.3
+          version: 0.6.4
 
   provision-eks-api-e2e-tests:
     executor: custom
@@ -2494,7 +2494,7 @@ jobs:
 
       - run:
           name: Test roxctl command for cert gen
-          command : |
+          command: |
             mkdir gencerts
             roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
               sensor generate-certs remote --output-dir gencerts
@@ -2777,7 +2777,7 @@ jobs:
       - run-openshift-tests:
           suffix: -rhel
           flavor: lite
-          version: 0.6.3
+          version: 0.6.4
           use-main-rhel: true
           sensor-deploy-flavor: helm
 
@@ -3477,7 +3477,7 @@ jobs:
       - run-openshift-tests:
           gate-label: ci-openshift-tests
           flavor: lite
-          version: 0.6.3
+          version: 0.6.4
 
   openshift-crio-api-e2e-tests:
     executor: custom
@@ -3494,7 +3494,7 @@ jobs:
           suffix: "-crio"
           gate-label: ci-openshift-crio-tests
           flavor: multi
-          version: 0.6.3
+          version: 0.6.4
 
   eks-api-e2e-tests:
     executor: custom
