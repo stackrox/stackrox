@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/blevesearch/bleve"
 	_ "github.com/blevesearch/bleve/analysis/analyzer/keyword"  // Import the keyword analyzer so that it can be referred to from proto files
@@ -66,7 +67,7 @@ func TempInitializeIndices(scorchPath string) (bleve.Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	return initializeIndices(filepath.Join(tmpDir, scorchPath), EphemeralIndex)
+	return initializeIndices(filepath.Join(tmpDir, scorchPath), EphemeralIndex, "")
 }
 
 func kvConfigForMoss() map[string]interface{} {
@@ -83,8 +84,8 @@ func MemOnlyIndex() (bleve.Index, error) {
 }
 
 // InitializeIndices initializes the index in the specified path.
-func InitializeIndices(name, scorchPath string, persisted IndexPersisted) (bleve.Index, error) {
-	globalIndex, err := initializeIndices(scorchPath, persisted)
+func InitializeIndices(name, scorchPath string, persisted IndexPersisted, typeString string) (bleve.Index, error) {
+	globalIndex, err := initializeIndices(scorchPath, persisted, typeString)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func InitializeIndices(name, scorchPath string, persisted IndexPersisted) (bleve
 	return globalIndex, nil
 }
 
-func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.Index, error) {
+func initializeIndices(scorchPath string, indexPersisted IndexPersisted, typeString string) (bleve.Index, error) {
 	kvconfig := map[string]interface{}{
 		// Determines if we should persist the index
 		// false means persisted and true means *not* persisted
@@ -120,12 +121,12 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.
 		if err := os.RemoveAll(scorchPath); err != nil {
 			log.Panicf("error removing scorch path: %v", err)
 		}
-		return initializeIndices(scorchPath, indexPersisted)
+		return initializeIndices(scorchPath, indexPersisted, "")
 	}
 
 	// This implies that the index mapping has changed and therefore we should reindex everything
 	// This can only happen on upgrades
-	if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping()) {
+	if !compareMappings(globalIndex.Mapping(), mapping.GetIndexMapping(), typeString) {
 		log.Info("[STARTUP] Found new index mapping. Removing index and rebuilding")
 		if err := globalIndex.Close(); err != nil {
 			log.Errorf("error closing global index: %v", err)
@@ -133,7 +134,7 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.
 		if err := os.RemoveAll(scorchPath); err != nil {
 			log.Errorf("error removing scorch path: %v", err)
 		}
-		return initializeIndices(scorchPath, indexPersisted)
+		return initializeIndices(scorchPath, indexPersisted, "")
 	}
 
 	return globalIndex, nil
@@ -141,7 +142,7 @@ func initializeIndices(scorchPath string, indexPersisted IndexPersisted) (bleve.
 
 // compareMappings marshals the index mappings into JSON (which is sorted and deterministic) and then compares the bytes
 // this will determine if the index mapping has changed and the index needs to be rebuilt
-func compareMappings(im1, im2 bleveMapping.IndexMapping) bool {
+func compareMappings(im1, im2 bleveMapping.IndexMapping, typeString string) bool {
 	bytes1, err := json.Marshal(im1)
 	if err != nil {
 		return false
@@ -150,5 +151,42 @@ func compareMappings(im1, im2 bleveMapping.IndexMapping) bool {
 	if err != nil {
 		return false
 	}
-	return bytes.Equal(bytes1, bytes2)
+
+	// If a type string is passed, then there is a single object type in this index
+	// so we can look to see if the doc map for that single type has changed. If it has not,
+	// then there is no need to remove and reindex
+	// In the case, where there are multiple objects in an index, do a full rebuild if the doc mapping
+	// has changed at all (very frequently)
+	if typeString == "" {
+		return bytes.Equal(bytes1, bytes2)
+	}
+
+	var m1 map[string]interface{}
+	if err := json.Unmarshal(bytes1, &m1); err != nil {
+		return false
+	}
+	m1Types, ok := m1["types"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	// Exclude the other type mappings as they do not influence this index
+	delete(m1, "types")
+
+	var m2 map[string]interface{}
+	if err := json.Unmarshal(bytes2, &m2); err != nil {
+		return false
+	}
+	m2Types, ok := m2["types"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	// Exclude the other type mappings as they do not influence this index
+	delete(m2, "types")
+
+	// Return false if the specific typed doc map for this index has changed
+	if !reflect.DeepEqual(m1Types[typeString], m2Types[typeString]) {
+		return false
+	}
+	// Check if global variables have changed (e.g. default analyzer, etc)
+	return reflect.DeepEqual(m1, m2)
 }

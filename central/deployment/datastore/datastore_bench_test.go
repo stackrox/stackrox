@@ -47,7 +47,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
-	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex)
+	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	require.NoError(b, err)
 
 	deploymentsStore, err := badgerStore.New(db)

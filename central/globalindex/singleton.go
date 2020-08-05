@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/blevesearch/bleve"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -30,12 +31,12 @@ var (
 
 func initialize() {
 	var err error
-	globalIndex, err = InitializeIndices("combined-persisted", DefaultBlevePath, PersistedIndex)
+	globalIndex, err = InitializeIndices("combined-persisted", DefaultBlevePath, PersistedIndex, "")
 	if err != nil {
 		panic(err)
 	}
 
-	globalTmpIndex, err = InitializeIndices("combined-ephemeral", DefaultTmpBlevePath, EphemeralIndex)
+	globalTmpIndex, err = InitializeIndices("combined-ephemeral", DefaultTmpBlevePath, EphemeralIndex, "")
 	if err != nil {
 		panic(err)
 	}
@@ -56,27 +57,27 @@ func GetGlobalTmpIndex() bleve.Index {
 
 // GetAlertIndex returns the alert index on a separate index path
 func GetAlertIndex() bleve.Index {
-	return getSeparateIndex("alert")
+	return getSeparateIndex("alert", v1.SearchCategory_ALERTS)
 }
 
 // GetPodIndex returns the pod index in a separate index
 func GetPodIndex() bleve.Index {
-	return getSeparateIndex("pod")
+	return getSeparateIndex("pod", v1.SearchCategory_PODS)
 }
 
 // GetProcessIndex returns the process index in a separate index
 func GetProcessIndex() bleve.Index {
-	return getSeparateIndex("process")
+	return getSeparateIndex("process", v1.SearchCategory_PROCESS_INDICATORS)
 }
 
-func getSeparateIndex(obj string) bleve.Index {
+func getSeparateIndex(obj string, category v1.SearchCategory) bleve.Index {
 	separatesLock.Lock()
 	defer separatesLock.Unlock()
 	if index, ok := separates[obj]; ok {
 		return index
 	}
 	path := filepath.Join(SeparateIndexPath, obj)
-	index, err := InitializeIndices(obj, path, PersistedIndex)
+	index, err := InitializeIndices(obj, path, PersistedIndex, category.String())
 	if err != nil {
 		panic(err)
 	}
