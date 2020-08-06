@@ -4,23 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/dbhelper"
-	"github.com/stackrox/rox/pkg/migrations"
 )
 
 const (
 	// BadgerDBDirName is the directory (under the mount point for data files) containing BadgerDB data.
 	BadgerDBDirName = `badgerdb`
-)
-
-var (
-	// DefaultBadgerPath is the default path for the DB. Exported for metrics
-	DefaultBadgerPath = filepath.Join(migrations.DBMountPath, BadgerDBDirName)
 )
 
 // GetDefaultOptions for BadgerDB
@@ -51,11 +43,6 @@ func New(path string) (*badger.DB, error) {
 	return badger.Open(options)
 }
 
-// NewWithDefaults returns an instance of the persistent BadgerDB store instantiated at the default filesystem location.
-func NewWithDefaults() (*badger.DB, error) {
-	return New(DefaultBadgerPath)
-}
-
 // NewTemp creates a new DB, but places it in the host temporary directory.
 func NewTemp(name string) (*badger.DB, string, error) {
 	tmpDir, err := ioutil.TempDir("", fmt.Sprintf("badgerdb-%s", strings.Replace(name, "/", "_", -1)))
@@ -66,11 +53,6 @@ func NewTemp(name string) (*badger.DB, string, error) {
 	return db, tmpDir, err
 }
 
-// BucketKeyCount returns the number of objects in a "Bucket"
-func BucketKeyCount(txn *badger.Txn, keyPrefix []byte) (int, error) {
-	return Count(txn, dbhelper.GetBucketKey(keyPrefix, nil))
-}
-
 // Count gets the number of keys with a specific prefix
 func Count(txn *badger.Txn, keyPrefix []byte) (int, error) {
 	var count int
@@ -79,21 +61,4 @@ func Count(txn *badger.Txn, keyPrefix []byte) (int, error) {
 		return nil
 	})
 	return count, err
-}
-
-// CountWithBytes gets the number of keys with a specific prefix and the size in bytes of the specified prefix
-// Count gets the number of keys with a specific prefix
-func CountWithBytes(txn *badger.Txn, keyPrefix []byte) (int, int, error) {
-	var count int
-	var size int64
-	opts := ForEachOptions{
-		IteratorOptions: DefaultIteratorOptions(),
-	}
-	opts.IteratorOptions.PrefetchValues = false
-	err := ForEachItemWithPrefix(txn, keyPrefix, opts, func(k []byte, item *badger.Item) error {
-		count++
-		size += item.KeySize() + item.ValueSize()
-		return nil
-	})
-	return count, int(size), err
 }

@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
+	"github.com/tecbot/gorocksdb"
 )
 
 func TestVersionStore(t *testing.T) {
@@ -20,31 +19,25 @@ func TestVersionStore(t *testing.T) {
 type VersionStoreTestSuite struct {
 	suite.Suite
 
-	boltDB   *bolt.DB
-	badgerDB *badger.DB
-	rocksDB  *rocksdb.RocksDB
-	store    Store
+	boltDB  *bolt.DB
+	rocksDB *rocksdb.RocksDB
+	store   Store
 }
 
 func (suite *VersionStoreTestSuite) SetupTest() {
 	boltDB, err := bolthelper.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err, "Failed to make BoltDB")
 
-	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
-	suite.Require().NoError(err, "failed to create badger DB")
-
 	rocksDB, _, err := rocksdb.NewTemp(suite.T().Name())
 	suite.Require().NoError(err, "failed to create rocksDB")
 
 	suite.boltDB = boltDB
-	suite.badgerDB = badgerDB
 	suite.rocksDB = rocksDB
-	suite.store = New(boltDB, badgerDB, rocksDB)
+	suite.store = New(boltDB, rocksDB)
 }
 
 func (suite *VersionStoreTestSuite) TearDownTest() {
 	suite.NoError(suite.boltDB.Close())
-	suite.NoError(suite.badgerDB.Close())
 	suite.rocksDB.Close()
 }
 
@@ -67,13 +60,12 @@ func (suite *VersionStoreTestSuite) TestVersionMismatch() {
 	boltVersionBytes, err := boltVersion.Marshal()
 	suite.Require().NoError(err)
 
-	badgerVersion := &storage.Version{SeqNum: 3, Version: "Version 3"}
-	badgerVersionBytes, err := badgerVersion.Marshal()
+	rocksVersion := &storage.Version{SeqNum: 3, Version: "Version 3"}
+	rocksVersionBytes, err := rocksVersion.Marshal()
 	suite.Require().NoError(err)
 
-	suite.NoError(suite.badgerDB.Update(func(txn *badger.Txn) error {
-		return txn.Set(versionBucket, badgerVersionBytes)
-	}))
+	suite.NoError(suite.rocksDB.Put(gorocksdb.NewDefaultWriteOptions(), versionBucket, rocksVersionBytes))
+
 	suite.NoError(suite.boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(versionBucket)
 		return bucket.Put(key, boltVersionBytes)

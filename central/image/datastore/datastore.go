@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
 	"github.com/stackrox/rox/central/image/datastore/internal/search"
@@ -63,10 +62,10 @@ func newDatastore(dacky *dackbox.DackBox, storage store.Store, bleveIndex bleve.
 	return ds, nil
 }
 
-// NewBadger returns a new instance of DataStore using the input store, indexer, and searcher.
+// New returns a new instance of DataStore using the input store, indexer, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, bleveIndex bleve.Index, noUpdateTimestamps bool,
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, bleveIndex bleve.Index, noUpdateTimestamps bool,
 	imageComponents imageComponentDS.DataStore, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) (DataStore, error) {
 	storage, err := dackBoxStore.New(dacky, keyFence, noUpdateTimestamps)
 	if err != nil {

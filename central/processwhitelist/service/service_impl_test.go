@@ -4,26 +4,24 @@ import (
 	"context"
 	"testing"
 
-	"github.com/etcd-io/bbolt"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
-	"github.com/stackrox/rox/central/processwhitelist/store/bolt"
+	rocksdbStore "github.com/stackrox/rox/central/processwhitelist/store/rocksdb"
 	resultsMocks "github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/storecache"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -56,9 +54,12 @@ func TestProcessWhitelistService(t *testing.T) {
 
 type ProcessWhitelistServiceTestSuite struct {
 	suite.Suite
-	datastore       datastore.DataStore
-	service         Service
-	db              *bbolt.DB
+	datastore datastore.DataStore
+	service   Service
+
+	db  *rocksdb.RocksDB
+	dir string
+
 	reprocessor     *mocks.MockLoop
 	resultDatastore *resultsMocks.MockDataStore
 	connectionMgr   *connectionMocks.MockManager
@@ -66,31 +67,34 @@ type ProcessWhitelistServiceTestSuite struct {
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
-	var err error
-	suite.db, err = bolthelper.NewTemp("process_whitelist_service_test.db")
-	suite.NoError(err)
-	wlStore, err := bolt.NewStore(suite.db, storecache.NewMapBackedCache())
+	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+	suite.Require().NoError(err)
+
+	suite.db = db
+	suite.dir = dir
+
+	store, err := rocksdbStore.New(db)
 	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.NoError(err)
 	indexer := index.New(tmpIndex)
 
-	searcher, err := whitelistSearch.New(wlStore, indexer)
+	searcher, err := whitelistSearch.New(store, indexer)
 	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultDatastore.EXPECT().DeleteWhitelistResults(gomock.Any(), gomock.Any()).AnyTimes()
 
-	suite.datastore = datastore.New(wlStore, indexer, searcher, suite.resultDatastore)
+	suite.datastore = datastore.New(store, indexer, searcher, suite.resultDatastore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.service = New(suite.datastore, suite.reprocessor, suite.connectionMgr)
 }
 
 func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
-	testutils.TearDownDB(suite.db)
+	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
 	suite.mockCtrl.Finish()
 }
 

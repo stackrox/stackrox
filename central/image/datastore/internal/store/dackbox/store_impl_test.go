@@ -3,15 +3,14 @@ package dackbox
 import (
 	"testing"
 
-	"github.com/dgraph-io/badger"
 	cveStore "github.com/stackrox/rox/central/cve/store"
 	cveDackBoxStore "github.com/stackrox/rox/central/cve/store/dackbox"
 	"github.com/stackrox/rox/central/image/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/rocksdb"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -22,7 +21,7 @@ func TestImageStore(t *testing.T) {
 type ImageStoreTestSuite struct {
 	suite.Suite
 
-	db    *badger.DB
+	db    *rocksdb.RocksDB
 	dir   string
 	dacky *dackbox.DackBox
 
@@ -32,12 +31,13 @@ type ImageStoreTestSuite struct {
 
 func (suite *ImageStoreTestSuite) SetupSuite() {
 	var err error
-	suite.db, suite.dir, err = badgerhelper.NewTemp("reference")
+
+	suite.db, suite.dir, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		suite.FailNowf("failed to create DB: %+v", err.Error())
 	}
 
-	suite.dacky, err = dackbox.NewDackBox(suite.db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	suite.dacky, err = dackbox.NewRocksDBDackBox(suite.db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	if err != nil {
 		suite.FailNowf("failed to create counter: %+v", err.Error())
 	}
@@ -52,7 +52,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {
-	testutils.TearDownBadger(suite.db, suite.dir)
+	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
 }
 
 func (suite *ImageStoreTestSuite) TestImages() {

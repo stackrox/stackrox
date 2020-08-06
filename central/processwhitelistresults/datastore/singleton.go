@@ -2,13 +2,9 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store"
-	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -20,14 +16,7 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	if features.RocksDB.Enabled() {
-		storage = rocksdb.New(globaldb.GetRocksDB())
-	} else {
-		var err error
-		storage, err = bolt.NewBoltStore(globaldb.GetGlobalDB())
-		utils.Must(err)
-	}
+	storage := rocksdb.New(globaldb.GetRocksDB())
 	singleton = New(storage)
 }
 

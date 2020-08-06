@@ -112,7 +112,7 @@ func TestAutocomplete(t *testing.T) {
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(mockCtrl)
 
-	deploymentDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, idx, idx, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	allAccessCtx := sac.WithAllAccess(context.Background())

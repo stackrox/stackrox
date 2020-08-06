@@ -15,7 +15,7 @@ type RemoteDiscard func(openedAt uint64, txn transactions.DBTransaction)
 // RemoteCommit is a function that can be used to commit a change to DackBox.
 type RemoteCommit func(openedAt uint64, txn transactions.DBTransaction, modification graph.Modification, dirtyKeys map[string]proto.Message) error
 
-// Transaction is a linked graph and badger transaction.
+// Transaction is a linked graph and database transaction.
 type Transaction struct {
 	ts uint64
 

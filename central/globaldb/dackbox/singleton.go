@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/dackbox/indexer"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -69,11 +68,7 @@ func initializeDackBox() {
 		globalKeyLock = concurrency.NewKeyFence()
 
 		var err error
-		if features.RocksDB.Enabled() {
-			duckBox, err = dackbox.NewRocksDBDackBox(globaldb.GetRocksDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
-		} else {
-			duckBox, err = dackbox.NewDackBox(globaldb.GetGlobalBadgerDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
-		}
+		duckBox, err = dackbox.NewRocksDBDackBox(globaldb.GetRocksDB(), toIndex, GraphBucket, DirtyBucket, ReindexIfMissingBucket)
 		if err != nil {
 			log.Panicf("could not load stored indices: %v", err)
 		}

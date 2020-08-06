@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -29,8 +28,8 @@ const (
 )
 
 // BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
-func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.Handler {
-	return serializeDB(boltDB, badgerDB, rocksDB)
+func BackupDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
+	return serializeDB(boltDB, rocksDB)
 }
 
 func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
@@ -49,7 +48,7 @@ func deferredRestart(ctx context.Context) {
 }
 
 // RestoreDB is a handler that takes in a DB and restores Central to it
-func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.Handler {
+func RestoreDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB restore ...")
 		filename := filepath.Join(os.TempDir(), time.Now().Format(restoreFileFormat))
@@ -87,9 +86,6 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) h
 		if err := boltDB.Close(); err != nil {
 			log.Errorf("unable to close bolt DB: %v", err)
 		}
-		if err := badgerDB.Close(); err != nil {
-			log.Errorf("unable to close badger DB: %v", err)
-		}
 		rocksDB.Close()
 
 		log.Info("Bouncing Central to pick up newly imported DB")
@@ -97,7 +93,7 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) h
 	})
 }
 
-func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB) http.HandlerFunc {
+func serializeDB(boltDB *bolt.DB, rocksDB *rocksdb.RocksDB) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		log.Info("Starting DB backup ...")
 		filename := time.Now().Format(dbFileFormat)
@@ -105,7 +101,7 @@ func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, rocksDB *rocksdb.RocksDB)
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
-		if err := export.Backup(req.Context(), boltDB, badgerDB, rocksDB, w); err != nil {
+		if err := export.Backup(req.Context(), boltDB, rocksDB, w); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
 			return
 		}

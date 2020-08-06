@@ -28,9 +28,8 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = NewBadger(dackbox.GetGlobalDackBox(),
+	ad, err = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
-		globaldb.GetGlobalBadgerDB(),
 		processtagsstore.New(globaldb.GetGlobalDB()),
 		globalindex.GetGlobalIndex(),
 		globalindex.GetProcessIndex(),

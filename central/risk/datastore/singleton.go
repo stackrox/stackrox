@@ -5,10 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/risk/datastore/internal/index"
 	"github.com/stackrox/rox/central/risk/datastore/internal/search"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store"
-	"github.com/stackrox/rox/central/risk/datastore/internal/store/bolt"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -22,18 +19,9 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	var err error
-	if features.RocksDB.Enabled() {
-		storage = rocksdb.New(globaldb.GetRocksDB())
-	} else {
-		storage, err = bolt.New(globaldb.GetGlobalDB())
-		if err != nil {
-			log.Panicf("Failed to initialize risk store: %v", err)
-		}
-	}
-
+	storage := rocksdb.New(globaldb.GetRocksDB())
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
+	var err error
 	ad, err = New(storage, indexer, search.New(storage, indexer))
 	if err != nil {
 		log.Panicf("Failed to initialize risks datastore: %s", err)

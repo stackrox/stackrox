@@ -59,7 +59,7 @@ func (s *gathererTestSuite) SetupSuite() {
 	installationStore := installation.New(s.bolt)
 	s.Require().NoError(err, "Failed to make installation store")
 
-	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newBadgerGatherer(s.badger), newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
+	s.gatherer = newCentralGatherer(nil, installationStore, newDatabaseGatherer(newRocksDBGatherer(s.rocks), newBoltGatherer(s.bolt), newBleveGatherer(s.index)), newAPIGatherer(metrics.GRPCSingleton(), metrics.HTTPSingleton()), gatherers.NewComponentInfoGatherer())
 }
 
 func (s *gathererTestSuite) TearDownSuite() {

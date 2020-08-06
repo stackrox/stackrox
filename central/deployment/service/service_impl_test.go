@@ -123,7 +123,7 @@ func TestLabelsMap(t *testing.T) {
 			dacky, registry, indexingQ := testDackBoxInstance(t, rocksDB, bleveIndex)
 			registry.RegisterWrapper(deploymentDackBox.Bucket, deploymentIndex.Wrapper{})
 
-			deploymentsDS, err := datastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+			deploymentsDS, err := datastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 			require.NoError(t, err)
 
 			for _, deployment := range c.deployments {

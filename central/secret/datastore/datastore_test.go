@@ -9,14 +9,15 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/internal/index"
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/internal/store/bolt"
+	rocksdbStore "github.com/stackrox/rox/central/secret/internal/store/rocksdb"
 	secretSearch "github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,6 +29,9 @@ type SecretDataStoreTestSuite struct {
 	suite.Suite
 
 	bleveIndex bleve.Index
+
+	db  *rocksdb.RocksDB
+	dir string
 
 	indexer   index.Indexer
 	searcher  secretSearch.Searcher
@@ -42,10 +46,13 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 	suite.bleveIndex, err = globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
-	db, err := bolthelper.NewTemp(suite.T().Name() + ".db")
+	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
 	suite.Require().NoError(err)
 
-	suite.storage = bolt.New(db)
+	suite.db = db
+	suite.dir = dir
+
+	suite.storage = rocksdbStore.New(db)
 	suite.indexer = index.New(suite.bleveIndex)
 	suite.searcher = secretSearch.New(suite.storage, suite.indexer)
 	suite.datastore, err = New(suite.storage, suite.indexer, suite.searcher)
@@ -59,6 +66,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.NoError(suite.bleveIndex.Close())
+	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {

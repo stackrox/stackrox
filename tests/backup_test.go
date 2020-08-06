@@ -10,14 +10,9 @@ import (
 	"testing"
 	"time"
 
-	deploymentBadgerStore "github.com/stackrox/rox/central/deployment/store/badger"
-	"github.com/stackrox/rox/central/globaldb/badgerutils"
-	"github.com/stackrox/rox/pkg/badgerhelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tecbot/gorocksdb"
 )
@@ -60,30 +55,7 @@ func TestBackup(t *testing.T) {
 	require.NoError(t, err)
 	defer utils.IgnoreError(zipFile.Close)
 
-	if features.RocksDB.Enabled() {
-		checkZipForRocks(t, zipFile)
-	} else {
-		checkZipForBadger(t, zipFile)
-	}
-}
-
-func checkZipForBadger(t *testing.T, zipFile *zip.ReadCloser) {
-	badgerFileEntry := getFileWithName(zipFile, "badger.db")
-	require.NotNil(t, badgerFileEntry)
-
-	badgerFile, err := badgerFileEntry.Open()
-	require.NoError(t, err)
-
-	b, err := badgerhelper.New("backup.db")
-	require.NoError(t, err)
-
-	require.NoError(t, badgerutils.Load(badgerFile, b))
-
-	depStore, err := deploymentBadgerStore.New(b)
-	require.NoError(t, err)
-	deployments, err := depStore.GetDeployments()
-	require.NoError(t, err)
-	assert.NotEmpty(t, deployments)
+	checkZipForRocks(t, zipFile)
 }
 
 func checkZipForRocks(t *testing.T, zipFile *zip.ReadCloser) {

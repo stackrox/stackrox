@@ -10,10 +10,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/internal/commentsstore"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
-	"github.com/stackrox/rox/central/processindicator/store"
-	badgerStore "github.com/stackrox/rox/central/processindicator/store/badger"
 	"github.com/stackrox/rox/central/processindicator/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -33,12 +30,7 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	if features.RocksDB.Enabled() {
-		storage = rocksdb.New(globaldb.GetRocksDB())
-	} else {
-		storage = badgerStore.New(globaldb.GetGlobalBadgerDB())
-	}
+	storage := rocksdb.New(globaldb.GetRocksDB())
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetProcessIndex())
 	searcher := search.New(storage, indexer)

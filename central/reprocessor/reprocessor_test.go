@@ -159,10 +159,10 @@ func TestGetActiveImageIDs(t *testing.T) {
 	reg.RegisterWrapper(deploymentDackbox.Bucket, deploymentIndex.Wrapper{})
 	reg.RegisterWrapper(indexDackbox.Bucket, imageIndex.Wrapper{})
 
-	imageDS, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
+	imageDS, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
-	deploymentsDS, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
+	deploymentsDS, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, nil, nil, nil,
 		nil, filter.NewFilter(5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 

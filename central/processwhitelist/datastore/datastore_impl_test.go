@@ -9,18 +9,17 @@ import (
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
-	"github.com/stackrox/rox/central/processwhitelist/store/bolt"
+	rocksdbStore "github.com/stackrox/rox/central/processwhitelist/store/rocksdb"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore/mocks"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/storecache"
-	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/rocksdbtest"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -37,6 +36,9 @@ type ProcessWhitelistDataStoreTestSuite struct {
 	indexer        index.Indexer
 	searcher       whitelistSearch.Searcher
 
+	db  *rocksdb.RocksDB
+	dir string
+
 	whitelistResultsStore *mocks.MockDataStore
 
 	mockCtrl *gomock.Controller
@@ -50,10 +52,13 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 		),
 	)
 
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite))
+	db, dir, err := rocksdb.NewTemp(suite.T().Name() + ".db")
+	suite.Require().NoError(err)
 
-	suite.NoError(err)
-	suite.storage, err = bolt.NewStore(db, storecache.NewMapBackedCache())
+	suite.db = db
+	suite.dir = dir
+
+	suite.storage, err = rocksdbStore.New(db)
 	suite.NoError(err)
 
 	tmpIndex, err := globalindex.TempInitializeIndices("")
@@ -71,6 +76,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) SetupTest() {
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+	rocksdbtest.TearDownRocksDB(suite.db, suite.dir)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) mustSerializeKey(key *storage.ProcessWhitelistKey) string {

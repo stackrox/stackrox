@@ -19,9 +19,6 @@ var (
 	// ComplianceInNodes enables running of node-related Compliance checks in the compliance pods
 	ComplianceInNodes = registerFeature("Enable compliance checks in nodes", "ROX_COMPLIANCE_IN_NODES", true)
 
-	// RocksDB enables running of RocksDB
-	RocksDB = registerFeature("Runs RocksDB instead of BadgerDB", "ROX_ROCKSDB", true)
-
 	// csvExport enables CSV export of search results.
 	csvExport = registerFeature("Enable CSV export of search results", "ROX_CSV_EXPORT", false)
 

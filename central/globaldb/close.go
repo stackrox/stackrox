@@ -10,9 +10,4 @@ func Close() {
 	if rocksDB != nil {
 		rocksDB.Close()
 	}
-	if badgerDB != nil {
-		if err := badgerDB.Close(); err != nil {
-			log.Errorf("Unable to close badger db: %v", err)
-		}
-	}
 }

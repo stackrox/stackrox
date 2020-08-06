@@ -4,9 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dgraph-io/badger"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,24 +17,24 @@ type DackBoxTransactionTestSuite struct {
 	suite.Suite
 
 	dir string
-	db  *badger.DB
+	db  *rocksdb.RocksDB
 	sdb *DackBox
 }
 
 func (s *DackBoxTransactionTestSuite) SetupTest() {
 	var err error
-	s.db, s.dir, err = badgerhelper.NewTemp("reference")
+	s.db, s.dir, err = rocksdb.NewTemp("reference")
 	if err != nil {
 		s.FailNowf("failed to create DB: %+v", err.Error())
 	}
-	s.sdb, err = NewDackBox(s.db, nil, []byte{}, []byte{}, []byte{})
+	s.sdb, err = NewRocksDBDackBox(s.db, nil, []byte{}, []byte{}, []byte{})
 	if err != nil {
 		s.FailNowf("failed to create counter: %+v", err.Error())
 	}
 }
 
 func (s *DackBoxTransactionTestSuite) TearDownTest() {
-	_ = s.db.Close()
+	s.db.Close()
 	_ = os.RemoveAll(s.dir)
 }
 

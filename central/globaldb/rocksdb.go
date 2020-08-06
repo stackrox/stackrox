@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fileutils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	rocksMetrics "github.com/stackrox/rox/pkg/rocksdb/metrics"
 	"github.com/stackrox/rox/pkg/sync"
@@ -14,13 +14,29 @@ import (
 var (
 	rocksInit sync.Once
 	rocksDB   *rocksdb.RocksDB
+
+	registeredBuckets []registeredBucket
+
+	log = logging.LoggerForModule()
 )
+
+type registeredBucket struct {
+	prefix       []byte
+	prefixString string
+	objType      string
+}
+
+// RegisterBucket registers a bucket to have metrics pulled from it
+func RegisterBucket(bucketName []byte, objType string) {
+	registeredBuckets = append(registeredBuckets, registeredBucket{
+		prefixString: string(bucketName),
+		prefix:       bucketName,
+		objType:      objType,
+	})
+}
 
 // GetRocksDB returns the global rocksdb instance
 func GetRocksDB() *rocksdb.RocksDB {
-	if !features.RocksDB.Enabled() {
-		return nil
-	}
 	rocksInit.Do(func() {
 		db, err := rocksdb.New(rocksMetrics.RocksDBPath)
 		if err != nil {
@@ -36,7 +52,7 @@ func startMonitoringRocksDB(db *rocksdb.RocksDB) {
 	ticker := time.NewTicker(gatherFrequency)
 	for range ticker.C {
 		for _, bucket := range registeredBuckets {
-			rocksMetrics.UpdateRocksDBPrefixSizeMetric(db, bucket.badgerPrefix, bucket.prefixString, bucket.objType)
+			rocksMetrics.UpdateRocksDBPrefixSizeMetric(db, bucket.prefix, bucket.prefixString, bucket.objType)
 		}
 
 		size, err := fileutils.DirectorySize(rocksMetrics.RocksDBPath)

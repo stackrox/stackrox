@@ -28,7 +28,6 @@ func Singleton() *RoxGatherer {
 				manager.ManagerSingleton(),
 				installation.Singleton(),
 				newDatabaseGatherer(
-					newBadgerGatherer(globaldb.GetGlobalBadgerDB()),
 					newRocksDBGatherer(globaldb.GetRocksDB()),
 					newBoltGatherer(globaldb.GetGlobalDB()),
 					newBleveGatherer(

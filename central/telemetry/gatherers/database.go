@@ -4,25 +4,22 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/telemetry/data"
 	"golang.org/x/sys/unix"
 )
 
 type databaseGatherer struct {
-	badger *badgerGatherer
-	bolt   *boltGatherer
-	bleve  *bleveGatherer
-	rocks  *rocksdbGatherer
+	bolt  *boltGatherer
+	bleve *bleveGatherer
+	rocks *rocksdbGatherer
 }
 
-func newDatabaseGatherer(badger *badgerGatherer, rocks *rocksdbGatherer, bolt *boltGatherer, bleve *bleveGatherer) *databaseGatherer {
+func newDatabaseGatherer(rocks *rocksdbGatherer, bolt *boltGatherer, bleve *bleveGatherer) *databaseGatherer {
 	return &databaseGatherer{
-		badger: badger,
-		bolt:   bolt,
-		bleve:  bleve,
-		rocks:  rocks,
+		bolt:  bolt,
+		bleve: bleve,
+		rocks: rocks,
 	}
 }
 
@@ -42,12 +39,7 @@ func (d *databaseGatherer) Gather() *data.StorageInfo {
 		Errors: errList.ErrorStrings(),
 	}
 
-	if features.RocksDB.Enabled() {
-		storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
-	} else {
-		storageInfo.Databases = append(storageInfo.Databases, d.badger.Gather())
-	}
-
+	storageInfo.Databases = append(storageInfo.Databases, d.rocks.Gather())
 	databaseStats := d.bleve.Gather()
 	storageInfo.Databases = append(storageInfo.Databases, databaseStats...)
 

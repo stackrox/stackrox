@@ -3,10 +3,8 @@ package singleton
 import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store"
-	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/badger"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/common"
 	"github.com/stackrox/rox/central/networkflow/datastore/internal/store/rocksdb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -19,11 +17,7 @@ var (
 // information.
 func Singleton() store.ClusterStore {
 	once.Do(func() {
-		if features.RocksDB.Enabled() {
-			instance = rocksdb.NewClusterStore(globaldb.GetRocksDB())
-		} else {
-			instance = badger.NewClusterStore(globaldb.GetGlobalBadgerDB())
-		}
+		instance = rocksdb.NewClusterStore(globaldb.GetRocksDB())
 		globaldb.RegisterBucket([]byte(common.GlobalPrefix), "NetworkFlow")
 
 	})

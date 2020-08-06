@@ -1,12 +1,10 @@
 package dackbox
 
 import (
-	"github.com/dgraph-io/badger"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/pkg/dackbox/graph"
 	"github.com/stackrox/rox/pkg/dackbox/sortedkeys"
 	"github.com/stackrox/rox/pkg/dackbox/transactions"
-	badgerTxns "github.com/stackrox/rox/pkg/dackbox/transactions/badger"
 	rocksdbTxns "github.com/stackrox/rox/pkg/dackbox/transactions/rocksdb"
 	"github.com/stackrox/rox/pkg/dackbox/utils/queue"
 	"github.com/stackrox/rox/pkg/dbhelper"
@@ -28,11 +26,6 @@ func newDackBox(dbFactory transactions.DBTransactionFactory, toIndex queue.Accep
 		validPrefix: validPrefix,
 	}
 	return ret, nil
-}
-
-// NewDackBox returns a new DackBox object using the given DB and prefix for storing data and ids.
-func NewDackBox(db *badger.DB, toIndex queue.AcceptsKeyValue, graphPrefix, dirtyPrefix, validPrefix []byte) (*DackBox, error) {
-	return newDackBox(badgerTxns.NewBadgerWrapper(db), toIndex, graphPrefix, dirtyPrefix, validPrefix)
 }
 
 // NewRocksDBDackBox creates an instance of dackbox based on RocksDB

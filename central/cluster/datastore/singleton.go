@@ -3,8 +3,6 @@ package datastore
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
-	"github.com/stackrox/rox/central/cluster/store"
-	"github.com/stackrox/rox/central/cluster/store/cluster/boltdb"
 	clusterRocksDB "github.com/stackrox/rox/central/cluster/store/cluster/rocksdb"
 	healthRocksDB "github.com/stackrox/rox/central/cluster/store/cluster_health_status/rocksdb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -17,7 +15,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -29,17 +26,10 @@ var (
 )
 
 func initialize() {
-	var clusterStorage store.ClusterStore
-	var clusterHealthStorage store.ClusterHealthStore
-	var err error
-	if features.RocksDB.Enabled() {
-		clusterStorage, err = clusterRocksDB.New(globaldb.GetRocksDB())
-		utils.Must(err)
-		clusterHealthStorage, err = healthRocksDB.New(globaldb.GetRocksDB())
-		utils.Must(err)
-	} else {
-		clusterStorage = boltdb.New(globaldb.GetGlobalDB())
-	}
+	clusterStorage, err := clusterRocksDB.New(globaldb.GetRocksDB())
+	utils.Must(err)
+	clusterHealthStorage, err := healthRocksDB.New(globaldb.GetRocksDB())
+	utils.Must(err)
 	indexer := index.New(globalindex.GetGlobalTmpIndex())
 
 	ad, err = New(clusterStorage,

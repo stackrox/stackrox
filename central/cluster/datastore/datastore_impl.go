@@ -140,14 +140,12 @@ func (ds *datastoreImpl) buildIndex() error {
 	}
 
 	clusterHealthStatuses := make(map[string]*storage.ClusterHealthStatus)
-	if features.RocksDB.Enabled() {
-		err = ds.clusterHealthStorage.WalkAllWithID(func(id string, healthInfo *storage.ClusterHealthStatus) error {
-			clusterHealthStatuses[id] = healthInfo
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	err = ds.clusterHealthStorage.WalkAllWithID(func(id string, healthInfo *storage.ClusterHealthStatus) error {
+		clusterHealthStatuses[id] = healthInfo
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	for _, c := range clusters {
@@ -341,10 +339,6 @@ func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.T
 		return err
 	} else if !ok {
 		return errors.New("permission denied")
-	}
-
-	if !features.RocksDB.Enabled() {
-		return nil
 	}
 
 	ds.lock.Lock()
@@ -560,9 +554,6 @@ func (ds *datastoreImpl) getClusterOnly(id string) (*storage.Cluster, error) {
 }
 
 func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
-	if !features.RocksDB.Enabled() {
-		return
-	}
 	ids := make([]string, 0, len(clusters))
 	for _, cluster := range clusters {
 		ids = append(ids, cluster.GetId())

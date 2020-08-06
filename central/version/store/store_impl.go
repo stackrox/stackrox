@@ -3,14 +3,11 @@ package store
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/tecbot/gorocksdb"
 )
@@ -19,7 +16,6 @@ var key = []byte("\x00")
 
 type storeImpl struct {
 	bucketRef bolthelper.BucketRef
-	badgerDB  *badger.DB
 	rocksDB   *rocksdb.RocksDB
 }
 
@@ -40,25 +36,6 @@ func (s *storeImpl) getBoltVersion() (*storage.Version, error) {
 		return nil, err
 	}
 	return boltVersion, nil
-}
-
-func (s *storeImpl) getBadgerVersion() (*storage.Version, error) {
-	var badgerVersion *storage.Version
-	err := s.badgerDB.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(versionBucket)
-		if err == badger.ErrKeyNotFound {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		badgerVersion = new(storage.Version)
-		return badgerhelper.UnmarshalProtoValue(item, badgerVersion)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return badgerVersion, nil
 }
 
 func (s *storeImpl) getRocksDBVersion() (*storage.Version, error) {
@@ -89,28 +66,17 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 		return nil, err
 	}
 
-	var writeHeavyVersion *storage.Version
-	var writeHeavyDBName string
-	if features.RocksDB.Enabled() {
-		writeHeavyVersion, err = s.getRocksDBVersion()
-		if err != nil {
-			return nil, err
-		}
-		writeHeavyDBName = "rocksdb"
-	} else {
-		writeHeavyVersion, err = s.getBadgerVersion()
-		if err != nil {
-			return nil, err
-		}
-		writeHeavyDBName = "badgerdb"
+	writeHeavyVersion, err := s.getRocksDBVersion()
+	if err != nil {
+		return nil, err
 	}
 
 	commonVersion := boltVersion
 	if commonVersion == nil && writeHeavyVersion != nil {
-		return nil, fmt.Errorf("bolt database has no version, but %s does (%+v); this is invalid", writeHeavyDBName, writeHeavyVersion)
+		return nil, fmt.Errorf("bolt database has no version, but rocksdb does (%+v); this is invalid", writeHeavyVersion)
 	}
 	if writeHeavyVersion.GetSeqNum() != commonVersion.GetSeqNum() {
-		return nil, fmt.Errorf("%s database version mismatch: %+v vs %+v", writeHeavyDBName, writeHeavyVersion, commonVersion)
+		return nil, fmt.Errorf("rocksdb database version mismatch: %+v vs %+v", writeHeavyVersion, commonVersion)
 	}
 
 	return commonVersion, err
@@ -131,27 +97,18 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 		return errors.Wrap(err, "updating version in bolt")
 	}
 
-	if features.RocksDB.Enabled() {
-		if err := s.rocksDB.IncRocksDBInProgressOps(); err != nil {
-			return err
-		}
-		defer s.rocksDB.DecRocksDBInProgressOps()
+	if err := s.rocksDB.IncRocksDBInProgressOps(); err != nil {
+		return err
+	}
+	defer s.rocksDB.DecRocksDBInProgressOps()
 
-		writeOpts := gorocksdb.NewDefaultWriteOptions()
-		// Purposefully sync this
-		writeOpts.SetSync(true)
-		defer writeOpts.Destroy()
+	writeOpts := gorocksdb.NewDefaultWriteOptions()
+	// Purposefully sync this
+	writeOpts.SetSync(true)
+	defer writeOpts.Destroy()
 
-		if err := s.rocksDB.Put(writeOpts, versionBucket, bytes); err != nil {
-			return errors.Wrap(err, "updating version in rocksdb")
-		}
-	} else {
-		err = s.badgerDB.Update(func(txn *badger.Txn) error {
-			return txn.Set(versionBucket, bytes)
-		})
-		if err != nil {
-			return errors.Wrap(err, "updating version in badger")
-		}
+	if err := s.rocksDB.Put(writeOpts, versionBucket, bytes); err != nil {
+		return errors.Wrap(err, "updating version in rocksdb")
 	}
 	return nil
 }

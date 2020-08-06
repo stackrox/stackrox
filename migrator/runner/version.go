@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/tecbot/gorocksdb"
 )
 
@@ -96,15 +95,11 @@ func getCurrentSeqNum(databases *types.Databases) (int, error) {
 		return 0, errors.Wrap(err, "getting current bolt sequence number")
 	}
 
-	var writeHeavySeqNum int
-	var writeHeavyDBName string
-	if features.RocksDB.Enabled() {
-		writeHeavySeqNum, err = GetCurrentSeqNumRocksDB(databases.RocksDB)
-		if err != nil {
-			return 0, errors.Wrap(err, "getting current rocksdb sequence number")
-		}
-		writeHeavyDBName = "rocksdb"
+	writeHeavySeqNum, err := GetCurrentSeqNumRocksDB(databases.RocksDB)
+	if err != nil {
+		return 0, errors.Wrap(err, "getting current rocksdb sequence number")
 	}
+	writeHeavyDBName := "rocksdb"
 	if writeHeavySeqNum == 0 {
 		writeHeavySeqNum, err = getCurrentSeqNumBadger(databases.BadgerDB)
 		if err != nil {
@@ -148,7 +143,7 @@ func updateVersion(databases *types.Databases, newVersion *storage.Version) erro
 
 	// The migrator now has the RocksDB migration embedded, which will be migrated to from 40->41, so we should only update RocksDB
 	// after this migration has occurred
-	if features.RocksDB.Enabled() && newVersion.SeqNum >= 41 {
+	if newVersion.SeqNum >= 41 {
 		if err := updateRocksDB(databases.RocksDB, versionBytes); err != nil {
 			return err
 		}

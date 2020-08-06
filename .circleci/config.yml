@@ -2822,7 +2822,6 @@ jobs:
       - ADMISSION_CONTROLLER_UPDATES: true
       - ROX_ADMISSION_CONTROL_SERVICE: true
       - ROX_ADMISSION_CONTROL_ENFORCE_ON_UPDATE: true
-      - ROX_ROCKSDB: true
       - ROX_SUPPORT_SLIM_COLLECTOR_MODE: true
 
     steps:
@@ -3389,7 +3388,6 @@ jobs:
       - STORAGE_SIZE: 100
       - LOAD_BALANCER: lb
       - OUTPUT_FORMAT: helm
-      - ROX_ROCKSDB: true
 
     steps:
       - checkout

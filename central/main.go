@@ -255,7 +255,7 @@ func main() {
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB())
+	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetRocksDB())
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
@@ -551,13 +551,13 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/db/backup",
 			Authorizer:    dbAuthz.DBReadAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB()),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
 			Authorizer:    dbAuthz.DBWriteAccessAuthorizer(),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB(), globaldb.GetRocksDB()),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetRocksDB()),
 		},
 		{
 			Route:         "/api/docs/swagger",

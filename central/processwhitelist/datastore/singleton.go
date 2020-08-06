@@ -5,13 +5,9 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	"github.com/stackrox/rox/central/processwhitelist/search"
-	"github.com/stackrox/rox/central/processwhitelist/store"
-	"github.com/stackrox/rox/central/processwhitelist/store/bolt"
 	"github.com/stackrox/rox/central/processwhitelist/store/rocksdb"
 	"github.com/stackrox/rox/central/processwhitelistresults/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/storecache"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -25,13 +21,7 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	var err error
-	if features.RocksDB.Enabled() {
-		storage, err = rocksdb.New(globaldb.GetRocksDB())
-	} else {
-		storage, err = bolt.NewStore(globaldb.GetGlobalDB(), storecache.NewMapBackedCache())
-	}
+	storage, err := rocksdb.New(globaldb.GetRocksDB())
 	utils.Must(err)
 
 	indexer := index.New(globalindex.GetGlobalTmpIndex())

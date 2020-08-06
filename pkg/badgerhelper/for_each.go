@@ -55,18 +55,6 @@ func ForEachItemWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOption
 	return nil
 }
 
-// BucketForEach ensures that the prefix iterated over has the bucket prefix
-func BucketForEach(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k, v []byte) error) error {
-	bucketPrefix := dbhelper.AppendSeparator(keyPrefix)
-	return ForEachWithPrefix(txn, bucketPrefix, opts, do)
-}
-
-// BucketKeyForEach ensures that the keys iterated over has the bucket prefix
-func BucketKeyForEach(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k []byte) error) error {
-	bucketPrefix := dbhelper.AppendSeparator(keyPrefix)
-	return ForEachOverKeySet(txn, bucketPrefix, opts, do)
-}
-
 // ForEachWithPrefix invokes a callback for all key/value pairs with the given prefix.
 func ForEachWithPrefix(txn *badger.Txn, keyPrefix []byte, opts ForEachOptions, do func(k, v []byte) error) error {
 	closure := func(k []byte, item *badger.Item) error {

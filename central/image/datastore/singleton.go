@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	dackbox "github.com/stackrox/rox/central/globaldb/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -20,9 +19,8 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = NewBadger(dackbox.GetGlobalDackBox(),
+	ad, err = New(dackbox.GetGlobalDackBox(),
 		dackbox.GetKeyFence(),
-		globaldb.GetGlobalBadgerDB(),
 		globalindex.GetGlobalIndex(),
 		false,
 		imageComponentDS.Singleton(),

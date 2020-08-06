@@ -7,10 +7,10 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -18,11 +18,11 @@ import (
 const maxGRPCSize = 4194304
 
 func getDeploymentStore(b *testing.B) *StoreImpl {
-	db, _, err := badgerhelper.NewTemp("reference")
+	db, _, err := rocksdb.NewTemp("reference")
 	if err != nil {
 		b.Fatal(err)
 	}
-	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -179,7 +179,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	registry.RegisterWrapper(imageDackBox.Bucket, imageIndex.Wrapper{})
 
 	// Initialize real datastore
-	images, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, bleveIndex, true, mockComponentDatastore, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
+	images, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, true, mockComponentDatastore, mockRiskDatastore, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
@@ -195,7 +195,7 @@ func generateImageDataStructures(ctx context.Context, t *testing.T) (alertDatast
 	mockFilter := filterMocks.NewMockFilter(ctrl)
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	pods, err := podDatastore.NewRocksDB(db, bleveIndex, mockProcessDataStore, mockFilter)
@@ -227,7 +227,7 @@ func generateAlertDataStructures(ctx context.Context, t *testing.T) (alertDatast
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.NewBadger(dacky, concurrency.NewKeyFence(), nil, nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(dacky, concurrency.NewKeyFence(), nil, bleveIndex, bleveIndex, nil, mockWhitelistDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(t, err)
 
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments

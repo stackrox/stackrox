@@ -7,10 +7,10 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/search"
-	"github.com/stackrox/rox/central/processindicator/store/badger"
+	rocksdbStore "github.com/stackrox/rox/central/processindicator/store/rocksdb"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -25,10 +25,10 @@ func BenchmarkAddIndicator(b *testing.B) {
 		indicators = append(indicators, pi)
 	}
 
-	db, _, err := badgerhelper.NewTemp(testutils.DBFileNameForT(b))
+	db, _, err := rocksdb.NewTemp(testutils.DBFileNameForT(b))
 	require.NoError(b, err)
 
-	store := badger.New(db)
+	store := rocksdbStore.New(db)
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	require.NoError(b, err)
 

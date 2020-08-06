@@ -12,7 +12,6 @@ var (
 func init() {
 	// general
 	prometheus.MustRegister(
-		badgerOperationHistogramVec,
 		boltOperationHistogramVec,
 		rocksDBOperationHistogramVec,
 		dackboxOperationHistogramVec,

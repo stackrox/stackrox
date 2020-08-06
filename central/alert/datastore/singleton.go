@@ -5,12 +5,9 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/commentsstore"
 	"github.com/stackrox/rox/central/alert/datastore/internal/index"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store"
-	"github.com/stackrox/rox/central/alert/datastore/internal/store/badger"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/rocksdb"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -21,12 +18,7 @@ var (
 )
 
 func initialize() {
-	var storage store.Store
-	if features.RocksDB.Enabled() {
-		storage = rocksdb.NewFullStore(globaldb.GetRocksDB())
-	} else {
-		storage = badger.New(globaldb.GetGlobalBadgerDB())
-	}
+	storage := rocksdb.NewFullStore(globaldb.GetRocksDB())
 	commentsStorage := commentsstore.New(globaldb.GetGlobalDB())
 	indexer := index.New(globalindex.GetAlertIndex())
 	searcher := search.New(storage, indexer)

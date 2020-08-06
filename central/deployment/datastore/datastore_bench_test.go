@@ -10,19 +10,18 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/index"
-	badgerStore "github.com/stackrox/rox/central/deployment/store/badger"
+	dackBoxStore "github.com/stackrox/rox/central/deployment/store/dackbox"
 	"github.com/stackrox/rox/central/globalindex"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/dackbox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/rocksdb"
 	"github.com/stackrox/rox/pkg/sac"
 	search2 "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -39,27 +38,27 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 
 	blevePath := filepath.Join(tempPath, "scorch.bleve")
 
-	db, dir, err := badgerhelper.NewTemp("benchmark_search_all")
+	db, dir, err := rocksdb.NewTemp("benchmark_search_all")
 	require.NoError(b, err)
-	defer utils.IgnoreError(db.Close)
+	defer db.Close()
 	defer func() { _ = os.RemoveAll(dir) }()
 
-	dacky, err := dackbox.NewDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
+	dacky, err := dackbox.NewRocksDBDackBox(db, nil, []byte("graph"), []byte("dirty"), []byte("valid"))
 	require.NoError(b, err)
 
 	bleveIndex, err := globalindex.InitializeIndices("main", blevePath, globalindex.EphemeralIndex, "")
 	require.NoError(b, err)
 
-	deploymentsStore, err := badgerStore.New(db)
+	storage, err := dackBoxStore.New(dacky, concurrency.NewKeyFence())
 	require.NoError(b, err)
 
 	deploymentsIndexer := index.New(bleveIndex, bleveIndex)
-	deploymentsSearcher := search.New(deploymentsStore, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
+	deploymentsSearcher := search.New(storage, dacky, nil, nil, nil, nil, nil, deploymentsIndexer)
 
-	imageDS, err := imageDatastore.NewBadger(dacky, concurrency.NewKeyFence(), db, bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
+	imageDS, err := imageDatastore.New(dacky, concurrency.NewKeyFence(), bleveIndex, false, nil, nil, ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 
-	deploymentsDatastore, err := newDatastoreImpl(deploymentsStore, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,
+	deploymentsDatastore, err := newDatastoreImpl(storage, nil, deploymentsIndexer, deploymentsSearcher, imageDS, nil, nil, nil, nil,
 		nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
 	require.NoError(b, err)
 

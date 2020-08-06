@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/blevesearch/bleve"
-	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/central/analystnotes"
 	componentCVEEdgeIndexer "github.com/stackrox/rox/central/componentcveedge/index"
 	cveIndexer "github.com/stackrox/rox/central/cve/index"
@@ -86,8 +85,8 @@ func newDataStore(storage store.Store, graphProvider graph.Provider, processTags
 	return ds, nil
 }
 
-// NewBadger creates a deployment datastore based on BadgerDB
-func NewBadger(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, db *badger.DB, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
+// New creates a deployment datastore based on dackbox
+func New(dacky *dackbox.DackBox, keyFence concurrency.KeyFence, processTagsStore processtagsstore.Store, bleveIndex bleve.Index, processIndex bleve.Index,
 	images imageDS.DataStore, whitelists pwDS.DataStore, networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore, deletedDeploymentCache expiringcache.Cache, processFilter filter.Filter,
 	clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) (DataStore, error) {

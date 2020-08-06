@@ -14,9 +14,7 @@ import (
 	"github.com/stackrox/rox/migrator/runner"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/config"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/routes"
-	"github.com/tecbot/gorocksdb"
 )
 
 func main() {
@@ -65,18 +63,14 @@ func run() error {
 		return nil
 	}
 
-	var rocksdb *gorocksdb.DB
-	var rocksDBSeqNum int
-	if features.RocksDB.Enabled() {
-		rocksdb, err = rockshelper.New()
-		if err != nil {
-			return errors.Wrap(err, "failed to open rocksdb")
-		}
+	rocksdb, err := rockshelper.New()
+	if err != nil {
+		return errors.Wrap(err, "failed to open rocksdb")
+	}
 
-		rocksDBSeqNum, err = runner.GetCurrentSeqNumRocksDB(rocksdb)
-		if err != nil {
-			return errors.Wrap(err, "failed to fetch sequence number from rocksdb")
-		}
+	rocksDBSeqNum, err := runner.GetCurrentSeqNumRocksDB(rocksdb)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch sequence number from rocksdb")
 	}
 
 	var badgerDB *badger.DB
