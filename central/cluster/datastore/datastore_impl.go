@@ -62,14 +62,6 @@ type datastoreImpl struct {
 	lock sync.Mutex
 }
 
-func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clusterHealth *storage.ClusterHealthStatus) error {
-	if err := checkWriteSac(ctx, id); err != nil {
-		return err
-	}
-	//TODO: Implement store logic, and call it here
-	return nil
-}
-
 func (ds *datastoreImpl) UpdateClusterUpgradeStatus(ctx context.Context, id string, upgradeStatus *storage.ClusterUpgradeStatus) error {
 	if err := checkWriteSac(ctx, id); err != nil {
 		return err
@@ -354,16 +346,67 @@ func (ds *datastoreImpl) UpdateClusterContactTimes(ctx context.Context, t time.T
 	healthIdx := 0
 	for clusterIdx := range ids {
 		if missCount < len(missing) && clusterIdx == missing[missCount] {
-			allStatuses = append(allStatuses, &storage.ClusterHealthStatus{LastUpdated: ts})
+			allStatuses = append(allStatuses, &storage.ClusterHealthStatus{LastContact: ts})
 			missCount++
 			continue
 		}
 		currentHealthStatus := healthStatuses[healthIdx]
-		currentHealthStatus.LastUpdated = ts
+		currentHealthStatus.LastContact = ts
 		allStatuses = append(allStatuses, currentHealthStatus)
 		healthIdx++
 	}
 	return ds.clusterHealthStorage.UpsertManyWithIDs(ids, allStatuses)
+}
+
+func (ds *datastoreImpl) UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error {
+	if id == "" {
+		return errors.New("cannot update cluster health. cluster id not provided")
+	}
+
+	if clusterHealthStatus == nil {
+		return errors.Errorf("cannot update health for cluster %s. No health information available", id)
+	}
+
+	if err := checkWriteSac(ctx, id); err != nil {
+		return err
+	}
+
+	ds.lock.Lock()
+	defer ds.lock.Unlock()
+
+	oldHealth, _, err := ds.clusterHealthStorage.Get(id)
+	if err != nil {
+		return err
+	}
+
+	if !features.ClusterHealthMonitoring.Enabled() {
+		if protoconv.ConvertTimestampToTimeOrDefault(clusterHealthStatus.GetLastContact(), time.Time{}).IsZero() {
+			clusterHealthStatus.LastContact = oldHealth.GetLastContact()
+		}
+	}
+
+	if err := ds.clusterHealthStorage.UpsertWithID(id, clusterHealthStatus); err != nil {
+		return err
+	}
+
+	if !features.ClusterHealthMonitoring.Enabled() {
+		return nil
+	}
+
+	// If no change in cluster health status, no need to rebuild index
+	if clusterHealthStatus.GetSensorHealthStatus() == oldHealth.GetSensorHealthStatus() && clusterHealthStatus.GetCollectorHealthStatus() == oldHealth.GetCollectorHealthStatus() {
+		return nil
+	}
+
+	cluster, exists, err := ds.clusterStorage.Get(id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	cluster.HealthStatus = clusterHealthStatus
+	return ds.indexer.AddCluster(cluster)
 }
 
 func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
@@ -583,7 +626,7 @@ func (ds *datastoreImpl) populateHealthInfos(clusters ...*storage.Cluster) {
 		if cluster.Status == nil {
 			cluster.Status = &storage.ClusterStatus{}
 		}
-		cluster.Status.LastContact = infos[healthIdx].GetLastUpdated()
+		cluster.Status.LastContact = infos[healthIdx].GetLastContact()
 		healthIdx++
 	}
 }

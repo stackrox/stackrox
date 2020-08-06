@@ -183,7 +183,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"collectorHealthInfo: CollectorHealthInfo",
 		"collectorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"healthInfoComplete: Boolean!",
-		"lastUpdated: Time",
+		"lastContact: Time",
 		"overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 		"sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!",
 	}))
@@ -2474,8 +2474,8 @@ func (resolver *clusterHealthStatusResolver) HealthInfoComplete(ctx context.Cont
 	return value
 }
 
-func (resolver *clusterHealthStatusResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
-	value := resolver.data.GetLastUpdated()
+func (resolver *clusterHealthStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetLastContact()
 	return timestamp(value)
 }
 

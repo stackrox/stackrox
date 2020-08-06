@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	graphMocks "github.com/stackrox/rox/pkg/dackbox/graph/mocks"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -345,38 +346,38 @@ func (suite *ClusterDataStoreTestSuite) TestUpdateClusterContactTimes() {
 	existingHealths := []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 	}
 	healths := []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
-			LastUpdated: ts,
+			LastContact: ts,
 		},
 		{
-			LastUpdated: ts,
+			LastContact: ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
-			LastUpdated: ts,
+			LastContact: ts,
 		},
 	}
 
@@ -394,15 +395,15 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterContactTimes() {
 	existingHealths := []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 	}
 	results := []search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}, {ID: "6"}}
@@ -455,27 +456,27 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterContactTimes() {
 	existingHealths = []*storage.ClusterHealthStatus{
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_DEGRADED,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 		{
 			SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-			LastUpdated:        ts,
+			LastContact:        ts,
 		},
 	}
 	expected = []*storage.Cluster{
@@ -530,4 +531,160 @@ func (suite *ClusterDataStoreTestSuite) TestPopulateClusterContactTimes() {
 	actuals, err = suite.clusterDataStore.SearchRawClusters(suite.hasReadCtx, search.EmptyQuery())
 	suite.NoError(err)
 	suite.Equal(expected, actuals)
+}
+
+func (suite *ClusterDataStoreTestSuite) TestUpdateClusterHealth() {
+	t1 := time.Now()
+	t3 := time.Now().Add(-30 * time.Minute)
+	ts1 := protoconv.ConvertTimeToTimestamp(t1)
+	ts3 := protoconv.ConvertTimeToTimestamp(t3)
+
+	cases := []struct {
+		name      string
+		oldHealth *storage.ClusterHealthStatus
+		newHealth *storage.ClusterHealthStatus
+		cluster   *storage.Cluster
+		skipIndex bool
+	}{
+		{
+			name: "status change: first check-in, must index",
+			oldHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_UNINITIALIZED,
+			},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts1,
+			},
+			cluster: &storage.Cluster{
+				Id: "1",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+					LastContact:        ts1,
+				},
+			},
+			skipIndex: false,
+		},
+		{
+			name: "status change: unhealthy to healthy, must index",
+			oldHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:        ts3,
+			},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts1,
+			},
+			cluster: &storage.Cluster{
+				Id: "2",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+					LastContact:        ts1,
+				},
+			},
+			skipIndex: false,
+		},
+		{
+			name: "no status change: healthy, skip index",
+			oldHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts1,
+			},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts1,
+			},
+			cluster: &storage.Cluster{
+				Id: "3",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+					LastContact:        ts1,
+				},
+			},
+			skipIndex: true,
+		},
+		{
+			name: "no status change: unhealthy, skip index",
+			oldHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				LastContact:           ts3,
+			},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:           ts3,
+			},
+			cluster: &storage.Cluster{
+				Id: "4",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+					CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+					OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+					LastContact:           ts3,
+				},
+			},
+			skipIndex: true,
+		},
+		{
+			name: "status change: degraded to unhealthy, must index",
+			oldHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_DEGRADED,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				LastContact:           ts3,
+			},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+				CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+				OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+				LastContact:           ts3,
+			},
+			cluster: &storage.Cluster{
+				Id: "5",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus:    storage.ClusterHealthStatus_UNHEALTHY,
+					CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+					OverallHealthStatus:   storage.ClusterHealthStatus_UNHEALTHY,
+					LastContact:           ts3,
+				},
+			},
+			skipIndex: false,
+		},
+		{
+			name:      "no previous health status exists",
+			oldHealth: &storage.ClusterHealthStatus{},
+			newHealth: &storage.ClusterHealthStatus{
+				SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+				LastContact:        ts1,
+			},
+			cluster: &storage.Cluster{
+				Id: "6",
+				HealthStatus: &storage.ClusterHealthStatus{
+					SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY,
+					LastContact:        ts1,
+				},
+			},
+			skipIndex: false,
+		},
+	}
+
+	for _, c := range cases {
+		suite.healthStatuses.EXPECT().Get(c.cluster.GetId()).Return(c.oldHealth, true, nil)
+		suite.healthStatuses.EXPECT().UpsertWithID(c.cluster.GetId(), c.newHealth)
+
+		if features.ClusterHealthMonitoring.Enabled() {
+			if !c.skipIndex {
+				suite.clusters.EXPECT().Get(c.cluster.GetId()).Return(c.cluster, true, nil)
+				cluster := c.cluster
+				cluster.HealthStatus = c.newHealth
+				suite.indexer.EXPECT().AddCluster(cluster).Return(nil)
+			}
+		}
+
+		err := suite.clusterDataStore.UpdateClusterHealth(suite.hasWriteCtx, c.cluster.GetId(), c.newHealth)
+		suite.NoError(err)
+	}
+
+	err := suite.clusterDataStore.UpdateClusterHealth(suite.hasWriteCtx, "", &storage.ClusterHealthStatus{})
+	suite.Error(err)
 }

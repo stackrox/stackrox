@@ -122,7 +122,7 @@ func migrateLastContact(boltDB *bbolt.DB, rocksDB *gorocksdb.DB) (int, error) {
 			}
 
 			healthStatus := storage.ClusterHealthStatus{
-				LastUpdated: &lastContact,
+				LastContact: &lastContact,
 			}
 
 			newValue, err := proto.Marshal(&healthStatus)

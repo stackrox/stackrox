@@ -4,13 +4,17 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc/codes"
@@ -90,23 +94,64 @@ func (m *manager) Start(clusterManager ClusterManager, policyManager PolicyManag
 		return errors.Wrap(err, "failed to initialize upgrade controllers")
 	}
 
-	go m.updateClusterContactTimesForever()
+	go m.updateClusterHealthForever()
 	return nil
 }
 
-func (m *manager) updateClusterContactTimesForever() {
+func (m *manager) updateClusterHealthForever() {
 	t := time.NewTicker(clusterCheckinInterval)
 	defer t.Stop()
 
 	for range t.C {
-		connections := m.GetActiveConnections()
-		clusterIDs := make([]string, 0, len(connections))
-		for _, c := range connections {
-			clusterIDs = append(clusterIDs, c.ClusterID())
+		clusters, err := m.clusters.GetClusters(managerCtx)
+		if err != nil {
+			log.Errorf("error updating cluster healths: %v", err)
 		}
-		if err := m.clusters.UpdateClusterContactTimes(managerCtx, time.Now(), clusterIDs...); err != nil {
-			log.Errorf("error checking in clusters: %v", err)
+
+		for _, cluster := range clusters {
+			conn := m.GetConnection(cluster.GetId())
+			if conn == nil {
+				m.updateInactiveClusterHealth(cluster)
+				continue
+			}
+
+			// Update cluster contact times for active sensors from here iff they do not have health monitoring capability.
+			// Otherwise, rely on cluster health pipeline.
+			if !conn.HasCapability(centralsensor.HealthMonitoringCap) {
+				m.updateActiveClusterHealth(cluster)
+			}
 		}
+	}
+}
+
+func (m *manager) updateInactiveClusterHealth(cluster *storage.Cluster) {
+	oldHealth := cluster.GetHealthStatus()
+	previousContact := protoconv.ConvertTimestampToTimeOrDefault(oldHealth.GetLastContact(), time.Time{})
+	newSensorStatus := clusterhealth.PopulateSensorStatus(previousContact, time.Time{})
+	clusterHealthStatus := &storage.ClusterHealthStatus{
+		SensorHealthStatus:    newSensorStatus,
+		CollectorHealthStatus: oldHealth.GetCollectorHealthStatus(),
+		LastContact:           oldHealth.GetLastContact(),
+		CollectorHealthInfo:   oldHealth.GetCollectorHealthInfo(),
+		HealthInfoComplete:    oldHealth.GetHealthInfoComplete(),
+	}
+	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+
+	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), &storage.ClusterHealthStatus{}); err != nil {
+		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
+	}
+}
+
+func (m *manager) updateActiveClusterHealth(cluster *storage.Cluster) {
+	clusterHealthStatus := &storage.ClusterHealthStatus{
+		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+		CollectorHealthStatus: storage.ClusterHealthStatus_UNAVAILABLE,
+		LastContact:           types.TimestampNow(),
+	}
+	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
+
+	if err := m.clusters.UpdateClusterHealth(managerCtx, cluster.GetId(), clusterHealthStatus); err != nil {
+		log.Errorf("error updating health for cluster %s (id: %s): %v", cluster.GetName(), cluster.GetId(), err)
 	}
 }
 

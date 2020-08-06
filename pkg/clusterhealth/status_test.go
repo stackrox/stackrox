@@ -73,7 +73,7 @@ func TestGetSensorStatus(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expectedStatus, GetSensorStatus(c.previousContact, c.newContact))
+			assert.Equal(t, c.expectedStatus, PopulateSensorStatus(c.previousContact, c.newContact))
 		})
 	}
 
@@ -81,43 +81,50 @@ func TestGetSensorStatus(t *testing.T) {
 
 func TestCollectorStatus(t *testing.T) {
 	cases := []struct {
-		name           string
-		desired        int64
-		ready          int64
-		expectedStatus storage.ClusterHealthStatus_HealthStatusLabel
+		name                string
+		collectorHealthInfo *storage.CollectorHealthInfo
+		expectedStatus      storage.ClusterHealthStatus_HealthStatusLabel
 	}{
 		{
 			name:           "collector: no data",
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
-			name:           "collector: unhealthy",
-			desired:        0,
-			ready:          5,
+			name: "collector: unhealthy",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPods: 0,
+				TotalReadyPods:   5,
+			},
 			expectedStatus: storage.ClusterHealthStatus_UNINITIALIZED,
 		},
 		{
-			name:           "collector: healthy",
-			desired:        10,
-			ready:          10,
+			name: "collector: healthy",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPods: 10,
+				TotalReadyPods:   10,
+			},
 			expectedStatus: storage.ClusterHealthStatus_HEALTHY,
 		},
 		{
-			name:           "collector: degraded",
-			desired:        10,
-			ready:          9,
+			name: "collector: degraded",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPods: 10,
+				TotalReadyPods:   9,
+			},
 			expectedStatus: storage.ClusterHealthStatus_DEGRADED,
 		},
 		{
-			name:           "collector: unhealthy",
-			desired:        10,
-			ready:          5,
+			name: "collector: unhealthy",
+			collectorHealthInfo: &storage.CollectorHealthInfo{
+				TotalDesiredPods: 10,
+				TotalReadyPods:   5,
+			},
 			expectedStatus: storage.ClusterHealthStatus_UNHEALTHY,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expectedStatus, GetCollectorStatus(c.desired, c.ready))
+			assert.Equal(t, c.expectedStatus, PopulateCollectorStatus(c.collectorHealthInfo))
 		})
 	}
 }

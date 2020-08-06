@@ -103,7 +103,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastUpdated: ts,
+				LastContact: ts,
 			},
 			healthShouldExists: true,
 		},
@@ -124,7 +124,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastUpdated: ts,
+				LastContact: ts,
 			},
 			healthShouldExists: true,
 		},
@@ -145,7 +145,7 @@ func (suite *clusterRocksDBMigrationTestSuite) TestClusterRocksDBMigration() {
 				},
 			},
 			rocksDBHealth: &storage.ClusterHealthStatus{
-				LastUpdated: ts,
+				LastContact: ts,
 			},
 			healthShouldExists: true,
 		},

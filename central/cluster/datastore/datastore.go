@@ -53,7 +53,7 @@ type DataStore interface {
 	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 	UpdateClusterUpgradeStatus(ctx context.Context, id string, clusterUpgradeStatus *storage.ClusterUpgradeStatus) error
 	UpdateClusterCertExpiryStatus(ctx context.Context, id string, clusterCertExpiryStatus *storage.ClusterCertExpiryStatus) error
-	UpdateClusterHealth(ctx context.Context, id string, status *storage.ClusterHealthStatus) error
+	UpdateClusterHealth(ctx context.Context, id string, clusterHealthStatus *storage.ClusterHealthStatus) error
 
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error)

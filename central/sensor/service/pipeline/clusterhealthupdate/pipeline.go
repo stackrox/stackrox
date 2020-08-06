@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -46,12 +48,17 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	m := msg.GetClusterHealthInfo().GetCollectorHealthInfo()
 
-	clusterHealth := &storage.ClusterHealthStatus{
-		CollectorHealthInfo: m,
-		LastUpdated:         timestamp.Now().GogoProtobuf(),
+	clusterHealthStatus := &storage.ClusterHealthStatus{
+		SensorHealthStatus:    storage.ClusterHealthStatus_HEALTHY,
+		CollectorHealthStatus: clusterhealth.PopulateCollectorStatus(m),
+		CollectorHealthInfo:   m,
+		LastContact:           timestamp.Now().GogoProtobuf(),
+		// When sensor health monitoring is revised update the sensor capability
+		HealthInfoComplete: centralsensor.ExtractCapsFromContext(ctx).Contains(centralsensor.HealthMonitoringCap),
 	}
+	clusterHealthStatus.OverallHealthStatus = clusterhealth.PopulateOverallClusterStatus(clusterHealthStatus)
 
-	if err := s.clusters.UpdateClusterHealth(ctx, clusterID, clusterHealth); err != nil {
+	if err := s.clusters.UpdateClusterHealth(ctx, clusterID, clusterHealthStatus); err != nil {
 		return err
 	}
 	return nil
